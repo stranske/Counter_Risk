@@ -259,42 +259,6 @@ def _extract_requirement_name(entry: str) -> str | None:
     return token or None
 
 
-def _catches_import_error(handler: ast.ExceptHandler) -> bool:
-    """Return True when an except handler catches import-related errors."""
-    error_type = handler.type
-    if error_type is None:
-        # Bare except catches ImportError/ModuleNotFoundError as well.
-        return True
-
-    if isinstance(error_type, ast.Name):
-        return error_type.id in {"ImportError", "ModuleNotFoundError"}
-
-    if isinstance(error_type, ast.Tuple):
-        return any(
-            isinstance(item, ast.Name) and item.id in {"ImportError", "ModuleNotFoundError"}
-            for item in error_type.elts
-        )
-
-    return False
-
-
-def _is_guarded_optional_import(node: ast.AST, parent_map: dict[ast.AST, ast.AST]) -> bool:
-    """Detect imports inside try blocks guarded by import-related except clauses."""
-    child: ast.AST = node
-    current: ast.AST | None = parent_map.get(node)
-    while current is not None:
-        if (
-            isinstance(current, ast.Try)
-            and child in current.body
-            and any(_catches_import_error(h) for h in current.handlers)
-        ):
-            return True
-        child = current
-        current = parent_map.get(current)
-
-    return False
-
-
 def extract_imports_from_file(file_path: Path) -> set[str]:
     """Extract all top-level import names from a Python file."""
     try:
@@ -303,16 +267,8 @@ def extract_imports_from_file(file_path: Path) -> set[str]:
     except (SyntaxError, UnicodeDecodeError):
         return set()
 
-    parent_map: dict[ast.AST, ast.AST] = {}
-    for parent in ast.walk(tree):
-        for child in ast.iter_child_nodes(parent):
-            parent_map[child] = parent
-
     imports = set()
     for node in ast.walk(tree):
-        if _is_guarded_optional_import(node, parent_map):
-            continue
-
         if isinstance(node, ast.Import):
             for alias in node.names:
                 module = alias.name.split(".")[0]
