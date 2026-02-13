@@ -7,10 +7,10 @@ tasks:
     title: Create `src/counter_risk/build/release.py` to assemble a versioned release
       folder containing the pipeline executable (or python env bundle), templates,
       default config, runner, and README.
-    status: doing
+    status: done
     started_at: '2026-02-13T17:34:42Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T17:34:52Z'
+    commit: 1de13a95031cb3b5b8531a5c12d2ea5555bc2286
     notes: []
   - id: task-02
     title: 'Define scope for: Create the basic structure of `src/counter_risk/build/release.py`
