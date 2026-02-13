@@ -77,7 +77,7 @@ def float_tolerant_equal(
 ) -> bool:
     """Compare scalars or nested sequences with float tolerance."""
     if _is_sequence(left) and _is_sequence(right):
-        if len(left) != len(right):  # type: ignore[arg-type]
+        if len(left) != len(right):
             return False
         return all(
             float_tolerant_equal(left_item, right_item, abs_tol=abs_tol, rel_tol=rel_tol)
@@ -90,4 +90,4 @@ def float_tolerant_equal(
         except (TypeError, ValueError):
             return False
 
-    return left == right
+    return bool(left == right)
