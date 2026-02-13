@@ -36,7 +36,7 @@ def test_runner_workbook_embeds_runnerlaunch_entrypoints_in_vba_project() -> Non
     with ZipFile("Runner.xlsm") as zip_file, zip_file.open("xl/vbaProject.bin") as handle:
         vba_project = handle.read().decode("latin-1", errors="ignore")
 
-    assert "Attribute VB_Name = \"RunnerLaunch\"" in vba_project
+    assert 'Attribute VB_Name = "RunnerLaunch"' in vba_project
     assert "Public Sub RunAll_Click()" in vba_project
     assert "Public Sub RunExTrend_Click()" in vba_project
     assert "Public Sub RunTrend_Click()" in vba_project
