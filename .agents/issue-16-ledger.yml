@@ -1,0 +1,446 @@
+version: 1
+issue: 16
+base: main
+branch: codex/issue-16
+tasks:
+  - id: task-01
+    title: 'Create `src/counter_risk/normalize.py` implementing `normalize_counterparty(name:
+      str) -> str`'
+    status: done
+    started_at: '2026-02-13T03:34:30Z'
+    finished_at: '2026-02-13T03:34:43Z'
+    commit: 5b9260387b2fa00bd513e7e76821bf3c5c003bc3
+    notes: []
+  - id: task-02
+    title: 'Create the file `src/counter_risk/normalize.py` with module-level documentation
+      (verify: docs updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement the `normalize_counterparty` function signature with type hints
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Implement the `normalize_counterparty` function signature with docstring
+      (verify: docs updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Add counterparty name mappings dictionary within the normalize_counterparty
+      function (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement whitespace normalization logic (strip (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'collapse spaces) in normalize_counterparty (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement the mapping lookup (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'return logic in normalize_counterparty (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Create `src/counter_risk/normalize.py` implementing `normalize_clearing_house(name:
+      str) -> str`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Implement the `normalize_clearing_house` function signature with type
+      hints (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Implement the `normalize_clearing_house` function signature with docstring
+      (verify: docs updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Add clearing house name mappings dictionary within the normalize_clearing_house
+      function (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'collapse spaces) in normalize_clearing_house (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'return logic in normalize_clearing_house (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Add mappings in `src/counter_risk/normalize.py` for: `Citigroup -> Citibank`,
+      `Bank of America, NA -> Bank of America`, `Goldman Sachs Int''l -> Goldman Sachs`,
+      `Societe Generale -> Soc Gen`, `Barclays Bank PLC -> Barclays`, `CME Clearing
+      House -> CME`, `ICE Clear U.S. -> ICE`, `ICE Clear Europe -> ICE Euro`, `EUREX
+      Clearing -> EUREX`, `Japan Securities Clearing Corporation -> Japan SCC`, `Korea
+      Exchange (in-house) -> Korea Exchange`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Define scope for: Add counterparty mappings for Citigroup, Bank of America
+      NA, Goldman Sachs Intl, Societe Generale, (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Implement focused slice for: Add counterparty mappings for Citigroup,
+      Bank of America NA, Goldman Sachs Intl, Societe Generale, (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Validate focused slice for: Add counterparty mappings for Citigroup, Bank
+      of America NA, Goldman Sachs Intl, Societe Generale, (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Barclays Bank PLC (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Define scope for: Add clearing house mappings for CME Clearing House,
+      ICE Clear US, ICE Clear Europe, EUREX Clearing, Japan Securities Clearing Corporation,
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Implement focused slice for: Add clearing house mappings for CME Clearing
+      House, ICE Clear US, ICE Clear Europe, EUREX Clearing, Japan Securities Clearing
+      Corporation, (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Validate focused slice for: Add clearing house mappings for CME Clearing
+      House, ICE Clear US, ICE Clear Europe, EUREX Clearing, Japan Securities Clearing
+      Corporation, (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Korea Exchange in-house (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Write unit tests covering every mapping plus whitespace cleanup and no-op
+      behavior
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Write unit tests for all counterparty name mappings in normalize_counterparty
+      function (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Define scope for: Write unit tests for all clearing house name mappings
+      in normalize_clearing_house function (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Implement focused slice for: Write unit tests for all clearing house name
+      mappings in normalize_clearing_house function (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Validate focused slice for: Write unit tests for all clearing house name
+      mappings in normalize_clearing_house function (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Write unit tests verifying whitespace cleanup behavior for leading (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Write unit tests verifying whitespace cleanup behavior for trailing (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Write unit tests verifying whitespace cleanup behavior for and multiple
+      spaces (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Define scope for: Write unit tests verifying no-op behavior when unknown
+      names are passed to normalization functions (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Implement focused slice for: Write unit tests verifying no-op behavior
+      when unknown names are passed to normalization functions (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Validate focused slice for: Write unit tests verifying no-op behavior
+      when unknown names are passed to normalization functions (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: Unit tests exist and cover all listed mappings
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: Unit tests verify whitespace cleanup behavior (e.g., trimming/collapsing)
+      and no-op behavior (unknown names return unchanged)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: At least one parser test asserts normalization is applied
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: At least one writer test asserts normalization is applied
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'Add `src/counter_risk/normalize.py` with:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: '`normalize_counterparty(name: str) -> str`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: '`normalize_clearing_house(name: str) -> str`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'Include mappings observed in fixtures (minimum set):'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: Citigroup -> Citibank
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: Bank of America, NA -> Bank of America
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: Goldman Sachs Int'l -> Goldman Sachs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: Societe Generale -> Soc Gen
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: Barclays Bank PLC -> Barclays
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: CME Clearing House -> CME
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: ICE Clear U.S. -> ICE
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: ICE Clear Europe -> ICE Euro
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: EUREX Clearing -> EUREX
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: Japan Securities Clearing Corporation -> Japan SCC
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: Korea Exchange (in-house) -> Korea Exchange
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: Add unit tests for every mapping + whitespace cleanup + no-op behavior
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: All mappings are covered by unit tests
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: Normalization is applied in at least one parser test and one writer test
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
