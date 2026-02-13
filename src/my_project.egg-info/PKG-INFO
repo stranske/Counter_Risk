@@ -17,10 +17,10 @@ Requires-Python: >=3.11
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Provides-Extra: dev
-Requires-Dist: pytest>=9.0.2; extra == "dev"
-Requires-Dist: pytest-cov>=7.0.0; extra == "dev"
-Requires-Dist: ruff>=0.15.0; extra == "dev"
-Requires-Dist: mypy>=1.19.1; extra == "dev"
+Requires-Dist: pytest==9.0.2; extra == "dev"
+Requires-Dist: pytest-cov==7.0.0; extra == "dev"
+Requires-Dist: ruff==0.15.0; extra == "dev"
+Requires-Dist: mypy==1.19.1; extra == "dev"
 Dynamic: license-file
 
 # Counter_Risk
@@ -63,6 +63,13 @@ If a change requires editing synced workflow files, do it in **stranske/Workflow
 
 ## Testing
 Autopilot smoke tests are enabled to validate basic keepalive and automation flow behavior.
+
+## Development
+Use these maintainer commands from the repository root:
+
+- `make lint` runs `ruff check src/ tests/`
+- `make format` runs `ruff format src/ tests/`
+- `make test` runs `pytest -m "not slow"`
 
 ## Features
 
