@@ -31,6 +31,15 @@ class DateControlDecision:
     rationale: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class RunnerDateControlScope:
+    """Scoped decision artifact for the Runner.xlsm date control."""
+
+    requirements: DateControlRequirements
+    decision: DateControlDecision
+    out_of_scope: tuple[str, ...]
+
+
 def choose_runner_date_input_control(
     requirements: DateControlRequirements,
 ) -> DateControlDecision:
@@ -54,5 +63,21 @@ def choose_runner_date_input_control(
         selected_control=DateInputControl.DATE_PICKER,
         rationale=(
             "Requirements do not mandate the month-end/reliability/testability constraints.",
+        ),
+    )
+
+
+def define_runner_xlsm_date_control_scope() -> RunnerDateControlScope:
+    """Define scope for Runner.xlsm date control selection from user requirements."""
+    requirements = DateControlRequirements()
+    decision = choose_runner_date_input_control(requirements)
+
+    return RunnerDateControlScope(
+        requirements=requirements,
+        decision=decision,
+        out_of_scope=(
+            "Run-mode button handlers.",
+            "Executable launch integration.",
+            "Post-run status and log display.",
         ),
     )

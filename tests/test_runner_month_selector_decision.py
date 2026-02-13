@@ -10,6 +10,7 @@ from counter_risk.runner_date_control import (
     DateControlRequirements,
     DateInputControl,
     choose_runner_date_input_control,
+    define_runner_xlsm_date_control_scope,
 )
 
 
@@ -39,6 +40,16 @@ def test_relaxed_requirements_can_choose_date_picker() -> None:
     )
     decision = choose_runner_date_input_control(relaxed)
     assert decision.selected_control is DateInputControl.DATE_PICKER
+
+
+def test_scope_definition_uses_default_requirements_and_boundaries() -> None:
+    scope = define_runner_xlsm_date_control_scope()
+
+    assert scope.requirements == DateControlRequirements()
+    assert scope.decision.selected_control is DateInputControl.MONTH_SELECTOR
+    assert "Run-mode button handlers." in scope.out_of_scope
+    assert "Executable launch integration." in scope.out_of_scope
+    assert "Post-run status and log display." in scope.out_of_scope
 
 
 @pytest.mark.parametrize(
