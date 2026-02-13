@@ -142,6 +142,17 @@ def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    class FakeOleObject:
+        def __init__(self) -> None:
+            self.update_calls = 0
+
+        def Update(self) -> None:  # noqa: N802
+            self.update_calls += 1
+
+    class FakeOleFormat:
+        def __init__(self, ole_object: FakeOleObject | None = None) -> None:
+            self.Object = ole_object or FakeOleObject()
+
     class FakeLinkFormat:
         def __init__(self, source: str | None = None) -> None:
             self.source = source or ""
@@ -158,9 +169,11 @@ def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
         def __init__(
             self,
             link_format: FakeLinkFormat | None = None,
+            ole_format: FakeOleFormat | None = None,
             group_items: list[FakeShape] | None = None,
         ) -> None:
             self.LinkFormat = link_format or FakeLinkFormat()
+            self.OLEFormat = ole_format or FakeOleFormat()
             self.GroupItems = group_items or []
 
     class FakeSlide:
@@ -174,7 +187,7 @@ def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
             self.close_calls = 0
             grouped_shape = FakeShape(
                 FakeLinkFormat(),
-                [FakeShape(FakeLinkFormat()), FakeShape(FakeLinkFormat())],
+                group_items=[FakeShape(FakeLinkFormat()), FakeShape(FakeLinkFormat())],
             )
             self.Slides = [
                 FakeSlide([grouped_shape, FakeShape(FakeLinkFormat())]),
@@ -237,6 +250,16 @@ def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
         for grouped_shape in shape.GroupItems
     )
     assert shape_updates + grouped_shape_updates == 5
+    ole_shape_updates = sum(
+        shape.OLEFormat.Object.update_calls for slide in presentation.Slides for shape in slide.Shapes
+    )
+    ole_grouped_updates = sum(
+        grouped_shape.OLEFormat.Object.update_calls
+        for slide in presentation.Slides
+        for shape in slide.Shapes
+        for grouped_shape in shape.GroupItems
+    )
+    assert ole_shape_updates + ole_grouped_updates == 5
 
 
 def test_list_external_link_targets_collects_presentation_and_shape_sources(
