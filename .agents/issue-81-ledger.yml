@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Update `src/counter_risk/pipeline/run.py` to compute `run_dir` as `Path(repo_root)
       / "runs" / as_of_date_str` and pass it to all downstream functions
-    status: doing
+    status: done
     started_at: '2026-02-13T21:39:14Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T21:39:26Z'
+    commit: 7fee67122e7b74bd9c9cf88e8741b8718dfb96bf
     notes: []
   - id: task-02
     title: Refactor manifest writer in `src/counter_risk/pipeline/manifest.py` to
