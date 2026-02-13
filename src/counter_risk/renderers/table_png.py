@@ -1,6 +1,6 @@
 """Deterministic PNG renderers for screenshot replacement workflows.
 
-Rendering library choice for CPRS-CH table output is explicitly:
+Rendering library choice for CPRS-CH/CPRS-FCM table output is explicitly:
 ``internal_pure_python_png_encoder``.
 This renderer intentionally uses an internal pure-Python PNG encoder and bitmap
 glyph table (instead of PIL/matplotlib) so output bytes are stable across
@@ -177,17 +177,25 @@ def cprs_ch_view_spec() -> dict[str, object]:
 
 
 def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
-    """Render a deterministic CPRS-CH table PNG.
+    """Render a deterministic CPRS-CH table PNG."""
+    _render_cprs_table_png(exposures_df, output_png, layout=_CPRS_CH_LAYOUT)
 
-    The table layout is stable across runs and uses a built-in bitmap font to avoid
-    environment-specific font differences.
-    """
 
+def render_cprs_fcm_png(exposures_df: object, output_png: Path | str) -> None:
+    """Render a deterministic CPRS-FCM table PNG."""
+    _render_cprs_table_png(exposures_df, output_png, layout=_CPRS_CH_LAYOUT)
+
+
+def _render_cprs_table_png(
+    exposures_df: object,
+    output_png: Path | str,
+    *,
+    layout: _TableLayout,
+) -> None:
     rows = _to_renderable_rows(exposures_df)
     destination = Path(output_png)
     destination.parent.mkdir(parents=True, exist_ok=True)
 
-    layout = _CPRS_CH_LAYOUT
     col_widths = [_column_pixel_width(column.width_chars) for column in layout.columns]
     row_height = _CHAR_HEIGHT + (2 * _CELL_PADDING_Y)
     table_width = sum(col_widths) + len(col_widths) + 1

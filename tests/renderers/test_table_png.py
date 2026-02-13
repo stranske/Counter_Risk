@@ -17,6 +17,7 @@ from counter_risk.renderers.table_png import (
     cprs_ch_table_style,
     cprs_ch_view_spec,
     render_cprs_ch_png,
+    render_cprs_fcm_png,
 )
 
 
@@ -67,6 +68,21 @@ def test_render_cprs_ch_png_writes_deterministic_bytes(tmp_path: Path) -> None:
 
     render_cprs_ch_png(_sample_frame(), output_one)
     render_cprs_ch_png(_sample_frame(), output_two)
+
+    data_one = output_one.read_bytes()
+    data_two = output_two.read_bytes()
+
+    assert data_one.startswith(b"\x89PNG\r\n\x1a\n")
+    assert len(data_one) > 500
+    assert data_one == data_two
+
+
+def test_render_cprs_fcm_png_writes_deterministic_bytes(tmp_path: Path) -> None:
+    output_one = tmp_path / "first-fcm.png"
+    output_two = tmp_path / "second-fcm.png"
+
+    render_cprs_fcm_png(_sample_frame(), output_one)
+    render_cprs_fcm_png(_sample_frame(), output_two)
 
     data_one = output_one.read_bytes()
     data_two = output_two.read_bytes()
