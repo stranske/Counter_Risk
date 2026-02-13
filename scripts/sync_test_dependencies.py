@@ -283,9 +283,10 @@ def _is_guarded_optional_import(node: ast.AST, parent_map: dict[ast.AST, ast.AST
     child: ast.AST = node
     current: ast.AST | None = parent_map.get(node)
     while current is not None:
-        if isinstance(current, ast.Try):
-            if child in current.body and any(_catches_import_error(h) for h in current.handlers):
-                return True
+        if isinstance(current, ast.Try) and child in current.body and any(
+            _catches_import_error(h) for h in current.handlers
+        ):
+            return True
         child = current
         current = parent_map.get(current)
 
