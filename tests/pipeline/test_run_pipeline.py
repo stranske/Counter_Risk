@@ -256,6 +256,25 @@ def test_run_pipeline_wraps_output_write_errors(
     assert "disk full" in str(exc_info.value.__cause__)
 
 
+def test_run_pipeline_wraps_input_validation_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(_: dict[str, Path]) -> None:
+        raise FileNotFoundError("missing source workbook")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._validate_input_files", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during input validation stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, FileNotFoundError)
+    assert "missing source workbook" in str(exc_info.value.__cause__)
+
+
 def test_run_pipeline_wraps_compute_errors(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -300,6 +319,26 @@ def test_run_pipeline_wraps_historical_update_errors(
 
     assert isinstance(exc_info.value.__cause__, OSError)
     assert "historical workbook write failed" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_manifest_generation_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(self: Any, manifest: dict[str, Any]) -> Path:
+        _ = (self, manifest)
+        raise OSError("manifest disk error")
+
+    monkeypatch.setattr("counter_risk.pipeline.run.ManifestBuilder.write", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during manifest generation stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, OSError)
+    assert "manifest disk error" in str(exc_info.value.__cause__)
 
 
 def test_run_pipeline_passes_as_of_date_and_parsed_inputs_to_historical_update(
