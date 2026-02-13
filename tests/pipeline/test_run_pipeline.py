@@ -155,3 +155,61 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(tmp_path: Path, fake_
     for variant in ("all_programs", "ex_trend", "trend"):
         assert variant in manifest["top_exposures"]
         assert variant in manifest["top_changes_per_variant"]
+
+
+def _write_valid_config(tmp_path: Path, output_root: Path) -> Path:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {output_root}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return config_path
+
+
+def test_run_pipeline_wraps_parse_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(_: dict[str, Path]) -> dict[str, dict[str, Any]]:
+        raise ValueError("bad parser input")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", _boom)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "bad parser input" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_output_write_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(*, run_dir: Path, config: Any, warnings: list[str]) -> list[Path]:
+        _ = (run_dir, config, warnings)
+        raise OSError("disk full")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._write_outputs", _boom)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during output write stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, OSError)
+    assert "disk full" in str(exc_info.value.__cause__)
