@@ -665,6 +665,17 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
     worksheet = workbook.active
     metric_columns = _find_metric_columns(worksheet)
     breakdown_row = _find_row_by_label(worksheet, "Notional Breakdown")
+    expected_notional = {
+        "CME": 150.0,
+        "EUREX": 155.0,
+        "ICE Euro": 160.0,
+        "ICE": 165.0,
+        "Japan SCC": 170.0,
+    }
+
+    for counterparty, expected_value in expected_notional.items():
+        row = _find_row_by_label(worksheet, counterparty)
+        assert worksheet.cell(row=row, column=metric_columns["notional"]).value == expected_value
 
     assert worksheet.cell(row=breakdown_row, column=metric_columns["tips"]).value == pytest.approx(
         0.40
@@ -683,6 +694,60 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
     ).value == pytest.approx(1.00)
 
     workbook.close()
+
+
+def test_fill_dropin_template_generated_workbooks_reopen_cleanly_for_all_variants(
+    tmp_path: Path,
+) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+
+    cases = [
+        (
+            Path("tests/fixtures/NISA Drop-In Template - All Programs.xlsx"),
+            tmp_path / "all-programs-reopen.xlsx",
+            [
+                {"counterparty": "Citigroup", "notional": 1},
+                {"counterparty": "Bank of America, NA", "notional": 2},
+                {"counterparty": "Goldman Sachs Int'l", "notional": 3},
+                {"counterparty": "JP Morgan", "notional": 4},
+                {"counterparty": "Societe Generale", "notional": 5},
+            ],
+        ),
+        (
+            Path("tests/fixtures/NISA Drop-In Template - Ex Trend.xlsx"),
+            tmp_path / "ex-trend-reopen.xlsx",
+            [
+                {"counterparty": "Citigroup", "notional": 11},
+                {"counterparty": "Bank of America, NA", "notional": 12},
+                {"counterparty": "Goldman Sachs Int'l", "notional": 13},
+                {"counterparty": "JP Morgan", "notional": 14},
+                {"counterparty": "Societe Generale", "notional": 15},
+            ],
+        ),
+        (
+            Path("tests/fixtures/NISA Drop-In Template - Trend.xlsx"),
+            tmp_path / "trend-reopen.xlsx",
+            [
+                {"counterparty": "CME", "notional": 21},
+                {"counterparty": "EUREX", "notional": 22},
+                {"counterparty": "ICE Euro", "notional": 23},
+                {"counterparty": "ICE", "notional": 24},
+                {"counterparty": "Japan SCC", "notional": 25},
+            ],
+        ),
+    ]
+
+    for template, output, exposures in cases:
+        fill_dropin_template(
+            template_path=template,
+            exposures_df=exposures,
+            breakdown={"notional": 1.0},
+            output_path=output,
+        )
+
+        workbook = openpyxl.load_workbook(output, data_only=True)
+        assert workbook.active.max_row > 0
+        workbook.close()
 
 
 def test_fill_dropin_template_rejects_malformed_template_file(tmp_path: Path) -> None:
