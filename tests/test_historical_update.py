@@ -44,9 +44,32 @@ def test_resolve_append_date_prefers_explicit_date() -> None:
     assert resolved == explicit
 
 
-def test_resolve_append_date_requires_one_source() -> None:
-    with pytest.raises(historical_update.AppendDateError, match="required"):
-        historical_update._resolve_append_date(append_date=None, config_as_of_date=None)
+def test_resolve_append_date_uses_config_when_explicit_is_not_provided() -> None:
+    config_date = date(2026, 1, 31)
+    resolved = historical_update._resolve_append_date(
+        append_date=None,
+        config_as_of_date=config_date,
+        rollup_data={"CPRS CH Header Date": "01/15/2026"},
+    )
+    assert resolved == config_date
+
+
+def test_resolve_append_date_infers_from_cprs_ch_header_when_other_sources_missing() -> None:
+    resolved = historical_update._resolve_append_date(
+        append_date=None,
+        config_as_of_date=None,
+        rollup_data={"CPRS CH Header Date": "01/31/2026"},
+    )
+    assert resolved == date(2026, 1, 31)
+
+
+def test_resolve_append_date_raises_dedicated_error_when_all_sources_missing() -> None:
+    with pytest.raises(historical_update.AppendDateResolutionError, match="Unable to resolve"):
+        historical_update._resolve_append_date(
+            append_date=None,
+            config_as_of_date=None,
+            rollup_data={"irrelevant": 1.0},
+        )
 
 
 def test_find_header_row_scans_through_row_twelve_even_when_sheet_max_row_is_lower() -> None:
@@ -72,6 +95,24 @@ def test_append_to_sheet_raises_date_monotonicity_error_on_equal_append_date() -
             rollup_data={"Total": 1.0},
             resolved_date=date(2025, 12, 31),
         )
+
+
+def test_append_to_sheet_raises_monotonicity_error_on_less_than_last_row_date_from_string() -> None:
+    sheet_name = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
+    sheet = _build_sheet(sheet_name, historical_update.SERIES_BY_SHEET[sheet_name])
+    sheet.set_value(13, 1, "12/31/2025")
+    sheet.set_value(13, 2, 1.0)
+    workbook = _FakeWorkbook({sheet_name: sheet})
+
+    with pytest.raises(historical_update.DateMonotonicityError, match="must be newer"):
+        historical_update._append_to_sheet(
+            workbook=workbook,
+            sheet_name=sheet_name,
+            rollup_data={"Total": 1.0},
+            resolved_date=date(2025, 12, 30),
+        )
+
+    assert historical_update._get_cell_value_no_create(sheet, row=14, column=1) is None
 
 
 class _FakeCell:
@@ -283,6 +324,35 @@ def test_append_functions_add_exactly_one_row_to_each_target_sheet(
     assert workbook.closed_count == 3
 
 
+def test_append_row_raises_resolution_error_when_no_append_date_source_and_does_not_save(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workbook_path = tmp_path / "historical.xlsx"
+    workbook_path.write_text("placeholder", encoding="utf-8")
+
+    sheet_name = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
+    workbook = _FakeWorkbook(
+        {
+            sheet_name: _build_sheet(
+                sheet_name,
+                historical_update.SERIES_BY_SHEET[sheet_name],
+            )
+        }
+    )
+    fake_module = ModuleType("openpyxl")
+    fake_module.load_workbook = lambda filename: workbook  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "openpyxl", fake_module)
+
+    with pytest.raises(historical_update.AppendDateResolutionError, match="Unable to resolve"):
+        historical_update.append_row_all_programs(
+            workbook_path=workbook_path,
+            rollup_data={"Total": 11.0},
+        )
+
+    assert workbook.saved_paths == []
+    assert workbook.closed_count == 0
+
+
 def test_append_functions_write_known_series_values_with_numeric_edge_cases(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -401,3 +471,23 @@ def test_append_to_sheet_defaults_missing_and_mismatched_numeric_series_to_zero_
     assert sheet.cell(row=appended_row, column=3).value == pytest.approx(22.0)
     assert sheet.cell(row=appended_row, column=4).value == pytest.approx(0.0)
     assert sheet.cell(row=appended_row, column=5).value == pytest.approx(0.0)
+
+
+def test_consolidated_header_map_includes_date_and_multi_row_numeric_series_columns() -> None:
+    sheet_name = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
+    sheet = _build_multi_row_header_sheet(sheet_name)
+
+    header_map = historical_update._build_consolidated_header_map(sheet)
+    date_column = historical_update._get_date_column_from_consolidated(header_map)
+    numeric_columns = historical_update._get_numeric_series_columns(
+        header_map,
+        date_column=date_column,
+    )
+
+    assert date_column == 1
+    assert header_map[1] == "date"
+    assert header_map[2] == "total"
+    assert header_map[3] == "cash"
+    assert header_map[4] == "swap (adj.) series"
+    assert header_map[5] == "commodity"
+    assert set(numeric_columns) == {2, 3, 4, 5}
