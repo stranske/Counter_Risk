@@ -19,9 +19,7 @@ def assert_slide_count(pptx_obj_or_path: Any, expected_count: int) -> None:
     presentation = _as_presentation(pptx_obj_or_path)
     actual_count = len(presentation.slides)
     if actual_count != expected_count:
-        raise AssertionError(
-            f"Expected {expected_count} slides but found {actual_count}."
-        )
+        raise AssertionError(f"Expected {expected_count} slides but found {actual_count}.")
 
 
 def assert_chart_present(pptx_obj_or_path: Any) -> None:
