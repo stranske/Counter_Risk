@@ -1,0 +1,440 @@
+version: 1
+issue: 12
+base: main
+branch: codex/issue-12
+tasks:
+  - id: task-01
+    title: Create `src/counter_risk/config.py` defining a Pydantic config model for
+      the workflow variants.
+    status: doing
+    started_at: '2026-02-13T03:01:35Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: 'Create the `src/counter_risk/config.py` file with basic imports (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Create the `src/counter_risk/config.py` file with module structure (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Define a Pydantic BaseModel class named WorkflowConfig with appropriate
+      type hints (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Add docstrings to the WorkflowConfig class explaining its purpose (verify:
+      docs updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'usage (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Add config fields to the model: `as_of_date` (optional), `mosers_all_programs_xlsx`,
+      `mosers_ex_trend_xlsx`, `mosers_trend_xlsx`, `hist_all_programs_3yr_xlsx`, `hist_ex_llc_3yr_xlsx`,
+      `hist_llc_3yr_xlsx`, `monthly_pptx`, and an output root directory (e.g., `runs/`).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Define scope for: Add the optional as_of_date field with appropriate type
+      annotation to the config model (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Implement focused slice for: Add the optional as_of_date field with appropriate
+      type annotation to the config model (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Validate focused slice for: Add the optional as_of_date field with appropriate
+      type annotation to the config model (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Add the three MOSERS input workbook path fields to the config model (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Add the three historical graphs workbook path fields to the config model
+      (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Add the monthly_pptx template path field to the config model (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Define scope for: Add the output root directory field with a default value
+      to the config model (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Implement focused slice for: Add the output root directory field with
+      a default value to the config model (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Validate focused slice for: Add the output root directory field with a
+      default value to the config model (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Implement `load_config(path)` in `src/counter_risk/config.py` to load YAML
+      and raise readable validation errors on missing/invalid fields.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Create sample config files: `config/all_programs.yml`, `config/ex_trend.yml`,
+      `config/trend.yml`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Define scope for: Create the config/all_programs.yml file with sample
+      values for the all programs workflow variant (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Implement focused slice for: Create the config/all_programs.yml file with
+      sample values for the all programs workflow variant (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Validate focused slice for: Create the config/all_programs.yml file with
+      sample values for the all programs workflow variant (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Define scope for: Create the config/ex_trend.yml file with sample values
+      for the ex trend workflow variant (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Implement focused slice for: Create the config/ex_trend.yml file with
+      sample values for the ex trend workflow variant (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Validate focused slice for: Create the config/ex_trend.yml file with sample
+      values for the ex trend workflow variant (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Define scope for: Create the config/trend.yml file with sample values
+      for the trend workflow variant (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Implement focused slice for: Create the config/trend.yml file with sample
+      values for the trend workflow variant (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Validate focused slice for: Create the config/trend.yml file with sample
+      values for the trend workflow variant (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Write unit tests to load each sample config file and assert it validates
+      successfully via `load_config(path)`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Write a unit test that loads config/all_programs.yml (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'asserts successful validation (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Write a unit test that loads config/ex_trend.yml (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Write a unit test that loads config/trend.yml (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Define scope for: Write a unit test that verifies load_config raises an
+      error for missing required fields (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Implement focused slice for: Write a unit test that verifies load_config
+      raises an error for missing required fields (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Validate focused slice for: Write a unit test that verifies load_config
+      raises an error for missing required fields (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Define scope for: Write a unit test that verifies load_config raises an
+      error for invalid field types (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Implement focused slice for: Write a unit test that verifies load_config
+      raises an error for invalid field types (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Validate focused slice for: Write a unit test that verifies load_config
+      raises an error for invalid field types (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: Unit tests confirm `load_config(path)` successfully loads `config/all_programs.yml`,
+      `config/ex_trend.yml`, and `config/trend.yml` without errors.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: Unit tests confirm missing/invalid config input causes `load_config(path)`
+      to raise an error with a clear, readable validation message.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: Add `src/counter_risk/config.py` (Pydantic preferred)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Support fields:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: '`as_of_date` (optional; can be inferred from input later)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'MOSERS input workbook paths:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: '`mosers_all_programs_xlsx`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: '`mosers_ex_trend_xlsx`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: '`mosers_trend_xlsx`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'Historical graphs workbook paths:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: '`hist_all_programs_3yr_xlsx`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: '`hist_ex_llc_3yr_xlsx`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: '`hist_llc_3yr_xlsx`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: 'PPT template path: `monthly_pptx`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: Output root directory (e.g., `runs/`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: Add `config/all_programs.yml`, `config/ex_trend.yml`, `config/trend.yml`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: Implement `load_config(path)` with readable validation errors
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: Sample configs load successfully in unit tests
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: Missing/invalid config yields a clear error message
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
