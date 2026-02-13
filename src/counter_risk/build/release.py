@@ -254,6 +254,22 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
     return bundle_dir
 
 
+def run_release(
+    *,
+    version: str | None = None,
+    version_file: Path | None = None,
+    output_dir: Path | None = None,
+    force: bool = False,
+) -> Path:
+    """Assemble a release bundle using explicit runtime parameters."""
+
+    root = repository_root()
+    resolved_version_file = version_file or (root / "VERSION")
+    resolved_output_dir = output_dir or (root / "dist")
+    resolved_version = read_version(version, resolved_version_file)
+    return assemble_release(resolved_version, resolved_output_dir, force=force)
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point for release bundle assembly."""
 
@@ -261,8 +277,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        version = read_version(args.version, args.version_file)
-        bundle_dir = assemble_release(version, args.output_dir, force=args.force)
+        bundle_dir = run_release(
+            version=args.version,
+            version_file=args.version_file,
+            output_dir=args.output_dir,
+            force=args.force,
+        )
     except ValueError as exc:
         parser.error(str(exc))
 

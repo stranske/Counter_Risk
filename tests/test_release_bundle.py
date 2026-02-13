@@ -79,6 +79,27 @@ def test_main_accepts_version_and_output_dir(
     assert (output_dir / "counter-risk-3.4.5" / "manifest.json").is_file()
 
 
+def test_run_release_accepts_explicit_version_and_output_dir(tmp_path: Path) -> None:
+    output_dir = tmp_path / "custom-dist"
+
+    bundle_dir = release.run_release(version="7.8.9", output_dir=output_dir)
+
+    assert bundle_dir == output_dir / "counter-risk-7.8.9"
+    manifest = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["version"] == "7.8.9"
+
+
+def test_run_release_uses_version_file_when_override_missing(tmp_path: Path) -> None:
+    output_dir = tmp_path / "dist"
+    version_file = tmp_path / "VERSION"
+    version_file.write_text("8.8.8\n", encoding="utf-8")
+
+    bundle_dir = release.run_release(version_file=version_file, output_dir=output_dir)
+
+    assert bundle_dir == output_dir / "counter-risk-8.8.8"
+    assert (bundle_dir / "VERSION").read_text(encoding="utf-8").strip() == "8.8.8"
+
+
 def test_bundled_entrypoint_runs_from_copied_folder(tmp_path: Path) -> None:
     output_dir = tmp_path / "release-output"
     bundle_dir = release.assemble_release("4.5.6", output_dir)
