@@ -150,11 +150,35 @@ def heuristic_alignment_check(
     Returns:
         (alignment_score, aligned_commits, unaligned_commits)
     """
+    # Allowlist for common, meaningful short tokens that frequently appear in
+    # acceptance criteria as snake_case parts, and in commits as acronyms.
+    # Keep this small to avoid inflating alignment via generic 3-letter words.
+    short_token_allowlist = {
+        "png",
+        "pdf",
+        "csv",
+        "ppt",
+        "pptx",
+        "cprs",
+        "fcm",
+        "json",
+        "yaml",
+        "yml",
+    }
+
     criteria_keywords = set()
     for criterion in acceptance_criteria:
-        # Extract meaningful words from criteria (longer words are more specific)
-        words = re.findall(r"\b[a-z_]{4,}\b", criterion.lower())
-        criteria_keywords.update(words)
+        # Extract meaningful words from criteria.
+        # Note: acceptance criteria often include snake_case identifiers (e.g.
+        # render_cprs_ch_png). Split those into tokens so commits like
+        # "CPRS-CH PNG" can be recognized as aligned.
+        words = re.findall(r"\b[a-z0-9_]{4,}\b", criterion.lower())
+        for word in words:
+            criteria_keywords.add(word)
+            if "_" in word:
+                for token in word.split("_"):
+                    if len(token) >= 4 or token in short_token_allowlist:
+                        criteria_keywords.add(token)
 
     # Infrastructure words that indicate supporting work
     # These alone don't count as alignment, but combined with criteria keywords they help
@@ -201,7 +225,7 @@ def heuristic_alignment_check(
 
     for commit in recent_commits:
         commit_lower = commit.lower()
-        commit_words = set(re.findall(r"\b[a-z_]{3,}\b", commit_lower))
+        commit_words = set(re.findall(r"\b[a-z0-9_]{3,}\b", commit_lower))
 
         # Check for direct criteria match (strong signal)
         criteria_match = criteria_keywords & commit_words
@@ -330,7 +354,7 @@ def review_progress_with_llm(
             ),
             feedback_for_agent="Review your recent work against the acceptance criteria.",
             summary=(
-                f"Heuristic review: {len(aligned)}/{len(recent_commits)} commits appear aligned"
+                f"Heuristic review: {len(aligned)}/" f"{len(recent_commits)} commits appear aligned"
             ),
             used_llm=False,
             error="LLM unavailable, using heuristic fallback",
@@ -430,7 +454,7 @@ def review_progress(
             ),
             feedback_for_agent="Work appears aligned. Continue toward task completion.",
             summary=(
-                f"Heuristic: {len(aligned)}/{len(recent_commits)} commits aligned with criteria"
+                f"Heuristic: {len(aligned)}/" f"{len(recent_commits)} commits aligned with criteria"
             ),
             used_llm=False,
         )
@@ -485,20 +509,23 @@ def main() -> int:
     parser.add_argument(
         "--acceptance-criteria",
         nargs="+",
+        action="append",
         default=[],
-        help="List of acceptance criteria",
+        help="List of acceptance criteria (can be provided multiple times)",
     )
     parser.add_argument(
         "--recent-commits",
         nargs="+",
+        action="append",
         default=[],
-        help="List of recent commit messages",
+        help="List of recent commit messages (can be provided multiple times)",
     )
     parser.add_argument(
         "--files-changed",
         nargs="+",
+        action="append",
         default=[],
-        help="List of files changed",
+        help="List of files changed (can be provided multiple times)",
     )
     parser.add_argument(
         "--rounds-without-completion",
@@ -524,10 +551,14 @@ def main() -> int:
 
     args = parser.parse_args()
 
+    acceptance_criteria = [item for group in args.acceptance_criteria for item in group]
+    recent_commits = [item for group in args.recent_commits for item in group]
+    files_changed = [item for group in args.files_changed for item in group]
+
     result = review_progress(
-        acceptance_criteria=args.acceptance_criteria,
-        recent_commits=args.recent_commits,
-        files_changed=args.files_changed,
+        acceptance_criteria=acceptance_criteria,
+        recent_commits=recent_commits,
+        files_changed=files_changed,
         rounds_without_completion=args.rounds_without_completion,
         use_llm=not args.no_llm,
         model=args.model,
