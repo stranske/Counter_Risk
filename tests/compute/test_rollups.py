@@ -170,11 +170,17 @@ def test_top_exposures_is_deterministic_for_ties() -> None:
 
 
 def test_top_exposures_is_deterministic_for_fixture_input(fake_pandas: None) -> None:
-    totals = parse_fcm_totals(_fixture("MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx"))
+    totals = parse_fcm_totals(
+        _fixture("MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx")
+    )
     totals_rows = _as_records(totals)
 
     exposures = [
-        {"counterparty": row["counterparty"], "asset_class": asset_class, "notional": row[asset_class]}
+        {
+            "counterparty": row["counterparty"],
+            "asset_class": asset_class,
+            "notional": row[asset_class],
+        }
         for row in totals_rows
         for asset_class in ("TIPS", "Treasury", "Equity", "Commodity", "Currency")
     ]
