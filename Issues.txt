@@ -1,23 +1,400 @@
-1. [Agent] [M2] Extract CASH amounts from Daily Holdings PDFs and integrate into Repo “Cash” column (All Programs)
+1. [Agent] [M1] Standardize date semantics (as_of_date vs run_date) and enforce across the pipeline
 ## Why
-Procedure requires cash amounts from a daily holdings PDF (1-day lag) and manual entry into Repo section.
+Time-series reporting breaks quietly when “what date is this row?” is ambiguous. We need one consistent definition for chart x-axes, filenames, and audit logs.
 
 ## Scope
-Parse the relevant daily holdings PDF and map cash amounts to Repo counterparties in the All Programs run.
+Introduce two explicit dates:
+- as_of_date: the reporting effective date from source data
+- run_date: when the report was produced
+Enforce consistent usage across historical workbook append, outputs naming, and manifest.
 
 ## Non-Goals
-- OCR-first approach if tables are extractable (use OCR only as fallback)
-- Perfect parsing of every historical PDF variant on day one
+- Changing legacy historical workbook structure
+- Rebuilding charts
 
 ## Tasks
-- [ ] Add fixtures: 1–2 representative Daily Holdings PDFs (sanitized if needed)
-- [ ] Implement `src/counter_risk/parsers/daily_holdings_pdf.py`
-- [ ] Extract repo cash by counterparty (ASL, South Street, Buckler, CIBC, Daiwa, etc.)
-- [ ] Integrate into exposures rollups and Drop-In filled output
-- [ ] Add tests on fixture PDFs (basic sanity: totals > 0, key counterparties present)
+- [ ] Extend config to include optional `as_of_date` and optional `run_date`
+- [ ] Implement `derive_as_of_date()` from inputs (CPRS headers) with clear fallback precedence:
+- [ ] (1) config.as_of_date, else (2) parse from input headers, else hard fail
+- [ ] Implement `derive_run_date()` default = today (local timezone) unless supplied
+- [ ] Add a centralized `dates.py` module used by all writers
+- [ ] Update historical append logic to use as_of_date exclusively for row date
+- [ ] Update output folder naming and filenames to include as_of_date (and optionally run_date)
+- [ ] Add tests that verify:
+- [ ] derived dates are stable and deterministic for fixtures
+- [ ] appended row date equals as_of_date
 
 ## Acceptance Criteria
-- [ ] Pipeline fills Repo Cash values automatically for All Programs without manual entry
+- [ ] Every run writes both as_of_date and run_date into manifest.json
+- [ ] Historical workbook appended rows always use as_of_date (never run_date)
+- [ ] If date cannot be derived, pipeline fails with a clear error message
+
+
+2. [Agent] [M1] Add “you’re about to lose data” reconciliation checks (unmapped series, missing mappings, dropped rows)
+## Why
+The biggest operational risk is silent omission: new counterparties appear, headers don’t match, and exposures vanish from outputs without anyone noticing.
+
+## Scope
+Add reconciliation checks that run after parsing and before writing outputs.
+
+## Non-Goals
+- Automatically editing historical workbook headers (that’s a separate maintainers action)
+
+## Tasks
+- [ ] Add `reconcile_series_coverage()` that compares:
+- [ ] counterparties/clearing houses in current month data
+- [ ] vs historical workbook series headers (per sheet)
+- [ ] Add checks for:
+- [ ] unmapped counterparties after normalization
+- [ ] counterparties present in data but missing in historical headers
+- [ ] segments expected by variant but missing in parsed results
+- [ ] Implement a fail policy config:
+- [ ] strict = fail run on any missing series
+- [ ] warn = continue but write warnings
+- [ ] Write a human-readable `NEEDS_MAPPING_UPDATES.txt` into the run folder when gaps exist
+- [ ] Add tests that intentionally introduce a fake new counterparty and verify warning/fail behavior
+
+## Acceptance Criteria
+- [ ] Runs never silently drop exposures without producing a warning or failing (per config)
+- [ ] The run manifest lists reconciliation warnings and the count of impacted rows/series
+
+
+3. [Agent] [M1] Sanitize header and series names everywhere (trim, normalize whitespace, canonicalize aliases)
+## Why
+A single leading/trailing space or inconsistent punctuation can break series matching across Excel headers, PPT chart series, and parsed counterparty names.
+
+## Scope
+Create canonicalization utilities and apply them consistently to:
+- parsed names
+- Excel sheet headers
+- PPT series titles (when reading link targets or mapping by title)
+
+## Non-Goals
+- Fuzzy matching (keep it deterministic)
+- Changing user-facing displayed names (unless explicitly desired)
+
+## Tasks
+- [ ] Implement `canonicalize_name()`:
+- [ ] strip leading/trailing whitespace
+- [ ] collapse repeated spaces
+- [ ] normalize apostrophes/hyphens where appropriate
+- [ ] Add a “safe display name” function separate from “matching key”
+- [ ] Apply canonicalization before all lookup/match operations
+- [ ] Add tests with known tricky cases (spaces, punctuation, capitalization)
+
+## Acceptance Criteria
+- [ ] Matching behavior is stable even when headers have extra spaces
+- [ ] A run manifest includes the canonical key used for each matched counterparty/series
+
+
+4. [Agent] [M1] Produce a “Distribution” PPT deliverable with static charts (render-to-images) and optional PDF
+## Why
+Non-technical recipients shouldn’t deal with OLE link prompts or Office “Update Links” dialogs. A static deliverable is the boring kind of reliable.
+
+## Scope
+Generate an additional output:
+- Distribution PPT: charts replaced by images (preserving slide layout)
+- Optional Distribution PDF: exported from PPT (COM if available; otherwise skip with warning)
+
+## Non-Goals
+- Editing chart aesthetics in PowerPoint
+- Removing the maintainer master PPT workflow
+
+## Tasks
+- [ ] Add a pipeline output mode: `distribution_static=true`
+- [ ] Implement chart-to-image conversion strategy:
+- [ ] Preferred: PowerPoint COM export slide(s) to images, then reinsert images (Windows-only)
+- [ ] Fallback: export entire PPT to PDF (COM), keep PDF as deliverable, note limitations
+- [ ] Replace embedded chart shapes with images while keeping titles/positions stable
+- [ ] Add tests for fallback logic when COM not available (writes a clear warning + still produces non-static outputs)
+
+## Acceptance Criteria
+- [ ] Distribution PPT opens with no link update prompts
+- [ ] Distribution PPT retains slide count and basic layout
+- [ ] If PDF export is enabled and COM available, a PDF is produced in the run folder
+
+
+5. [Agent] [M1] Maintain dual deliverables: “Maintainer Master” (linked/editable) vs “Distribution” (static)
+## Why
+Maintainers may want linked charts for ongoing edits; operators/recipients want a no-surprises deliverable.
+
+## Scope
+Define and implement a standard run output structure that always writes both artifacts (when enabled).
+
+## Non-Goals
+- Overhauling the existing PPT design
+
+## Tasks
+- [ ] Define output naming convention:
+- [ ] Master: `Monthly Counterparty Exposure Report (Master) - <as_of_date>.pptx`
+- [ ] Distribution: `Monthly Counterparty Exposure Report - <as_of_date>.pptx`
+- [ ] Update pipeline to produce Master first (linked refresh), then derive Distribution from Master
+- [ ] Update manifest to include both outputs and their generation steps
+- [ ] Add a short operator-facing README in the run folder describing which file to send
+
+## Acceptance Criteria
+- [ ] Every run that produces PPT output writes both Master and Distribution (unless disabled)
+- [ ] Operator instructions are present in the run folder and are non-technical
+
+
+6. [Agent] [M2] Convert VBA macros into a machine-readable “spec” (macro parity harness)
+## Why
+The macros are effectively your requirements. Turning them into tests means we can replace VBA safely without guessing.
+
+## Scope
+Create a “spec harness” that captures macro behaviors as deterministic checks:
+- expected outputs given known inputs
+- layout transformations
+- plug-values logic
+
+## Non-Goals
+- Running VBA in CI
+- Refactoring macros themselves
+
+## Tasks
+- [ ] Store VBA modules as source files in `assets/vba/*.bas` (if not already)
+- [ ] Write `docs/macro_spec.md` describing each macro’s intent in plain language
+- [ ] For each macro, define:
+- [ ] required inputs (sheet names, columns)
+- [ ] output expectations (ranges affected, invariants)
+- [ ] Create pytest “spec tests” using fixtures:
+- [ ] range-level checks in generated MOSERS-format outputs
+- [ ] invariants like “no blank numeric cells” and “headers match expected”
+- [ ] Add a “known-acceptable drift” section (tolerances, rounding rules)
+
+## Acceptance Criteria
+- [ ] A maintainer can run spec tests locally and see which macro behaviors are covered
+- [ ] Spec tests fail clearly when a transformation deviates from expected behavior
+
+
+7. [Agent] [M2] Replace VBA layout/plug-value steps with Python transformations guided by the macro spec
+## Why
+Milestone 2 goal is to eliminate “open Excel, run macros, copy/paste values” as a prerequisite to producing the report.
+
+## Scope
+Implement Python equivalents for:
+- layout macros (producing MOSERS-format CPRS sheets from raw NISA)
+- plug-values behavior (mapping into the correct structures)
+
+## Non-Goals
+- Perfect cosmetic formatting parity (focus on structural and numeric parity)
+- Using Excel UI automation as the primary path (allowed as optional assist)
+
+## Tasks
+- [ ] Implement Python transformations for each macro-covered behavior:
+- [ ] NISA layout transforms (All Programs / Ex Trend / Trend)
+- [ ] plug-values transforms where applicable
+- [ ] Ensure outputs match the MOSERS-format structure expected by Milestone 1 parsers
+- [ ] Make transformations data-driven (header detection, not row-number hardcoding)
+- [ ] Add tests that compare Python-generated MOSERS-format outputs to approved reference outputs (range-level)
+
+## Acceptance Criteria
+- [ ] Given raw NISA inputs, the pipeline produces valid MOSERS-format workbooks without running VBA
+- [ ] Macro spec tests pass for covered behaviors
+
+
+8. [Agent] [M2] Cash ingestion hardening: structured source preference, overrides, and reconciliation checks
+## Why
+Cash values coming from PDFs are a permanent source of brittle parsing and human error. We need both a best path and a safe fallback.
+
+## Scope
+Implement a “best available source” strategy + overrides:
+- prefer CSV/XLSX exports if available
+- otherwise parse PDF
+- allow manual overrides via a small structured file (YAML/CSV) with audit trail
+
+## Non-Goals
+- Perfect parsing for every PDF layout variant without human fallback
+
+## Tasks
+- [ ] Add config fields for cash source:
+- [ ] `cash_source_type` in {xlsx,csv,pdf,none}
+- [ ] `cash_source_path` or discovery roots
+- [ ] Implement `load_cash_by_counterparty()` with priority order:
+- [ ] overrides file > structured source > pdf parser
+- [ ] Add `cash_overrides_<as_of_date>.csv` schema (counterparty, cash_value, note)
+- [ ] Add reconciliation checks:
+- [ ] cash totals vs expected range
+- [ ] required repo counterparties present (configurable)
+- [ ] Log cash source used and any overrides into manifest
+- [ ] Add tests using synthetic sources + one representative fixture path
+
+## Acceptance Criteria
+- [ ] Pipeline never silently omits repo cash; it either fills, warns, or fails per policy
+- [ ] Any manual overrides are recorded in the manifest with file reference
+
+
+9. [Agent] [M3] Add concentration metrics exhibit (Top N share + HHI) by variant and by segment
+## Why
+Raw notionals don’t tell the whole story. Concentration metrics make “single-name dependency” visible and defensible.
+
+## Scope
+Compute and output:
+- Top 5/Top 10 share of total exposure
+- Herfindahl-Hirschman Index (HHI)
+For each variant (All/Ex/Trend) and for each segment (Swaps/Repo/Futures where applicable).
+
+## Non-Goals
+- Changing primary PPT structure (initially write to manifest + optional CSV)
+
+## Tasks
+- [ ] Implement `compute_concentration_metrics(exposures_df, group_by=[variant,segment])`
+- [ ] Output results to:
+- [ ] manifest.json (summary)
+- [ ] `concentration_metrics.csv` in run folder
+- [ ] Add optional small table render for inclusion in Distribution PPT (later toggle)
+- [ ] Add tests verifying metrics sum logic and determinism on fixtures
+
+## Acceptance Criteria
+- [ ] Run folder includes concentration metrics outputs with stable results on fixtures
+- [ ] Manifest includes Top N shares and HHI values per group
+
+
+10. [Agent] [M3] Add risk-weighted exposure proxies and rankings (Notional×Vol, Position×Vol where available)
+## Why
+“Big notional” is not always “big risk.” A simple proxy helps triage and improves the narrative for stakeholders.
+
+## Scope
+Compute risk proxies when data exists:
+- Notional × AnnualizedVolatility (if vol exists)
+- PositionUSD × Vol (if position exists)
+Produce ranked lists and deltas.
+
+## Non-Goals
+- Full VaR model
+- Complex risk factor modeling
+
+## Tasks
+- [ ] Implement `compute_risk_proxies(exposures_df)`
+- [ ] Add ranking outputs:
+- [ ] `risk_rankings.csv` (by proxy)
+- [ ] `risk_top_movers.csv` (month-over-month when prior month available)
+- [ ] Add tests using fixtures to verify:
+- [ ] proxies computed when columns exist
+- [ ] graceful behavior when missing (warn, skip)
+
+## Acceptance Criteria
+- [ ] If vol/position data exists, rankings are produced
+- [ ] If data is missing, outputs are skipped with an explicit manifest warning (not silent)
+
+
+11. [Agent] [M3] Add limit monitoring framework (config-driven limits, breach flags, and operator warnings)
+## Why
+If there are policy/committee limits per counterparty/FCM/clearing house, the system should surface breaches automatically.
+
+## Scope
+Config-driven limits and automated breach checks:
+- limit type: absolute notional or percentage of total
+- targets: counterparty, FCM, clearing house, segment, or custom groups
+
+## Non-Goals
+- Building an approvals workflow
+- Integrating with external risk systems
+
+## Tasks
+- [ ] Add `config/limits.yml` schema:
+- [ ] entity_type, entity_name (canonical key), limit_value, limit_kind, notes
+- [ ] Implement `check_limits(exposures_df, limits_cfg) -> breaches_df`
+- [ ] Output:
+- [ ] `limit_breaches.csv`
+- [ ] manifest summary + Runner UI warning banner
+- [ ] Add tests with a small synthetic dataset to verify breach detection
+
+## Acceptance Criteria
+- [ ] Breaches are detected deterministically and surfaced to operators
+- [ ] Missing limit entities are handled gracefully (warn, not fail) unless strict policy enabled
+
+
+12. [Agent] [M3] Add change attribution exhibit with confidence flags (new positions vs proxy drivers)
+## Why
+Stakeholders ask “what caused the move?” Even a simple attribution (with honesty about uncertainty) improves trust.
+
+## Scope
+Produce a change attribution summary using available data:
+- new/unmatched rows (likely new positions)
+- matched rows with notional change
+- proxy attribution (when vol/position exists)
+Include confidence flags and “unattributed remainder.”
+
+## Non-Goals
+- True trade-level attribution
+- Complex factor decomposition
+
+## Tasks
+- [ ] Implement `attribute_changes(current_df, prior_df) -> attribution_report`
+- [ ] Define confidence levels:
+- [ ] High: exact match keys + clean deltas
+- [ ] Medium: normalized match with minor differences
+- [ ] Low: fuzzy/partial match or missing prior data
+- [ ] Output `change_attribution.md` and `change_attribution.csv`
+- [ ] Add tests with synthetic prior/current pairs
+
+## Acceptance Criteria
+- [ ] When prior month data is available, attribution outputs are generated
+- [ ] Unmatched items and low-confidence matches are explicitly labeled (no silent assumptions)
+
+
+13. [Agent] [M3] Add a “Data Quality Report” section to manifest + operator-friendly warnings in Runner UI
+## Why
+Operators need a simple “is this run safe to send?” checklist without being technical.
+
+## Scope
+Create a single consolidated quality report containing:
+- missing inputs
+- reconciliation gaps (unmapped series)
+- overrides applied
+- limits breaches
+- chart refresh status
+- any skipped outputs (e.g., no COM)
+
+## Non-Goals
+- Complex incident management
+
+## Tasks
+- [ ] Add a `data_quality` object to manifest.json with:
+- [ ] severity levels {info, warn, fail}
+- [ ] categorized findings and counts
+- [ ] recommended actions
+- [ ] Add a `DATA_QUALITY_SUMMARY.txt` in run folder (plain English)
+- [ ] Update Runner UI to display:
+- [ ] green/yellow/red status
+- [ ] “Open summary” button
+- [ ] Add tests that ensure:
+- [ ] findings propagate to manifest
+- [ ] strict mode fails the run appropriately
+
+## Acceptance Criteria
+- [ ] Every run produces a data quality summary artifact
+- [ ] Operators can see at-a-glance whether the run is safe to distribute
+
+
+14. [Agent] [M1] Add a counterparty mapping registry + maintainers workflow for updating series headers safely
+## Why
+When a new counterparty appears or naming conventions change, maintainers need a controlled, auditable way to update mappings and (if needed) add new series headers.
+
+## Scope
+Introduce a mapping registry and a guided process for maintainers to update it without breaking history.
+
+## Non-Goals
+- Automatically editing historical workbook headers in-place without review
+
+## Tasks
+- [ ] Add `config/name_registry.yml`:
+- [ ] canonical_key
+- [ ] aliases
+- [ ] display_name
+- [ ] optional “series_included” flags per variant
+- [ ] Update normalization to consult registry first, then fallback to hardcoded mappings
+- [ ] Add a maintainer command (developer-only) to generate a “mapping diff report” for the month:
+- [ ] new names not in registry
+- [ ] names that mapped via fallback
+- [ ] suggested canonicalization
+- [ ] Add docs: safe steps to add a new counterparty series to historical workbooks (manual, reviewed)
+
+## Acceptance Criteria
+- [ ] The system produces an explicit report when new names appear
+- [ ] Maintainers can update the registry and re-run to clear reconciliation warnings
+
 
 
 
