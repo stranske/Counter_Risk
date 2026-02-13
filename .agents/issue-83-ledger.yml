@@ -7,10 +7,10 @@ tasks:
     title: Implement `render_cprs_fcm_png(...)` in `src/counter_risk/renderers/table_png.py`
       by routing through the same internal table-to-PNG rasterization/PNG-writing
       helper used by `render_cprs_ch_png(...)`, ensuring deterministic output
-    status: doing
+    status: done
     started_at: '2026-02-13T22:07:57Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T22:08:07Z'
+    commit: a4298203cc18be5232bdff44c9e6c47764b34044
     notes: []
   - id: task-02
     title: Update `src/counter_risk/renderers/__init__.py` to export `render_cprs_fcm_png`
