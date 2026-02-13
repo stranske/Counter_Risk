@@ -12,11 +12,19 @@ def assert_numeric_outputs_close(
     actual: Any,
     expected: Any,
     *,
-    atol: float,
-    rtol: float,
+    abs_tol: float = 1e-9,
+    rel_tol: float = 1e-9,
+    atol: float | None = None,
+    rtol: float | None = None,
     path: str = "value",
 ) -> None:
-    """Assert numeric outputs match with explicit absolute/relative tolerances."""
+    """Assert nested outputs match using tolerance-aware comparisons for numeric values."""
+
+    # Backward-compatible aliases while standardizing on abs_tol/rel_tol.
+    if atol is not None:
+        abs_tol = atol
+    if rtol is not None:
+        rel_tol = rtol
 
     if isinstance(expected, Mapping):
         if not isinstance(actual, Mapping):
@@ -33,8 +41,8 @@ def assert_numeric_outputs_close(
             assert_numeric_outputs_close(
                 actual[key],
                 expected[key],
-                atol=atol,
-                rtol=rtol,
+                abs_tol=abs_tol,
+                rel_tol=rel_tol,
                 path=f"{path}.{key}",
             )
         return
@@ -49,17 +57,17 @@ def assert_numeric_outputs_close(
             assert_numeric_outputs_close(
                 actual_item,
                 expected_item,
-                atol=atol,
-                rtol=rtol,
+                abs_tol=abs_tol,
+                rel_tol=rel_tol,
                 path=f"{path}[{index}]",
             )
         return
 
     if isinstance(expected, Real) and isinstance(actual, Real):
-        if not math.isclose(float(actual), float(expected), abs_tol=atol, rel_tol=rtol):
+        if not math.isclose(float(actual), float(expected), abs_tol=abs_tol, rel_tol=rel_tol):
             raise AssertionError(
                 f"{path} numeric mismatch: actual={actual}, expected={expected}, "
-                f"atol={atol}, rtol={rtol}"
+                f"abs_tol={abs_tol}, rel_tol={rel_tol}"
             )
         return
 
