@@ -28,6 +28,17 @@ _REQUIRED_FUTURES_COLUMNS: tuple[str, ...] = (
     "clearing_house",
     "notional",
 )
+_PREFERRED_HISTORICAL_SHEET_BY_VARIANT: dict[str, str] = {
+    "all_programs": "Total",
+    "ex_trend": "Total",
+    "trend": "Total",
+}
+_DATE_HEADER_CANDIDATES: tuple[str, ...] = ("date", "as of date", "as-of date")
+_REQUIRED_HISTORICAL_APPEND_HEADERS: tuple[str, ...] = (
+    "date",
+    "value series 1",
+    "value series 2",
+)
 
 
 @dataclass(frozen=True)
@@ -465,7 +476,12 @@ def _merge_historical_workbook(
     workbook = None
     try:
         workbook = load_workbook(filename=workbook_path)
-        worksheet = workbook.active
+        preferred_sheet = _PREFERRED_HISTORICAL_SHEET_BY_VARIANT.get(variant)
+        worksheet = _select_historical_worksheet(
+            workbook=workbook,
+            preferred_sheet_name=preferred_sheet,
+        )
+        _validate_historical_headers(worksheet=worksheet)
         append_row = int(getattr(worksheet, "max_row", 0)) + 1
 
         total_notional = sum(float(record.get("Notional", 0.0) or 0.0) for record in totals_records)
@@ -495,6 +511,63 @@ def _merge_historical_workbook(
     finally:
         if workbook is not None:
             workbook.close()
+
+
+def _normalize_header(value: Any) -> str:
+    if value is None:
+        return ""
+    return " ".join(str(value).split()).casefold()
+
+
+def _select_historical_worksheet(*, workbook: Any, preferred_sheet_name: str | None) -> Any:
+    sheet_names = list(getattr(workbook, "sheetnames", []))
+    if not sheet_names:
+        raise ValueError("Historical workbook has no worksheets")
+
+    if preferred_sheet_name and preferred_sheet_name in sheet_names:
+        return workbook[preferred_sheet_name]
+
+    fallback_sheet_name = sorted(sheet_names, key=str.casefold)[0]
+    if preferred_sheet_name:
+        LOGGER.warning(
+            "historical_sheet_preferred_missing preferred=%s fallback=%s",
+            preferred_sheet_name,
+            fallback_sheet_name,
+        )
+    return workbook[fallback_sheet_name]
+
+
+def _validate_historical_headers(*, worksheet: Any) -> None:
+    worksheet_title = str(getattr(worksheet, "title", "<unknown>"))
+    header_row = _find_historical_header_row(worksheet=worksheet)
+    date_value = _normalize_header(worksheet.cell(row=header_row, column=1).value)
+    first_series_value = _normalize_header(worksheet.cell(row=header_row, column=2).value)
+    second_series_value = _normalize_header(worksheet.cell(row=header_row, column=3).value)
+
+    missing: list[str] = []
+    if date_value not in _DATE_HEADER_CANDIDATES:
+        missing.append(_REQUIRED_HISTORICAL_APPEND_HEADERS[0])
+    if not first_series_value:
+        missing.append(_REQUIRED_HISTORICAL_APPEND_HEADERS[1])
+    if not second_series_value:
+        missing.append(_REQUIRED_HISTORICAL_APPEND_HEADERS[2])
+
+    if missing:
+        raise ValueError(
+            "Historical workbook sheet "
+            f"{worksheet_title!r} is missing required columns for append: {', '.join(missing)}"
+        )
+
+
+def _find_historical_header_row(*, worksheet: Any, max_scan_rows: int = 25) -> int:
+    max_row = int(getattr(worksheet, "max_row", max_scan_rows))
+    for row in range(1, min(max_row, max_scan_rows) + 1):
+        if _normalize_header(worksheet.cell(row=row, column=1).value) in _DATE_HEADER_CANDIDATES:
+            return row
+    raise ValueError(
+        "Historical workbook sheet "
+        f"{getattr(worksheet, 'title', '<unknown>')!r} is missing a date header in column A"
+    )
 
 
 def _sha256_file(path: Path) -> str:
