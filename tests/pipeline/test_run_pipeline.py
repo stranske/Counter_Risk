@@ -213,3 +213,48 @@ def test_run_pipeline_wraps_output_write_errors(
 
     assert isinstance(exc_info.value.__cause__, OSError)
     assert "disk full" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_config_validation_errors_for_output_root_file(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    output_root_file = tmp_path / "runs"
+    output_root_file.write_text("not-a-directory", encoding="utf-8")
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=output_root_file)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during config validation") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "output_root must be a directory path" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_config_validation_errors_for_invalid_ppt_extension(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    fixtures = Path("tests/fixtures")
+    output_root = tmp_path / "runs"
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"output_root: {output_root}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during config validation") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "Invalid file type for monthly_pptx: expected .pptx" in str(exc_info.value.__cause__)

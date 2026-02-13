@@ -91,6 +91,12 @@ def run_pipeline(config_path: str | Path) -> Path:
         LOGGER.exception("pipeline_failed stage=config_load config_path=%s", config_path)
         raise RuntimeError(f"Pipeline failed during config load: {config_path}") from exc
 
+    try:
+        _validate_pipeline_config(config)
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=config_validate config_path=%s", config_path)
+        raise RuntimeError(f"Pipeline failed during config validation: {config_path}") from exc
+
     input_paths = _resolve_input_paths(config)
     _validate_input_files(input_paths)
 
@@ -146,6 +152,54 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
         "hist_llc_3yr_xlsx": config.hist_llc_3yr_xlsx,
         "monthly_pptx": config.monthly_pptx,
     }
+
+
+def _validate_pipeline_config(config: WorkflowConfig) -> None:
+    if config.output_root.exists() and not config.output_root.is_dir():
+        raise ValueError(f"output_root must be a directory path: {config.output_root}")
+
+    _validate_extension(
+        field_name="mosers_all_programs_xlsx",
+        path=config.mosers_all_programs_xlsx,
+        expected_suffix=".xlsx",
+    )
+    _validate_extension(
+        field_name="mosers_ex_trend_xlsx",
+        path=config.mosers_ex_trend_xlsx,
+        expected_suffix=".xlsx",
+    )
+    _validate_extension(
+        field_name="mosers_trend_xlsx",
+        path=config.mosers_trend_xlsx,
+        expected_suffix=".xlsx",
+    )
+    _validate_extension(
+        field_name="hist_all_programs_3yr_xlsx",
+        path=config.hist_all_programs_3yr_xlsx,
+        expected_suffix=".xlsx",
+    )
+    _validate_extension(
+        field_name="hist_ex_llc_3yr_xlsx",
+        path=config.hist_ex_llc_3yr_xlsx,
+        expected_suffix=".xlsx",
+    )
+    _validate_extension(
+        field_name="hist_llc_3yr_xlsx",
+        path=config.hist_llc_3yr_xlsx,
+        expected_suffix=".xlsx",
+    )
+    _validate_extension(
+        field_name="monthly_pptx",
+        path=config.monthly_pptx,
+        expected_suffix=".pptx",
+    )
+
+
+def _validate_extension(*, field_name: str, path: Path, expected_suffix: str) -> None:
+    if path.suffix.lower() != expected_suffix:
+        raise ValueError(
+            f"Invalid file type for {field_name}: expected {expected_suffix}, got '{path.suffix}'"
+        )
 
 
 def _validate_input_files(input_paths: dict[str, Path]) -> None:
