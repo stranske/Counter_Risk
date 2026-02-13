@@ -191,6 +191,29 @@ def test_assemble_release_fails_when_pyinstaller_output_is_missing(
         release.assemble_release("2.3.4", output_dir)
 
 
+def test_assemble_release_fails_on_duplicate_template_filenames(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "repo"
+    _write_fake_repo(repo_root)
+    duplicate_name = "duplicate-template.pptx"
+    (repo_root / "templates" / duplicate_name).write_bytes(b"template")
+    (repo_root / "tests" / "fixtures" / duplicate_name).write_bytes(b"fixture-template")
+    output_dir = tmp_path / "release"
+
+    monkeypatch.setattr(release, "repository_root", lambda: repo_root)
+
+    expected_template_path = repo_root / "templates" / duplicate_name
+    expected_fixture_path = repo_root / "tests" / "fixtures" / duplicate_name
+    with pytest.raises(ValueError) as exc_info:
+        release.assemble_release("4.5.6", output_dir)
+    message = str(exc_info.value)
+    assert "Template filename conflicts detected" in message
+    assert duplicate_name in message
+    assert str(expected_template_path) in message
+    assert str(expected_fixture_path) in message
+
+
 def test_run_pyinstaller_raises_nonzero_exit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
