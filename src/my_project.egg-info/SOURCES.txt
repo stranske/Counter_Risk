@@ -14,6 +14,7 @@ tests/test_cli.py
 tests/test_counter_risk_cli.py
 tests/test_counter_risk_logging.py
 tests/test_dependency_version_alignment.py
+tests/test_excel_asserts.py
 tests/test_imports.py
 tests/test_main.py
 tests/test_readme_testing_section.py
