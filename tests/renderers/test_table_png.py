@@ -137,6 +137,18 @@ def test_render_cprs_ch_png_malformed_numeric_value_raises(tmp_path: Path) -> No
         render_cprs_ch_png(bad, output)
 
 
+@pytest.mark.parametrize("counterparty_value", ("   ", None))
+def test_render_cprs_ch_png_blank_counterparty_raises(
+    tmp_path: Path, counterparty_value: object
+) -> None:
+    output = tmp_path / "blank-counterparty.png"
+    bad = _sample_frame()
+    bad._rows[0]["Counterparty"] = counterparty_value
+
+    with pytest.raises(ValueError, match="counterparty"):
+        render_cprs_ch_png(bad, output)
+
+
 def test_cprs_ch_table_columns_are_stable() -> None:
     assert cprs_ch_table_columns() == (
         "Counterparty",
