@@ -108,8 +108,12 @@ def run_pipeline(config_path: str | Path) -> Path:
         LOGGER.exception("pipeline_failed stage=config_validate config_path=%s", config_path)
         raise RuntimeError(f"Pipeline failed during config validation: {config_path}") from exc
 
-    input_paths = _resolve_input_paths(config)
-    _validate_input_files(input_paths)
+    try:
+        input_paths = _resolve_input_paths(config)
+        _validate_input_files(input_paths)
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=input_validation config_path=%s", config_path)
+        raise RuntimeError("Pipeline failed during input validation stage") from exc
 
     as_of_date = config.as_of_date or datetime.now(tz=UTC).date()
     run_dir = config.output_root / as_of_date.isoformat()
@@ -152,16 +156,21 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during output write stage") from exc
     output_paths = historical_output_paths + output_paths
 
-    input_hashes = {name: _sha256_file(path) for name, path in input_paths.items()}
-    manifest_builder = ManifestBuilder(run_dir=run_dir, config=config)
-    manifest = manifest_builder.build(
-        input_hashes=input_hashes,
-        output_paths=output_paths,
-        top_exposures=top_exposures,
-        top_changes_per_variant=top_changes_per_variant,
-        warnings=warnings,
-    )
-    manifest_path = manifest_builder.write(manifest)
+    try:
+        input_hashes = {name: _sha256_file(path) for name, path in input_paths.items()}
+        manifest_builder = ManifestBuilder(run_dir=run_dir, config=config)
+        manifest = manifest_builder.build(
+            input_hashes=input_hashes,
+            output_paths=output_paths,
+            top_exposures=top_exposures,
+            top_changes_per_variant=top_changes_per_variant,
+            warnings=warnings,
+        )
+        manifest_path = manifest_builder.write(manifest)
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=manifest_write run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during manifest generation stage") from exc
+
     LOGGER.info("pipeline_complete run_dir=%s manifest=%s", run_dir, manifest_path)
 
     return run_dir
