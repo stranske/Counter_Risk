@@ -50,6 +50,26 @@ def _extract_link_sources(link_owner: Any) -> list[str]:
     return []
 
 
+def _iter_shapes(shape_container: Any) -> list[Any]:
+    """Return shapes from a slide-like container, recursively including grouped items."""
+
+    collected: list[Any] = []
+    for shape in shape_container:
+        collected.append(shape)
+        with suppress(Exception):
+            collected.extend(_iter_shapes(shape.GroupItems))
+    return collected
+
+
+def _iter_linked_shapes(presentation: Any) -> list[Any]:
+    """Return all shapes from the presentation slides that may hold external links."""
+
+    linked_shapes: list[Any] = []
+    for slide in presentation.Slides:
+        linked_shapes.extend(_iter_shapes(slide.Shapes))
+    return linked_shapes
+
+
 def _write_manual_refresh_instructions(
     *,
     run_folder: Path,
@@ -149,12 +169,11 @@ def list_external_link_targets(pptx_path: str | Path) -> list[str]:
         presentation = app.Presentations.Open(str(source_path), False, True, False)
         targets.extend(_extract_link_sources(presentation))
 
-        for slide in presentation.Slides:
-            for shape in slide.Shapes:
-                with suppress(Exception):
-                    link_target = str(shape.LinkFormat.SourceFullName)
-                    if link_target:
-                        targets.append(link_target)
+        for shape in _iter_linked_shapes(presentation):
+            with suppress(Exception):
+                link_target = str(shape.LinkFormat.SourceFullName)
+                if link_target:
+                    targets.append(link_target)
     finally:
         if presentation is not None:
             with suppress(Exception):
@@ -211,10 +230,9 @@ def refresh_links_and_save(
         with suppress(Exception):
             presentation.UpdateLinks()
 
-        for slide in presentation.Slides:
-            for shape in slide.Shapes:
-                with suppress(Exception):
-                    shape.LinkFormat.Update()
+        for shape in _iter_linked_shapes(presentation):
+            with suppress(Exception):
+                shape.LinkFormat.Update()
 
         presentation.SaveCopyAs(str(output_path))
     finally:

@@ -155,8 +155,13 @@ def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
             self.update_calls += 1
 
     class FakeShape:
-        def __init__(self, link_format: FakeLinkFormat | None = None) -> None:
+        def __init__(
+            self,
+            link_format: FakeLinkFormat | None = None,
+            group_items: list["FakeShape"] | None = None,
+        ) -> None:
             self.LinkFormat = link_format or FakeLinkFormat()
+            self.GroupItems = group_items or []
 
     class FakeSlide:
         def __init__(self, shapes: list[FakeShape]) -> None:
@@ -167,8 +172,12 @@ def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
             self.update_links_calls = 0
             self.save_copy_paths: list[str] = []
             self.close_calls = 0
+            grouped_shape = FakeShape(
+                FakeLinkFormat(),
+                [FakeShape(FakeLinkFormat()), FakeShape(FakeLinkFormat())],
+            )
             self.Slides = [
-                FakeSlide([FakeShape(FakeLinkFormat()), FakeShape(FakeLinkFormat())]),
+                FakeSlide([grouped_shape, FakeShape(FakeLinkFormat())]),
                 FakeSlide([FakeShape(FakeLinkFormat())]),
             ]
 
@@ -221,7 +230,13 @@ def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
     shape_updates = sum(
         shape.LinkFormat.update_calls for slide in presentation.Slides for shape in slide.Shapes
     )
-    assert shape_updates == 3
+    grouped_shape_updates = sum(
+        grouped_shape.LinkFormat.update_calls
+        for slide in presentation.Slides
+        for shape in slide.Shapes
+        for grouped_shape in shape.GroupItems
+    )
+    assert shape_updates + grouped_shape_updates == 5
 
 
 def test_list_external_link_targets_collects_presentation_and_shape_sources(
@@ -240,8 +255,13 @@ def test_list_external_link_targets_collects_presentation_and_shape_sources(
             return self.source or ""
 
     class FakeShape:
-        def __init__(self, link_format: FakeLinkFormat) -> None:
+        def __init__(
+            self,
+            link_format: FakeLinkFormat,
+            group_items: list["FakeShape"] | None = None,
+        ) -> None:
             self.LinkFormat = link_format
+            self.GroupItems = group_items or []
 
     class FakeSlide:
         def __init__(self, shapes: list[FakeShape]) -> None:
@@ -253,6 +273,13 @@ def test_list_external_link_targets_collects_presentation_and_shape_sources(
                 FakeSlide(
                     [
                         FakeShape(FakeLinkFormat("X:\\linked\\book1.xlsx")),
+                        FakeShape(
+                            FakeLinkFormat(""),
+                            [
+                                FakeShape(FakeLinkFormat("X:\\linked\\book3.xlsx")),
+                                FakeShape(FakeLinkFormat("X:\\linked\\book2.xlsx")),
+                            ],
+                        ),
                         FakeShape(FakeLinkFormat("X:\\linked\\book2.xlsx")),
                         FakeShape(FakeLinkFormat("X:\\linked\\book1.xlsx")),
                         FakeShape(FakeLinkFormat(raise_on_source=True)),
@@ -299,6 +326,7 @@ def test_list_external_link_targets_collects_presentation_and_shape_sources(
     assert targets == [
         "X:\\linked\\book0.xlsx",
         "X:\\linked\\book1.xlsx",
+        "X:\\linked\\book3.xlsx",
         "X:\\linked\\book2.xlsx",
     ]
     assert app.Visible == 0
