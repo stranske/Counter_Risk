@@ -1,0 +1,85 @@
+"""Policy for selecting Runner.xlsm date input controls."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import StrEnum
+
+
+class DateInputControl(StrEnum):
+    """Supported Runner date-input control types."""
+
+    MONTH_SELECTOR = "month_selector"
+    DATE_PICKER = "date_picker"
+
+
+@dataclass(frozen=True, slots=True)
+class DateControlRequirements:
+    """User requirements that drive control selection."""
+
+    non_technical_operator_flow: bool = True
+    month_end_reporting_process: bool = True
+    cross_office_reliability_required: bool = True
+    deterministic_ci_testability_required: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class DateControlDecision:
+    """Decision payload used by docs/tests/build tooling."""
+
+    selected_control: DateInputControl
+    rationale: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class RunnerDateControlScope:
+    """Scoped decision artifact for the Runner.xlsm date control."""
+
+    requirements: DateControlRequirements
+    decision: DateControlDecision
+    out_of_scope: tuple[str, ...]
+
+
+def choose_runner_date_input_control(
+    requirements: DateControlRequirements,
+) -> DateControlDecision:
+    """Choose a Runner date input control based on explicit requirements."""
+    if (
+        requirements.non_technical_operator_flow
+        and requirements.month_end_reporting_process
+        and requirements.cross_office_reliability_required
+        and requirements.deterministic_ci_testability_required
+    ):
+        return DateControlDecision(
+            selected_control=DateInputControl.MONTH_SELECTOR,
+            rationale=(
+                "Monthly as_of_date workflow aligns to month-end selection.",
+                "Date picker support is inconsistent across Office environments.",
+                "Validation-list month selector is deterministic and CI-testable.",
+            ),
+        )
+
+    return DateControlDecision(
+        selected_control=DateInputControl.DATE_PICKER,
+        rationale=(
+            "Requirements do not mandate the month-end/reliability/testability constraints.",
+        ),
+    )
+
+
+def define_runner_xlsm_date_control_scope(
+    requirements: DateControlRequirements | None = None,
+) -> RunnerDateControlScope:
+    """Define scope for Runner.xlsm date control selection from user requirements."""
+    effective_requirements = requirements or DateControlRequirements()
+    decision = choose_runner_date_input_control(effective_requirements)
+
+    return RunnerDateControlScope(
+        requirements=effective_requirements,
+        decision=decision,
+        out_of_scope=(
+            "Run-mode button handlers.",
+            "Executable launch integration.",
+            "Post-run status and log display.",
+        ),
+    )
