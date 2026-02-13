@@ -158,6 +158,24 @@ def cprs_ch_table_style() -> dict[str, RGB]:
     }
 
 
+def cprs_ch_view_spec() -> dict[str, object]:
+    """Return the full deterministic CPRS-CH rendering contract.
+
+    This function documents the selected PNG rendering library and the
+    table/view styling used for screenshot generation.
+    """
+    return {
+        "render_backend": cprs_ch_render_backend(),
+        "render_backend_notes": cprs_ch_render_backend_notes(),
+        "font": cprs_ch_font_spec(),
+        "columns": cprs_ch_table_columns(),
+        "headers": cprs_ch_table_headers(),
+        "layout": cprs_ch_table_layout(),
+        "header_layout": cprs_ch_table_header_layout(),
+        "style": cprs_ch_table_style(),
+    }
+
+
 def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
     """Render a deterministic CPRS-CH table PNG.
 
