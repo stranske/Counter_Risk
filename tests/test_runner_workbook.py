@@ -44,7 +44,9 @@ def test_runner_workbook_contains_month_selector_dropdown() -> None:
             for rel in workbook_rels_root.findall("pr:Relationship", NAMESPACES)
         }
 
-        runner_sheet_target = rel_target_by_id[sheet_by_name["Runner"].attrib[f"{{{RELATIONSHIP_NS}}}id"]]
+        runner_sheet_target = rel_target_by_id[
+            sheet_by_name["Runner"].attrib[f"{{{RELATIONSHIP_NS}}}id"]
+        ]
         control_sheet_target = rel_target_by_id[
             sheet_by_name["ControlData"].attrib[f"{{{RELATIONSHIP_NS}}}id"]
         ]
@@ -62,7 +64,9 @@ def test_runner_workbook_contains_month_selector_dropdown() -> None:
         validations = runner_sheet_root.findall("ss:dataValidations/ss:dataValidation", NAMESPACES)
         assert validations, "Runner sheet must include data validation on the month selector cell."
 
-        month_validation = next((item for item in validations if item.attrib.get("sqref") == "B3"), None)
+        month_validation = next(
+            (item for item in validations if item.attrib.get("sqref") == "B3"), None
+        )
         assert month_validation is not None
         assert month_validation.attrib.get("type") == "list"
 
@@ -91,7 +95,9 @@ def test_runner_workbook_contains_run_controls() -> None:
             for rel in workbook_rels_root.findall("pr:Relationship", NAMESPACES)
         }
 
-        runner_sheet_target = rel_target_by_id[sheet_by_name["Runner"].attrib[f"{{{RELATIONSHIP_NS}}}id"]]
+        runner_sheet_target = rel_target_by_id[
+            sheet_by_name["Runner"].attrib[f"{{{RELATIONSHIP_NS}}}id"]
+        ]
         runner_sheet_root = _read_xml(zip_file, f"xl/{runner_sheet_target}")
 
         action_cells = {

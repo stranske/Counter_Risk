@@ -40,11 +40,7 @@ def _month_end_dates(start_year: int, start_month: int, end_year: int, end_month
 
 
 def _inline_str_cell(cell_ref: str, value: str) -> str:
-    return (
-        f'<c r="{cell_ref}" t="inlineStr">'
-        f"<is><t>{escape(value)}</t></is>"
-        "</c>"
-    )
+    return f'<c r="{cell_ref}" t="inlineStr">' f"<is><t>{escape(value)}</t></is>" "</c>"
 
 
 def _runner_sheet_xml(validation_formula: str) -> str:
@@ -221,7 +217,9 @@ def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
         _write_zip_member(zip_file, "xl/workbook.xml", _workbook_xml())
         _write_zip_member(zip_file, "xl/_rels/workbook.xml.rels", _workbook_rels_xml())
         _write_zip_member(zip_file, "xl/styles.xml", _styles_xml())
-        _write_zip_member(zip_file, "xl/worksheets/sheet1.xml", _runner_sheet_xml(validation_formula))
+        _write_zip_member(
+            zip_file, "xl/worksheets/sheet1.xml", _runner_sheet_xml(validation_formula)
+        )
         _write_zip_member(
             zip_file,
             "xl/worksheets/sheet2.xml",
