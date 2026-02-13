@@ -15,6 +15,7 @@ from counter_risk.renderers.table_png import (
     cprs_ch_table_headers,
     cprs_ch_table_layout,
     cprs_ch_table_style,
+    cprs_ch_view_spec,
     render_cprs_ch_png,
 )
 
@@ -197,3 +198,15 @@ def test_cprs_ch_table_style_is_explicit_and_stable() -> None:
         "alternate_row_background": (242, 246, 252),
         "text": (26, 26, 26),
     }
+
+
+def test_cprs_ch_view_spec_documents_library_and_styling() -> None:
+    spec = cprs_ch_view_spec()
+    assert spec["render_backend"] == "internal_pure_python_png_encoder"
+    assert "pure-Python PNG encoder" in str(spec["render_backend_notes"])
+    assert spec["font"] == cprs_ch_font_spec()
+    assert spec["columns"] == cprs_ch_table_columns()
+    assert spec["headers"] == cprs_ch_table_headers()
+    assert spec["layout"] == cprs_ch_table_layout()
+    assert spec["header_layout"] == cprs_ch_table_header_layout()
+    assert spec["style"] == cprs_ch_table_style()
