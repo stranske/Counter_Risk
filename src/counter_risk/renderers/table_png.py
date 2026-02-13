@@ -46,6 +46,14 @@ class _TableLayout:
     style: _TableStyle
 
 
+@dataclass(frozen=True)
+class _BitmapFont:
+    family: str
+    glyph_width_px: int
+    glyph_height_px: int
+    glyph_gap_px: int
+
+
 _TABLE_COLUMNS: tuple[_TableColumn, ...] = (
     _TableColumn("Counterparty", "Counterparty", 28),
     _TableColumn("Cash", "Cash", 11),
@@ -69,6 +77,12 @@ _CPRS_CH_LAYOUT = _TableLayout(columns=_TABLE_COLUMNS, style=_CPRS_CH_STYLE)
 
 _REQUIRED_COLUMNS = {column.key for column in _TABLE_COLUMNS}
 _CPRS_CH_RENDER_BACKEND = "internal_pure_python_png_encoder"
+_CPRS_CH_FONT = _BitmapFont(
+    family="builtin_5x7_bitmap",
+    glyph_width_px=_CHAR_WIDTH,
+    glyph_height_px=_CHAR_HEIGHT,
+    glyph_gap_px=_CHAR_GAP,
+)
 
 
 def cprs_ch_table_columns() -> tuple[str, ...]:
@@ -79,6 +93,16 @@ def cprs_ch_table_columns() -> tuple[str, ...]:
 def cprs_ch_render_backend() -> str:
     """Return the rendering backend selected for deterministic CPRS-CH PNGs."""
     return _CPRS_CH_RENDER_BACKEND
+
+
+def cprs_ch_font_spec() -> dict[str, int | str]:
+    """Return the deterministic CPRS-CH font contract used during rendering."""
+    return {
+        "family": _CPRS_CH_FONT.family,
+        "glyph_width_px": _CPRS_CH_FONT.glyph_width_px,
+        "glyph_height_px": _CPRS_CH_FONT.glyph_height_px,
+        "glyph_gap_px": _CPRS_CH_FONT.glyph_gap_px,
+    }
 
 
 def cprs_ch_table_style() -> dict[str, RGB]:
