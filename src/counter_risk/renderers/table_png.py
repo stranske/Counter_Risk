@@ -1,4 +1,9 @@
-"""Deterministic PNG renderers for screenshot replacement workflows."""
+"""Deterministic PNG renderers for screenshot replacement workflows.
+
+The CPRS screenshot pipeline intentionally uses an internal pure-Python PNG
+encoder and bitmap glyph table (instead of PIL/matplotlib) so output bytes are
+stable across machines and runtime environments.
+"""
 
 from __future__ import annotations
 
@@ -43,11 +48,17 @@ _TABLE_COLUMNS: tuple[_TableColumn, ...] = (
 )
 
 _REQUIRED_COLUMNS = {column.key for column in _TABLE_COLUMNS}
+_CPRS_CH_RENDER_BACKEND = "internal_pure_python_png_encoder"
 
 
 def cprs_ch_table_columns() -> tuple[str, ...]:
     """Return the deterministic CPRS-CH column order used for PNG rendering."""
     return tuple(column.key for column in _TABLE_COLUMNS)
+
+
+def cprs_ch_render_backend() -> str:
+    """Return the rendering backend selected for deterministic CPRS-CH PNGs."""
+    return _CPRS_CH_RENDER_BACKEND
 
 
 def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:

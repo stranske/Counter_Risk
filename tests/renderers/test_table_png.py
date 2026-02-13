@@ -6,7 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from counter_risk.renderers.table_png import cprs_ch_table_columns, render_cprs_ch_png
+from counter_risk.renderers.table_png import (
+    cprs_ch_render_backend,
+    cprs_ch_table_columns,
+    render_cprs_ch_png,
+)
 
 
 class _FakeDataFrame:
@@ -93,3 +97,7 @@ def test_cprs_ch_table_columns_are_stable() -> None:
         "Currency",
         "Notional",
     )
+
+
+def test_cprs_ch_render_backend_is_explicit_and_stable() -> None:
+    assert cprs_ch_render_backend() == "internal_pure_python_png_encoder"
