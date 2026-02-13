@@ -11,7 +11,8 @@ def test_runner_vba_module_constructs_arguments_from_date_and_mode() -> None:
 
     assert "Public Function BuildRunArguments" in module_source
     assert 'Format$(parsedDate, "yyyy-mm-dd")' in module_source
-    assert 'QuoteArg("outputs\\" & Format$(parsedDate, "yyyy-mm-dd"))' in module_source
+    assert "outputDir = \"outputs\\\" & Format$(parsedDate, \"yyyy-mm-dd\")" in module_source
+    assert "BuildRunArguments = BuildCommand(ModeToString(mode), asOfMonth, outputDir)" in module_source
 
     assert "Case RunnerModeAllPrograms" in module_source
     assert 'ResolveConfigPath = "config\\all_programs.yml"' in module_source
@@ -30,6 +31,14 @@ def test_runner_vba_module_defines_public_entrypoints() -> None:
     assert "Public Sub RunExTrend_Click()" in module_source
     assert "Public Sub RunTrend_Click()" in module_source
     assert "Public Sub OpenOutputFolder_Click()" in module_source
+
+
+def test_runner_vba_run_all_reads_selected_date_and_calls_shared_builder() -> None:
+    module_source = Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
+
+    assert "Public Sub RunAll_Click()" in module_source
+    assert "selectedDate = ReadSelectedDate()" in module_source
+    assert 'BuildCommand "All", selectedDate, outputDir' in module_source
 
 
 def test_runner_workbook_embeds_runnerlaunch_entrypoints_in_vba_project() -> None:
