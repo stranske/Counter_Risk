@@ -1,0 +1,541 @@
+version: 1
+issue: 23
+base: main
+branch: codex/issue-23
+tasks:
+  - id: task-01
+    title: Create `Runner.xlsm` that includes a date picker (or month selector) control.
+    status: doing
+    started_at: '2026-02-13T14:32:40Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: 'Define scope for: Define whether the Runner.xlsm should use a date picker
+      or month selector control based on user requirements (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement focused slice for: Define whether the Runner.xlsm should use
+      a date picker or month selector control based on user requirements (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Validate focused slice for: Define whether the Runner.xlsm should use
+      a date picker or month selector control based on user requirements (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define scope for: Create the Runner.xlsm workbook file with the chosen
+      date/month selection control implemented (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement focused slice for: Create the Runner.xlsm workbook file with
+      the chosen date/month selection control implemented (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Validate focused slice for: Create the Runner.xlsm workbook file with
+      the chosen date/month selection control implemented (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: "Add \u201CRun All / Run Ex Trend / Run Trend\u201D buttons to `Runner.xlsm`."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: "Add an \u201COpen Output Folder\u201D button to `Runner.xlsm` that opens\
+      \ the standard output directory."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Implement VBA in `Runner.xlsm` to call the packaged executable with config
+      arguments for the selected run mode and date/month.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Write VBA code to construct command-line arguments from the selected date
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'run mode (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Define scope for: Implement VBA Shell or WScript execution to launch the
+      packaged executable with constructed arguments (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Implement focused slice for: Implement VBA Shell or WScript execution
+      to launch the packaged executable with constructed arguments (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Validate focused slice for: Implement VBA Shell or WScript execution to
+      launch the packaged executable with constructed arguments (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Define scope for: Add VBA error handling for cases where the executable
+      is not found or fails to launch (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Implement focused slice for: Add VBA error handling for cases where the
+      executable is not found or fails to launch (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Validate focused slice for: Add VBA error handling for cases where the
+      executable is not found or fails to launch (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Add a status area in `Runner.xlsm` that displays current status and the
+      last run result (success/failure + message/log snippet).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Define scope for: Create a designated cell range or text box in Runner.xlsm
+      for displaying execution status (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Implement focused slice for: Create a designated cell range or text box
+      in Runner.xlsm for displaying execution status (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Validate focused slice for: Create a designated cell range or text box
+      in Runner.xlsm for displaying execution status (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Define scope for: Implement VBA code to update the status area with ''Running''
+      state when execution begins (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Implement focused slice for: Implement VBA code to update the status area
+      with ''Running'' state when execution begins (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Validate focused slice for: Implement VBA code to update the status area
+      with ''Running'' state when execution begins (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Add VBA code to capture (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'parse the executable''s exit code (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'output to determine success or failure (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Display the last run result with timestamp (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Define scope for: Display the last run result with relevant log snippet
+      in the status area (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Implement focused slice for: Display the last run result with relevant
+      log snippet in the status area (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Validate focused slice for: Display the last run result with relevant
+      log snippet in the status area (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Create a desktop GUI runner module (if choosing the Windows desktop GUI
+      approach) that provides: choose date, choose variants, run, show logs, open
+      output.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Define scope for: Create a Windows Forms or WPF project structure for
+      the desktop GUI runner (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Implement focused slice for: Create a Windows Forms or WPF project structure
+      for the desktop GUI runner (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Validate focused slice for: Create a Windows Forms or WPF project structure
+      for the desktop GUI runner (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Implement date selection controls in the desktop GUI interface (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Add variant selection checkboxes or dropdown controls to the GUI (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Define scope for: Implement the run button functionality to execute the
+      packaged executable with selected parameters (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'Implement focused slice for: Implement the run button functionality to
+      execute the packaged executable with selected parameters (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Validate focused slice for: Implement the run button functionality to
+      execute the packaged executable with selected parameters (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Define scope for: Add a log viewer component to display execution logs
+      in real-time or post-execution (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'Implement focused slice for: Add a log viewer component to display execution
+      logs in real-time or post-execution (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Validate focused slice for: Add a log viewer component to display execution
+      logs in real-time or post-execution (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Define scope for: Implement the open output folder button to launch Windows
+      Explorer at the output directory (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Implement focused slice for: Implement the open output folder button to
+      launch Windows Explorer at the output directory (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Validate focused slice for: Implement the open output folder button to
+      launch Windows Explorer at the output directory (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: "Add a \u201Cno CLI\u201D smoke test that launches the chosen UI module/runner\
+      \ and exits cleanly."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: "`Runner.xlsm` exists in the repo and includes buttons for \u201CRun All\u201D\
+      , \u201CRun Ex Trend\u201D, \u201CRun Trend\u201D, and \u201COpen Output Folder\u201D\
+      ."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: Clicking a run button in `Runner.xlsm` invokes the packaged executable
+      with config arguments matching the selected date/month and run mode.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: The runner writes outputs to the standard location and the UI provides
+      an action that opens that output folder.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: The runner UI displays a status indicator and a last-run result after execution
+      completes.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: "The \u201Cno CLI\u201D smoke test can be executed and exits with code\
+      \ 0 after launching the UI module."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: 'Excel Runner path (if chosen):'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: 'Create `Runner.xlsm` with:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: date picker (or month selector)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: "\u201CRun All / Run Ex Trend / Run Trend\u201D buttons"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: "\u201COpen Output Folder\u201D button"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: calls packaged executable with config arguments
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: displays status + last run result
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: 'Desktop GUI path (if chosen):'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: 'simple UI: choose date, choose variants, run, show logs, open output'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: "Add a \u201Cno CLI\u201D smoke test (launches UI module and exits cleanly)"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: A non-technical user can run the monthly workflow via buttons without a
+      CLI
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: "Runner writes outputs to standard location and exposes \u201Copen output\u201D\
+      \ action"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: 'Create a desktop GUI runner module (if choosing the Windows desktop GUI
+      approach) (The agent cannot make the subjective design decision of whether to
+      implement Excel Runner.xlsm or a Windows desktop GUI. The issue presents both
+      as options without specifying which to implement. | Add an Implementation Notes
+      section specifying: ''This issue implements the Excel Runner.xlsm approach (recommended
+      option from Issue 1). Desktop GUI approach is out of scope for this issue.'')'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
