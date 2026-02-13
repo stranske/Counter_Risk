@@ -1,0 +1,242 @@
+version: 1
+issue: 21
+base: main
+branch: codex/issue-21
+tasks:
+  - id: task-01
+    title: Create `src/counter_risk/compute/rollups.py`
+    status: done
+    started_at: '2026-02-13T06:12:33Z'
+    finished_at: '2026-02-13T06:12:43Z'
+    commit: 382abb11280b3542083428594a2815b264df0f9e
+    notes: []
+  - id: task-02
+    title: Implement `compute_totals(exposures_df) -> totals_df` in `src/counter_risk/compute/rollups.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement compute_totals function that aggregates exposures by counterparty
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Implement compute_totals function that aggregates exposures by asset class
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define the output schema for the totals_df DataFrame with required columns
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Add input validation for the exposures_df parameter in compute_totals
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Implement `compute_notional_breakdown(exposures_df) -> breakdown_row` in
+      `src/counter_risk/compute/rollups.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Implement `top_exposures(exposures_df, n=10)` in `src/counter_risk/compute/rollups.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Implement `top_changes(totals_df, n=10)` in `src/counter_risk/compute/rollups.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Add unit tests (using fixtures) verifying `compute_notional_breakdown(...)`
+      fractions sum to ~1.0 when appropriate
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Define scope for: Create unit test verifying compute_notional_breakdown
+      fractions sum to 1.0 for valid multi-asset fixture data (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Implement focused slice for: Create unit test verifying compute_notional_breakdown
+      fractions sum to 1.0 for valid multi-asset fixture data (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Validate focused slice for: Create unit test verifying compute_notional_breakdown
+      fractions sum to 1.0 for valid multi-asset fixture data (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Define scope for: Create unit test verifying compute_notional_breakdown
+      handles empty DataFrame input gracefully (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Implement focused slice for: Create unit test verifying compute_notional_breakdown
+      handles empty DataFrame input gracefully (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Validate focused slice for: Create unit test verifying compute_notional_breakdown
+      handles empty DataFrame input gracefully (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Define scope for: Create unit test verifying compute_notional_breakdown
+      handles single-asset class input correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Implement focused slice for: Create unit test verifying compute_notional_breakdown
+      handles single-asset class input correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Validate focused slice for: Create unit test verifying compute_notional_breakdown
+      handles single-asset class input correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Define the tolerance threshold for fraction summation in test assertions
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: For fixture inputs with applicable data, `compute_notional_breakdown(...)`
+      fractions sum to 1.0 within tolerance
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: For fixture inputs, `top_exposures(...)` results are deterministic
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Add `src/counter_risk/compute/rollups.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Implement:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: '`compute_totals(exposures_df) -> totals_df`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: '`compute_notional_breakdown(exposures_df) -> breakdown_row`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: '`top_exposures(exposures_df, n=10)`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: '`top_changes(totals_df, n=10)` (when change data exists)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Add unit tests on fixtures verifying breakdown sums to ~1.0 when appropriate
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Breakdown fractions sum to 1.0 within tolerance (when data exists)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Top exposures lists are deterministic for the fixture inputs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
