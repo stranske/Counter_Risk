@@ -186,9 +186,9 @@ def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
             self.presentation = presentation
             self.open_args: list[tuple[str, bool, bool, bool]] = []
 
-        def Open(
+        def Open(  # noqa: N802
             self, path: str, with_window: bool, read_only: bool, untitled: bool
-        ) -> FakePresentation:  # noqa: N802
+        ) -> FakePresentation:
             self.open_args.append((path, with_window, read_only, untitled))
             return self.presentation
 
@@ -272,9 +272,9 @@ def test_list_external_link_targets_collects_presentation_and_shape_sources(
             self.presentation = presentation
             self.open_args: list[tuple[str, bool, bool, bool]] = []
 
-        def Open(
+        def Open(  # noqa: N802
             self, path: str, with_window: bool, read_only: bool, untitled: bool
-        ) -> FakePresentation:  # noqa: N802
+        ) -> FakePresentation:
             self.open_args.append((path, with_window, read_only, untitled))
             return self.presentation
 
