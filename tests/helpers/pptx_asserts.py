@@ -8,7 +8,7 @@ from typing import Any
 
 def _as_presentation(pptx_obj_or_path: Any) -> Any:
     if isinstance(pptx_obj_or_path, (str, Path)):
-        from pptx import Presentation  # type: ignore[import-not-found]
+        from pptx import Presentation
 
         return Presentation(str(pptx_obj_or_path))
     return pptx_obj_or_path
@@ -34,7 +34,7 @@ def assert_chart_present(pptx_obj_or_path: Any) -> None:
 
 def assert_picture_present(pptx_obj_or_path: Any) -> None:
     """Assert that at least one picture shape exists in the presentation."""
-    from pptx.enum.shapes import MSO_SHAPE_TYPE  # type: ignore[import-not-found]
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
 
     presentation = _as_presentation(pptx_obj_or_path)
     for slide in presentation.slides:
