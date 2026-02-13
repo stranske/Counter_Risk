@@ -56,6 +56,24 @@ def _make_workflow_pptx(path: Path, base_image: Path) -> None:
     prs.save(str(path))
 
 
+def _make_near_match_workflow_pptx(path: Path, base_image: Path) -> None:
+    prs = Presentation()
+    blank_layout = prs.slide_layouts[6]
+
+    exact_slide = prs.slides.add_slide(blank_layout)
+    exact_box = exact_slide.shapes.add_textbox(Inches(0.5), Inches(0.25), Inches(8.5), Inches(0.6))
+    exact_box.text_frame.text = "All Programs"
+    left, top, width, height = _TARGET_PICTURE_GEOMETRY["All Programs"]
+    exact_slide.shapes.add_picture(str(base_image), left, top, width=width, height=height)
+
+    near_slide = prs.slides.add_slide(blank_layout)
+    near_box = near_slide.shapes.add_textbox(Inches(0.5), Inches(0.25), Inches(8.5), Inches(0.6))
+    near_box.text_frame.text = "All Programs Summary"
+    near_slide.shapes.add_picture(str(base_image), left, top + 1, width=width, height=height)
+
+    prs.save(str(path))
+
+
 def _slide_picture_state(
     slide: object,
 ) -> tuple[int, tuple[tuple[str, tuple[int, int, int, int]], ...]]:
@@ -118,3 +136,38 @@ def test_replacement_workflow_output_reopens(tmp_path: Path) -> None:
         assert [geometry for _, geometry in before_details] == [
             geometry for _, geometry in after_details
         ]
+
+
+def test_replacement_workflow_near_match_slide_remains_unchanged(tmp_path: Path) -> None:
+    source = tmp_path / "near-input.pptx"
+    output = tmp_path / "near-output.pptx"
+
+    base_image = tmp_path / "near-base.png"
+    replacement_image = tmp_path / "near-replacement.png"
+    _write_png(base_image, _RED_PNG)
+    _write_png(replacement_image, _GREEN_PNG)
+
+    _make_near_match_workflow_pptx(source, base_image)
+    before = Presentation(str(source))
+    before_by_title = {
+        slide.shapes[0].text_frame.text: _slide_picture_state(slide) for slide in before.slides
+    }
+
+    replace_screenshot_pictures(source, {"All Programs": replacement_image}, output)
+    reopened = Presentation(str(output))
+    after_by_title = {
+        slide.shapes[0].text_frame.text: _slide_picture_state(slide) for slide in reopened.slides
+    }
+
+    exact_before = before_by_title["All Programs"]
+    exact_after = after_by_title["All Programs"]
+    assert exact_before[0] == exact_after[0]
+    assert any(
+        before_hash != after_hash
+        for (before_hash, _), (after_hash, _) in zip(exact_before[1], exact_after[1], strict=True)
+    )
+    assert [geometry for _, geometry in exact_before[1]] == [geometry for _, geometry in exact_after[1]]
+
+    near_before = before_by_title["All Programs Summary"]
+    near_after = after_by_title["All Programs Summary"]
+    assert near_before == near_after
