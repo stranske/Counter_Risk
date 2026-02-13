@@ -76,3 +76,34 @@ def test_runner_workbook_contains_month_selector_dropdown() -> None:
         assert month_values[0] == "MonthEnd"
         assert month_values[1] == "2020-01-31"
         assert month_values[-1] == "2035-12-31"
+
+
+def test_runner_workbook_contains_run_controls() -> None:
+    workbook_path = Path("Runner.xlsm")
+    with ZipFile(workbook_path) as zip_file:
+        workbook_root = _read_xml(zip_file, "xl/workbook.xml")
+        workbook_rels_root = _read_xml(zip_file, "xl/_rels/workbook.xml.rels")
+
+        sheets = workbook_root.findall("ss:sheets/ss:sheet", NAMESPACES)
+        sheet_by_name = {sheet.attrib["name"]: sheet for sheet in sheets}
+        rel_target_by_id = {
+            rel.attrib["Id"]: rel.attrib["Target"]
+            for rel in workbook_rels_root.findall("pr:Relationship", NAMESPACES)
+        }
+
+        runner_sheet_target = rel_target_by_id[sheet_by_name["Runner"].attrib[f"{{{RELATIONSHIP_NS}}}id"]]
+        runner_sheet_root = _read_xml(zip_file, f"xl/{runner_sheet_target}")
+
+        action_cells = {
+            "A5": "Run All",
+            "B5": "Run Ex Trend",
+            "C5": "Run Trend",
+            "D5": "Open Output Folder",
+        }
+        for cell_ref, expected_text in action_cells.items():
+            node = runner_sheet_root.find(
+                f"ss:sheetData/ss:row[@r='5']/ss:c[@r='{cell_ref}']/ss:is/ss:t",
+                NAMESPACES,
+            )
+            assert node is not None
+            assert node.text == expected_text
