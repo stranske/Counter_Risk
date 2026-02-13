@@ -6,6 +6,7 @@ Drop-In workbook outputs.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
@@ -19,6 +20,33 @@ _COUNTERPARTY_COLUMNS = (
     "clearing_house",
     "clearing_house_name",
 )
+
+_TEMPLATE_NUMERIC_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
+    "cash": ("cash",),
+    "tips": ("tips",),
+    "treasury": ("treasury",),
+    "equity": ("equity",),
+    "commodity": ("commodity",),
+    "currency": ("currency",),
+    "notional": ("notional", "total", "total_notional"),
+    "notional_change": (
+        "notional_change",
+        "from_prior_month",
+        "prior_month_change",
+        "change_from_prior_month",
+    ),
+}
+
+_TEMPLATE_HEADER_LABEL_TO_METRIC: dict[str, str] = {
+    "cash": "cash",
+    "tips": "tips",
+    "treasury": "treasury",
+    "equity": "equity",
+    "commodity": "commodity",
+    "currency": "currency",
+    "notional": "notional",
+    "from prior month": "notional_change",
+}
 
 
 def _normalize_label(name: str) -> str:
@@ -114,6 +142,104 @@ def _build_exposure_index(rows: Sequence[Mapping[str, Any]]) -> dict[str, Mappin
     return indexed
 
 
+def _normalize_header_label(value: str) -> str:
+    collapsed = " ".join(value.split())
+    return re.sub(r"[^a-z0-9]+", " ", collapsed.casefold()).strip()
+
+
+def _normalize_field_name(value: str) -> str:
+    collapsed = " ".join(value.split())
+    return re.sub(r"[^a-z0-9]+", "_", collapsed.casefold()).strip("_")
+
+
+def _find_counterparty_column(worksheet: Any, *, header_scan_rows: int = 20) -> int:
+    max_row = min(getattr(worksheet, "max_row", header_scan_rows), header_scan_rows)
+    max_col = min(getattr(worksheet, "max_column", 40), 40)
+
+    for row in worksheet.iter_rows(min_row=1, max_row=max_row, min_col=1, max_col=max_col):
+        for cell in row:
+            if not isinstance(cell.value, str):
+                continue
+            label = _normalize_header_label(cell.value)
+            if "counterparty" in label and "clearing house" in label:
+                return int(cell.column)
+    return 2
+
+
+def _find_numeric_template_columns(
+    worksheet: Any, *, header_scan_rows: int = 20
+) -> dict[str, int]:
+    max_row = min(getattr(worksheet, "max_row", header_scan_rows), header_scan_rows)
+    max_col = min(getattr(worksheet, "max_column", 40), 40)
+
+    columns: dict[str, int] = {}
+    for row in worksheet.iter_rows(min_row=1, max_row=max_row, min_col=1, max_col=max_col):
+        for cell in row:
+            if not isinstance(cell.value, str):
+                continue
+            label = _normalize_header_label(cell.value)
+            metric = _TEMPLATE_HEADER_LABEL_TO_METRIC.get(label)
+            if metric is not None:
+                columns[metric] = int(cell.column)
+
+    return columns
+
+
+def _build_numeric_field_index(row: Mapping[str, Any]) -> dict[str, Any]:
+    indexed: dict[str, Any] = {}
+    for key, value in row.items():
+        if isinstance(key, str):
+            indexed[_normalize_field_name(key)] = value
+    return indexed
+
+
+def _coerce_numeric_cell_value(value: Any, *, field_name: str, counterparty: str) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Exposure value for {field_name!r} on {counterparty!r} must be numeric"
+        ) from exc
+
+
+def _populate_numeric_cells(
+    worksheet: Any,
+    exposures_by_name: Mapping[str, Mapping[str, Any]],
+) -> None:
+    counterparty_col = _find_counterparty_column(worksheet)
+    template_numeric_columns = _find_numeric_template_columns(worksheet)
+    if not template_numeric_columns:
+        return
+
+    for row_index in range(1, int(getattr(worksheet, "max_row", 0)) + 1):
+        counterparty_cell = worksheet.cell(row=row_index, column=counterparty_col)
+        if not isinstance(counterparty_cell.value, str) or not counterparty_cell.value.strip():
+            continue
+
+        normalized_name = _normalize_label(counterparty_cell.value)
+        exposure_row = exposures_by_name.get(normalized_name)
+        if exposure_row is None:
+            continue
+
+        numeric_index = _build_numeric_field_index(exposure_row)
+        for metric, column in template_numeric_columns.items():
+            aliases = _TEMPLATE_NUMERIC_COLUMN_ALIASES.get(metric, ())
+            raw_value = None
+            for alias in aliases:
+                raw_value = numeric_index.get(alias)
+                if raw_value is not None:
+                    break
+
+            if raw_value is None:
+                continue
+
+            worksheet.cell(row=row_index, column=column).value = _coerce_numeric_cell_value(
+                raw_value,
+                field_name=metric,
+                counterparty=counterparty_cell.value,
+            )
+
+
 def fill_dropin_template(
     template_path: str | Path,
     exposures_df: Any,
@@ -135,7 +261,7 @@ def fill_dropin_template(
     _validate_workbook_path(output_file, field_name="output_path", must_exist=False)
 
     rows = _iter_rows(exposures_df)
-    _ = _build_exposure_index(rows)
+    exposures_by_name = _build_exposure_index(rows)
     _ = _coerce_breakdown(breakdown)
 
     try:
@@ -150,6 +276,9 @@ def fill_dropin_template(
         workbook = load_workbook(filename=template_file)
     except OSError as exc:
         raise ValueError(f"Unable to load template workbook: {template_file}") from exc
+
+    worksheet = workbook.active
+    _populate_numeric_cells(worksheet, exposures_by_name)
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(output_file)
