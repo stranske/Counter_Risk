@@ -83,8 +83,7 @@ def replace_screenshot_pictures(
         pictures = _picture_shapes(slide)
         if not pictures:
             raise ValueError(
-                "matched slide has no picture shapes for section "
-                f"'{matched_target}'"
+                "matched slide has no picture shapes for section " f"'{matched_target}'"
             )
 
         replacement = normalized_targets[matched_target]
@@ -95,17 +94,14 @@ def replace_screenshot_pictures(
 
         if len(_picture_shapes(slide)) != len(pictures):
             raise ValueError(
-                "picture replacement changed shape count for section "
-                f"'{matched_target}'"
+                "picture replacement changed shape count for section " f"'{matched_target}'"
             )
 
         matched_sections.add(matched_target)
 
     missing = sorted(set(normalized_targets) - matched_sections)
     if missing:
-        raise ValueError(
-            "no matching slide title found for sections: " + ", ".join(missing)
-        )
+        raise ValueError("no matching slide title found for sections: " + ", ".join(missing))
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     presentation.save(str(destination))
