@@ -13,6 +13,10 @@ import pytest
 from counter_risk.build import release
 
 
+def _assert_file_bytes_equal(actual_path: Path, expected_path: Path) -> None:
+    assert actual_path.read_bytes() == expected_path.read_bytes()
+
+
 def test_read_version_prefers_override(tmp_path: Path) -> None:
     version_file = tmp_path / "VERSION"
     version_file.write_text("0.0.1\n", encoding="utf-8")
@@ -46,8 +50,11 @@ def test_assemble_release_creates_versioned_bundle(tmp_path: Path) -> None:
     assert bundle_dir == output_dir / "counter-risk-9.9.9"
     assert (bundle_dir / "VERSION").read_text(encoding="utf-8").strip() == "9.9.9"
     assert (bundle_dir / "config").is_dir()
+    assert (bundle_dir / "config" / "fixture_replay.yml").is_file()
     assert (bundle_dir / "templates").is_dir()
     assert list((bundle_dir / "templates").glob("*.pptx"))
+    assert (bundle_dir / "fixtures").is_dir()
+    assert list((bundle_dir / "fixtures").glob("*.xlsx"))
     assert (bundle_dir / "pipeline" / "counter_risk_cli.py").is_file()
     assert (bundle_dir / "pipeline" / "src" / "counter_risk" / "cli.py").is_file()
     assert (bundle_dir / "run_counter_risk.cmd").is_file()
@@ -116,3 +123,48 @@ def test_bundled_entrypoint_runs_from_copied_folder(tmp_path: Path) -> None:
 
     assert process.returncode == 0, process.stderr
     assert "not implemented yet" in process.stdout.lower()
+
+
+def test_release_bundle_fixture_replay_outputs_match_fixture_tolerances(tmp_path: Path) -> None:
+    output_dir = tmp_path / "release-output"
+    bundle_dir = release.assemble_release("6.6.6", output_dir)
+    copied_bundle = tmp_path / "shared-drive" / bundle_dir.name
+    shutil.copytree(bundle_dir, copied_bundle)
+
+    process = subprocess.run(
+        [
+            sys.executable,
+            "pipeline/counter_risk_cli.py",
+            "run",
+            "--fixture-replay",
+            "--config",
+            "config/fixture_replay.yml",
+            "--output-dir",
+            "fixture-run-output",
+        ],
+        cwd=copied_bundle,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert process.returncode == 0, process.stderr
+
+    run_output = copied_bundle / "fixture-run-output"
+    manifest = json.loads((run_output / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["mode"] == "fixture_replay"
+
+    expected_output_names = [
+        "MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
+        "MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+        "MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+        "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+        "Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+        "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+        "Monthly Counterparty Exposure Report.pptx",
+    ]
+
+    for output_name in expected_output_names:
+        expected_path = copied_bundle / "fixtures" / output_name
+        actual_path = run_output / output_name
+        _assert_file_bytes_equal(actual_path, expected_path)
