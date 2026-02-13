@@ -130,9 +130,7 @@ def _build_header_map(
 def _resolve_append_date(*, append_date: date | None, config_as_of_date: date | None) -> date:
     resolved = append_date if append_date is not None else config_as_of_date
     if resolved is None:
-        raise AppendDateError(
-            "Append date is required. Provide append_date or config_as_of_date."
-        )
+        raise AppendDateError("Append date is required. Provide append_date or config_as_of_date.")
     return resolved
 
 
@@ -247,7 +245,9 @@ def _append_row(
 ) -> Path:
     path = _as_path(workbook_path, field_name="workbook_path")
     _validate_workbook_path(path)
-    resolved_date = _resolve_append_date(append_date=append_date, config_as_of_date=config_as_of_date)
+    resolved_date = _resolve_append_date(
+        append_date=append_date, config_as_of_date=config_as_of_date
+    )
 
     try:
         from openpyxl import load_workbook  # type: ignore[import-untyped]
