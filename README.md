@@ -39,6 +39,13 @@ If a change requires editing synced workflow files, do it in **stranske/Workflow
 ## Testing
 Autopilot smoke tests are enabled to validate basic keepalive and automation flow behavior.
 
+## Development
+Use these maintainer commands from the repository root:
+
+- `make lint` runs `ruff check src/ tests/`
+- `make format` runs `ruff format src/ tests/`
+- `make test` runs `pytest -m "not slow"`
+
 ## Features
 
 - 🐍 **Python 3.11+** - Modern Python with type hints
