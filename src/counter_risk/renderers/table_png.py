@@ -275,15 +275,15 @@ def _render_cprs_table_png(
 
 
 def _to_renderable_rows(exposures_df: object) -> list[dict[str, str]]:
+    records = _read_records(exposures_df)
+    if not records:
+        raise ValueError("exposures_df is an empty DataFrame")
+
     columns = _read_columns(exposures_df)
     missing_columns = sorted(_REQUIRED_COLUMNS - set(columns))
     if missing_columns:
         missing = ", ".join(missing_columns)
         raise ValueError(f"exposures_df is missing required columns: {missing}")
-
-    records = _read_records(exposures_df)
-    if not records:
-        raise ValueError("exposures_df contains no records")
 
     rendered: list[dict[str, str]] = []
     for index, record in enumerate(records):
