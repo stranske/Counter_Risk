@@ -6,8 +6,7 @@ import json
 import posixpath
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
-from pathlib import Path
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from counter_risk.config import WorkflowConfig
@@ -109,7 +108,9 @@ class ManifestBuilder:
             raise ValueError(f"Artifact path cannot contain '..' segments: {artifact_path}")
 
         if normalized_posix.as_posix() == ".":
-            raise ValueError(f"Artifact path must reference a file, not run_dir itself: {artifact_path}")
+            raise ValueError(
+                f"Artifact path must reference a file, not run_dir itself: {artifact_path}"
+            )
 
         return Path(normalized_posix.as_posix())
 
