@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import Any
 from zipfile import BadZipFile, ZipFile
 
 _XML_NS = {
@@ -69,7 +70,7 @@ _FUTURES_DTYPES: dict[str, str] = {
 }
 
 
-def parse_fcm_totals(path: Path | str):  # -> pd.DataFrame
+def parse_fcm_totals(path: Path | str) -> Any:  # pandas.DataFrame
     """Parse totals-by-counterparty section from the CPRS-FCM worksheet."""
     file_path = Path(path)
     if not file_path.exists():
@@ -122,7 +123,7 @@ def parse_fcm_totals(path: Path | str):  # -> pd.DataFrame
     return _to_dataframe(records=records, columns=_TOTAL_COLUMNS, dtypes=_TOTAL_DTYPES)
 
 
-def parse_futures_detail(path: Path | str):  # -> pd.DataFrame
+def parse_futures_detail(path: Path | str) -> Any:  # pandas.DataFrame
     """Parse futures detail section from the CPRS-FCM worksheet."""
     file_path = Path(path)
     if not file_path.exists():
@@ -375,9 +376,9 @@ def _extract_numeric(value: str | None) -> float:
 
 def _to_dataframe(
     *, records: list[dict[str, object]], columns: tuple[str, ...], dtypes: dict[str, str]
-):
+) -> Any:
     try:
-        import pandas as pd
+        import pandas as pd  # type: ignore[import-untyped]
     except ModuleNotFoundError as exc:  # pragma: no cover - environment-dependent
         raise ModuleNotFoundError(
             "CPRS-FCM parser requires pandas to be installed in the runtime environment"
