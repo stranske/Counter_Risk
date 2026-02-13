@@ -8,10 +8,12 @@ from counter_risk.writers.historical_update import (
     append_row_ex_trend,
     append_row_trend,
 )
+from counter_risk.writers.pptx_screenshots import replace_screenshot_pictures
 
 __all__ = [
     "append_row_all_programs",
     "append_row_ex_trend",
     "append_row_trend",
     "fill_dropin_template",
+    "replace_screenshot_pictures",
 ]
