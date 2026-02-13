@@ -100,6 +100,13 @@ def test_render_cprs_ch_png_missing_required_columns_raises(tmp_path: Path) -> N
         render_cprs_ch_png(bad, output)
 
 
+def test_render_cprs_ch_png_empty_dataframe_raises(tmp_path: Path) -> None:
+    output = tmp_path / "empty.png"
+
+    with pytest.raises(ValueError, match="empty DataFrame"):
+        render_cprs_ch_png(_FakeDataFrame([]), output)
+
+
 def test_render_cprs_ch_png_malformed_numeric_value_raises(tmp_path: Path) -> None:
     output = tmp_path / "bad-value.png"
     bad = _sample_frame()
