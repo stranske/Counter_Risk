@@ -151,6 +151,13 @@ def test_render_cprs_fcm_png_none_exposures_df_raises(tmp_path: Path) -> None:
         render_cprs_fcm_png(None, output)
 
 
+def test_render_cprs_fcm_png_empty_dataframe_raises(tmp_path: Path) -> None:
+    output = tmp_path / "empty-fcm.png"
+
+    with pytest.raises(ValueError, match="empty DataFrame"):
+        render_cprs_fcm_png(_FakeDataFrame([]), output)
+
+
 @pytest.mark.parametrize(
     ("variant", "row_count", "expected_rows"),
     (
@@ -182,6 +189,18 @@ def test_render_cprs_ch_png_blank_counterparty_raises(
 
     with pytest.raises(ValueError, match="counterparty"):
         render_cprs_ch_png(bad, output)
+
+
+@pytest.mark.parametrize("counterparty_value", ("   ", None))
+def test_render_cprs_fcm_png_blank_counterparty_raises(
+    tmp_path: Path, counterparty_value: object
+) -> None:
+    output = tmp_path / "blank-counterparty-fcm.png"
+    bad = _sample_frame()
+    bad._rows[0]["Counterparty"] = counterparty_value
+
+    with pytest.raises(ValueError, match="counterparty"):
+        render_cprs_fcm_png(bad, output)
 
 
 def test_cprs_ch_table_columns_are_stable() -> None:
