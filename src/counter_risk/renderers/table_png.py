@@ -30,6 +30,7 @@ class _TableColumn:
     key: str
     header: str
     width_chars: int
+    header_align: str
 
 
 @dataclass(frozen=True)
@@ -57,14 +58,14 @@ class _BitmapFont:
 
 
 _TABLE_COLUMNS: tuple[_TableColumn, ...] = (
-    _TableColumn("Counterparty", "Counterparty", 28),
-    _TableColumn("Cash", "Cash", 11),
-    _TableColumn("TIPS", "TIPS", 10),
-    _TableColumn("Treasury", "Treasury", 12),
-    _TableColumn("Equity", "Equity", 10),
-    _TableColumn("Commodity", "Commodity", 12),
-    _TableColumn("Currency", "Currency", 11),
-    _TableColumn("Notional", "Notional", 12),
+    _TableColumn("Counterparty", "Counterparty", 28, "left"),
+    _TableColumn("Cash", "Cash", 11, "right"),
+    _TableColumn("TIPS", "TIPS", 10, "right"),
+    _TableColumn("Treasury", "Treasury", 12, "right"),
+    _TableColumn("Equity", "Equity", 10, "right"),
+    _TableColumn("Commodity", "Commodity", 12, "right"),
+    _TableColumn("Currency", "Currency", 11, "right"),
+    _TableColumn("Notional", "Notional", 12, "right"),
 )
 
 _CPRS_CH_STYLE = _TableStyle(
@@ -104,6 +105,19 @@ def cprs_ch_table_layout() -> tuple[dict[str, str | int], ...]:
             "key": column.key,
             "header": column.header,
             "width_chars": column.width_chars,
+            "header_align": column.header_align,
+        }
+        for column in _TABLE_COLUMNS
+    )
+
+
+def cprs_ch_table_header_layout() -> tuple[dict[str, str], ...]:
+    """Return the deterministic CPRS-CH header layout used in the PNG table."""
+    return tuple(
+        {
+            "key": column.key,
+            "header": column.header,
+            "header_align": column.header_align,
         }
         for column in _TABLE_COLUMNS
     )
@@ -181,10 +195,13 @@ def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
             row_height,
             layout.style.header_background,
         )
+        text_x = x + _CELL_PADDING_X
+        if column.header_align == "right":
+            text_x = x + cell_width - _CELL_PADDING_X - _text_pixel_width(column.header)
         _draw_text(
             pixels,
             width,
-            x + _CELL_PADDING_X,
+            text_x,
             origin_y + _CELL_PADDING_Y,
             column.header,
             layout.style.header_text,
@@ -383,6 +400,12 @@ def _draw_text(
         glyph = _glyph_for(character)
         _draw_glyph(pixels, image_width, cursor, y, glyph, color)
         cursor += _CHAR_WIDTH + _CHAR_GAP
+
+
+def _text_pixel_width(text: str) -> int:
+    if not text:
+        return 0
+    return (len(text) * (_CHAR_WIDTH + _CHAR_GAP)) - _CHAR_GAP
 
 
 def _draw_glyph(

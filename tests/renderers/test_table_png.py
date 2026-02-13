@@ -10,6 +10,7 @@ from counter_risk.renderers.table_png import (
     cprs_ch_font_spec,
     cprs_ch_render_backend,
     cprs_ch_render_backend_notes,
+    cprs_ch_table_header_layout,
     cprs_ch_table_columns,
     cprs_ch_table_headers,
     cprs_ch_table_layout,
@@ -119,14 +120,52 @@ def test_cprs_ch_table_headers_are_stable() -> None:
 
 def test_cprs_ch_table_layout_contract_is_stable() -> None:
     assert cprs_ch_table_layout() == (
-        {"key": "Counterparty", "header": "Counterparty", "width_chars": 28},
-        {"key": "Cash", "header": "Cash", "width_chars": 11},
-        {"key": "TIPS", "header": "TIPS", "width_chars": 10},
-        {"key": "Treasury", "header": "Treasury", "width_chars": 12},
-        {"key": "Equity", "header": "Equity", "width_chars": 10},
-        {"key": "Commodity", "header": "Commodity", "width_chars": 12},
-        {"key": "Currency", "header": "Currency", "width_chars": 11},
-        {"key": "Notional", "header": "Notional", "width_chars": 12},
+        {
+            "key": "Counterparty",
+            "header": "Counterparty",
+            "width_chars": 28,
+            "header_align": "left",
+        },
+        {"key": "Cash", "header": "Cash", "width_chars": 11, "header_align": "right"},
+        {"key": "TIPS", "header": "TIPS", "width_chars": 10, "header_align": "right"},
+        {
+            "key": "Treasury",
+            "header": "Treasury",
+            "width_chars": 12,
+            "header_align": "right",
+        },
+        {"key": "Equity", "header": "Equity", "width_chars": 10, "header_align": "right"},
+        {
+            "key": "Commodity",
+            "header": "Commodity",
+            "width_chars": 12,
+            "header_align": "right",
+        },
+        {
+            "key": "Currency",
+            "header": "Currency",
+            "width_chars": 11,
+            "header_align": "right",
+        },
+        {
+            "key": "Notional",
+            "header": "Notional",
+            "width_chars": 12,
+            "header_align": "right",
+        },
+    )
+
+
+def test_cprs_ch_table_header_layout_contract_is_stable() -> None:
+    assert cprs_ch_table_header_layout() == (
+        {"key": "Counterparty", "header": "Counterparty", "header_align": "left"},
+        {"key": "Cash", "header": "Cash", "header_align": "right"},
+        {"key": "TIPS", "header": "TIPS", "header_align": "right"},
+        {"key": "Treasury", "header": "Treasury", "header_align": "right"},
+        {"key": "Equity", "header": "Equity", "header_align": "right"},
+        {"key": "Commodity", "header": "Commodity", "header_align": "right"},
+        {"key": "Currency", "header": "Currency", "header_align": "right"},
+        {"key": "Notional", "header": "Notional", "header_align": "right"},
     )
 
 
