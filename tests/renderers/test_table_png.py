@@ -1,0 +1,82 @@
+"""Tests for deterministic CPRS-CH PNG rendering."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from counter_risk.renderers.table_png import render_cprs_ch_png
+
+
+class _FakeDataFrame:
+    def __init__(self, rows: list[dict[str, object]]) -> None:
+        self._rows = [dict(row) for row in rows]
+        self.columns = list(rows[0].keys()) if rows else []
+
+    def to_dict(self, orient: str = "dict") -> list[dict[str, object]]:
+        if orient != "records":
+            raise ValueError("only records orient is supported")
+        return [dict(row) for row in self._rows]
+
+
+_REQUIRED = {
+    "Counterparty": "Alpha Clearing",
+    "Cash": 125.0,
+    "TIPS": 19.5,
+    "Treasury": 302.25,
+    "Equity": -15.0,
+    "Commodity": 8.5,
+    "Currency": 1.2,
+    "Notional": 441.45,
+}
+
+
+def _sample_frame() -> _FakeDataFrame:
+    return _FakeDataFrame(
+        [
+            _REQUIRED,
+            {
+                "Counterparty": "Beta FCM",
+                "Cash": 7,
+                "TIPS": 0,
+                "Treasury": 10,
+                "Equity": 2,
+                "Commodity": 3,
+                "Currency": 4,
+                "Notional": 26,
+            },
+        ]
+    )
+
+
+def test_render_cprs_ch_png_writes_deterministic_bytes(tmp_path: Path) -> None:
+    output_one = tmp_path / "first.png"
+    output_two = tmp_path / "second.png"
+
+    render_cprs_ch_png(_sample_frame(), output_one)
+    render_cprs_ch_png(_sample_frame(), output_two)
+
+    data_one = output_one.read_bytes()
+    data_two = output_two.read_bytes()
+
+    assert data_one.startswith(b"\x89PNG\r\n\x1a\n")
+    assert len(data_one) > 500
+    assert data_one == data_two
+
+
+def test_render_cprs_ch_png_missing_required_columns_raises(tmp_path: Path) -> None:
+    output = tmp_path / "missing.png"
+    bad = _FakeDataFrame([{"Counterparty": "Only", "Cash": 1.0}])
+
+    with pytest.raises(ValueError, match="missing required columns"):
+        render_cprs_ch_png(bad, output)
+
+
+def test_render_cprs_ch_png_malformed_numeric_value_raises(tmp_path: Path) -> None:
+    output = tmp_path / "bad-value.png"
+    bad = _sample_frame()
+    bad._rows[0]["Cash"] = "not-a-number"
+
+    with pytest.raises(ValueError, match="non-numeric value"):
+        render_cprs_ch_png(bad, output)
