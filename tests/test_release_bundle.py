@@ -218,7 +218,7 @@ def test_assemble_release_fails_on_duplicate_template_filenames(
 
 
 def test_run_pyinstaller_raises_nonzero_exit(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir(parents=True, exist_ok=True)
@@ -234,9 +234,39 @@ def test_run_pyinstaller_raises_nonzero_exit(
         )
 
     monkeypatch.setattr(subprocess, "run", _failed_run)
+    caplog.set_level("INFO")
 
     with pytest.raises(ValueError, match="PyInstaller failed with exit code 2"):
         release._run_pyinstaller(repo_root, spec_path)
+    assert "PyInstaller completed with exit code 2" in caplog.text
+    assert "PyInstaller stdout:\nbuild log" in caplog.text
+    assert "PyInstaller stderr:\nerror log" in caplog.text
+    assert f"PyInstaller build failed for spec '{spec_path}'" in caplog.text
+
+
+def test_run_pyinstaller_logs_streams_on_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    spec_path = repo_root / "release.spec"
+    spec_path.write_text("# fake\n", encoding="utf-8")
+
+    def _successful_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(
+            args=["pyinstaller", "-y", str(spec_path)],
+            returncode=0,
+            stdout="success build log",
+            stderr="warning log",
+        )
+
+    monkeypatch.setattr(subprocess, "run", _successful_run)
+    caplog.set_level("INFO")
+
+    release._run_pyinstaller(repo_root, spec_path)
+    assert "PyInstaller completed with exit code 0" in caplog.text
+    assert "PyInstaller stdout:\nsuccess build log" in caplog.text
+    assert "PyInstaller stderr:\nwarning log" in caplog.text
 
 
 def test_validate_version_manifest_consistency_raises_on_mismatch(tmp_path: Path) -> None:
