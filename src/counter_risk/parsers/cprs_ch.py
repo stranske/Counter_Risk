@@ -177,7 +177,9 @@ def _segment_ranges(
     for index, segment in enumerate(ordered):
         end_row = ordered[index + 1].start_row - 1 if index + 1 < len(ordered) else max_row
         ranges.append(
-            _SegmentRange(segment_type=segment.segment_type, start_row=segment.start_row, end_row=end_row)
+            _SegmentRange(
+                segment_type=segment.segment_type, start_row=segment.start_row, end_row=end_row
+            )
         )
     return ranges
 
@@ -213,7 +215,9 @@ def _to_dataframe(records: list[dict[str, object]]) -> pd.DataFrame:
 
     for column in _OUTPUT_COLUMNS:
         if column not in df.columns:
-            df[column] = 0.0 if column in _OUTPUT_DTYPES and _OUTPUT_DTYPES[column] == "float64" else ""
+            df[column] = (
+                0.0 if column in _OUTPUT_DTYPES and _OUTPUT_DTYPES[column] == "float64" else ""
+            )
 
     df = df.loc[:, list(_OUTPUT_COLUMNS)]
     return df.astype(_OUTPUT_DTYPES)
