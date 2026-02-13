@@ -14,7 +14,6 @@ import pytest
 from counter_risk.build import release
 from tests.utils.assertions import assert_numeric_outputs_close
 
-
 _FORBIDDEN_RUNNER_ENTRYPOINT_PATTERN = re.compile(
     r"\bpython(?:\.exe)?\b|\bpy(?:\.exe)?\b|\.py\b",
     re.IGNORECASE,

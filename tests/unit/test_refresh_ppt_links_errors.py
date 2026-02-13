@@ -38,8 +38,8 @@ def test_refresh_ppt_links_surfaces_com_failures_with_context(
     presentation.Close = lambda: setattr(state, "closed", True)
 
     presentations = types.SimpleNamespace()
-    presentations.Open = (
-        lambda _path, **kwargs: _raise_assertion_error("WithWindow was not passed")
+    presentations.Open = lambda _path, **kwargs: (
+        _raise_assertion_error("WithWindow was not passed")
         if "WithWindow" not in kwargs
         else presentation
     )
@@ -60,9 +60,10 @@ def test_refresh_ppt_links_surfaces_com_failures_with_context(
     ppt_path = tmp_path / "monthly.pptx"
     ppt_path.write_bytes(b"ppt")
 
-    with caplog.at_level(logging.ERROR), pytest.raises(
-        RuntimeError, match="PPT link refresh failed"
-    ) as exc_info:
+    with (
+        caplog.at_level(logging.ERROR),
+        pytest.raises(RuntimeError, match="PPT link refresh failed") as exc_info,
+    ):
         _refresh_ppt_links(ppt_path)
 
     assert str(ppt_path) in str(exc_info.value)
