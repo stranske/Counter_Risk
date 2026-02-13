@@ -240,9 +240,7 @@ def _coerce_numeric_cell_value(value: Any, *, field_name: str, counterparty: str
             f"Exposure value for {field_name!r} on {counterparty!r} must be numeric"
         ) from exc
     if not math.isfinite(numeric_value):
-        raise ValueError(
-            f"Exposure value for {field_name!r} on {counterparty!r} must be finite"
-        )
+        raise ValueError(f"Exposure value for {field_name!r} on {counterparty!r} must be finite")
     return numeric_value
 
 
