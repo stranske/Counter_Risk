@@ -1,0 +1,773 @@
+version: 1
+issue: 78
+base: main
+branch: codex/issue-78
+tasks:
+  - id: task-01
+    title: Create a PyInstaller spec file `release.spec` at repo root that builds
+      the pipeline CLI entrypoint into an executable named `counter-risk` (and `counter-risk.exe`
+      on Windows), bundling required package data (templates + default config) and
+      any runtime hooks needed for path resolution.
+    status: done
+    started_at: '2026-02-13T20:10:57Z'
+    finished_at: '2026-02-13T20:11:08Z'
+    commit: ee14d3f691a00a691671ac2d6fb6edfb0573b443
+    notes: []
+  - id: task-02
+    title: 'Create a PyInstaller spec file at repo root with Analysis (verify: confirm
+      completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Create a PyInstaller spec file at repo root with EXE (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Define scope for: Create a PyInstaller spec file at repo root with and
+      COLLECT sections for the pipeline CLI entrypoint (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Implement focused slice for: Create a PyInstaller spec file at repo root
+      with and COLLECT sections for the pipeline CLI entrypoint (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Validate focused slice for: Create a PyInstaller spec file at repo root
+      with and COLLECT sections for the pipeline CLI entrypoint (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Define scope for: Configure the spec file to produce an executable named
+      counter-risk with platform-specific extensions (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement focused slice for: Configure the spec file to produce an executable
+      named counter-risk with platform-specific extensions (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Validate focused slice for: Configure the spec file to produce an executable
+      named counter-risk with platform-specific extensions (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Add datas configuration to bundle templates (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'default config files into the executable (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Define scope for: Implement runtime hooks or path resolution helpers to
+      locate bundled assets at runtime (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Implement focused slice for: Implement runtime hooks or path resolution
+      helpers to locate bundled assets at runtime (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Validate focused slice for: Implement runtime hooks or path resolution
+      helpers to locate bundled assets at runtime (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Update `src/counter_risk/build/release.py` to invoke PyInstaller using
+      `release.spec` during packaging, fail with non-zero exit code on PyInstaller
+      failure, and fail fast with clear errors if `release.spec` or the expected `dist/...`
+      executable output is missing.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Define scope for: Update release.py to invoke PyInstaller using release.spec
+      via subprocess during the packaging flow (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Implement focused slice for: Update release.py to invoke PyInstaller using
+      release.spec via subprocess during the packaging flow (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Validate focused slice for: Update release.py to invoke PyInstaller using
+      release.spec via subprocess during the packaging flow (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Define scope for: Add error handling to exit with non-zero code when PyInstaller
+      returns a failure status (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Implement focused slice for: Add error handling to exit with non-zero
+      code when PyInstaller returns a failure status (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Validate focused slice for: Add error handling to exit with non-zero code
+      when PyInstaller returns a failure status (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Define scope for: Add validation to fail fast with clear error messages
+      if release.spec is missing before invoking PyInstaller (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Implement focused slice for: Add validation to fail fast with clear error
+      messages if release.spec is missing before invoking PyInstaller (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Validate focused slice for: Add validation to fail fast with clear error
+      messages if release.spec is missing before invoking PyInstaller (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Define scope for: Add validation to fail fast with clear error messages
+      if the expected dist executable is missing after PyInstaller completes (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Implement focused slice for: Add validation to fail fast with clear error
+      messages if the expected dist executable is missing after PyInstaller completes
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Validate focused slice for: Add validation to fail fast with clear error
+      messages if the expected dist executable is missing after PyInstaller completes
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Update `src/counter_risk/build/release.py` to copy the built executable
+      from `dist/...` into a deterministic location under `release/<version>/` (e.g.,
+      `release/<version>/bin/counter-risk(.exe)`), and add/keep an automated check
+      that `release/<version>/VERSION` equals the `manifest.json` version field.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Update `run_counter_risk.cmd` to execute the bundled executable (not `python`/`py`),
+      resolving the executable path relative to the `.cmd` location (e.g., via `%~dp0`)
+      and passing through `%*` unchanged.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Implement deterministic template conflict handling during bundle assembly
+      by detecting duplicate template filenames across template source directories
+      and either enforcing an explicit precedence rule in code or raising an error
+      that lists each conflicting filename and all source paths.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Add a numeric comparison test helper in `tests/utils/assertions.py` (or
+      equivalent) that compares parsed numeric outputs with configurable `atol` and
+      `rtol`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Update fixture-based transformation tests to parse numeric outputs (CSV/TSV/JSON/parquet
+      as applicable to fixtures) and compare using the helper with explicitly specified
+      `atol`/`rtol` values instead of byte-for-byte equality.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: Add a GitHub Actions workflow `.github/workflows/release.yml` that (1)
+      sets up Python, (2) installs dependencies, (3) runs unit + fixture tests, (4)
+      builds the PyInstaller executable with `release.spec`, (5) runs the packaging
+      script to assemble `release/<version>/...`, (6) validates required bundle files
+      exist, and (7) uploads the release bundle as an artifact.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Create the release.yml workflow file with Python setup (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Create the release.yml workflow file with dependency installation steps
+      (verify: dependencies updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Add a workflow step to run unit (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'fixture tests before building (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Add a workflow step to build the PyInstaller executable using release.spec
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Add a workflow step to run the packaging script (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'assemble the versioned release directory (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Define scope for: Add a workflow step to validate that all required bundle
+      files exist in the release directory (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Implement focused slice for: Add a workflow step to validate that all
+      required bundle files exist in the release directory (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'Validate focused slice for: Add a workflow step to validate that all required
+      bundle files exist in the release directory (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Define scope for: Add a workflow step to upload the release bundle as
+      a GitHub Actions artifact (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Implement focused slice for: Add a workflow step to upload the release
+      bundle as a GitHub Actions artifact (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Validate focused slice for: Add a workflow step to upload the release
+      bundle as a GitHub Actions artifact (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: Write `docs/RELEASE_CHECKLIST.md` documenting the commands to build via
+      PyInstaller (`release.spec`), run packaging, validate bundle contents, and trigger/run
+      the release workflow, plus an explicit list of expected bundle contents.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: '`release.spec` exists at repo root and defines an `Analysis`/`EXE`/`COLLECT`
+      (one-folder) or `EXE` (one-file) build for the pipeline CLI entrypoint, producing
+      an executable named `counter-risk` (or `counter-risk.exe` on Windows).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: Running `pyinstaller -y release.spec` on a clean workspace produces the
+      executable artifact at `dist/counter-risk/counter-risk` (one-folder) or `dist/counter-risk`
+      (one-file) on Linux/macOS, and `dist\counter-risk\counter-risk.exe` or `dist\counter-risk.exe`
+      on Windows (depending on chosen mode).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: The PyInstaller build includes required package data such that, when run
+      from `dist/...`, the executable can load the default configuration and template
+      assets without referencing the repo checkout paths.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: '`src/counter_risk/build/release.py` invokes PyInstaller using `release.spec`
+      as part of the packaging flow and exits non-zero if PyInstaller fails.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: After packaging completes, the versioned release directory contains the
+      bundled executable at a deterministic path (e.g., `release/<version>/bin/counter-risk(.exe)`
+      or `release/<version>/counter-risk(.exe)`), and the packaging command fails
+      if the executable is not present at the expected PyInstaller output location.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: '`run_counter_risk.cmd` does not invoke `python` and instead executes the
+      bundled executable using a path resolved relative to the location of the `.cmd`
+      file, passing through all CLI args unchanged.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: 'Template bundle assembly detects duplicate template filenames across template
+      source directories and applies one deterministic policy: either (A) raise an
+      error that lists every conflicting filename and all source paths for each conflict,
+      or (B) apply a documented precedence order that is enforced in code and covered
+      by a unit test.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: Fixture-based transformation tests compare numeric outputs using absolute/relative
+      tolerances rather than byte-for-byte file equality for supported numeric formats
+      (CSV/TSV/JSON/parquet as applicable to the fixtures).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: '`tests/utils/assertions.py` (or the chosen helper path) exists and provides
+      a function that compares numeric outputs with configurable `atol` and `rtol`,
+      and fixture tests call this helper with explicitly defined tolerance values
+      (not implicit defaults).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: '`.github/workflows/release.yml` exists and, on workflow execution, performs
+      these steps in order: (1) sets up Python, (2) installs dependencies, (3) runs
+      unit + fixture tests, (4) builds the PyInstaller executable using `release.spec`,
+      (5) runs the packaging script to assemble the versioned release bundle, (6)
+      validates required bundle files exist, and (7) uploads the release bundle as
+      a workflow artifact.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: 'The release workflow includes an explicit validation step that fails the
+      job if any required bundle artifact is missing: `VERSION`, `manifest.json`,
+      templates directory, default config file, runner script, README ("How to run"),
+      and the bundled executable.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: Packaging produces a versioned release directory where `VERSION` file content
+      exactly matches the `manifest.json` version field value.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: The versioned release directory contains a README file whose title line
+      includes the exact phrase `How to run`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: '`docs/RELEASE_CHECKLIST.md` exists and contains: (1) the exact command(s)
+      to run the release workflow locally or in CI, (2) the packaging command(s),
+      (3) the validation command(s) to confirm bundle contents, and (4) an explicit
+      list of expected bundle contents including the executable, runner, templates,
+      default config, `VERSION`, and `manifest.json`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: A fixture-based run executed using the produced release bundle (calling
+      the bundled executable or the updated runner) produces numeric outputs that
+      match the expected fixture values within the tolerances defined in the fixture
+      tests.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: Add a PyInstaller build definition (e.g., `release.spec`) that bundles
+      the pipeline entrypoint into a single-folder or single-file executable, including
+      required package data (templates/default config) and any runtime hooks needed
+      for path resolution.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: Update the release bundling script to invoke PyInstaller as part of packaging
+      and to copy the built executable into the versioned release directory; fail
+      fast with clear errors if the executable is missing.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: Update the Windows runner script to call the bundled executable (and not
+      `python ...`), resolving paths relative to the runner location and passing through
+      CLI args.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: 'Implement deterministic template conflict handling during bundle assembly:
+      detect duplicate template filenames across source directories and either (a)
+      apply an explicit precedence rule in code or (b) raise an error listing conflicts.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-67
+    title: Enhance fixture-based tests to validate transformation outputs numerically
+      within tolerances (e.g., parse outputs to numeric arrays/dataframes and compare
+      with abs/rel tolerance) instead of byte-for-byte file equality.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-68
+    title: Add a release CI workflow that builds the executable via PyInstaller, runs
+      unit/fixture tests, assembles the versioned release bundle, validates required
+      files exist, and uploads the bundle as an artifact.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-69
+    title: Add release checklist documentation describing the automated release steps,
+      validation commands, and bundle contents expectations.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-70
+    title: A PyInstaller spec file named `release.spec` exists at repo root and defines
+      an `Analysis`/`EXE`/`COLLECT` (one-folder) or `EXE` (one-file) build for the
+      pipeline CLI entrypoint, producing an executable named `counter-risk` (or `counter-risk.exe`
+      on Windows).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-71
+    title: Running `pyinstaller -y release.spec` on a clean workspace produces the
+      executable artifact at `dist/counter-risk/counter-risk` (one-folder) or `dist/counter-risk`
+      (one-file) on Linux/macOS, and `dist\counter-risk\counter-risk.exe` or `dist\counter-risk.exe`
+      on Windows (depending on chosen mode).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-72
+    title: The PyInstaller build includes required package data such that, when run
+      from `dist/...`, the executable can load the default configuration and template
+      assets without referencing the repo checkout paths.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-73
+    title: The release bundling script `src/counter_risk/build/release.py` invokes
+      PyInstaller using `release.spec` as part of the packaging flow and fails with
+      a non-zero exit code if PyInstaller fails.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-74
+    title: After packaging completes, the versioned release directory contains the
+      bundled executable at a deterministic path (e.g., `release/<version>/bin/counter-risk(.exe)`
+      or `release/<version>/counter-risk(.exe)`), and the packaging command fails
+      fast if the executable is not present at the expected PyInstaller output location.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-75
+    title: The Windows runner script `run_counter_risk.cmd` does not invoke `python`
+      and instead executes the bundled executable using a path resolved relative to
+      the location of the `.cmd` file, passing through all CLI args unchanged.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-76
+    title: 'Template bundle assembly detects duplicate template filenames across template
+      source directories and applies one deterministic policy: either (A) raise an
+      error that lists every conflicting filename and all source paths for each conflict,
+      or (B) apply a documented precedence order that is enforced in code and covered
+      by a unit test.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-77
+    title: Fixture-based transformation tests compare numeric outputs using absolute/relative
+      tolerances rather than byte-for-byte file equality for supported numeric formats
+      (CSV/TSV/JSON/parquet as applicable to the fixtures).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-78
+    title: A test helper exists (e.g., `tests/utils/assertions.py`) providing a function
+      that compares numeric outputs with configurable `atol` and `rtol`, and the fixture
+      tests call this helper with explicitly defined tolerance values (not implicit
+      defaults).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-79
+    title: 'The repository contains `.github/workflows/release.yml` which, on workflow
+      execution, performs these steps in order: (1) sets up Python, (2) installs dependencies,
+      (3) runs unit + fixture tests, (4) builds the PyInstaller executable using `release.spec`,
+      (5) runs the packaging script to assemble the versioned release bundle, (6)
+      validates required bundle files exist, and (7) uploads the release bundle as
+      a workflow artifact.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-80
+    title: 'The release workflow includes an explicit validation step that fails the
+      job if any required bundle artifact is missing: `VERSION`, `manifest.json`,
+      templates directory, default config file, runner script, README ("How to run"),
+      and the bundled executable.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-81
+    title: Packaging produces a versioned release directory where `VERSION` file content
+      exactly matches the `manifest.json` version field value.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-82
+    title: The versioned release directory contains a README file whose title line
+      includes the exact phrase `How to run`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-83
+    title: '`docs/RELEASE_CHECKLIST.md` exists and contains: (1) the exact command(s)
+      to run the release workflow locally or in CI, (2) the packaging command(s),
+      (3) the validation command(s) to confirm bundle contents, and (4) an explicit
+      list of expected bundle contents including the executable, runner, templates,
+      default config, `VERSION`, and `manifest.json`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-84
+    title: A fixture-based run executed using the produced release bundle (calling
+      the bundled executable or the updated runner) produces numeric outputs that
+      match the expected fixture values within the tolerances defined in the fixture
+      tests.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-85
+    title: 'Add a GitHub Actions workflow `.github/workflows/release.yml` that (1)
+      sets up Python, (2) installs dependencies, (3) runs unit + fixture tests, (4)
+      builds the PyInstaller executable with `release.spec`, (5) runs the packaging
+      script to assemble `release/<version>/...`, (6) validates required bundle files
+      exist, and (7) uploads the release bundle as an artifact. (AGENT_LIMITATIONS:
+      Cannot modify .github/workflows/*.yml (protected) | Create a template workflow
+      file at a non-protected location (e.g., docs/templates/release.yml.template)
+      with detailed inline comments, then document in RELEASE_CHECKLIST.md that a
+      maintainer must manually copy it to .github/workflows/release.yml)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

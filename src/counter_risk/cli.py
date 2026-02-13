@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import cast
 
 from counter_risk.pipeline import run_fixture_replay
+from counter_risk.runtime_paths import resolve_runtime_path
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -25,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument(
         "--config",
         type=Path,
-        default=Path("config/fixture_replay.yml"),
+        default=resolve_runtime_path(Path("config/fixture_replay.yml")),
         help="Path to workflow YAML config used by --fixture-replay mode.",
     )
     run_parser.add_argument(
