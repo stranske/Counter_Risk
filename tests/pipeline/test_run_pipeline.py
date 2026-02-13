@@ -197,6 +197,38 @@ def test_run_pipeline_wraps_parse_errors(
     assert "bad parser input" in str(exc_info.value.__cause__)
 
 
+def test_run_pipeline_wraps_parse_validation_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    malformed = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "A", "Notional": 1.0}]),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "B", "Notional": 2.0}]),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "trend": {
+            "totals": _FakeDataFrame(records=[]),
+            "futures": _FakeDataFrame(records=[{"account": "Acct"}]),
+        },
+    }
+
+    def _bad_parse(_: dict[str, Path]) -> dict[str, dict[str, Any]]:
+        return malformed
+
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", _bad_parse)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "missing required columns" in str(exc_info.value.__cause__)
+
+
 def test_run_pipeline_wraps_output_write_errors(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
