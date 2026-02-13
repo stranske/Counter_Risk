@@ -329,7 +329,7 @@ def _to_renderable_rows(
             value = record.get(column.key)
             if column.key == "Counterparty":
                 if value is None or str(value).strip() == "":
-                    raise ValueError(f"row {index} is missing a Counterparty value")
+                    raise ValueError(f"row {index} is missing a counterparty value")
                 normalized[column.key] = str(value).strip()
                 continue
 
