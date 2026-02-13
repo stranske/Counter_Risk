@@ -26,7 +26,15 @@ class ManifestBuilder:
         top_exposures: dict[str, list[dict[str, Any]]],
         top_changes_per_variant: dict[str, list[dict[str, Any]]],
         warnings: list[str],
+        ppt_status: str = "success",
     ) -> dict[str, Any]:
+        valid_ppt_statuses = {"success", "skipped", "failed"}
+        if ppt_status not in valid_ppt_statuses:
+            raise ValueError(
+                f"Invalid ppt_status {ppt_status!r}; expected one of: "
+                f"{', '.join(sorted(valid_ppt_statuses))}"
+            )
+
         normalized_output_paths = self._normalize_output_paths(
             run_dir=run_dir,
             output_paths=output_paths,
@@ -40,6 +48,7 @@ class ManifestBuilder:
             "config_snapshot": config_snapshot,
             "input_hashes": input_hashes,
             "output_paths": [str(path) for path in normalized_output_paths],
+            "ppt_status": ppt_status,
             "top_exposures": top_exposures,
             "top_changes_per_variant": top_changes_per_variant,
             "warnings": warnings,

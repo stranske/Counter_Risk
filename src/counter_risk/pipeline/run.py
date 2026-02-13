@@ -9,6 +9,7 @@ import shutil
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +47,22 @@ class _VariantInputs:
     name: str
     workbook_path: Path
     historical_path: Path
+
+
+class PptProcessingStatus(str, Enum):
+    """Machine-readable statuses for PPT processing."""
+
+    SUCCESS = "success"
+    SKIPPED = "skipped"
+    FAILED = "failed"
+
+
+@dataclass(frozen=True)
+class PptProcessingResult:
+    """Result envelope for PPT processing and link refresh."""
+
+    status: PptProcessingStatus
+    error_detail: str | None = None
 
 
 def run_pipeline(config_path: str | Path) -> Path:
@@ -106,7 +123,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during historical update stage") from exc
 
     try:
-        output_paths = _write_outputs(
+        output_result = _write_outputs(
             run_dir=run_dir,
             config=config,
             warnings=warnings,
@@ -114,6 +131,11 @@ def run_pipeline(config_path: str | Path) -> Path:
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=write_outputs run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during output write stage") from exc
+    if isinstance(output_result, tuple):
+        output_paths, ppt_result = output_result
+    else:
+        output_paths = output_result
+        ppt_result = PptProcessingResult(status=PptProcessingStatus.SUCCESS)
     output_paths = historical_output_paths + output_paths
 
     try:
@@ -127,6 +149,7 @@ def run_pipeline(config_path: str | Path) -> Path:
             top_exposures=top_exposures,
             top_changes_per_variant=top_changes_per_variant,
             warnings=warnings,
+            ppt_status=ppt_result.status.value,
         )
         manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)
     except Exception as exc:
@@ -335,7 +358,9 @@ def _compute_metrics(
     return top_exposures, top_changes_per_variant
 
 
-def _write_outputs(*, run_dir: Path, config: WorkflowConfig, warnings: list[str]) -> list[Path]:
+def _write_outputs(
+    *, run_dir: Path, config: WorkflowConfig, warnings: list[str]
+) -> tuple[list[Path], PptProcessingResult]:
     LOGGER.info("write_outputs_start run_dir=%s", run_dir)
 
     variant_inputs = [
@@ -369,25 +394,43 @@ def _write_outputs(*, run_dir: Path, config: WorkflowConfig, warnings: list[str]
     output_paths.append(target_ppt)
 
     warnings.append("PPT screenshots replacement not implemented; copied source deck unchanged")
-    if not _refresh_ppt_links(target_ppt):
+    refresh_result = _refresh_ppt_links(target_ppt)
+    if isinstance(refresh_result, bool):
+        refresh_result = PptProcessingResult(
+            status=PptProcessingStatus.SUCCESS if refresh_result else PptProcessingStatus.SKIPPED
+        )
+
+    if refresh_result.status == PptProcessingStatus.SKIPPED:
         warnings.append("PPT links not refreshed; COM refresh skipped")
+    elif refresh_result.status == PptProcessingStatus.FAILED:
+        warnings.append(
+            "PPT links refresh failed; COM refresh encountered an error"
+            if not refresh_result.error_detail
+            else f"PPT links refresh failed; {refresh_result.error_detail}"
+        )
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
-    return output_paths
+    return output_paths, refresh_result
 
 
-def _refresh_ppt_links(pptx_path: Path) -> bool:
+def _refresh_ppt_links(pptx_path: Path) -> PptProcessingResult:
     """Best-effort refresh of linked PowerPoint content via COM automation."""
 
     if platform.system().lower() != "windows":
         LOGGER.info("ppt_link_refresh_skipped file=%s reason=unsupported_platform", pptx_path)
-        return False
+        return PptProcessingResult(
+            status=PptProcessingStatus.SKIPPED,
+            error_detail="unsupported platform",
+        )
 
     try:
         import win32com.client  # type: ignore[import-untyped]
     except ImportError:
         LOGGER.info("ppt_link_refresh_skipped file=%s reason=win32com_unavailable", pptx_path)
-        return False
+        return PptProcessingResult(
+            status=PptProcessingStatus.SKIPPED,
+            error_detail="win32com unavailable",
+        )
 
     app = None
     presentation = None
@@ -398,10 +441,13 @@ def _refresh_ppt_links(pptx_path: Path) -> bool:
         presentation.UpdateLinks()
         presentation.Save()
         LOGGER.info("ppt_link_refresh_complete file=%s", pptx_path)
-        return True
-    except Exception:
+        return PptProcessingResult(status=PptProcessingStatus.SUCCESS)
+    except Exception as exc:
         LOGGER.exception("ppt_link_refresh_failed file=%s", pptx_path)
-        return False
+        return PptProcessingResult(
+            status=PptProcessingStatus.FAILED,
+            error_detail=str(exc),
+        )
     finally:
         if presentation is not None:
             presentation.Close()
