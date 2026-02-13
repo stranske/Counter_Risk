@@ -1,0 +1,20 @@
+version: 1
+issue: 5
+base: main
+branch: codex/issue-5
+tasks:
+  - id: task-01
+    title: Add a single sentence (10-20 words) to README.md in a new "Testing" section
+      noting that autopilot smoke tests are enabled
+    status: doing
+    started_at: '2026-02-13T00:16:45Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Add one short sentence to README noting autopilot smoke test
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
