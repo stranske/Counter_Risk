@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Write `docs/operator_ux_decision.md` documenting operator UX, pros/cons,
       and constraints (Office availability, macro policy, network drive paths).
-    status: doing
+    status: done
     started_at: '2026-02-13T02:38:13Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T02:38:25Z'
+    commit: 8191a68409dc6315ad34fa37068c255fc341903b
     notes: []
   - id: task-02
     title: 'Create the initial `docs/operator_ux_decision.md` file with document structure
