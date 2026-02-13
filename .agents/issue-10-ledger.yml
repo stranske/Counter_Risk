@@ -1,0 +1,206 @@
+version: 1
+issue: 10
+base: main
+branch: codex/issue-10
+tasks:
+  - id: task-01
+    title: Write `docs/operator_ux_decision.md` documenting operator UX, pros/cons,
+      and constraints (Office availability, macro policy, network drive paths).
+    status: done
+    started_at: '2026-02-13T02:38:13Z'
+    finished_at: '2026-02-13T02:38:25Z'
+    commit: 8191a68409dc6315ad34fa37068c255fc341903b
+    notes: []
+  - id: task-02
+    title: 'Create the initial `docs/operator_ux_decision.md` file with document structure
+      (verify: docs updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Create the initial `docs/operator_ux_decision.md` file with introduction
+      (verify: docs updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Document Approach A (Excel Runner.xlsm) including technical requirements
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Document Approach A (Excel Runner.xlsm) including user workflow (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Document Approach B (Windows desktop app) including technical requirements
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Document Approach B (Windows desktop app) including user workflow (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Add pros (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'cons comparison table for both approaches (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Document environmental constraints including Office availability (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Document environmental constraints including macro security policies (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Document technical constraints related to network drive paths (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'file access (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Add a section to `docs/operator_ux_decision.md` specifying the order of
+      precedence for implementation (Approach A vs Approach B).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Update `docs/operator_ux_decision.md` to define standard input discovery
+      rules (date-based) vs file-pick rules.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Update `docs/operator_ux_decision.md` to define the standard output folder
+      convention and naming.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: "Update `docs/operator_ux_decision.md` to define the non-repo update delivery\
+      \ mechanism (shared drive \u201CReleases\u201D folder, versioned zip)."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: '`docs/operator_ux_decision.md` exists in the repo and includes both implementation
+      approaches (A: Excel `Runner.xlsm`; B: Windows desktop app).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: "`docs/operator_ux_decision.md` includes a \u201Cmonthly operator steps\u201D\
+      \ outline that contains no CLI steps."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Write a short decision doc in repo: operator UX, pros/cons, constraints
+      (Office availability, macro policy, network drive paths)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Document the order of precedence in implementation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Define standard input discovery rules (date-based) vs file-pick rules
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Define standard output folder convention + naming
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: "Define how updates are delivered to non-repo users (shared drive \u201C\
+      Releases\u201D folder, versioned zip)"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Repo contains a  doc with a implementation approaches
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: "A clear \u201Cmonthly operator steps\u201D outline exists (no CLI steps)"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
