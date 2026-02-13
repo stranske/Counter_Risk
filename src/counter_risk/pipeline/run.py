@@ -108,10 +108,11 @@ def run_pipeline(config_path: str | Path) -> Path:
     try:
         input_hashes = {name: _sha256_file(path) for name, path in input_paths.items()}
         manifest_builder = ManifestBuilder(config=config)
+        output_paths_for_manifest = [path.relative_to(run_dir) for path in output_paths]
         manifest = manifest_builder.build(
             run_dir=run_dir,
             input_hashes=input_hashes,
-            output_paths=output_paths,
+            output_paths=output_paths_for_manifest,
             top_exposures=top_exposures,
             top_changes_per_variant=top_changes_per_variant,
             warnings=warnings,

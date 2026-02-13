@@ -27,14 +27,19 @@ class ManifestBuilder:
         top_changes_per_variant: dict[str, list[dict[str, Any]]],
         warnings: list[str],
     ) -> dict[str, Any]:
+        normalized_output_paths = self._normalize_output_paths(
+            run_dir=run_dir,
+            output_paths=output_paths,
+        )
+        self._validate_artifact_paths_exist(run_dir=run_dir, relative_paths=normalized_output_paths)
         config_snapshot = self._serialize_config_snapshot(self.config)
         return {
             "as_of_date": str(self._resolve_as_of_date(self.config)),
             "run_date": datetime.now(tz=UTC).isoformat(),
-            "run_dir": str(run_dir),
+            "run_dir": ".",
             "config_snapshot": config_snapshot,
             "input_hashes": input_hashes,
-            "output_paths": [str(path) for path in output_paths],
+            "output_paths": [str(path) for path in normalized_output_paths],
             "top_exposures": top_exposures,
             "top_changes_per_variant": top_changes_per_variant,
             "warnings": warnings,
@@ -65,3 +70,31 @@ class ManifestBuilder:
 
     def _resolve_as_of_date(self, config: WorkflowConfig) -> date:
         return config.as_of_date or datetime.now(tz=UTC).date()
+
+    def _normalize_output_paths(self, *, run_dir: Path, output_paths: list[Path]) -> list[Path]:
+        normalized_paths: list[Path] = []
+        for artifact_path in output_paths:
+            normalized = self._to_relative_artifact_path(run_dir=run_dir, artifact_path=artifact_path)
+            normalized_paths.append(normalized)
+        return normalized_paths
+
+    def _to_relative_artifact_path(self, *, run_dir: Path, artifact_path: Path) -> Path:
+        if artifact_path.is_absolute():
+            try:
+                return artifact_path.relative_to(run_dir)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Artifact path must be within run_dir '{run_dir}': {artifact_path}"
+                ) from exc
+        return artifact_path
+
+    def _validate_artifact_paths_exist(self, *, run_dir: Path, relative_paths: list[Path]) -> None:
+        missing_paths: list[Path] = []
+        for relative_path in relative_paths:
+            resolved_path = run_dir / relative_path
+            if not resolved_path.exists():
+                missing_paths.append(resolved_path)
+
+        if missing_paths:
+            missing = ", ".join(str(path) for path in missing_paths)
+            raise ValueError(f"Manifest output paths do not exist at write time: {missing}")

@@ -139,7 +139,8 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
     assert manifest["config_snapshot"]["output_root"] == str(output_root)
 
     for output_path in manifest["output_paths"]:
-        assert Path(output_path).exists(), f"Manifest references missing path: {output_path}"
+        assert not Path(output_path).is_absolute()
+        assert (run_dir / output_path).exists(), f"Manifest references missing path: {output_path}"
 
     assert "PPT links not refreshed; COM refresh skipped" in manifest["warnings"]
 
