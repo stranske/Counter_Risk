@@ -49,6 +49,17 @@ def test_resolve_append_date_requires_one_source() -> None:
         historical_update._resolve_append_date(append_date=None, config_as_of_date=None)
 
 
+def test_find_header_row_scans_through_row_twelve_even_when_sheet_max_row_is_lower() -> None:
+    worksheet = _FakeWorksheet("All Programs 3 Year")
+    worksheet.max_row = 2
+    worksheet.max_column = 3
+    worksheet.set_value(12, 1, "Date")
+
+    header_row = historical_update._find_header_row(worksheet)
+
+    assert header_row == 12
+
+
 class _FakeCell:
     def __init__(self, value: Any = None) -> None:
         self.value = value

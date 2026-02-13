@@ -98,7 +98,7 @@ def _find_header_row(
     max_scan_rows: int = 12,
     max_scan_cols: int = 40,
 ) -> int:
-    upper_row = min(int(getattr(worksheet, "max_row", max_scan_rows)), max_scan_rows)
+    upper_row = max_scan_rows
     upper_col = min(int(getattr(worksheet, "max_column", max_scan_cols)), max_scan_cols)
 
     for row_index in range(1, upper_row + 1):
