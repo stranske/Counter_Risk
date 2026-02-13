@@ -5,10 +5,10 @@ branch: codex/issue-11
 tasks:
   - id: task-01
     title: Create `src/counter_risk/__init__.py` with package version metadata
-    status: doing
+    status: done
     started_at: '2026-02-13T02:49:22Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T02:49:37Z'
+    commit: c8816b2787106a92e571ae2b73b1d83d254322bf
     notes: []
   - id: task-02
     title: Create `src/counter_risk/logging.py` implementing structured logging to
