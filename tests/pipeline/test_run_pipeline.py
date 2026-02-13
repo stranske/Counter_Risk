@@ -12,6 +12,7 @@ from typing import Any
 
 import pytest
 
+import counter_risk.pipeline.run as run_module
 from counter_risk.pipeline.run import run_pipeline
 
 
@@ -70,6 +71,51 @@ class _LocIndexer:
         _rows_slice, columns = key
         records = [{column: row.get(column) for column in columns} for row in self._frame._rows]
         return _FakeDataFrame(records=records, columns=columns)
+
+
+class _FakeCell:
+    def __init__(self, value: Any = None) -> None:
+        self.value = value
+
+
+class _FakeWorksheet:
+    def __init__(self, title: str) -> None:
+        self.title = title
+        self.max_row = 1
+        self.max_column = 1
+        self._cells: dict[tuple[int, int], _FakeCell] = {}
+
+    def cell(self, row: int, column: int) -> _FakeCell:
+        self.max_row = max(self.max_row, row)
+        self.max_column = max(self.max_column, column)
+        key = (row, column)
+        if key not in self._cells:
+            self._cells[key] = _FakeCell()
+        return self._cells[key]
+
+    def set_value(self, row: int, column: int, value: Any) -> None:
+        self.cell(row=row, column=column).value = value
+
+
+class _FakeWorkbook:
+    def __init__(self, sheets: dict[str, _FakeWorksheet]) -> None:
+        self._sheets = dict(sheets)
+        self.sheetnames = list(sheets)
+        self.saved_paths: list[Path] = []
+        self.closed = False
+
+    @property
+    def active(self) -> _FakeWorksheet:
+        return self._sheets[self.sheetnames[0]]
+
+    def __getitem__(self, item: str) -> _FakeWorksheet:
+        return self._sheets[item]
+
+    def save(self, path: Path) -> None:
+        self.saved_paths.append(path)
+
+    def close(self) -> None:
+        self.closed = True
 
 
 @pytest.fixture
@@ -494,3 +540,104 @@ def test_run_pipeline_wraps_run_directory_setup_errors(
 
     assert isinstance(exc_info.value.__cause__, OSError)
     assert "permission denied" in str(exc_info.value.__cause__)
+
+
+def test_merge_historical_workbook_prefers_configured_total_sheet(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workbook_path = tmp_path / "hist.xlsx"
+    workbook_path.write_bytes(b"fixture")
+
+    decoy = _FakeWorksheet("A Decoy")
+    decoy.set_value(1, 1, "Date")
+    decoy.set_value(1, 2, "Wrong")
+    decoy.set_value(1, 3, "Wrong")
+    decoy.set_value(2, 1, "2025-12-31")
+
+    target = _FakeWorksheet("Total")
+    target.set_value(1, 1, "Date")
+    target.set_value(1, 2, "Barclays")
+    target.set_value(1, 3, "Citibank")
+    target.set_value(2, 1, "2025-12-31")
+
+    workbook = _FakeWorkbook({"A Decoy": decoy, "Total": target})
+    monkeypatch.setitem(sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook))
+
+    run_module._merge_historical_workbook(
+        workbook_path=workbook_path,
+        variant="all_programs",
+        as_of_date=date(2026, 2, 13),
+        totals_records=[{"Notional": 10.0, "counterparty": "A"}],
+        warnings=[],
+    )
+
+    assert target.cell(row=3, column=1).value == "2026-02-13"
+    assert target.cell(row=3, column=2).value == pytest.approx(10.0)
+    assert target.cell(row=3, column=3).value == 1
+    assert decoy.cell(row=3, column=1).value is None
+
+
+def test_merge_historical_workbook_uses_deterministic_fallback_sheet_when_preferred_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workbook_path = tmp_path / "hist.xlsx"
+    workbook_path.write_bytes(b"fixture")
+
+    alpha = _FakeWorksheet("Alpha")
+    alpha.set_value(1, 1, "Date")
+    alpha.set_value(1, 2, "Series A")
+    alpha.set_value(1, 3, "Series B")
+    alpha.set_value(2, 1, "2025-12-31")
+
+    zulu = _FakeWorksheet("Zulu")
+    zulu.set_value(1, 1, "Date")
+    zulu.set_value(1, 2, "Series A")
+    zulu.set_value(1, 3, "Series B")
+    zulu.set_value(2, 1, "2025-12-31")
+
+    workbook = _FakeWorkbook({"Zulu": zulu, "Alpha": alpha})
+    monkeypatch.setitem(sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook))
+
+    run_module._merge_historical_workbook(
+        workbook_path=workbook_path,
+        variant="unknown_variant",
+        as_of_date=date(2026, 2, 13),
+        totals_records=[{"Notional": 20.0, "counterparty": "A"}, {"Notional": 5.0, "counterparty": "B"}],
+        warnings=[],
+    )
+
+    assert alpha.cell(row=3, column=1).value == "2026-02-13"
+    assert alpha.cell(row=3, column=2).value == pytest.approx(25.0)
+    assert alpha.cell(row=3, column=3).value == 2
+    assert zulu.cell(row=3, column=1).value is None
+
+
+def test_merge_historical_workbook_fails_fast_when_required_headers_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workbook_path = tmp_path / "hist.xlsx"
+    workbook_path.write_bytes(b"fixture")
+
+    broken = _FakeWorksheet("Total")
+    broken.set_value(1, 1, "Date")
+    broken.set_value(1, 2, "")
+    broken.set_value(1, 3, "Series B")
+    broken.set_value(2, 1, "2025-12-31")
+
+    workbook = _FakeWorkbook({"Total": broken})
+    monkeypatch.setitem(sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook))
+
+    with pytest.raises(RuntimeError, match="Failed to update historical workbook") as exc_info:
+        run_module._merge_historical_workbook(
+            workbook_path=workbook_path,
+            variant="all_programs",
+            as_of_date=date(2026, 2, 13),
+            totals_records=[{"Notional": 10.0, "counterparty": "A"}],
+            warnings=[],
+        )
+
+    message = str(exc_info.value.__cause__)
+    assert "missing required columns" in message
+    assert "Total" in message
+    assert "value series 1" in message
+    assert broken.cell(row=3, column=1).value is None
