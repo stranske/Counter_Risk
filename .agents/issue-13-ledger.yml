@@ -5,10 +5,10 @@ branch: codex/issue-13
 tasks:
   - id: task-01
     title: 'Create `tests/fixtures/` and add the following fixture files:'
-    status: doing
+    status: done
     started_at: '2026-02-13T03:05:27Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T03:05:43Z'
+    commit: 9eb02e84c7fc6e4800315c8b637d5017cafe7cc6
     notes: []
   - id: task-02
     title: Add `tests/fixtures/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx`
