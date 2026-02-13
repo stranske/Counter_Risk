@@ -17,6 +17,17 @@ from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 
 LOGGER = logging.getLogger(__name__)
 
+_EXPECTED_VARIANTS: tuple[str, ...] = ("all_programs", "ex_trend", "trend")
+_REQUIRED_TOTAL_COLUMNS: tuple[str, ...] = ("counterparty", "Notional", "NotionalChange")
+_REQUIRED_FUTURES_COLUMNS: tuple[str, ...] = (
+    "account",
+    "description",
+    "class",
+    "fcm",
+    "clearing_house",
+    "notional",
+)
+
 
 @dataclass(frozen=True)
 class _VariantInputs:
@@ -107,6 +118,7 @@ def run_pipeline(config_path: str | Path) -> Path:
     warnings: list[str] = []
     try:
         parsed_by_variant = _parse_inputs(input_paths)
+        _validate_parsed_inputs(parsed_by_variant)
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=parse_inputs run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during parse stage") from exc
@@ -235,6 +247,49 @@ def _parse_inputs(input_paths: dict[str, Path]) -> dict[str, dict[str, Any]]:
     return parsed
 
 
+def _validate_parsed_inputs(parsed_by_variant: dict[str, dict[str, Any]]) -> None:
+    missing_variants = [variant for variant in _EXPECTED_VARIANTS if variant not in parsed_by_variant]
+    if missing_variants:
+        raise ValueError(f"Missing parsed variants: {', '.join(missing_variants)}")
+
+    for variant in _EXPECTED_VARIANTS:
+        parsed_sections = parsed_by_variant[variant]
+        if not isinstance(parsed_sections, Mapping):
+            raise ValueError(f"Parsed payload for variant '{variant}' must be a mapping")
+
+        missing_sections = [section for section in ("totals", "futures") if section not in parsed_sections]
+        if missing_sections:
+            raise ValueError(
+                f"Parsed payload for variant '{variant}' is missing sections: "
+                f"{', '.join(missing_sections)}"
+            )
+
+        totals_columns = _column_names(parsed_sections["totals"])
+        futures_columns = _column_names(parsed_sections["futures"])
+
+        _require_columns(
+            section_name=f"{variant}.totals",
+            columns=totals_columns,
+            required_columns=_REQUIRED_TOTAL_COLUMNS,
+        )
+        _require_columns(
+            section_name=f"{variant}.futures",
+            columns=futures_columns,
+            required_columns=_REQUIRED_FUTURES_COLUMNS,
+        )
+
+
+def _require_columns(
+    *, section_name: str, columns: set[str], required_columns: tuple[str, ...]
+) -> None:
+    missing_columns = [column for column in required_columns if column not in columns]
+    if missing_columns:
+        raise ValueError(
+            f"Parsed section '{section_name}' is missing required columns: "
+            f"{', '.join(missing_columns)}"
+        )
+
+
 def _compute_metrics(
     parsed_by_variant: dict[str, dict[str, Any]],
 ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, list[dict[str, Any]]]]:
@@ -349,6 +404,20 @@ def _records(table: Any) -> list[dict[str, Any]]:
         as_records = table.to_records()
         return [dict(record) for record in as_records if isinstance(record, Mapping)]
     return []
+
+
+def _column_names(table: Any) -> set[str]:
+    if hasattr(table, "columns"):
+        raw_columns = table.columns
+        try:
+            return {str(column) for column in raw_columns}
+        except TypeError:
+            return set()
+
+    records = _records(table)
+    if not records:
+        return set()
+    return {str(column) for column in records[0]}
 
 
 def _row_count(table: Any) -> int:
