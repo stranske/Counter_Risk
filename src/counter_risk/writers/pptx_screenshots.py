@@ -83,6 +83,25 @@ def _resolve_image_path(value: Path | str) -> Path:
     return image_path
 
 
+def _swap_picture_image_part(picture: BaseShape, replacement: Path) -> None:
+    """Swap a picture's embedded image part while preserving shape geometry.
+
+    This relies on private python-pptx API (`picture._element`) because public
+    APIs do not provide an in-place image swap; updating `a:blip/@r:embed`
+    allows replacing image content without appending/removing shapes.
+    """
+    _, new_rid = picture.part.get_or_add_image_part(str(replacement))
+    blip = picture._element.blipFill.blip
+    if blip is None:
+        raise ValueError("picture shape is missing blip image content")
+
+    old_rid = blip.rEmbed
+    blip.rEmbed = new_rid
+
+    if old_rid and old_rid != new_rid and picture.part._rel_ref_count(old_rid) == 0:
+        picture.part.drop_rel(old_rid)
+
+
 def replace_screenshot_pictures(
     pptx_in: Path | str,
     images_by_section: Mapping[str, Path | str],
@@ -130,9 +149,7 @@ def replace_screenshot_pictures(
         pictures = _picture_shapes(slide)
         replacement = normalized_targets[matched_target]
         for picture in list(pictures):
-            left, top, width, height = picture.left, picture.top, picture.width, picture.height
-            slide.shapes.add_picture(str(replacement), left, top, width=width, height=height)
-            picture._element.getparent().remove(picture._element)
+            _swap_picture_image_part(picture, replacement)
 
         if len(_picture_shapes(slide)) != len(pictures):
             raise ValueError(
