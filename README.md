@@ -181,6 +181,10 @@ pytest --cov
 ruff format src/ tests/
 ```
 
+## Testing
+
+Autopilot smoke tests are enabled to continuously verify keepalive automation on minimal, safe tasks.
+
 ## Troubleshooting
 
 ### Keepalive Not Triggering
