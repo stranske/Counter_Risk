@@ -444,10 +444,7 @@ def _refresh_ppt_links(pptx_path: Path) -> PptProcessingResult:
         return PptProcessingResult(status=PptProcessingStatus.SUCCESS)
     except Exception as exc:
         LOGGER.exception("ppt_link_refresh_failed file=%s", pptx_path)
-        return PptProcessingResult(
-            status=PptProcessingStatus.FAILED,
-            error_detail=str(exc),
-        )
+        raise RuntimeError(f"PPT link refresh failed for '{pptx_path}': {exc}") from exc
     finally:
         if presentation is not None:
             presentation.Close()
