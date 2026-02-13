@@ -91,7 +91,8 @@ def _swap_picture_image_part(picture: BaseShape, replacement: Path) -> None:
     allows replacing image content without appending/removing shapes.
     """
     _, new_rid = picture.part.get_or_add_image_part(str(replacement))
-    blip = picture._element.blipFill.blip
+    blip_fill = getattr(picture._element, "blipFill", None)
+    blip = getattr(blip_fill, "blip", None)
     if blip is None:
         raise ValueError("picture shape is missing blip image content")
 
