@@ -56,7 +56,9 @@ def _make_workflow_pptx(path: Path, base_image: Path) -> None:
     prs.save(str(path))
 
 
-def _slide_picture_state(slide: object) -> tuple[int, tuple[tuple[str, tuple[int, int, int, int]], ...]]:
+def _slide_picture_state(
+    slide: object,
+) -> tuple[int, tuple[tuple[str, tuple[int, int, int, int]], ...]]:
     pictures = [shape for shape in slide.shapes if shape.shape_type == 13]
     details = tuple(
         (
