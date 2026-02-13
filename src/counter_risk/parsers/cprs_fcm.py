@@ -193,7 +193,9 @@ def _locate_totals_section(rows: dict[int, dict[int, str | None]]) -> tuple[int,
     return start_row, max(start_row - 1, end_row)
 
 
-def _locate_futures_detail_section(rows: dict[int, dict[int, str | None]]) -> tuple[int, int] | None:
+def _locate_futures_detail_section(
+    rows: dict[int, dict[int, str | None]],
+) -> tuple[int, int] | None:
     marker_row: int | None = None
     for row_number in sorted(rows):
         row_text = _normalize_text(rows[row_number].get(3)).lower()
@@ -262,7 +264,9 @@ def _read_fcm_sheet(path: Path) -> tuple[str, dict[int, dict[int, str | None]]]:
         if selected_target is None:
             raise ValueError("Unable to locate CPRS-FCM worksheet")
 
-        sheet_path = f"xl/{selected_target}" if not selected_target.startswith("/") else selected_target[1:]
+        sheet_path = (
+            f"xl/{selected_target}" if not selected_target.startswith("/") else selected_target[1:]
+        )
         shared_strings = _load_shared_strings(workbook_zip)
         sheet_xml = ET.fromstring(workbook_zip.read(sheet_path))
         rows = _read_sheet_rows(sheet_xml, shared_strings)
