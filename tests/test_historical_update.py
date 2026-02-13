@@ -60,6 +60,20 @@ def test_find_header_row_scans_through_row_twelve_even_when_sheet_max_row_is_low
     assert header_row == 12
 
 
+def test_append_to_sheet_raises_date_monotonicity_error_on_equal_append_date() -> None:
+    sheet_name = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
+    sheet = _build_sheet(sheet_name, historical_update.SERIES_BY_SHEET[sheet_name])
+    workbook = _FakeWorkbook({sheet_name: sheet})
+
+    with pytest.raises(historical_update.DateMonotonicityError, match="must be newer"):
+        historical_update._append_to_sheet(
+            workbook=workbook,
+            sheet_name=sheet_name,
+            rollup_data={"Total": 1.0},
+            resolved_date=date(2025, 12, 31),
+        )
+
+
 class _FakeCell:
     def __init__(self, value: Any = None) -> None:
         self.value = value
