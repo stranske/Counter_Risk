@@ -51,6 +51,7 @@ SERIES_BY_SHEET: dict[str, tuple[str, ...]] = {
 }
 
 DATE_HEADER_CANDIDATES: tuple[str, ...] = ("date", "as of date", "as-of date")
+HEADER_SCAN_ROWS = 12
 
 
 class HistoricalUpdateError(ValueError):
@@ -99,7 +100,7 @@ def _normalize_header(value: Any) -> str:
 def _find_header_row(
     worksheet: Any,
     *,
-    max_scan_rows: int = 12,
+    max_scan_rows: int = HEADER_SCAN_ROWS,
     max_scan_cols: int = 40,
 ) -> int:
     upper_row = max_scan_rows
@@ -116,18 +117,78 @@ def _find_header_row(
     )
 
 
+def _extract_column_header_values(
+    worksheet: Any,
+    *,
+    column_index: int,
+    max_scan_rows: int = HEADER_SCAN_ROWS,
+) -> tuple[str, ...]:
+    values: list[str] = []
+    for row_index in range(1, max_scan_rows + 1):
+        raw_value = _get_cell_value_no_create(
+            worksheet,
+            row=row_index,
+            column=column_index,
+        )
+        if not isinstance(raw_value, str):
+            continue
+        normalized = _normalize_header(raw_value)
+        if normalized:
+            values.append(normalized)
+    return tuple(values)
+
+
+def _get_cell_value_no_create(worksheet: Any, *, row: int, column: int) -> Any:
+    existing_cells = getattr(worksheet, "_cells", None)
+    if isinstance(existing_cells, dict):
+        existing = existing_cells.get((row, column))
+        return None if existing is None else existing.value
+    if hasattr(worksheet, "iter_rows"):
+        for row_values in worksheet.iter_rows(
+            min_row=row,
+            max_row=row,
+            min_col=column,
+            max_col=column,
+            values_only=True,
+        ):
+            return row_values[0]
+        return None
+    return worksheet.cell(row=row, column=column).value
+
+
+def _build_consolidated_header_map(
+    worksheet: Any,
+    *,
+    max_scan_rows: int = HEADER_SCAN_ROWS,
+    max_scan_cols: int = 256,
+) -> dict[int, str]:
+    upper_col = min(int(getattr(worksheet, "max_column", max_scan_cols)), max_scan_cols)
+    header_map: dict[int, str] = {}
+    for col_index in range(1, upper_col + 1):
+        stacked_values = _extract_column_header_values(
+            worksheet,
+            column_index=col_index,
+            max_scan_rows=max_scan_rows,
+        )
+        if not stacked_values:
+            continue
+        header_map[col_index] = " ".join(stacked_values)
+    return header_map
+
+
 def _build_header_map(
     worksheet: Any,
     *,
     header_row: int,
     max_scan_cols: int = 256,
 ) -> dict[str, int]:
-    upper_col = min(int(getattr(worksheet, "max_column", max_scan_cols)), max_scan_cols)
     header_map: dict[str, int] = {}
-    for col_index in range(1, upper_col + 1):
-        normalized = _normalize_header(worksheet.cell(row=header_row, column=col_index).value)
-        if normalized:
-            header_map[normalized] = col_index
+    for col_index, normalized in _build_consolidated_header_map(
+        worksheet,
+        max_scan_rows=max(header_row, HEADER_SCAN_ROWS),
+        max_scan_cols=max_scan_cols,
+    ).items():
+        header_map[normalized] = col_index
     return header_map
 
 
@@ -158,6 +219,21 @@ def _get_date_column(header_map: Mapping[str, int]) -> int:
         if column is not None:
             return column
     raise WorkbookValidationError("Worksheet header row is missing a date column")
+
+
+def _get_date_column_from_consolidated(header_map: Mapping[int, str]) -> int:
+    for column_index, normalized in header_map.items():
+        if normalized in DATE_HEADER_CANDIDATES:
+            return column_index
+    raise WorkbookValidationError("Worksheet header rows are missing a date column")
+
+
+def _get_numeric_series_columns(header_map: Mapping[int, str], *, date_column: int) -> dict[int, str]:
+    return {
+        column_index: normalized
+        for column_index, normalized in header_map.items()
+        if column_index != date_column
+    }
 
 
 def _coerce_cell_date(value: Any) -> date | None:
@@ -201,12 +277,18 @@ def _append_to_sheet(
 
     worksheet = workbook[sheet_name]
     header_row = _find_header_row(worksheet)
-    header_map = _build_header_map(worksheet, header_row=header_row)
-    date_column = _get_date_column(header_map)
+    consolidated_headers = _build_consolidated_header_map(worksheet, max_scan_rows=HEADER_SCAN_ROWS)
+    date_column = _get_date_column_from_consolidated(consolidated_headers)
+    numeric_series_columns = _get_numeric_series_columns(
+        consolidated_headers,
+        date_column=date_column,
+    )
+    if not numeric_series_columns:
+        LOGGER.warning("No numeric series columns detected in %s", sheet_name)
 
     last_row = _find_last_dated_row(worksheet, header_row=header_row, date_column=date_column)
     if last_row is None:
-        target_row = header_row + 1
+        target_row = HEADER_SCAN_ROWS + 1
     else:
         last_date = _coerce_cell_date(worksheet.cell(row=last_row, column=date_column).value)
         if last_date is None:
@@ -223,19 +305,9 @@ def _append_to_sheet(
     worksheet.cell(row=target_row, column=date_column).value = resolved_date
 
     normalized_rollups = _coerce_rollup_data(rollup_data)
-    for series_name in SERIES_BY_SHEET[sheet_name]:
-        normalized_series = _normalize_header(series_name)
-        series_column = header_map.get(normalized_series)
-        if series_column is None:
-            LOGGER.warning(
-                "Missing expected series header in %s: %s",
-                sheet_name,
-                series_name,
-            )
-            continue
+    for series_column, normalized_series in numeric_series_columns.items():
         worksheet.cell(row=target_row, column=series_column).value = normalized_rollups.get(
-            normalized_series,
-            0.0,
+            normalized_series, 0.0
         )
 
 
