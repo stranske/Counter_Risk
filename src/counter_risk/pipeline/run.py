@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import platform
 import shutil
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
+from counter_risk.pipeline.manifest import ManifestBuilder
 
 LOGGER = logging.getLogger(__name__)
 
@@ -28,6 +29,17 @@ _REQUIRED_FUTURES_COLUMNS: tuple[str, ...] = (
     "clearing_house",
     "notional",
 )
+_PREFERRED_HISTORICAL_SHEET_BY_VARIANT: dict[str, str] = {
+    "all_programs": "Total",
+    "ex_trend": "Total",
+    "trend": "Total",
+}
+_DATE_HEADER_CANDIDATES: tuple[str, ...] = ("date", "as of date", "as-of date")
+_REQUIRED_HISTORICAL_APPEND_HEADERS: tuple[str, ...] = (
+    "date",
+    "value series 1",
+    "value series 2",
+)
 
 
 @dataclass(frozen=True)
@@ -37,60 +49,20 @@ class _VariantInputs:
     historical_path: Path
 
 
-class ManifestBuilder:
-    """Build and write run manifests."""
+class PptProcessingStatus(StrEnum):
+    """Machine-readable statuses for PPT processing."""
 
-    def __init__(self, *, run_dir: Path, config: WorkflowConfig) -> None:
-        self._run_dir = run_dir
-        self._config = config
+    SUCCESS = "success"
+    SKIPPED = "skipped"
+    FAILED = "failed"
 
-    def build(
-        self,
-        *,
-        input_hashes: dict[str, str],
-        output_paths: list[Path],
-        top_exposures: dict[str, list[dict[str, Any]]],
-        top_changes_per_variant: dict[str, list[dict[str, Any]]],
-        warnings: list[str],
-    ) -> dict[str, Any]:
-        config_snapshot = self._serialize_config_snapshot(self._config)
-        return {
-            "as_of_date": str(self._resolve_as_of_date(self._config)),
-            "run_date": datetime.now(tz=UTC).isoformat(),
-            "run_dir": str(self._run_dir),
-            "config_snapshot": config_snapshot,
-            "input_hashes": input_hashes,
-            "output_paths": [str(path) for path in output_paths],
-            "top_exposures": top_exposures,
-            "top_changes_per_variant": top_changes_per_variant,
-            "warnings": warnings,
-        }
 
-    def write(self, manifest: dict[str, Any]) -> Path:
-        path = self._run_dir / "manifest.json"
-        try:
-            path.write_text(
-                json.dumps(manifest, sort_keys=True, indent=2) + "\n",
-                encoding="utf-8",
-            )
-        except OSError as exc:
-            raise RuntimeError(f"Failed to write manifest file: {path}") from exc
-        return path
+@dataclass(frozen=True)
+class PptProcessingResult:
+    """Result envelope for PPT processing and link refresh."""
 
-    def _serialize_config_snapshot(self, config: WorkflowConfig) -> dict[str, Any]:
-        raw = config.model_dump(mode="python")
-        snapshot: dict[str, Any] = {}
-        for key, value in raw.items():
-            if isinstance(value, Path):
-                snapshot[key] = str(value)
-            elif isinstance(value, date):
-                snapshot[key] = value.isoformat()
-            else:
-                snapshot[key] = value
-        return snapshot
-
-    def _resolve_as_of_date(self, config: WorkflowConfig) -> date:
-        return config.as_of_date or datetime.now(tz=UTC).date()
+    status: PptProcessingStatus
+    error_detail: str | None = None
 
 
 def run_pipeline(config_path: str | Path) -> Path:
@@ -117,7 +89,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during input validation stage") from exc
 
     as_of_date = config.as_of_date or datetime.now(tz=UTC).date()
-    run_dir = config.output_root / as_of_date.isoformat()
+    run_dir = _resolve_repo_root() / "runs" / as_of_date.isoformat()
     try:
         run_dir.mkdir(parents=True, exist_ok=True)
     except Exception as exc:
@@ -151,7 +123,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during historical update stage") from exc
 
     try:
-        output_paths = _write_outputs(
+        output_result = _write_outputs(
             run_dir=run_dir,
             config=config,
             warnings=warnings,
@@ -159,19 +131,27 @@ def run_pipeline(config_path: str | Path) -> Path:
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=write_outputs run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during output write stage") from exc
+    if isinstance(output_result, tuple):
+        output_paths, ppt_result = output_result
+    else:
+        output_paths = output_result
+        ppt_result = PptProcessingResult(status=PptProcessingStatus.SUCCESS)
     output_paths = historical_output_paths + output_paths
 
     try:
         input_hashes = {name: _sha256_file(path) for name, path in input_paths.items()}
-        manifest_builder = ManifestBuilder(run_dir=run_dir, config=config)
+        manifest_builder = ManifestBuilder(config=config)
+        output_paths_for_manifest = [path.relative_to(run_dir) for path in output_paths]
         manifest = manifest_builder.build(
+            run_dir=run_dir,
             input_hashes=input_hashes,
-            output_paths=output_paths,
+            output_paths=output_paths_for_manifest,
             top_exposures=top_exposures,
             top_changes_per_variant=top_changes_per_variant,
             warnings=warnings,
+            ppt_status=ppt_result.status.value,
         )
-        manifest_path = manifest_builder.write(manifest)
+        manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=manifest_write run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during manifest generation stage") from exc
@@ -179,6 +159,12 @@ def run_pipeline(config_path: str | Path) -> Path:
     LOGGER.info("pipeline_complete run_dir=%s manifest=%s", run_dir, manifest_path)
 
     return run_dir
+
+
+def _resolve_repo_root() -> Path:
+    """Resolve the repository root for deterministic run output layout."""
+
+    return Path(__file__).resolve().parents[3]
 
 
 def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
@@ -372,7 +358,9 @@ def _compute_metrics(
     return top_exposures, top_changes_per_variant
 
 
-def _write_outputs(*, run_dir: Path, config: WorkflowConfig, warnings: list[str]) -> list[Path]:
+def _write_outputs(
+    *, run_dir: Path, config: WorkflowConfig, warnings: list[str]
+) -> tuple[list[Path], PptProcessingResult]:
     LOGGER.info("write_outputs_start run_dir=%s", run_dir)
 
     variant_inputs = [
@@ -406,25 +394,43 @@ def _write_outputs(*, run_dir: Path, config: WorkflowConfig, warnings: list[str]
     output_paths.append(target_ppt)
 
     warnings.append("PPT screenshots replacement not implemented; copied source deck unchanged")
-    if not _refresh_ppt_links(target_ppt):
+    refresh_result = _refresh_ppt_links(target_ppt)
+    if isinstance(refresh_result, bool):
+        refresh_result = PptProcessingResult(
+            status=PptProcessingStatus.SUCCESS if refresh_result else PptProcessingStatus.SKIPPED
+        )
+
+    if refresh_result.status == PptProcessingStatus.SKIPPED:
         warnings.append("PPT links not refreshed; COM refresh skipped")
+    elif refresh_result.status == PptProcessingStatus.FAILED:
+        warnings.append(
+            "PPT links refresh failed; COM refresh encountered an error"
+            if not refresh_result.error_detail
+            else f"PPT links refresh failed; {refresh_result.error_detail}"
+        )
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
-    return output_paths
+    return output_paths, refresh_result
 
 
-def _refresh_ppt_links(pptx_path: Path) -> bool:
+def _refresh_ppt_links(pptx_path: Path) -> PptProcessingResult:
     """Best-effort refresh of linked PowerPoint content via COM automation."""
 
     if platform.system().lower() != "windows":
         LOGGER.info("ppt_link_refresh_skipped file=%s reason=unsupported_platform", pptx_path)
-        return False
+        return PptProcessingResult(
+            status=PptProcessingStatus.SKIPPED,
+            error_detail="unsupported platform",
+        )
 
     try:
         import win32com.client  # type: ignore[import-untyped]
     except ImportError:
         LOGGER.info("ppt_link_refresh_skipped file=%s reason=win32com_unavailable", pptx_path)
-        return False
+        return PptProcessingResult(
+            status=PptProcessingStatus.SKIPPED,
+            error_detail="win32com unavailable",
+        )
 
     app = None
     presentation = None
@@ -435,10 +441,13 @@ def _refresh_ppt_links(pptx_path: Path) -> bool:
         presentation.UpdateLinks()
         presentation.Save()
         LOGGER.info("ppt_link_refresh_complete file=%s", pptx_path)
-        return True
-    except Exception:
+        return PptProcessingResult(status=PptProcessingStatus.SUCCESS)
+    except Exception as exc:
         LOGGER.exception("ppt_link_refresh_failed file=%s", pptx_path)
-        return False
+        return PptProcessingResult(
+            status=PptProcessingStatus.FAILED,
+            error_detail=str(exc),
+        )
     finally:
         if presentation is not None:
             presentation.Close()
@@ -513,7 +522,12 @@ def _merge_historical_workbook(
     workbook = None
     try:
         workbook = load_workbook(filename=workbook_path)
-        worksheet = workbook.active
+        preferred_sheet = _PREFERRED_HISTORICAL_SHEET_BY_VARIANT.get(variant)
+        worksheet = _select_historical_worksheet(
+            workbook=workbook,
+            preferred_sheet_name=preferred_sheet,
+        )
+        _validate_historical_headers(worksheet=worksheet)
         append_row = int(getattr(worksheet, "max_row", 0)) + 1
 
         total_notional = sum(float(record.get("Notional", 0.0) or 0.0) for record in totals_records)
@@ -543,6 +557,63 @@ def _merge_historical_workbook(
     finally:
         if workbook is not None:
             workbook.close()
+
+
+def _normalize_header(value: Any) -> str:
+    if value is None:
+        return ""
+    return " ".join(str(value).split()).casefold()
+
+
+def _select_historical_worksheet(*, workbook: Any, preferred_sheet_name: str | None) -> Any:
+    sheet_names = list(getattr(workbook, "sheetnames", []))
+    if not sheet_names:
+        raise ValueError("Historical workbook has no worksheets")
+
+    if preferred_sheet_name and preferred_sheet_name in sheet_names:
+        return workbook[preferred_sheet_name]
+
+    fallback_sheet_name = sorted(sheet_names, key=str.casefold)[0]
+    if preferred_sheet_name:
+        LOGGER.warning(
+            "historical_sheet_preferred_missing preferred=%s fallback=%s",
+            preferred_sheet_name,
+            fallback_sheet_name,
+        )
+    return workbook[fallback_sheet_name]
+
+
+def _validate_historical_headers(*, worksheet: Any) -> None:
+    worksheet_title = str(getattr(worksheet, "title", "<unknown>"))
+    header_row = _find_historical_header_row(worksheet=worksheet)
+    date_value = _normalize_header(worksheet.cell(row=header_row, column=1).value)
+    first_series_value = _normalize_header(worksheet.cell(row=header_row, column=2).value)
+    second_series_value = _normalize_header(worksheet.cell(row=header_row, column=3).value)
+
+    missing: list[str] = []
+    if date_value not in _DATE_HEADER_CANDIDATES:
+        missing.append(_REQUIRED_HISTORICAL_APPEND_HEADERS[0])
+    if not first_series_value:
+        missing.append(_REQUIRED_HISTORICAL_APPEND_HEADERS[1])
+    if not second_series_value:
+        missing.append(_REQUIRED_HISTORICAL_APPEND_HEADERS[2])
+
+    if missing:
+        raise ValueError(
+            "Historical workbook sheet "
+            f"{worksheet_title!r} is missing required columns for append: {', '.join(missing)}"
+        )
+
+
+def _find_historical_header_row(*, worksheet: Any, max_scan_rows: int = 25) -> int:
+    max_row = int(getattr(worksheet, "max_row", max_scan_rows))
+    for row in range(1, min(max_row, max_scan_rows) + 1):
+        if _normalize_header(worksheet.cell(row=row, column=1).value) in _DATE_HEADER_CANDIDATES:
+            return row
+    raise ValueError(
+        "Historical workbook sheet "
+        f"{getattr(worksheet, 'title', '<unknown>')!r} is missing a date header in column A"
+    )
 
 
 def _sha256_file(path: Path) -> str:
