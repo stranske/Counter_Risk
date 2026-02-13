@@ -6,6 +6,7 @@ import hashlib
 import json
 import sys
 import types
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -272,6 +273,68 @@ def test_run_pipeline_wraps_compute_errors(
 
     assert isinstance(exc_info.value.__cause__, ValueError)
     assert "bad compute inputs" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_historical_update_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(
+        *,
+        run_dir: Path,
+        config: Any,
+        parsed_by_variant: dict[str, dict[str, Any]],
+        as_of_date: date,
+        warnings: list[str],
+    ) -> list[Path]:
+        _ = (run_dir, config, parsed_by_variant, as_of_date, warnings)
+        raise OSError("historical workbook write failed")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._update_historical_outputs", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during historical update stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, OSError)
+    assert "historical workbook write failed" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_passes_as_of_date_and_parsed_inputs_to_historical_update(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    calls: list[dict[str, Any]] = []
+
+    def _capture(
+        *,
+        run_dir: Path,
+        config: Any,
+        parsed_by_variant: dict[str, dict[str, Any]],
+        as_of_date: date,
+        warnings: list[str],
+    ) -> list[Path]:
+        _ = config
+        calls.append(
+            {
+                "run_dir": run_dir,
+                "variants": sorted(parsed_by_variant.keys()),
+                "as_of_date": as_of_date,
+                "warnings": warnings,
+            }
+        )
+        return []
+
+    monkeypatch.setattr("counter_risk.pipeline.run._update_historical_outputs", _capture)
+
+    run_dir = run_pipeline(config_path)
+
+    assert run_dir == tmp_path / "runs" / "2025-12-31"
+    assert len(calls) == 1
+    assert calls[0]["as_of_date"] == date(2025, 12, 31)
+    assert calls[0]["variants"] == ["all_programs", "ex_trend", "trend"]
 
 
 def test_run_pipeline_wraps_config_validation_errors_for_output_root_file(

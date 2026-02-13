@@ -130,6 +130,18 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during compute stage") from exc
 
     try:
+        historical_output_paths = _update_historical_outputs(
+            run_dir=run_dir,
+            config=config,
+            parsed_by_variant=parsed_by_variant,
+            as_of_date=as_of_date,
+            warnings=warnings,
+        )
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=historical_update run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during historical update stage") from exc
+
+    try:
         output_paths = _write_outputs(
             run_dir=run_dir,
             config=config,
@@ -138,6 +150,7 @@ def run_pipeline(config_path: str | Path) -> Path:
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=write_outputs run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during output write stage") from exc
+    output_paths = historical_output_paths + output_paths
 
     input_hashes = {name: _sha256_file(path) for name, path in input_paths.items()}
     manifest_builder = ManifestBuilder(run_dir=run_dir, config=config)
@@ -368,11 +381,6 @@ def _write_outputs(*, run_dir: Path, config: WorkflowConfig, warnings: list[str]
 
     output_paths: list[Path] = []
     for variant_input in variant_inputs:
-        source_hist = variant_input.historical_path
-        target_hist = run_dir / source_hist.name
-        shutil.copy2(source_hist, target_hist)
-        output_paths.append(target_hist)
-
         source_mosers = variant_input.workbook_path
         target_monthly_book = run_dir / f"{variant_input.name}-mosers-input.xlsx"
         shutil.copy2(source_mosers, target_monthly_book)
@@ -388,6 +396,105 @@ def _write_outputs(*, run_dir: Path, config: WorkflowConfig, warnings: list[str]
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
     return output_paths
+
+
+def _update_historical_outputs(
+    *,
+    run_dir: Path,
+    config: WorkflowConfig,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    as_of_date: date,
+    warnings: list[str],
+) -> list[Path]:
+    LOGGER.info("historical_update_start run_dir=%s as_of_date=%s", run_dir, as_of_date.isoformat())
+    variant_inputs = [
+        _VariantInputs(
+            name="all_programs",
+            workbook_path=config.mosers_all_programs_xlsx,
+            historical_path=config.hist_all_programs_3yr_xlsx,
+        ),
+        _VariantInputs(
+            name="ex_trend",
+            workbook_path=config.mosers_ex_trend_xlsx,
+            historical_path=config.hist_ex_llc_3yr_xlsx,
+        ),
+        _VariantInputs(
+            name="trend",
+            workbook_path=config.mosers_trend_xlsx,
+            historical_path=config.hist_llc_3yr_xlsx,
+        ),
+    ]
+
+    output_paths: list[Path] = []
+    for variant_input in variant_inputs:
+        source_hist = variant_input.historical_path
+        target_hist = run_dir / source_hist.name
+        shutil.copy2(source_hist, target_hist)
+        totals_records = _records(parsed_by_variant[variant_input.name]["totals"])
+        _merge_historical_workbook(
+            workbook_path=target_hist,
+            variant=variant_input.name,
+            as_of_date=as_of_date,
+            totals_records=totals_records,
+            warnings=warnings,
+        )
+        output_paths.append(target_hist)
+
+    LOGGER.info("historical_update_complete workbook_count=%s", len(output_paths))
+    return output_paths
+
+
+def _merge_historical_workbook(
+    *,
+    workbook_path: Path,
+    variant: str,
+    as_of_date: date,
+    totals_records: list[dict[str, Any]],
+    warnings: list[str],
+) -> None:
+    try:
+        from openpyxl import load_workbook  # type: ignore[import-untyped]
+    except ImportError:
+        message = (
+            f"Historical workbook update skipped for variant '{variant}'; openpyxl unavailable"
+        )
+        LOGGER.warning("historical_update_skipped variant=%s reason=openpyxl_unavailable", variant)
+        warnings.append(message)
+        return
+
+    workbook = None
+    try:
+        workbook = load_workbook(filename=workbook_path)
+        worksheet = workbook.active
+        append_row = int(getattr(worksheet, "max_row", 0)) + 1
+
+        total_notional = sum(float(record.get("Notional", 0.0) or 0.0) for record in totals_records)
+        counterparties = len(
+            {
+                str(record.get("counterparty", "")).strip()
+                for record in totals_records
+                if str(record.get("counterparty", "")).strip()
+            }
+        )
+
+        worksheet.cell(row=append_row, column=1).value = as_of_date.isoformat()
+        worksheet.cell(row=append_row, column=2).value = total_notional
+        worksheet.cell(row=append_row, column=3).value = counterparties
+        workbook.save(workbook_path)
+        LOGGER.info(
+            "historical_update_variant_complete variant=%s row=%s notional=%s counterparties=%s",
+            variant,
+            append_row,
+            total_notional,
+            counterparties,
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            f"Failed to update historical workbook for variant '{variant}': {workbook_path}"
+        ) from exc
+    finally:
+        if workbook is not None:
+            workbook.close()
 
 
 def _sha256_file(path: Path) -> str:
