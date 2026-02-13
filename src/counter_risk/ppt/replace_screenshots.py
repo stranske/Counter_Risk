@@ -116,11 +116,11 @@ def _collect_slide_picture_targets(archive: ZipFile) -> dict[int, list[str]]:
         slide_number = int(suffix)
 
         slide_root = ET.fromstring(archive.read(name))
-        embeds = [
-            blip.attrib.get(EMBED_QNAME)
-            for blip in slide_root.findall(f".//{BLIP_QNAME}")
-            if blip.attrib.get(EMBED_QNAME)
-        ]
+        embeds: list[str] = []
+        for blip in slide_root.findall(f".//{BLIP_QNAME}"):
+            embed = blip.attrib.get(EMBED_QNAME)
+            if embed:
+                embeds.append(embed)
 
         if not embeds:
             targets[slide_number] = []
