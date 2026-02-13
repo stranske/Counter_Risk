@@ -70,6 +70,17 @@ def _iter_linked_shapes(presentation: Any) -> list[Any]:
     return linked_shapes
 
 
+def _update_shape_links(shape: Any) -> None:
+    """Attempt link refresh for both chart links and embedded OLE objects."""
+
+    with suppress(Exception):
+        shape.LinkFormat.Update()
+
+    # Some linked workbook objects are surfaced via OLEFormat.
+    with suppress(Exception):
+        shape.OLEFormat.Object.Update()
+
+
 def _write_manual_refresh_instructions(
     *,
     run_folder: Path,
@@ -231,8 +242,7 @@ def refresh_links_and_save(
             presentation.UpdateLinks()
 
         for shape in _iter_linked_shapes(presentation):
-            with suppress(Exception):
-                shape.LinkFormat.Update()
+            _update_shape_links(shape)
 
         presentation.SaveCopyAs(str(output_path))
     finally:
