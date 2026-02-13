@@ -1,0 +1,580 @@
+version: 1
+issue: 15
+base: main
+branch: codex/issue-15
+tasks:
+  - id: task-01
+    title: Create `src/counter_risk/parsers/cprs_fcm.py`
+    status: done
+    started_at: '2026-02-13T05:44:46Z'
+    finished_at: '2026-02-13T05:44:59Z'
+    commit: ceeb3ca284d92abb955f58a3386a8d69f4fc77d3
+    notes: []
+  - id: task-02
+    title: 'Define scope for: Create the file `src/counter_risk/parsers/cprs_fcm.py`
+      with module docstring explaining its purpose (verify: docs updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement focused slice for: Create the file `src/counter_risk/parsers/cprs_fcm.py`
+      with module docstring explaining its purpose (verify: docs updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Validate focused slice for: Create the file `src/counter_risk/parsers/cprs_fcm.py`
+      with module docstring explaining its purpose (verify: docs updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Add necessary imports including pandas (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Add necessary imports including any required internal modules (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Define module-level constants for expected column names (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'sheet identifiers (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Implement `parse_fcm_totals(path) -> pandas.DataFrame` in `src/counter_risk/parsers/cprs_fcm.py`
+      to parse the totals-by-counterparty section (may return empty for Trend)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Implement file reading (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'sheet identification logic for the CPRS-FCM sheet (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Define scope for: Create helper function to locate the totals-by-counterparty
+      section boundaries within the sheet (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Implement focused slice for: Create helper function to locate the totals-by-counterparty
+      section boundaries within the sheet (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Validate focused slice for: Create helper function to locate the totals-by-counterparty
+      section boundaries within the sheet (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Implement data extraction logic to parse counterparty rows (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'their associated values (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Construct (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'return a pandas DataFrame with the standardized column schema (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Add logic to detect Trend variant (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'return empty DataFrame when appropriate (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Implement `parse_futures_detail(path) -> pandas.DataFrame` in `src/counter_risk/parsers/cprs_fcm.py`
+      to parse the futures detail section (may return empty for Ex Trend)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Define scope for: Create helper function to locate the futures detail
+      section boundaries within the sheet (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Implement focused slice for: Create helper function to locate the futures
+      detail section boundaries within the sheet (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Validate focused slice for: Create helper function to locate the futures
+      detail section boundaries within the sheet (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Define scope for: Implement data extraction logic to parse futures detail
+      rows with all required fields (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Implement focused slice for: Implement data extraction logic to parse
+      futures detail rows with all required fields (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Validate focused slice for: Implement data extraction logic to parse futures
+      detail rows with all required fields (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Construct and return a pandas DataFrame with columns account (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Construct and return a pandas DataFrame with description (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Construct and return a pandas DataFrame with class (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Construct and return a pandas DataFrame with fcm (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Construct and return a pandas DataFrame with clearing_house (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Construct and return a pandas DataFrame with notional (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Add logic to detect Ex Trend variant (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Update `parse_fcm_totals` output to standardize columns: `counterparty`,
+      `TIPS`, `Treasury`, `Equity`, `Commodity`, `Currency`, `Notional`, `NotionalChange`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Update `parse_futures_detail` output to standardize columns: `account`,
+      `description`, `class`, `fcm`, `clearing_house`, `notional`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: Write tests to confirm which sections exist per variant (All Programs /
+      Ex Trend / Trend) and that parsing completes successfully
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Define scope for: Write test for parse_fcm_totals with All Programs input
+      verifying non-empty DataFrame with correct columns (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Implement focused slice for: Write test for parse_fcm_totals with All
+      Programs input verifying non-empty DataFrame with correct columns (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'Validate focused slice for: Write test for parse_fcm_totals with All Programs
+      input verifying non-empty DataFrame with correct columns (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Define scope for: Write test for parse_fcm_totals with Ex Trend input
+      verifying non-empty DataFrame with correct columns (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Implement focused slice for: Write test for parse_fcm_totals with Ex Trend
+      input verifying non-empty DataFrame with correct columns (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'Validate focused slice for: Write test for parse_fcm_totals with Ex Trend
+      input verifying non-empty DataFrame with correct columns (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Define scope for: Write test for parse_fcm_totals with Trend input verifying
+      empty or minimal DataFrame (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Implement focused slice for: Write test for parse_fcm_totals with Trend
+      input verifying empty or minimal DataFrame (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Validate focused slice for: Write test for parse_fcm_totals with Trend
+      input verifying empty or minimal DataFrame (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Define scope for: Write test for parse_futures_detail with All Programs
+      input verifying non-empty DataFrame with correct columns (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'Implement focused slice for: Write test for parse_futures_detail with
+      All Programs input verifying non-empty DataFrame with correct columns (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: 'Validate focused slice for: Write test for parse_futures_detail with All
+      Programs input verifying non-empty DataFrame with correct columns (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: 'Define scope for: Write test for parse_futures_detail with Ex Trend input
+      verifying empty DataFrame (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: 'Implement focused slice for: Write test for parse_futures_detail with
+      Ex Trend input verifying empty DataFrame (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: 'Validate focused slice for: Write test for parse_futures_detail with Ex
+      Trend input verifying empty DataFrame (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: 'Define scope for: Write test for parse_futures_detail with Trend input
+      verifying non-empty DataFrame with correct columns (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: 'Implement focused slice for: Write test for parse_futures_detail with
+      Trend input verifying non-empty DataFrame with correct columns (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: 'Validate focused slice for: Write test for parse_futures_detail with Trend
+      input verifying non-empty DataFrame with correct columns (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: 'Define scope for: Create test fixtures or sample data files for each variant
+      if not already present (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: 'Implement focused slice for: Create test fixtures or sample data files
+      for each variant if not already present (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: 'Validate focused slice for: Create test fixtures or sample data files
+      for each variant if not already present (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: For All Programs input, `parse_fcm_totals(path)` returns a DataFrame with
+      columns `counterparty`, `TIPS`, `Treasury`, `Equity`, `Commodity`, `Currency`,
+      `Notional`, `NotionalChange` and `parse_futures_detail(path)` returns a DataFrame
+      with columns `account`, `description`, `class`, `fcm`, `clearing_house`, `notional`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: For Ex Trend input, `parse_fcm_totals(path)` returns a non-empty DataFrame
+      and `parse_futures_detail(path)` returns an empty DataFrame
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: For Trend input, `parse_futures_detail(path)` returns a non-empty DataFrame
+      and `parse_fcm_totals(path)` returns an empty or minimal DataFrame
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: Test suite passes for the new parser and variants
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: Add `src/counter_risk/parsers/cprs_fcm.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: Implement `parse_fcm_totals(path) -> DataFrame` (may be empty for Trend)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: Implement `parse_futures_detail(path) -> DataFrame` (may be empty for Ex
+      Trend)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: 'Standardize output columns:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-67
+    title: 'Totals: counterparty, TIPS, Treasury, Equity, Commodity, Currency, Notional,
+      NotionalChange'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-68
+    title: 'Futures detail: account, description, class, fcm, clearing_house, notional'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-69
+    title: Add tests that confirm which sections exist per variant and parse successfully
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-70
+    title: 'All Programs: totals + futures detail parse'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-71
+    title: 'Ex Trend: totals parse, futures detail empty (expected)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-72
+    title: 'Trend: futures detail parses, totals empty or minimal (expected)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
