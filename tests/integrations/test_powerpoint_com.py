@@ -33,7 +33,7 @@ def test_is_powerpoint_com_available_true_when_dispatch_works(
         def __init__(self) -> None:
             self.quit_called = False
 
-        def Quit(self) -> None:
+        def Quit(self) -> None:  # noqa: N802
             self.quit_called = True
 
     app = FakeApp()

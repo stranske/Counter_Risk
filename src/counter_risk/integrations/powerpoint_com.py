@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+from contextlib import suppress
 from typing import Any
 
 
@@ -70,11 +71,9 @@ def is_powerpoint_com_available() -> bool:
     except PowerPointComError:
         return False
 
-    try:
+    # COM servers can already be in the process of teardown; availability check still passed.
+    with suppress(Exception):
         app.Quit()
-    except Exception:
-        # COM servers can already be in the process of teardown; availability check still passed.
-        pass
 
     return True
 
