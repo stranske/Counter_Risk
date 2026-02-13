@@ -561,7 +561,9 @@ def test_merge_historical_workbook_prefers_configured_total_sheet(
     target.set_value(2, 1, "2025-12-31")
 
     workbook = _FakeWorkbook({"A Decoy": decoy, "Total": target})
-    monkeypatch.setitem(sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook))
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook)
+    )
 
     run_module._merge_historical_workbook(
         workbook_path=workbook_path,
@@ -596,13 +598,18 @@ def test_merge_historical_workbook_uses_deterministic_fallback_sheet_when_prefer
     zulu.set_value(2, 1, "2025-12-31")
 
     workbook = _FakeWorkbook({"Zulu": zulu, "Alpha": alpha})
-    monkeypatch.setitem(sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook))
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook)
+    )
 
     run_module._merge_historical_workbook(
         workbook_path=workbook_path,
         variant="unknown_variant",
         as_of_date=date(2026, 2, 13),
-        totals_records=[{"Notional": 20.0, "counterparty": "A"}, {"Notional": 5.0, "counterparty": "B"}],
+        totals_records=[
+            {"Notional": 20.0, "counterparty": "A"},
+            {"Notional": 5.0, "counterparty": "B"},
+        ],
         warnings=[],
     )
 
@@ -625,7 +632,9 @@ def test_merge_historical_workbook_fails_fast_when_required_headers_missing(
     broken.set_value(2, 1, "2025-12-31")
 
     workbook = _FakeWorkbook({"Total": broken})
-    monkeypatch.setitem(sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook))
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook)
+    )
 
     with pytest.raises(RuntimeError, match="Failed to update historical workbook") as exc_info:
         run_module._merge_historical_workbook(
