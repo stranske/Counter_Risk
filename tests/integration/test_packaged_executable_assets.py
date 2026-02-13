@@ -11,7 +11,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-
 _REQUIRED_FIXTURE_KEYS = (
     "mosers_all_programs_xlsx",
     "mosers_ex_trend_xlsx",
@@ -66,7 +65,7 @@ def _seed_bundle_fixture_inputs(bundle_dir: Path, config: dict[str, object]) -> 
             pytest.fail(f"Expected string path for config key '{key}', got: {value!r}")
         target = (bundle_dir / value).resolve()
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(f"fixture-bytes-for-{key}".encode("utf-8"))
+        target.write_bytes(f"fixture-bytes-for-{key}".encode())
 
 
 def _packaged_executable_path(bundle_dir: Path) -> Path:
