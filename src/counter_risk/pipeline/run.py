@@ -248,7 +248,9 @@ def _parse_inputs(input_paths: dict[str, Path]) -> dict[str, dict[str, Any]]:
 
 
 def _validate_parsed_inputs(parsed_by_variant: dict[str, dict[str, Any]]) -> None:
-    missing_variants = [variant for variant in _EXPECTED_VARIANTS if variant not in parsed_by_variant]
+    missing_variants = [
+        variant for variant in _EXPECTED_VARIANTS if variant not in parsed_by_variant
+    ]
     if missing_variants:
         raise ValueError(f"Missing parsed variants: {', '.join(missing_variants)}")
 
@@ -257,7 +259,9 @@ def _validate_parsed_inputs(parsed_by_variant: dict[str, dict[str, Any]]) -> Non
         if not isinstance(parsed_sections, Mapping):
             raise ValueError(f"Parsed payload for variant '{variant}' must be a mapping")
 
-        missing_sections = [section for section in ("totals", "futures") if section not in parsed_sections]
+        missing_sections = [
+            section for section in ("totals", "futures") if section not in parsed_sections
+        ]
         if missing_sections:
             raise ValueError(
                 f"Parsed payload for variant '{variant}' is missing sections: "
