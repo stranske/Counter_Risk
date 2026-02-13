@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import struct
 import zlib
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
@@ -23,18 +24,30 @@ _CHAR_WIDTH = 5 * _SCALE
 _CHAR_HEIGHT = 7 * _SCALE
 _CHAR_GAP = 1 * _SCALE
 
-_TABLE_COLUMNS: tuple[tuple[str, str, int], ...] = (
-    ("Counterparty", "Counterparty", 28),
-    ("Cash", "Cash", 11),
-    ("TIPS", "TIPS", 10),
-    ("Treasury", "Treasury", 12),
-    ("Equity", "Equity", 10),
-    ("Commodity", "Commodity", 12),
-    ("Currency", "Currency", 11),
-    ("Notional", "Notional", 12),
+@dataclass(frozen=True)
+class _TableColumn:
+    key: str
+    header: str
+    width_chars: int
+
+
+_TABLE_COLUMNS: tuple[_TableColumn, ...] = (
+    _TableColumn("Counterparty", "Counterparty", 28),
+    _TableColumn("Cash", "Cash", 11),
+    _TableColumn("TIPS", "TIPS", 10),
+    _TableColumn("Treasury", "Treasury", 12),
+    _TableColumn("Equity", "Equity", 10),
+    _TableColumn("Commodity", "Commodity", 12),
+    _TableColumn("Currency", "Currency", 11),
+    _TableColumn("Notional", "Notional", 12),
 )
 
-_REQUIRED_COLUMNS = {column for column, _, _ in _TABLE_COLUMNS}
+_REQUIRED_COLUMNS = {column.key for column in _TABLE_COLUMNS}
+
+
+def cprs_ch_table_columns() -> tuple[str, ...]:
+    """Return the deterministic CPRS-CH column order used for PNG rendering."""
+    return tuple(column.key for column in _TABLE_COLUMNS)
 
 
 def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
@@ -48,7 +61,7 @@ def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
     destination = Path(output_png)
     destination.parent.mkdir(parents=True, exist_ok=True)
 
-    col_widths = [_column_pixel_width(char_width) for _, _, char_width in _TABLE_COLUMNS]
+    col_widths = [_column_pixel_width(column.width_chars) for column in _TABLE_COLUMNS]
     row_height = _CHAR_HEIGHT + (2 * _CELL_PADDING_Y)
     table_width = sum(col_widths) + len(col_widths) + 1
     table_height = (len(rows) + 1) * row_height + len(rows) + 2
@@ -62,7 +75,7 @@ def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
     origin_y = 12
 
     x = origin_x
-    for col_index, (_, header, _) in enumerate(_TABLE_COLUMNS):
+    for col_index, column in enumerate(_TABLE_COLUMNS):
         cell_width = col_widths[col_index]
         _fill_rect(pixels, width, x, origin_y, cell_width, row_height, _COLOR_HEADER_BG)
         _draw_text(
@@ -70,7 +83,7 @@ def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
             width,
             x + _CELL_PADDING_X,
             origin_y + _CELL_PADDING_Y,
-            header,
+            column.header,
             _COLOR_HEADER_TEXT,
         )
         x += cell_width + 1
@@ -81,8 +94,8 @@ def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
             _fill_rect(pixels, width, origin_x, y, table_width - 1, row_height, _COLOR_ROW_ALT)
 
         x = origin_x
-        for column_index, (key, _, _) in enumerate(_TABLE_COLUMNS):
-            text = row[key]
+        for column_index, column in enumerate(_TABLE_COLUMNS):
+            text = row[column.key]
             _draw_text(pixels, width, x + _CELL_PADDING_X, y + _CELL_PADDING_Y, text, _COLOR_TEXT)
             x += col_widths[column_index] + 1
 
@@ -105,16 +118,16 @@ def _to_renderable_rows(exposures_df: object) -> list[dict[str, str]]:
     rendered: list[dict[str, str]] = []
     for index, record in enumerate(records):
         normalized: dict[str, str] = {}
-        for key, _, _ in _TABLE_COLUMNS:
-            value = record.get(key)
-            if key == "Counterparty":
+        for column in _TABLE_COLUMNS:
+            value = record.get(column.key)
+            if column.key == "Counterparty":
                 if value is None or str(value).strip() == "":
                     raise ValueError(f"row {index} is missing a Counterparty value")
-                normalized[key] = str(value).strip()
+                normalized[column.key] = str(value).strip()
                 continue
 
-            number = _coerce_number(value, row_index=index, column_name=key)
-            normalized[key] = f"{number:,.2f}"
+            number = _coerce_number(value, row_index=index, column_name=column.key)
+            normalized[column.key] = f"{number:,.2f}"
         rendered.append(normalized)
 
     return rendered
