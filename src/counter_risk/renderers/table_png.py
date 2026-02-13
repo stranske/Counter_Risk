@@ -97,6 +97,18 @@ def cprs_ch_table_headers() -> tuple[str, ...]:
     return tuple(column.header for column in _TABLE_COLUMNS)
 
 
+def cprs_ch_table_layout() -> tuple[dict[str, str | int], ...]:
+    """Return the deterministic CPRS-CH column layout contract for PNG rendering."""
+    return tuple(
+        {
+            "key": column.key,
+            "header": column.header,
+            "width_chars": column.width_chars,
+        }
+        for column in _TABLE_COLUMNS
+    )
+
+
 def cprs_ch_render_backend() -> str:
     """Return the rendering backend selected for deterministic CPRS-CH PNGs."""
     return _CPRS_CH_RENDER_BACKEND
