@@ -346,6 +346,56 @@ def test_fill_dropin_template_rejects_non_numeric_values_for_template_cells(
         )
 
 
+def test_fill_dropin_template_rejects_non_finite_values_for_template_cells(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    sheet = _FakeWorksheet()
+    sheet.set_value(5, 2, "Counterparty/ \nClearing House")
+    sheet.set_value(6, 6, "Equity")
+    sheet.set_value(8, 2, "Societe Generale")
+
+    workbook = _FakeWorkbook(sheet)
+    _install_fake_openpyxl(monkeypatch, workbook)
+
+    with pytest.raises(ValueError, match="must be finite"):
+        fill_dropin_template(
+            template_path=fake_template,
+            exposures_df=[{"counterparty": "Societe Generale", "equity": float("nan")}],
+            breakdown={},
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
+def test_fill_dropin_template_aggregates_duplicate_counterparty_rows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    sheet = _FakeWorksheet()
+    sheet.set_value(5, 2, "Counterparty/ \nClearing House")
+    sheet.set_value(6, 10, "Notional")
+    sheet.set_value(8, 2, "Societe Generale")
+
+    workbook = _FakeWorkbook(sheet)
+    _install_fake_openpyxl(monkeypatch, workbook)
+
+    fill_dropin_template(
+        template_path=fake_template,
+        exposures_df=[
+            {"counterparty": "Societe Generale", "notional": 10},
+            {"counterparty": "Societe Generale", "notional": 15},
+        ],
+        breakdown={},
+        output_path=tmp_path / "out.xlsx",
+    )
+
+    assert sheet.cell(8, 10).value == 25.0
+
+
 def test_fill_dropin_template_populates_notional_breakdown_row(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

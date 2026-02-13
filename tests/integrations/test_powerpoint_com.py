@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import stat
 import sys
 import types
@@ -14,7 +15,7 @@ from counter_risk.integrations import powerpoint_com
 
 
 def test_is_powerpoint_com_available_false_on_non_windows(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("counter_risk.integrations.powerpoint_com.sys.platform", "linux")
+    monkeypatch.setattr(powerpoint_com.sys, "platform", "linux")
 
     assert powerpoint_com.is_powerpoint_com_available() is False
 
@@ -22,11 +23,8 @@ def test_is_powerpoint_com_available_false_on_non_windows(monkeypatch: pytest.Mo
 def test_is_powerpoint_com_available_false_when_win32com_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("counter_risk.integrations.powerpoint_com.sys.platform", "win32")
-    monkeypatch.setattr(
-        "counter_risk.integrations.powerpoint_com.importlib.util.find_spec",
-        lambda _: None,
-    )
+    monkeypatch.setattr(powerpoint_com.sys, "platform", "win32")
+    monkeypatch.setattr(powerpoint_com.importlib.util, "find_spec", lambda _: None)
 
     assert powerpoint_com.is_powerpoint_com_available() is False
 
@@ -52,9 +50,10 @@ def test_is_powerpoint_com_available_true_when_dispatch_works(
     client_mod.DispatchEx = fake_dispatch_ex  # type: ignore[attr-defined]
     win32com_mod.client = client_mod  # type: ignore[attr-defined]
 
-    monkeypatch.setattr("counter_risk.integrations.powerpoint_com.sys.platform", "win32")
+    monkeypatch.setattr(powerpoint_com.sys, "platform", "win32")
     monkeypatch.setattr(
-        "counter_risk.integrations.powerpoint_com.importlib.util.find_spec",
+        powerpoint_com.importlib.util,
+        "find_spec",
         lambda name: object() if name == "win32com.client" else None,
     )
     monkeypatch.setitem(sys.modules, "win32com", win32com_mod)

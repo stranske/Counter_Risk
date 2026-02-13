@@ -27,9 +27,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+app = []
 dev = [
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
+    "pandas>=2.2,<3",
     "python-pptx==1.0.2",
     "ruff==0.15.0",
     "mypy==1.19.1",
@@ -116,3 +118,21 @@ disable_error_code = ["import-untyped"]
 [[tool.mypy.overrides]]
 module = "counter_risk.integrations.powerpoint_com"
 disable_error_code = ["import-untyped"]
+
+[[tool.mypy.overrides]]
+module = "scripts.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "tools.*"
+ignore_errors = true
+
+[tool.black]
+line-length = 100
+extend-exclude = '''
+/(
+  \.venv
+  | node_modules
+  | \.workflows-lib
+)/
+'''
