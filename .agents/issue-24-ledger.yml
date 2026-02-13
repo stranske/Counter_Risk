@@ -1,0 +1,395 @@
+version: 1
+issue: 24
+base: main
+branch: codex/issue-24
+tasks:
+  - id: task-01
+    title: Create `src/counter_risk/build/release.py` to assemble a versioned release
+      folder containing the pipeline executable (or python env bundle), templates,
+      default config, runner, and README.
+    status: doing
+    started_at: '2026-02-13T17:34:42Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: 'Define scope for: Create the basic structure of `src/counter_risk/build/release.py`
+      with a main function that accepts version (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement focused slice for: Create the basic structure of `src/counter_risk/build/release.py`
+      with a main function that accepts version (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Validate focused slice for: Create the basic structure of `src/counter_risk/build/release.py`
+      with a main function that accepts version (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define scope for: Create the basic structure of `src/counter_risk/build/release.py`
+      with output directory parameters (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement focused slice for: Create the basic structure of `src/counter_risk/build/release.py`
+      with output directory parameters (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Validate focused slice for: Create the basic structure of `src/counter_risk/build/release.py`
+      with output directory parameters (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement the template collection logic to copy all required PPTX (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'drop-in files to the release folder (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Define scope for: Implement the configuration file collection logic to
+      include default config files in the release bundle (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Implement focused slice for: Implement the configuration file collection
+      logic to include default config files in the release bundle (verify: config
+      validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Validate focused slice for: Implement the configuration file collection
+      logic to include default config files in the release bundle (verify: config
+      validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Define scope for: Implement the runner file inclusion logic to add the
+      XLSM or desktop shortcut to the release folder (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Implement focused slice for: Implement the runner file inclusion logic
+      to add the XLSM or desktop shortcut to the release folder (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Validate focused slice for: Implement the runner file inclusion logic
+      to add the XLSM or desktop shortcut to the release folder (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Define scope for: Implement the README generation or copying logic to
+      include usage instructions in the release bundle (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Implement focused slice for: Implement the README generation or copying
+      logic to include usage instructions in the release bundle (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Validate focused slice for: Implement the README generation or copying
+      logic to include usage instructions in the release bundle (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Define scope for: Add version stamping logic to create or update manifest.json
+      with the version from the VERSION file (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Implement focused slice for: Add version stamping logic to create or update
+      manifest.json with the version from the VERSION file (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Validate focused slice for: Add version stamping logic to create or update
+      manifest.json with the version from the VERSION file (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Add PyInstaller packaging configuration to build a Windows executable for
+      the pipeline as part of the release bundle.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Define scope for: Create a PyInstaller spec file with basic configuration
+      for the pipeline entry point (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Implement focused slice for: Create a PyInstaller spec file with basic
+      configuration for the pipeline entry point (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Validate focused slice for: Create a PyInstaller spec file with basic
+      configuration for the pipeline entry point (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Configure PyInstaller hidden imports (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'data files to include all required dependencies (verify: dependencies
+      updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Define scope for: Add PyInstaller build command to the release.py script
+      to generate the Windows executable (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Implement focused slice for: Add PyInstaller build command to the release.py
+      script to generate the Windows executable (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Validate focused slice for: Add PyInstaller build command to the release.py
+      script to generate the Windows executable (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Define scope for: Test the generated executable runs successfully from
+      a clean directory without Python installed (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Implement focused slice for: Test the generated executable runs successfully
+      from a clean directory without Python installed (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Validate focused slice for: Test the generated executable runs successfully
+      from a clean directory without Python installed (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Add a `VERSION` file at the repository root and update `src/counter_risk/build/release.py`
+      to embed the version into `manifest.json`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: Create `docs/RELEASE_CHECKLIST.md` documenting the maintainer release steps
+      for producing the bundle.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: Add a CI workflow (e.g., `.github/workflows/release.yml`) that builds and
+      uploads the release bundle as an artifact.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: "Running the packaging command produces a versioned release bundle directory\
+      \ that includes `VERSION`, `manifest.json`, templates, default config, runner,\
+      \ and a README \u201CHow to run\u201D."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: The CI workflow completes successfully and uploads the release bundle artifact.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: The version string from `VERSION` is present in the generated `manifest.json`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: The bundled executable (or env bundle entrypoint) runs from a copied folder
+      location (e.g., shared drive path) without requiring GitHub access.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: A fixture-based run using the release bundle produces outputs matching
+      the expected fixtures within defined tolerances.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: Add `src/counter_risk/build/release.py` (or scripts/) to assemble release
+      folder
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: Choose packaging tool (PyInstaller preferred for Windows exe)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: Include a `VERSION` file and embed version into manifest.json
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: "Add \u201CRelease Checklist\u201D doc (maintainers)"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: Add a CI workflow that builds a release artifact (if allowed)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: A release bundle can be copied to a shared drive and run by a non-technical
+      user
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: Release bundle produces outputs identical to fixture-based run (within
+      defined tolerances)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
