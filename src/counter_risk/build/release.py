@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import textwrap
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -77,6 +78,8 @@ def _copy_tree_filtered(
 
     dst_dir.mkdir(parents=True, exist_ok=True)
     for src_path in sorted(path for path in src_dir.rglob("*") if path.is_file()):
+        if "__pycache__" in src_path.parts or src_path.suffix.lower() == ".pyc":
+            continue
         if suffixes is not None and src_path.suffix.lower() not in suffixes:
             continue
         relative = src_path.relative_to(src_dir)
@@ -102,6 +105,74 @@ def _create_runner_file(bundle_dir: Path) -> Path:
         encoding="utf-8",
     )
     return runner_path
+
+
+def _copy_templates(root: Path, bundle_dir: Path) -> list[Path]:
+    copied: list[Path] = []
+    seen_names: set[str] = set()
+    template_sources = [root / "templates", root / "tests" / "fixtures"]
+    destination = bundle_dir / "templates"
+    destination.mkdir(parents=True, exist_ok=True)
+
+    for src_dir in template_sources:
+        if not src_dir.exists():
+            continue
+        for src_path in sorted(path for path in src_dir.rglob("*.pptx") if path.is_file()):
+            filename = src_path.name
+            if filename in seen_names:
+                continue
+            seen_names.add(filename)
+            dst_path = destination / filename
+            shutil.copy2(src_path, dst_path)
+            copied.append(dst_path)
+    return copied
+
+
+def _copy_pipeline_source(root: Path, bundle_dir: Path) -> list[Path]:
+    copied: list[Path] = []
+    pipeline_dir = bundle_dir / "pipeline"
+    source_root = root / "src"
+    package_src = source_root / "counter_risk"
+    package_dst = pipeline_dir / "src" / "counter_risk"
+
+    if package_src.exists():
+        for src_path in sorted(path for path in package_src.rglob("*") if path.is_file()):
+            if "__pycache__" in src_path.parts or src_path.suffix.lower() == ".pyc":
+                continue
+            relative = src_path.relative_to(package_src)
+            dst_path = package_dst / relative
+            dst_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_path, dst_path)
+            copied.append(dst_path)
+    else:
+        package_dst.mkdir(parents=True, exist_ok=True)
+
+    entrypoint_path = pipeline_dir / "counter_risk_cli.py"
+    entrypoint_path.parent.mkdir(parents=True, exist_ok=True)
+    entrypoint_path.write_text(
+        textwrap.dedent(
+            """
+            from __future__ import annotations
+
+            import sys
+            from pathlib import Path
+
+            BUNDLE_ROOT = Path(__file__).resolve().parent
+            SOURCE_ROOT = BUNDLE_ROOT / "src"
+            if str(SOURCE_ROOT) not in sys.path:
+                sys.path.insert(0, str(SOURCE_ROOT))
+
+            from counter_risk.cli import main
+
+            if __name__ == "__main__":
+                raise SystemExit(main())
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    copied.append(entrypoint_path)
+    return copied
 
 
 def _write_readme(bundle_dir: Path, version: str) -> Path:
@@ -156,12 +227,7 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
     bundle_dir.mkdir(parents=True, exist_ok=True)
 
     copied: dict[str, list[Path]] = {}
-    templates_src = root / "templates"
-    copied["templates"] = _copy_tree_filtered(
-        templates_src,
-        bundle_dir / "templates",
-        suffixes={".pptx"},
-    )
+    copied["templates"] = _copy_templates(root, bundle_dir)
 
     config_src = root / "config"
     copied["config"] = _copy_tree_filtered(
@@ -169,6 +235,8 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
         bundle_dir / "config",
         suffixes={".yml", ".yaml", ".json"},
     )
+
+    copied["pipeline"] = _copy_pipeline_source(root, bundle_dir)
 
     version_file = bundle_dir / "VERSION"
     version_file.write_text(f"{version}\n", encoding="utf-8")
