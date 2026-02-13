@@ -228,7 +228,9 @@ def test_append_functions_add_exactly_one_row_to_each_target_sheet(
         config_as_of_date=as_of_date,
     )
 
-    assert all_programs.max_row == row_counts_before[historical_update.SHEET_ALL_PROGRAMS_3_YEAR] + 1
+    assert (
+        all_programs.max_row == row_counts_before[historical_update.SHEET_ALL_PROGRAMS_3_YEAR] + 1
+    )
     assert ex_trend.max_row == row_counts_before[historical_update.SHEET_EX_LLC_3_YEAR] + 1
     assert trend.max_row == row_counts_before[historical_update.SHEET_LLC_3_YEAR] + 1
 
