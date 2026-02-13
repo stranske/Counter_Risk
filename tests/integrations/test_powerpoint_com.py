@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import stat
 import sys
 import types
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -77,3 +79,56 @@ def test_initialize_powerpoint_application_wraps_dispatch_errors(
         powerpoint_com.initialize_powerpoint_application()
 
     assert isinstance(exc_info.value.__cause__, RuntimeError)
+
+
+def test_refresh_links_and_save_writes_manual_instructions_when_com_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    source_pptx = tmp_path / "Monthly Counterparty Exposure Report.pptx"
+    source_pptx.write_bytes(b"pptx-content")
+
+    monkeypatch.setattr(
+        powerpoint_com,
+        "initialize_powerpoint_application",
+        lambda: (_ for _ in ()).throw(powerpoint_com.PowerPointComUnavailableError("COM unavailable")),
+    )
+
+    output_path = powerpoint_com.refresh_links_and_save(source_pptx)
+
+    assert output_path.exists()
+    assert output_path.name.endswith("_links_refreshed.pptx")
+    assert output_path.read_bytes() == b"pptx-content"
+
+    instructions_path = output_path.parent / powerpoint_com.MANUAL_LINK_REFRESH_FILENAME
+    assert instructions_path.exists()
+
+    mode = instructions_path.stat().st_mode
+    assert bool(mode & stat.S_IRUSR)
+    assert bool(mode & stat.S_IWUSR)
+
+
+def test_refresh_links_fallback_instructions_include_manual_steps(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    source_pptx = tmp_path / "input.pptx"
+    output_pptx = tmp_path / "run_2026-01-31" / "output.pptx"
+    source_pptx.write_bytes(b"sample")
+
+    monkeypatch.setattr(
+        powerpoint_com,
+        "initialize_powerpoint_application",
+        lambda: (_ for _ in ()).throw(powerpoint_com.PowerPointComUnavailableError("not on windows")),
+    )
+
+    returned_path = powerpoint_com.refresh_links_and_save(source_pptx, output_pptx)
+    assert returned_path == output_pptx
+
+    instructions_path = output_pptx.parent / powerpoint_com.MANUAL_LINK_REFRESH_FILENAME
+    content = instructions_path.read_text(encoding="utf-8")
+    assert "Edit Links to File" in content
+    assert "Update Now" in content
+    assert "Open the output presentation in Microsoft PowerPoint." in content
+    assert f"Input presentation: {source_pptx}" in content
+    assert f"Output presentation: {output_pptx}" in content
