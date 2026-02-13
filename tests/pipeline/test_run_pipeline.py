@@ -403,7 +403,9 @@ def test_run_pipeline_invokes_ppt_link_refresh(
 def test_run_pipeline_ignores_config_output_root_for_run_directory(
     tmp_path: Path, fake_pandas: None
 ) -> None:
-    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "different-output-root")
+    config_path = _write_valid_config(
+        tmp_path=tmp_path, output_root=tmp_path / "different-output-root"
+    )
 
     run_dir = run_pipeline(config_path)
 
