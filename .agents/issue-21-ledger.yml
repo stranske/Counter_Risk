@@ -5,10 +5,10 @@ branch: codex/issue-21
 tasks:
   - id: task-01
     title: Create `src/counter_risk/compute/rollups.py`
-    status: doing
+    status: done
     started_at: '2026-02-13T06:12:33Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T06:12:43Z'
+    commit: 382abb11280b3542083428594a2815b264df0f9e
     notes: []
   - id: task-02
     title: Implement `compute_totals(exposures_df) -> totals_df` in `src/counter_risk/compute/rollups.py`
