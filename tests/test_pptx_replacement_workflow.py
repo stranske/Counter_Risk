@@ -3,8 +3,11 @@ from __future__ import annotations
 import base64
 import hashlib
 from pathlib import Path
+from typing import cast
 
 from pptx import Presentation
+from pptx.shapes.picture import Picture
+from pptx.slide import Slide
 from pptx.util import Inches
 
 from counter_risk.writers.pptx_screenshots import replace_screenshot_pictures
@@ -75,9 +78,9 @@ def _make_near_match_workflow_pptx(path: Path, base_image: Path) -> None:
 
 
 def _slide_picture_state(
-    slide: object,
+    slide: Slide,
 ) -> tuple[int, tuple[tuple[str, tuple[int, int, int, int]], ...]]:
-    pictures = [shape for shape in slide.shapes if shape.shape_type == 13]
+    pictures = [cast(Picture, shape) for shape in slide.shapes if shape.shape_type == 13]
     details = tuple(
         (
             hashlib.sha256(picture.image.blob).hexdigest(),
