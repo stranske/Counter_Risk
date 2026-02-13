@@ -1,6 +1,6 @@
 """Deterministic PNG renderers for screenshot replacement workflows.
 
-Rendering library choice for CPRS-CH table output is explicitly:
+Rendering library choice for CPRS-CH/CPRS-FCM table output is explicitly:
 ``internal_pure_python_png_encoder``.
 This renderer intentionally uses an internal pure-Python PNG encoder and bitmap
 glyph table (instead of PIL/matplotlib) so output bytes are stable across
@@ -80,6 +80,11 @@ _CPRS_CH_LAYOUT = _TableLayout(columns=_TABLE_COLUMNS, style=_CPRS_CH_STYLE)
 
 _REQUIRED_COLUMNS = {column.key for column in _TABLE_COLUMNS}
 _CPRS_CH_RENDER_BACKEND = "internal_pure_python_png_encoder"
+_CPRS_MIN_ROWS_BY_VARIANT: dict[str, int] = {
+    "all_programs": 3,
+    "ex_trend": 2,
+    "trend": 1,
+}
 _CPRS_CH_FONT = _BitmapFont(
     family="builtin_5x7_bitmap",
     glyph_width_px=_CHAR_WIDTH,
@@ -176,18 +181,48 @@ def cprs_ch_view_spec() -> dict[str, object]:
     }
 
 
-def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
-    """Render a deterministic CPRS-CH table PNG.
+def render_cprs_ch_png(
+    exposures_df: object, output_png: Path | str, *, variant: str | None = None
+) -> None:
+    """Render a deterministic CPRS-CH table PNG."""
+    _render_cprs_table_png(
+        exposures_df,
+        output_png,
+        layout=_CPRS_CH_LAYOUT,
+        variant=variant,
+        min_rows_by_variant=_CPRS_MIN_ROWS_BY_VARIANT,
+    )
 
-    The table layout is stable across runs and uses a built-in bitmap font to avoid
-    environment-specific font differences.
-    """
 
-    rows = _to_renderable_rows(exposures_df)
+def render_cprs_fcm_png(
+    exposures_df: object, output_png: Path | str, *, variant: str | None = None
+) -> None:
+    """Render a deterministic CPRS-FCM table PNG."""
+    _render_cprs_table_png(
+        exposures_df,
+        output_png,
+        layout=_CPRS_CH_LAYOUT,
+        variant=variant,
+        min_rows_by_variant=_CPRS_MIN_ROWS_BY_VARIANT,
+    )
+
+
+def _render_cprs_table_png(
+    exposures_df: object,
+    output_png: Path | str,
+    *,
+    layout: _TableLayout,
+    variant: str | None = None,
+    min_rows_by_variant: dict[str, int] | None = None,
+) -> None:
+    rows = _to_renderable_rows(
+        exposures_df,
+        variant=variant,
+        min_rows_by_variant=min_rows_by_variant,
+    )
     destination = Path(output_png)
     destination.parent.mkdir(parents=True, exist_ok=True)
 
-    layout = _CPRS_CH_LAYOUT
     col_widths = [_column_pixel_width(column.width_chars) for column in layout.columns]
     row_height = _CHAR_HEIGHT + (2 * _CELL_PADDING_Y)
     table_width = sum(col_widths) + len(col_widths) + 1
@@ -266,16 +301,36 @@ def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
     destination.write_bytes(png_bytes)
 
 
-def _to_renderable_rows(exposures_df: object) -> list[dict[str, str]]:
+def _to_renderable_rows(
+    exposures_df: object,
+    *,
+    variant: str | None = None,
+    min_rows_by_variant: dict[str, int] | None = None,
+) -> list[dict[str, str]]:
+    records = _read_records(exposures_df)
+    if variant is not None and min_rows_by_variant:
+        normalized_variant = _normalize_variant_key(variant)
+        expected_rows = min_rows_by_variant.get(normalized_variant)
+        if expected_rows is None:
+            supported = ", ".join(sorted(min_rows_by_variant))
+            raise ValueError(f"unsupported variant '{variant}'; expected one of: {supported}")
+        if len(records) < expected_rows:
+            raise ValueError(
+                "exposures_df has "
+                f"{len(records)} rows for variant '{normalized_variant}'; "
+                f"expected at least {expected_rows} rows"
+            )
+
+    if not records:
+        raise ValueError("exposures_df is an empty DataFrame")
+
     columns = _read_columns(exposures_df)
     missing_columns = sorted(_REQUIRED_COLUMNS - set(columns))
     if missing_columns:
+        if "Counterparty" in missing_columns:
+            raise ValueError("exposures_df is missing required counterparty column")
         missing = ", ".join(missing_columns)
         raise ValueError(f"exposures_df is missing required columns: {missing}")
-
-    records = _read_records(exposures_df)
-    if not records:
-        raise ValueError("exposures_df contains no records")
 
     rendered: list[dict[str, str]] = []
     for index, record in enumerate(records):
@@ -284,7 +339,7 @@ def _to_renderable_rows(exposures_df: object) -> list[dict[str, str]]:
             value = record.get(column.key)
             if column.key == "Counterparty":
                 if value is None or str(value).strip() == "":
-                    raise ValueError(f"row {index} is missing a Counterparty value")
+                    raise ValueError(f"row {index} is missing a counterparty value")
                 normalized[column.key] = str(value).strip()
                 continue
 
@@ -295,6 +350,13 @@ def _to_renderable_rows(exposures_df: object) -> list[dict[str, str]]:
     return rendered
 
 
+def _normalize_variant_key(variant: str) -> str:
+    normalized = "".join(ch.lower() if ch.isalnum() else "_" for ch in variant).strip("_")
+    while "__" in normalized:
+        normalized = normalized.replace("__", "_")
+    return normalized
+
+
 def _read_columns(exposures_df: object) -> list[str]:
     columns = getattr(exposures_df, "columns", None)
     if columns is None:
@@ -303,6 +365,9 @@ def _read_columns(exposures_df: object) -> list[str]:
 
 
 def _read_records(exposures_df: object) -> list[dict[str, object]]:
+    if exposures_df is None:
+        raise ValueError("exposures_df cannot be None")
+
     if hasattr(exposures_df, "to_dict"):
         try:
             records = exposures_df.to_dict(orient="records")
