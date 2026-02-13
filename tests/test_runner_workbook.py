@@ -25,7 +25,11 @@ def _is_month_end(iso_date: str) -> bool:
 
 
 def _next_month_end(current: date) -> date:
-    next_month_start = date(current.year + 1, 1, 1) if current.month == 12 else date(current.year, current.month + 1, 1)
+    next_month_start = (
+        date(current.year + 1, 1, 1)
+        if current.month == 12
+        else date(current.year, current.month + 1, 1)
+    )
     month_after_next_start = (
         date(next_month_start.year + 1, 1, 1)
         if next_month_start.month == 12
