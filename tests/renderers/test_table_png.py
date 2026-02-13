@@ -151,6 +151,27 @@ def test_render_cprs_fcm_png_none_exposures_df_raises(tmp_path: Path) -> None:
         render_cprs_fcm_png(None, output)
 
 
+@pytest.mark.parametrize(
+    ("variant", "row_count", "expected_rows"),
+    (
+        ("all_programs", 2, 3),
+        ("ex_trend", 1, 2),
+        ("trend", 0, 1),
+    ),
+)
+def test_render_cprs_fcm_png_below_minimum_rows_raises(
+    tmp_path: Path, variant: str, row_count: int, expected_rows: int
+) -> None:
+    output = tmp_path / f"{variant}-fcm-rows.png"
+    frame = _FakeDataFrame([dict(_REQUIRED) for _ in range(row_count)])
+
+    with pytest.raises(ValueError, match=r"rows?"):
+        render_cprs_fcm_png(frame, output, variant=variant)
+
+    with pytest.raises(ValueError, match=str(expected_rows)):
+        render_cprs_fcm_png(frame, output, variant=variant)
+
+
 @pytest.mark.parametrize("counterparty_value", ("   ", None))
 def test_render_cprs_ch_png_blank_counterparty_raises(
     tmp_path: Path, counterparty_value: object
