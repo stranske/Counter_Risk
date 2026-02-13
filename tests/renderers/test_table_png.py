@@ -8,8 +8,8 @@ import pytest
 
 from counter_risk.renderers.table_png import (
     cprs_ch_font_spec,
-    cprs_ch_render_backend_notes,
     cprs_ch_render_backend,
+    cprs_ch_render_backend_notes,
     cprs_ch_table_columns,
     cprs_ch_table_headers,
     cprs_ch_table_style,
