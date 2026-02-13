@@ -196,7 +196,10 @@ def _validate_numeric_ranges(record: dict[str, object], row_number: int) -> None
     ]
 
     for key in numeric_columns:
-        value = float(record[key])
+        raw_value = record[key]
+        if not isinstance(raw_value, (int, float)):
+            raise ValueError(f"Invalid non-numeric value for {key} at row {row_number}: {raw_value!r}")
+        value = float(raw_value)
         if not math.isfinite(value):
             raise ValueError(f"Invalid non-finite numeric value for {key} at row {row_number}")
         if abs(value) > 1_000_000_000_000_000:
