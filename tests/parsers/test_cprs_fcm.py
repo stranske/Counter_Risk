@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 
 try:
-    import pandas as pd
-    from pandas.testing import assert_frame_equal
+    import pandas as pd  # type: ignore[import-untyped]
+    from pandas.testing import assert_frame_equal  # type: ignore[import-untyped]
 except ModuleNotFoundError:  # pragma: no cover - depends on test environment
     pd = None
     assert_frame_equal = None
