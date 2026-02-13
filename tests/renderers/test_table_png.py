@@ -107,6 +107,13 @@ def test_render_cprs_ch_png_empty_dataframe_raises(tmp_path: Path) -> None:
         render_cprs_ch_png(_FakeDataFrame([]), output)
 
 
+def test_render_cprs_ch_png_none_exposures_df_raises(tmp_path: Path) -> None:
+    output = tmp_path / "none.png"
+
+    with pytest.raises(ValueError, match="exposures_df"):
+        render_cprs_ch_png(None, output)
+
+
 @pytest.mark.parametrize(
     ("variant", "row_count", "expected_rows"),
     (
@@ -135,6 +142,13 @@ def test_render_cprs_ch_png_malformed_numeric_value_raises(tmp_path: Path) -> No
 
     with pytest.raises(ValueError, match="non-numeric value"):
         render_cprs_ch_png(bad, output)
+
+
+def test_render_cprs_fcm_png_none_exposures_df_raises(tmp_path: Path) -> None:
+    output = tmp_path / "none-fcm.png"
+
+    with pytest.raises(ValueError, match="exposures_df"):
+        render_cprs_fcm_png(None, output)
 
 
 @pytest.mark.parametrize("counterparty_value", ("   ", None))
