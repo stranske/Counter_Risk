@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 from counter_risk.runtime_paths import resolve_runtime_path
 
 
