@@ -14,7 +14,9 @@ from counter_risk.parsers.cprs_ch import parse_cprs_ch
 
 class _FakeDataFrame:
     def __init__(
-        self, records: list[dict[str, Any]] | None = None, columns: list[str] | tuple[str, ...] | None = None
+        self,
+        records: list[dict[str, Any]] | None = None,
+        columns: list[str] | tuple[str, ...] | None = None,
     ) -> None:
         self._rows = [dict(row) for row in (records or [])]
         if columns is not None:
