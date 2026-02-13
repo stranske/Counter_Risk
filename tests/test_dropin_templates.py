@@ -139,6 +139,34 @@ def test_fill_dropin_template_validates_iterable_rows_are_mappings(tmp_path: Pat
         )
 
 
+def test_fill_dropin_template_validates_counterparty_identifier_columns(tmp_path: Path) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="counterparty identifier"):
+        fill_dropin_template(
+            template_path=fake_template,
+            exposures_df=[{"tips": 10, "notional": 10}],
+            breakdown={},
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
+def test_fill_dropin_template_validates_non_empty_counterparty_identifier_values(
+    tmp_path: Path,
+) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="counterparty identifier"):
+        fill_dropin_template(
+            template_path=fake_template,
+            exposures_df=[{"counterparty": "   ", "tips": 10, "notional": 10}],
+            breakdown={},
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
 class _FakeCell:
     def __init__(self, row: int, column: int, value: Any = None) -> None:
         self.row = row
