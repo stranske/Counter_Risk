@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -20,7 +20,7 @@ _FRACTION_TOLERANCE = 1e-9
 
 def _as_records(table: Any) -> list[dict[str, Any]]:
     if hasattr(table, "to_dict"):
-        return table.to_dict(orient="records")
+        return cast(list[dict[str, Any]], table.to_dict(orient="records"))
     return [dict(row) for row in table]
 
 
