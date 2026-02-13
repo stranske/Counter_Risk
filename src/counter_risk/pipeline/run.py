@@ -417,7 +417,7 @@ def _refresh_ppt_links(pptx_path: Path) -> bool:
         return False
 
     try:
-        import win32com.client  # type: ignore[import-not-found,import-untyped]
+        import win32com.client  # type: ignore[import-untyped]
     except ImportError:
         LOGGER.info("ppt_link_refresh_skipped file=%s reason=win32com_unavailable", pptx_path)
         return False
