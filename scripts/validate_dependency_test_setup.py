@@ -32,18 +32,25 @@ def check_lock_file_completeness() -> tuple[bool, list[str]]:
     optional_groups = re.findall(r"^(\w+)\s*=", optional_section.group(1), re.MULTILINE)
     print(f"✓ Found optional dependency groups: {', '.join(optional_groups)}")
 
-    # Check dependabot-auto-lock.yml includes all extras
-    workflow_path = Path(".github/workflows/dependabot-auto-lock.yml")
-    if workflow_path.exists():
+    # Check the auto-lock workflow includes all extras.
+    # Support both legacy and current workflow filenames.
+    workflow_candidates = [
+        Path(".github/workflows/dependabot-auto-lock.yml"),
+        Path(".github/workflows/maint-dependabot-auto-lock.yml"),
+    ]
+    workflow_path = next((path for path in workflow_candidates if path.exists()), None)
+
+    if workflow_path:
         workflow = workflow_path.read_text()
         for group in optional_groups:
             if f"--extra {group}" not in workflow:
-                issues.append(f"dependabot-auto-lock.yml missing --extra {group}")
+                issues.append(f"{workflow_path.name} missing --extra {group}")
 
         if not issues:
-            print("✓ dependabot-auto-lock.yml includes all extras")
+            print(f"✓ {workflow_path.name} includes all extras")
     else:
-        issues.append("dependabot-auto-lock.yml not found")
+        expected = ", ".join(path.name for path in workflow_candidates)
+        issues.append(f"Auto-lock workflow not found (expected one of: {expected})")
 
     return len(issues) == 0, issues
 
@@ -59,7 +66,7 @@ def check_for_hardcoded_versions() -> tuple[bool, list[str]]:
         r'assert.*version.*==.*["\d]',  # assert version == "x.y"
     ]
 
-    problematic_files = []
+    problematic_files: set[tuple[Path, int, str]] = set()
     for test_file in test_files:
         content = test_file.read_text()
 
@@ -72,15 +79,22 @@ def check_for_hardcoded_versions() -> tuple[bool, list[str]]:
 
         for pattern in version_patterns:
             if re.search(pattern, content):
-                # Check if it's in a comment
+                # Check if it's in a comment.
                 lines = content.split("\n")
                 for i, line in enumerate(lines):
-                    if re.search(pattern, line) and not line.strip().startswith("#"):
-                        problematic_files.append((test_file, i + 1, line.strip()))
+                    if not re.search(pattern, line):
+                        continue
+                    stripped = line.strip()
+                    if stripped.startswith("#"):
+                        continue
+                    # Allow project package version assertions.
+                    if "__version__" in stripped:
+                        continue
+                    problematic_files.add((test_file, i + 1, stripped))
 
     if problematic_files:
         issues.append("Found potential hardcoded versions in tests:")
-        for file, line_no, line in problematic_files:
+        for file, line_no, line in sorted(problematic_files):
             issues.append(f"  {file}:{line_no}: {line[:80]}")
     else:
         print("✓ No hardcoded version numbers found in tests")
