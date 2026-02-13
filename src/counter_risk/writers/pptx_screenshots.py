@@ -10,6 +10,18 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
 
+_SECTION_TITLE_SUBSTRINGS: dict[str, tuple[str, ...]] = {
+    "allprograms": ("allprograms",),
+    "extrend": ("extrend", "excludingtrend"),
+    "trend": ("trend",),
+}
+
+_EXPECTED_PICTURE_GEOMETRY_BY_SECTION: dict[str, tuple[tuple[int, int, int, int], ...]] = {
+    "allprograms": ((0, 811705, 9144000, 5817695),),
+    "extrend": ((0, 1304636, 9144000, 5172364),),
+    "trend": ((0, 2031298, 9144000, 2795403),),
+}
+
 
 def _normalize_key(value: str) -> str:
     return "".join(ch.lower() for ch in value if ch.isalnum())
@@ -30,6 +42,38 @@ def _slide_title(slide: Slide) -> str:
 
 def _picture_shapes(slide: Slide) -> list[BaseShape]:
     return [shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE]
+
+
+def _picture_geometry(picture: BaseShape) -> tuple[int, int, int, int]:
+    return picture.left, picture.top, picture.width, picture.height
+
+
+def _canonical_section_key(section: str) -> str:
+    normalized = _normalize_key(section)
+    for canonical_key, title_substrings in _SECTION_TITLE_SUBSTRINGS.items():
+        if normalized == canonical_key or normalized in title_substrings:
+            return canonical_key
+    return normalized
+
+
+def _section_matches_title(section_key: str, normalized_title: str) -> bool:
+    for title_substring in _SECTION_TITLE_SUBSTRINGS.get(section_key, (section_key,)):
+        if title_substring in normalized_title:
+            return True
+    return False
+
+
+def _slide_matches_expected_picture_geometry(slide: Slide, section_key: str) -> bool:
+    expected_geometry = _EXPECTED_PICTURE_GEOMETRY_BY_SECTION.get(section_key)
+    if expected_geometry is None:
+        return bool(_picture_shapes(slide))
+
+    pictures = _picture_shapes(slide)
+    if len(pictures) != len(expected_geometry):
+        return False
+
+    actual_geometry = tuple(_picture_geometry(picture) for picture in pictures)
+    return actual_geometry == expected_geometry
 
 
 def _resolve_image_path(value: Path | str) -> Path:
@@ -58,7 +102,7 @@ def replace_screenshot_pictures(
 
     normalized_targets: dict[str, Path] = {}
     for section, image in images_by_section.items():
-        normalized_targets[_normalize_key(section)] = _resolve_image_path(image)
+        normalized_targets[_canonical_section_key(section)] = _resolve_image_path(image)
 
     if not normalized_targets:
         raise ValueError("images_by_section must contain at least one section mapping")
@@ -73,19 +117,17 @@ def replace_screenshot_pictures(
 
         matched_target: str | None = None
         for section_key in normalized_targets:
-            if section_key == title_key or section_key in title_key:
+            if _section_matches_title(section_key, title_key):
                 matched_target = section_key
                 break
 
         if matched_target is None:
             continue
 
-        pictures = _picture_shapes(slide)
-        if not pictures:
-            raise ValueError(
-                "matched slide has no picture shapes for section " f"'{matched_target}'"
-            )
+        if not _slide_matches_expected_picture_geometry(slide, matched_target):
+            continue
 
+        pictures = _picture_shapes(slide)
         replacement = normalized_targets[matched_target]
         for picture in list(pictures):
             left, top, width, height = picture.left, picture.top, picture.width, picture.height
