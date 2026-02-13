@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -62,7 +63,7 @@ def test_json_formatter_includes_exception_text() -> None:
     assert "RuntimeError" in payload["exception"]
 
 
-def test_configure_logging_writes_json_file(tmp_path) -> None:
+def test_configure_logging_writes_json_file(tmp_path: Path) -> None:
     log_path = tmp_path / "counter-risk.log"
     logger = cr_logging.configure_logging(
         log_level="INFO",

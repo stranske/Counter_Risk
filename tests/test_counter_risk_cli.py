@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import pytest
+
 from counter_risk import cli
 
 
-def test_main_without_command_prints_help(capsys) -> None:
+def test_main_without_command_prints_help(capsys: pytest.CaptureFixture[str]) -> None:
     result = cli.main([])
     captured = capsys.readouterr()
 
@@ -13,7 +15,7 @@ def test_main_without_command_prints_help(capsys) -> None:
     assert "usage:" in captured.out.lower()
 
 
-def test_main_run_command_returns_zero(capsys) -> None:
+def test_main_run_command_returns_zero(capsys: pytest.CaptureFixture[str]) -> None:
     result = cli.main(["run"])
     captured = capsys.readouterr()
 
