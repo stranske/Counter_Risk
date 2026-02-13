@@ -11,10 +11,10 @@ tasks:
       \ `run_counter_risk.cmd`, `README` containing `How to run`, and the built executable)\
       \ \u2192 upload the bundle as a workflow artifact (fail non-zero on any missing\
       \ artifact)."
-    status: doing
+    status: done
     started_at: '2026-02-13T22:56:39Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T22:56:49Z'
+    commit: 0c817eec009051488093ff0f92a6226d2d282a20
     notes: []
   - id: task-02
     title: 'Create the basic workflow file structure with checkout (verify: confirm
