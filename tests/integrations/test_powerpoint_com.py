@@ -251,7 +251,9 @@ def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
     )
     assert shape_updates + grouped_shape_updates == 5
     ole_shape_updates = sum(
-        shape.OLEFormat.Object.update_calls for slide in presentation.Slides for shape in slide.Shapes
+        shape.OLEFormat.Object.update_calls
+        for slide in presentation.Slides
+        for shape in slide.Shapes
     )
     ole_grouped_updates = sum(
         grouped_shape.OLEFormat.Object.update_calls
