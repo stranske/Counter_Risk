@@ -70,6 +70,10 @@ class AppendDateError(HistoricalUpdateError):
     """Raised when append date resolution or ordering checks fail."""
 
 
+class AppendDateResolutionError(AppendDateError):
+    """Raised when append date cannot be resolved from any supported source."""
+
+
 class DateMonotonicityError(AppendDateError):
     """Raised when append date is not newer than the latest existing row date."""
 
@@ -192,11 +196,51 @@ def _build_header_map(
     return header_map
 
 
-def _resolve_append_date(*, append_date: date | None, config_as_of_date: date | None) -> date:
-    resolved = append_date if append_date is not None else config_as_of_date
-    if resolved is None:
-        raise AppendDateError("Append date is required. Provide append_date or config_as_of_date.")
-    return resolved
+def _resolve_append_date(
+    *,
+    append_date: date | None,
+    config_as_of_date: date | None,
+    rollup_data: Mapping[str, Any] | None = None,
+) -> date:
+    if append_date is not None:
+        return append_date
+    if config_as_of_date is not None:
+        return config_as_of_date
+
+    inferred = _infer_date_from_cprs_ch_header(rollup_data)
+    if inferred is not None:
+        return inferred
+
+    raise AppendDateResolutionError(
+        "Unable to resolve append date from append_date, config_as_of_date, or CPRS-CH header date."
+    )
+
+
+def _infer_date_from_cprs_ch_header(rollup_data: Mapping[str, Any] | None) -> date | None:
+    if not rollup_data:
+        return None
+
+    candidate_labels = {
+        "cprs ch header date",
+        "cprs-ch header date",
+        "cprs_ch_header_date",
+        "cprs ch as of date",
+        "cprs_ch_as_of_date",
+        "as of date",
+        "as_of_date",
+        "report date",
+        "report_date",
+    }
+    for raw_key, raw_value in rollup_data.items():
+        normalized_key = _normalize_header(raw_key)
+        if normalized_key not in candidate_labels:
+            continue
+
+        parsed = _coerce_cell_date(raw_value)
+        if parsed is not None:
+            return parsed
+
+    return None
 
 
 def _coerce_rollup_data(rollup_data: Mapping[str, Any]) -> dict[str, float]:
@@ -322,7 +366,9 @@ def _append_row(
     path = _as_path(workbook_path, field_name="workbook_path")
     _validate_workbook_path(path)
     resolved_date = _resolve_append_date(
-        append_date=append_date, config_as_of_date=config_as_of_date
+        append_date=append_date,
+        config_as_of_date=config_as_of_date,
+        rollup_data=rollup_data,
     )
 
     try:
@@ -404,6 +450,7 @@ def append_row_trend(
 
 __all__ = [
     "AppendDateError",
+    "AppendDateResolutionError",
     "DateMonotonicityError",
     "HistoricalUpdateError",
     "SHEET_ALL_PROGRAMS_3_YEAR",
