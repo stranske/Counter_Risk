@@ -80,7 +80,7 @@ _CPRS_CH_LAYOUT = _TableLayout(columns=_TABLE_COLUMNS, style=_CPRS_CH_STYLE)
 
 _REQUIRED_COLUMNS = {column.key for column in _TABLE_COLUMNS}
 _CPRS_CH_RENDER_BACKEND = "internal_pure_python_png_encoder"
-_CPRS_CH_MIN_ROWS_BY_VARIANT: dict[str, int] = {
+_CPRS_MIN_ROWS_BY_VARIANT: dict[str, int] = {
     "all_programs": 3,
     "ex_trend": 2,
     "trend": 1,
@@ -190,15 +190,21 @@ def render_cprs_ch_png(
         output_png,
         layout=_CPRS_CH_LAYOUT,
         variant=variant,
-        min_rows_by_variant=_CPRS_CH_MIN_ROWS_BY_VARIANT,
+        min_rows_by_variant=_CPRS_MIN_ROWS_BY_VARIANT,
     )
 
 
-def render_cprs_fcm_png(exposures_df: object, output_png: Path | str) -> None:
+def render_cprs_fcm_png(
+    exposures_df: object, output_png: Path | str, *, variant: str | None = None
+) -> None:
     """Render a deterministic CPRS-FCM table PNG."""
-    if exposures_df is None:
-        raise ValueError("exposures_df cannot be None")
-    _render_cprs_table_png(exposures_df, output_png, layout=_CPRS_CH_LAYOUT)
+    _render_cprs_table_png(
+        exposures_df,
+        output_png,
+        layout=_CPRS_CH_LAYOUT,
+        variant=variant,
+        min_rows_by_variant=_CPRS_MIN_ROWS_BY_VARIANT,
+    )
 
 
 def _render_cprs_table_png(
