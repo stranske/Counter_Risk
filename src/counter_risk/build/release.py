@@ -117,23 +117,38 @@ def _create_runner_file(bundle_dir: Path) -> Path:
 
 
 def _copy_templates(root: Path, bundle_dir: Path) -> list[Path]:
-    copied: list[Path] = []
-    seen_names: set[str] = set()
     template_sources = [root / "templates", root / "tests" / "fixtures"]
-    destination = bundle_dir / "templates"
-    destination.mkdir(parents=True, exist_ok=True)
+    template_candidates: dict[str, list[Path]] = {}
 
     for src_dir in template_sources:
         if not src_dir.exists():
             continue
         for src_path in sorted(path for path in src_dir.rglob("*.pptx") if path.is_file()):
-            filename = src_path.name
-            if filename in seen_names:
-                continue
-            seen_names.add(filename)
-            dst_path = destination / filename
-            shutil.copy2(src_path, dst_path)
-            copied.append(dst_path)
+            template_candidates.setdefault(src_path.name, []).append(src_path)
+
+    duplicate_templates = {
+        filename: paths
+        for filename, paths in template_candidates.items()
+        if len(paths) > 1
+    }
+    if duplicate_templates:
+        conflict_lines = [
+            "Template filename conflicts detected across template sources:",
+        ]
+        for filename in sorted(duplicate_templates):
+            sources = ", ".join(str(path) for path in sorted(duplicate_templates[filename]))
+            conflict_lines.append(f"- {filename}: {sources}")
+        raise ValueError("\n".join(conflict_lines))
+
+    copied: list[Path] = []
+    destination = bundle_dir / "templates"
+    destination.mkdir(parents=True, exist_ok=True)
+
+    for filename in sorted(template_candidates):
+        src_path = template_candidates[filename][0]
+        dst_path = destination / filename
+        shutil.copy2(src_path, dst_path)
+        copied.append(dst_path)
     return copied
 
 
