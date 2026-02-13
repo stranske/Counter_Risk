@@ -158,6 +158,26 @@ def test_render_cprs_fcm_png_empty_dataframe_raises(tmp_path: Path) -> None:
         render_cprs_fcm_png(_FakeDataFrame([]), output)
 
 
+def test_render_cprs_fcm_png_missing_counterparty_column_raises(tmp_path: Path) -> None:
+    output = tmp_path / "missing-counterparty-fcm.png"
+    bad = _FakeDataFrame(
+        [
+            {
+                "Cash": 125.0,
+                "TIPS": 19.5,
+                "Treasury": 302.25,
+                "Equity": -15.0,
+                "Commodity": 8.5,
+                "Currency": 1.2,
+                "Notional": 441.45,
+            }
+        ]
+    )
+
+    with pytest.raises(ValueError, match="counterparty"):
+        render_cprs_fcm_png(bad, output)
+
+
 @pytest.mark.parametrize(
     ("variant", "row_count", "expected_rows"),
     (

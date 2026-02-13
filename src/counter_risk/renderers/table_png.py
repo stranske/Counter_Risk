@@ -327,6 +327,8 @@ def _to_renderable_rows(
     columns = _read_columns(exposures_df)
     missing_columns = sorted(_REQUIRED_COLUMNS - set(columns))
     if missing_columns:
+        if "Counterparty" in missing_columns:
+            raise ValueError("exposures_df is missing required counterparty column")
         missing = ", ".join(missing_columns)
         raise ValueError(f"exposures_df is missing required columns: {missing}")
 
