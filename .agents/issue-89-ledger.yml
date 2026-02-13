@@ -8,10 +8,10 @@ tasks:
       \ configured screenshot replacement backend (zip-based or `python-pptx`) when\
       \ screenshot replacement is enabled, and remove/guard the legacy \u201Cbypassing\
       \ screenshot replacement\u201D warning/copy path from running in that mode."
-    status: doing
+    status: done
     started_at: '2026-02-13T23:19:09Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T23:19:19Z'
+    commit: b20339ff9c133a18d5f7bdd6bc590068699a44ac
     notes: []
   - id: task-02
     title: Add config fields in `src/counter_risk/pipeline/config.py` to enable screenshot
