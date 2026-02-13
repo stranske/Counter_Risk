@@ -158,7 +158,7 @@ def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
         def __init__(
             self,
             link_format: FakeLinkFormat | None = None,
-            group_items: list["FakeShape"] | None = None,
+            group_items: list[FakeShape] | None = None,
         ) -> None:
             self.LinkFormat = link_format or FakeLinkFormat()
             self.GroupItems = group_items or []
@@ -258,7 +258,7 @@ def test_list_external_link_targets_collects_presentation_and_shape_sources(
         def __init__(
             self,
             link_format: FakeLinkFormat,
-            group_items: list["FakeShape"] | None = None,
+            group_items: list[FakeShape] | None = None,
         ) -> None:
             self.LinkFormat = link_format
             self.GroupItems = group_items or []
