@@ -70,6 +70,8 @@ def test_main_run_fixture_replay_mode(tmp_path: Path, capsys: pytest.CaptureFixt
             str(config_path),
             "--output-dir",
             str(output_dir),
+            "--as-of-date",
+            "2026-01-31",
         ]
     )
     captured = capsys.readouterr()
@@ -78,3 +80,4 @@ def test_main_run_fixture_replay_mode(tmp_path: Path, capsys: pytest.CaptureFixt
     assert "fixture replay completed" in captured.out.lower()
     manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["mode"] == "fixture_replay"
+    assert manifest["as_of_date"] == "2026-01-31"

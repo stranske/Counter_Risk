@@ -9,11 +9,14 @@ End Enum
 
 Public Function BuildRunArguments(ByVal asOfMonth As String, ByVal mode As RunnerMode) As String
     Dim parsedDate As Date
+    Dim asOfDateIso As String
     parsedDate = ParseAsOfMonth(asOfMonth)
+    asOfDateIso = Format$(parsedDate, "yyyy-mm-dd")
 
     BuildRunArguments = "run --fixture-replay --config " & _
                         QuoteArg(ResolveConfigPath(mode)) & _
-                        " --output-dir " & QuoteArg("outputs\" & Format$(parsedDate, "yyyy-mm-dd"))
+                        " --output-dir " & QuoteArg("outputs\" & asOfDateIso) & _
+                        " --as-of-date " & QuoteArg(asOfDateIso)
 End Function
 
 Public Function BuildExecutableCommand( _

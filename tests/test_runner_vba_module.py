@@ -9,8 +9,10 @@ def test_runner_vba_module_constructs_arguments_from_date_and_mode() -> None:
     module_source = Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
 
     assert "Public Function BuildRunArguments" in module_source
+    assert "asOfDateIso = Format$(parsedDate, \"yyyy-mm-dd\")" in module_source
     assert 'Format$(parsedDate, "yyyy-mm-dd")' in module_source
-    assert 'QuoteArg("outputs\\" & Format$(parsedDate, "yyyy-mm-dd"))' in module_source
+    assert 'QuoteArg("outputs\\" & asOfDateIso)' in module_source
+    assert '" --as-of-date " & QuoteArg(asOfDateIso)' in module_source
 
     assert "Case RunnerModeAllPrograms" in module_source
     assert 'ResolveConfigPath = "config\\all_programs.yml"' in module_source

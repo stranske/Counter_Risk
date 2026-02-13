@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from counter_risk.config import WorkflowConfig, load_config
@@ -40,7 +40,12 @@ def _resolve_output_dir(
     return (config_path.parent / config.output_root).resolve()
 
 
-def run_fixture_replay(*, config_path: Path, output_dir: Path | None = None) -> Path:
+def run_fixture_replay(
+    *,
+    config_path: Path,
+    output_dir: Path | None = None,
+    as_of_date: date | None = None,
+) -> Path:
     """Replay fixture artifacts into a deterministic run-output folder."""
 
     config = load_config(config_path)
@@ -64,10 +69,11 @@ def run_fixture_replay(*, config_path: Path, output_dir: Path | None = None) -> 
         copied_path = _copy_output_file(src_path=resolved, output_dir=run_dir)
         copied_outputs[key] = str(copied_path)
 
+    effective_as_of_date = as_of_date or config.as_of_date
     manifest = {
         "mode": "fixture_replay",
         "run_date_utc": datetime.now(UTC).isoformat(),
-        "as_of_date": None if config.as_of_date is None else config.as_of_date.isoformat(),
+        "as_of_date": None if effective_as_of_date is None else effective_as_of_date.isoformat(),
         "config_path": str(config_path.resolve()),
         "outputs": copied_outputs,
     }
