@@ -8,8 +8,10 @@ import pytest
 
 from counter_risk.renderers.table_png import (
     cprs_ch_font_spec,
+    cprs_ch_render_backend_notes,
     cprs_ch_render_backend,
     cprs_ch_table_columns,
+    cprs_ch_table_headers,
     cprs_ch_table_style,
     render_cprs_ch_png,
 )
@@ -101,8 +103,27 @@ def test_cprs_ch_table_columns_are_stable() -> None:
     )
 
 
+def test_cprs_ch_table_headers_are_stable() -> None:
+    assert cprs_ch_table_headers() == (
+        "Counterparty",
+        "Cash",
+        "TIPS",
+        "Treasury",
+        "Equity",
+        "Commodity",
+        "Currency",
+        "Notional",
+    )
+
+
 def test_cprs_ch_render_backend_is_explicit_and_stable() -> None:
     assert cprs_ch_render_backend() == "internal_pure_python_png_encoder"
+
+
+def test_cprs_ch_render_backend_notes_document_library_choice() -> None:
+    notes = cprs_ch_render_backend_notes()
+    assert "pure-Python PNG encoder" in notes
+    assert "deterministic" in notes
 
 
 def test_cprs_ch_font_spec_is_explicit_and_stable() -> None:
