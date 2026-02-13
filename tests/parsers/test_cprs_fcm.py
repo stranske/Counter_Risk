@@ -117,6 +117,29 @@ def test_parse_futures_detail_trend_non_empty_and_stable_columns() -> None:
     assert df["class"].eq("Currency").any()
 
 
+@pytest.mark.parametrize("fixture_name", [_ALL_PROGRAMS_FIXTURE, _EX_TREND_FIXTURE, _TREND_FIXTURE])
+def test_parse_fcm_totals_returns_dataframe_with_expected_dtypes(fixture_name: str) -> None:
+    _require_pandas()
+    df = parse_fcm_totals(_fixture(fixture_name))
+
+    assert isinstance(df, pd.DataFrame)
+    assert_frame_equal(
+        df.dtypes.to_frame(name="dtype"), _empty_totals_frame().dtypes.to_frame(name="dtype")
+    )
+
+
+@pytest.mark.parametrize("fixture_name", [_ALL_PROGRAMS_FIXTURE, _EX_TREND_FIXTURE, _TREND_FIXTURE])
+def test_parse_futures_detail_returns_dataframe_with_expected_dtypes(fixture_name: str) -> None:
+    _require_pandas()
+    df = parse_futures_detail(_fixture(fixture_name))
+
+    assert isinstance(df, pd.DataFrame)
+    assert_frame_equal(
+        df.dtypes.to_frame(name="dtype"),
+        _empty_futures_frame().dtypes.to_frame(name="dtype"),
+    )
+
+
 def _require_pandas() -> None:
     if pd is None or assert_frame_equal is None:
         pytest.skip("pandas is required for CPRS-FCM parser DataFrame tests")
