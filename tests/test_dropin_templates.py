@@ -15,6 +15,7 @@ from counter_risk.writers.dropin_templates import (
     _normalize_header_label,
     fill_dropin_template,
 )
+from tests.utils.assertions import assert_numeric_outputs_close
 
 
 def test_fill_dropin_template_raises_for_missing_template(tmp_path: Path) -> None:
@@ -541,9 +542,19 @@ def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
         "JP Morgan": 2550.0,
         "Societe Generale": 3150.0,
     }
-    for counterparty, expected_value in expected_notional.items():
+    actual_notional: dict[str, float] = {}
+    for counterparty in expected_notional:
         row = _find_row_by_label(worksheet, counterparty)
-        assert worksheet.cell(row=row, column=metric_columns["notional"]).value == expected_value
+        actual_notional[counterparty] = float(
+            worksheet.cell(row=row, column=metric_columns["notional"]).value
+        )
+
+    assert_numeric_outputs_close(
+        actual_notional,
+        expected_notional,
+        atol=1e-9,
+        rtol=1e-9,
+    )
 
     workbook.close()
 
@@ -625,12 +636,19 @@ def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path:
         "JP Morgan": -80.0,
         "Societe Generale": 95.0,
     }
-    for counterparty, expected_value in expected_notional_change.items():
+    actual_notional_change: dict[str, float] = {}
+    for counterparty in expected_notional_change:
         row = _find_row_by_label(worksheet, counterparty)
-        assert (
+        actual_notional_change[counterparty] = float(
             worksheet.cell(row=row, column=metric_columns["notional_change"]).value
-            == expected_value
         )
+
+    assert_numeric_outputs_close(
+        actual_notional_change,
+        expected_notional_change,
+        atol=1e-9,
+        rtol=1e-9,
+    )
 
     workbook.close()
 
@@ -722,26 +740,47 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
         "ICE": 165.0,
         "Japan SCC": 170.0,
     }
+    actual_notional: dict[str, float] = {}
 
-    for counterparty, expected_value in expected_notional.items():
+    for counterparty in expected_notional:
         row = _find_row_by_label(worksheet, counterparty)
-        assert worksheet.cell(row=row, column=metric_columns["notional"]).value == expected_value
+        actual_notional[counterparty] = float(
+            worksheet.cell(row=row, column=metric_columns["notional"]).value
+        )
 
-    assert worksheet.cell(row=breakdown_row, column=metric_columns["tips"]).value == pytest.approx(
-        0.40
+    assert_numeric_outputs_close(
+        actual_notional,
+        expected_notional,
+        atol=1e-9,
+        rtol=1e-9,
     )
-    assert worksheet.cell(
-        row=breakdown_row, column=metric_columns["treasury"]
-    ).value == pytest.approx(0.30)
-    assert worksheet.cell(
-        row=breakdown_row, column=metric_columns["equity"]
-    ).value == pytest.approx(0.20)
-    assert worksheet.cell(
-        row=breakdown_row, column=metric_columns["commodity"]
-    ).value == pytest.approx(0.10)
-    assert worksheet.cell(
-        row=breakdown_row, column=metric_columns["notional"]
-    ).value == pytest.approx(1.00)
+
+    actual_breakdown = {
+        "tips": float(worksheet.cell(row=breakdown_row, column=metric_columns["tips"]).value),
+        "treasury": float(
+            worksheet.cell(row=breakdown_row, column=metric_columns["treasury"]).value
+        ),
+        "equity": float(worksheet.cell(row=breakdown_row, column=metric_columns["equity"]).value),
+        "commodity": float(
+            worksheet.cell(row=breakdown_row, column=metric_columns["commodity"]).value
+        ),
+        "notional": float(
+            worksheet.cell(row=breakdown_row, column=metric_columns["notional"]).value
+        ),
+    }
+    expected_breakdown = {
+        "tips": 0.40,
+        "treasury": 0.30,
+        "equity": 0.20,
+        "commodity": 0.10,
+        "notional": 1.00,
+    }
+    assert_numeric_outputs_close(
+        actual_breakdown,
+        expected_breakdown,
+        atol=1e-9,
+        rtol=1e-9,
+    )
 
     workbook.close()
 
