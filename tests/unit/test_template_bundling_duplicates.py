@@ -12,7 +12,9 @@ def _write_template(path: Path, contents: bytes) -> None:
     path.write_bytes(contents)
 
 
-def test_copy_templates_raises_with_all_duplicate_filenames_and_source_paths(tmp_path: Path) -> None:
+def test_copy_templates_raises_with_all_duplicate_filenames_and_source_paths(
+    tmp_path: Path,
+) -> None:
     repo_root = tmp_path / "repo"
     bundle_dir = tmp_path / "bundle"
 
