@@ -1,0 +1,401 @@
+version: 1
+issue: 17
+base: main
+branch: codex/issue-17
+tasks:
+  - id: task-01
+    title: Create `src/counter_risk/writers/dropin_templates.py`
+    status: doing
+    started_at: '2026-02-13T04:35:52Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Implement `fill_dropin_template(template_path, exposures_df, breakdown,
+      *, output_path)` in `src/counter_risk/writers/dropin_templates.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement the function signature (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'parameter validation for fill_dropin_template (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define scope for: Add logic to load the Excel template file using openpyxl
+      or similar library (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement focused slice for: Add logic to load the Excel template file
+      using openpyxl or similar library (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Validate focused slice for: Add logic to load the Excel template file
+      using openpyxl or similar library (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement the main orchestration logic that coordinates counterparty matching
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'cell population (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Add error handling for missing templates (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'invalid input dataframes (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Implement the logic to save the populated workbook to the output_path
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Implement normalized counterparty name matching logic used by `fill_dropin_template(...)`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Update `fill_dropin_template(...)` to populate the blue-box numeric cells
+      (asset class columns + notional + notional change where present)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Implement logic to identify (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'populate asset class column cells in the template (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Define scope for: Implement logic to populate the notional column cells
+      with values from exposures_df (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Implement focused slice for: Implement logic to populate the notional
+      column cells with values from exposures_df (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Validate focused slice for: Implement logic to populate the notional column
+      cells with values from exposures_df (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Define scope for: Implement logic to populate the notional change column
+      cells where present in the template (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Implement focused slice for: Implement logic to populate the notional
+      change column cells where present in the template (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Validate focused slice for: Implement logic to populate the notional change
+      column cells where present in the template (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Add validation to ensure numeric values are formatted correctly for Excel
+      (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Update `fill_dropin_template(...)` to populate the Notional Breakdown row
+      from the computed `breakdown`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Write tests that generate output files in `tmp_path` and verify a few known
+      cells are filled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Define scope for: Write a test that verifies the All Programs template
+      populates counterparty rows correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Implement focused slice for: Write a test that verifies the All Programs
+      template populates counterparty rows correctly (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Validate focused slice for: Write a test that verifies the All Programs
+      template populates counterparty rows correctly (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Define scope for: Write a test that verifies the Ex Trend template populates
+      numeric cells correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Implement focused slice for: Write a test that verifies the Ex Trend template
+      populates numeric cells correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Validate focused slice for: Write a test that verifies the Ex Trend template
+      populates numeric cells correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Define scope for: Write a test that verifies the Trend template populates
+      the Notional Breakdown row correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Implement focused slice for: Write a test that verifies the Trend template
+      populates the Notional Breakdown row correctly (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Validate focused slice for: Write a test that verifies the Trend template
+      populates the Notional Breakdown row correctly (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Define scope for: Write a test that verifies error handling when template
+      files are missing or malformed (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Implement focused slice for: Write a test that verifies error handling
+      when template files are missing or malformed (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Validate focused slice for: Write a test that verifies error handling
+      when template files are missing or malformed (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Define scope for: Write a test that verifies the output Excel files can
+      be opened without corruption (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Implement focused slice for: Write a test that verifies the output Excel
+      files can be opened without corruption (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'Validate focused slice for: Write a test that verifies the output Excel
+      files can be opened without corruption (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: Running the tests produces `.xlsx` outputs that open in Excel without repair
+      prompts
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: Tests verify at least 5 known counterparties match expected totals for
+      each template variant (where applicable)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: Add `src/counter_risk/writers/dropin_templates.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: Implement `fill_dropin_template(template_path, exposures_df, breakdown,
+      *, output_path)`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: Match rows by normalized counterparty name
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: Populate the blue-box numeric cells (asset class columns + notional + notional
+      change where present)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: Populate Notional Breakdown row from computed breakdown
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: Add tests that write to `tmp_path` and verify a few known cells are filled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: Output templates open in Excel without repair prompts
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: At least 5 known counterparties match expected totals for each variant
+      (where applicable)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
