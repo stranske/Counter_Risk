@@ -134,7 +134,7 @@ async function detectInstructionComment({ github, context, comment, prNumber, en
 
   const dispatch = normaliseLower(result.dispatch);
   const reason = normaliseLower(result.reason);
-  const isValid = dispatch === 'true' || reason === 'duplicate-keepalive' || reason === 'keepalive-detected';
+  const isValid = dispatch === 'true' || reason === 'duplicate-keepalive' || reason === 'keepalive-detected' || reason === 'lock-held';
   if (!isValid) {
     return null;
   }
@@ -337,5 +337,11 @@ module.exports = {
   evaluateKeepaliveWorkerGate: async function ({ core, github: rawGithub, context, env = process.env }) {
     const github = await ensureRateLimitWrapped({ github: rawGithub, core, env });
     return evaluateKeepaliveWorkerGate({ core, github, context, env });
+  },
+  _test: {
+    detectInstructionComment,
+    findLatestInstruction,
+    extractLastProcessedState,
+    evaluateKeepaliveWorkerGate,
   },
 };
