@@ -376,6 +376,25 @@ def test_run_pipeline_passes_as_of_date_and_parsed_inputs_to_historical_update(
     assert calls[0]["variants"] == ["all_programs", "ex_trend", "trend"]
 
 
+def test_run_pipeline_invokes_ppt_link_refresh(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    seen: dict[str, Path] = {}
+
+    def _refresh(pptx_path: Path) -> bool:
+        seen["path"] = pptx_path
+        return True
+
+    monkeypatch.setattr("counter_risk.pipeline.run._refresh_ppt_links", _refresh)
+
+    run_dir = run_pipeline(config_path)
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    assert seen["path"] == run_dir / "Monthly Counterparty Exposure Report.pptx"
+    assert "PPT links not refreshed; COM refresh skipped" not in manifest["warnings"]
+
+
 def test_run_pipeline_wraps_config_validation_errors_for_output_root_file(
     tmp_path: Path, fake_pandas: None
 ) -> None:
