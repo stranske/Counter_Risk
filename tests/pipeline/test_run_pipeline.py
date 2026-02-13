@@ -331,8 +331,8 @@ def test_run_pipeline_wraps_manifest_generation_errors(
 ) -> None:
     config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
 
-    def _boom(self: Any, manifest: dict[str, Any]) -> Path:
-        _ = (self, manifest)
+    def _boom(self: Any, *, run_dir: Path, manifest: dict[str, Any]) -> Path:
+        _ = (self, run_dir, manifest)
         raise OSError("manifest disk error")
 
     monkeypatch.setattr("counter_risk.pipeline.run.ManifestBuilder.write", _boom)

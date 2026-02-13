@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import platform
 import shutil
@@ -15,6 +14,7 @@ from typing import Any
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
+from counter_risk.pipeline.manifest import ManifestBuilder
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,62 +35,6 @@ class _VariantInputs:
     name: str
     workbook_path: Path
     historical_path: Path
-
-
-class ManifestBuilder:
-    """Build and write run manifests."""
-
-    def __init__(self, *, run_dir: Path, config: WorkflowConfig) -> None:
-        self._run_dir = run_dir
-        self._config = config
-
-    def build(
-        self,
-        *,
-        input_hashes: dict[str, str],
-        output_paths: list[Path],
-        top_exposures: dict[str, list[dict[str, Any]]],
-        top_changes_per_variant: dict[str, list[dict[str, Any]]],
-        warnings: list[str],
-    ) -> dict[str, Any]:
-        config_snapshot = self._serialize_config_snapshot(self._config)
-        return {
-            "as_of_date": str(self._resolve_as_of_date(self._config)),
-            "run_date": datetime.now(tz=UTC).isoformat(),
-            "run_dir": str(self._run_dir),
-            "config_snapshot": config_snapshot,
-            "input_hashes": input_hashes,
-            "output_paths": [str(path) for path in output_paths],
-            "top_exposures": top_exposures,
-            "top_changes_per_variant": top_changes_per_variant,
-            "warnings": warnings,
-        }
-
-    def write(self, manifest: dict[str, Any]) -> Path:
-        path = self._run_dir / "manifest.json"
-        try:
-            path.write_text(
-                json.dumps(manifest, sort_keys=True, indent=2) + "\n",
-                encoding="utf-8",
-            )
-        except OSError as exc:
-            raise RuntimeError(f"Failed to write manifest file: {path}") from exc
-        return path
-
-    def _serialize_config_snapshot(self, config: WorkflowConfig) -> dict[str, Any]:
-        raw = config.model_dump(mode="python")
-        snapshot: dict[str, Any] = {}
-        for key, value in raw.items():
-            if isinstance(value, Path):
-                snapshot[key] = str(value)
-            elif isinstance(value, date):
-                snapshot[key] = value.isoformat()
-            else:
-                snapshot[key] = value
-        return snapshot
-
-    def _resolve_as_of_date(self, config: WorkflowConfig) -> date:
-        return config.as_of_date or datetime.now(tz=UTC).date()
 
 
 def run_pipeline(config_path: str | Path) -> Path:
@@ -163,15 +107,16 @@ def run_pipeline(config_path: str | Path) -> Path:
 
     try:
         input_hashes = {name: _sha256_file(path) for name, path in input_paths.items()}
-        manifest_builder = ManifestBuilder(run_dir=run_dir, config=config)
+        manifest_builder = ManifestBuilder(config=config)
         manifest = manifest_builder.build(
+            run_dir=run_dir,
             input_hashes=input_hashes,
             output_paths=output_paths,
             top_exposures=top_exposures,
             top_changes_per_variant=top_changes_per_variant,
             warnings=warnings,
         )
-        manifest_path = manifest_builder.write(manifest)
+        manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=manifest_write run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during manifest generation stage") from exc
