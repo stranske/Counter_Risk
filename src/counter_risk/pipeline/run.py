@@ -117,7 +117,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during input validation stage") from exc
 
     as_of_date = config.as_of_date or datetime.now(tz=UTC).date()
-    run_dir = config.output_root / as_of_date.isoformat()
+    run_dir = _resolve_repo_root() / "runs" / as_of_date.isoformat()
     try:
         run_dir.mkdir(parents=True, exist_ok=True)
     except Exception as exc:
@@ -179,6 +179,12 @@ def run_pipeline(config_path: str | Path) -> Path:
     LOGGER.info("pipeline_complete run_dir=%s manifest=%s", run_dir, manifest_path)
 
     return run_dir
+
+
+def _resolve_repo_root() -> Path:
+    """Resolve the repository root for deterministic run output layout."""
+
+    return Path(__file__).resolve().parents[3]
 
 
 def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:

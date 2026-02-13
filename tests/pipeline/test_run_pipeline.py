@@ -78,6 +78,11 @@ def fake_pandas(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(sys.modules, "pandas", fake_module)
 
 
+@pytest.fixture(autouse=True)
+def patch_repo_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("counter_risk.pipeline.run._resolve_repo_root", lambda: tmp_path)
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     digest.update(path.read_bytes())
@@ -111,7 +116,7 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
 
     run_dir = run_pipeline(config_path)
 
-    assert run_dir == output_root / "2025-12-31"
+    assert run_dir == tmp_path / "runs" / "2025-12-31"
     assert run_dir.exists()
 
     manifest_path = run_dir / "manifest.json"
@@ -393,6 +398,17 @@ def test_run_pipeline_invokes_ppt_link_refresh(
 
     assert seen["path"] == run_dir / "Monthly Counterparty Exposure Report.pptx"
     assert "PPT links not refreshed; COM refresh skipped" not in manifest["warnings"]
+
+
+def test_run_pipeline_ignores_config_output_root_for_run_directory(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "different-output-root")
+
+    run_dir = run_pipeline(config_path)
+
+    assert run_dir == tmp_path / "runs" / "2025-12-31"
+    assert not (tmp_path / "different-output-root" / "2025-12-31").exists()
 
 
 def test_run_pipeline_wraps_config_validation_errors_for_output_root_file(
