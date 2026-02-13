@@ -42,11 +42,10 @@ def test_runner_vba_run_all_reads_selected_date_and_calls_shared_builder() -> No
 
 
 def test_runner_workbook_embeds_runnerlaunch_entrypoints_in_vba_project() -> None:
-    with ZipFile("Runner.xlsm") as zip_file:
-        with zip_file.open("xl/vbaProject.bin") as handle:
-            vba_project = handle.read().decode("latin-1", errors="ignore")
+    with ZipFile("Runner.xlsm") as zip_file, zip_file.open("xl/vbaProject.bin") as handle:
+        vba_project = handle.read().decode("latin-1", errors="ignore")
 
-    assert "Attribute VB_Name = \"RunnerLaunch\"" in vba_project
+    assert 'Attribute VB_Name = "RunnerLaunch"' in vba_project
     assert "Public Sub RunAll_Click()" in vba_project
     assert "Public Sub RunExTrend_Click()" in vba_project
     assert "Public Sub RunTrend_Click()" in vba_project
