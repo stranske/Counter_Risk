@@ -196,6 +196,8 @@ def render_cprs_ch_png(
 
 def render_cprs_fcm_png(exposures_df: object, output_png: Path | str) -> None:
     """Render a deterministic CPRS-FCM table PNG."""
+    if exposures_df is None:
+        raise ValueError("exposures_df cannot be None")
     _render_cprs_table_png(exposures_df, output_png, layout=_CPRS_CH_LAYOUT)
 
 
