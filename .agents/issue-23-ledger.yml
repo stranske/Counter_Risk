@@ -65,10 +65,10 @@ tasks:
     notes: []
   - id: task-08
     title: "Add \u201CRun All / Run Ex Trend / Run Trend\u201D buttons to `Runner.xlsm`."
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-13T14:54:20Z'
+    finished_at: '2026-02-13T14:58:14Z'
+    commit: 928b9303f2ec8daa3d4166f80989b5d2fc520c1e
     notes: []
   - id: task-09
     title: "Add an \u201COpen Output Folder\u201D button to `Runner.xlsm` that opens\
