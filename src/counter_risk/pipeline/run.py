@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import platform
 import shutil
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -401,10 +402,44 @@ def _write_outputs(*, run_dir: Path, config: WorkflowConfig, warnings: list[str]
     output_paths.append(target_ppt)
 
     warnings.append("PPT screenshots replacement not implemented; copied source deck unchanged")
-    warnings.append("PPT links not refreshed; COM refresh skipped")
+    if not _refresh_ppt_links(target_ppt):
+        warnings.append("PPT links not refreshed; COM refresh skipped")
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
     return output_paths
+
+
+def _refresh_ppt_links(pptx_path: Path) -> bool:
+    """Best-effort refresh of linked PowerPoint content via COM automation."""
+
+    if platform.system().lower() != "windows":
+        LOGGER.info("ppt_link_refresh_skipped file=%s reason=unsupported_platform", pptx_path)
+        return False
+
+    try:
+        import win32com.client  # type: ignore[import-not-found,import-untyped]
+    except ImportError:
+        LOGGER.info("ppt_link_refresh_skipped file=%s reason=win32com_unavailable", pptx_path)
+        return False
+
+    app = None
+    presentation = None
+    try:
+        app = win32com.client.DispatchEx("PowerPoint.Application")
+        app.Visible = False
+        presentation = app.Presentations.Open(str(pptx_path), WithWindow=False)
+        presentation.UpdateLinks()
+        presentation.Save()
+        LOGGER.info("ppt_link_refresh_complete file=%s", pptx_path)
+        return True
+    except Exception:
+        LOGGER.exception("ppt_link_refresh_failed file=%s", pptx_path)
+        return False
+    finally:
+        if presentation is not None:
+            presentation.Close()
+        if app is not None:
+            app.Quit()
 
 
 def _update_historical_outputs(
