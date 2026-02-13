@@ -112,3 +112,7 @@ disable_error_code = ["import-untyped"]
 [[tool.mypy.overrides]]
 module = "counter_risk.parsers.cprs_ch"
 disable_error_code = ["import-untyped"]
+
+[[tool.mypy.overrides]]
+module = "counter_risk.integrations.powerpoint_com"
+disable_error_code = ["import-untyped"]
