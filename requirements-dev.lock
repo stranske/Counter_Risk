@@ -2,6 +2,8 @@
 #    uv pip compile pyproject.toml --extra dev -o requirements-dev.lock
 coverage==7.13.0
     # via pytest-cov
+black==26.1.0
+    # via my-project (pyproject.toml)
 iniconfig==2.3.0
     # via pytest
 librt==0.7.4
@@ -32,7 +34,7 @@ pytest==9.0.2
     #   pytest-cov
 pytest-cov==7.0.0
     # via my-project (pyproject.toml)
-ruff==0.14.10
+ruff==0.15.0
     # via my-project (pyproject.toml)
 typing-extensions==4.15.0
     # via mypy
