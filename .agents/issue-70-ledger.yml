@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Implement logic in `src/counter_risk/writers/historical_update.py` to iterate
       through rows one through twelve of the worksheet
-    status: doing
+    status: done
     started_at: '2026-02-13T14:29:46Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T14:29:56Z'
+    commit: 9828f25d537e9778631e0fdd79e268cba2cba73c
     notes: []
   - id: task-02
     title: Create a function in `src/counter_risk/writers/historical_update.py` to
