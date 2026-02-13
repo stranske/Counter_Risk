@@ -52,6 +52,21 @@ def test_scope_definition_uses_default_requirements_and_boundaries() -> None:
     assert "Post-run status and log display." in scope.out_of_scope
 
 
+def test_scope_decision_matches_policy_decision_for_same_requirements() -> None:
+    explicit_requirements = DateControlRequirements(
+        non_technical_operator_flow=True,
+        month_end_reporting_process=True,
+        cross_office_reliability_required=True,
+        deterministic_ci_testability_required=True,
+    )
+
+    policy_decision = choose_runner_date_input_control(explicit_requirements)
+    scope = define_runner_xlsm_date_control_scope(explicit_requirements)
+
+    assert scope.decision == policy_decision
+    assert scope.decision.selected_control is DateInputControl.MONTH_SELECTOR
+
+
 def test_scope_definition_accepts_explicit_requirements() -> None:
     explicit_requirements = DateControlRequirements(
         month_end_reporting_process=False,
@@ -80,3 +95,12 @@ def test_any_missing_mandatory_requirement_switches_to_date_picker(
     requirements = DateControlRequirements(**override)
     decision = choose_runner_date_input_control(requirements)
     assert decision.selected_control is DateInputControl.DATE_PICKER
+
+
+def test_month_selector_rationale_covers_workflow_reliability_and_ci_requirements() -> None:
+    decision = choose_runner_date_input_control(DateControlRequirements())
+    rationale = " ".join(decision.rationale).lower()
+
+    assert "month-end" in rationale
+    assert "inconsistent across office" in rationale
+    assert "ci-testable" in rationale
