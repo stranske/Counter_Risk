@@ -11,6 +11,33 @@ import pytest
 
 from counter_risk.parsers.cprs_ch import parse_cprs_ch
 
+_ALL_PROGRAMS_FIXTURE = "CPRS-CH Fixture - All Programs.xlsx"
+_EX_TREND_FIXTURE = "CPRS-CH Fixture - Ex Trend.xlsx"
+_TREND_FIXTURE = "CPRS-CH Fixture - Trend.xlsx"
+_NUMERIC_COLUMNS = (
+    "Cash",
+    "TIPS",
+    "Treasury",
+    "Equity",
+    "Commodity",
+    "Currency",
+    "Notional",
+)
+_STABLE_COLUMNS = (
+    "Segment",
+    "Counterparty",
+    "Cash",
+    "TIPS",
+    "Treasury",
+    "Equity",
+    "Commodity",
+    "Currency",
+    "Notional",
+    "NotionalChangeFromPriorMonth",
+    "AnnualizedVolatility",
+    "SourceRow",
+)
+
 
 class _FakeDataFrame:
     def __init__(
@@ -78,21 +105,22 @@ def _fixture(name: str) -> Path:
 
 
 def test_parse_all_programs_variant(fake_pandas: None) -> None:
-    df = parse_cprs_ch(_fixture("NISA Drop-In Template - All Programs.xlsx"))
+    df = parse_cprs_ch(_fixture(_ALL_PROGRAMS_FIXTURE))
 
     assert not df.empty
     records = df.to_records()
     assert any(row["Segment"] == "swaps" for row in records)
     assert any(row["Segment"] == "repo" for row in records)
     assert any(row["Segment"] == "futures_cdx" for row in records)
+    assert tuple(df.columns) == _STABLE_COLUMNS
 
     sample = records[0]
-    assert isinstance(sample["Cash"], float)
-    assert isinstance(sample["Notional"], float)
+    for column in _NUMERIC_COLUMNS:
+        assert isinstance(sample[column], float)
 
 
 def test_parse_ex_trend_variant(fake_pandas: None) -> None:
-    df = parse_cprs_ch(_fixture("NISA Drop-In Template - Ex Trend.xlsx"))
+    df = parse_cprs_ch(_fixture(_EX_TREND_FIXTURE))
 
     records = df.to_records()
     segments = {row["Segment"] for row in records}
@@ -101,7 +129,7 @@ def test_parse_ex_trend_variant(fake_pandas: None) -> None:
 
 
 def test_parse_trend_variant_maps_swaps_to_futures(fake_pandas: None) -> None:
-    df = parse_cprs_ch(_fixture("NISA Drop-In Template - Trend.xlsx"))
+    df = parse_cprs_ch(_fixture(_TREND_FIXTURE))
 
     records = df.to_records()
     assert {row["Segment"] for row in records} == {"futures"}
