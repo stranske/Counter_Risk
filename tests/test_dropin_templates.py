@@ -578,24 +578,72 @@ def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path:
     for counterparty, expected_value in expected_notional_change.items():
         row = _find_row_by_label(worksheet, counterparty)
         assert (
-            worksheet.cell(row=row, column=metric_columns["notional_change"]).value == expected_value
+            worksheet.cell(row=row, column=metric_columns["notional_change"]).value
+            == expected_value
         )
 
     workbook.close()
 
 
-def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(tmp_path: Path) -> None:
+def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
+    tmp_path: Path,
+) -> None:
     openpyxl = pytest.importorskip("openpyxl")
 
     template = Path("tests/fixtures/NISA Drop-In Template - Trend.xlsx")
     output = tmp_path / "trend-output.xlsx"
 
     exposures = [
-        {"counterparty": "CME", "tips": 10, "treasury": 20, "equity": 30, "commodity": 40, "currency": 50, "notional": 150, "notional_change": 1},
-        {"counterparty": "EUREX", "tips": 11, "treasury": 21, "equity": 31, "commodity": 41, "currency": 51, "notional": 155, "notional_change": 2},
-        {"counterparty": "ICE Euro", "tips": 12, "treasury": 22, "equity": 32, "commodity": 42, "currency": 52, "notional": 160, "notional_change": 3},
-        {"counterparty": "ICE", "tips": 13, "treasury": 23, "equity": 33, "commodity": 43, "currency": 53, "notional": 165, "notional_change": 4},
-        {"counterparty": "Japan SCC", "tips": 14, "treasury": 24, "equity": 34, "commodity": 44, "currency": 54, "notional": 170, "notional_change": 5},
+        {
+            "counterparty": "CME",
+            "tips": 10,
+            "treasury": 20,
+            "equity": 30,
+            "commodity": 40,
+            "currency": 50,
+            "notional": 150,
+            "notional_change": 1,
+        },
+        {
+            "counterparty": "EUREX",
+            "tips": 11,
+            "treasury": 21,
+            "equity": 31,
+            "commodity": 41,
+            "currency": 51,
+            "notional": 155,
+            "notional_change": 2,
+        },
+        {
+            "counterparty": "ICE Euro",
+            "tips": 12,
+            "treasury": 22,
+            "equity": 32,
+            "commodity": 42,
+            "currency": 52,
+            "notional": 160,
+            "notional_change": 3,
+        },
+        {
+            "counterparty": "ICE",
+            "tips": 13,
+            "treasury": 23,
+            "equity": 33,
+            "commodity": 43,
+            "currency": 53,
+            "notional": 165,
+            "notional_change": 4,
+        },
+        {
+            "counterparty": "Japan SCC",
+            "tips": 14,
+            "treasury": 24,
+            "equity": 34,
+            "commodity": 44,
+            "currency": 54,
+            "notional": 170,
+            "notional_change": 5,
+        },
     ]
     breakdown = {
         "tips": 0.40,
@@ -618,14 +666,21 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(tmp
     metric_columns = _find_metric_columns(worksheet)
     breakdown_row = _find_row_by_label(worksheet, "Notional Breakdown")
 
-    assert worksheet.cell(row=breakdown_row, column=metric_columns["tips"]).value == pytest.approx(0.40)
-    assert worksheet.cell(row=breakdown_row, column=metric_columns["treasury"]).value == pytest.approx(0.30)
-    assert worksheet.cell(row=breakdown_row, column=metric_columns["equity"]).value == pytest.approx(0.20)
-    assert (
-        worksheet.cell(row=breakdown_row, column=metric_columns["commodity"]).value
-        == pytest.approx(0.10)
+    assert worksheet.cell(row=breakdown_row, column=metric_columns["tips"]).value == pytest.approx(
+        0.40
     )
-    assert worksheet.cell(row=breakdown_row, column=metric_columns["notional"]).value == pytest.approx(1.00)
+    assert worksheet.cell(
+        row=breakdown_row, column=metric_columns["treasury"]
+    ).value == pytest.approx(0.30)
+    assert worksheet.cell(
+        row=breakdown_row, column=metric_columns["equity"]
+    ).value == pytest.approx(0.20)
+    assert worksheet.cell(
+        row=breakdown_row, column=metric_columns["commodity"]
+    ).value == pytest.approx(0.10)
+    assert worksheet.cell(
+        row=breakdown_row, column=metric_columns["notional"]
+    ).value == pytest.approx(1.00)
 
     workbook.close()
 
