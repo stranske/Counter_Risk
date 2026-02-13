@@ -104,7 +104,7 @@ def test_runner_workbook_contains_month_selector_dropdown() -> None:
         assert all(_is_month_end(item) for item in month_values[1:])
 
         parsed_dates = [date.fromisoformat(item) for item in month_values[1:]]
-        for current, next_value in zip(parsed_dates, parsed_dates[1:]):
+        for current, next_value in zip(parsed_dates, parsed_dates[1:], strict=False):
             assert next_value == _next_month_end(current)
 
 
