@@ -1,0 +1,226 @@
+version: 1
+issue: 58
+base: main
+branch: codex/issue-58
+tasks:
+  - id: task-01
+    title: Create `tests/helpers/pptx_asserts.py` defining `assert_slide_count`, `assert_chart_present`,
+      and `assert_picture_present` using `python-pptx` slide/shape inspection.
+    status: doing
+    started_at: '2026-02-13T03:33:03Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Add `tests/helpers/__init__.py` if needed to support `from tests.helpers.pptx_asserts
+      import ...` imports.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: "Create `tests/test_fixtures_smoke.py` with a pytest test that enumerates\
+      \ `tests/fixtures/` (optionally recursively) and opens `.pptx` via `pptx.Presentation(...)`\
+      \ and `.xlsx` via `openpyxl.load_workbook(...)` (or the project\u2019s existing\
+      \ XLSX loader), failing on exceptions."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Remove tracked runtime/build artifacts from git index (e.g., tracked `**/__pycache__/**`,
+      `**/*.pyc`, `**/*.egg-info/**`) so they are no longer tracked.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Update `.gitignore` to ignore `__pycache__/`, `*.pyc`, and `*.egg-info/`
+      (and other common Python build artifacts if missing).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: '`tests/helpers/pptx_asserts.py` exists and `from tests.helpers.pptx_asserts
+      import assert_slide_count, assert_chart_present, assert_picture_present` succeeds.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: '`assert_slide_count(pptx_obj_or_path, expected_count)` accepts a `str`/`pathlib.Path`
+      or `pptx.Presentation` and raises `AssertionError` when slide count != `expected_count`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: '`assert_chart_present(pptx_obj_or_path)` iterates slides/shapes and detects
+      charts via `getattr(shape, "has_chart", False)`, raising `AssertionError` if
+      none exist and not raising if at least one exists.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: '`assert_picture_present(pptx_obj_or_path)` iterates slides/shapes and
+      detects pictures via `shape.shape_type == pptx.enum.shapes.MSO_SHAPE_TYPE.PICTURE`,
+      raising `AssertionError` if none exist and not raising if at least one exists.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: "`tests/test_fixtures_smoke.py` exists and contains at least one pytest\
+      \ test that enumerates fixtures under `tests/fixtures/` (directly or recursively)\
+      \ and attempts to open `.pptx` with `pptx.Presentation(...)` and `.xlsx` with\
+      \ `openpyxl.load_workbook(...)` (or the project\u2019s existing XLSX loader)."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: The fixture smoke test produces a pytest failure if any supported fixture
+      cannot be opened (exceptions are not silently swallowed).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: '`git ls-files` shows no tracked paths matching `**/__pycache__/**`, `**/*.pyc`,
+      or `**/*.egg-info/**`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: '`.gitignore` includes patterns covering `__pycache__/`, `*.pyc`, and `*.egg-info/`
+      (or equivalent patterns that ignore those paths).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Add PPTX assertion helpers in `tests/helpers/pptx_asserts.py` implementing:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Create a fixture smoke test at `tests/test_fixtures_smoke.py` that iterates
+      over all files in `tests/fixtures/` and attempts to open each based on extension:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Remove any committed runtime/build artifacts from the repository (e.g.,
+      `__pycache__/` directories, `*.pyc` files under `src/` and `tests/`, and generated
+      `*.egg-info` content) so they are not tracked in git.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Update `.gitignore` to ignore `__pycache__/` directories, `*.pyc` files,
+      and `*.egg-info` directories (and any other common Python build artifacts if
+      not already present).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: A new module `tests/helpers/pptx_asserts.py` exists and defines callables
+      named `assert_slide_count`, `assert_chart_present`, and `assert_picture_present`
+      that are importable via `from tests.helpers.pptx_asserts import assert_slide_count,
+      assert_chart_present, assert_picture_present`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: '`assert_slide_count(pptx_obj_or_path, expected_count)` accepts either
+      a filesystem path (`str`/`pathlib.Path`) or an in-memory `pptx.Presentation`
+      object and raises an `AssertionError` when the actual slide count does not equal
+      `expected_count`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: '`assert_chart_present(pptx_obj_or_path)` detects charts by iterating all
+      slides and shapes and checking `shape.has_chart` and raises `AssertionError`
+      if no chart exists anywhere in the deck; it must not raise if at least one chart
+      exists.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: '`assert_picture_present(pptx_obj_or_path)` detects pictures by iterating
+      all slides and shapes and checking `shape.shape_type == pptx.enum.shapes.MSO_SHAPE_TYPE.PICTURE`
+      and raises `AssertionError` if no picture exists anywhere in the deck; it must
+      not raise if at least one picture exists.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: "A new test file `tests/test_fixtures_smoke.py` exists and contains at\
+      \ least one pytest test that enumerates files directly under `tests/fixtures/`\
+      \ (or recursively) and attempts to open each supported fixture based on extension:\
+      \ `.pptx` via `pptx.Presentation(...)` and `.xlsx` via `openpyxl.load_workbook(...)`\
+      \ (or the project\u2019s existing XLSX loader)."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: The fixture smoke test fails with a clear assertion/pytest failure if any
+      `.pptx` fixture cannot be opened by `pptx.Presentation` or any `.xlsx` fixture
+      cannot be opened by the chosen XLSX loader (i.e., exceptions are not silently
+      swallowed).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'No tracked runtime/build artifacts exist in git after the change: no tracked
+      paths matching `**/__pycache__/**`, `**/*.pyc`, or `**/*.egg-info/**`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: '`.gitignore` contains ignore patterns that cover Python bytecode caches
+      and build metadata at minimum: `__pycache__/`, `*.pyc`, and `*.egg-info/` (or
+      equivalent patterns that ignore those paths).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
