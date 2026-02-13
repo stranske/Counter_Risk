@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import posixpath
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Any
 
 from counter_risk.config import WorkflowConfig
@@ -90,14 +92,26 @@ class ManifestBuilder:
         return normalized_paths
 
     def _to_relative_artifact_path(self, *, run_dir: Path, artifact_path: Path) -> Path:
+        run_dir_resolved = run_dir.resolve()
         if artifact_path.is_absolute():
+            normalized_absolute = artifact_path.resolve()
             try:
-                return artifact_path.relative_to(run_dir)
+                relative_path = normalized_absolute.relative_to(run_dir_resolved)
             except ValueError as exc:
                 raise ValueError(
                     f"Artifact path must be within run_dir '{run_dir}': {artifact_path}"
                 ) from exc
-        return artifact_path
+        else:
+            relative_path = artifact_path
+
+        normalized_posix = PurePosixPath(posixpath.normpath(relative_path.as_posix()))
+        if any(part == ".." for part in normalized_posix.parts):
+            raise ValueError(f"Artifact path cannot contain '..' segments: {artifact_path}")
+
+        if normalized_posix.as_posix() == ".":
+            raise ValueError(f"Artifact path must reference a file, not run_dir itself: {artifact_path}")
+
+        return Path(normalized_posix.as_posix())
 
     def _validate_artifact_paths_exist(self, *, run_dir: Path, relative_paths: list[Path]) -> None:
         missing_paths: list[Path] = []
