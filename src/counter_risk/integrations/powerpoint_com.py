@@ -165,7 +165,9 @@ def list_external_link_targets(pptx_path: str | Path) -> list[str]:
     return list(dict.fromkeys(targets))
 
 
-def refresh_links_and_save(pptx_path: str | Path, output_pptx_path: str | Path | None = None) -> Path:
+def refresh_links_and_save(
+    pptx_path: str | Path, output_pptx_path: str | Path | None = None
+) -> Path:
     """Refresh external links using PowerPoint COM and save to a new file.
 
     If COM is unavailable, this function copies the presentation to the output path,

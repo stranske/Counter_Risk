@@ -91,7 +91,9 @@ def test_refresh_links_and_save_writes_manual_instructions_when_com_unavailable(
     monkeypatch.setattr(
         powerpoint_com,
         "initialize_powerpoint_application",
-        lambda: (_ for _ in ()).throw(powerpoint_com.PowerPointComUnavailableError("COM unavailable")),
+        lambda: (_ for _ in ()).throw(
+            powerpoint_com.PowerPointComUnavailableError("COM unavailable")
+        ),
     )
 
     output_path = powerpoint_com.refresh_links_and_save(source_pptx)
@@ -119,7 +121,9 @@ def test_refresh_links_fallback_instructions_include_manual_steps(
     monkeypatch.setattr(
         powerpoint_com,
         "initialize_powerpoint_application",
-        lambda: (_ for _ in ()).throw(powerpoint_com.PowerPointComUnavailableError("not on windows")),
+        lambda: (_ for _ in ()).throw(
+            powerpoint_com.PowerPointComUnavailableError("not on windows")
+        ),
     )
 
     returned_path = powerpoint_com.refresh_links_and_save(source_pptx, output_pptx)
@@ -132,3 +136,172 @@ def test_refresh_links_fallback_instructions_include_manual_steps(
     assert "Open the output presentation in Microsoft PowerPoint." in content
     assert f"Input presentation: {source_pptx}" in content
     assert f"Output presentation: {output_pptx}" in content
+
+
+def test_refresh_links_and_save_updates_links_and_saves_when_com_available(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class FakeLinkFormat:
+        def __init__(self, source: str | None = None) -> None:
+            self.source = source or ""
+            self.update_calls = 0
+
+        @property
+        def SourceFullName(self) -> str:  # noqa: N802
+            return self.source
+
+        def Update(self) -> None:  # noqa: N802
+            self.update_calls += 1
+
+    class FakeShape:
+        def __init__(self, link_format: FakeLinkFormat | None = None) -> None:
+            self.LinkFormat = link_format or FakeLinkFormat()
+
+    class FakeSlide:
+        def __init__(self, shapes: list[FakeShape]) -> None:
+            self.Shapes = shapes
+
+    class FakePresentation:
+        def __init__(self) -> None:
+            self.update_links_calls = 0
+            self.save_copy_paths: list[str] = []
+            self.close_calls = 0
+            self.Slides = [
+                FakeSlide([FakeShape(FakeLinkFormat()), FakeShape(FakeLinkFormat())]),
+                FakeSlide([FakeShape(FakeLinkFormat())]),
+            ]
+
+        def UpdateLinks(self) -> None:  # noqa: N802
+            self.update_links_calls += 1
+
+        def SaveCopyAs(self, path: str) -> None:  # noqa: N802
+            self.save_copy_paths.append(path)
+
+        def Close(self) -> None:  # noqa: N802
+            self.close_calls += 1
+
+    class FakePresentations:
+        def __init__(self, presentation: FakePresentation) -> None:
+            self.presentation = presentation
+            self.open_args: list[tuple[str, bool, bool, bool]] = []
+
+        def Open(
+            self, path: str, with_window: bool, read_only: bool, untitled: bool
+        ) -> FakePresentation:  # noqa: N802
+            self.open_args.append((path, with_window, read_only, untitled))
+            return self.presentation
+
+    class FakeApp:
+        def __init__(self, presentation: FakePresentation) -> None:
+            self.Presentations = FakePresentations(presentation)
+            self.Visible: int | None = None
+            self.quit_calls = 0
+
+        def Quit(self) -> None:  # noqa: N802
+            self.quit_calls += 1
+
+    source_pptx = tmp_path / "in.pptx"
+    output_pptx = tmp_path / "out.pptx"
+    source_pptx.write_bytes(b"stub")
+
+    presentation = FakePresentation()
+    app = FakeApp(presentation)
+    monkeypatch.setattr(powerpoint_com, "initialize_powerpoint_application", lambda: app)
+
+    returned = powerpoint_com.refresh_links_and_save(source_pptx, output_pptx)
+
+    assert returned == output_pptx
+    assert app.Visible == 0
+    assert app.Presentations.open_args == [(str(source_pptx), False, False, False)]
+    assert presentation.update_links_calls == 1
+    assert presentation.save_copy_paths == [str(output_pptx)]
+    assert presentation.close_calls == 1
+    assert app.quit_calls == 1
+    shape_updates = sum(
+        shape.LinkFormat.update_calls for slide in presentation.Slides for shape in slide.Shapes
+    )
+    assert shape_updates == 3
+
+
+def test_list_external_link_targets_collects_presentation_and_shape_sources(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class FakeLinkFormat:
+        def __init__(self, source: str | None = None, *, raise_on_source: bool = False) -> None:
+            self.source = source
+            self.raise_on_source = raise_on_source
+
+        @property
+        def SourceFullName(self) -> str:  # noqa: N802
+            if self.raise_on_source:
+                raise RuntimeError("link source unavailable")
+            return self.source or ""
+
+    class FakeShape:
+        def __init__(self, link_format: FakeLinkFormat) -> None:
+            self.LinkFormat = link_format
+
+    class FakeSlide:
+        def __init__(self, shapes: list[FakeShape]) -> None:
+            self.Shapes = shapes
+
+    class FakePresentation:
+        def __init__(self) -> None:
+            self.Slides = [
+                FakeSlide(
+                    [
+                        FakeShape(FakeLinkFormat("X:\\linked\\book1.xlsx")),
+                        FakeShape(FakeLinkFormat("X:\\linked\\book2.xlsx")),
+                        FakeShape(FakeLinkFormat("X:\\linked\\book1.xlsx")),
+                        FakeShape(FakeLinkFormat(raise_on_source=True)),
+                    ]
+                )
+            ]
+            self.close_calls = 0
+
+        def LinkSources(self) -> list[str]:  # noqa: N802
+            return ["X:\\linked\\book0.xlsx", "X:\\linked\\book1.xlsx"]
+
+        def Close(self) -> None:  # noqa: N802
+            self.close_calls += 1
+
+    class FakePresentations:
+        def __init__(self, presentation: FakePresentation) -> None:
+            self.presentation = presentation
+            self.open_args: list[tuple[str, bool, bool, bool]] = []
+
+        def Open(
+            self, path: str, with_window: bool, read_only: bool, untitled: bool
+        ) -> FakePresentation:  # noqa: N802
+            self.open_args.append((path, with_window, read_only, untitled))
+            return self.presentation
+
+    class FakeApp:
+        def __init__(self, presentation: FakePresentation) -> None:
+            self.Presentations = FakePresentations(presentation)
+            self.Visible: int | None = None
+            self.quit_calls = 0
+
+        def Quit(self) -> None:  # noqa: N802
+            self.quit_calls += 1
+
+    source_pptx = tmp_path / "input.pptx"
+    source_pptx.write_bytes(b"pptx")
+
+    presentation = FakePresentation()
+    app = FakeApp(presentation)
+    monkeypatch.setattr(powerpoint_com, "initialize_powerpoint_application", lambda: app)
+
+    targets = powerpoint_com.list_external_link_targets(source_pptx)
+
+    assert targets == [
+        "X:\\linked\\book0.xlsx",
+        "X:\\linked\\book1.xlsx",
+        "X:\\linked\\book2.xlsx",
+    ]
+    assert app.Visible == 0
+    assert app.Presentations.open_args == [(str(source_pptx), False, True, False)]
+    assert presentation.close_calls == 1
+    assert app.quit_calls == 1
