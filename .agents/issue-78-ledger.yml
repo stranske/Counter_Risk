@@ -8,10 +8,10 @@ tasks:
       the pipeline CLI entrypoint into an executable named `counter-risk` (and `counter-risk.exe`
       on Windows), bundling required package data (templates + default config) and
       any runtime hooks needed for path resolution.
-    status: doing
+    status: done
     started_at: '2026-02-13T20:10:57Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T20:11:08Z'
+    commit: ee14d3f691a00a691671ac2d6fb6edfb0573b443
     notes: []
   - id: task-02
     title: 'Create a PyInstaller spec file at repo root with Analysis (verify: confirm
