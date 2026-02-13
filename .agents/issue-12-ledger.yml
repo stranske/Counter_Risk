@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Create `src/counter_risk/config.py` defining a Pydantic config model for
       the workflow variants.
-    status: doing
+    status: done
     started_at: '2026-02-13T03:01:35Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T03:01:46Z'
+    commit: 584c318dc3a25b930c51b221deb1f3740d5c4f35
     notes: []
   - id: task-02
     title: 'Create the `src/counter_risk/config.py` file with basic imports (verify:
