@@ -83,9 +83,7 @@ def replace_screenshots_in_pptx(
 
             for media_part in payload_by_part:
                 if media_part not in source_archive.namelist():
-                    raise ValueError(
-                        f"Replacement target does not exist in archive: {media_part}"
-                    )
+                    raise ValueError(f"Replacement target does not exist in archive: {media_part}")
 
             output_pptx_path.parent.mkdir(parents=True, exist_ok=True)
             with ZipFile(output_pptx_path, "w") as output_archive:

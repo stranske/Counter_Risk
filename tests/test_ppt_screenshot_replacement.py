@@ -21,7 +21,9 @@ def _read_media_parts(pptx_path: Path) -> dict[str, bytes]:
         }
 
 
-def test_replace_screenshots_writes_modified_ppt_and_changes_target_media_parts(tmp_path: Path) -> None:
+def test_replace_screenshots_writes_modified_ppt_and_changes_target_media_parts(
+    tmp_path: Path,
+) -> None:
     source = Path("tests/fixtures/Monthly Counterparty Exposure Report.pptx")
     output = tmp_path / "run" / source.name
 
@@ -48,7 +50,9 @@ def test_replace_screenshots_writes_modified_ppt_and_changes_target_media_parts(
     output_media = _read_media_parts(output)
 
     changed_media_parts = sorted(
-        name for name, bytes_payload in output_media.items() if input_media.get(name) != bytes_payload
+        name
+        for name, bytes_payload in output_media.items()
+        if input_media.get(name) != bytes_payload
     )
     assert changed_media_parts == sorted(expected_targets)
     assert changed_media_parts == result.replaced_media_parts
