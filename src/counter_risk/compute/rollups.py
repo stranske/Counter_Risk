@@ -100,10 +100,7 @@ def _to_dataframe_or_records(*, records: list[dict[str, Any]], columns: tuple[st
     except ModuleNotFoundError:
         return [{column: row.get(column) for column in columns} for row in records]
 
-    if records:
-        frame = pd.DataFrame(records)
-    else:
-        frame = pd.DataFrame(columns=columns)
+    frame = pd.DataFrame(records) if records else pd.DataFrame(columns=columns)
 
     for column in columns:
         if column not in frame.columns:
