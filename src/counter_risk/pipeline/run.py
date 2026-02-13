@@ -118,7 +118,11 @@ def run_pipeline(config_path: str | Path) -> Path:
 
     as_of_date = config.as_of_date or datetime.now(tz=UTC).date()
     run_dir = config.output_root / as_of_date.isoformat()
-    run_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        run_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=run_dir_setup run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during run directory setup stage") from exc
 
     warnings: list[str] = []
     try:
