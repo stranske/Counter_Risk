@@ -29,6 +29,7 @@ _CHAR_WIDTH = 5 * _SCALE
 _CHAR_HEIGHT = 7 * _SCALE
 _CHAR_GAP = 1 * _SCALE
 
+
 @dataclass(frozen=True)
 class _TableColumn:
     key: str
@@ -172,9 +173,7 @@ def _coerce_number(value: object, *, row_index: int, column_name: str) -> float:
         raise ValueError(f"row {row_index} column {column_name} has invalid boolean value")
     try:
         numeric = (
-            value
-            if isinstance(value, (str, bytes, bytearray, int, float))
-            else cast(Any, value)
+            value if isinstance(value, (str, bytes, bytearray, int, float)) else cast(Any, value)
         )
         number = float(numeric)
     except (TypeError, ValueError) as exc:
