@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
+
+import pytest
 
 
 def test_release_spec_defines_analysis_exe_and_collect() -> None:
@@ -66,3 +71,35 @@ def test_release_spec_defines_analysis_exe_and_collect() -> None:
     assert collect_args[2] == ["fake-zip"]
     assert collect_args[3] == ["fake-data"]
     assert captures["collect_kwargs"]["name"] == "counter-risk"
+
+
+def test_release_spec_pyinstaller_build_outputs_expected_executable(
+    tmp_path: Path,
+) -> None:
+    pyinstaller = shutil.which("pyinstaller")
+    if pyinstaller is None:
+        pytest.skip("PyInstaller is not installed in this environment.")
+
+    repo_root = Path(__file__).resolve().parents[1]
+    temp_root = tmp_path / "project"
+    shutil.copytree(repo_root / "src", temp_root / "src")
+    shutil.copytree(repo_root / "config", temp_root / "config")
+    shutil.copytree(repo_root / "templates", temp_root / "templates")
+    shutil.copy2(repo_root / "release.spec", temp_root / "release.spec")
+    shutil.copy2(
+        repo_root / "pyinstaller_runtime_hook.py",
+        temp_root / "pyinstaller_runtime_hook.py",
+    )
+
+    subprocess.run(
+        [pyinstaller, "-y", "release.spec"],
+        cwd=temp_root,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    expected_executable = temp_root / "dist" / "counter-risk" / (
+        "counter-risk.exe" if os.name == "nt" else "counter-risk"
+    )
+    assert expected_executable.is_file()
