@@ -424,11 +424,15 @@ def _write_outputs(
 
 def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]:
     raw_inputs = config.screenshot_inputs
-    normalized: dict[str, Path] = {}
-    for raw_key, raw_path in sorted(raw_inputs.items(), key=lambda item: str(item[0])):
+    normalized_pairs: list[tuple[str, Path]] = []
+    seen_keys: set[str] = set()
+    for raw_key, raw_path in raw_inputs.items():
         key = str(raw_key).strip()
         if not key:
             raise ValueError("Screenshot input keys must be non-empty")
+        if key in seen_keys:
+            raise ValueError(f"Screenshot input key is duplicated after normalization: {key!r}")
+        seen_keys.add(key)
 
         image_path = Path(raw_path).expanduser().resolve()
         if image_path.suffix.lower() != ".png":
@@ -439,8 +443,10 @@ def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]
             raise FileNotFoundError(
                 f"Screenshot input '{key}' file does not exist: {image_path}"
             )
-        normalized[key] = image_path
 
+        normalized_pairs.append((key, image_path))
+
+    normalized = {key: path for key, path in sorted(normalized_pairs, key=lambda item: item[0])}
     if config.enable_screenshot_replacement and not normalized:
         raise ValueError("Screenshot replacement is enabled but no screenshot_inputs were provided")
     return normalized
