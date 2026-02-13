@@ -5,10 +5,10 @@ branch: codex/issue-18
 tasks:
   - id: task-01
     title: Create `src/counter_risk/writers/historical_update.py`.
-    status: doing
+    status: done
     started_at: '2026-02-13T05:40:20Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T05:40:34Z'
+    commit: 945b226c2cff52630e2f88dae11efbc62a49f5ff
     notes: []
   - id: task-02
     title: 'Define scope for: Create the file `src/counter_risk/writers/historical_update.py`
