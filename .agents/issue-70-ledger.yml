@@ -1,0 +1,410 @@
+version: 1
+issue: 70
+base: main
+branch: codex/issue-70
+tasks:
+  - id: task-01
+    title: Implement logic in `src/counter_risk/writers/historical_update.py` to iterate
+      through rows one through twelve of the worksheet
+    status: doing
+    started_at: '2026-02-13T14:29:46Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Create a function in `src/counter_risk/writers/historical_update.py` to
+      extract non-empty header cell values for each column across the scanned rows
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Implement logic in `src/counter_risk/writers/historical_update.py` to combine
+      stacked header cells from multiple rows into a single string per column
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Add normalization logic in `src/counter_risk/writers/historical_update.py`
+      to convert combined header strings into normalized keys
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Build and return a consolidated header map from column index to normalized
+      key in `src/counter_risk/writers/historical_update.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Update existing header lookup code in `src/counter_risk/writers/historical_update.py`
+      to use the new consolidated header map
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Create a helper function in `src/counter_risk/writers/historical_update.py`
+      that identifies all numeric series columns from the consolidated header map
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Implement logic in `src/counter_risk/writers/historical_update.py` to check
+      whether each numeric series column has a corresponding value in the rollup data
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Add code in `src/counter_risk/writers/historical_update.py` to write numeric
+      zero when a rollup value is missing for a numeric series column
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Add code in `src/counter_risk/writers/historical_update.py` to write numeric
+      zero when header normalization produces a key not present in rollup data
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Update the row append function in `src/counter_risk/writers/historical_update.py`
+      to call the numeric series defaulting logic for each appended row
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Create a dedicated function in `src/counter_risk/writers/historical_update.py`
+      for append date resolution that accepts all three potential date sources
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Implement logic in `src/counter_risk/writers/historical_update.py` to check
+      and return the append_date parameter if provided
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Implement logic in `src/counter_risk/writers/historical_update.py` to check
+      and return config as_of_date if append_date is not provided
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Implement logic in `src/counter_risk/writers/historical_update.py` to infer
+      date from MOSERS CPRS-CH header when both explicit sources are missing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Add exception raising in `src/counter_risk/writers/historical_update.py`
+      when all three date resolution strategies fail to produce a date
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Integrate the date resolution function into the historical append workflow
+      in `src/counter_risk/writers/historical_update.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Create a dedicated validation exception class in `src/counter_risk/writers/historical_update.py`
+      for date monotonicity violations
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Implement a function in `src/counter_risk/writers/historical_update.py`
+      to parse the date from the last existing data row in the worksheet
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Implement comparison logic in `src/counter_risk/writers/historical_update.py`
+      to check if resolved append date is less than or equal to last row date
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Add code in `src/counter_risk/writers/historical_update.py` to raise the
+      validation exception when monotonicity check fails
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Integrate the monotonicity validation into the append workflow in `src/counter_risk/writers/historical_update.py`
+      before writing the new row
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Identify all test functions for parse_fcm_totals that currently use fake
+      DataFrame stubs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Create or update fixtures to provide real pandas DataFrame objects as test
+      inputs for parse_fcm_totals tests
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Replace fake DataFrame stubs with real DataFrame objects in each identified
+      parse_fcm_totals test
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Update test assertions in parse_fcm_totals tests to use pandas-native comparison
+      methods like assert_frame_equal
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Verify that all parse_fcm_totals tests pass with real DataFrame objects
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Identify all test functions for parse_futures_detail that currently use
+      fake DataFrame stubs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Create or update fixtures to provide real pandas DataFrame objects as test
+      inputs for parse_futures_detail tests
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Replace fake DataFrame stubs with real DataFrame objects in each identified
+      parse_futures_detail test
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Update test assertions in parse_futures_detail tests to use pandas-native
+      comparison methods like assert_frame_equal
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Verify that all parse_futures_detail tests pass with real DataFrame objects
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: Add a unit test that asserts the dedicated date validation error is raised
+      when `append_date` is exactly equal to the last-row date
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Create a test fixture with a workbook containing multiple numeric series
+      columns in a multi-row header
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: Create a test fixture with rollup data that intentionally omits values
+      for some numeric series columns
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: Write a test case that verifies zero is written when a rollup key is completely
+      missing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: Write a test case that verifies zero is written when header normalization
+      produces a key mismatch
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: Add assertions that iterate all numeric series columns and verify each
+      has a non-blank value in the appended row
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: When appending a row, every worksheet column identified as a numeric series
+      column in the consolidated header map is written with a non-blank value; if
+      the rollup data has no value for that series (missing key or normalization mismatch),
+      the appended cell value equals numeric `0`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: If the worksheet header contains a numeric series column whose normalized
+      name has no match in the rollup keys (e.g., header "Swap (Adj.)" normalizes
+      differently than any rollup key), the appended row cell for that column equals
+      `0`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Append date resolution uses the strict fallback order: (1) provided `append_date`,
+      else (2) config `as_of_date`, else (3) date inferred from the MOSERS CPRS-CH
+      header; the resolved date is what is written to the appended row date column.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: If `append_date` and config `as_of_date` are missing and the MOSERS CPRS-CH
+      header does not yield an inferable date, the append operation raises a dedicated
+      exception indicating the date could not be resolved and no row is appended.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: If the resolved `append_date` is less than or equal to the parsed date
+      from the last existing data row, the append operation raises a dedicated date
+      validation error and does not write a new row.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: The last-row date used for monotonicity validation is parsed from the worksheet
+      date column using the same date parsing rules as used elsewhere (comparison
+      is performed on parsed date objects, not strings).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: The consolidated header map contains at least one entry for the date column
+      and one entry per distinct numeric series column label found in rows 1-12, verified
+      by asserting map keys match expected column indices and normalized values match
+      expected patterns (e.g., date_column, numeric series names).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: If a numeric series header appears anywhere within the first 12 rows, the
+      append operation writes a value (rollup value or `0`) into that column in the
+      appended row regardless of which scanned header row contained the label.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: Tests instantiate pandas.DataFrame objects directly using pandas constructors
+      (pd.DataFrame, pd.read_csv, etc.) rather than mock objects or custom test doubles,
+      and verify results using pandas.testing.assert_frame_equal or DataFrame.equals
+      methods.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: A unit test asserts the dedicated date validation error is raised when
+      `append_date` is exactly equal to the last-row date.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: A unit/integration test iterates across all numeric series columns detected
+      from the consolidated header map and asserts that when rollup does not provide
+      a value, each appended cell equals `0` (covering missing-key and normalization-mismatch
+      scenarios in the same test or separate parametrized cases).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
