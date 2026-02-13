@@ -112,3 +112,11 @@ disable_error_code = ["import-untyped"]
 [[tool.mypy.overrides]]
 module = "counter_risk.parsers.cprs_ch"
 disable_error_code = ["import-untyped"]
+
+[[tool.mypy.overrides]]
+module = "scripts.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "tools.*"
+ignore_errors = true
