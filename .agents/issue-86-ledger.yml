@@ -85,7 +85,7 @@ tasks:
       only the packaged output into a temporary isolated directory (no repo paths),
       execute the produced binary from that directory, and assert it locates/loads
       the bundled default configuration and at least one template asset.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -177,7 +177,7 @@ tasks:
       assert (a) executable path is resolved relative to the `.cmd` location, (b)
       the `.cmd` does not invoke `python`/`py`/a `.py` entrypoint, and (c) CLI args
       (including at least one `--flag value`) are forwarded unchanged.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -284,7 +284,7 @@ tasks:
       template bundling logic, and assert either a raised error listing all conflicting
       filenames and source paths or a deterministic precedence rule documented in
       code and validated by the test.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -366,7 +366,7 @@ tasks:
   - id: task-44
     title: Update `src/counter_risk/build/release.py` `_run_pyinstaller` to always
       capture and log PyInstaller stdout and stderr on both success and failure paths.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -377,7 +377,7 @@ tasks:
       be found in any bundle root, and write/extend `tests/unit/test_runtime_paths.py`
       to cover the missing-asset and misconfiguration scenarios (asserting message
       contents include the asset name and at least one searched location/root).
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -385,7 +385,7 @@ tasks:
   - id: task-46
     title: 'Define scope for: Update resolve_runtime_path to raise an exception or
       emit a warning for missing assets (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -393,7 +393,7 @@ tasks:
   - id: task-47
     title: 'Implement focused slice for: Update resolve_runtime_path to raise an exception
       or emit a warning for missing assets (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -401,7 +401,7 @@ tasks:
   - id: task-48
     title: 'Validate focused slice for: Update resolve_runtime_path to raise an exception
       or emit a warning for missing assets (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -409,14 +409,14 @@ tasks:
   - id: task-49
     title: 'Ensure the error message includes the asset name (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-50
     title: 'searched locations (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -424,7 +424,7 @@ tasks:
   - id: task-51
     title: 'Add unit test for the missing-asset scenario with message validation (verify:
       confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -432,21 +432,21 @@ tasks:
   - id: task-52
     title: 'Add unit test for misconfiguration scenarios like incorrect MEIPASS (verify:
       config validated)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-53
     title: Verify that tests assert message contents include asset name
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-54
     title: 'searched roots (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -517,7 +517,7 @@ tasks:
     notes: []
   - id: task-63
     title: '`.github/workflows/release.yml` exists on the default branch.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -525,7 +525,7 @@ tasks:
   - id: task-64
     title: The `release` workflow uses `actions/setup-python` and installs project
       dependencies before running tests/build steps.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -533,14 +533,14 @@ tasks:
   - id: task-65
     title: The `release` workflow runs the full Python test suite before building
       the release bundle.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-66
     title: The `release` workflow runs `pyinstaller -y release.spec`.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -548,7 +548,7 @@ tasks:
   - id: task-67
     title: The `release` workflow assembles and uploads a versioned release bundle
       directory whose name includes the version value.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -573,7 +573,7 @@ tasks:
   - id: task-70
     title: '`tests/integration/test_packaged_executable_assets.py` exists and is collected
       by pytest.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -581,7 +581,7 @@ tasks:
   - id: task-71
     title: The packaged-executable integration test runs `pyinstaller -y release.spec`
       and fails if the command exits non-zero.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -590,7 +590,7 @@ tasks:
     title: The packaged-executable integration test executes the produced binary from
       a temporary isolated directory containing only the packaged output (not the
       repository).
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -599,7 +599,7 @@ tasks:
     title: The packaged-executable integration test asserts the executable successfully
       locates and loads the bundled default configuration when run from the isolated
       directory.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -608,7 +608,7 @@ tasks:
     title: The packaged-executable integration test asserts the executable successfully
       locates and loads at least one bundled template asset when run from the isolated
       directory.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -616,7 +616,7 @@ tasks:
   - id: task-75
     title: '`tests/integration/test_windows_runner_cmd.py` exists and is skipped automatically
       on non-Windows platforms.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -625,7 +625,7 @@ tasks:
     title: The Windows integration test executes `run_counter_risk.cmd` from a temporary
       directory (separate from repo root) and verifies it launches the packaged executable
       using a path resolved relative to the `.cmd` file location.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -642,7 +642,7 @@ tasks:
     title: The Windows integration test verifies CLI args passed to `run_counter_risk.cmd`
       are forwarded unchanged to the packaged executable, including at least one flag
       and one value.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -651,7 +651,7 @@ tasks:
     title: '`tests/unit/test_template_bundling_duplicates.py` exists and includes
       a test that creates at least two different template source directories containing
       a colliding template filename.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -661,7 +661,7 @@ tasks:
       raises an exception whose message includes every conflicting filename and all
       corresponding source paths, OR (B) applies a deterministic precedence rule documented
       in code and validated by unit tests.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -695,7 +695,7 @@ tasks:
   - id: task-84
     title: '`src/counter_risk/build/release.py` `_run_pyinstaller` captures and logs
       PyInstaller stdout and stderr on success.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -704,7 +704,7 @@ tasks:
     title: '`src/counter_risk/build/release.py` `_run_pyinstaller` captures and logs
       PyInstaller stdout and stderr on failure before raising/returning a non-zero
       result.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -713,7 +713,7 @@ tasks:
     title: '`resolve_runtime_path` emits an explicit failure signal on missing assets:
       either raises a specific exception with a clear message or emits a warning containing
       the asset name and attempted roots.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -722,7 +722,7 @@ tasks:
     title: '`tests/unit/test_runtime_paths.py` covers the missing-asset scenario and
       asserts the chosen behavior (exception or warning) including message contents
       mentioning the requested asset and at least one searched location.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -732,7 +732,7 @@ tasks:
       (e.g., wrong bundle root / missing env var / incorrect `_MEIPASS`) and asserts
       failure is surfaced (exception or warning) rather than silently falling back
       to an unrelated path.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -763,7 +763,7 @@ tasks:
       artifacts exist (VERSION, manifest.json, templates/, default config, run_counter_risk.cmd,
       README containing a title line with 'How to run', and the built executable),
       fails on any missing artifact, and uploads the bundle as a workflow artifact.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -773,7 +773,7 @@ tasks:
       release.spec`, then executes the produced binary from a temporary, isolated
       directory (without repository paths available) and asserts it can locate and
       load the bundled default configuration and template assets.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -783,7 +783,7 @@ tasks:
       a temp directory and verifies it resolves the executable path relative to the
       `.cmd` location (not via python) and forwards CLI args to the bundled executable
       correctly.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -793,7 +793,7 @@ tasks:
       template filenames across multiple source directories and asserting either (A)
       a raised error includes all conflicting filenames and their source paths, or
       (B) a documented precedence rule is applied deterministically.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -812,7 +812,7 @@ tasks:
     title: Update `src/counter_risk/build/release.py` (`_run_pyinstaller`) to always
       capture and log PyInstaller stdout/stderr on both success and failure so CI
       logs contain actionable build output.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -822,7 +822,7 @@ tasks:
       to either raise a clear exception or emit a warning when an asset cannot be
       found in any bundle root, and add unit tests covering the chosen behavior (including
       a misconfiguration scenario).'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -840,7 +840,7 @@ tasks:
   - id: task-99
     title: A GitHub Actions workflow file exists at `.github/workflows/release.yml`
       on the default branch.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -848,7 +848,7 @@ tasks:
   - id: task-100
     title: The `release` workflow provisions Python using `actions/setup-python` and
       installs project dependencies prior to running tests/build steps.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -856,7 +856,7 @@ tasks:
   - id: task-101
     title: The `release` workflow runs the full Python test suite before building
       the release bundle.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -864,7 +864,7 @@ tasks:
   - id: task-102
     title: The `release` workflow runs `pyinstaller -y release.spec` as part of the
       workflow execution.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -872,7 +872,7 @@ tasks:
   - id: task-103
     title: The `release` workflow assembles a versioned release bundle directory (name
       includes the version value) and uploads it as a workflow artifact.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -898,7 +898,7 @@ tasks:
   - id: task-106
     title: An integration test file exists at `tests/integration/test_packaged_executable_assets.py`
       and is collected by pytest.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -906,7 +906,7 @@ tasks:
   - id: task-107
     title: The integration test executes `pyinstaller -y release.spec` and fails if
       the PyInstaller command exits non-zero.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -915,7 +915,7 @@ tasks:
     title: The integration test copies/moves only the produced packaged output (not
       the repository) into a temporary isolated directory and executes the binary
       from that isolated directory.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -924,7 +924,7 @@ tasks:
     title: The integration test asserts the packaged executable successfully locates
       and loads the bundled default configuration asset when executed from the isolated
       directory.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -933,7 +933,7 @@ tasks:
     title: The integration test asserts the packaged executable successfully locates
       and loads at least one bundled template asset when executed from the isolated
       directory.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -941,7 +941,7 @@ tasks:
   - id: task-111
     title: A Windows-specific integration test file exists at `tests/integration/test_windows_runner_cmd.py`
       and is skipped automatically on non-Windows platforms.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -950,7 +950,7 @@ tasks:
     title: The Windows integration test executes `run_counter_risk.cmd` from a temporary
       directory (separate from repo root) and verifies it launches the packaged executable
       using a path resolved relative to the `.cmd` file location.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -967,7 +967,7 @@ tasks:
     title: The Windows integration test verifies that CLI arguments passed to `run_counter_risk.cmd`
       are forwarded unchanged to the packaged executable (including at least one flag
       and one value).
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -976,7 +976,7 @@ tasks:
     title: A unit test file exists at `tests/unit/test_template_bundling_duplicates.py`
       and includes a test case that creates at least two different template source
       directories containing a colliding template filename.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -986,7 +986,7 @@ tasks:
       (A) raises an exception whose message includes every conflicting filename and
       all corresponding source paths, OR (B) applies a deterministic precedence rule
       documented in code and validated by unit tests.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -1021,7 +1021,7 @@ tasks:
   - id: task-120
     title: '`src/counter_risk/build/release.py` `_run_pyinstaller` captures PyInstaller
       stdout and stderr and logs them on success.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -1030,7 +1030,7 @@ tasks:
     title: '`src/counter_risk/build/release.py` `_run_pyinstaller` captures PyInstaller
       stdout and stderr and logs them on failure before raising/returning a non-zero
       result.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -1039,7 +1039,7 @@ tasks:
     title: '`resolve_runtime_path` behavior is tightened such that when an asset cannot
       be found in any bundle root it either raises a specific exception type with
       a clear message OR emits a warning containing the asset name and attempted roots.'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -1048,7 +1048,7 @@ tasks:
     title: Unit tests in `tests/unit/test_runtime_paths.py` cover the missing-asset
       scenario and assert the chosen behavior (exception or warning) including message
       contents mentioning the requested asset and at least one searched location.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -1058,7 +1058,7 @@ tasks:
       scenario (e.g., wrong bundle root / missing env var / incorrect `_MEIPASS`)
       and assert that the failure is surfaced (exception or warning) rather than silently
       falling back to an unrelated path.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
