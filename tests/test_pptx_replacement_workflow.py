@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 from pathlib import Path
 
 from pptx import Presentation
@@ -55,6 +56,18 @@ def _make_workflow_pptx(path: Path, base_image: Path) -> None:
     prs.save(str(path))
 
 
+def _slide_picture_state(slide: object) -> tuple[int, tuple[tuple[str, tuple[int, int, int, int]], ...]]:
+    pictures = [shape for shape in slide.shapes if shape.shape_type == 13]
+    details = tuple(
+        (
+            hashlib.sha256(picture.image.blob).hexdigest(),
+            (picture.left, picture.top, picture.width, picture.height),
+        )
+        for picture in pictures
+    )
+    return len(pictures), details
+
+
 def test_replacement_workflow_output_reopens(tmp_path: Path) -> None:
     source = tmp_path / "input.pptx"
     output = tmp_path / "output.pptx"
@@ -70,6 +83,10 @@ def test_replacement_workflow_output_reopens(tmp_path: Path) -> None:
     _write_png(trend_image, _BLUE_PNG)
 
     _make_workflow_pptx(source, base_image)
+    before = Presentation(str(source))
+    before_by_title = {
+        slide.shapes[0].text_frame.text: _slide_picture_state(slide) for slide in before.slides
+    }
 
     replace_screenshot_pictures(
         source,
@@ -83,3 +100,19 @@ def test_replacement_workflow_output_reopens(tmp_path: Path) -> None:
 
     reopened = Presentation(str(output))
     assert len(reopened.slides) == 3
+    after_by_title = {
+        slide.shapes[0].text_frame.text: _slide_picture_state(slide) for slide in reopened.slides
+    }
+
+    for title in ("All Programs", "Ex Trend", "Trend"):
+        before_count, before_details = before_by_title[title]
+        after_count, after_details = after_by_title[title]
+        assert before_count == after_count
+        assert len(before_details) == len(after_details)
+        assert any(
+            before_hash != after_hash
+            for (before_hash, _), (after_hash, _) in zip(before_details, after_details, strict=True)
+        )
+        assert [geometry for _, geometry in before_details] == [
+            geometry for _, geometry in after_details
+        ]
