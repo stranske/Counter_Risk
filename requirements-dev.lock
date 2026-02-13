@@ -6,9 +6,7 @@ black==26.1.0
     # via my-project (pyproject.toml)
 iniconfig==2.3.0
     # via pytest
-librt==0.7.4
-    # via mypy
-mypy==1.19.1
+mypy==1.18.2
     # via my-project (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
