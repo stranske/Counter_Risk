@@ -117,3 +117,14 @@ disable_error_code = ["import-untyped"]
 [[tool.mypy.overrides]]
 module = "counter_risk.integrations.powerpoint_com"
 disable_error_code = ["import-untyped"]
+
+
+[tool.black]
+line-length = 100
+extend-exclude = '''
+/(
+  \.venv
+  | node_modules
+  | \.workflows-lib
+)/
+'''
