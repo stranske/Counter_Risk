@@ -272,7 +272,9 @@ def _get_date_column_from_consolidated(header_map: Mapping[int, str]) -> int:
     raise WorkbookValidationError("Worksheet header rows are missing a date column")
 
 
-def _get_numeric_series_columns(header_map: Mapping[int, str], *, date_column: int) -> dict[int, str]:
+def _get_numeric_series_columns(
+    header_map: Mapping[int, str], *, date_column: int
+) -> dict[int, str]:
     return {
         column_index: normalized
         for column_index, normalized in header_map.items()
