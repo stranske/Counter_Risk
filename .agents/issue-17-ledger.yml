@@ -5,10 +5,10 @@ branch: codex/issue-17
 tasks:
   - id: task-01
     title: Create `src/counter_risk/writers/dropin_templates.py`
-    status: doing
+    status: done
     started_at: '2026-02-13T04:35:52Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T04:36:05Z'
+    commit: 5720c52c72f3736aa57200db963ee13e1813d9a7
     notes: []
   - id: task-02
     title: Implement `fill_dropin_template(template_path, exposures_df, breakdown,
