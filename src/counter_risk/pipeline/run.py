@@ -9,7 +9,7 @@ import shutil
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -49,7 +49,7 @@ class _VariantInputs:
     historical_path: Path
 
 
-class PptProcessingStatus(str, Enum):
+class PptProcessingStatus(StrEnum):
     """Machine-readable statuses for PPT processing."""
 
     SUCCESS = "success"
