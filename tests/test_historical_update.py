@@ -437,7 +437,9 @@ def test_append_functions_write_known_series_values_with_numeric_edge_cases(
     assert workbook.closed_count == 3
 
 
-def test_append_to_sheet_defaults_missing_and_mismatched_numeric_series_to_zero_in_multi_row_headers() -> None:
+def test_append_to_sheet_defaults_missing_and_mismatched_numeric_series_to_zero_in_multi_row_headers() -> (
+    None
+):
     sheet_name = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
     sheet = _build_multi_row_header_sheet(sheet_name)
     workbook = _FakeWorkbook({sheet_name: sheet})
