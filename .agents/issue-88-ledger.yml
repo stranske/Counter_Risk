@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Create a macro-enabled Excel workbook file named `Runner.xlsm` with the
       correct OOXML structure and content types
-    status: doing
+    status: done
     started_at: '2026-02-13T23:15:37Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T23:15:51Z'
+    commit: 45f681b37c6ba6a4fac9f53d3533363fce3c9e60
     notes: []
   - id: task-02
     title: Embed a valid VBA project binary at `xl/vbaProject.bin` within the `Runner.xlsm`
