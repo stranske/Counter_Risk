@@ -32,7 +32,8 @@ def check_lock_file_completeness() -> tuple[bool, list[str]]:
     optional_groups = re.findall(r"^(\w+)\s*=", optional_section.group(1), re.MULTILINE)
     print(f"✓ Found optional dependency groups: {', '.join(optional_groups)}")
 
-    # Check dependabot-auto-lock.yml includes all extras
+    # Check dependabot-auto-lock.yml includes all extras when present.
+    # Some repos do not use this optional workflow.
     workflow_path = Path(".github/workflows/dependabot-auto-lock.yml")
     if workflow_path.exists():
         workflow = workflow_path.read_text()
@@ -43,7 +44,7 @@ def check_lock_file_completeness() -> tuple[bool, list[str]]:
         if not issues:
             print("✓ dependabot-auto-lock.yml includes all extras")
     else:
-        issues.append("dependabot-auto-lock.yml not found")
+        print("○ dependabot-auto-lock.yml not found (skipping optional workflow check)")
 
     return len(issues) == 0, issues
 
@@ -53,13 +54,16 @@ def check_for_hardcoded_versions() -> tuple[bool, list[str]]:
     issues = []
     test_files = list(Path("tests").rglob("*.py"))
 
-    # Patterns that indicate hardcoded versions
+    # Only flag assertions on dependency versions, not arbitrary numeric equality.
     version_patterns = [
-        r'==\s*["\']?\d+\.\d+',  # == version
-        r'assert.*version.*==.*["\d]',  # assert version == "x.y"
+        re.compile(
+            r"""assert\b.*\bversion\b.*==\s*["']\d+\.\d+(?:\.\d+)?["']""",
+            re.IGNORECASE,
+        )
     ]
 
-    problematic_files = []
+    problematic_files: list[tuple[Path, int, str]] = []
+    seen: set[tuple[Path, int]] = set()
     for test_file in test_files:
         content = test_file.read_text()
 
@@ -70,13 +74,21 @@ def check_for_hardcoded_versions() -> tuple[bool, list[str]]:
         ):
             continue
 
-        for pattern in version_patterns:
-            if re.search(pattern, content):
-                # Check if it's in a comment
-                lines = content.split("\n")
-                for i, line in enumerate(lines):
-                    if re.search(pattern, line) and not line.strip().startswith("#"):
-                        problematic_files.append((test_file, i + 1, line.strip()))
+        lines = content.split("\n")
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            # Project version assertions are allowed and are not dependency checks.
+            if "__version__" in stripped:
+                continue
+            for pattern in version_patterns:
+                if pattern.search(stripped):
+                    key = (test_file, i + 1)
+                    if key not in seen:
+                        problematic_files.append((test_file, i + 1, stripped))
+                        seen.add(key)
+                    break
 
     if problematic_files:
         issues.append("Found potential hardcoded versions in tests:")
