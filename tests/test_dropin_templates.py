@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -35,7 +36,7 @@ def test_fill_dropin_template_validates_exposures_type(tmp_path: Path) -> None:
 
 
 def test_build_exposure_index_normalizes_counterparty_and_clearing_house_labels() -> None:
-    rows = [
+    rows: list[dict[str, Any]] = [
         {"counterparty": "  Societe   Generale "},
         {"clearing_house": " ICE   Clear   U.S. "},
     ]
@@ -44,3 +45,65 @@ def test_build_exposure_index_normalizes_counterparty_and_clearing_house_labels(
 
     assert "soc gen" in indexed
     assert "ice" in indexed
+
+
+def test_fill_dropin_template_validates_non_empty_path_arguments(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="template_path"):
+        fill_dropin_template(
+            template_path="",
+            exposures_df=[],
+            breakdown={},
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
+def test_fill_dropin_template_validates_template_suffix(tmp_path: Path) -> None:
+    fake_template = tmp_path / "template.xls"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    with pytest.raises(ValueError, match=r"\.xlsx"):
+        fill_dropin_template(
+            template_path=fake_template,
+            exposures_df=[],
+            breakdown={},
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
+def test_fill_dropin_template_validates_breakdown_mapping(tmp_path: Path) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    with pytest.raises(TypeError, match="breakdown"):
+        fill_dropin_template(
+            template_path=fake_template,
+            exposures_df=[],
+            breakdown=[],  # type: ignore[arg-type]
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
+def test_fill_dropin_template_validates_breakdown_value_type(tmp_path: Path) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="must be numeric"):
+        fill_dropin_template(
+            template_path=fake_template,
+            exposures_df=[],
+            breakdown={"total": "not-a-number"},
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
+def test_fill_dropin_template_validates_iterable_rows_are_mappings(tmp_path: Path) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    with pytest.raises(TypeError, match="row at index 0"):
+        fill_dropin_template(
+            template_path=fake_template,
+            exposures_df=[1],
+            breakdown={},
+            output_path=tmp_path / "out.xlsx",
+        )

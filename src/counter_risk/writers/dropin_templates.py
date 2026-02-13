@@ -6,9 +6,9 @@ Drop-In workbook outputs.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from counter_risk.normalize import normalize_clearing_house, normalize_counterparty
 
@@ -63,7 +63,7 @@ def _is_dataframe_like(value: Any) -> bool:
 
 def _iter_rows(exposures_df: Any) -> list[Mapping[str, Any]]:
     if _is_dataframe_like(exposures_df):
-        rows = exposures_df.to_dict(orient="records")
+        rows = list(exposures_df.to_dict(orient="records"))
     elif isinstance(exposures_df, Iterable) and not isinstance(exposures_df, (str, bytes)):
         rows = list(exposures_df)
     else:
@@ -78,10 +78,10 @@ def _iter_rows(exposures_df: Any) -> list[Mapping[str, Any]]:
         if not isinstance(row, Mapping):
             raise TypeError(f"exposures_df row at index {index} must be a mapping")
 
-    return rows
+    return cast(list[Mapping[str, Any]], rows)
 
 
-def _build_exposure_index(rows: list[Mapping[str, Any]]) -> dict[str, Mapping[str, Any]]:
+def _build_exposure_index(rows: Sequence[Mapping[str, Any]]) -> dict[str, Mapping[str, Any]]:
     """Index rows by normalized counterparty/clearing-house label."""
 
     indexed: dict[str, Mapping[str, Any]] = {}
@@ -130,7 +130,7 @@ def fill_dropin_template(
     _ = _coerce_breakdown(breakdown)
 
     try:
-        from openpyxl import load_workbook
+        from openpyxl import load_workbook  # type: ignore[import-untyped]
     except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
         raise RuntimeError(
             "openpyxl is required to fill drop-in templates. "
