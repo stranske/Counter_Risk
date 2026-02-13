@@ -98,7 +98,7 @@ def _create_runner_file(bundle_dir: Path) -> Path:
                 "@echo off",
                 "setlocal",
                 "set SCRIPT_DIR=%~dp0",
-                "python \"%SCRIPT_DIR%\\pipeline\\counter_risk_cli.py\" %*",
+                'python "%SCRIPT_DIR%\\pipeline\\counter_risk_cli.py" %*',
             ]
         )
         + "\n",
@@ -126,6 +126,12 @@ def _copy_templates(root: Path, bundle_dir: Path) -> list[Path]:
             shutil.copy2(src_path, dst_path)
             copied.append(dst_path)
     return copied
+
+
+def _copy_fixture_artifacts(root: Path, bundle_dir: Path) -> list[Path]:
+    fixtures_src = root / "tests" / "fixtures"
+    fixture_suffixes = {".xlsx", ".pptx"}
+    return _copy_tree_filtered(fixtures_src, bundle_dir / "fixtures", suffixes=fixture_suffixes)
 
 
 def _copy_pipeline_source(root: Path, bundle_dir: Path) -> list[Path]:
@@ -228,6 +234,7 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
 
     copied: dict[str, list[Path]] = {}
     copied["templates"] = _copy_templates(root, bundle_dir)
+    copied["fixtures"] = _copy_fixture_artifacts(root, bundle_dir)
 
     config_src = root / "config"
     copied["config"] = _copy_tree_filtered(
