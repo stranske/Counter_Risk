@@ -1,8 +1,0 @@
-pydantic<3,>=2.7
-PyYAML<7,>=6.0.2
-
-[dev]
-pytest==9.0.2
-pytest-cov==7.0.0
-ruff==0.15.0
-mypy==1.19.1

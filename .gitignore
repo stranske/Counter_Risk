@@ -8,3 +8,12 @@ codex-prompt.md
 codex-output.md
 verifier-context.md
 autofix_report_enriched.json
+
+# Python runtime/build artifacts
+__pycache__/
+*.py[cod]
+*.pyc
+*.egg-info/
+.eggs/
+build/
+dist/
