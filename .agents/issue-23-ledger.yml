@@ -5,10 +5,10 @@ branch: codex/issue-23
 tasks:
   - id: task-01
     title: Create `Runner.xlsm` that includes a date picker (or month selector) control.
-    status: doing
+    status: done
     started_at: '2026-02-13T14:32:40Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T14:32:53Z'
+    commit: 7b0b276c1962b764eb8759b146b0efbc6a6569b5
     notes: []
   - id: task-02
     title: 'Define scope for: Define whether the Runner.xlsm should use a date picker
