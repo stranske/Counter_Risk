@@ -5,10 +5,7 @@ from __future__ import annotations
 import struct
 import zlib
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import pandas as pd
+from typing import Any, cast
 
 RGB = tuple[int, int, int]
 
@@ -40,7 +37,7 @@ _TABLE_COLUMNS: tuple[tuple[str, str, int], ...] = (
 _REQUIRED_COLUMNS = {column for column, _, _ in _TABLE_COLUMNS}
 
 
-def render_cprs_ch_png(exposures_df: pd.DataFrame, output_png: Path | str) -> None:
+def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
     """Render a deterministic CPRS-CH table PNG.
 
     The table layout is stable across runs and uses a built-in bitmap font to avoid
@@ -133,14 +130,14 @@ def _read_columns(exposures_df: object) -> list[str]:
 def _read_records(exposures_df: object) -> list[dict[str, object]]:
     if hasattr(exposures_df, "to_dict"):
         try:
-            records = exposures_df.to_dict(orient="records")  # type: ignore[attr-defined]
+            records = exposures_df.to_dict(orient="records")
         except TypeError:
-            records = exposures_df.to_dict("records")  # type: ignore[attr-defined]
+            records = exposures_df.to_dict("records")
         if isinstance(records, list):
             return [dict(record) for record in records]
 
     if hasattr(exposures_df, "to_records"):
-        raw = exposures_df.to_records()  # type: ignore[attr-defined]
+        raw = exposures_df.to_records()
         return [dict(record) for record in raw]
 
     raise ValueError("exposures_df must provide to_dict(orient='records') or to_records()")
@@ -150,7 +147,12 @@ def _coerce_number(value: object, *, row_index: int, column_name: str) -> float:
     if isinstance(value, bool):
         raise ValueError(f"row {row_index} column {column_name} has invalid boolean value")
     try:
-        number = float(value)
+        numeric = (
+            value
+            if isinstance(value, (str, bytes, bytearray, int, float))
+            else cast(Any, value)
+        )
+        number = float(numeric)
     except (TypeError, ValueError) as exc:
         raise ValueError(
             f"row {row_index} column {column_name} has non-numeric value: {value!r}"
