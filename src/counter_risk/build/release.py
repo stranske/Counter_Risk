@@ -8,7 +8,6 @@ import shutil
 from datetime import UTC, datetime
 from pathlib import Path
 
-
 RELEASE_NAME_PREFIX = "counter-risk"
 
 
