@@ -39,7 +39,7 @@ def _month_end_dates(start_year: int, start_month: int, end_year: int, end_month
 
 
 def _inline_str_cell(cell_ref: str, value: str) -> str:
-    return f'<c r="{cell_ref}" t="inlineStr">' f"<is><t>{escape(value)}</t></is>" "</c>"
+    return f'<c r="{cell_ref}" t="inlineStr"><is><t>{escape(value)}</t></is></c>'
 
 
 def _runner_sheet_xml(validation_formula: str) -> str:
@@ -52,20 +52,20 @@ def _runner_sheet_xml(validation_formula: str) -> str:
   <sheetFormatPr defaultRowHeight="15"/>
   <sheetData>
     <row r="1">
-      {_inline_str_cell('A1', 'Counter Risk Runner')}
+      {_inline_str_cell("A1", "Counter Risk Runner")}
     </row>
     <row r="2">
-      {_inline_str_cell('A2', 'Select reporting month-end date and choose a run mode.')}
+      {_inline_str_cell("A2", "Select reporting month-end date and choose a run mode.")}
     </row>
     <row r="3">
-      {_inline_str_cell('A3', 'As-Of Month')}
+      {_inline_str_cell("A3", "As-Of Month")}
       <c r="B3"/>
     </row>
     <row r="5">
-      {_inline_str_cell('A5', 'Run All')}
-      {_inline_str_cell('B5', 'Run Ex Trend')}
-      {_inline_str_cell('C5', 'Run Trend')}
-      {_inline_str_cell('D5', 'Open Output Folder')}
+      {_inline_str_cell("A5", "Run All")}
+      {_inline_str_cell("B5", "Run Ex Trend")}
+      {_inline_str_cell("C5", "Run Trend")}
+      {_inline_str_cell("D5", "Open Output Folder")}
     </row>
   </sheetData>
   <dataValidations count="1">
@@ -79,10 +79,10 @@ def _runner_sheet_xml(validation_formula: str) -> str:
 
 def _control_data_sheet_xml(month_values: list[str]) -> str:
     rows = [
-        f"<row r=\"1\">{_inline_str_cell('A1', 'MonthEnd')}</row>",
+        f'<row r="1">{_inline_str_cell("A1", "MonthEnd")}</row>',
     ]
     for index, value in enumerate(month_values, start=2):
-        rows.append(f"<row r=\"{index}\">{_inline_str_cell(f'A{index}', value)}</row>")
+        rows.append(f'<row r="{index}">{_inline_str_cell(f"A{index}", value)}</row>')
 
     rows_xml = "\n    ".join(rows)
 
