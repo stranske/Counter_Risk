@@ -1,0 +1,725 @@
+version: 1
+issue: 89
+base: main
+branch: codex/issue-89
+tasks:
+  - id: task-01
+    title: "Update `src/counter_risk/pipeline/run.py` `_write_outputs` to call the\
+      \ configured screenshot replacement backend (zip-based or `python-pptx`) when\
+      \ screenshot replacement is enabled, and remove/guard the legacy \u201Cbypassing\
+      \ screenshot replacement\u201D warning/copy path from running in that mode."
+    status: doing
+    started_at: '2026-02-13T23:19:09Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Add config fields in `src/counter_risk/pipeline/config.py` to enable screenshot
+      replacement and select implementation (at least `zip` and `python-pptx`), and
+      update `run.py` to pass a resolved screenshot input mapping/paths into the backend
+      call.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Add `enable_screenshot_replacement` boolean field (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: '`screenshot_replacement_implementation` enum field to the pipeline config
+      schema (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define scope for: Implement screenshot input resolution logic in `run.py`
+      that creates a stable mapping from image keys to PNG file paths (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement focused slice for: Implement screenshot input resolution logic
+      in `run.py` that creates a stable mapping from image keys to PNG file paths
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Validate focused slice for: Implement screenshot input resolution logic
+      in `run.py` that creates a stable mapping from image keys to PNG file paths
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Define scope for: Update `run.py` to pass the resolved screenshot mapping
+      into the selected backend implementation (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Implement focused slice for: Update `run.py` to pass the resolved screenshot
+      mapping into the selected backend implementation (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Validate focused slice for: Update `run.py` to pass the resolved screenshot
+      mapping into the selected backend implementation (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Write an integration-style test in `tests/test_pipeline_run_outputs.py`
+      that runs the pipeline with screenshot replacement enabled and N valid screenshots
+      and asserts output PPTX bytes differ from input and exactly N files under `ppt/media/`
+      differ between unzipped input vs output.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Create test fixtures with a sample PPTX file (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Define scope for: Create test fixtures with N valid screenshot PNG files
+      in `tests/fixtures/screenshots/` (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Implement focused slice for: Create test fixtures with N valid screenshot
+      PNG files in `tests/fixtures/screenshots/` (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Validate focused slice for: Create test fixtures with N valid screenshot
+      PNG files in `tests/fixtures/screenshots/` (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Define scope for: Write integration test that runs the pipeline end-to-end
+      with screenshot replacement enabled using the fixture files (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Implement focused slice for: Write integration test that runs the pipeline
+      end-to-end with screenshot replacement enabled using the fixture files (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Validate focused slice for: Write integration test that runs the pipeline
+      end-to-end with screenshot replacement enabled using the fixture files (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Add assertions comparing input versus output PPTX bytes (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'verifying exactly N media files differ in unzipped contents (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Fix `src/counter_risk/pipeline/manifest.py` `ManifestBuilder._to_relative_artifact_path()`
+      to normalize both absolute and relative artifact paths to run-dir-relative POSIX-style
+      paths and raise `ValueError` (or dedicated exception) for any normalized path
+      containing `..`, and update/add unit tests in `tests/test_manifest_paths.py`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Implement path normalization in `_to_relative_artifact_path()` to convert
+      absolute (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'relative paths to run-dir-relative POSIX format (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Add validation logic to raise `ValueError` when normalized paths contain
+      `..` segments (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Define scope for: Write unit tests in `tests/test_manifest_paths.py` covering
+      absolute paths, relative paths, (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Implement focused slice for: Write unit tests in `tests/test_manifest_paths.py`
+      covering absolute paths, relative paths, (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Validate focused slice for: Write unit tests in `tests/test_manifest_paths.py`
+      covering absolute paths, relative paths, (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: '`..` rejection cases (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Implement deterministic unique run directory creation in `src/counter_risk/pipeline/paths.py`
+      and/or `src/counter_risk/pipeline/run.py` (replacing `exist_ok=True` reuse)
+      using a scheme like `runs/<YYYY-MM-DD>_<n>`, and update/add tests in `tests/test_run_directory_creation.py`
+      (and any other assumptions) to validate isolation across same-date runs.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Define scope for: Implement deterministic unique run directory naming
+      scheme using pattern `runs/<YYYY-MM-DD>_<n>` with incrementing suffix (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Implement focused slice for: Implement deterministic unique run directory
+      naming scheme using pattern `runs/<YYYY-MM-DD>_<n>` with incrementing suffix
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Validate focused slice for: Implement deterministic unique run directory
+      naming scheme using pattern `runs/<YYYY-MM-DD>_<n>` with incrementing suffix
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Define scope for: Replace `exist_ok=True` directory creation with logic
+      that creates uniquely named directories without reuse (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Implement focused slice for: Replace `exist_ok=True` directory creation
+      with logic that creates uniquely named directories without reuse (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Validate focused slice for: Replace `exist_ok=True` directory creation
+      with logic that creates uniquely named directories without reuse (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Define scope for: Write tests in `tests/test_run_directory_creation.py`
+      verifying two same-date runs produce isolated directories (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Implement focused slice for: Write tests in `tests/test_run_directory_creation.py`
+      verifying two same-date runs produce isolated directories (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Validate focused slice for: Write tests in `tests/test_run_directory_creation.py`
+      verifying two same-date runs produce isolated directories (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: Update `pyproject.toml` to declare `python-pptx` as an install dependency
+      (with any required pins/extras consistent with repository policy).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: Refactor `src/counter_risk/pipeline/historical_workbook.py` so the same
+      header-normalization function is used in both validation and append phases,
+      and add a test in `tests/test_historical_workbook_update.py` asserting a valid
+      update writes an updated workbook into the current run directory.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Extract a shared header-normalization function (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'apply it consistently in both validation (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'append phases of historical workbook updates (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Define scope for: Write test in `tests/test_historical_workbook_update.py`
+      verifying valid updates write the workbook to the current run directory (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Implement focused slice for: Write test in `tests/test_historical_workbook_update.py`
+      verifying valid updates write the workbook to the current run directory (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Validate focused slice for: Write test in `tests/test_historical_workbook_update.py`
+      verifying valid updates write the workbook to the current run directory (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Define scope for: Add test assertion confirming the updated workbook content
+      differs from the original input workbook (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'Implement focused slice for: Add test assertion confirming the updated
+      workbook content differs from the original input workbook (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: 'Validate focused slice for: Add test assertion confirming the updated
+      workbook content differs from the original input workbook (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: Implement combined PPT operation status reporting by updating `src/counter_risk/pipeline/manifest.py`
+      and orchestration in `src/counter_risk/pipeline/run.py` so `ppt_status` reflects
+      link refresh + screenshot replacement outcomes (success/partial/failure), and
+      add tests in `tests/test_manifest_ppt_status.py`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: 'Define scope for: Update status computation logic in `manifest.py` to
+      incorporate screenshot replacement outcomes alongside link refresh results (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: 'Implement focused slice for: Update status computation logic in `manifest.py`
+      to incorporate screenshot replacement outcomes alongside link refresh results
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: 'Validate focused slice for: Update status computation logic in `manifest.py`
+      to incorporate screenshot replacement outcomes alongside link refresh results
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: 'Modify pipeline orchestration in `run.py` to propagate screenshot replacement
+      exceptions (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: 'return codes into manifest status (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: 'Write tests in `tests/test_manifest_ppt_status.py` covering success, failure,
+      (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: 'partial replacement scenarios (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: "With screenshot replacement enabled, `src/counter_risk/pipeline/run.py::_write_outputs`\
+      \ invokes the selected backend exactly once and does not execute the legacy\
+      \ behavior that copies the PPTX unchanged while emitting the \u201Cbypassing\
+      \ screenshot replacement\u201D warning (verifiable via a unit test using monkeypatch/spy)."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: Pipeline config exposes (a) an enable flag and (b) an implementation selector
+      supporting at least `zip` and `python-pptx`, and when enabled with N screenshot
+      inputs the backend receives a mapping/dict of length N; selecting `zip` vs `python-pptx`
+      routes to the expected backend (verifiable via automated tests).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: '`pytest -k screenshot_replacement -q` passes, including an integration
+      test that (1) compares input vs output PPTX bytes and asserts they differ, (2)
+      unzips both PPTX files, diffs `ppt/media/*` payload bytes, and asserts exactly
+      N media files differ.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: '`pytest -k manifest_paths -q` passes, and tests verify `ManifestBuilder._to_relative_artifact_path()`
+      returns run-dir-relative POSIX-style paths for absolute-under-run-dir and relative
+      inputs, rejects any `..` segment with `ValueError` (or dedicated exception),
+      and defines behavior for absolute paths not inside `run_dir`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: '`pytest -k run_directory_creation -q` passes, and a test creating two
+      same-date runs asserts: two different run directory paths are produced, both
+      directories exist, and writing artifacts in the second does not modify files
+      in the first.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: After `pip install .` in a clean environment, `python -c "import pptx;
+      print(pptx.__version__)"` exits with code 0 (verifying `pyproject.toml` declares
+      `python-pptx` as an install dependency).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: '`pytest -k historical_workbook_update -q` passes, and the test verifies
+      header normalization is applied consistently (validation + append) and an updated
+      workbook is written under the current run directory and differs in bytes (or
+      via verifiable content change).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: '`pytest -k manifest_ppt_status -q` passes, and tests verify manifest JSON
+      `ppt_status` values: `success` when link refresh and replacement succeed, `failure`
+      when replacement raises/returns non-zero, and `partial` when replacement reports
+      fewer than N replacements (`replaced_count < expected`).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: 'Wire screenshot replacement into the pipeline output step: in `src/counter_risk/pipeline/run.py`
+      (`_write_outputs`), when configured, call the selected screenshot replacement
+      implementation (zip-based or python-pptx) instead of copying the PPTX and emitting
+      a warning.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-67
+    title: 'Add configuration plumbing for screenshot replacement: introduce/extend
+      a config flag (e.g., `enable_screenshot_replacement` + implementation selector)
+      and pass resolved screenshot input mappings/paths into the replacement call
+      from the pipeline.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-68
+    title: Add an integration-style test that runs the pipeline with screenshot replacement
+      enabled and N valid screenshots; assert (1) output PPTX bytes differ from input,
+      and (2) exactly N files under `ppt/media/` differ when comparing unzipped contents
+      of input vs output.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-69
+    title: 'Harden manifest artifact path normalization: in `ManifestBuilder._to_relative_artifact_path()`,
+      normalize both absolute and relative inputs to run-dir-relative paths and explicitly
+      reject any path containing `..` segments; add/adjust unit tests accordingly.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-70
+    title: 'Fix run directory creation to prevent overwriting/mixing artifacts: replace
+      `exist_ok=True` behavior with a deterministic unique run directory strategy
+      (e.g., `runs/<YYYY-MM-DD>_<n>`) and update any code/tests that assume a single
+      fixed directory name.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-71
+    title: "Declare `python-pptx` as a project dependency in `pyproject.toml` (including\
+      \ any needed extras/pins consistent with the repo\u2019s dependency policy)."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-72
+    title: 'Unify header normalization for historical workbook updates: refactor the
+      historical update code so the same header-normalization function is applied
+      in both validation and append phases; add a test that a valid historical update
+      completes and writes the updated workbook into the current run directory.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-73
+    title: 'Update manifest `ppt_status` reporting to include screenshot replacement
+      outcomes: set `ppt_status` to reflect success/partial/failure based on link
+      refresh + screenshot replacement execution; propagate exceptions/return codes
+      from the replacement step into the status field and tests.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-74
+    title: "When screenshot replacement is enabled, `src/counter_risk/pipeline/run.py::_write_outputs`\
+      \ must call the configured screenshot replacement backend (zip-based or python-pptx)\
+      \ and must not execute the legacy behavior that copies the PPTX unchanged while\
+      \ emitting the \u201Cbypassing screenshot replacement\u201D warning."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-75
+    title: Pipeline configuration must expose (a) a boolean flag to enable screenshot
+      replacement and (b) an implementation selector with at least values `zip` and
+      `python-pptx`; when enabled, the resolved screenshot input mapping passed into
+      the backend must contain exactly N entries when N screenshot inputs are provided.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-76
+    title: 'Integration test: running the pipeline with screenshot replacement enabled
+      and N valid screenshots must produce an output PPTX whose bytes differ from
+      the input fixture PPTX, and exactly N files under `ppt/media/` must differ between
+      the unzipped input PPTX and unzipped output PPTX.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-77
+    title: '`ManifestBuilder._to_relative_artifact_path()` must return run-dir-relative,
+      POSIX-style paths for both absolute and relative inputs, and must raise a `ValueError`
+      (or a dedicated exception) if the normalized path contains any `..` segment.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-78
+    title: Each pipeline execution must create a unique run directory and must not
+      overwrite/mix artifacts with an existing run from the same date; when a same-date
+      run directory already exists, the new run directory name must be deterministically
+      generated and different from the existing one.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-79
+    title: '`pyproject.toml` must declare `python-pptx` as an install dependency such
+      that `import pptx` succeeds in a fresh environment after installing the project.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-80
+    title: Historical workbook update must apply the same header-normalization function
+      during both validation and append, and a valid historical update run must write
+      the updated workbook file into the current run directory.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-81
+    title: 'Manifest `ppt_status` must reflect combined PPT operations: if link refresh
+      succeeds and screenshot replacement is enabled and succeeds, status must be
+      `success`; if screenshot replacement is enabled and fails (exception or non-zero
+      return), status must be `failure`; if link refresh succeeds but screenshot replacement
+      performs fewer than N replacements (backend reports partial), status must be
+      `partial`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
