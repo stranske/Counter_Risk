@@ -1,0 +1,409 @@
+version: 1
+issue: 22
+base: main
+branch: codex/issue-22
+tasks:
+  - id: task-01
+    title: Create `src/counter_risk/pipeline/run.py`
+    status: done
+    started_at: '2026-02-13T06:13:45Z'
+    finished_at: '2026-02-13T06:13:59Z'
+    commit: d42106f40d644c47c495fafdda464e998312e89d
+    notes: []
+  - id: task-02
+    title: Implement `run_pipeline(config_path) -> run_dir` in `src/counter_risk/pipeline/run.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement the main orchestration function signature (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'basic error handling in run_pipeline (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Add configuration loading (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'validation logic within run_pipeline (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Integrate the parse step to load (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'validate input data (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Integrate the compute step to calculate risk metrics from parsed data
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Integrate the historical update step to merge new results with existing
+      books (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Integrate the PPT screenshot replacement functionality into the pipeline
+      flow (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Integrate the PPT link refresh functionality into the pipeline flow (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Add comprehensive logging throughout the pipeline execution stages (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Implement writing outputs to `runs/<as_of_date>/...` within `run_pipeline`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Add `manifest.json` generation in `run_pipeline` that includes a config
+      snapshot
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Create a ManifestBuilder class or function to construct the manifest data
+      structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Implement config snapshot serialization that captures all pipeline configuration
+      parameters (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Implement the manifest file writing logic with proper JSON formatting
+      (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Implement the manifest file writing logic with error handling (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Add input file hashing and write input file hashes into `manifest.json`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Add output file path collection and write output file paths into `manifest.json`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: "Add computation of \u201Ctop exposures\u201D and \u201Ctop changes per\
+      \ variant\u201D and write them into `manifest.json`"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: "Add warning collection (e.g., \u201CPPT links not refreshed\u201D) and\
+      \ write warnings into `manifest.json`"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Write an integration test that runs the pipeline on fixtures into `tmp_path`
+      with COM refresh skipped
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Create fixture data files representing valid NISA inputs for the integration
+      test (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Define scope for: Write an integration test that verifies the pipeline
+      creates the expected run directory structure (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Implement focused slice for: Write an integration test that verifies the
+      pipeline creates the expected run directory structure (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Validate focused slice for: Write an integration test that verifies the
+      pipeline creates the expected run directory structure (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Define scope for: Write an integration test that verifies all expected
+      output files are generated with valid content (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Implement focused slice for: Write an integration test that verifies all
+      expected output files are generated with valid content (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Validate focused slice for: Write an integration test that verifies all
+      expected output files are generated with valid content (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Define scope for: Write an integration test that verifies the manifest.json
+      contains all required fields (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Implement focused slice for: Write an integration test that verifies the
+      manifest.json contains all required fields (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Validate focused slice for: Write an integration test that verifies the
+      manifest.json contains all required fields (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'valid data (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Define scope for: Write an integration test that verifies input file hashes
+      in the manifest match the actual fixture files (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Implement focused slice for: Write an integration test that verifies input
+      file hashes in the manifest match the actual fixture files (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Validate focused slice for: Write an integration test that verifies input
+      file hashes in the manifest match the actual fixture files (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: Running the pipeline creates a single run directory under `runs/<as_of_date>/`
+      containing updated historical books, an updated PPTX, and `manifest.json`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: '`manifest.json` is valid JSON and all file paths referenced in it exist
+      on disk'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: Add `src/counter_risk/pipeline/run.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: Implement `run_pipeline(config_path) -> run_dir`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: Write outputs to `runs/<as_of_date>/...`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Create `manifest.json` including:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: config snapshot
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: input file hashes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: output file paths
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: top exposures + top changes per variant
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: "warnings (e.g., \u201CPPT links not refreshed\u201D)"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: Add an integration test running pipeline on fixtures into `tmp_path` (with
+      COM refresh skipped)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: Pipeline produces updated historical books + updated PPTX + manifest in
+      one run directory
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: Manifest references files that exist and contains valid JSON
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

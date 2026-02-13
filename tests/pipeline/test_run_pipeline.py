@@ -1,0 +1,477 @@
+"""Integration-style tests for pipeline orchestration."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import sys
+import types
+from datetime import date
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from counter_risk.pipeline.run import run_pipeline
+
+
+class _FakeDataFrame:
+    def __init__(
+        self,
+        records: list[dict[str, Any]] | None = None,
+        columns: list[str] | tuple[str, ...] | None = None,
+    ) -> None:
+        self._rows = [dict(row) for row in (records or [])]
+        if columns is not None:
+            self.columns: list[str] = list(columns)
+        elif self._rows:
+            self.columns = list(self._rows[0].keys())
+        else:
+            self.columns = []
+
+    @property
+    def empty(self) -> bool:
+        return len(self._rows) == 0
+
+    @property
+    def loc(self) -> _LocIndexer:
+        return _LocIndexer(self)
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        if key not in self.columns:
+            self.columns.append(key)
+        for row in self._rows:
+            row[key] = value
+
+    def astype(self, dtypes: dict[str, str]) -> _FakeDataFrame:
+        for row in self._rows:
+            for column, dtype in dtypes.items():
+                if column not in row:
+                    continue
+                if dtype == "float64":
+                    row[column] = float(row[column])
+                elif dtype == "int64":
+                    row[column] = int(row[column])
+                elif dtype == "string":
+                    row[column] = str(row[column])
+        return self
+
+    def to_dict(self, orient: str = "records") -> list[dict[str, Any]]:
+        if orient != "records":
+            raise ValueError("Only orient='records' is supported")
+        return [dict(row) for row in self._rows]
+
+
+class _LocIndexer:
+    def __init__(self, frame: _FakeDataFrame) -> None:
+        self._frame = frame
+
+    def __getitem__(self, key: tuple[slice, list[str]]) -> _FakeDataFrame:
+        _rows_slice, columns = key
+        records = [{column: row.get(column) for column in columns} for row in self._frame._rows]
+        return _FakeDataFrame(records=records, columns=columns)
+
+
+@pytest.fixture
+def fake_pandas(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_module = types.SimpleNamespace(DataFrame=_FakeDataFrame)
+    monkeypatch.setitem(sys.modules, "pandas", fake_module)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def test_run_pipeline_writes_expected_outputs_and_manifest(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    fixtures = Path("tests/fixtures")
+    output_root = tmp_path / "runs"
+
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {output_root}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    assert run_dir == output_root / "2025-12-31"
+    assert run_dir.exists()
+
+    manifest_path = run_dir / "manifest.json"
+    assert manifest_path.exists()
+
+    expected_outputs = [
+        run_dir / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+        run_dir / "Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+        run_dir / "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+        run_dir / "all_programs-mosers-input.xlsx",
+        run_dir / "ex_trend-mosers-input.xlsx",
+        run_dir / "trend-mosers-input.xlsx",
+        run_dir / "Monthly Counterparty Exposure Report.pptx",
+    ]
+    for output_file in expected_outputs:
+        assert output_file.exists(), f"Missing output file: {output_file}"
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["as_of_date"] == "2025-12-31"
+    assert manifest["config_snapshot"]["output_root"] == str(output_root)
+
+    for output_path in manifest["output_paths"]:
+        assert Path(output_path).exists(), f"Manifest references missing path: {output_path}"
+
+    assert "PPT links not refreshed; COM refresh skipped" in manifest["warnings"]
+
+    expected_hashes = {
+        "mosers_all_programs_xlsx": _sha256(
+            fixtures / "MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx"
+        ),
+        "mosers_ex_trend_xlsx": _sha256(
+            fixtures / "MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx"
+        ),
+        "mosers_trend_xlsx": _sha256(
+            fixtures / "MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx"
+        ),
+        "hist_all_programs_3yr_xlsx": _sha256(
+            fixtures / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx"
+        ),
+        "hist_ex_llc_3yr_xlsx": _sha256(
+            fixtures / "Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+        ),
+        "hist_llc_3yr_xlsx": _sha256(
+            fixtures / "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx"
+        ),
+        "monthly_pptx": _sha256(fixtures / "Monthly Counterparty Exposure Report.pptx"),
+    }
+    assert manifest["input_hashes"] == expected_hashes
+
+    for variant in ("all_programs", "ex_trend", "trend"):
+        assert variant in manifest["top_exposures"]
+        assert variant in manifest["top_changes_per_variant"]
+
+
+def _write_valid_config(tmp_path: Path, output_root: Path) -> Path:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {output_root}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return config_path
+
+
+def test_run_pipeline_wraps_parse_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(_: dict[str, Path]) -> dict[str, dict[str, Any]]:
+        raise ValueError("bad parser input")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", _boom)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "bad parser input" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_parse_validation_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    malformed = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "A", "Notional": 1.0}]),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "B", "Notional": 2.0}]),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "trend": {
+            "totals": _FakeDataFrame(records=[]),
+            "futures": _FakeDataFrame(records=[{"account": "Acct"}]),
+        },
+    }
+
+    def _bad_parse(_: dict[str, Path]) -> dict[str, dict[str, Any]]:
+        return malformed
+
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", _bad_parse)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "missing required columns" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_output_write_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(*, run_dir: Path, config: Any, warnings: list[str]) -> list[Path]:
+        _ = (run_dir, config, warnings)
+        raise OSError("disk full")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._write_outputs", _boom)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during output write stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, OSError)
+    assert "disk full" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_input_validation_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(_: dict[str, Path]) -> None:
+        raise FileNotFoundError("missing source workbook")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._validate_input_files", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during input validation stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, FileNotFoundError)
+    assert "missing source workbook" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_compute_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(
+        _: dict[str, dict[str, Any]],
+    ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, list[dict[str, Any]]]]:
+        raise ValueError("bad compute inputs")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._compute_metrics", _boom)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during compute stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "bad compute inputs" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_historical_update_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(
+        *,
+        run_dir: Path,
+        config: Any,
+        parsed_by_variant: dict[str, dict[str, Any]],
+        as_of_date: date,
+        warnings: list[str],
+    ) -> list[Path]:
+        _ = (run_dir, config, parsed_by_variant, as_of_date, warnings)
+        raise OSError("historical workbook write failed")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._update_historical_outputs", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during historical update stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, OSError)
+    assert "historical workbook write failed" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_manifest_generation_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(self: Any, manifest: dict[str, Any]) -> Path:
+        _ = (self, manifest)
+        raise OSError("manifest disk error")
+
+    monkeypatch.setattr("counter_risk.pipeline.run.ManifestBuilder.write", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during manifest generation stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, OSError)
+    assert "manifest disk error" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_passes_as_of_date_and_parsed_inputs_to_historical_update(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    calls: list[dict[str, Any]] = []
+
+    def _capture(
+        *,
+        run_dir: Path,
+        config: Any,
+        parsed_by_variant: dict[str, dict[str, Any]],
+        as_of_date: date,
+        warnings: list[str],
+    ) -> list[Path]:
+        _ = config
+        calls.append(
+            {
+                "run_dir": run_dir,
+                "variants": sorted(parsed_by_variant.keys()),
+                "as_of_date": as_of_date,
+                "warnings": warnings,
+            }
+        )
+        return []
+
+    monkeypatch.setattr("counter_risk.pipeline.run._update_historical_outputs", _capture)
+
+    run_dir = run_pipeline(config_path)
+
+    assert run_dir == tmp_path / "runs" / "2025-12-31"
+    assert len(calls) == 1
+    assert calls[0]["as_of_date"] == date(2025, 12, 31)
+    assert calls[0]["variants"] == ["all_programs", "ex_trend", "trend"]
+
+
+def test_run_pipeline_invokes_ppt_link_refresh(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    seen: dict[str, Path] = {}
+
+    def _refresh(pptx_path: Path) -> bool:
+        seen["path"] = pptx_path
+        return True
+
+    monkeypatch.setattr("counter_risk.pipeline.run._refresh_ppt_links", _refresh)
+
+    run_dir = run_pipeline(config_path)
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    assert seen["path"] == run_dir / "Monthly Counterparty Exposure Report.pptx"
+    assert "PPT links not refreshed; COM refresh skipped" not in manifest["warnings"]
+
+
+def test_run_pipeline_wraps_config_validation_errors_for_output_root_file(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    output_root_file = tmp_path / "runs"
+    output_root_file.write_text("not-a-directory", encoding="utf-8")
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=output_root_file)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during config validation") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "output_root must be a directory path" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_config_validation_errors_for_invalid_ppt_extension(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    fixtures = Path("tests/fixtures")
+    output_root = tmp_path / "runs"
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"output_root: {output_root}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during config validation") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "Invalid file type for monthly_pptx: expected .pptx" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_config_load_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "missing.yml"
+
+    def _boom(_: Path) -> Any:
+        raise ValueError("config parse failed")
+
+    monkeypatch.setattr("counter_risk.pipeline.run.load_config", _boom)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during config load") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "config parse failed" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_run_directory_setup_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(self: Path, parents: bool, exist_ok: bool) -> None:
+        _ = (self, parents, exist_ok)
+        raise OSError("permission denied")
+
+    monkeypatch.setattr("counter_risk.pipeline.run.Path.mkdir", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during run directory setup stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, OSError)
+    assert "permission denied" in str(exc_info.value.__cause__)
