@@ -37,6 +37,19 @@ def _as_path(value: str | Path, *, field_name: str) -> Path:
     raise ValueError(msg)
 
 
+def _validate_workbook_path(path: Path, *, field_name: str, must_exist: bool) -> None:
+    if path.suffix.lower() != ".xlsx":
+        raise ValueError(f"{field_name} must point to an .xlsx file: {path}")
+
+    if must_exist:
+        if not path.exists():
+            raise FileNotFoundError(f"Template workbook not found: {path}")
+        if not path.is_file():
+            raise ValueError(f"{field_name} must point to a file: {path}")
+    elif path.exists() and path.is_dir():
+        raise ValueError(f"{field_name} must point to a file path, not a directory: {path}")
+
+
 def _coerce_breakdown(breakdown: Mapping[str, Any]) -> dict[str, float]:
     if not isinstance(breakdown, Mapping):
         raise TypeError("breakdown must be a mapping of metric names to numeric values")
@@ -118,12 +131,8 @@ def fill_dropin_template(
 
     template_file = _as_path(template_path, field_name="template_path")
     output_file = _as_path(output_path, field_name="output_path")
-
-    if not template_file.exists():
-        raise FileNotFoundError(f"Template workbook not found: {template_file}")
-
-    if template_file.suffix.lower() != ".xlsx":
-        raise ValueError(f"template_path must point to an .xlsx file: {template_file}")
+    _validate_workbook_path(template_file, field_name="template_path", must_exist=True)
+    _validate_workbook_path(output_file, field_name="output_path", must_exist=False)
 
     rows = _iter_rows(exposures_df)
     _ = _build_exposure_index(rows)

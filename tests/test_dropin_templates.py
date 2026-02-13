@@ -57,6 +57,29 @@ def test_fill_dropin_template_validates_non_empty_path_arguments(tmp_path: Path)
         )
 
 
+def test_fill_dropin_template_validates_output_suffix(tmp_path: Path) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="output_path"):
+        fill_dropin_template(
+            template_path=fake_template,
+            exposures_df=[],
+            breakdown={},
+            output_path=tmp_path / "out.xls",
+        )
+
+
+def test_fill_dropin_template_rejects_directory_paths(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="template_path"):
+        fill_dropin_template(
+            template_path=tmp_path,
+            exposures_df=[],
+            breakdown={},
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
 def test_fill_dropin_template_validates_template_suffix(tmp_path: Path) -> None:
     fake_template = tmp_path / "template.xls"
     fake_template.write_text("placeholder", encoding="utf-8")
