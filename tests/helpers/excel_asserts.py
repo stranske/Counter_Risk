@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from dataclasses import dataclass
 import math
 import re
+from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Any
 
 _A1_REF_PATTERN = re.compile(r"^([A-Z]+)(\d+)$")
@@ -53,7 +53,9 @@ def parse_a1_range(range_ref: str) -> RangeBounds:
     return RangeBounds(min_row=min_row, min_col=min_col, max_row=max_row, max_col=max_col)
 
 
-def extract_range_values(grid: Sequence[Sequence[Any]], range_ref: str) -> tuple[tuple[Any, ...], ...]:
+def extract_range_values(
+    grid: Sequence[Sequence[Any]], range_ref: str
+) -> tuple[tuple[Any, ...], ...]:
     """Extract a rectangular A1 range from a 2D list-like grid."""
     bounds = parse_a1_range(range_ref)
     values: list[tuple[Any, ...]] = []
@@ -70,7 +72,9 @@ def _is_sequence(value: Any) -> bool:
     return isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray))
 
 
-def float_tolerant_equal(left: Any, right: Any, *, abs_tol: float = 1e-9, rel_tol: float = 1e-9) -> bool:
+def float_tolerant_equal(
+    left: Any, right: Any, *, abs_tol: float = 1e-9, rel_tol: float = 1e-9
+) -> bool:
     """Compare scalars or nested sequences with float tolerance."""
     if _is_sequence(left) and _is_sequence(right):
         if len(left) != len(right):  # type: ignore[arg-type]
