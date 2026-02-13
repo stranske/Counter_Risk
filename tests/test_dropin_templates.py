@@ -189,6 +189,57 @@ def _install_fake_openpyxl(monkeypatch: pytest.MonkeyPatch, workbook: _FakeWorkb
     monkeypatch.setitem(sys.modules, "openpyxl", fake_module)
 
 
+def test_fill_dropin_template_loads_template_via_openpyxl(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+    workbook = _FakeWorkbook(_FakeWorksheet())
+    captured_filename: dict[str, Any] = {}
+
+    fake_module = ModuleType("openpyxl")
+
+    def _load_workbook(filename: Path) -> _FakeWorkbook:
+        captured_filename["value"] = filename
+        return workbook
+
+    fake_module.load_workbook = _load_workbook  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "openpyxl", fake_module)
+
+    fill_dropin_template(
+        template_path=fake_template,
+        exposures_df=[],
+        breakdown={},
+        output_path=tmp_path / "out.xlsx",
+    )
+
+    assert captured_filename["value"] == fake_template
+
+
+def test_fill_dropin_template_raises_for_unloadable_workbook(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    fake_module = ModuleType("openpyxl")
+
+    def _load_workbook(filename: Path) -> _FakeWorkbook:
+        msg = f"cannot open {filename}"
+        raise OSError(msg)
+
+    fake_module.load_workbook = _load_workbook  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "openpyxl", fake_module)
+
+    with pytest.raises(ValueError, match="Unable to load template workbook"):
+        fill_dropin_template(
+            template_path=fake_template,
+            exposures_df=[],
+            breakdown={},
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
 def test_fill_dropin_template_populates_asset_and_notional_cells(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
