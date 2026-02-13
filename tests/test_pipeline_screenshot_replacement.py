@@ -86,6 +86,8 @@ def test_write_outputs_calls_zip_backend_once_when_enabled(
     assert len(calls) == 1
     assert calls[0]["output"] == run_dir / "monthly.pptx"
     assert list(calls[0]["mapping"]) == ["slide1", "slide2"]
+    assert len(calls[0]["mapping"]) == 2
+    assert all(path.suffix.lower() == ".png" for path in calls[0]["mapping"].values())
     assert output_paths[-1] == run_dir / "monthly.pptx"
     assert (run_dir / "monthly.pptx").exists()
     assert all("not implemented" not in warning for warning in warnings)
@@ -135,3 +137,17 @@ def test_write_outputs_routes_python_pptx_backend_when_selected(
     assert called["python_pptx"] == 1
     assert called["zip"] == 0
     assert all("not implemented" not in warning for warning in warnings)
+
+
+def test_resolve_screenshot_input_mapping_rejects_non_png_paths(tmp_path: Path) -> None:
+    text_path = tmp_path / "screenshots" / "slide_1.jpg"
+    _write_placeholder(text_path, payload=b"not-png")
+    config = _build_config(
+        tmp_path=tmp_path,
+        enable_screenshot_replacement=True,
+        screenshot_replacement_implementation="zip",
+        screenshot_inputs={"slide1": text_path},
+    )
+
+    with pytest.raises(ValueError, match="must point to a PNG file"):
+        run_module._resolve_screenshot_input_mapping(config)

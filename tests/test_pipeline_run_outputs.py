@@ -51,7 +51,9 @@ def _build_config(tmp_path: Path, screenshot_inputs: dict[str, Path]) -> Workflo
     )
 
 
-def test_write_outputs_replaces_expected_number_of_media_parts(tmp_path: Path) -> None:
+def test_write_outputs_screenshot_replacement_replaces_expected_number_of_media_parts(
+    tmp_path: Path,
+) -> None:
     run_dir = tmp_path / "run"
     run_dir.mkdir(parents=True)
 
