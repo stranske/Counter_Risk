@@ -218,7 +218,7 @@ After 3 failures, keepalive pauses and adds `needs-human`:
 - [Setup Checklist](docs/keepalive/SETUP_CHECKLIST.md) - Step-by-step configuration
 
 ## Testing
-Autopilot smoke tests are enabled to quickly verify keepalive flow changes before broader validation.
+Autopilot smoke tests are enabled to validate basic keepalive and automation flow behavior.
 
 ## License
 
