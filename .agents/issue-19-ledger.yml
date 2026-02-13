@@ -5,10 +5,10 @@ branch: codex/issue-19
 tasks:
   - id: task-01
     title: Create `src/counter_risk/renderers/table_png.py`.
-    status: doing
+    status: done
     started_at: '2026-02-13T04:41:15Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T04:41:28Z'
+    commit: ef2d472ff1c4557e6f922542b24277b2fdea7aad
     notes: []
   - id: task-02
     title: Implement `render_cprs_ch_png(exposures_df, output_png)` in `src/counter_risk/renderers/table_png.py`
