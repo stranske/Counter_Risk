@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import shutil
-import textwrap
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 RELEASE_NAME_PREFIX = "counter-risk"
+EXECUTABLE_BASENAME = "counter-risk"
 
 
 def repository_root() -> Path:
@@ -36,7 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=root / "dist",
+        default=root / "release",
         help="Directory where the versioned release folder will be created.",
     )
     parser.add_argument(
@@ -97,8 +99,15 @@ def _create_runner_file(bundle_dir: Path) -> Path:
             [
                 "@echo off",
                 "setlocal",
-                "set SCRIPT_DIR=%~dp0",
-                'python "%SCRIPT_DIR%\\pipeline\\counter_risk_cli.py" %*',
+                'set "SCRIPT_DIR=%~dp0"',
+                'set "EXE_PATH=%SCRIPT_DIR%bin\\counter-risk.exe"',
+                'if exist "%EXE_PATH%" (',
+                '  "%EXE_PATH%" %*',
+                "  exit /b %ERRORLEVEL%",
+                ")",
+                'set "EXE_PATH=%SCRIPT_DIR%bin\\counter-risk"',
+                '"%EXE_PATH%" %*',
+                "exit /b %ERRORLEVEL%",
             ]
         )
         + "\n",
@@ -134,51 +143,53 @@ def _copy_fixture_artifacts(root: Path, bundle_dir: Path) -> list[Path]:
     return _copy_tree_filtered(fixtures_src, bundle_dir / "fixtures", suffixes=fixture_suffixes)
 
 
-def _copy_pipeline_source(root: Path, bundle_dir: Path) -> list[Path]:
-    copied: list[Path] = []
-    pipeline_dir = bundle_dir / "pipeline"
-    source_root = root / "src"
-    package_src = source_root / "counter_risk"
-    package_dst = pipeline_dir / "src" / "counter_risk"
+def _executable_filename(*, for_windows: bool | None = None) -> str:
+    is_windows = for_windows if for_windows is not None else sys.platform.startswith("win")
+    if is_windows:
+        return f"{EXECUTABLE_BASENAME}.exe"
+    return EXECUTABLE_BASENAME
 
-    if package_src.exists():
-        for src_path in sorted(path for path in package_src.rglob("*") if path.is_file()):
-            if "__pycache__" in src_path.parts or src_path.suffix.lower() == ".pyc":
-                continue
-            relative = src_path.relative_to(package_src)
-            dst_path = package_dst / relative
-            dst_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src_path, dst_path)
-            copied.append(dst_path)
-    else:
-        package_dst.mkdir(parents=True, exist_ok=True)
 
-    entrypoint_path = pipeline_dir / "counter_risk_cli.py"
-    entrypoint_path.parent.mkdir(parents=True, exist_ok=True)
-    entrypoint_path.write_text(
-        textwrap.dedent(
-            """
-            from __future__ import annotations
+def _expected_pyinstaller_output(root: Path, *, for_windows: bool | None = None) -> Path:
+    return root / "dist" / RELEASE_NAME_PREFIX / _executable_filename(for_windows=for_windows)
 
-            import sys
-            from pathlib import Path
 
-            BUNDLE_ROOT = Path(__file__).resolve().parent
-            SOURCE_ROOT = BUNDLE_ROOT / "src"
-            if str(SOURCE_ROOT) not in sys.path:
-                sys.path.insert(0, str(SOURCE_ROOT))
-
-            from counter_risk.cli import main
-
-            if __name__ == "__main__":
-                raise SystemExit(main())
-            """
-        ).strip()
-        + "\n",
-        encoding="utf-8",
+def _run_pyinstaller(root: Path, spec_path: Path) -> None:
+    result = subprocess.run(
+        ["pyinstaller", "-y", str(spec_path)],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        check=False,
     )
-    copied.append(entrypoint_path)
-    return copied
+    if result.returncode != 0:
+        stdout = result.stdout.strip()
+        stderr = result.stderr.strip()
+        details = "\n".join(part for part in [stdout, stderr] if part)
+        raise ValueError(
+            f"PyInstaller failed with exit code {result.returncode} while building '{spec_path}'."
+            + (f"\n{details}" if details else "")
+        )
+
+
+def _copy_bundled_executable(root: Path, bundle_dir: Path) -> Path:
+    spec_path = root / "release.spec"
+    if not spec_path.is_file():
+        raise ValueError(f"Missing required PyInstaller spec file: '{spec_path}'.")
+
+    _run_pyinstaller(root, spec_path)
+    built_executable = _expected_pyinstaller_output(root)
+    if not built_executable.is_file():
+        raise ValueError(
+            "PyInstaller build completed but expected executable was not found at "
+            f"'{built_executable}'."
+        )
+
+    bundle_bin_dir = bundle_dir / "bin"
+    bundle_bin_dir.mkdir(parents=True, exist_ok=True)
+    destination = bundle_bin_dir / built_executable.name
+    shutil.copy2(built_executable, destination)
+    return destination
 
 
 def _write_readme(bundle_dir: Path, version: str) -> Path:
@@ -186,7 +197,7 @@ def _write_readme(bundle_dir: Path, version: str) -> Path:
     readme_path.write_text(
         "\n".join(
             [
-                "# Counter Risk Release",
+                "# Counter Risk Release - How to run",
                 "",
                 f"Version: {version}",
                 "",
@@ -219,11 +230,21 @@ def _write_manifest(bundle_dir: Path, version: str, copied: dict[str, list[Path]
     return manifest_path
 
 
+def _validate_version_manifest_consistency(bundle_dir: Path) -> None:
+    version_value = (bundle_dir / "VERSION").read_text(encoding="utf-8").strip()
+    manifest_value = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))["version"]
+    if version_value != manifest_value:
+        raise ValueError(
+            "Release metadata mismatch: VERSION file value "
+            f"'{version_value}' does not match manifest version '{manifest_value}'."
+        )
+
+
 def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> Path:
     """Create the versioned release bundle and return its path."""
 
     root = repository_root()
-    bundle_dir = output_dir / f"{RELEASE_NAME_PREFIX}-{version}"
+    bundle_dir = output_dir / version
     if bundle_dir.exists():
         if not force:
             raise ValueError(
@@ -242,8 +263,7 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
         bundle_dir / "config",
         suffixes={".yml", ".yaml", ".json"},
     )
-
-    copied["pipeline"] = _copy_pipeline_source(root, bundle_dir)
+    copied["executable"] = [_copy_bundled_executable(root, bundle_dir)]
 
     version_file = bundle_dir / "VERSION"
     version_file.write_text(f"{version}\n", encoding="utf-8")
@@ -257,6 +277,7 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
 
     manifest_file = _write_manifest(bundle_dir, version, copied)
     copied["manifest"] = [manifest_file]
+    _validate_version_manifest_consistency(bundle_dir)
 
     return bundle_dir
 
@@ -272,7 +293,7 @@ def run_release(
 
     root = repository_root()
     resolved_version_file = version_file or (root / "VERSION")
-    resolved_output_dir = output_dir or (root / "dist")
+    resolved_output_dir = output_dir or (root / "release")
     resolved_version = read_version(version, resolved_version_file)
     return assemble_release(resolved_version, resolved_output_dir, force=force)
 
