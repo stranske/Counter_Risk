@@ -8,6 +8,7 @@ import pytest
 
 from counter_risk.renderers.table_png import (
     cprs_ch_render_backend,
+    cprs_ch_table_style,
     cprs_ch_table_columns,
     render_cprs_ch_png,
 )
@@ -101,3 +102,14 @@ def test_cprs_ch_table_columns_are_stable() -> None:
 
 def test_cprs_ch_render_backend_is_explicit_and_stable() -> None:
     assert cprs_ch_render_backend() == "internal_pure_python_png_encoder"
+
+
+def test_cprs_ch_table_style_is_explicit_and_stable() -> None:
+    assert cprs_ch_table_style() == {
+        "background": (255, 255, 255),
+        "header_background": (29, 50, 90),
+        "header_text": (255, 255, 255),
+        "grid": (178, 187, 203),
+        "alternate_row_background": (242, 246, 252),
+        "text": (26, 26, 26),
+    }

@@ -15,13 +15,6 @@ from typing import Any, cast
 
 RGB = tuple[int, int, int]
 
-_COLOR_BACKGROUND: RGB = (255, 255, 255)
-_COLOR_HEADER_BG: RGB = (29, 50, 90)
-_COLOR_HEADER_TEXT: RGB = (255, 255, 255)
-_COLOR_GRID: RGB = (178, 187, 203)
-_COLOR_ROW_ALT: RGB = (242, 246, 252)
-_COLOR_TEXT: RGB = (26, 26, 26)
-
 _SCALE = 2
 _CELL_PADDING_X = 5
 _CELL_PADDING_Y = 4
@@ -37,6 +30,22 @@ class _TableColumn:
     width_chars: int
 
 
+@dataclass(frozen=True)
+class _TableStyle:
+    background: RGB
+    header_background: RGB
+    header_text: RGB
+    grid: RGB
+    alternate_row_background: RGB
+    text: RGB
+
+
+@dataclass(frozen=True)
+class _TableLayout:
+    columns: tuple[_TableColumn, ...]
+    style: _TableStyle
+
+
 _TABLE_COLUMNS: tuple[_TableColumn, ...] = (
     _TableColumn("Counterparty", "Counterparty", 28),
     _TableColumn("Cash", "Cash", 11),
@@ -47,6 +56,16 @@ _TABLE_COLUMNS: tuple[_TableColumn, ...] = (
     _TableColumn("Currency", "Currency", 11),
     _TableColumn("Notional", "Notional", 12),
 )
+
+_CPRS_CH_STYLE = _TableStyle(
+    background=(255, 255, 255),
+    header_background=(29, 50, 90),
+    header_text=(255, 255, 255),
+    grid=(178, 187, 203),
+    alternate_row_background=(242, 246, 252),
+    text=(26, 26, 26),
+)
+_CPRS_CH_LAYOUT = _TableLayout(columns=_TABLE_COLUMNS, style=_CPRS_CH_STYLE)
 
 _REQUIRED_COLUMNS = {column.key for column in _TABLE_COLUMNS}
 _CPRS_CH_RENDER_BACKEND = "internal_pure_python_png_encoder"
@@ -62,6 +81,18 @@ def cprs_ch_render_backend() -> str:
     return _CPRS_CH_RENDER_BACKEND
 
 
+def cprs_ch_table_style() -> dict[str, RGB]:
+    """Return the CPRS-CH table style contract used during rendering."""
+    return {
+        "background": _CPRS_CH_LAYOUT.style.background,
+        "header_background": _CPRS_CH_LAYOUT.style.header_background,
+        "header_text": _CPRS_CH_LAYOUT.style.header_text,
+        "grid": _CPRS_CH_LAYOUT.style.grid,
+        "alternate_row_background": _CPRS_CH_LAYOUT.style.alternate_row_background,
+        "text": _CPRS_CH_LAYOUT.style.text,
+    }
+
+
 def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
     """Render a deterministic CPRS-CH table PNG.
 
@@ -73,7 +104,8 @@ def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
     destination = Path(output_png)
     destination.parent.mkdir(parents=True, exist_ok=True)
 
-    col_widths = [_column_pixel_width(column.width_chars) for column in _TABLE_COLUMNS]
+    layout = _CPRS_CH_LAYOUT
+    col_widths = [_column_pixel_width(column.width_chars) for column in layout.columns]
     row_height = _CHAR_HEIGHT + (2 * _CELL_PADDING_Y)
     table_width = sum(col_widths) + len(col_widths) + 1
     table_height = (len(rows) + 1) * row_height + len(rows) + 2
@@ -81,37 +113,69 @@ def render_cprs_ch_png(exposures_df: object, output_png: Path | str) -> None:
     width = table_width + 24
     height = table_height + 24
     pixels = bytearray(width * height * 3)
-    _fill_rect(pixels, width, 0, 0, width, height, _COLOR_BACKGROUND)
+    _fill_rect(pixels, width, 0, 0, width, height, layout.style.background)
 
     origin_x = 12
     origin_y = 12
 
     x = origin_x
-    for col_index, column in enumerate(_TABLE_COLUMNS):
+    for col_index, column in enumerate(layout.columns):
         cell_width = col_widths[col_index]
-        _fill_rect(pixels, width, x, origin_y, cell_width, row_height, _COLOR_HEADER_BG)
+        _fill_rect(
+            pixels,
+            width,
+            x,
+            origin_y,
+            cell_width,
+            row_height,
+            layout.style.header_background,
+        )
         _draw_text(
             pixels,
             width,
             x + _CELL_PADDING_X,
             origin_y + _CELL_PADDING_Y,
             column.header,
-            _COLOR_HEADER_TEXT,
+            layout.style.header_text,
         )
         x += cell_width + 1
 
     for row_index, row in enumerate(rows):
         y = origin_y + row_height + 1 + row_index * (row_height + 1)
         if row_index % 2 == 1:
-            _fill_rect(pixels, width, origin_x, y, table_width - 1, row_height, _COLOR_ROW_ALT)
+            _fill_rect(
+                pixels,
+                width,
+                origin_x,
+                y,
+                table_width - 1,
+                row_height,
+                layout.style.alternate_row_background,
+            )
 
         x = origin_x
-        for column_index, column in enumerate(_TABLE_COLUMNS):
+        for column_index, column in enumerate(layout.columns):
             text = row[column.key]
-            _draw_text(pixels, width, x + _CELL_PADDING_X, y + _CELL_PADDING_Y, text, _COLOR_TEXT)
+            _draw_text(
+                pixels,
+                width,
+                x + _CELL_PADDING_X,
+                y + _CELL_PADDING_Y,
+                text,
+                layout.style.text,
+            )
             x += col_widths[column_index] + 1
 
-    _draw_grid(pixels, width, origin_x, origin_y, col_widths, row_height, len(rows))
+    _draw_grid(
+        pixels,
+        width,
+        origin_x,
+        origin_y,
+        col_widths,
+        row_height,
+        len(rows),
+        layout.style.grid,
+    )
     png_bytes = _encode_png(width=width, height=height, rgb_data=bytes(pixels))
     destination.write_bytes(png_bytes)
 
@@ -216,12 +280,13 @@ def _draw_grid(
     col_widths: list[int],
     row_height: int,
     row_count: int,
+    grid_color: RGB,
 ) -> None:
     table_height = (row_count + 1) * row_height + row_count + 1
     table_width = sum(col_widths) + len(col_widths)
 
     # Outer border.
-    _fill_rect(pixels, image_width, origin_x, origin_y, table_width, 1, _COLOR_GRID)
+    _fill_rect(pixels, image_width, origin_x, origin_y, table_width, 1, grid_color)
     _fill_rect(
         pixels,
         image_width,
@@ -229,9 +294,9 @@ def _draw_grid(
         origin_y + table_height,
         table_width,
         1,
-        _COLOR_GRID,
+        grid_color,
     )
-    _fill_rect(pixels, image_width, origin_x, origin_y, 1, table_height + 1, _COLOR_GRID)
+    _fill_rect(pixels, image_width, origin_x, origin_y, 1, table_height + 1, grid_color)
     _fill_rect(
         pixels,
         image_width,
@@ -239,19 +304,19 @@ def _draw_grid(
         origin_y,
         1,
         table_height + 1,
-        _COLOR_GRID,
+        grid_color,
     )
 
     # Inner row boundaries.
     for row in range(1, row_count + 1):
         y = origin_y + row * row_height + (row - 1)
-        _fill_rect(pixels, image_width, origin_x, y, table_width + 1, 1, _COLOR_GRID)
+        _fill_rect(pixels, image_width, origin_x, y, table_width + 1, 1, grid_color)
 
     # Inner column boundaries.
     x = origin_x
     for col_width in col_widths[:-1]:
         x += col_width + 1
-        _fill_rect(pixels, image_width, x, origin_y, 1, table_height + 1, _COLOR_GRID)
+        _fill_rect(pixels, image_width, x, origin_y, 1, table_height + 1, grid_color)
 
 
 def _draw_text(
