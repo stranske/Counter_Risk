@@ -74,7 +74,9 @@ class ManifestBuilder:
     def _normalize_output_paths(self, *, run_dir: Path, output_paths: list[Path]) -> list[Path]:
         normalized_paths: list[Path] = []
         for artifact_path in output_paths:
-            normalized = self._to_relative_artifact_path(run_dir=run_dir, artifact_path=artifact_path)
+            normalized = self._to_relative_artifact_path(
+                run_dir=run_dir, artifact_path=artifact_path
+            )
             normalized_paths.append(normalized)
         return normalized_paths
 
