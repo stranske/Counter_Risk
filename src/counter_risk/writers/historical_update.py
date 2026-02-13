@@ -69,6 +69,10 @@ class AppendDateError(HistoricalUpdateError):
     """Raised when append date resolution or ordering checks fail."""
 
 
+class DateMonotonicityError(AppendDateError):
+    """Raised when append date is not newer than the latest existing row date."""
+
+
 def _as_path(value: str | Path, *, field_name: str) -> Path:
     if isinstance(value, Path):
         return value
@@ -210,7 +214,7 @@ def _append_to_sheet(
                 f"Last worksheet date is blank for sheet {sheet_name!r} at row {last_row}"
             )
         if resolved_date <= last_date:
-            raise AppendDateError(
+            raise DateMonotonicityError(
                 "Append date must be newer than the last row date: "
                 f"append_date={resolved_date.isoformat()} last_row_date={last_date.isoformat()}"
             )
@@ -328,6 +332,7 @@ def append_row_trend(
 
 __all__ = [
     "AppendDateError",
+    "DateMonotonicityError",
     "HistoricalUpdateError",
     "SHEET_ALL_PROGRAMS_3_YEAR",
     "SHEET_EX_LLC_3_YEAR",
