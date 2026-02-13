@@ -5,10 +5,10 @@ branch: codex/issue-22
 tasks:
   - id: task-01
     title: Create `src/counter_risk/pipeline/run.py`
-    status: doing
+    status: done
     started_at: '2026-02-13T06:13:45Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T06:13:59Z'
+    commit: d42106f40d644c47c495fafdda464e998312e89d
     notes: []
   - id: task-02
     title: Implement `run_pipeline(config_path) -> run_dir` in `src/counter_risk/pipeline/run.py`
