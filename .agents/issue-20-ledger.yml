@@ -1,0 +1,366 @@
+version: 1
+issue: 20
+base: main
+branch: codex/issue-20
+tasks:
+  - id: task-01
+    title: Create `src/counter_risk/integrations/powerpoint_com.py` implementing Windows-only
+      COM integration for PowerPoint link refresh.
+    status: done
+    started_at: '2026-02-13T06:12:52Z'
+    finished_at: '2026-02-13T06:13:02Z'
+    commit: c548b48a75620c7a062495974671d7ffe213c77d
+    notes: []
+  - id: task-02
+    title: 'Define scope for: Create the module file `src/counter_risk/integrations/powerpoint_com.py`
+      with basic structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement focused slice for: Create the module file `src/counter_risk/integrations/powerpoint_com.py`
+      with basic structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Validate focused slice for: Create the module file `src/counter_risk/integrations/powerpoint_com.py`
+      with basic structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define scope for: Create the module file `src/counter_risk/integrations/powerpoint_com.py`
+      with imports (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement focused slice for: Create the module file `src/counter_risk/integrations/powerpoint_com.py`
+      with imports (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Validate focused slice for: Create the module file `src/counter_risk/integrations/powerpoint_com.py`
+      with imports (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement COM availability detection logic to check if PowerPoint COM
+      is accessible (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Add error handling for COM initialization failures with appropriate exception
+      types (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Implement `refresh_links_and_save(pptx_path) -> pptx_path` in `src/counter_risk/integrations/powerpoint_com.py`
+      to open a PPTX headless, update all external/OLE links, and save to a new output
+      PPTX path.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Define scope for: Implement PowerPoint COM automation to open a PPTX file
+      in headless mode without displaying the UI (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Implement focused slice for: Implement PowerPoint COM automation to open
+      a PPTX file in headless mode without displaying the UI (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Validate focused slice for: Implement PowerPoint COM automation to open
+      a PPTX file in headless mode without displaying the UI (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Implement link enumeration (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'update logic to refresh all external (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'OLE links in the presentation (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Define scope for: Implement save functionality to write the updated presentation
+      to a new output path (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Implement focused slice for: Implement save functionality to write the
+      updated presentation to a new output path (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Validate focused slice for: Implement save functionality to write the
+      updated presentation to a new output path (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'return that path (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Add `list_external_link_targets(pptx_path) -> list[str]` (or similar) in
+      `src/counter_risk/integrations/powerpoint_com.py` to enumerate external link
+      targets for sanity-checking paths.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: "Implement a COM-unavailable fallback that writes `NEEDS_LINK_REFRESH.txt`\
+      \ into the run folder with explicit manual steps to refresh links via \u201C\
+      Edit Links to File\u201D and \u201CUpdate Now\u201D."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Write CI-safe tests that exercise the non-COM fallback behavior and assert
+      `NEEDS_LINK_REFRESH.txt` is created with the expected instructions.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Write unit tests that mock COM unavailability (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: verify the fallback path is triggered without errors
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Define scope for: Write tests that validate `NEEDS_LINK_REFRESH.txt` is
+      created in the correct location with proper file permissions (verify: tests
+      pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Implement focused slice for: Write tests that validate `NEEDS_LINK_REFRESH.txt`
+      is created in the correct location with proper file permissions (verify: tests
+      pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Validate focused slice for: Write tests that validate `NEEDS_LINK_REFRESH.txt`
+      is created in the correct location with proper file permissions (verify: tests
+      pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Define scope for: Write tests that verify the content of `NEEDS_LINK_REFRESH.txt`
+      contains all required manual refresh instructions'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Implement focused slice for: Write tests that verify the content of `NEEDS_LINK_REFRESH.txt`
+      contains all required manual refresh instructions'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Validate focused slice for: Write tests that verify the content of `NEEDS_LINK_REFRESH.txt`
+      contains all required manual refresh instructions'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: On Windows with Office installed, running `refresh_links_and_save(pptx_path)`
+      updates all links and produces a new saved PPTX at the returned path.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: When COM is not available, the pipeline completes without error and creates
+      `NEEDS_LINK_REFRESH.txt` in the run folder containing explicit manual refresh
+      steps.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: CI tests pass by validating the fallback logic without requiring COM/Office.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: Add `src/counter_risk/integrations/powerpoint_com.py` (Windows-only)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: Implement `refresh_links_and_save(pptx_path) -> pptx_path`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Ensure it:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: opens PPT headless
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: updates all links
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: saves as a new output PPTX
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Fallback path when COM not available:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: "write a \u201CNEEDS_LINK_REFRESH.txt\u201D note in the run folder with\
+      \ explicit steps"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: Add a small utility to list external link targets in the PPT (sanity check
+      paths)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: Add tests that run in CI without COM by exercising the fallback logic
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'On Windows with Office installed: charts refresh and PPT saves successfully'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Without COM: pipeline completes and emits a clear instruction file for
+      manual refresh'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
