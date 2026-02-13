@@ -1,0 +1,400 @@
+version: 1
+issue: 13
+base: main
+branch: codex/issue-13
+tasks:
+  - id: task-01
+    title: 'Create `tests/fixtures/` and add the following fixture files:'
+    status: doing
+    started_at: '2026-02-13T03:05:27Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Add `tests/fixtures/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Add `tests/fixtures/MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Add `tests/fixtures/MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Add `tests/fixtures/Historical Counterparty Risk Graphs - All Programs
+      3 Year.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Add `tests/fixtures/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Add `tests/fixtures/Historical Counterparty Risk Graphs - LLC 3 Year.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Add `tests/fixtures/NISA Drop-In Template - All Programs.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Add `tests/fixtures/NISA Drop-In Template - Ex Trend.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Add `tests/fixtures/NISA Drop-In Template - Trend.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Add `tests/fixtures/Monthly Counterparty Exposure Report.pptx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Create `tests/helpers/excel_asserts.py` implementing range extraction and
+      float-tolerant comparison utilities
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Create tests/helpers/excel_asserts.py with basic module structure (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Create tests/helpers/excel_asserts.py with imports (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Implement range extraction utility function in excel_asserts.py (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Implement float-tolerant comparison utility function in excel_asserts.py
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Add unit tests for the range extraction utility (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Add unit tests for the float-tolerant comparison utility (verify: tests
+      pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Create `tests/helpers/pptx_asserts.py` implementing slide count and chart/picture
+      presence assertion utilities
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Create tests/helpers/pptx_asserts.py with basic module structure (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Create tests/helpers/pptx_asserts.py with imports (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Implement slide count assertion utility function in pptx_asserts.py (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Implement chart presence assertion utility function in pptx_asserts.py
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Implement picture presence assertion utility function in pptx_asserts.py
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Add unit tests for the slide count assertion utility (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Add unit tests for the chart (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'picture presence utilities (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Add smoke tests that load each file in `tests/fixtures/` without exceptions
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Create tests/test_fixtures_smoke.py for smoke test implementations (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Add smoke tests for loading all MOSERS Counterparty Risk Summary Excel
+      files (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Add smoke tests for loading all Historical Counterparty Risk Graphs Excel
+      files (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Add smoke tests for loading all NISA Drop-In Template Excel files (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Add smoke test for loading Monthly Counterparty Exposure Report PowerPoint
+      file (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Running `pytest` loads all files in `tests/fixtures/` without exceptions
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: '`tests/helpers/excel_asserts.py` exists and includes a helper that can
+      compare at least one known range deterministically (same inputs yield same comparison
+      result)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: '`tests/helpers/pptx_asserts.py` exists and includes helpers that can assert
+      slide count and presence of chart/picture shapes'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Add `tests/fixtures/` containing the provided artifacts:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: Historical Counterparty Risk Graphs - LLC 3 Year.xlsx
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: NISA Drop-In Template - All Programs.xlsx
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: NISA Drop-In Template - Ex Trend.xlsx
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: NISA Drop-In Template - Trend.xlsx
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: Monthly Counterparty Exposure Report.pptx
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: Add `tests/helpers/excel_asserts.py` for range extraction + float-tolerant
+      compare
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: Add `tests/helpers/pptx_asserts.py` for slide count + chart/picture presence
+      checks
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: Add smoke tests that load each fixture without exceptions
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: '`pytest` loads all fixture files cleanly'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: Helper functions can compare at least one known range deterministically
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: Add fixture files to tests/fixtures/ (Agent cannot access or upload binary
+      files (Excel/PowerPoint) that are not already in the repository | User must
+      provide these fixture files by uploading them to the repository or providing
+      download links. Agent can create the directory structure and placeholder documentation.)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
