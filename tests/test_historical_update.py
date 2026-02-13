@@ -101,6 +101,80 @@ def _build_sheet(sheet_name: str, series: tuple[str, ...]) -> _FakeWorksheet:
     return sheet
 
 
+def _seed_real_sheet(worksheet: Any, series: tuple[str, ...]) -> None:
+    worksheet.cell(row=1, column=1).value = "Date"
+    for offset, name in enumerate(series, start=2):
+        worksheet.cell(row=1, column=offset).value = name
+
+    worksheet.cell(row=2, column=1).value = date(2025, 12, 31)
+    for offset, _ in enumerate(series, start=2):
+        worksheet.cell(row=2, column=offset).value = 1.0
+
+
+def test_append_functions_save_and_reload_updated_workbook(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    workbook_path = tmp_path / "historical.xlsx"
+
+    workbook = openpyxl.Workbook()
+    all_programs = workbook.active
+    all_programs.title = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
+    _seed_real_sheet(
+        all_programs,
+        historical_update.SERIES_BY_SHEET[historical_update.SHEET_ALL_PROGRAMS_3_YEAR],
+    )
+
+    ex_trend = workbook.create_sheet(historical_update.SHEET_EX_LLC_3_YEAR)
+    _seed_real_sheet(
+        ex_trend,
+        historical_update.SERIES_BY_SHEET[historical_update.SHEET_EX_LLC_3_YEAR],
+    )
+
+    trend = workbook.create_sheet(historical_update.SHEET_LLC_3_YEAR)
+    _seed_real_sheet(
+        trend,
+        historical_update.SERIES_BY_SHEET[historical_update.SHEET_LLC_3_YEAR],
+    )
+
+    workbook.save(workbook_path)
+    workbook.close()
+
+    as_of_date = date(2026, 1, 31)
+    historical_update.append_row_all_programs(
+        workbook_path=workbook_path,
+        rollup_data={"Total": 100.0, "Cash": 25.0},
+        config_as_of_date=as_of_date,
+    )
+    historical_update.append_row_ex_trend(
+        workbook_path=workbook_path,
+        rollup_data={"Total": 200.0, "Class": 50.0},
+        config_as_of_date=as_of_date,
+    )
+    historical_update.append_row_trend(
+        workbook_path=workbook_path,
+        rollup_data={"Total": 300.0, "Equity": 75.0},
+        config_as_of_date=as_of_date,
+    )
+
+    reloaded = openpyxl.load_workbook(workbook_path)
+    try:
+        for sheet_name in (
+            historical_update.SHEET_ALL_PROGRAMS_3_YEAR,
+            historical_update.SHEET_EX_LLC_3_YEAR,
+            historical_update.SHEET_LLC_3_YEAR,
+        ):
+            sheet = reloaded[sheet_name]
+            assert sheet.max_row == 3
+
+            headers = historical_update._build_header_map(sheet, header_row=1)
+            date_column = historical_update._get_date_column(headers)
+            assert (
+                historical_update._coerce_cell_date(sheet.cell(row=3, column=date_column).value)
+                == as_of_date
+            )
+    finally:
+        reloaded.close()
+
+
 def test_append_functions_add_exactly_one_row_to_each_target_sheet(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
