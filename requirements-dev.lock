@@ -14,6 +14,10 @@ packaging==25.0
     # via pytest
 pathspec==0.12.1
     # via mypy
+pydantic==2.7.4
+    # via my-project (pyproject.toml)
+pyyaml==6.0.2
+    # via my-project (pyproject.toml)
 pluggy==1.6.0
     # via
     #   pytest

@@ -21,7 +21,10 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
-dependencies = []
+dependencies = [
+    "pydantic>=2.7,<3",
+    "PyYAML>=6.0.2,<7",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -100,3 +103,7 @@ show_error_codes = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "counter_risk.config"
+disable_error_code = ["import-untyped"]
