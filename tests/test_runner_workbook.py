@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from xml.etree import ElementTree
 from zipfile import ZipFile
@@ -15,6 +16,22 @@ NAMESPACES = {
     "r": RELATIONSHIP_NS,
     "pr": PACKAGE_REL_NS,
 }
+
+
+def _is_month_end(iso_date: str) -> bool:
+    parsed = date.fromisoformat(iso_date)
+    next_day = parsed.fromordinal(parsed.toordinal() + 1)
+    return next_day.month != parsed.month
+
+
+def _next_month_end(current: date) -> date:
+    next_month_start = date(current.year + 1, 1, 1) if current.month == 12 else date(current.year, current.month + 1, 1)
+    month_after_next_start = (
+        date(next_month_start.year + 1, 1, 1)
+        if next_month_start.month == 12
+        else date(next_month_start.year, next_month_start.month + 1, 1)
+    )
+    return month_after_next_start.fromordinal(month_after_next_start.toordinal() - 1)
 
 
 def _read_xml(zip_file: ZipFile, member: str) -> ElementTree.Element:
@@ -80,6 +97,11 @@ def test_runner_workbook_contains_month_selector_dropdown() -> None:
         assert month_values[0] == "MonthEnd"
         assert month_values[1] == "2020-01-31"
         assert month_values[-1] == "2035-12-31"
+        assert all(_is_month_end(item) for item in month_values[1:])
+
+        parsed_dates = [date.fromisoformat(item) for item in month_values[1:]]
+        for current, next_value in zip(parsed_dates, parsed_dates[1:]):
+            assert next_value == _next_month_end(current)
 
 
 def test_runner_workbook_contains_run_controls() -> None:
