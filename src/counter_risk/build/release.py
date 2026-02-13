@@ -127,9 +127,7 @@ def _copy_templates(root: Path, bundle_dir: Path) -> list[Path]:
             template_candidates.setdefault(src_path.name, []).append(src_path)
 
     duplicate_templates = {
-        filename: paths
-        for filename, paths in template_candidates.items()
-        if len(paths) > 1
+        filename: paths for filename, paths in template_candidates.items() if len(paths) > 1
     }
     if duplicate_templates:
         conflict_lines = [
@@ -247,7 +245,9 @@ def _write_manifest(bundle_dir: Path, version: str, copied: dict[str, list[Path]
 
 def _validate_version_manifest_consistency(bundle_dir: Path) -> None:
     version_value = (bundle_dir / "VERSION").read_text(encoding="utf-8").strip()
-    manifest_value = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))["version"]
+    manifest_value = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))[
+        "version"
+    ]
     if version_value != manifest_value:
         raise ValueError(
             "Release metadata mismatch: VERSION file value "
