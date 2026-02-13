@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
@@ -63,6 +63,9 @@ class PptProcessingResult:
 
     status: PptProcessingStatus
     error_detail: str | None = None
+
+
+ScreenshotReplacer = Callable[[Path, Path, dict[str, Path]], None]
 
 
 def run_pipeline(config_path: str | Path) -> Path:
@@ -390,10 +393,18 @@ def _write_outputs(
 
     source_ppt = config.monthly_pptx
     target_ppt = run_dir / source_ppt.name
-    shutil.copy2(source_ppt, target_ppt)
+    screenshot_inputs = _resolve_screenshot_input_mapping(config)
+    if config.enable_screenshot_replacement:
+        replacer = _get_screenshot_replacer(config.screenshot_replacement_implementation)
+        replacer(source_ppt, target_ppt, screenshot_inputs)
+    else:
+        shutil.copy2(source_ppt, target_ppt)
+        if screenshot_inputs:
+            warnings.append(
+                "PPT screenshots replacement disabled; copied source deck unchanged"
+            )
     output_paths.append(target_ppt)
 
-    warnings.append("PPT screenshots replacement not implemented; copied source deck unchanged")
     refresh_result = _refresh_ppt_links(target_ppt)
     if isinstance(refresh_result, bool):
         refresh_result = PptProcessingResult(
@@ -411,6 +422,73 @@ def _write_outputs(
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
     return output_paths, refresh_result
+
+
+def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]:
+    raw_inputs = config.screenshot_inputs
+    normalized = {str(key): Path(path) for key, path in sorted(raw_inputs.items())}
+    if config.enable_screenshot_replacement and not normalized:
+        raise ValueError("Screenshot replacement is enabled but no screenshot_inputs were provided")
+    return normalized
+
+
+def _get_screenshot_replacer(implementation: str) -> ScreenshotReplacer:
+    if implementation == "zip":
+        return _replace_screenshots_with_zip_backend
+    if implementation == "python-pptx":
+        return _replace_screenshots_with_python_pptx_backend
+    raise ValueError(f"Unsupported screenshot replacement implementation: {implementation}")
+
+
+def _replace_screenshots_with_python_pptx_backend(
+    source_pptx_path: Path, output_pptx_path: Path, screenshot_inputs: dict[str, Path]
+) -> None:
+    from counter_risk.writers.pptx_screenshots import replace_screenshot_pictures
+
+    replace_screenshot_pictures(
+        pptx_in=source_pptx_path,
+        images_by_section=screenshot_inputs,
+        pptx_out=output_pptx_path,
+    )
+
+
+def _replace_screenshots_with_zip_backend(
+    source_pptx_path: Path, output_pptx_path: Path, screenshot_inputs: dict[str, Path]
+) -> None:
+    from counter_risk.ppt.replace_screenshots import ScreenshotReplacement, replace_screenshots_in_pptx
+
+    replacements = [
+        ScreenshotReplacement(
+            slide_number=slide_number,
+            picture_index=picture_index,
+            image_bytes=image_path.read_bytes(),
+        )
+        for screenshot_key, image_path in screenshot_inputs.items()
+        for slide_number, picture_index in [_parse_zip_screenshot_key(screenshot_key)]
+    ]
+    replace_screenshots_in_pptx(
+        source_pptx_path=source_pptx_path,
+        output_pptx_path=output_pptx_path,
+        replacements=replacements,
+    )
+
+
+def _parse_zip_screenshot_key(key: str) -> tuple[int, int]:
+    slide_token, separator, picture_token = key.partition(":")
+    normalized_slide = slide_token.strip().lower()
+    if normalized_slide.startswith("slide"):
+        normalized_slide = normalized_slide.removeprefix("slide").strip()
+    if not normalized_slide.isdigit():
+        raise ValueError(f"Invalid screenshot key for zip backend: {key!r}")
+
+    picture_index = 0
+    if separator:
+        picture_candidate = picture_token.strip()
+        if not picture_candidate.isdigit():
+            raise ValueError(f"Invalid screenshot key for zip backend: {key!r}")
+        picture_index = int(picture_candidate)
+
+    return int(normalized_slide), picture_index
 
 
 def _refresh_ppt_links(pptx_path: Path) -> PptProcessingResult:
