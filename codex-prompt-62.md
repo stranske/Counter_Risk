@@ -206,11 +206,11 @@ The PR is complete when ALL of these are satisfied:
 ### Recently Attempted Tasks
 Avoid repeating these unless a task needs explicit follow-up:
 
-- Implement focused slice for: Add logic to load the Excel template file using openpyxl or similar library (verify: confirm completion in repo)
 - Validate focused slice for: Add logic to load the Excel template file using openpyxl or similar library (verify: confirm completion in repo)
 - Update `fill_dropin_template(...)` to populate the Notional Breakdown row from the computed `breakdown`
+- Implement the main orchestration logic that coordinates counterparty matching (verify: confirm completion in repo) cell population (verify: confirm completion in repo)
 
 ### Suggested Next Task
-- Implement the main orchestration logic that coordinates counterparty matching (verify: confirm completion in repo) cell population (verify: confirm completion in repo)
+- Add error handling for missing templates (verify: confirm completion in repo) invalid input dataframes (verify: confirm completion in repo)
 
 ---

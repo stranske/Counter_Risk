@@ -142,6 +142,22 @@ def _iter_rows(exposures_df: Any) -> list[Mapping[str, Any]]:
     return cast(list[Mapping[str, Any]], rows)
 
 
+def _validate_exposure_rows(rows: Sequence[Mapping[str, Any]]) -> None:
+    for index, row in enumerate(rows):
+        identifier = None
+        for key in _COUNTERPARTY_COLUMNS:
+            value = row.get(key)
+            if isinstance(value, str) and value.strip():
+                identifier = value
+                break
+
+        if identifier is None:
+            raise ValueError(
+                f"exposures_df row at index {index} must include a non-empty counterparty identifier "
+                f"column from {_COUNTERPARTY_COLUMNS}"
+            )
+
+
 def _build_exposure_index(rows: Sequence[Mapping[str, Any]]) -> dict[str, Mapping[str, Any]]:
     """Index rows by normalized counterparty/clearing-house label."""
 
@@ -314,6 +330,7 @@ def fill_dropin_template(
     _validate_workbook_path(output_file, field_name="output_path", must_exist=False)
 
     rows = _iter_rows(exposures_df)
+    _validate_exposure_rows(rows)
     exposures_by_name = _build_exposure_index(rows)
     normalized_breakdown = _coerce_breakdown(breakdown)
 
