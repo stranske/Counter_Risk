@@ -23,9 +23,46 @@ Requires-Dist: ruff>=0.15.0; extra == "dev"
 Requires-Dist: mypy>=1.19.1; extra == "dev"
 Dynamic: license-file
 
-# Template
+# Counter_Risk
 
-A template Python repository with [stranske/Workflows](https://github.com/stranske/Workflows) CI integration and CLI Codex agent automation.
+A programmatic replacement for the MOSERS spreadsheet workflow used to evaluate counterparty risk and produce the monthly Counterparty Exposure reporting package (Excel workbooks + PowerPoint).
+
+## Who this is for
+
+- **Operators (non-technical):** run the monthly process via a button-driven Runner (Excel or a simple Windows app) and deliver the output files. Operators do not need repo access.
+- **Maintainers:** develop and maintain the pipeline in this repository, primarily through agent-driven issues and PRs.
+
+## What the pipeline produces
+
+- Updated historical Excel workbooks (time series inputs for charts)
+- Updated monthly PowerPoint (screenshots replaced + chart links refreshed)
+- A run folder with a manifest (inputs, hashes, warnings, summaries)
+- Optional “distribution” deliverables (static PPT/PDF) that do not prompt for link refresh
+
+## Start here
+
+- **Project agent guide:** [AGENTS.md](AGENTS.md)
+- **Consumer repo workflow rules:** [CLAUDE.md](CLAUDE.md)
+- **How to use labels/keepalive/autopilot:** [WORKFLOW_USER_GUIDE.md](WORKFLOW_USER_GUIDE.md)
+- **Issue formatting standard:** [docs/AGENT_ISSUE_FORMAT.md](docs/AGENT_ISSUE_FORMAT.md)
+- **CI/Workflows integration guide:** [docs/CI_SYSTEM_GUIDE.md](docs/CI_SYSTEM_GUIDE.md)
+- **Keepalive troubleshooting:** [docs/KEEPALIVE_TROUBLESHOOTING.md](docs/KEEPALIVE_TROUBLESHOOTING.md)
+- **Consumer setup checklist:** [docs/SETUP_CHECKLIST.md](docs/SETUP_CHECKLIST.md)
+
+## Repository automation (high level)
+
+This repo is integrated with the central [stranske/Workflows](https://github.com/stranske/Workflows) library.
+
+Typical maintainer loop:
+
+1. Write/format an issue using the repo issue format.
+2. Label the issue to trigger agent workflows (for example, `agents:format` then `agent:codex`).
+3. Keepalive iterates on the PR until tasks and acceptance criteria are complete.
+
+If a change requires editing synced workflow files, do it in **stranske/Workflows** first and then sync.
+
+## Testing
+Autopilot smoke tests are enabled to validate basic keepalive and automation flow behavior.
 
 ## Features
 
@@ -35,45 +72,6 @@ A template Python repository with [stranske/Workflows](https://github.com/strans
 - 🧪 **Pytest** - Testing with 80% coverage requirement
 - 🤖 **CLI Codex Automation** - Gate-triggered keepalive for automated development
 - 🔄 **Dual Checkout Pattern** - Consumer repo + centralized Workflows scripts
-
-## Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/stranske/Template.git
-cd Template
-
-# Install in development mode
-pip install -e ".[dev]"
-
-# Run tests
-pytest
-
-# Run linting
-ruff check src/ tests/
-
-# Run type checking
-mypy src/ tests/
-```
-
-## Project Structure
-
-```
-Template/
-├── .github/
-│   ├── codex/
-│   │   ├── AGENT_INSTRUCTIONS.md  # Codex agent guidelines
-│   │   └── prompts/               # Task execution templates
-│   ├── scripts/                   # Agent automation scripts (dual checkout from Workflows)
-│   └── workflows/                 # GitHub Actions workflows
-├── docs/                          # Documentation
-├── src/
-│   └── my_project/                # Main package
-├── tests/                         # Test suite
-├── Issues.txt                     # Agent issue queue
-├── pyproject.toml                 # Project configuration
-└── README.md
-```
 
 ## Workflows
 
@@ -157,53 +155,6 @@ Explanation of what needs to be done and why.
 
 Implementation notes
 - Technical details or constraints
-```
-
-## Setup for New Repos
-
-### Required Secrets
-
-| Secret | Purpose | Alternative |
-|--------|---------|-------------|
-| `CODEX_AUTH_JSON` | ChatGPT auth for Codex CLI | Recommended |
-| `WORKFLOWS_APP_ID` | GitHub App ID | Use with APP_PRIVATE_KEY |
-| `WORKFLOWS_APP_PRIVATE_KEY` | GitHub App private key | Use with APP_ID |
-| `SERVICE_BOT_PAT` | Bot PAT for automation | Required |
-| `OWNER_PR_PAT` | Owner PAT for PR operations | Optional |
-
-**Note:** Choose either `CODEX_AUTH_JSON` OR the GitHub App credentials, not both.
-
-### Required Environments
-
-Create in **Settings** → **Environments**:
-- `agent-standard` - For standard agent execution
-
-### Repository Variables
-
-| Variable | Purpose | Default |
-|----------|---------|---------|
-| `ALLOWED_KEEPALIVE_LOGINS` | Users who can trigger keepalive | `stranske` |
-
-### Branch Protection
-
-Configure branch protection for `main`:
-- Require status checks: `Gate / gate`
-- Require pull request reviews: 1 approval
-- Dismiss stale reviews on new commits
-
-## Development
-
-```bash
-# Install dependencies
-pip install -e ".[dev]"
-
-# Run all checks
-ruff check src/ tests/
-mypy src/ tests/
-pytest --cov
-
-# Format code
-ruff format src/ tests/
 ```
 
 ## Troubleshooting
