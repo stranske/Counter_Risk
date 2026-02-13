@@ -436,13 +436,9 @@ def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]
 
         image_path = Path(raw_path).expanduser().resolve()
         if image_path.suffix.lower() != ".png":
-            raise ValueError(
-                f"Screenshot input '{key}' must point to a PNG file: {image_path}"
-            )
+            raise ValueError(f"Screenshot input '{key}' must point to a PNG file: {image_path}")
         if not image_path.exists() or not image_path.is_file():
-            raise FileNotFoundError(
-                f"Screenshot input '{key}' file does not exist: {image_path}"
-            )
+            raise FileNotFoundError(f"Screenshot input '{key}' file does not exist: {image_path}")
 
         normalized_pairs.append((key, image_path))
 
