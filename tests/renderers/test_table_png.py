@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from counter_risk.renderers.table_png import (
+    cprs_ch_font_spec,
     cprs_ch_render_backend,
     cprs_ch_table_columns,
     cprs_ch_table_style,
@@ -102,6 +103,15 @@ def test_cprs_ch_table_columns_are_stable() -> None:
 
 def test_cprs_ch_render_backend_is_explicit_and_stable() -> None:
     assert cprs_ch_render_backend() == "internal_pure_python_png_encoder"
+
+
+def test_cprs_ch_font_spec_is_explicit_and_stable() -> None:
+    assert cprs_ch_font_spec() == {
+        "family": "builtin_5x7_bitmap",
+        "glyph_width_px": 10,
+        "glyph_height_px": 14,
+        "glyph_gap_px": 2,
+    }
 
 
 def test_cprs_ch_table_style_is_explicit_and_stable() -> None:
