@@ -12,6 +12,12 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
+from counter_risk.runner_date_control import (
+    DateControlRequirements,
+    DateInputControl,
+    choose_runner_date_input_control,
+)
+
 OUTPUT_PATH = Path("Runner.xlsm")
 
 
@@ -191,6 +197,11 @@ def _write_zip_member(zip_file: ZipFile, member_path: str, content: str) -> None
 
 
 def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
+    decision = choose_runner_date_input_control(DateControlRequirements())
+    if decision.selected_control is not DateInputControl.MONTH_SELECTOR:
+        msg = "Runner workbook builder currently supports month-selector control only."
+        raise ValueError(msg)
+
     month_values = _month_end_dates(2020, 1, 2035, 12)
     data_start_row = 2
     data_end_row = data_start_row + len(month_values) - 1
