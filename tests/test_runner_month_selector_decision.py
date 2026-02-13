@@ -52,6 +52,19 @@ def test_scope_definition_uses_default_requirements_and_boundaries() -> None:
     assert "Post-run status and log display." in scope.out_of_scope
 
 
+def test_scope_definition_accepts_explicit_requirements() -> None:
+    explicit_requirements = DateControlRequirements(
+        month_end_reporting_process=False,
+        cross_office_reliability_required=False,
+        deterministic_ci_testability_required=False,
+    )
+
+    scope = define_runner_xlsm_date_control_scope(explicit_requirements)
+
+    assert scope.requirements == explicit_requirements
+    assert scope.decision.selected_control is DateInputControl.DATE_PICKER
+
+
 @pytest.mark.parametrize(
     "override",
     [
