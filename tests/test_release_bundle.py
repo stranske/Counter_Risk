@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -44,8 +47,12 @@ def test_assemble_release_creates_versioned_bundle(tmp_path: Path) -> None:
     assert (bundle_dir / "VERSION").read_text(encoding="utf-8").strip() == "9.9.9"
     assert (bundle_dir / "config").is_dir()
     assert (bundle_dir / "templates").is_dir()
+    assert list((bundle_dir / "templates").glob("*.pptx"))
+    assert (bundle_dir / "pipeline" / "counter_risk_cli.py").is_file()
+    assert (bundle_dir / "pipeline" / "src" / "counter_risk" / "cli.py").is_file()
     assert (bundle_dir / "run_counter_risk.cmd").is_file()
     assert (bundle_dir / "README_HOW_TO_RUN.md").is_file()
+    assert "How to run" in (bundle_dir / "README_HOW_TO_RUN.md").read_text(encoding="utf-8")
     manifest = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["version"] == "9.9.9"
     assert manifest["release_name"] == "counter-risk-9.9.9"
@@ -70,3 +77,21 @@ def test_main_accepts_version_and_output_dir(
     assert result == 0
     assert "Release bundle created at:" in captured.out
     assert (output_dir / "counter-risk-3.4.5" / "manifest.json").is_file()
+
+
+def test_bundled_entrypoint_runs_from_copied_folder(tmp_path: Path) -> None:
+    output_dir = tmp_path / "release-output"
+    bundle_dir = release.assemble_release("4.5.6", output_dir)
+    copied_bundle = tmp_path / "shared-drive" / bundle_dir.name
+    shutil.copytree(bundle_dir, copied_bundle)
+
+    process = subprocess.run(
+        [sys.executable, "pipeline/counter_risk_cli.py", "run"],
+        cwd=copied_bundle,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert process.returncode == 0, process.stderr
+    assert "not implemented yet" in process.stdout.lower()
