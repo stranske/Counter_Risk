@@ -6,6 +6,7 @@ Drop-In workbook outputs.
 
 from __future__ import annotations
 
+import math
 import re
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
@@ -173,7 +174,11 @@ def _build_exposure_index(rows: Sequence[Mapping[str, Any]]) -> dict[str, Mappin
         if label is None:
             continue
 
-        indexed[label] = row
+        existing = indexed.get(label)
+        if existing is None:
+            indexed[label] = row
+            continue
+        indexed[label] = _merge_exposure_rows(existing, row)
 
     return indexed
 
@@ -229,11 +234,48 @@ def _build_numeric_field_index(row: Mapping[str, Any]) -> dict[str, Any]:
 
 def _coerce_numeric_cell_value(value: Any, *, field_name: str, counterparty: str) -> float:
     try:
-        return float(value)
+        numeric_value = float(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(
             f"Exposure value for {field_name!r} on {counterparty!r} must be numeric"
         ) from exc
+    if not math.isfinite(numeric_value):
+        raise ValueError(
+            f"Exposure value for {field_name!r} on {counterparty!r} must be finite"
+        )
+    return numeric_value
+
+
+def _merge_exposure_rows(
+    existing: Mapping[str, Any],
+    incoming: Mapping[str, Any],
+) -> dict[str, Any]:
+    merged: dict[str, Any] = dict(existing)
+    existing_numeric = _build_numeric_field_index(existing)
+    incoming_numeric = _build_numeric_field_index(incoming)
+
+    for key, existing_value in existing_numeric.items():
+        merged.setdefault(key, existing_value)
+
+    for key, incoming_value in incoming_numeric.items():
+        existing_value = merged.get(key)
+        if incoming_value is None:
+            continue
+        if existing_value is None:
+            merged[key] = incoming_value
+            continue
+
+        try:
+            merged[key] = float(existing_value) + float(incoming_value)
+        except (TypeError, ValueError):
+            merged[key] = incoming_value
+
+    for key, value in incoming.items():
+        if key in merged:
+            continue
+        merged[key] = value
+
+    return merged
 
 
 def _populate_numeric_cells(
