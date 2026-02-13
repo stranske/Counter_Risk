@@ -166,9 +166,7 @@ def _find_counterparty_column(worksheet: Any, *, header_scan_rows: int = 20) -> 
     return 2
 
 
-def _find_numeric_template_columns(
-    worksheet: Any, *, header_scan_rows: int = 20
-) -> dict[str, int]:
+def _find_numeric_template_columns(worksheet: Any, *, header_scan_rows: int = 20) -> dict[str, int]:
     max_row = min(getattr(worksheet, "max_row", header_scan_rows), header_scan_rows)
     max_col = min(getattr(worksheet, "max_column", 40), 40)
 
