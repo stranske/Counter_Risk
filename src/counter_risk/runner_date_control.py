@@ -67,13 +67,15 @@ def choose_runner_date_input_control(
     )
 
 
-def define_runner_xlsm_date_control_scope() -> RunnerDateControlScope:
+def define_runner_xlsm_date_control_scope(
+    requirements: DateControlRequirements | None = None,
+) -> RunnerDateControlScope:
     """Define scope for Runner.xlsm date control selection from user requirements."""
-    requirements = DateControlRequirements()
-    decision = choose_runner_date_input_control(requirements)
+    effective_requirements = requirements or DateControlRequirements()
+    decision = choose_runner_date_input_control(effective_requirements)
 
     return RunnerDateControlScope(
-        requirements=requirements,
+        requirements=effective_requirements,
         decision=decision,
         out_of_scope=(
             "Run-mode button handlers.",

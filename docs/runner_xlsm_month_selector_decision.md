@@ -23,6 +23,7 @@ Use a **month selector** dropdown in `Runner.xlsm` rather than an Excel date pic
 - Cell `B3` is the month selector control.
 - Month options are sourced from a hidden `ControlData` sheet (`A2:A193`, month-end dates).
 - Scope and decision policy are encoded in `counter_risk.runner_date_control.define_runner_xlsm_date_control_scope`.
+- `define_runner_xlsm_date_control_scope` accepts explicit requirement overrides so control selection is traceable to stated user requirements.
 - This slice implements date/month selection only; run buttons and execution VBA are handled in subsequent tasks.
 
 ## Out Of Scope For This Slice
