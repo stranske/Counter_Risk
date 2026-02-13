@@ -164,3 +164,87 @@ def test_append_functions_add_exactly_one_row_to_each_target_sheet(
 
     assert workbook.saved_paths == [workbook_path, workbook_path, workbook_path]
     assert workbook.closed_count == 3
+
+
+def test_append_functions_write_known_series_values_with_numeric_edge_cases(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workbook_path = tmp_path / "historical.xlsx"
+    workbook_path.write_text("placeholder", encoding="utf-8")
+
+    all_programs = _build_sheet(
+        historical_update.SHEET_ALL_PROGRAMS_3_YEAR,
+        historical_update.SERIES_BY_SHEET[historical_update.SHEET_ALL_PROGRAMS_3_YEAR],
+    )
+    ex_trend = _build_sheet(
+        historical_update.SHEET_EX_LLC_3_YEAR,
+        historical_update.SERIES_BY_SHEET[historical_update.SHEET_EX_LLC_3_YEAR],
+    )
+    trend = _build_sheet(
+        historical_update.SHEET_LLC_3_YEAR,
+        historical_update.SERIES_BY_SHEET[historical_update.SHEET_LLC_3_YEAR],
+    )
+    workbook = _FakeWorkbook(
+        {
+            historical_update.SHEET_ALL_PROGRAMS_3_YEAR: all_programs,
+            historical_update.SHEET_EX_LLC_3_YEAR: ex_trend,
+            historical_update.SHEET_LLC_3_YEAR: trend,
+        }
+    )
+
+    fake_module = ModuleType("openpyxl")
+    fake_module.load_workbook = lambda filename: workbook  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "openpyxl", fake_module)
+
+    as_of_date = date(2026, 1, 31)
+    all_programs_rollups = {
+        "Total": 0.0,
+        "Cash": -12.75,
+        "Commodity": 1_250_000_000_000.0,
+    }
+    ex_trend_rollups = {
+        "Total": 222.125,
+        "Class": -9.5,
+        "Currency": 0.0,
+    }
+    trend_rollups = {
+        "Total": 3_400_000_000.0,
+        "Equity": 0.0,
+        "Commodity": -0.25,
+    }
+
+    historical_update.append_row_all_programs(
+        workbook_path=workbook_path,
+        rollup_data=all_programs_rollups,
+        config_as_of_date=as_of_date,
+    )
+    historical_update.append_row_ex_trend(
+        workbook_path=workbook_path,
+        rollup_data=ex_trend_rollups,
+        config_as_of_date=as_of_date,
+    )
+    historical_update.append_row_trend(
+        workbook_path=workbook_path,
+        rollup_data=trend_rollups,
+        config_as_of_date=as_of_date,
+    )
+
+    all_headers = historical_update._build_header_map(all_programs, header_row=1)
+    ex_headers = historical_update._build_header_map(ex_trend, header_row=1)
+    trend_headers = historical_update._build_header_map(trend, header_row=1)
+
+    assert all_programs.cell(row=3, column=all_headers["total"]).value == pytest.approx(0.0)
+    assert all_programs.cell(row=3, column=all_headers["cash"]).value == pytest.approx(-12.75)
+    assert all_programs.cell(row=3, column=all_headers["commodity"]).value == pytest.approx(
+        1_250_000_000_000.0
+    )
+
+    assert ex_trend.cell(row=3, column=ex_headers["total"]).value == pytest.approx(222.125)
+    assert ex_trend.cell(row=3, column=ex_headers["class"]).value == pytest.approx(-9.5)
+    assert ex_trend.cell(row=3, column=ex_headers["currency"]).value == pytest.approx(0.0)
+
+    assert trend.cell(row=3, column=trend_headers["total"]).value == pytest.approx(3_400_000_000.0)
+    assert trend.cell(row=3, column=trend_headers["equity"]).value == pytest.approx(0.0)
+    assert trend.cell(row=3, column=trend_headers["commodity"]).value == pytest.approx(-0.25)
+
+    assert workbook.closed_count == 3
