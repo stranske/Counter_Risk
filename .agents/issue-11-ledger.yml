@@ -1,0 +1,119 @@
+version: 1
+issue: 11
+base: main
+branch: codex/issue-11
+tasks:
+  - id: task-01
+    title: Create `src/counter_risk/__init__.py` with package version metadata
+    status: doing
+    started_at: '2026-02-13T02:49:22Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Create `src/counter_risk/logging.py` implementing structured logging to
+      file and console with configurable log levels
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Create `src/counter_risk/cli.py` with an entrypoint supporting `--help`
+      and a stub `run` command
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Create `tests/__init__.py` to mark tests directory as a package
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Add `tests/test_imports.py` with test cases that import `counter_risk`,
+      `counter_risk.logging`, and `counter_risk.cli`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Add `tests/test_cli.py` with smoke test that runs `python -m counter_risk.cli
+      --help` via subprocess and asserts exit code 0
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Create or update `pyproject.toml` with ruff configuration for linting and
+      formatting rules (line length, target Python version, select/ignore rules)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Add pytest configuration section to `pyproject.toml` with test discovery
+      settings (testpaths, python_files, python_classes, python_functions)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Create `requirements-dev.txt` or update `pyproject.toml` [project.optional-dependencies]
+      with development dependencies including ruff and pytest with specific versions
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Create `Makefile` or `scripts/lint.sh` with commands to run `ruff check
+      src/ tests/` and `ruff format src/ tests/`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Add a "Development" section to `README.md` documenting the lint/format/test
+      commands (make lint, make format, make test or equivalent)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: '`pytest` exits with code 0'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: '`python -m counter_risk.cli --help` runs and exits with code 0'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: '`ruff check src/ tests/` exits with code 0'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: '`ruff format --check src/ tests/` exits with code 0'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
