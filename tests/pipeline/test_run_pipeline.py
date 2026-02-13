@@ -438,3 +438,40 @@ def test_run_pipeline_wraps_config_validation_errors_for_invalid_ppt_extension(
 
     assert isinstance(exc_info.value.__cause__, ValueError)
     assert "Invalid file type for monthly_pptx: expected .pptx" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_config_load_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "missing.yml"
+
+    def _boom(_: Path) -> Any:
+        raise ValueError("config parse failed")
+
+    monkeypatch.setattr("counter_risk.pipeline.run.load_config", _boom)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during config load") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "config parse failed" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_wraps_run_directory_setup_errors(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    def _boom(self: Path, parents: bool, exist_ok: bool) -> None:
+        _ = (self, parents, exist_ok)
+        raise OSError("permission denied")
+
+    monkeypatch.setattr("counter_risk.pipeline.run.Path.mkdir", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during run directory setup stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, OSError)
+    assert "permission denied" in str(exc_info.value.__cause__)
