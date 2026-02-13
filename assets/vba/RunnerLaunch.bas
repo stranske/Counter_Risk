@@ -20,7 +20,15 @@ Public Sub RunAll_Click()
 End Sub
 
 Public Sub RunExTrend_Click()
-    BuildRunArguments ReadSelectedDate(), RunnerModeExTrend
+    Dim selectedDate As String
+    Dim parsedDate As Date
+    Dim outputDir As String
+
+    selectedDate = ReadSelectedDate()
+    parsedDate = ParseAsOfMonth(selectedDate)
+    outputDir = "outputs\" & Format$(parsedDate, "yyyy-mm-dd")
+
+    BuildCommand "ExTrend", selectedDate, outputDir
 End Sub
 
 Public Sub RunTrend_Click()

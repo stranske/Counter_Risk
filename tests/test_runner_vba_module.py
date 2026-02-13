@@ -41,6 +41,14 @@ def test_runner_vba_run_all_reads_selected_date_and_calls_shared_builder() -> No
     assert 'BuildCommand "All", selectedDate, outputDir' in module_source
 
 
+def test_runner_vba_run_ex_trend_reads_selected_date_and_calls_shared_builder() -> None:
+    module_source = Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
+
+    assert "Public Sub RunExTrend_Click()" in module_source
+    assert "selectedDate = ReadSelectedDate()" in module_source
+    assert 'BuildCommand "ExTrend", selectedDate, outputDir' in module_source
+
+
 def test_runner_workbook_embeds_runnerlaunch_entrypoints_in_vba_project() -> None:
     with ZipFile("Runner.xlsm") as zip_file, zip_file.open("xl/vbaProject.bin") as handle:
         vba_project = handle.read().decode("latin-1", errors="ignore")
