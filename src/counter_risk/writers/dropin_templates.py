@@ -49,6 +49,17 @@ _TEMPLATE_HEADER_LABEL_TO_METRIC: dict[str, str] = {
 }
 
 
+def _resolve_metric_from_key(raw_key: str) -> str | None:
+    normalized_field = _normalize_field_name(raw_key)
+    for metric, aliases in _TEMPLATE_NUMERIC_COLUMN_ALIASES.items():
+        alias_fields = {_normalize_field_name(alias) for alias in aliases}
+        if normalized_field in alias_fields:
+            return metric
+
+    normalized_header = _normalize_header_label(raw_key)
+    return _TEMPLATE_HEADER_LABEL_TO_METRIC.get(normalized_header)
+
+
 def _normalize_label(name: str) -> str:
     """Return a deterministic normalized label for row matching."""
 
@@ -95,6 +106,15 @@ def _coerce_breakdown(breakdown: Mapping[str, Any]) -> dict[str, float]:
         normalized[key] = value
 
     return normalized
+
+
+def _build_breakdown_metric_index(breakdown: Mapping[str, float]) -> dict[str, float]:
+    metric_index: dict[str, float] = {}
+    for key, value in breakdown.items():
+        metric = _resolve_metric_from_key(key)
+        if metric is not None:
+            metric_index[metric] = value
+    return metric_index
 
 
 def _is_dataframe_like(value: Any) -> bool:
@@ -238,6 +258,41 @@ def _populate_numeric_cells(
             )
 
 
+def _find_notional_breakdown_row(worksheet: Any) -> int | None:
+    for row_index in range(1, int(getattr(worksheet, "max_row", 0)) + 1):
+        for column_index in range(1, 4):
+            candidate = worksheet.cell(row=row_index, column=column_index).value
+            if not isinstance(candidate, str):
+                continue
+            if _normalize_header_label(candidate) == "notional breakdown":
+                return row_index
+    return None
+
+
+def _populate_notional_breakdown_row(
+    worksheet: Any,
+    breakdown: Mapping[str, float],
+) -> None:
+    breakdown_row = _find_notional_breakdown_row(worksheet)
+    if breakdown_row is None:
+        return
+
+    metric_values = _build_breakdown_metric_index(breakdown)
+    if not metric_values:
+        return
+
+    template_numeric_columns = _find_numeric_template_columns(worksheet)
+    for metric, column in template_numeric_columns.items():
+        if metric == "notional_change":
+            continue
+
+        metric_value = metric_values.get(metric)
+        if metric_value is None:
+            continue
+
+        worksheet.cell(row=breakdown_row, column=column).value = float(metric_value)
+
+
 def fill_dropin_template(
     template_path: str | Path,
     exposures_df: Any,
@@ -260,7 +315,7 @@ def fill_dropin_template(
 
     rows = _iter_rows(exposures_df)
     exposures_by_name = _build_exposure_index(rows)
-    _ = _coerce_breakdown(breakdown)
+    normalized_breakdown = _coerce_breakdown(breakdown)
 
     try:
         from openpyxl import load_workbook  # type: ignore[import-untyped]
@@ -272,11 +327,12 @@ def fill_dropin_template(
 
     try:
         workbook = load_workbook(filename=template_file)
-    except OSError as exc:
+    except Exception as exc:
         raise ValueError(f"Unable to load template workbook: {template_file}") from exc
 
     worksheet = workbook.active
     _populate_numeric_cells(worksheet, exposures_by_name)
+    _populate_notional_breakdown_row(worksheet, normalized_breakdown)
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(output_file)

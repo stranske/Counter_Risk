@@ -9,7 +9,12 @@ from typing import Any
 
 import pytest
 
-from counter_risk.writers.dropin_templates import _build_exposure_index, fill_dropin_template
+from counter_risk.writers.dropin_templates import (
+    _TEMPLATE_HEADER_LABEL_TO_METRIC,
+    _build_exposure_index,
+    _normalize_header_label,
+    fill_dropin_template,
+)
 
 
 def test_fill_dropin_template_raises_for_missing_template(tmp_path: Path) -> None:
@@ -308,6 +313,306 @@ def test_fill_dropin_template_rejects_non_numeric_values_for_template_cells(
         fill_dropin_template(
             template_path=fake_template,
             exposures_df=[{"counterparty": "Societe Generale", "equity": "abc"}],
+            breakdown={},
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
+def test_fill_dropin_template_populates_notional_breakdown_row(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    sheet = _FakeWorksheet()
+    sheet.set_value(5, 2, "Counterparty/ \nClearing House")
+    sheet.set_value(6, 4, "TIPS")
+    sheet.set_value(6, 5, "Treasury")
+    sheet.set_value(6, 6, "Equity")
+    sheet.set_value(6, 7, "Commodity")
+    sheet.set_value(6, 8, "Currency")
+    sheet.set_value(6, 10, "Notional")
+    sheet.set_value(12, 2, "Notional Breakdown")
+
+    workbook = _FakeWorkbook(sheet)
+    _install_fake_openpyxl(monkeypatch, workbook)
+
+    fill_dropin_template(
+        template_path=fake_template,
+        exposures_df=[],
+        breakdown={
+            "tips": 0.11,
+            "treasury": 0.22,
+            "equity": 0.33,
+            "commodity": 0.44,
+            "currency": 0.55,
+            "notional": 1.0,
+        },
+        output_path=tmp_path / "out.xlsx",
+    )
+
+    assert sheet.cell(12, 4).value == pytest.approx(0.11)
+    assert sheet.cell(12, 5).value == pytest.approx(0.22)
+    assert sheet.cell(12, 6).value == pytest.approx(0.33)
+    assert sheet.cell(12, 7).value == pytest.approx(0.44)
+    assert sheet.cell(12, 8).value == pytest.approx(0.55)
+    assert sheet.cell(12, 10).value == pytest.approx(1.0)
+
+
+def _find_row_by_label(worksheet: Any, label: str, *, column: int = 2) -> int:
+    for row_index in range(1, int(getattr(worksheet, "max_row", 0)) + 1):
+        value = worksheet.cell(row=row_index, column=column).value
+        if isinstance(value, str) and value.strip() == label:
+            return row_index
+    raise AssertionError(f"Unable to find row label {label!r} in column {column}")
+
+
+def _find_metric_columns(worksheet: Any) -> dict[str, int]:
+    columns: dict[str, int] = {}
+    for row in worksheet.iter_rows(min_row=1, max_row=20, min_col=1, max_col=30):
+        for cell in row:
+            if not isinstance(cell.value, str):
+                continue
+            metric = _TEMPLATE_HEADER_LABEL_TO_METRIC.get(_normalize_header_label(cell.value))
+            if metric is not None:
+                columns[metric] = int(cell.column)
+    return columns
+
+
+def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
+    tmp_path: Path,
+) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+
+    template = Path("tests/fixtures/NISA Drop-In Template - All Programs.xlsx")
+    output = tmp_path / "all-programs-output.xlsx"
+
+    exposures = [
+        {
+            "counterparty": "Citigroup",
+            "cash": 100,
+            "tips": 110,
+            "treasury": 120,
+            "equity": 130,
+            "commodity": 140,
+            "currency": 150,
+            "notional": 750,
+            "notional_change": 50,
+        },
+        {
+            "counterparty": "Bank of America, NA",
+            "cash": 200,
+            "tips": 210,
+            "treasury": 220,
+            "equity": 230,
+            "commodity": 240,
+            "currency": 250,
+            "notional": 1350,
+            "notional_change": -5,
+        },
+        {
+            "counterparty": "Goldman Sachs Int'l",
+            "cash": 300,
+            "tips": 310,
+            "treasury": 320,
+            "equity": 330,
+            "commodity": 340,
+            "currency": 350,
+            "notional": 1950,
+            "notional_change": 0,
+        },
+        {
+            "counterparty": "JP Morgan",
+            "cash": 400,
+            "tips": 410,
+            "treasury": 420,
+            "equity": 430,
+            "commodity": 440,
+            "currency": 450,
+            "notional": 2550,
+            "notional_change": 15,
+        },
+        {
+            "counterparty": "Societe Generale",
+            "cash": 500,
+            "tips": 510,
+            "treasury": 520,
+            "equity": 530,
+            "commodity": 540,
+            "currency": 550,
+            "notional": 3150,
+            "notional_change": -25,
+        },
+    ]
+
+    fill_dropin_template(
+        template_path=template,
+        exposures_df=exposures,
+        breakdown={"notional": 1},
+        output_path=output,
+    )
+
+    workbook = openpyxl.load_workbook(output, data_only=True)
+    worksheet = workbook.active
+    metric_columns = _find_metric_columns(worksheet)
+
+    expected_notional = {
+        "Citigroup": 750.0,
+        "Bank of America, NA": 1350.0,
+        "Goldman Sachs Int'l": 1950.0,
+        "JP Morgan": 2550.0,
+        "Societe Generale": 3150.0,
+    }
+    for counterparty, expected_value in expected_notional.items():
+        row = _find_row_by_label(worksheet, counterparty)
+        assert worksheet.cell(row=row, column=metric_columns["notional"]).value == expected_value
+
+    workbook.close()
+
+
+def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+
+    template = Path("tests/fixtures/NISA Drop-In Template - Ex Trend.xlsx")
+    output = tmp_path / "ex-trend-output.xlsx"
+
+    exposures = [
+        {
+            "counterparty": "Citigroup",
+            "tips": 1001,
+            "treasury": 1002,
+            "equity": 1003,
+            "commodity": 1004,
+            "currency": 1005,
+            "notional": 5015,
+            "notional_change": 15,
+        },
+        {
+            "counterparty": "Bank of America, NA",
+            "tips": 2001,
+            "treasury": 2002,
+            "equity": 2003,
+            "commodity": 2004,
+            "currency": 2005,
+            "notional": 10015,
+            "notional_change": -35,
+        },
+        {
+            "counterparty": "Goldman Sachs Int'l",
+            "tips": 3001,
+            "treasury": 3002,
+            "equity": 3003,
+            "commodity": 3004,
+            "currency": 3005,
+            "notional": 15015,
+            "notional_change": 60,
+        },
+        {
+            "counterparty": "JP Morgan",
+            "tips": 4001,
+            "treasury": 4002,
+            "equity": 4003,
+            "commodity": 4004,
+            "currency": 4005,
+            "notional": 20015,
+            "notional_change": -80,
+        },
+        {
+            "counterparty": "Societe Generale",
+            "tips": 5001,
+            "treasury": 5002,
+            "equity": 5003,
+            "commodity": 5004,
+            "currency": 5005,
+            "notional": 25015,
+            "notional_change": 95,
+        },
+    ]
+
+    fill_dropin_template(
+        template_path=template,
+        exposures_df=exposures,
+        breakdown={"notional": 1},
+        output_path=output,
+    )
+
+    workbook = openpyxl.load_workbook(output, data_only=True)
+    worksheet = workbook.active
+    metric_columns = _find_metric_columns(worksheet)
+
+    expected_notional_change = {
+        "Citigroup": 15.0,
+        "Bank of America, NA": -35.0,
+        "Goldman Sachs Int'l": 60.0,
+        "JP Morgan": -80.0,
+        "Societe Generale": 95.0,
+    }
+    for counterparty, expected_value in expected_notional_change.items():
+        row = _find_row_by_label(worksheet, counterparty)
+        assert (
+            worksheet.cell(row=row, column=metric_columns["notional_change"]).value == expected_value
+        )
+
+    workbook.close()
+
+
+def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+
+    template = Path("tests/fixtures/NISA Drop-In Template - Trend.xlsx")
+    output = tmp_path / "trend-output.xlsx"
+
+    exposures = [
+        {"counterparty": "CME", "tips": 10, "treasury": 20, "equity": 30, "commodity": 40, "currency": 50, "notional": 150, "notional_change": 1},
+        {"counterparty": "EUREX", "tips": 11, "treasury": 21, "equity": 31, "commodity": 41, "currency": 51, "notional": 155, "notional_change": 2},
+        {"counterparty": "ICE Euro", "tips": 12, "treasury": 22, "equity": 32, "commodity": 42, "currency": 52, "notional": 160, "notional_change": 3},
+        {"counterparty": "ICE", "tips": 13, "treasury": 23, "equity": 33, "commodity": 43, "currency": 53, "notional": 165, "notional_change": 4},
+        {"counterparty": "Japan SCC", "tips": 14, "treasury": 24, "equity": 34, "commodity": 44, "currency": 54, "notional": 170, "notional_change": 5},
+    ]
+    breakdown = {
+        "tips": 0.40,
+        "treasury": 0.30,
+        "equity": 0.20,
+        "commodity": 0.10,
+        "currency": 0.00,
+        "notional": 1.00,
+    }
+
+    fill_dropin_template(
+        template_path=template,
+        exposures_df=exposures,
+        breakdown=breakdown,
+        output_path=output,
+    )
+
+    workbook = openpyxl.load_workbook(output, data_only=True)
+    worksheet = workbook.active
+    metric_columns = _find_metric_columns(worksheet)
+    breakdown_row = _find_row_by_label(worksheet, "Notional Breakdown")
+
+    assert worksheet.cell(row=breakdown_row, column=metric_columns["tips"]).value == pytest.approx(0.40)
+    assert worksheet.cell(row=breakdown_row, column=metric_columns["treasury"]).value == pytest.approx(0.30)
+    assert worksheet.cell(row=breakdown_row, column=metric_columns["equity"]).value == pytest.approx(0.20)
+    assert (
+        worksheet.cell(row=breakdown_row, column=metric_columns["commodity"]).value
+        == pytest.approx(0.10)
+    )
+    assert worksheet.cell(row=breakdown_row, column=metric_columns["notional"]).value == pytest.approx(1.00)
+
+    workbook.close()
+
+
+def test_fill_dropin_template_rejects_malformed_template_file(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    assert openpyxl is not None
+
+    malformed_template = tmp_path / "malformed.xlsx"
+    malformed_template.write_bytes(b"not-a-valid-xlsx")
+
+    with pytest.raises(ValueError, match="Unable to load template workbook"):
+        fill_dropin_template(
+            template_path=malformed_template,
+            exposures_df=[],
             breakdown={},
             output_path=tmp_path / "out.xlsx",
         )
