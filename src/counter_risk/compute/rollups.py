@@ -195,7 +195,7 @@ def compute_notional_breakdown(exposures_df: Any) -> dict[str, float]:
 
     total_notional = sum(by_asset_class.values())
     if total_notional == 0.0:
-        return {name: 0.0 for name in sorted(by_asset_class, key=str.casefold)}
+        return dict.fromkeys(sorted(by_asset_class, key=str.casefold), 0.0)
 
     return {
         name: by_asset_class[name] / total_notional
