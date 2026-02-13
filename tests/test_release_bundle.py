@@ -357,6 +357,6 @@ def test_release_bundle_executable_runs_fixture_replay_and_matches_numeric_fixtu
     assert_numeric_outputs_close(
         actual_numeric_values,
         expected_numeric_values,
-        atol=1e-9,
-        rtol=1e-9,
+        abs_tol=1e-9,
+        rel_tol=1e-9,
     )
