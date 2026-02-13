@@ -442,7 +442,7 @@ def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]
 
         normalized_pairs.append((key, image_path))
 
-    normalized = {key: path for key, path in sorted(normalized_pairs, key=lambda item: item[0])}
+    normalized = dict(sorted(normalized_pairs, key=lambda item: item[0]))
     if config.enable_screenshot_replacement and not normalized:
         raise ValueError("Screenshot replacement is enabled but no screenshot_inputs were provided")
     return normalized
