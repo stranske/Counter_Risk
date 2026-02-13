@@ -23,5 +23,5 @@ def test_testing_section_contains_single_autopilot_sentence() -> None:
     assert "autopilot smoke tests" in sentence.lower()
     assert sentence.endswith("."), "Testing sentence must end with a period"
 
-    words = [word for word in re.findall(r"[A-Za-z0-9']+", sentence)]
+    words = list(re.findall(r"[A-Za-z0-9']+", sentence))
     assert 10 <= len(words) <= 20, "Testing sentence must be between 10 and 20 words"
