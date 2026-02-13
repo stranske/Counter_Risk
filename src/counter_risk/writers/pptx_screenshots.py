@@ -143,17 +143,19 @@ def replace_screenshot_pictures(
         if matched_target is None:
             continue
 
+        pictures = _picture_shapes(slide)
+        if not pictures:
+            raise ValueError(f"matched slide has no picture shapes for section '{matched_target}'")
+
         if not _slide_matches_expected_picture_geometry(slide, matched_target):
             continue
-
-        pictures = _picture_shapes(slide)
         replacement = normalized_targets[matched_target]
         for picture in list(pictures):
             _swap_picture_image_part(picture, replacement)
 
         if len(_picture_shapes(slide)) != len(pictures):
             raise ValueError(
-                "picture replacement changed shape count for section " f"'{matched_target}'"
+                f"picture replacement changed shape count for section '{matched_target}'"
             )
 
         matched_sections.add(matched_target)

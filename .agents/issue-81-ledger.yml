@@ -1,0 +1,355 @@
+version: 1
+issue: 81
+base: main
+branch: codex/issue-81
+tasks:
+  - id: task-01
+    title: Update `src/counter_risk/pipeline/run.py` to compute `run_dir` as `Path(repo_root)
+      / "runs" / as_of_date_str` and pass it to all downstream functions
+    status: done
+    started_at: '2026-02-13T21:39:14Z'
+    finished_at: '2026-02-13T21:39:26Z'
+    commit: 7fee67122e7b74bd9c9cf88e8741b8718dfb96bf
+    notes: []
+  - id: task-02
+    title: Refactor manifest writer in `src/counter_risk/pipeline/manifest.py` to
+      accept `run_dir` as an explicit parameter instead of computing it internally
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Refactor workbook output functions to accept `run_dir` as an explicit parameter
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Refactor PPTX output functions to accept `run_dir` as an explicit parameter
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Add `tests/test_pipeline_run_dir.py` to set `config.output_root` to a different
+      temp directory and assert outputs only appear under `runs/<YYYY-MM-DD>/`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Update `src/counter_risk/pipeline/manifest.py` to convert all artifact
+      paths to relative paths using a single consistent base directory
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Add validation logic to `src/counter_risk/pipeline/manifest.py` that verifies
+      each recorded path resolves to an existing file before writing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Update all manifest call sites to provide paths in the expected relative
+      format
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Add `tests/test_manifest_paths.py` to assert `manifest.json` parses, contains
+      no absolute paths, uses a consistent base across entries, and all referenced
+      files exist
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Implement deterministic worksheet selection logic in `src/counter_risk/historical/update_books.py`
+      that prefers configured name and falls back to a deterministic rule
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Add header column validation to `src/counter_risk/historical/update_books.py`
+      that checks for required columns before any append operation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Create a custom exception class or enhance `ValueError` messages to include
+      sheet name and missing column details
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Add `tests/test_historical_workbook_validation.py` with fixtures covering
+      missing header, multi-sheet (decoy + target), and valid workbook update cases
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Implement PPTX opening and parsing logic in `src/counter_risk/ppt/replace_screenshots.py`
+      to access the internal structure as a zip archive
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Implement logic to locate target image shapes or placeholders within PPTX
+      slides
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Implement image replacement logic that swaps embedded image bytes with
+      generated screenshot bytes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Add logic to save the modified PPTX to the run directory with proper error
+      handling
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Add `tests/test_ppt_screenshot_replacement.py` to verify output `.pptx`
+      exists, is not byte-identical to input, and at least one `ppt/media/*` part
+      differs when comparing input vs output as zip archives
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Define a structured status type or enum with values `success`, `skipped`,
+      and `failed` for PPT processing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Update PPT processing functions to return the structured status value instead
+      of relying on exceptions alone
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Update `src/counter_risk/pipeline/run.py` to capture and propagate PPT
+      status through the execution flow
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Add PPT status field to manifest metadata schema and populate it when manifest
+      is written
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Add `tests/test_ppt_status_reporting.py` using monkeypatching to simulate
+      missing dependency/unsupported environment => `skipped`, and runtime error during
+      replacement => `failed`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Add `tests/test_pipeline_e2e_outputs.py` to run the pipeline for `as_of_date=2026-02-13`
+      against minimal fixtures and assert: single run dir at `runs/2026-02-13/` (no
+      suffix dirs), manifest exists/parses/relative paths/reference existing files,
+      invalid workbook fails fast, and PPTX output differs from input when replacement
+      enabled'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Invoking the pipeline entrypoint with `as_of_date=2026-02-13` writes all
+      outputs (manifest, updated books, PPTX outputs) under `runs/2026-02-13/` relative
+      to the repository root, regardless of any `config.output_root` value
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: A single execution does not create multiple sibling run directories (e.g.,
+      no `runs/2026-02-13_1/`); all artifacts are contained within `runs/<YYYY-MM-DD>/`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: '`runs/<YYYY-MM-DD>/manifest.json` is valid JSON and parses successfully
+      into a Python object'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Every file path recorded in `manifest.json` is relative (does not start
+      with `/` and does not match `^[A-Za-z]:\\`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Every file path recorded in `manifest.json` resolves to an existing file
+      on disk at the time the manifest is written
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Manifest path base is consistent across entries (all run-dir-relative or
+      all repo-root-relative; no mixing within one manifest)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Before appending historical data, the update logic deterministically selects
+      the intended worksheet and validates required header columns; on missing columns
+      it raises `ValueError` (or a dedicated exception) whose message includes the
+      sheet name and missing column names
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: With multiple sheets present, the update logic does not append to an unintended
+      sheet when the intended sheet is present
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: Given a valid historical workbook fixture with the required sheet and header
+      columns, the update completes without raising and writes an updated workbook
+      into `runs/<YYYY-MM-DD>/`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: When screenshot replacement is enabled with valid screenshot inputs, the
+      PPTX written to `runs/<YYYY-MM-DD>/` is not byte-identical to the input PPTX
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: When screenshot replacement is enabled with N valid screenshot inputs,
+      exactly N corresponding `ppt/media/*` files in the output PPTX differ from the
+      input PPTX when compared as zip archives, and these are the files corresponding
+      to the target shapes identified for replacement
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: If PPT processing cannot run due to missing dependency or unsupported environment,
+      the pipeline records status `skipped` (not `failed`) and completes without raising
+      solely due to PPT processing unavailability
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: If PPT processing is attempted and an error occurs, the pipeline records
+      status `failed` and either (a) raises an exception that propagates to the caller,
+      or (b) returns a structured result object with a `failed` status field and error
+      details
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: If PPT status is recorded in the manifest, the manifest includes a machine-readable
+      PPT status field whose value is one of `success`, `skipped`, `failed`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: End-to-end run for `as_of_date=2026-02-13` produces `runs/2026-02-13/manifest.json`,
+      at least one updated historical workbook output, and one PPTX output under `runs/2026-02-13/`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'End-to-end: the produced manifest contains only relative paths and all
+      referenced files exist for artifacts created in `runs/<YYYY-MM-DD>/`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'End-to-end: with an invalid historical workbook fixture, the pipeline
+      fails before writing an updated workbook'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'End-to-end: with PPT screenshot replacement enabled and valid screenshot
+      fixtures, the output PPTX under `runs/<YYYY-MM-DD>/` differs from the input
+      PPTX fixture (not a direct copy)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
