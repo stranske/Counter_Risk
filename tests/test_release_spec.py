@@ -99,7 +99,10 @@ def test_release_spec_pyinstaller_build_outputs_expected_executable(
         check=True,
     )
 
-    expected_executable = temp_root / "dist" / "counter-risk" / (
-        "counter-risk.exe" if os.name == "nt" else "counter-risk"
+    expected_executable = (
+        temp_root
+        / "dist"
+        / "counter-risk"
+        / ("counter-risk.exe" if os.name == "nt" else "counter-risk")
     )
     assert expected_executable.is_file()
