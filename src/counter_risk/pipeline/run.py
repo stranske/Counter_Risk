@@ -6,12 +6,12 @@ import hashlib
 import logging
 import platform
 import shutil
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
@@ -400,9 +400,7 @@ def _write_outputs(
     else:
         shutil.copy2(source_ppt, target_ppt)
         if screenshot_inputs:
-            warnings.append(
-                "PPT screenshots replacement disabled; copied source deck unchanged"
-            )
+            warnings.append("PPT screenshots replacement disabled; copied source deck unchanged")
     output_paths.append(target_ppt)
 
     refresh_result = _refresh_ppt_links(target_ppt)
@@ -455,7 +453,10 @@ def _replace_screenshots_with_python_pptx_backend(
 def _replace_screenshots_with_zip_backend(
     source_pptx_path: Path, output_pptx_path: Path, screenshot_inputs: dict[str, Path]
 ) -> None:
-    from counter_risk.ppt.replace_screenshots import ScreenshotReplacement, replace_screenshots_in_pptx
+    from counter_risk.ppt.replace_screenshots import (
+        ScreenshotReplacement,
+        replace_screenshots_in_pptx,
+    )
 
     replacements = [
         ScreenshotReplacement(
