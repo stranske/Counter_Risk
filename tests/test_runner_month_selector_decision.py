@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from counter_risk.runner_date_control import (
     DateControlRequirements,
     DateInputControl,
@@ -36,4 +38,21 @@ def test_relaxed_requirements_can_choose_date_picker() -> None:
         deterministic_ci_testability_required=False,
     )
     decision = choose_runner_date_input_control(relaxed)
+    assert decision.selected_control is DateInputControl.DATE_PICKER
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"non_technical_operator_flow": False},
+        {"month_end_reporting_process": False},
+        {"cross_office_reliability_required": False},
+        {"deterministic_ci_testability_required": False},
+    ],
+)
+def test_any_missing_mandatory_requirement_switches_to_date_picker(
+    override: dict[str, bool],
+) -> None:
+    requirements = DateControlRequirements(**override)
+    decision = choose_runner_date_input_control(requirements)
     assert decision.selected_control is DateInputControl.DATE_PICKER
