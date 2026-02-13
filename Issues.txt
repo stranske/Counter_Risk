@@ -1,56 +1,349 @@
-# Issues.txt - Agent Issue Queue
-# ===============================
-# Format: Numbered issues with structured sections
-# 
-# Each issue should have:
-# - Numbered title (e.g., "1) Issue title")
-# - Labels: line with comma-separated labels
-# - Why: Explanation of the need
-# - Scope: What's included/excluded
-# - Tasks: Checkboxes for work items
-# - Acceptance criteria: Verification checkboxes
-# - Implementation notes: Technical details
-#
-# Issues with "agent:codex" label will be picked up by agent automation.
-# 
-# Example format below:
+1. [Agent] [M1] Document end-user “Runner” approach (Excel .xlsm, Windows desktop app, and Streamlit app) and lock distribution model
+## Why
+End users can’t use a CLI and won’t have repo access. We need a one-click monthly workflow and a clear update mechanism.
 
-1) Set up initial project structure and tests
-Labels: agent:codex, enhancement, setup
+## Scope
+Document the operator UX and packaging approaches below will both be developed:
+- A: Excel “Runner.xlsm” with buttons that calls a packaged pipeline executable
+- B: Windows desktop app (simple GUI) that runs the pipeline
 
-Why
-The project needs a solid foundation with proper testing, linting, and CI integration.
-This establishes the patterns that all future development will follow.
+## Non-Goals
+- Implementing pipeline logic in this issue
+- Any LLM features
 
-Scope
-- Create minimal Python package structure
-- Set up pytest with coverage reporting
-- Configure ruff for linting
-- Configure mypy for type checking
-- Ensure all CI checks pass
+## Tasks
+- [ ] Write a short decision doc in repo: operator UX, pros/cons, constraints (Office availability, macro policy, network drive paths)
+- [ ] Document the order of precedence in implementation
+- [ ] Define standard input discovery rules (date-based) vs file-pick rules
+- [ ] Define standard output folder convention + naming
+- [ ] Define how updates are delivered to non-repo users (shared drive “Releases” folder, versioned zip)
 
-Non-Goals
-- Complex business logic (future issues)
-- Documentation site (separate issue)
+## Acceptance Criteria
+- [ ] Repo contains a  doc with a implementation approaches
+- [ ] A clear “monthly operator steps” outline exists (no CLI steps)
 
-Tasks
-- [ ] Create src/my_project/__init__.py with version
-- [ ] Create src/my_project/main.py with sample function
-- [ ] Create tests/test_main.py with basic tests
-- [ ] Configure pyproject.toml with all tools
-- [ ] Verify ruff check passes
-- [ ] Verify mypy check passes
-- [ ] Verify pytest passes with >80% coverage
+## Implementation Notes
 
-Acceptance criteria
-- [ ] Package can be installed with pip install -e .
-- [ ] Running pytest shows all tests passing
-- [ ] Running ruff check shows no issues
-- [ ] Running mypy shows no errors
-- [ ] Coverage report shows >80% coverage
 
-Implementation notes
-- Use modern pyproject.toml format (no setup.py)
-- Target Python 3.11+ 
-- Use src layout for package
-- Follow strict mypy configuration
+2. [Agent] [M1] Bootstrap Counter_Risk Python package + internal CLI (developer-only) + test harness
+## Why
+We need a stable, testable core library that the Runner can call. CLI is for maintainers/CI, not end users.
+
+## Scope
+Create `src/counter_risk/` package, basic logging, and tests.
+
+## Non-Goals
+- Full pipeline execution
+- UI/Runner
+
+## Tasks
+- [ ] Add `src/counter_risk/__init__.py`
+- [ ] Add `src/counter_risk/logging.py` (structured logging to file + console)
+- [ ] Add `src/counter_risk/cli.py` with `--help` and a stub `run` command (maintainers only)
+- [ ] Add `tests/` with import + smoke tests
+- [ ] Configure lint/format/test tooling per repo standard (ruff/pytest or equivalent)
+
+## Acceptance Criteria
+- [ ] `pytest` passes
+- [ ] `python -m counter_risk.cli --help` runs
+- [ ] Lint/format checks run cleanly
+
+## Implementation Notes
+- Keep dependencies minimal here; add Excel/PPT libs in later issues.
+
+
+3. [Agent] [M1] Add typed run configuration schema + sample configs for All / Ex Trend / Trend
+## Why
+The workflow has three variants and multiple artifacts (templates, historical books, PPT). Config makes runs reproducible.
+
+## Scope
+Create a config model and sample config files.
+
+## Non-Goals
+- Auto-discovery of network inputs (Milestone 2)
+- Running end-to-end
+
+## Tasks
+- [ ] Add `src/counter_risk/config.py` (Pydantic preferred)
+- [ ] Support fields:
+- [ ] `as_of_date` (optional; can be inferred from input later)
+- [ ] MOSERS input workbook paths:
+- [ ] `mosers_all_programs_xlsx`
+- [ ] `mosers_ex_trend_xlsx`
+- [ ] `mosers_trend_xlsx`
+- [ ] Historical graphs workbook paths:
+- [ ] `hist_all_programs_3yr_xlsx`
+- [ ] `hist_ex_llc_3yr_xlsx`
+- [ ] `hist_llc_3yr_xlsx`
+- [ ] PPT template path: `monthly_pptx`
+- [ ] Output root directory (e.g., `runs/`)
+- [ ] Add `config/all_programs.yml`, `config/ex_trend.yml`, `config/trend.yml`
+- [ ] Implement `load_config(path)` with readable validation errors
+
+## Acceptance Criteria
+- [ ] Sample configs load successfully in unit tests
+- [ ] Missing/invalid config yields a clear error message
+
+
+4. [Agent] [M1] Add fixtures folder + golden comparison helpers (Excel + PPT)
+## Why
+We need objective regression checks (“did we match the current workbook behavior?”) without manual eyeballing.
+
+## Scope
+Add fixtures organization and helper utilities to compare key cells/ranges and PPT structure.
+
+## Non-Goals
+- Pixel-perfect chart rendering checks
+- Full Excel chart comparisons
+
+## Tasks
+- [ ] Add `tests/fixtures/` containing the provided artifacts:
+- [ ] MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx
+- [ ] MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx
+- [ ] MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx
+- [ ] Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx
+- [ ] Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx
+- [ ] Historical Counterparty Risk Graphs - LLC 3 Year.xlsx
+- [ ] NISA Drop-In Template - All Programs.xlsx
+- [ ] NISA Drop-In Template - Ex Trend.xlsx
+- [ ] NISA Drop-In Template - Trend.xlsx
+- [ ] Monthly Counterparty Exposure Report.pptx
+- [ ] Add `tests/helpers/excel_asserts.py` for range extraction + float-tolerant compare
+- [ ] Add `tests/helpers/pptx_asserts.py` for slide count + chart/picture presence checks
+- [ ] Add smoke tests that load each fixture without exceptions
+
+## Acceptance Criteria
+- [ ] `pytest` loads all fixture files cleanly
+- [ ] Helper functions can compare at least one known range deterministically
+
+
+5. [Agent] [M1] Parse MOSERS “CPRS - CH” into canonical exposures table (handles all variants)
+## Why
+Downstream steps (historical updates, summaries, LLM context) are simpler if we normalize CPRS-CH into one table.
+
+## Scope
+Implement a robust parser for the MOSERS-format “CPRS - CH” sheet.
+
+## Non-Goals
+- Raw NISA layout macros (Milestone 2)
+- Writing back to Excel
+
+## Tasks
+- [ ] Add `src/counter_risk/parsers/cprs_ch.py`
+- [ ] Implement `parse_cprs_ch(path) -> DataFrame`
+- [ ] Detect segments present by scanning labels (e.g., Swaps/Repo/Futures/Futures-CDX)
+- [ ] Extract numeric columns when present: Cash, TIPS, Treasury, Equity, Commodity, Currency, Notional
+- [ ] Normalize blanks to 0 for numeric fields
+- [ ] Add tests for:
+- [ ] All Programs: includes Swaps, Repo, Futures/CDX
+- [ ] Ex Trend: includes Swaps, Repo
+- [ ] Trend: includes Futures only
+
+## Acceptance Criteria
+- [ ] Parser returns non-empty dataframes for each fixture variant
+- [ ] Output includes stable columns and numeric dtypes for numeric fields
+
+
+6. [Agent] [M1] Parse MOSERS “CPRS - FCM” into canonical tables (totals + futures detail when present)
+## Why
+The PPT screenshot slides include CPRS-FCM content, and Trend requires futures detail logic later.
+
+## Scope
+Implement parsers for MOSERS-format “CPRS - FCM” sheet:
+- Totals-by-counterparty section (All Programs + Ex Trend)
+- Futures detail section (All Programs + Trend)
+
+## Non-Goals
+- Prior-month change/sign-flip logic (Milestone 2)
+- Writing back to Excel
+
+## Tasks
+- [ ] Add `src/counter_risk/parsers/cprs_fcm.py`
+- [ ] Implement `parse_fcm_totals(path) -> DataFrame` (may be empty for Trend)
+- [ ] Implement `parse_futures_detail(path) -> DataFrame` (may be empty for Ex Trend)
+- [ ] Standardize output columns:
+- [ ] Totals: counterparty, TIPS, Treasury, Equity, Commodity, Currency, Notional, NotionalChange
+- [ ] Futures detail: account, description, class, fcm, clearing_house, notional
+- [ ] Add tests that confirm which sections exist per variant and parse successfully
+
+## Acceptance Criteria
+- [ ] All Programs: totals + futures detail parse
+- [ ] Ex Trend: totals parse, futures detail empty (expected)
+- [ ] Trend: futures detail parses, totals empty or minimal (expected)
+
+
+7. [Agent] [M1] Implement counterparty and clearing-house name normalization map (macro parity)
+## Why
+Historical workbooks use normalized header names (e.g., “Citibank”, “Soc Gen”). Without normalization, lookups break.
+
+## Scope
+Centralize normalization and apply it consistently in parsers and writers.
+
+## Non-Goals
+- General fuzzy matching
+
+## Tasks
+- [ ] Add `src/counter_risk/normalize.py` with:
+- [ ] `normalize_counterparty(name: str) -> str`
+- [ ] `normalize_clearing_house(name: str) -> str`
+- [ ] Include mappings observed in fixtures (minimum set):
+- [ ] Citigroup -> Citibank
+- [ ] Bank of America, NA -> Bank of America
+- [ ] Goldman Sachs Int'l -> Goldman Sachs
+- [ ] Societe Generale -> Soc Gen
+- [ ] Barclays Bank PLC -> Barclays
+- [ ] CME Clearing House -> CME
+- [ ] ICE Clear U.S. -> ICE
+- [ ] ICE Clear Europe -> ICE Euro
+- [ ] EUREX Clearing -> EUREX
+- [ ] Japan Securities Clearing Corporation -> Japan SCC
+- [ ] Korea Exchange (in-house) -> Korea Exchange
+- [ ] Add unit tests for every mapping + whitespace cleanup + no-op behavior
+
+## Acceptance Criteria
+- [ ] All mappings are covered by unit tests
+- [ ] Normalization is applied in at least one parser test and one writer test
+
+
+8. [Agent] [M1] Compute summary metrics + notional breakdown (Class) from canonical tables
+## Why
+Historical “Class” sheets and run summaries require consistent rollups (asset-class fractions, totals, top movers).
+
+## Scope
+Add a computation layer that produces:
+- totals by counterparty
+- totals by asset class
+- notional breakdown fractions for Class charts
+- top N exposures and top N changes
+
+## Non-Goals
+- LLM chat (separate issue)
+- Writing to Excel
+
+## Tasks
+- [ ] Add `src/counter_risk/compute/rollups.py`
+- [ ] Implement:
+- [ ] `compute_totals(exposures_df) -> totals_df`
+- [ ] `compute_notional_breakdown(exposures_df) -> breakdown_row`
+- [ ] `top_exposures(exposures_df, n=10)`
+- [ ] `top_changes(totals_df, n=10)` (when change data exists)
+- [ ] Add unit tests on fixtures verifying breakdown sums to ~1.0 when appropriate
+
+## Acceptance Criteria
+- [ ] Breakdown fractions sum to 1.0 within tolerance (when data exists)
+- [ ] Top exposures lists are deterministic for the fixture inputs
+
+
+9. [Agent] [M1] Generate filled “Drop-In Template” workbooks as audit outputs (optional but recommended)
+## Why
+Operators are used to the Drop-In templates and they’re useful for review/audit even if we update historical books directly.
+
+## Scope
+Write filled versions of:
+- NISA Drop-In Template - All Programs.xlsx (sheet CPRS - CH - ALL)
+- NISA Drop-In Template - Ex Trend.xlsx (sheet CPRS - CH - Ex Trend)
+- NISA Drop-In Template - Trend.xlsx (sheet CPRS - CH - Trend)
+
+## Non-Goals
+- Relying on Drop-In templates to update historical workbooks (we will update historical directly)
+
+## Tasks
+- [ ] Add `src/counter_risk/writers/dropin_templates.py`
+- [ ] Implement `fill_dropin_template(template_path, exposures_df, breakdown, *, output_path)`
+- [ ] Match rows by normalized counterparty name
+- [ ] Populate the blue-box numeric cells (asset class columns + notional + notional change where present)
+- [ ] Populate Notional Breakdown row from computed breakdown
+- [ ] Add tests that write to `tmp_path` and verify a few known cells are filled
+
+## Acceptance Criteria
+- [ ] Output templates open in Excel without repair prompts
+- [ ] At least 5 known counterparties match expected totals for each variant (where applicable)
+
+
+10. [Agent] [M1] Update Historical Counterparty Risk Graphs workbooks by appending a new row (All / Ex / Trend)
+## Why
+The PPT charts are linked to these historical workbooks. Updating the workbooks is the keystone.
+
+## Scope
+Append one new row to each relevant sheet based on computed rollups:
+- All Programs 3 Year: Total, Total x-clearing, Cash, Class, TIPS, Nominal, Equity, Currency, Commodity
+- ex LLC 3 Year: Total, Class, TIPS, WAL (WAL in Milestone 2), Nominal, Equity, Commodity, Currency
+- LLC 3 Year: Total, Class, Nominal, Equity, Commodity, Currency
+
+## Non-Goals
+- Rebuilding Excel charts
+- Changing formatting of the workbooks
+
+## Tasks
+- [ ] Add `src/counter_risk/writers/historical_update.py`
+- [ ] Implement `append_row_all_programs(...)`
+- [ ] Implement `append_row_ex_trend(...)`
+- [ ] Implement `append_row_trend(...)`
+- [ ] Date handling:
+- [ ] Default appended date = config `as_of_date` (or infer from MOSERS CPRS-CH header)
+- [ ] Validate date is newer than last row; fail with clear error if not
+- [ ] Lookup series columns by header name; write 0 for missing
+- [ ] Add tests that:
+- [ ] append exactly one row per sheet
+- [ ] verify at least one known series value matches computed rollups
+
+## Acceptance Criteria
+- [ ] Output workbooks save + reload without errors
+- [ ] Each target sheet receives exactly one appended row
+- [ ] Appended row has no blanks in numeric series columns (use 0 instead)
+
+
+11. [Agent] [M1] Replace screenshot slides in Monthly Counterparty Exposure Report.pptx using rendered table images
+## Why
+Slides 1–2 (All Programs), 6–7 (Ex Trend), 16–17 (Trend) are pasted screenshots today. We want reproducible automation.
+
+## Scope
+Generate PNG images for CPRS-CH and CPRS-FCM views and replace the picture shapes on those slides.
+
+## Non-Goals
+- Updating linked charts here (separate issue)
+- Pixel-perfect Excel screenshots
+
+## Tasks
+- [ ] Add `src/counter_risk/renderers/table_png.py`
+- [ ] Implement deterministic PNG renderers:
+- [ ] `render_cprs_ch_png(exposures_df, output_png)`
+- [ ] `render_cprs_fcm_png(fcm_totals_df, futures_detail_df, output_png)`
+- [ ] Add `src/counter_risk/writers/pptx_screenshots.py`
+- [ ] Implement `replace_screenshot_pictures(pptx_in, images_by_section, pptx_out)`
+- [ ] Identify target slides by existing picture count/position + section title (don’t hardcode slide numbers only)
+- [ ] Add tests: output PPTX saves and still has 23 slides
+
+## Acceptance Criteria
+- [ ] Output PPTX opens cleanly
+- [ ] Screenshot slides’ picture shapes are replaced (not appended)
+- [ ] PNGs are generated for all three variants without errors
+
+
+12. [Agent] [M1] Automate PPT chart refresh for linked OLE charts (PowerPoint COM automation + fallback)
+## Why
+The PPT charts are linked to Excel files on the network path (OLE links). Non-technical users shouldn’t have to click “Edit Links to File” and “Update Now” repeatedly.
+
+## Scope
+After historical workbooks are updated, refresh PPT charts automatically.
+
+## Non-Goals
+- Rebuilding charts in python-pptx (high risk of formatting loss)
+- Removing OLE links (optional future work)
+
+## Tasks
+- [ ] Add `src/counter_risk/integrations/powerpoint_com.py` (Windows-only)
+- [ ] Implement `refresh_links_and_save(pptx_path) -> pptx_path`
+- [ ] Ensure it:
+- [ ] opens PPT headless
+- [ ] updates all links
+- [ ] saves as a new output PPTX
+- [ ] Fallback path when COM not available:
+- [ ] write a “NEEDS_LINK_REFRESH.txt” note in the run folder with explicit steps
+- [ ] Add a small utility to list external link targets in the PPT (sanity check paths)
+- [ ] Add tests that run in CI without COM by exercising the fallback logic
+
+## Acceptance Criteria
+- [ ] On Windows with Office installed: charts refresh and PPT saves successfully
+- [ ] Without COM: pipeline completes and emits a clear instruction file for manual refresh
+
