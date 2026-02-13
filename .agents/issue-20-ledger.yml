@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Create `src/counter_risk/integrations/powerpoint_com.py` implementing Windows-only
       COM integration for PowerPoint link refresh.
-    status: doing
+    status: done
     started_at: '2026-02-13T06:12:52Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T06:13:02Z'
+    commit: c548b48a75620c7a062495974671d7ffe213c77d
     notes: []
   - id: task-02
     title: 'Define scope for: Create the module file `src/counter_risk/integrations/powerpoint_com.py`
