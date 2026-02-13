@@ -40,6 +40,25 @@ class RunnerDateControlScope:
     out_of_scope: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class RunnerWorkbookScope:
+    """Scope artifact for creating Runner.xlsm with the selected date control."""
+
+    workbook_path: str
+    runner_sheet_name: str
+    control_data_sheet_name: str
+    selector_label_cell: str
+    selector_label_text: str
+    selector_input_cell: str
+    control_data_header_cell: str
+    control_data_header_text: str
+    control_data_start_row: int
+    month_source_start: tuple[int, int]
+    month_source_end: tuple[int, int]
+    in_scope: tuple[str, ...]
+    out_of_scope: tuple[str, ...]
+
+
 def choose_runner_date_input_control(
     requirements: DateControlRequirements,
 ) -> DateControlDecision:
@@ -77,6 +96,41 @@ def define_runner_xlsm_date_control_scope(
     return RunnerDateControlScope(
         requirements=effective_requirements,
         decision=decision,
+        out_of_scope=(
+            "Run-mode button handlers.",
+            "Executable launch integration.",
+            "Post-run status and log display.",
+        ),
+    )
+
+
+def define_runner_xlsm_workbook_scope(
+    requirements: DateControlRequirements | None = None,
+) -> RunnerWorkbookScope:
+    """Define scope for creating Runner.xlsm with the selected date/month control."""
+    control_scope = define_runner_xlsm_date_control_scope(requirements)
+    if control_scope.decision.selected_control is not DateInputControl.MONTH_SELECTOR:
+        msg = "Current workbook scope supports month-selector control only."
+        raise ValueError(msg)
+
+    return RunnerWorkbookScope(
+        workbook_path="Runner.xlsm",
+        runner_sheet_name="Runner",
+        control_data_sheet_name="ControlData",
+        selector_label_cell="A3",
+        selector_label_text="As-Of Month",
+        selector_input_cell="B3",
+        control_data_header_cell="A1",
+        control_data_header_text="MonthEnd",
+        control_data_start_row=2,
+        month_source_start=(2020, 1),
+        month_source_end=(2035, 12),
+        in_scope=(
+            "Create Runner.xlsm workbook artifact at repository root.",
+            "Create visible Runner sheet with month-selector label and input cell.",
+            "Create hidden ControlData sheet with deterministic month-end values.",
+            "Bind month selector data validation to ControlData month-end range.",
+        ),
         out_of_scope=(
             "Run-mode button handlers.",
             "Executable launch integration.",

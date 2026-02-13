@@ -13,8 +13,7 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 from counter_risk.runner_date_control import (
-    DateInputControl,
-    define_runner_xlsm_date_control_scope,
+    define_runner_xlsm_workbook_scope,
 )
 
 OUTPUT_PATH = Path("Runner.xlsm")
@@ -42,7 +41,13 @@ def _inline_str_cell(cell_ref: str, value: str) -> str:
     return f'<c r="{cell_ref}" t="inlineStr"><is><t>{escape(value)}</t></is></c>'
 
 
-def _runner_sheet_xml(validation_formula: str) -> str:
+def _runner_sheet_xml(
+    *,
+    selector_label_cell: str,
+    selector_label_text: str,
+    selector_input_cell: str,
+    validation_formula: str,
+) -> str:
     return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
   <dimension ref="A1:D12"/>
@@ -58,8 +63,8 @@ def _runner_sheet_xml(validation_formula: str) -> str:
       {_inline_str_cell("A2", "Select reporting month-end date and choose a run mode.")}
     </row>
     <row r="3">
-      {_inline_str_cell("A3", "As-Of Month")}
-      <c r="B3"/>
+      {_inline_str_cell(selector_label_cell, selector_label_text)}
+      <c r="{selector_input_cell}"/>
     </row>
     <row r="5">
       {_inline_str_cell("A5", "Run All")}
@@ -69,7 +74,7 @@ def _runner_sheet_xml(validation_formula: str) -> str:
     </row>
   </sheetData>
   <dataValidations count="1">
-    <dataValidation type="list" allowBlank="0" showErrorMessage="1" sqref="B3">
+    <dataValidation type="list" allowBlank="0" showErrorMessage="1" sqref="{selector_input_cell}">
       <formula1>{escape(validation_formula)}</formula1>
     </dataValidation>
   </dataValidations>
@@ -77,9 +82,9 @@ def _runner_sheet_xml(validation_formula: str) -> str:
 """
 
 
-def _control_data_sheet_xml(month_values: list[str]) -> str:
+def _control_data_sheet_xml(month_values: list[str], header_cell: str, header_text: str) -> str:
     rows = [
-        f'<row r="1">{_inline_str_cell("A1", "MonthEnd")}</row>',
+        f'<row r="1">{_inline_str_cell(header_cell, header_text)}</row>',
     ]
     for index, value in enumerate(month_values, start=2):
         rows.append(f'<row r="{index}">{_inline_str_cell(f"A{index}", value)}</row>')
@@ -100,8 +105,8 @@ def _control_data_sheet_xml(month_values: list[str]) -> str:
 """
 
 
-def _workbook_xml() -> str:
-    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+def _workbook_xml(runner_sheet_name: str, control_data_sheet_name: str) -> str:
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
           xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <fileVersion appName="xl"/>
@@ -110,8 +115,8 @@ def _workbook_xml() -> str:
     <workbookView activeTab="0"/>
   </bookViews>
   <sheets>
-    <sheet name="Runner" sheetId="1" r:id="rId1"/>
-    <sheet name="ControlData" sheetId="2" state="hidden" r:id="rId2"/>
+    <sheet name="{runner_sheet_name}" sheetId="1" r:id="rId1"/>
+    <sheet name="{control_data_sheet_name}" sheetId="2" state="hidden" r:id="rId2"/>
   </sheets>
 </workbook>
 """
@@ -198,31 +203,58 @@ def _write_zip_member(zip_file: ZipFile, member_path: str, content: str) -> None
 
 
 def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
-    scope = define_runner_xlsm_date_control_scope()
-    if scope.decision.selected_control is not DateInputControl.MONTH_SELECTOR:
-        msg = "Runner workbook builder currently supports month-selector control only."
-        raise ValueError(msg)
+    workbook_scope = define_runner_xlsm_workbook_scope()
 
-    month_values = _month_end_dates(2020, 1, 2035, 12)
-    data_start_row = 2
+    if path == OUTPUT_PATH:
+        path = Path(workbook_scope.workbook_path)
+
+    month_start_year, month_start_month = workbook_scope.month_source_start
+    month_end_year, month_end_month = workbook_scope.month_source_end
+    month_values = _month_end_dates(
+        month_start_year,
+        month_start_month,
+        month_end_year,
+        month_end_month,
+    )
+    data_start_row = workbook_scope.control_data_start_row
     data_end_row = data_start_row + len(month_values) - 1
-    validation_formula = f"ControlData!$A${data_start_row}:$A${data_end_row}"
+    validation_formula = (
+        f"{workbook_scope.control_data_sheet_name}!$A${data_start_row}:$A${data_end_row}"
+    )
 
     with ZipFile(path, mode="w") as zip_file:
         _write_zip_member(zip_file, "[Content_Types].xml", _content_types_xml())
         _write_zip_member(zip_file, "_rels/.rels", _root_rels_xml())
         _write_zip_member(zip_file, "docProps/app.xml", _extended_properties_xml())
         _write_zip_member(zip_file, "docProps/core.xml", _core_properties_xml())
-        _write_zip_member(zip_file, "xl/workbook.xml", _workbook_xml())
+        _write_zip_member(
+            zip_file,
+            "xl/workbook.xml",
+            _workbook_xml(
+                runner_sheet_name=workbook_scope.runner_sheet_name,
+                control_data_sheet_name=workbook_scope.control_data_sheet_name,
+            ),
+        )
         _write_zip_member(zip_file, "xl/_rels/workbook.xml.rels", _workbook_rels_xml())
         _write_zip_member(zip_file, "xl/styles.xml", _styles_xml())
         _write_zip_member(
-            zip_file, "xl/worksheets/sheet1.xml", _runner_sheet_xml(validation_formula)
+            zip_file,
+            "xl/worksheets/sheet1.xml",
+            _runner_sheet_xml(
+                selector_label_cell=workbook_scope.selector_label_cell,
+                selector_label_text=workbook_scope.selector_label_text,
+                selector_input_cell=workbook_scope.selector_input_cell,
+                validation_formula=validation_formula,
+            ),
         )
         _write_zip_member(
             zip_file,
             "xl/worksheets/sheet2.xml",
-            _control_data_sheet_xml(month_values),
+            _control_data_sheet_xml(
+                month_values,
+                header_cell=workbook_scope.control_data_header_cell,
+                header_text=workbook_scope.control_data_header_text,
+            ),
         )
 
 
