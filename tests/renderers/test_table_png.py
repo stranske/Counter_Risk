@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from counter_risk.renderers.table_png import render_cprs_ch_png
+from counter_risk.renderers.table_png import cprs_ch_table_columns, render_cprs_ch_png
 
 
 class _FakeDataFrame:
@@ -80,3 +80,16 @@ def test_render_cprs_ch_png_malformed_numeric_value_raises(tmp_path: Path) -> No
 
     with pytest.raises(ValueError, match="non-numeric value"):
         render_cprs_ch_png(bad, output)
+
+
+def test_cprs_ch_table_columns_are_stable() -> None:
+    assert cprs_ch_table_columns() == (
+        "Counterparty",
+        "Cash",
+        "TIPS",
+        "Treasury",
+        "Equity",
+        "Commodity",
+        "Currency",
+        "Notional",
+    )
