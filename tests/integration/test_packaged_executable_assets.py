@@ -121,7 +121,9 @@ def test_packaged_executable_loads_default_config_and_bundled_template_from_isol
     template_config = dict(config)
     template_config["monthly_pptx"] = str(Path("templates") / template_path.name)
     template_config_path = bundle_dir / "config" / "fixture_replay_template.yml"
-    template_config_path.write_text(yaml.safe_dump(template_config, sort_keys=False), encoding="utf-8")
+    template_config_path.write_text(
+        yaml.safe_dump(template_config, sort_keys=False), encoding="utf-8"
+    )
 
     template_run_output = tmp_path / "run-template-input"
     template_run = _run_fixture_replay(
