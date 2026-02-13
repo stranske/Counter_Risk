@@ -85,7 +85,11 @@ def run_pipeline(config_path: str | Path) -> Path:
     """Run the Counter Risk pipeline and return the output run directory."""
 
     LOGGER.info("pipeline_start config_path=%s", config_path)
-    config = load_config(config_path)
+    try:
+        config = load_config(config_path)
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=config_load config_path=%s", config_path)
+        raise RuntimeError(f"Pipeline failed during config load: {config_path}") from exc
 
     input_paths = _resolve_input_paths(config)
     _validate_input_files(input_paths)
@@ -95,14 +99,27 @@ def run_pipeline(config_path: str | Path) -> Path:
     run_dir.mkdir(parents=True, exist_ok=True)
 
     warnings: list[str] = []
-    parsed_by_variant = _parse_inputs(input_paths)
-    top_exposures, top_changes_per_variant = _compute_metrics(parsed_by_variant)
+    try:
+        parsed_by_variant = _parse_inputs(input_paths)
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=parse_inputs run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during parse stage") from exc
 
-    output_paths = _write_outputs(
-        run_dir=run_dir,
-        config=config,
-        warnings=warnings,
-    )
+    try:
+        top_exposures, top_changes_per_variant = _compute_metrics(parsed_by_variant)
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=compute_metrics run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during compute stage") from exc
+
+    try:
+        output_paths = _write_outputs(
+            run_dir=run_dir,
+            config=config,
+            warnings=warnings,
+        )
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=write_outputs run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during output write stage") from exc
 
     input_hashes = {name: _sha256_file(path) for name, path in input_paths.items()}
     manifest_builder = ManifestBuilder(run_dir=run_dir, config=config)
