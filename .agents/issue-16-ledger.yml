@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: 'Create `src/counter_risk/normalize.py` implementing `normalize_counterparty(name:
       str) -> str`'
-    status: doing
+    status: done
     started_at: '2026-02-13T03:34:30Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T03:34:43Z'
+    commit: 5b9260387b2fa00bd513e7e76821bf3c5c003bc3
     notes: []
   - id: task-02
     title: 'Create the file `src/counter_risk/normalize.py` with module-level documentation
