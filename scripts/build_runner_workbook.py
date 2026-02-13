@@ -18,6 +18,7 @@ from counter_risk.runner_date_control import (
 )
 
 OUTPUT_PATH = Path("Runner.xlsm")
+VBA_PROJECT_PATH = Path("assets/vba/vbaProject.bin")
 
 
 def _month_end_dates(start_year: int, start_month: int, end_year: int, end_month: int) -> list[str]:
@@ -123,6 +124,7 @@ def _workbook_rels_xml() -> str:
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.microsoft.com/office/2006/relationships/vbaProject" Target="vbaProject.bin"/>
 </Relationships>
 """
 
@@ -156,6 +158,7 @@ def _content_types_xml() -> str:
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/xl/workbook.xml" ContentType="application/vnd.ms-excel.sheet.macroEnabled.main+xml"/>
+  <Override PartName="/xl/vbaProject.bin" ContentType="application/vnd.ms-office.vbaProject"/>
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
@@ -197,6 +200,13 @@ def _write_zip_member(zip_file: ZipFile, member_path: str, content: str) -> None
     zip_file.writestr(zip_info, content.encode("utf-8"))
 
 
+def _write_zip_binary_member(zip_file: ZipFile, member_path: str, content: bytes) -> None:
+    zip_info = ZipInfo(member_path)
+    zip_info.date_time = (1980, 1, 1, 0, 0, 0)
+    zip_info.compress_type = ZIP_DEFLATED
+    zip_file.writestr(zip_info, content)
+
+
 def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
     scope = define_runner_xlsm_date_control_scope()
     if scope.decision.selected_control is not DateInputControl.MONTH_SELECTOR:
@@ -204,6 +214,7 @@ def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
         raise ValueError(msg)
 
     month_values = _month_end_dates(2020, 1, 2035, 12)
+    vba_project_bin = VBA_PROJECT_PATH.read_bytes()
     data_start_row = 2
     data_end_row = data_start_row + len(month_values) - 1
     validation_formula = f"ControlData!$A${data_start_row}:$A${data_end_row}"
@@ -216,6 +227,7 @@ def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
         _write_zip_member(zip_file, "xl/workbook.xml", _workbook_xml())
         _write_zip_member(zip_file, "xl/_rels/workbook.xml.rels", _workbook_rels_xml())
         _write_zip_member(zip_file, "xl/styles.xml", _styles_xml())
+        _write_zip_binary_member(zip_file, "xl/vbaProject.bin", vba_project_bin)
         _write_zip_member(
             zip_file, "xl/worksheets/sheet1.xml", _runner_sheet_xml(validation_formula)
         )

@@ -59,6 +59,7 @@ def test_runner_workbook_has_required_ooxml_structure_and_content_types() -> Non
             "xl/workbook.xml",
             "xl/_rels/workbook.xml.rels",
             "xl/styles.xml",
+            "xl/vbaProject.bin",
             "xl/worksheets/sheet1.xml",
             "xl/worksheets/sheet2.xml",
         }
@@ -77,6 +78,9 @@ def test_runner_workbook_has_required_ooxml_structure_and_content_types() -> Non
             == "application/vnd.ms-excel.sheet.macroEnabled.main+xml"
         )
         assert (
+            override_content_types["/xl/vbaProject.bin"] == "application/vnd.ms-office.vbaProject"
+        )
+        assert (
             override_content_types["/xl/worksheets/sheet1.xml"]
             == "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
         )
@@ -88,6 +92,24 @@ def test_runner_workbook_has_required_ooxml_structure_and_content_types() -> Non
             override_content_types["/xl/styles.xml"]
             == "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"
         )
+
+        with zip_file.open("xl/vbaProject.bin") as handle:
+            vba_project = handle.read()
+        assert len(vba_project) >= 1024
+
+        workbook_rels_root = _read_xml(zip_file, "xl/_rels/workbook.xml.rels")
+        rels = workbook_rels_root.findall("pr:Relationship", NAMESPACES)
+        vba_project_rel = next(
+            (
+                rel
+                for rel in rels
+                if rel.attrib.get("Type")
+                == "http://schemas.microsoft.com/office/2006/relationships/vbaProject"
+            ),
+            None,
+        )
+        assert vba_project_rel is not None
+        assert vba_project_rel.attrib.get("Target") == "vbaProject.bin"
 
 
 def test_runner_workbook_contains_month_selector_dropdown() -> None:
