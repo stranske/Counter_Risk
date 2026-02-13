@@ -107,6 +107,27 @@ def test_render_cprs_ch_png_empty_dataframe_raises(tmp_path: Path) -> None:
         render_cprs_ch_png(_FakeDataFrame([]), output)
 
 
+@pytest.mark.parametrize(
+    ("variant", "row_count", "expected_rows"),
+    (
+        ("all_programs", 2, 3),
+        ("ex_trend", 1, 2),
+        ("trend", 0, 1),
+    ),
+)
+def test_render_cprs_ch_png_below_minimum_rows_raises(
+    tmp_path: Path, variant: str, row_count: int, expected_rows: int
+) -> None:
+    output = tmp_path / f"{variant}-rows.png"
+    frame = _FakeDataFrame([dict(_REQUIRED) for _ in range(row_count)])
+
+    with pytest.raises(ValueError, match=r"rows?"):
+        render_cprs_ch_png(frame, output, variant=variant)
+
+    with pytest.raises(ValueError, match=str(expected_rows)):
+        render_cprs_ch_png(frame, output, variant=variant)
+
+
 def test_render_cprs_ch_png_malformed_numeric_value_raises(tmp_path: Path) -> None:
     output = tmp_path / "bad-value.png"
     bad = _sample_frame()
