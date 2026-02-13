@@ -14,54 +14,54 @@ tasks:
     title: 'Define scope for: Define whether the Runner.xlsm should use a date picker
       or month selector control based on user requirements (verify: confirm completion
       in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-13T14:42:19Z'
+    finished_at: '2026-02-13T14:50:47Z'
+    commit: ba9a3b65abf6dfae192cf159730905dc9d86e3a3
     notes: []
   - id: task-03
     title: 'Implement focused slice for: Define whether the Runner.xlsm should use
       a date picker or month selector control based on user requirements (verify:
       confirm completion in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-13T14:47:15Z'
+    finished_at: '2026-02-13T14:50:47Z'
+    commit: bf6c7adb180eed135952fd97db27721712511b9a
     notes: []
   - id: task-04
     title: 'Validate focused slice for: Define whether the Runner.xlsm should use
       a date picker or month selector control based on user requirements (verify:
       confirm completion in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-13T14:50:47Z'
+    finished_at: '2026-02-13T14:50:47Z'
+    commit: bf6c7adb180eed135952fd97db27721712511b9a
     notes: []
   - id: task-05
     title: 'Define scope for: Create the Runner.xlsm workbook file with the chosen
       date/month selection control implemented (verify: confirm completion in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-13T14:38:09Z'
+    finished_at: '2026-02-13T14:50:47Z'
+    commit: 8fb4954f0ec0b720be459b5264b6f0a0aa07d706
     notes: []
   - id: task-06
     title: 'Implement focused slice for: Create the Runner.xlsm workbook file with
       the chosen date/month selection control implemented (verify: confirm completion
       in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-13T14:38:09Z'
+    finished_at: '2026-02-13T14:50:47Z'
+    commit: 8fb4954f0ec0b720be459b5264b6f0a0aa07d706
     notes: []
   - id: task-07
     title: 'Validate focused slice for: Create the Runner.xlsm workbook file with
       the chosen date/month selection control implemented (verify: confirm completion
       in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-13T14:38:09Z'
+    finished_at: '2026-02-13T14:50:47Z'
+    commit: 8fb4954f0ec0b720be459b5264b6f0a0aa07d706
     notes: []
   - id: task-08
     title: "Add \u201CRun All / Run Ex Trend / Run Trend\u201D buttons to `Runner.xlsm`."
