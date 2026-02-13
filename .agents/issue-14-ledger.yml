@@ -5,10 +5,10 @@ branch: codex/issue-14
 tasks:
   - id: task-01
     title: Create `src/counter_risk/parsers/cprs_ch.py`
-    status: doing
+    status: done
     started_at: '2026-02-13T03:35:04Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T03:35:15Z'
+    commit: 971857a0b044380f413c72e11a56825a7f79cea9
     notes: []
   - id: task-02
     title: Implement `parse_cprs_ch(path) -> pandas.DataFrame` in `src/counter_risk/parsers/cprs_ch.py`
