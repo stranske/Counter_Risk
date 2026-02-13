@@ -14,7 +14,7 @@ def test_resolve_runtime_path_keeps_relative_path_when_not_frozen() -> None:
 
 
 def test_resolve_runtime_path_prefers_bundle_root_env(
-    monkeypatch: "pytest.MonkeyPatch", tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     bundle_root = tmp_path / "bundle-root"
     config_path = bundle_root / "config" / "fixture_replay.yml"
@@ -30,7 +30,7 @@ def test_resolve_runtime_path_prefers_bundle_root_env(
 
 
 def test_resolve_runtime_path_falls_back_to_executable_dir(
-    monkeypatch: "pytest.MonkeyPatch", tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     executable_dir = tmp_path / "dist" / "counter-risk"
     executable_dir.mkdir(parents=True)
