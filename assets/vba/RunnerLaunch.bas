@@ -7,6 +7,23 @@ Public Enum RunnerMode
     RunnerModeTrend = 2
 End Enum
 
+Public Sub RunAll_Click()
+    BuildRunArguments ReadSelectedDate(), RunnerModeAllPrograms
+End Sub
+
+Public Sub RunExTrend_Click()
+    BuildRunArguments ReadSelectedDate(), RunnerModeExTrend
+End Sub
+
+Public Sub RunTrend_Click()
+    BuildRunArguments ReadSelectedDate(), RunnerModeTrend
+End Sub
+
+Public Sub OpenOutputFolder_Click()
+    Dim selectedDate As String
+    selectedDate = ReadSelectedDate()
+End Sub
+
 Public Function BuildRunArguments(ByVal asOfMonth As String, ByVal mode As RunnerMode) As String
     Dim parsedDate As Date
     parsedDate = ParseAsOfMonth(asOfMonth)
@@ -51,4 +68,8 @@ End Function
 
 Private Function QuoteArg(ByVal value As String) As String
     QuoteArg = Chr$(34) & value & Chr$(34)
+End Function
+
+Private Function ReadSelectedDate() As String
+    ReadSelectedDate = CStr(ThisWorkbook.Worksheets("Runner").Range("B3").Value)
 End Function
