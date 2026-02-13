@@ -126,6 +126,22 @@ def _build_sheet(sheet_name: str, series: tuple[str, ...]) -> _FakeWorksheet:
     return sheet
 
 
+def _build_multi_row_header_sheet(sheet_name: str) -> _FakeWorksheet:
+    sheet = _FakeWorksheet(sheet_name)
+    sheet.set_value(1, 1, "Date")
+    sheet.set_value(2, 2, "Total")
+    sheet.set_value(4, 3, "Cash")
+    sheet.set_value(6, 4, "Swap (Adj.)")
+    sheet.set_value(7, 4, "Series")
+    sheet.set_value(9, 5, "Commodity")
+    sheet.set_value(13, 1, date(2025, 12, 31))
+    sheet.set_value(13, 2, 5.0)
+    sheet.set_value(13, 3, 4.0)
+    sheet.set_value(13, 4, 3.0)
+    sheet.set_value(13, 5, 2.0)
+    return sheet
+
+
 def _seed_real_sheet(worksheet: Any, series: tuple[str, ...]) -> None:
     worksheet.cell(row=1, column=1).value = "Date"
     for offset, name in enumerate(series, start=2):
@@ -349,3 +365,39 @@ def test_append_functions_write_known_series_values_with_numeric_edge_cases(
     assert trend.cell(row=3, column=trend_headers["commodity"]).value == pytest.approx(-0.25)
 
     assert workbook.closed_count == 3
+
+
+def test_append_to_sheet_defaults_missing_and_mismatched_numeric_series_to_zero_in_multi_row_headers() -> None:
+    sheet_name = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
+    sheet = _build_multi_row_header_sheet(sheet_name)
+    workbook = _FakeWorkbook({sheet_name: sheet})
+
+    historical_update._append_to_sheet(
+        workbook=workbook,
+        sheet_name=sheet_name,
+        rollup_data={
+            "Total": 111.0,
+            "Cash": 22.0,
+            "Swap Adj Series": 77.0,
+        },
+        resolved_date=date(2026, 1, 31),
+    )
+
+    consolidated_headers = historical_update._build_consolidated_header_map(sheet)
+    date_column = historical_update._get_date_column_from_consolidated(consolidated_headers)
+    numeric_columns = historical_update._get_numeric_series_columns(
+        consolidated_headers, date_column=date_column
+    )
+
+    appended_row = 14
+    assert sheet.cell(row=appended_row, column=date_column).value == date(2026, 1, 31)
+
+    for column_index in numeric_columns:
+        value = sheet.cell(row=appended_row, column=column_index).value
+        assert value is not None
+        assert value != ""
+
+    assert sheet.cell(row=appended_row, column=2).value == pytest.approx(111.0)
+    assert sheet.cell(row=appended_row, column=3).value == pytest.approx(22.0)
+    assert sheet.cell(row=appended_row, column=4).value == pytest.approx(0.0)
+    assert sheet.cell(row=appended_row, column=5).value == pytest.approx(0.0)
