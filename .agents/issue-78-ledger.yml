@@ -16,7 +16,7 @@ tasks:
   - id: task-02
     title: 'Create a PyInstaller spec file at repo root with Analysis (verify: confirm
       completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -542,7 +542,7 @@ tasks:
       the bundled executable or the updated runner) produces numeric outputs that
       match the expected fixture values within the tolerances defined in the fixture
       tests.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''

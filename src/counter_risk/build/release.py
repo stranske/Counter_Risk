@@ -154,7 +154,7 @@ def _copy_templates(root: Path, bundle_dir: Path) -> list[Path]:
 
 def _copy_fixture_artifacts(root: Path, bundle_dir: Path) -> list[Path]:
     fixtures_src = root / "tests" / "fixtures"
-    fixture_suffixes = {".xlsx", ".pptx"}
+    fixture_suffixes = {".xlsx", ".pptx", ".csv", ".tsv", ".json", ".parquet"}
     return _copy_tree_filtered(fixtures_src, bundle_dir / "fixtures", suffixes=fixture_suffixes)
 
 

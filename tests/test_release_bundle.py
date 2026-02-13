@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
 from counter_risk.build import release
+from tests.utils.assertions import assert_numeric_outputs_close
 
 
 def _write_fake_repo(root: Path) -> None:
@@ -246,3 +249,85 @@ def test_validate_version_manifest_consistency_raises_on_mismatch(tmp_path: Path
 
     with pytest.raises(ValueError, match="Release metadata mismatch"):
         release._validate_version_manifest_consistency(bundle_dir)
+
+
+@pytest.mark.skipif(sys.platform.startswith("win"), reason="shell-script executable test")
+def test_release_bundle_executable_runs_fixture_replay_and_matches_numeric_fixture_values(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "repo"
+    _write_fake_repo(repo_root)
+    numeric_payload = {"values": [12.5, 7.25, 100.0, -5.5], "summary": {"net": 114.25}}
+    fixture_json = repo_root / "tests" / "fixtures" / "fixture.json"
+    fixture_json.write_text(json.dumps(numeric_payload) + "\n", encoding="utf-8")
+    (repo_root / "config" / "fixture_replay.yml").write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                "mosers_all_programs_xlsx: fixtures/fixture.json",
+                "mosers_ex_trend_xlsx: fixtures/fixture.json",
+                "mosers_trend_xlsx: fixtures/fixture.json",
+                "hist_all_programs_3yr_xlsx: fixtures/fixture.json",
+                "hist_ex_llc_3yr_xlsx: fixtures/fixture.json",
+                "hist_llc_3yr_xlsx: fixtures/fixture.json",
+                "monthly_pptx: fixtures/fixture.json",
+                "output_root: fixture-run-output",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    output_dir = tmp_path / "release"
+    run_output = tmp_path / "bundle-run-output"
+
+    executable_name = release._executable_filename(for_windows=False)
+    dist_executable = _create_fake_built_executable(repo_root, executable_name)
+    dist_executable.write_text(
+        "#!/usr/bin/env bash\n"
+        f'exec "{sys.executable}" -m counter_risk.cli "$@"\n',
+        encoding="utf-8",
+    )
+    dist_executable.chmod(0o755)
+
+    monkeypatch.setattr(release, "repository_root", lambda: repo_root)
+    monkeypatch.setattr(release, "_run_pyinstaller", lambda root, spec_path: None)
+
+    bundle_dir = release.assemble_release("6.7.8", output_dir)
+
+    bundled_executable = bundle_dir / "bin" / executable_name
+    config_path = bundle_dir / "config" / "fixture_replay.yml"
+    env = os.environ.copy()
+    src_path = Path(__file__).resolve().parents[1] / "src"
+    existing_pythonpath = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = (
+        f"{src_path}:{existing_pythonpath}" if existing_pythonpath else str(src_path)
+    )
+
+    run_result = subprocess.run(
+        [
+            str(bundled_executable),
+            "run",
+            "--fixture-replay",
+            "--config",
+            str(config_path),
+            "--output-dir",
+            str(run_output),
+        ],
+        cwd=bundle_dir,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert run_result.returncode == 0, run_result.stderr
+
+    expected_fixture = repo_root / "tests" / "fixtures" / "fixture.json"
+    actual_fixture = run_output / "fixture.json"
+    expected_numeric_values = json.loads(expected_fixture.read_text(encoding="utf-8"))
+    actual_numeric_values = json.loads(actual_fixture.read_text(encoding="utf-8"))
+    assert_numeric_outputs_close(
+        actual_numeric_values,
+        expected_numeric_values,
+        atol=1e-9,
+        rtol=1e-9,
+    )
