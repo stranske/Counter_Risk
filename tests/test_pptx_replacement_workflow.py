@@ -166,7 +166,9 @@ def test_replacement_workflow_near_match_slide_remains_unchanged(tmp_path: Path)
         before_hash != after_hash
         for (before_hash, _), (after_hash, _) in zip(exact_before[1], exact_after[1], strict=True)
     )
-    assert [geometry for _, geometry in exact_before[1]] == [geometry for _, geometry in exact_after[1]]
+    assert [geometry for _, geometry in exact_before[1]] == [
+        geometry for _, geometry in exact_after[1]
+    ]
 
     near_before = before_by_title["All Programs Summary"]
     near_after = after_by_title["All Programs Summary"]

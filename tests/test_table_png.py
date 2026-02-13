@@ -27,11 +27,11 @@ _MIN_ROWS_BY_VARIANT = {
 
 
 class _FakeDataFrame:
-    def __init__(
-        self, rows: list[dict[str, object]], columns: list[str] | None = None
-    ) -> None:
+    def __init__(self, rows: list[dict[str, object]], columns: list[str] | None = None) -> None:
         self._rows = [dict(row) for row in rows]
-        self.columns = list(columns) if columns is not None else list(rows[0].keys()) if rows else []
+        self.columns = (
+            list(columns) if columns is not None else list(rows[0].keys()) if rows else []
+        )
 
     def to_dict(self, orient: str = "dict") -> list[dict[str, object]]:
         if orient != "records":
@@ -107,7 +107,9 @@ def test_render_cprs_ch_png_is_deterministic_for_each_variant(tmp_path: Path, va
 
 
 @pytest.mark.parametrize("variant", ("all_programs", "ex_trend", "trend"))
-def test_render_cprs_fcm_png_is_deterministic_for_each_variant(tmp_path: Path, variant: str) -> None:
+def test_render_cprs_fcm_png_is_deterministic_for_each_variant(
+    tmp_path: Path, variant: str
+) -> None:
     output_one = tmp_path / f"fcm-{variant}-one.png"
     output_two = tmp_path / f"fcm-{variant}-two.png"
     frame = _frame_for_variant(variant)
@@ -183,6 +185,4 @@ def test_render_cprs_fcm_png_raises_on_blank_counterparty(tmp_path: Path) -> Non
     frame = _frame_for_variant("all_programs")
     frame._rows[0]["Counterparty"] = "   "
     with pytest.raises(ValueError, match="counterparty"):
-        render_cprs_fcm_png(
-            frame, tmp_path / "fcm-blank-counterparty.png", variant="all_programs"
-        )
+        render_cprs_fcm_png(frame, tmp_path / "fcm-blank-counterparty.png", variant="all_programs")
