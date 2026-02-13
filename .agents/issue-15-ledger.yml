@@ -5,10 +5,10 @@ branch: codex/issue-15
 tasks:
   - id: task-01
     title: Create `src/counter_risk/parsers/cprs_fcm.py`
-    status: doing
+    status: done
     started_at: '2026-02-13T05:44:46Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-13T05:44:59Z'
+    commit: ceeb3ca284d92abb955f58a3386a8d69f4fc77d3
     notes: []
   - id: task-02
     title: 'Define scope for: Create the file `src/counter_risk/parsers/cprs_fcm.py`
