@@ -283,8 +283,7 @@ def test_release_bundle_executable_runs_fixture_replay_and_matches_numeric_fixtu
     executable_name = release._executable_filename(for_windows=False)
     dist_executable = _create_fake_built_executable(repo_root, executable_name)
     dist_executable.write_text(
-        "#!/usr/bin/env bash\n"
-        f'exec "{sys.executable}" -m counter_risk.cli "$@"\n',
+        "#!/usr/bin/env bash\n" f'exec "{sys.executable}" -m counter_risk.cli "$@"\n',
         encoding="utf-8",
     )
     dist_executable.chmod(0o755)
