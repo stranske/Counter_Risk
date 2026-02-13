@@ -3,6 +3,7 @@ README.md
 pyproject.toml
 src/counter_risk/__init__.py
 src/counter_risk/cli.py
+src/counter_risk/config.py
 src/counter_risk/logging.py
 src/my_project/__init__.py
 src/my_project.egg-info/PKG-INFO
@@ -11,6 +12,7 @@ src/my_project.egg-info/dependency_links.txt
 src/my_project.egg-info/requires.txt
 src/my_project.egg-info/top_level.txt
 tests/test_cli.py
+tests/test_config.py
 tests/test_counter_risk_cli.py
 tests/test_counter_risk_logging.py
 tests/test_dependency_version_alignment.py
