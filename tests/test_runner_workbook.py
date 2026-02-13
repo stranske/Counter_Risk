@@ -47,6 +47,49 @@ def test_runner_workbook_exists() -> None:
     assert Path("Runner.xlsm").is_file(), "Runner.xlsm must be committed to the repository root."
 
 
+def test_runner_workbook_has_required_ooxml_structure_and_content_types() -> None:
+    workbook_path = Path("Runner.xlsm")
+    with ZipFile(workbook_path) as zip_file:
+        members = set(zip_file.namelist())
+        expected_members = {
+            "[Content_Types].xml",
+            "_rels/.rels",
+            "docProps/app.xml",
+            "docProps/core.xml",
+            "xl/workbook.xml",
+            "xl/_rels/workbook.xml.rels",
+            "xl/styles.xml",
+            "xl/worksheets/sheet1.xml",
+            "xl/worksheets/sheet2.xml",
+        }
+        assert expected_members.issubset(members)
+
+        content_types_root = _read_xml(zip_file, "[Content_Types].xml")
+        overrides = content_types_root.findall(
+            "{http://schemas.openxmlformats.org/package/2006/content-types}Override"
+        )
+        override_content_types = {
+            node.attrib["PartName"]: node.attrib["ContentType"] for node in overrides
+        }
+
+        assert (
+            override_content_types["/xl/workbook.xml"]
+            == "application/vnd.ms-excel.sheet.macroEnabled.main+xml"
+        )
+        assert (
+            override_content_types["/xl/worksheets/sheet1.xml"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+        )
+        assert (
+            override_content_types["/xl/worksheets/sheet2.xml"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+        )
+        assert (
+            override_content_types["/xl/styles.xml"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"
+        )
+
+
 def test_runner_workbook_contains_month_selector_dropdown() -> None:
     workbook_path = Path("Runner.xlsm")
     with ZipFile(workbook_path) as zip_file:
