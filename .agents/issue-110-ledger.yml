@@ -1,0 +1,312 @@
+version: 1
+issue: 110
+base: main
+branch: codex/issue-110
+tasks:
+  - id: task-01
+    title: Create a new platform detection function named `detect_platform` or `is_windows_like`
+      in `validate_release_bundle.sh` with a clear function signature that returns
+      a platform identifier string or boolean
+    status: done
+    started_at: '2026-02-14T16:21:18Z'
+    finished_at: '2026-02-14T16:21:28Z'
+    commit: b3ac86292c17ccdd8e1993d5b4fdb5db9ee33227
+    notes: []
+  - id: task-02
+    title: Implement platform detection logic in the new function using `uname` command
+      output to check for platform strings
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Add environment variable checks to the platform detection function for
+      `OS`, `MSYSTEM`, and `OSTYPE` variables
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Add pattern matching in the platform detection function to handle `CYGWIN*`,
+      `MINGW*`, and `MSYS*` patterns in environment variables or uname output
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Refactor all existing platform-specific code branches in `validate_release_bundle.sh`
+      to call the new detection function instead of inline checks
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Update `validate_release_bundle.sh` to define a single standardized error
+      message variable for missing `gh` executable containing the keywords `gh`, `not
+      found`, `required`, and `install`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Update all code paths in `validate_release_bundle.sh` that check for `gh`
+      availability to print the standardized error message and exit with non-zero
+      status
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Update the corresponding test in `tests/test_validate_release_bundle.sh`
+      to assert the exact standardized error message string using string equality
+      comparison
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Create test infrastructure in `tests/test_validate_release_bundle.sh` for
+      stubbing the `uname` command by creating a temporary directory and fake `uname`
+      script prepended to PATH
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Add test case in `tests/test_validate_release_bundle.sh` that simulates
+      Linux environment by stubbing `uname` to return `Linux` and asserting Unix-like
+      branch selection
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Add test case in `tests/test_validate_release_bundle.sh` that simulates
+      macOS environment by stubbing `uname` to return `Darwin` and asserting Unix-like
+      branch selection
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Add test case in `tests/test_validate_release_bundle.sh` that simulates
+      Cygwin environment by setting `OSTYPE=cygwin` and asserting Windows-like branch
+      selection
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Add test case in `tests/test_validate_release_bundle.sh` that simulates
+      MinGW environment by setting `MSYSTEM=MINGW64` and asserting Windows-like branch
+      selection
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Add test case in `tests/test_validate_release_bundle.sh` that simulates
+      MSYS environment by stubbing `uname` to return `MSYS_NT-10.0` and asserting
+      Windows-like branch selection
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Implement text file reading and parsing logic in `tests/test_vba_runnerlaunch_signature.py`
+      to load and parse `assets/vba/RunnerLaunch.bas` as plain text
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Add test function in `tests/test_vba_runnerlaunch_signature.py` that asserts
+      `BuildCommand` function signature matches regex `Sub\s+BuildCommand\s*\([^,]+,[^,]+,[^,]+\)`
+      to verify exactly three parameters
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Add test function in `tests/test_vba_runnerlaunch_signature.py` that asserts
+      the `BuildCommand` function body contains at least one line matching regex `(CDate|DateValue|DateSerial)\s*\(`
+      to verify date parsing logic is present
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: '**Create `.github/workflows/release.yml`**: Create the basic workflow
+      file structure with `workflow_dispatch` trigger and job definition'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: '**Add checkout and Python setup steps**: Add `actions/checkout@v3` or
+      later and `actions/setup-python@v4` or later with Python 3.8+ specified'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: '**Add dependency installation step**: Add step that installs required
+      Python packages from `requirements.txt` using `pip install -r requirements.txt`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: '**Add test execution step**: Add step that runs the repository test suite
+      using `pytest` or equivalent with exit code 0 required before proceeding'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: '**Add PyInstaller build step**: Add step that executes `pyinstaller` with
+      spec file producing executable artifacts in `dist/` directory'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: '**Add release directory population step**: Add step to copy all required
+      files from `dist/` and other locations into a top-level `release/` directory
+      with correct structure'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: '**Add validation step**: Add step that runs `validate_release_bundle.sh
+      release/` with exit code 0 required to verify bundle integrity'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: '**Add artifact upload step**: Add step using `actions/upload-artifact@v3`
+      or later to upload the `release/` directory with retention-days configured'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: '**Configure workflow_dispatch input**: Ensure the `workflow_dispatch`
+      trigger includes a `version` input with `required: false` or omit the `required`
+      field entirely'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: '`validate_release_bundle.sh` contains a function named `detect_platform`
+      or `is_windows_like` that is called at least once before any platform-specific
+      code paths'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: '`tests/test_validate_release_bundle.sh` includes at least 5 test cases
+      covering: (1) Linux via uname, (2) macOS via uname, (3) Cygwin via OSTYPE, (4)
+      MinGW via MSYSTEM, (5) MSYS via uname pattern, with each test asserting the
+      expected platform string or boolean return value'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: When `gh` executable is not found, `validate_release_bundle.sh` exits with
+      non-zero status and prints the exact standardized error message
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: The test in `tests/test_validate_release_bundle.sh` for missing `gh` asserts
+      the exact standardized error message string using string equality comparison
+      (not substring matching)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: '`tests/test_vba_runnerlaunch_signature.py` contains a test that parses
+      `assets/vba/RunnerLaunch.bas` and asserts: (1) `BuildCommand` function signature
+      matches regex `Sub\s+BuildCommand\s*\([^,]+,[^,]+,[^,]+\)` (exactly 3 parameters),
+      and (2) the function body contains at least one line matching regex `(CDate|DateValue|DateSerial)\s*\(`
+      indicating date parsing logic is present'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: All new tests in `tests/test_validate_release_bundle.sh` and `tests/test_vba_runnerlaunch_signature.py`
+      pass when executed
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: '`.github/workflows/release.yml` exists on the default branch and triggers
+      via `workflow_dispatch` (deferred, requires human)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: The release workflow uses `actions/checkout@v3` or later, `actions/setup-python@v4`
+      or later with Python 3.8+, installs dependencies from `requirements.txt`, runs
+      `pytest` or equivalent test command with exit code 0 required, executes `pyinstaller`
+      with spec file producing executable in `dist/`, copies all required files to
+      `release/` directory, executes `validate_release_bundle.sh release/` with exit
+      code 0 required, and uploads `release/` directory using `actions/upload-artifact@v3`
+      with retention-days set (deferred, requires human)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'The `workflow_dispatch` input `version` (if present) has `required: false`
+      or the `required` field is omitted, allowing the workflow to be started without
+      providing it (deferred, requires human)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

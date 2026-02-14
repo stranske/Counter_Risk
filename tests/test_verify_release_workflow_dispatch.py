@@ -21,7 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - run: python -m pip install -e ".[dev]"
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
       - run: python -m counter_risk.build.release --version-file VERSION --output-dir release --force
@@ -29,6 +31,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           path: release/1.2.3/
+          retention-days: 7
 """,
         encoding="utf-8",
     )
@@ -47,12 +50,22 @@ def test_verify_release_workflow_dispatch_reports_missing_workflow_file() -> Non
     assert result.returncode != 0
     assert "Workflow file not found" in output
     assert "needs-human" in output
+    assert "Apply label: needs-human" in output
+    assert (
+        "- [ ] .github/workflows/release.yml exists on the default branch and triggers via workflow_dispatch"
+        in output
+    )
+    assert (
+        "- [ ] The workflow_dispatch input version (if present) has required: false or omits required"
+        in output
+    )
+    assert "Required manual follow-up on branch 'main'" in output
     assert "docs/release.yml.draft" in output
     assert ".github/workflows/release.yml" in output
-    assert 'python -m pip install -e ".[dev]"' in output
+    assert "python -m pip install -r requirements.txt" in output
     assert "pyinstaller -y release.spec" in output
     assert "on.workflow_dispatch" in output
-    assert "workflow_dispatch.inputs.version" in output
+    assert "workflow_dispatch.inputs.version is omitted or sets required: false" in output
     assert "cp docs/release.yml.draft .github/workflows/release.yml" in output
 
 
@@ -103,6 +116,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       - run: pytest tests/
       - uses: actions/upload-artifact@v4
         with:
@@ -125,5 +140,56 @@ jobs:
     output = f"{result.stdout}\n{result.stderr}"
     assert result.returncode != 0
     assert "Draft workflow failed static validation" in output
-    assert 'missing run step containing: python -m pip install -e ".[dev]"' in output
+    assert "missing run step containing: pip install -r requirements.txt" in output
     assert "missing run step containing: pyinstaller -y release.spec" in output
+
+
+def test_verify_release_workflow_dispatch_surfaces_required_version_input_error(
+    tmp_path: Path,
+) -> None:
+    invalid_draft = tmp_path / "docs" / "release.yml.draft"
+    invalid_draft.parent.mkdir(parents=True, exist_ok=True)
+    invalid_draft.write_text(
+        """
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt
+      - run: pytest tests/
+      - run: pyinstaller -y release.spec
+      - run: python -m counter_risk.build.release --version-file VERSION --output-dir release --force
+      - run: scripts/validate_release_bundle.sh release/1.2.3
+      - uses: actions/upload-artifact@v4
+        with:
+          path: release/1.2.3/
+          retention-days: 7
+""",
+        encoding="utf-8",
+    )
+
+    env = os.environ.copy()
+    env["RELEASE_WORKFLOW_DRAFT_PATH"] = str(invalid_draft)
+    result = subprocess.run(
+        [str(SCRIPT_PATH), "release.yml", "main"],
+        text=True,
+        capture_output=True,
+        check=False,
+        cwd=tmp_path,
+        env=env,
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0
+    assert "Draft workflow failed static validation" in output
+    assert "workflow_dispatch.inputs.version must not set required: true" in output
