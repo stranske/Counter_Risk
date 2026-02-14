@@ -7,10 +7,10 @@ tasks:
     title: Create a new platform detection function named `detect_platform` or `is_windows_like`
       in `validate_release_bundle.sh` with a clear function signature that returns
       a platform identifier string or boolean
-    status: doing
+    status: done
     started_at: '2026-02-14T16:21:18Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-14T16:21:28Z'
+    commit: b3ac86292c17ccdd8e1993d5b4fdb5db9ee33227
     notes: []
   - id: task-02
     title: Implement platform detection logic in the new function using `uname` command
