@@ -8,8 +8,8 @@ implemented in follow-on slices.
 from __future__ import annotations
 
 import logging
-from copy import copy
 from collections.abc import Mapping
+from copy import copy
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
