@@ -98,5 +98,23 @@ def test_resolve_runtime_path_surfaces_meipass_misconfiguration(
         resolve_runtime_path(requested_asset)
 
     message = str(excinfo.value)
+    assert "Searched roots:" in message
     assert str(meipass_root / requested_asset) in message
     assert str(executable_dir / requested_asset) in message
+
+
+def test_resolve_runtime_path_raises_when_frozen_has_no_bundle_roots(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.delenv("COUNTER_RISK_BUNDLE_ROOT", raising=False)
+    monkeypatch.delattr(sys, "_MEIPASS", raising=False)
+    monkeypatch.delattr(sys, "executable", raising=False)
+
+    requested_asset = Path("config") / "fixture_replay.yml"
+    with pytest.raises(RuntimePathResolutionError, match="fixture_replay.yml") as excinfo:
+        resolve_runtime_path(requested_asset)
+
+    message = str(excinfo.value)
+    assert "No bundle roots were discovered" in message
+    assert "COUNTER_RISK_BUNDLE_ROOT" in message

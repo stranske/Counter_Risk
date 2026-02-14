@@ -47,12 +47,22 @@ def resolve_runtime_path(path: str | Path) -> Path:
         return candidate
 
     roots = _frozen_bundle_roots()
+    if not roots:
+        raise RuntimePathResolutionError(
+            f"Unable to resolve runtime asset '{candidate}'. "
+            "No bundle roots were discovered from COUNTER_RISK_BUNDLE_ROOT, "
+            "sys._MEIPASS, or sys.executable."
+        )
+
     attempted_paths = [root / candidate for root in roots]
     for resolved in attempted_paths:
         if resolved.exists():
             return resolved
 
+    searched_roots = ", ".join(str(root) for root in roots)
     searched_locations = ", ".join(str(path) for path in attempted_paths) or "<none>"
     raise RuntimePathResolutionError(
-        f"Unable to resolve runtime asset '{candidate}'. Searched locations: {searched_locations}"
+        f"Unable to resolve runtime asset '{candidate}'. "
+        f"Searched roots: {searched_roots}. "
+        f"Searched locations: {searched_locations}"
     )
