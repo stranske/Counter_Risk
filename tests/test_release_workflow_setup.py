@@ -102,7 +102,7 @@ def test_release_workflow_draft_contains_required_steps() -> None:
     assert "actions/checkout@v4" in uses_steps
     assert "actions/setup-python@v5" in uses_steps
 
-    assert any('python -m pip install -e ".[dev]"' in run for run in run_steps)
+    assert any("pip install -r requirements.txt" in run for run in run_steps)
     assert any("pytest tests/" in run for run in run_steps)
     assert any("pyinstaller -y release.spec" in run for run in run_steps)
     assert any("python -m counter_risk.build.release" in run for run in run_steps)
@@ -112,8 +112,10 @@ def test_release_workflow_draft_contains_required_steps() -> None:
         step for step in steps if str(step.get("uses", "")).startswith("actions/upload-artifact")
     ]
     assert upload_steps
-    upload_path = str(upload_steps[0].get("with", {}).get("path", ""))
+    upload_with = upload_steps[0].get("with", {})
+    upload_path = str(upload_with.get("path", ""))
     assert "release/" in upload_path
+    assert "retention-days" in upload_with
 
 
 def test_release_workflow_draft_dispatch_inputs_do_not_require_version() -> None:
@@ -136,7 +138,7 @@ def test_release_workflow_setup_doc_exists_with_promotion_steps() -> None:
 
     contents = setup_path.read_text(encoding="utf-8")
 
-    assert "pyproject.toml" in contents
+    assert "requirements.txt" in contents
     assert (
         "python -m counter_risk.build.release --version-file VERSION --output-dir release --force"
         in contents

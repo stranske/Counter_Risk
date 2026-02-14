@@ -34,7 +34,7 @@ if [ ! -f "${WORKFLOW_PATH}" ]; then
   echo "[ERROR] needs-human: create .github/workflows/release.yml in a high-privilege workflow-sync environment." >&2
   if [ -f "${DRAFT_WORKFLOW_PATH}" ]; then
     echo "[ERROR] Draft workflow exists at docs/release.yml.draft and must be promoted to .github/workflows/release.yml before dispatch verification." >&2
-    echo "[ERROR] Ensure promoted workflow includes run step: python -m pip install -e \".[dev]\"" >&2
+    echo "[ERROR] Ensure promoted workflow includes run step: python -m pip install -r requirements.txt" >&2
     echo "[ERROR] Ensure promoted workflow includes run step: pyinstaller -y release.spec" >&2
     echo "[ERROR] Ensure promoted workflow includes trigger: on.workflow_dispatch" >&2
     echo "[ERROR] Ensure workflow_dispatch.inputs.version is omitted or not required: true" >&2
