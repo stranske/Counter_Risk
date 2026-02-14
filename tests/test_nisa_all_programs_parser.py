@@ -8,7 +8,6 @@ import pytest
 
 from counter_risk.parsers.nisa_all_programs import NisaAllProgramsData, parse_nisa_all_programs
 
-
 _CANONICAL_HEADERS: tuple[str, ...] = (
     "counterparty",
     "cash",
