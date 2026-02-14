@@ -6,6 +6,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
+from counter_risk.mosers.template import load_mosers_template_workbook
 from counter_risk.parsers.nisa_all_programs import NisaAllProgramsData, parse_nisa_all_programs
 
 _DISPLAY_SEGMENT = {
@@ -31,19 +32,12 @@ def generate_mosers_workbook(
     parsed = parse_nisa_all_programs(raw_nisa_path)
     report_date = _to_report_date(as_of_date)
 
-    try:
-        from openpyxl import Workbook  # type: ignore[import-untyped]
-    except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
-        raise RuntimeError("openpyxl is required to generate MOSERS workbooks") from exc
+    workbook = load_mosers_template_workbook()
 
-    workbook = Workbook()
-    default_sheet = workbook.active
-    workbook.remove(default_sheet)
-
-    ch_sheet = workbook.create_sheet(title="CPRS - CH")
+    ch_sheet = workbook["CPRS - CH"]
     _write_ch_sheet(ch_sheet, parsed, report_date=report_date)
 
-    fcm_sheet = workbook.create_sheet(title="CPRS - FCM")
+    fcm_sheet = workbook["CPRS - FCM"]
     _write_fcm_sheet(fcm_sheet, parsed, report_date=report_date)
 
     destination.parent.mkdir(parents=True, exist_ok=True)
