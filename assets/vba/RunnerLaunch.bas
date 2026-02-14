@@ -1,59 +1,63 @@
 Attribute VB_Name = "RunnerLaunch"
 Option Explicit
 
+Private Const RUNNER_SHEET_NAME As String = "Runner"
+Private Const STATUS_CELL As String = "B7"
+Private Const RESULT_CELL As String = "B8"
+Private Const SHELL_ERROR_BASE As Long = vbObjectError + 7100
+
 Public Enum RunnerMode
     RunnerModeAllPrograms = 0
     RunnerModeExTrend = 1
     RunnerModeTrend = 2
 End Enum
 
+Public Type LaunchStatus
+    Success As Boolean
+    ErrorCode As Long
+    Message As String
+    Command As String
+    ExitCode As Long
+End Type
+
 Public Sub RunAll_Click()
-    Dim selectedDate As String
-    Dim parsedDate As Date
-    Dim outputDir As String
-
-    selectedDate = ReadSelectedDate()
-    parsedDate = ParseAsOfMonth(selectedDate)
-    outputDir = "outputs\" & Format$(parsedDate, "yyyy-mm-dd")
-
-    BuildCommand "All", selectedDate, outputDir
+    RunModeClick "All"
 End Sub
 
 Public Sub RunExTrend_Click()
-    Dim selectedDate As String
-    Dim parsedDate As Date
-    Dim outputDir As String
-
-    selectedDate = ReadSelectedDate()
-    parsedDate = ParseAsOfMonth(selectedDate)
-    outputDir = "outputs\" & Format$(parsedDate, "yyyy-mm-dd")
-
-    BuildCommand "ExTrend", selectedDate, outputDir
+    RunModeClick "ExTrend"
 End Sub
 
 Public Sub RunTrend_Click()
-    Dim selectedDate As String
-    Dim parsedDate As Date
-    Dim outputDir As String
-
-    selectedDate = ReadSelectedDate()
-    parsedDate = ParseAsOfMonth(selectedDate)
-    outputDir = "outputs\" & Format$(parsedDate, "yyyy-mm-dd")
-
-    BuildCommand "Trend", selectedDate, outputDir
+    RunModeClick "Trend"
 End Sub
 
 Public Sub OpenOutputFolder_Click()
+    On Error GoTo OpenOutputFolderError
+
     Dim selectedDate As String
+    Dim outputDir As String
+    Dim status As LaunchStatus
+
     selectedDate = ReadSelectedDate()
+    outputDir = ResolveOutputDir(ResolveRepoRoot(), selectedDate)
+    If Not DirectoryExists(outputDir) Then
+        WriteResult "Error Directory not found: " & outputDir
+        Exit Sub
+    End If
+
+    status = OpenDirectory(outputDir)
+    WriteLaunchResult status
+    Exit Sub
+
+OpenOutputFolderError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
 End Sub
 
 Public Function BuildRunArguments(ByVal asOfMonth As String, ByVal mode As RunnerMode) As String
-    Dim parsedDate As Date
     Dim outputDir As String
 
-    parsedDate = ParseAsOfMonth(asOfMonth)
-    outputDir = "outputs\" & Format$(parsedDate, "yyyy-mm-dd")
+    outputDir = ResolveOutputDir(".", asOfMonth)
 
     BuildRunArguments = BuildCommand(ModeToString(mode), asOfMonth, outputDir)
 End Function
@@ -77,6 +81,35 @@ Public Function BuildExecutableCommand( _
     ByVal mode As RunnerMode _
 ) As String
     BuildExecutableCommand = QuoteArg(executablePath) & " " & BuildRunArguments(asOfMonth, mode)
+End Function
+
+Public Function ResolveOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
+    Dim parsedDate As Date
+    parsedDate = ParseAsOfMonth(selectedDate)
+
+    ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\runs\" & Format$(parsedDate, "yyyy-mm-dd")
+End Function
+
+Public Function ExecuteRunnerCommand(ByVal executablePath As String, ByVal command As String) As LaunchStatus
+    Dim status As LaunchStatus
+    Dim shellCommand As String
+    Dim exitCode As Long
+
+    On Error GoTo ExecuteRunnerCommandError
+    shellCommand = BuildExecutableShellCommand(executablePath, command)
+    exitCode = ExecuteShellCommand(shellCommand)
+    status = BuildSuccessStatus(shellCommand, exitCode)
+    If exitCode <> 0 Then
+        status.Success = False
+        status.ErrorCode = SHELL_ERROR_BASE + exitCode
+        status.Message = "Process exited with code " & CStr(exitCode)
+    End If
+
+    ExecuteRunnerCommand = status
+    Exit Function
+
+ExecuteRunnerCommandError:
+    ExecuteRunnerCommand = BuildErrorStatus(command, Err.Number, Err.Description)
 End Function
 
 Private Function ResolveConfigPath(ByVal mode As RunnerMode) As String
@@ -136,6 +169,137 @@ Private Function QuoteArg(ByVal value As String) As String
     QuoteArg = Chr$(34) & value & Chr$(34)
 End Function
 
+Private Sub RunModeClick(ByVal runMode As String)
+    On Error GoTo RunModeClickError
+
+    Dim selectedDate As String
+    Dim outputDir As String
+    Dim command As String
+    Dim status As LaunchStatus
+
+    selectedDate = ReadSelectedDate()
+    outputDir = ResolveOutputDir(ResolveRepoRoot(), selectedDate)
+    command = BuildCommand(runMode, selectedDate, outputDir)
+
+    WriteStatus "Running..."
+    status = ExecuteRunnerCommand(ResolveExecutablePath(), command)
+    WriteLaunchResult status
+    Exit Sub
+
+RunModeClickError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
+Private Function ResolveExecutablePath() As String
+    ResolveExecutablePath = NormalizePathSeparators(ResolveRepoRoot()) & "\dist\counter-risk.exe"
+End Function
+
+Private Function ResolveRepoRoot() As String
+    ResolveRepoRoot = NormalizePathSeparators(ThisWorkbook.Path)
+End Function
+
+Private Function BuildExecutableShellCommand(ByVal executablePath As String, ByVal command As String) As String
+    BuildExecutableShellCommand = QuoteArg(executablePath) & " " & command
+End Function
+
+Private Function ExecuteShellCommand(ByVal shellCommand As String) As Long
+    Dim shellObject As Object
+
+    Set shellObject = CreateObject("WScript.Shell")
+    ExecuteShellCommand = CLng(shellObject.Run(shellCommand, 0, True))
+End Function
+
+Private Function OpenDirectory(ByVal directoryPath As String) As LaunchStatus
+    Dim status As LaunchStatus
+    Dim shellObject As Object
+    Dim openCommand As String
+
+    On Error GoTo OpenDirectoryError
+    Set shellObject = CreateObject("WScript.Shell")
+    openCommand = BuildOpenFolderCommand(directoryPath)
+    shellObject.Run openCommand, 1, False
+    status = BuildSuccessStatus(openCommand, 0)
+    OpenDirectory = status
+    Exit Function
+
+OpenDirectoryError:
+    OpenDirectory = BuildErrorStatus(directoryPath, Err.Number, Err.Description)
+End Function
+
+Private Function BuildOpenFolderCommand(ByVal directoryPath As String) As String
+    Dim platformName As String
+    platformName = Application.OperatingSystem
+
+    If InStr(1, platformName, "Windows", vbTextCompare) > 0 Then
+        BuildOpenFolderCommand = "cmd /c start " & Chr$(34) & Chr$(34) & " " & QuoteArg(directoryPath)
+        Exit Function
+    End If
+    If InStr(1, platformName, "Mac", vbTextCompare) > 0 Then
+        BuildOpenFolderCommand = "open " & QuoteArg(directoryPath)
+        Exit Function
+    End If
+
+    BuildOpenFolderCommand = "xdg-open " & QuoteArg(directoryPath)
+End Function
+
+Private Function DirectoryExists(ByVal directoryPath As String) As Boolean
+    DirectoryExists = LenB(Dir$(directoryPath, vbDirectory)) <> 0
+End Function
+
+Private Function BuildSuccessStatus(ByVal command As String, ByVal exitCode As Long) As LaunchStatus
+    Dim status As LaunchStatus
+
+    status.Success = True
+    status.ErrorCode = 0
+    status.Message = "Success"
+    status.Command = command
+    status.ExitCode = exitCode
+    BuildSuccessStatus = status
+End Function
+
+Private Function BuildErrorStatus( _
+    ByVal command As String, _
+    ByVal errorCode As Long, _
+    ByVal errorMessage As String _
+) As LaunchStatus
+    Dim status As LaunchStatus
+
+    status.Success = False
+    status.ErrorCode = errorCode
+    status.Message = errorMessage
+    status.Command = command
+    status.ExitCode = -1
+    BuildErrorStatus = status
+End Function
+
+Private Function NormalizePathSeparators(ByVal rawPath As String) As String
+    Dim normalizedPath As String
+
+    normalizedPath = Trim$(rawPath)
+    normalizedPath = Replace(normalizedPath, "/", "\")
+    Do While Len(normalizedPath) > 3 And Right$(normalizedPath, 1) = "\"
+        normalizedPath = Left$(normalizedPath, Len(normalizedPath) - 1)
+    Loop
+    NormalizePathSeparators = normalizedPath
+End Function
+
+Private Sub WriteStatus(ByVal statusText As String)
+    ThisWorkbook.Worksheets(RUNNER_SHEET_NAME).Range(STATUS_CELL).Value = statusText
+End Sub
+
+Private Sub WriteResult(ByVal resultText As String)
+    ThisWorkbook.Worksheets(RUNNER_SHEET_NAME).Range(RESULT_CELL).Value = resultText
+End Sub
+
+Private Sub WriteLaunchResult(ByRef status As LaunchStatus)
+    If status.Success Then
+        WriteResult "Success"
+        Exit Sub
+    End If
+
+    WriteResult "Error " & CStr(status.ErrorCode) & ": " & status.Message
+End Sub
+
 Private Function ReadSelectedDate() As String
-    ReadSelectedDate = CStr(ThisWorkbook.Worksheets("Runner").Range("B3").Value)
+    ReadSelectedDate = CStr(ThisWorkbook.Worksheets(RUNNER_SHEET_NAME).Range("B3").Value)
 End Function
