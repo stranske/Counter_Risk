@@ -93,6 +93,7 @@ Public Function BuildCommand( _
     WriteStatus "Running..."
 
     parsedDate = ParseAsOfMonth(selectedDate)
+    parsedDate = CDate(parsedDate)
     parsedDateValue = Format$(parsedDate, "yyyy-mm-dd")
     resolvedOutputDir = NormalizePathSeparators(ThisWorkbook.Path) & "\runs\" & parsedDateValue
     outputDir = resolvedOutputDir

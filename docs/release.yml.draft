@@ -2,6 +2,10 @@ name: Release Bundle Draft
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: Optional release version override; defaults to VERSION file
+        required: false
 
 jobs:
   release:
@@ -18,10 +22,7 @@ jobs:
       - name: Install project dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
-
-      - name: Install PyInstaller
-        run: python -m pip install pyinstaller
+          python -m pip install -r requirements.txt
 
       - name: Run tests before build
         run: pytest tests/
@@ -31,7 +32,12 @@ jobs:
 
       - name: Resolve release version
         run: |
-          VERSION="$(tr -d '\\r\\n' < VERSION)"
+          VERSION_INPUT="${{ github.event.inputs.version || '' }}"
+          if [ -n "$VERSION_INPUT" ]; then
+            VERSION="$VERSION_INPUT"
+          else
+            VERSION="$(tr -d '\\r\\n' < VERSION)"
+          fi
           if [ -z "$VERSION" ]; then
             echo "VERSION file is empty" >&2
             exit 1
@@ -53,3 +59,4 @@ jobs:
         with:
           name: release-${{ env.RELEASE_VERSION }}
           path: release/${{ env.RELEASE_VERSION }}/
+          retention-days: 7

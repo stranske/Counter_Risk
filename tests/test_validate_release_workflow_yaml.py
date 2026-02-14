@@ -23,7 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - run: python -m pip install -e ".[dev]"
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
       - run: python -m counter_risk.build.release --version-file VERSION --output-dir release --force
@@ -32,6 +34,7 @@ jobs:
         with:
           name: release-${{ env.RELEASE_VERSION }}
           path: release/${{ env.RELEASE_VERSION }}/
+          retention-days: 7
 """
         + extra,
         encoding="utf-8",
@@ -102,7 +105,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: {path: release/1.2.3/}
 """,
-            'python -m pip install -e ".[dev]"',
+            "pip install -r requirements.txt",
         ),
         (
             "missing_pyinstaller",
@@ -114,12 +117,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - run: python -m pip install -e ".[dev]"
+        with: {python-version: "3.11"}
+      - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: python -m counter_risk.build.release
       - run: scripts/validate_release_bundle.sh release/1.2.3
       - uses: actions/upload-artifact@v4
-        with: {path: release/1.2.3/}
+        with: {path: release/1.2.3/, retention-days: 14}
 """,
             "pyinstaller -y release.spec",
         ),
@@ -133,13 +137,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - run: python -m pip install -e ".[dev]"
+        with: {python-version: "3.11"}
+      - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
       - run: python -m counter_risk.build.release
       - run: scripts/validate_release_bundle.sh release/1.2.3
       - uses: actions/upload-artifact@v4
-        with: {path: dist/}
+        with: {path: dist/, retention-days: 14}
 """,
             "upload-artifact path must include 'release/'",
         ),
@@ -153,7 +158,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - run: python -m pip install -e ".[dev]"
+        with: {python-version: "3.11"}
+      - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
       - run: python -m counter_risk.build.release
@@ -193,7 +199,107 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - run: python -m pip install -e ".[dev]"
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt
+      - run: pytest tests/
+      - run: pyinstaller -y release.spec
+      - run: python -m counter_risk.build.release
+      - run: scripts/validate_release_bundle.sh release/1.2.3
+      - uses: actions/upload-artifact@v4
+        with: {path: release/1.2.3/, retention-days: 14}
+""",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        ["python", str(SCRIPT_PATH), str(workflow)], text=True, capture_output=True, check=False
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0
+    assert "must not set required: true" in output
+
+
+def test_validate_release_workflow_yaml_rejects_old_action_versions(tmp_path: Path) -> None:
+    workflow = tmp_path / "old-actions.yml"
+    workflow.write_text(
+        """
+name: x
+on: {workflow_dispatch: null}
+jobs:
+  release:
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v3
+        with: {python-version: "3.11"}
+      - run: python -m pip install -r requirements.txt
+      - run: pytest tests/
+      - run: pyinstaller -y release.spec
+      - run: python -m counter_risk.build.release
+      - run: scripts/validate_release_bundle.sh release/1.2.3
+      - uses: actions/upload-artifact@v2
+        with: {path: release/1.2.3/, retention-days: 14}
+""",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        ["python", str(SCRIPT_PATH), str(workflow)], text=True, capture_output=True, check=False
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0
+    assert "actions/checkout must be v3 or later" in output
+    assert "actions/setup-python must be v4 or later" in output
+    assert "actions/upload-artifact must be v3 or later" in output
+
+
+def test_validate_release_workflow_yaml_rejects_python_below_floor(tmp_path: Path) -> None:
+    workflow = tmp_path / "python-floor.yml"
+    workflow.write_text(
+        """
+name: x
+on: {workflow_dispatch: null}
+jobs:
+  release:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.7"}
+      - run: python -m pip install -r requirements.txt
+      - run: pytest tests/
+      - run: pyinstaller -y release.spec
+      - run: python -m counter_risk.build.release
+      - run: scripts/validate_release_bundle.sh release/1.2.3
+      - uses: actions/upload-artifact@v4
+        with: {path: release/1.2.3/, retention-days: 14}
+""",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        ["python", str(SCRIPT_PATH), str(workflow)], text=True, capture_output=True, check=False
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0
+    assert "python-version must be 3.8 or later" in output
+
+
+def test_validate_release_workflow_yaml_requires_upload_retention_days(tmp_path: Path) -> None:
+    workflow = tmp_path / "retention.yml"
+    workflow.write_text(
+        """
+name: x
+on: {workflow_dispatch: null}
+jobs:
+  release:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
       - run: python -m counter_risk.build.release
@@ -210,4 +316,4 @@ jobs:
 
     output = f"{result.stdout}\n{result.stderr}"
     assert result.returncode != 0
-    assert "must not set required: true" in output
+    assert "must set retention-days" in output

@@ -93,7 +93,7 @@ def test_release_workflow_draft_contains_required_steps() -> None:
     contents = workflow_path.read_text(encoding="utf-8")
     parsed = yaml.safe_load(contents)
     workflow_on = parsed.get("on", parsed.get(True, {}))
-    assert workflow_on["workflow_dispatch"] is None
+    assert "workflow_dispatch" in workflow_on
 
     steps = parsed["jobs"]["release"]["steps"]
     uses_steps = [str(step.get("uses", "")) for step in steps]
@@ -102,7 +102,7 @@ def test_release_workflow_draft_contains_required_steps() -> None:
     assert "actions/checkout@v4" in uses_steps
     assert "actions/setup-python@v5" in uses_steps
 
-    assert any('python -m pip install -e ".[dev]"' in run for run in run_steps)
+    assert any("pip install -r requirements.txt" in run for run in run_steps)
     assert any("pytest tests/" in run for run in run_steps)
     assert any("pyinstaller -y release.spec" in run for run in run_steps)
     assert any("python -m counter_risk.build.release" in run for run in run_steps)
@@ -112,22 +112,24 @@ def test_release_workflow_draft_contains_required_steps() -> None:
         step for step in steps if str(step.get("uses", "")).startswith("actions/upload-artifact")
     ]
     assert upload_steps
-    upload_path = str(upload_steps[0].get("with", {}).get("path", ""))
+    upload_with = upload_steps[0].get("with", {})
+    upload_path = str(upload_with.get("path", ""))
     assert "release/" in upload_path
+    assert "retention-days" in upload_with
 
 
 def test_release_workflow_draft_dispatch_inputs_do_not_require_version() -> None:
     workflow_path = REPO_ROOT / "docs" / "release.yml.draft"
     assert workflow_path.is_file()
 
-    parsed = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+    contents = workflow_path.read_text(encoding="utf-8")
+    parsed = yaml.safe_load(contents)
     workflow_on = parsed.get("on", parsed.get(True, {}))
     dispatch_inputs = (workflow_on or {}).get("workflow_dispatch") or {}
     version_input = (dispatch_inputs.get("inputs") or {}).get("version")
-    if version_input is None:
-        return
-
-    assert version_input.get("required") is not True
+    assert isinstance(version_input, dict)
+    assert version_input.get("required") is False
+    assert "github.event.inputs.version" in contents
 
 
 def test_release_workflow_setup_doc_exists_with_promotion_steps() -> None:
@@ -136,7 +138,7 @@ def test_release_workflow_setup_doc_exists_with_promotion_steps() -> None:
 
     contents = setup_path.read_text(encoding="utf-8")
 
-    assert "pyproject.toml" in contents
+    assert "requirements.txt" in contents
     assert (
         "python -m counter_risk.build.release --version-file VERSION --output-dir release --force"
         in contents

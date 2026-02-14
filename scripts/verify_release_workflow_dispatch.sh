@@ -2,6 +2,15 @@
 
 set -euo pipefail
 
+print_needs_human_followup() {
+  local ref_name="$1"
+  echo "[ERROR] needs-human: release workflow updates require agent-high-privilege or a manual maintainer action." >&2
+  echo "[ERROR] Apply label: needs-human" >&2
+  echo "[ERROR] Acceptance criteria requiring manual completion on '${ref_name}':" >&2
+  echo "[ERROR] - [ ] .github/workflows/release.yml exists on the default branch and triggers via workflow_dispatch" >&2
+  echo "[ERROR] - [ ] The workflow_dispatch input version (if present) has required: false or omits required" >&2
+}
+
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
   echo "Usage: $0 <workflow_file> <ref> [artifact_prefix]" >&2
   exit 2
@@ -31,13 +40,17 @@ fi
 if [ ! -f "${WORKFLOW_PATH}" ]; then
   echo "[ERROR] Workflow file not found: ${WORKFLOW_FILE}" >&2
   echo "[ERROR] Expected path: ${WORKFLOW_PATH}" >&2
-  echo "[ERROR] needs-human: create .github/workflows/release.yml in a high-privilege workflow-sync environment." >&2
+  print_needs_human_followup "${REF_NAME}"
+  echo "[ERROR] Required manual follow-up on branch '${REF_NAME}':" >&2
+  echo "[ERROR] 1) Create .github/workflows/release.yml from docs/release.yml.draft." >&2
+  echo "[ERROR] 2) Ensure the workflow includes trigger: on.workflow_dispatch." >&2
+  echo "[ERROR] 3) Ensure workflow_dispatch.inputs.version is omitted or sets required: false." >&2
   if [ -f "${DRAFT_WORKFLOW_PATH}" ]; then
     echo "[ERROR] Draft workflow exists at docs/release.yml.draft and must be promoted to .github/workflows/release.yml before dispatch verification." >&2
-    echo "[ERROR] Ensure promoted workflow includes run step: python -m pip install -e \".[dev]\"" >&2
+    echo "[ERROR] Ensure promoted workflow includes run step: python -m pip install -r requirements.txt" >&2
     echo "[ERROR] Ensure promoted workflow includes run step: pyinstaller -y release.spec" >&2
     echo "[ERROR] Ensure promoted workflow includes trigger: on.workflow_dispatch" >&2
-    echo "[ERROR] Ensure workflow_dispatch.inputs.version is omitted or not required: true" >&2
+    echo "[ERROR] Ensure workflow_dispatch.inputs.version is omitted or sets required: false" >&2
     if validator_output="$(python "${VALIDATOR_SCRIPT}" "${DRAFT_WORKFLOW_PATH}" 2>&1)"; then
       echo "[ERROR] Draft workflow passed static validation. Promote it with: cp docs/release.yml.draft .github/workflows/release.yml" >&2
     else
