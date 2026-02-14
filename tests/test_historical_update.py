@@ -32,7 +32,9 @@ def test_validate_workbook_path_rejects_non_xlsx_file(tmp_path: Path) -> None:
         historical_update._validate_workbook_path(bad_path)
 
 
-def test_locate_ex_llc_3_year_workbook_returns_expected_path_under_search_root(tmp_path: Path) -> None:
+def test_locate_ex_llc_3_year_workbook_returns_expected_path_under_search_root(
+    tmp_path: Path,
+) -> None:
     expected_relative = Path(
         "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
     )

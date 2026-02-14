@@ -107,7 +107,11 @@ def locate_ex_llc_3_year_workbook(
 ) -> Path:
     """Resolve the ex LLC 3 Year workbook path under the expected repository location."""
 
-    root = _resolve_repo_root() if search_root is None else _as_path(search_root, field_name="search_root")
+    root = (
+        _resolve_repo_root()
+        if search_root is None
+        else _as_path(search_root, field_name="search_root")
+    )
     relative_path = expected_relative_path or _DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH
     workbook_path = root / relative_path
     _validate_workbook_path(workbook_path, field_name="hist_ex_llc_3yr_xlsx")
