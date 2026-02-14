@@ -293,13 +293,15 @@ def _prepare_runtime_config(
     generated_dir = run_dir / "_generated"
     generated_dir.mkdir(parents=True, exist_ok=True)
     generated_mosers_path = generated_dir / "all_programs-generated-mosers.xlsx"
+    canonical_mosers_path = run_dir / "all_programs-mosers-input.xlsx"
     generate_mosers_workbook(
         raw_nisa_path=raw_nisa_path,
         output_path=generated_mosers_path,
         as_of_date=as_of_date,
     )
+    shutil.copy2(generated_mosers_path, canonical_mosers_path)
     warnings.append("Generated All Programs MOSERS workbook from raw NISA input")
-    return config.model_copy(update={"mosers_all_programs_xlsx": generated_mosers_path})
+    return config.model_copy(update={"mosers_all_programs_xlsx": canonical_mosers_path})
 
 
 def _parse_inputs(input_paths: dict[str, Path]) -> dict[str, dict[str, Any]]:
@@ -455,7 +457,8 @@ def _write_outputs(
     for variant_input in variant_inputs:
         source_mosers = variant_input.workbook_path
         target_monthly_book = run_dir / f"{variant_input.name}-mosers-input.xlsx"
-        shutil.copy2(source_mosers, target_monthly_book)
+        if source_mosers.resolve() != target_monthly_book.resolve():
+            shutil.copy2(source_mosers, target_monthly_book)
         output_paths.append(target_monthly_book)
 
     source_ppt = config.monthly_pptx
