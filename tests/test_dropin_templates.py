@@ -12,6 +12,7 @@ import pytest
 from counter_risk.writers.dropin_templates import (
     _TEMPLATE_HEADER_LABEL_TO_METRIC,
     _build_exposure_index,
+    _merge_exposure_rows,
     _normalize_header_label,
     fill_dropin_template,
 )
@@ -61,6 +62,30 @@ def test_build_exposure_index_normalizes_counterparty_and_clearing_house_labels(
 
     assert "soc gen" in indexed
     assert "ice" in indexed
+
+
+def test_merge_exposure_rows_aggregates_numeric_fields_and_keeps_non_numeric_latest() -> None:
+    existing = {
+        "counterparty": "Societe Generale",
+        "notional": 10,
+        "tips": 2.5,
+        "rating": "A",
+    }
+    incoming = {
+        "counterparty": "Societe Generale",
+        "notional": 15.0,
+        "tips": 3,
+        "rating": "A-",
+        "new_field": "present",
+    }
+
+    merged = _merge_exposure_rows(existing, incoming)
+
+    assert merged["counterparty"] == "Societe Generale"
+    assert merged["notional"] == pytest.approx(25.0)
+    assert merged["tips"] == pytest.approx(5.5)
+    assert merged["rating"] == "A-"
+    assert merged["new_field"] == "present"
 
 
 def test_fill_dropin_template_validates_non_empty_path_arguments(tmp_path: Path) -> None:
