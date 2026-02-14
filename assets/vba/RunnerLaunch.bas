@@ -47,6 +47,9 @@ Public Sub OpenOutputFolder_Click()
     End If
 
     status = OpenDirectory(outputDir)
+    If Not status.Success Then
+        status.Message = "Failed to open output directory: " & outputDir & " - " & status.Message
+    End If
     WriteLaunchResult status
     Exit Sub
 
