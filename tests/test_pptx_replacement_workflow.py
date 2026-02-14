@@ -82,9 +82,7 @@ def _slide_picture_state(
     slide: Slide,
 ) -> tuple[int, tuple[tuple[str, tuple[int, int, int, int]], ...]]:
     pictures = [
-        cast(Picture, shape)
-        for shape in slide.shapes
-        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+        cast(Picture, shape) for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
     ]
     details = tuple(
         (
