@@ -1,6 +1,6 @@
 # Release Workflow Setup
 
-This repository uses `pyproject.toml` for dependency installation and
+This repository uses `requirements.txt` for dependency installation and
 `python -m counter_risk.build.release --version-file VERSION --output-dir release --force`
 for release bundle assembly.
 

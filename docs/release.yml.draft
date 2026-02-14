@@ -18,10 +18,7 @@ jobs:
       - name: Install project dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
-
-      - name: Install PyInstaller
-        run: python -m pip install pyinstaller
+          python -m pip install -r requirements.txt
 
       - name: Run tests before build
         run: pytest tests/
@@ -53,3 +50,4 @@ jobs:
         with:
           name: release-${{ env.RELEASE_VERSION }}
           path: release/${{ env.RELEASE_VERSION }}/
+          retention-days: 7
