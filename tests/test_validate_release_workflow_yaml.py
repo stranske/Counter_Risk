@@ -32,7 +32,8 @@ jobs:
         with:
           name: release-${{ env.RELEASE_VERSION }}
           path: release/${{ env.RELEASE_VERSION }}/
-""" + extra,
+"""
+        + extra,
         encoding="utf-8",
     )
 
@@ -43,6 +44,39 @@ def test_validate_release_workflow_yaml_passes_for_valid_file(tmp_path: Path) ->
 
     result = subprocess.run(
         ["python", str(SCRIPT_PATH), str(workflow)], text=True, capture_output=True, check=False
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_validate_release_workflow_yaml_uses_default_path_and_fails_when_missing(
+    tmp_path: Path,
+) -> None:
+    result = subprocess.run(
+        ["python", str(SCRIPT_PATH)],
+        text=True,
+        capture_output=True,
+        check=False,
+        cwd=tmp_path,
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0
+    assert ".github/workflows/release.yml" in output
+    assert "not found" in output.lower()
+
+
+def test_validate_release_workflow_yaml_uses_default_path_when_present(tmp_path: Path) -> None:
+    workflow = tmp_path / ".github" / "workflows" / "release.yml"
+    workflow.parent.mkdir(parents=True, exist_ok=True)
+    _write_workflow(workflow)
+
+    result = subprocess.run(
+        ["python", str(SCRIPT_PATH)],
+        text=True,
+        capture_output=True,
+        check=False,
+        cwd=tmp_path,
     )
 
     assert result.returncode == 0, result.stderr

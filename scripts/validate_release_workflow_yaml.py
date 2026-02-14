@@ -15,6 +15,7 @@ REQUIRED_RUN_SNIPPETS = (
     "python -m counter_risk.build.release",
     "scripts/validate_release_bundle.sh",
 )
+DEFAULT_WORKFLOW_PATH = Path(".github/workflows/release.yml")
 
 
 class ValidationError(Exception):
@@ -97,7 +98,7 @@ def validate_release_workflow(path: Path) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("workflow_path", type=Path)
+    parser.add_argument("workflow_path", type=Path, nargs="?", default=DEFAULT_WORKFLOW_PATH)
     args = parser.parse_args()
 
     if not args.workflow_path.is_file():
