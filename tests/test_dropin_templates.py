@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from builtins import __import__ as builtins_import
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -291,6 +292,34 @@ def test_fill_dropin_template_raises_for_unloadable_workbook(
     monkeypatch.setitem(sys.modules, "openpyxl", fake_module)
 
     with pytest.raises(ValueError, match="Unable to load template workbook"):
+        fill_dropin_template(
+            template_path=fake_template,
+            exposures_df=[],
+            breakdown={},
+            output_path=tmp_path / "out.xlsx",
+        )
+
+
+def test_fill_dropin_template_raises_clear_error_when_openpyxl_is_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    def _import_without_openpyxl(
+        name: str,
+        globals_: Any = None,
+        locals_: Any = None,
+        fromlist: Any = (),
+        level: int = 0,
+    ) -> Any:
+        if name == "openpyxl":
+            raise ModuleNotFoundError("No module named 'openpyxl'")
+        return builtins_import(name, globals_, locals_, fromlist, level)
+
+    monkeypatch.setattr("builtins.__import__", _import_without_openpyxl)
+
+    with pytest.raises(RuntimeError, match="openpyxl is required"):
         fill_dropin_template(
             template_path=fake_template,
             exposures_df=[],
