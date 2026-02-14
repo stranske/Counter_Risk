@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook as _generate_mosers_workbook_in_memory,
 )
