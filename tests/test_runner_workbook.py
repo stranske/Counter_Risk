@@ -56,6 +56,14 @@ def _extract_vba_project_bytes(workbook_path: Path) -> bytes:
         return handle.read()
 
 
+def _extract_searchable_vba_text(workbook_path: Path) -> str:
+    vba_bytes = _extract_vba_project_bytes(workbook_path)
+    try:
+        return vba_bytes.decode("latin-1", errors="ignore")
+    except Exception:  # pragma: no cover - defensive fallback for non-standard decode failures
+        return vba_bytes.decode("latin-1", errors="replace")
+
+
 def test_runner_workbook_exists() -> None:
     assert Path("Runner.xlsm").is_file(), "Runner.xlsm must be committed to the repository root."
 
@@ -243,10 +251,15 @@ def test_build_runner_workbook_extracts_searchable_vba_text(tmp_path: Path) -> N
     output_workbook = tmp_path / "Runner.built.xlsm"
     runner_builder.build_runner_workbook(output_workbook)
 
-    vba_text = _extract_vba_project_bytes(output_workbook).decode("latin-1", errors="ignore")
+    vba_text = _extract_searchable_vba_text(output_workbook)
 
     assert vba_text
+    assert "BuildCommand(" in vba_text
     assert "OpenOutputFolder_Click" in vba_text
+    assert "Running..." in vba_text
+    assert "Success" in vba_text
+    assert "Error" in vba_text
+    assert "Directory not found" in vba_text
 
 
 def test_build_runner_workbook_fails_when_vba_project_bin_missing(
