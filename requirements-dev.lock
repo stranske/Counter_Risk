@@ -34,5 +34,7 @@ pytest-cov==7.0.0
     # via my-project (pyproject.toml)
 ruff==0.15.0
     # via my-project (pyproject.toml)
+tomlkit==0.13.3
+    # via my-project (pyproject.toml)
 typing-extensions==4.15.0
     # via mypy
