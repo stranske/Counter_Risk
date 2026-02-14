@@ -8,12 +8,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
-from enum import Enum
+from enum import StrEnum
 
 SHELL_ERROR_BASE = 7100
 
 
-class RunnerMode(str, Enum):
+class RunnerMode(StrEnum):
     ALL = "All"
     EX_TREND = "ExTrend"
     TREND = "Trend"
