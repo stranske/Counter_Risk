@@ -13,6 +13,15 @@ ARTIFACT_PREFIX="${3:-release-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VALIDATOR_SCRIPT="${SCRIPT_DIR}/validate_release_workflow_yaml.py"
+DRAFT_WORKFLOW_PATH="${RELEASE_WORKFLOW_DRAFT_PATH:-}"
+
+if [ -z "${DRAFT_WORKFLOW_PATH}" ]; then
+  if [ -f "docs/release.yml.draft" ]; then
+    DRAFT_WORKFLOW_PATH="docs/release.yml.draft"
+  else
+    DRAFT_WORKFLOW_PATH="${REPO_ROOT}/docs/release.yml.draft"
+  fi
+fi
 
 WORKFLOW_PATH="${WORKFLOW_FILE}"
 if [ ! -f "${WORKFLOW_PATH}" ] && [ -f ".github/workflows/${WORKFLOW_FILE}" ]; then
@@ -22,16 +31,17 @@ fi
 if [ ! -f "${WORKFLOW_PATH}" ]; then
   echo "[ERROR] Workflow file not found: ${WORKFLOW_FILE}" >&2
   echo "[ERROR] Expected path: ${WORKFLOW_PATH}" >&2
-  draft_workflow="${REPO_ROOT}/docs/release.yml.draft"
-  if [ -f "${draft_workflow}" ]; then
+  if [ -f "${DRAFT_WORKFLOW_PATH}" ]; then
     echo "[ERROR] Draft workflow exists at docs/release.yml.draft and must be promoted to .github/workflows/release.yml before dispatch verification." >&2
     echo "[ERROR] Ensure promoted workflow includes run step: python -m pip install -e \".[dev]\"" >&2
     echo "[ERROR] Ensure promoted workflow includes run step: pyinstaller -y release.spec" >&2
     echo "[ERROR] Ensure workflow_dispatch.inputs.version is omitted or not required: true" >&2
-    if python "${VALIDATOR_SCRIPT}" "${draft_workflow}" >/dev/null 2>&1; then
+    if validator_output="$(python "${VALIDATOR_SCRIPT}" "${DRAFT_WORKFLOW_PATH}" 2>&1)"; then
       echo "[ERROR] Draft workflow passed static validation. Promote it with: cp docs/release.yml.draft .github/workflows/release.yml" >&2
     else
-      echo "[ERROR] Draft workflow failed static validation. Run: python scripts/validate_release_workflow_yaml.py docs/release.yml.draft" >&2
+      echo "[ERROR] Draft workflow failed static validation." >&2
+      echo "${validator_output}" >&2
+      echo "[ERROR] Run: python scripts/validate_release_workflow_yaml.py docs/release.yml.draft" >&2
     fi
   fi
   exit 1
