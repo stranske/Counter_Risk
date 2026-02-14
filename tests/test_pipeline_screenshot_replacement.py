@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -8,6 +9,13 @@ import pytest
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.run import PptProcessingResult, PptProcessingStatus
+
+
+@dataclass
+class _ScreenshotBackendCall:
+    source: Path
+    output: Path
+    mapping: dict[str, Path]
 
 
 def _write_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
@@ -67,10 +75,10 @@ def test_write_outputs_calls_zip_backend_once_when_enabled(
         screenshot_inputs={"slide2": image_2, "slide1": image_1},
     )
 
-    calls: list[dict[str, object]] = []
+    calls: list[_ScreenshotBackendCall] = []
 
     def _fake_zip_backend(source: Path, output: Path, mapping: dict[str, Path]) -> None:
-        calls.append({"source": source, "output": output, "mapping": mapping})
+        calls.append(_ScreenshotBackendCall(source=source, output=output, mapping=mapping))
         output.write_bytes(source.read_bytes() + b"-replaced")
 
     monkeypatch.setattr(run_module, "_replace_screenshots_with_zip_backend", _fake_zip_backend)
@@ -84,10 +92,10 @@ def test_write_outputs_calls_zip_backend_once_when_enabled(
     output_paths, _ = run_module._write_outputs(run_dir=run_dir, config=config, warnings=warnings)
 
     assert len(calls) == 1
-    assert calls[0]["output"] == run_dir / "monthly.pptx"
-    assert list(calls[0]["mapping"]) == ["slide1", "slide2"]
-    assert len(calls[0]["mapping"]) == 2
-    assert all(path.suffix.lower() == ".png" for path in calls[0]["mapping"].values())
+    assert calls[0].output == run_dir / "monthly.pptx"
+    assert list(calls[0].mapping) == ["slide1", "slide2"]
+    assert len(calls[0].mapping) == 2
+    assert all(path.suffix.lower() == ".png" for path in calls[0].mapping.values())
     assert output_paths[-1] == run_dir / "monthly.pptx"
     assert (run_dir / "monthly.pptx").exists()
     assert all("not implemented" not in warning for warning in warnings)
