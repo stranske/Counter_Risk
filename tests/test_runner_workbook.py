@@ -255,12 +255,14 @@ def test_build_runner_workbook_extracts_searchable_vba_text(tmp_path: Path) -> N
     vba_text = _extract_searchable_vba_text(output_workbook)
 
     assert vba_text
-    assert "BuildCommand(" in vba_text
+    assert 'Attribute VB_Name = "RunnerLaunch"' in vba_text
+    assert "Public Sub RunAll_Click()" in vba_text
+    assert "Public Sub RunExTrend_Click()" in vba_text
+    assert "Public Sub RunTrend_Click()" in vba_text
     assert "OpenOutputFolder_Click" in vba_text
-    assert "Running..." in vba_text
-    assert "Success" in vba_text
-    assert "Error" in vba_text
-    assert "Directory not found" in vba_text
+    assert "BuildRunArguments" in vba_text
+    assert "BuildExecutableCommand" in vba_text
+    assert "ReadSelectedDate" in vba_text
 
 
 def test_build_runner_workbook_fails_when_vba_project_bin_missing(
