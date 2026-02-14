@@ -14,6 +14,7 @@ except ModuleNotFoundError:  # pragma: no cover - depends on test environment
     assert_frame_equal = None
 
 from counter_risk.parsers.cprs_fcm import parse_fcm_totals, parse_futures_detail
+from tests.utils.assertions import assert_numeric_outputs_close
 
 _ALL_PROGRAMS_FIXTURE = "MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx"
 _EX_TREND_FIXTURE = "MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx"
@@ -83,6 +84,58 @@ def test_parse_fcm_totals_ex_trend_non_empty_and_stable_columns() -> None:
     assert_frame_equal(df, df.loc[:, list(_TOTAL_COLUMNS)], check_like=False)
     assert not df.empty
     assert df["counterparty"].str.len().gt(0).all()
+
+
+def test_parse_fcm_totals_all_programs_fixture_numeric_totals_close() -> None:
+    _require_pandas()
+    df = parse_fcm_totals(_fixture(_ALL_PROGRAMS_FIXTURE))
+
+    totals = (
+        df[["TIPS", "Treasury", "Equity", "Commodity", "Currency", "Notional", "NotionalChange"]]
+        .sum()
+        .to_dict()
+    )
+    expected_totals = {
+        "TIPS": 613563453.14,
+        "Treasury": 2437132088.31,
+        "Equity": 4647960361.939,
+        "Commodity": 124181574.6156,
+        "Currency": -10837843.75,
+        "Notional": 7811999634.2546,
+        "NotionalChange": 13704178.2738,
+    }
+    assert_numeric_outputs_close(
+        totals,
+        expected_totals,
+        abs_tol=1e-6,
+        rel_tol=1e-12,
+    )
+
+
+def test_parse_fcm_totals_ex_trend_fixture_numeric_totals_close() -> None:
+    _require_pandas()
+    df = parse_fcm_totals(_fixture(_EX_TREND_FIXTURE))
+
+    totals = (
+        df[["TIPS", "Treasury", "Equity", "Commodity", "Currency", "Notional", "NotionalChange"]]
+        .sum()
+        .to_dict()
+    )
+    expected_totals = {
+        "TIPS": 613563453.14,
+        "Treasury": 2422820068.71,
+        "Equity": 4578574679.329,
+        "Commodity": 124131536.3156,
+        "Currency": 0.0,
+        "Notional": 7739089737.494599,
+        "NotionalChange": 224224528.0238,
+    }
+    assert_numeric_outputs_close(
+        totals,
+        expected_totals,
+        abs_tol=1e-6,
+        rel_tol=1e-12,
+    )
 
 
 def test_parse_fcm_totals_trend_is_empty() -> None:

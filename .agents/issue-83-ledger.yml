@@ -1,0 +1,495 @@
+version: 1
+issue: 83
+base: main
+branch: codex/issue-83
+tasks:
+  - id: task-01
+    title: Implement `render_cprs_fcm_png(...)` in `src/counter_risk/renderers/table_png.py`
+      by routing through the same internal table-to-PNG rasterization/PNG-writing
+      helper used by `render_cprs_ch_png(...)`, ensuring deterministic output
+    status: done
+    started_at: '2026-02-13T22:07:57Z'
+    finished_at: '2026-02-13T22:08:07Z'
+    commit: a4298203cc18be5232bdff44c9e6c47764b34044
+    notes: []
+  - id: task-02
+    title: Update `src/counter_risk/renderers/__init__.py` to export `render_cprs_fcm_png`
+      alongside `render_cprs_ch_png`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Add validation to `render_cprs_ch_png(...)` to raise ValueError when exposures_df
+      is None with message containing 'exposures_df'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Add validation to `render_cprs_ch_png(...)` to raise ValueError when exposures_df
+      is an empty DataFrame
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Add per-variant minimum row count validation to `render_cprs_ch_png(...)`
+      that raises ValueError with message containing 'row' or 'rows' and the expected
+      count
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Add validation to `render_cprs_ch_png(...)` to raise ValueError when counterparty
+      name fields are missing or blank with message containing 'counterparty'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Add validation to `render_cprs_fcm_png(...)` to raise ValueError when exposures_df
+      is None with message containing 'exposures_df'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Add validation to `render_cprs_fcm_png(...)` to raise ValueError when exposures_df
+      is an empty DataFrame
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Add per-variant minimum row count validation to `render_cprs_fcm_png(...)`
+      that raises ValueError with message containing 'row' or 'rows' and the expected
+      count
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Add validation to `render_cprs_fcm_png(...)` to raise ValueError when counterparty
+      name fields are missing or blank with message containing 'counterparty'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Write test in `tests/test_table_png.py` to call `render_cprs_ch_png(...)`
+      for each of the three variants and assert the output PNG path exists and `st_size
+      > 0`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Write test in `tests/test_table_png.py` to call `render_cprs_fcm_png(...)`
+      for each of the three variants and assert the output PNG path exists and `st_size
+      > 0`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Add deterministic-output test in `tests/test_table_png.py` that renders
+      twice with identical inputs using `render_cprs_ch_png(...)` for all three variants
+      and asserts SHA-256 hashes match
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Add deterministic-output test in `tests/test_table_png.py` that renders
+      twice with identical inputs using `render_cprs_fcm_png(...)` for all three variants
+      and asserts SHA-256 hashes match
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Add test for `render_cprs_ch_png(...)` that asserts ValueError with 'exposures_df'
+      substring when exposures_df is None
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Add test for `render_cprs_ch_png(...)` that asserts ValueError when exposures_df
+      is an empty DataFrame
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Add test for `render_cprs_ch_png(...)` that asserts ValueError with 'row'
+      substring when row count is below minimum for each variant
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Add test for `render_cprs_ch_png(...)` that asserts ValueError with 'counterparty'
+      substring when counterparty name fields are blank
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Add test for `render_cprs_fcm_png(...)` that asserts ValueError with 'exposures_df'
+      substring when exposures_df is None
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Add test for `render_cprs_fcm_png(...)` that asserts ValueError when exposures_df
+      is an empty DataFrame
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Add test for `render_cprs_fcm_png(...)` that asserts ValueError with 'row'
+      substring when row count is below minimum for each variant
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Add test for `render_cprs_fcm_png(...)` that asserts ValueError with 'counterparty'
+      substring when counterparty name fields are blank
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Update `replace_screenshot_pictures(...)` in `src/counter_risk/pptx/replacements.py`
+      to gate replacement on BOTH: (a) normalized section-title substring match AND
+      (b) slide contains exactly the expected number of picture shapes with positions
+      matching expected coordinates within 0 EMUs'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Implement a helper function in the PPTX replacement module that encapsulates
+      all usage of `picture._element` to swap image parts while preserving geometry,
+      and update all call sites to use the helper
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Add a docstring to the helper explaining it relies on private `python-pptx`
+      API (`_element`) and why (swap image parts while keeping geometry)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Create `tests/test_pptx_replacement_workflow.py` test file with fixture
+      PPTX generation or loading
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Add test that runs the replacement workflow and re-opens the PPTX with
+      `python-pptx` `Presentation(...)` without error
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Add assertion that targeted slides maintain the same number of picture
+      shapes before and after replacement
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Add assertion that at least one picture's image part SHA-256 hash changes
+      on targeted slides after replacement
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Add assertion that picture shape count remains identical before and after
+      replacement on targeted slides
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Add assertion that left, top, width, and height EMU tuples are exactly
+      equal pre and post replacement for replaced pictures
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Add test case in `tests/test_pptx_replacement_workflow.py` with at least
+      two similarly-titled slides where only one matches expected picture count/geometry,
+      and assert the "near match" slide remains unchanged when geometry/count gating
+      fails
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: '`src/counter_risk/renderers/table_png.py` defines a callable `render_cprs_fcm_png(...)`
+      function'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: '`render_cprs_fcm_png(...)` reuses the shared table-to-PNG rendering utility
+      used by `render_cprs_ch_png(...)` (i.e., both functions call the same internal
+      helper for rasterization/PNG writing)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: '`render_cprs_fcm_png` is importable from the package surface: `from counter_risk.renderers
+      import render_cprs_fcm_png` succeeds'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: '`render_cprs_ch_png(...)` raises `ValueError` with an error message containing
+      the substring `exposures_df` when `exposures_df is None`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: '`render_cprs_ch_png(...)` raises `ValueError` when `exposures_df` is empty
+      (0 rows)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: For each supported CPRS variant, `render_cprs_ch_png(...)` validates the
+      expected minimum row count and raises `ValueError` when `len(exposures_df)`
+      is less than that minimum; the exception message includes the substring `row`
+      or `rows` and the expected count
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: '`render_cprs_ch_png(...)` raises `ValueError` when any required counterparty
+      name field is missing/blank for at least one row; error message contains substring
+      `counterparty`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: '`render_cprs_fcm_png(...)` raises `ValueError` with an error message containing
+      the substring `exposures_df` when `exposures_df is None`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: '`render_cprs_fcm_png(...)` raises `ValueError` when `exposures_df` is
+      empty (0 rows)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: For each supported CPRS variant, `render_cprs_fcm_png(...)` validates the
+      expected minimum row count and raises `ValueError` when `len(exposures_df)`
+      is less than that minimum; the exception message includes the substring `row`
+      or `rows` and the expected count
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: '`render_cprs_fcm_png(...)` raises `ValueError` when any required counterparty
+      name field is missing/blank for at least one row; error message contains substring
+      `counterparty`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Tests exist in `tests/test_table_png.py` that call `render_cprs_ch_png(...)`
+      for each of the three variants and assert: (1) the output PNG path exists and
+      (2) file size is > 0 bytes'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Tests exist in `tests/test_table_png.py` that call `render_cprs_fcm_png(...)`
+      for each of the three variants and assert: (1) the output PNG path exists and
+      (2) file size is > 0 bytes'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Renderer output is deterministic: running `render_cprs_ch_png(...)` twice
+      with identical inputs produces byte-identical PNGs (same SHA-256 hash) for all
+      three fixture variants'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Renderer output is deterministic: running `render_cprs_fcm_png(...)` twice
+      with identical inputs produces byte-identical PNGs (same SHA-256 hash) for all
+      three fixture variants'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'Negative validation tests exist for `render_cprs_ch_png(...)` covering:
+      `exposures_df=None`, empty DataFrame, below-min-row-count per variant, and blank
+      counterparty name fields; all tests assert `ValueError` and required message
+      substrings'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: 'Negative validation tests exist for `render_cprs_fcm_png(...)` covering:
+      `exposures_df=None`, empty DataFrame, below-min-row-count per variant, and blank
+      counterparty name fields; all tests assert `ValueError` and required message
+      substrings'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: '`replace_screenshot_pictures(...)` only replaces pictures on slides where
+      BOTH conditions are met: (a) normalized section-title substring match AND (b)
+      the slide contains exactly the expected number of picture shapes with positions
+      matching expected coordinates within 0 EMUs; if (b) fails, no replacement is
+      performed for that slide'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: The PPTX replacement implementation contains a helper function that encapsulates
+      all usage of the private `python-pptx` API (`picture._element`), and call sites
+      use the helper rather than accessing `_element` directly
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: The helper function includes a docstring or inline comment that explicitly
+      states it relies on private `python-pptx` API (`_element`), and explains the
+      reason (e.g., required to swap image parts while keeping geometry)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: The workflow-generated PPTX opens without error using `python-pptx` after
+      replacements
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: 'Replacement does not append: for every targeted slide in the workflow
+      test, the number of picture shapes before and after replacement is identical'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: 'Replacement actually replaces: for every targeted slide in the workflow
+      test, at least one picture''s image part changes (e.g., related image SHA-256
+      differs) while picture count stays the same'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: 'Picture geometry is preserved: for each replaced picture shape, (left,
+      top, width, height) EMU values are exactly equal to the original values'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: Test exists with at least two similarly-titled slides where only one matches
+      expected picture count/geometry, and the "near match" slide remains unchanged
+      when geometry/count gating fails
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

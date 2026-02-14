@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +13,11 @@ import pytest
 
 from counter_risk.build import release
 from tests.utils.assertions import assert_numeric_outputs_close
+
+_FORBIDDEN_RUNNER_ENTRYPOINT_PATTERN = re.compile(
+    r"\bpython(?:\.exe)?\b|\bpy(?:\.exe)?\b|\.py\b",
+    re.IGNORECASE,
+)
 
 
 def _write_fake_repo(root: Path) -> None:
@@ -82,7 +88,7 @@ def test_assemble_release_creates_versioned_bundle_with_executable(
     assert list((bundle_dir / "fixtures").glob("*.xlsx"))
     assert (bundle_dir / "bin" / "counter-risk").is_file()
     runner_text = (bundle_dir / "run_counter_risk.cmd").read_text(encoding="utf-8")
-    assert "python" not in runner_text.lower()
+    assert _FORBIDDEN_RUNNER_ENTRYPOINT_PATTERN.search(runner_text) is None
     assert "%~dp0" in runner_text
     assert "%*" in runner_text
     assert (bundle_dir / "README_HOW_TO_RUN.md").is_file()
@@ -92,6 +98,19 @@ def test_assemble_release_creates_versioned_bundle_with_executable(
     assert manifest["version"] == "9.9.9"
     assert manifest["release_name"] == "9.9.9"
     assert manifest["artifacts"]["executable"] == ["bin/counter-risk"]
+
+
+def test_create_runner_file_directly_invokes_packaged_executable_only(tmp_path: Path) -> None:
+    bundle_dir = tmp_path / "bundle"
+    bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    runner_path = release._create_runner_file(bundle_dir)
+    runner_text = runner_path.read_text(encoding="utf-8")
+
+    assert _FORBIDDEN_RUNNER_ENTRYPOINT_PATTERN.search(runner_text) is None
+    assert '"%EXE_PATH%" %*' in runner_text
+    assert "counter-risk.exe" in runner_text
+    assert "counter-risk" in runner_text
 
 
 def test_assemble_release_requires_force_for_existing_bundle(
@@ -218,7 +237,7 @@ def test_assemble_release_fails_on_duplicate_template_filenames(
 
 
 def test_run_pyinstaller_raises_nonzero_exit(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir(parents=True, exist_ok=True)
@@ -234,9 +253,39 @@ def test_run_pyinstaller_raises_nonzero_exit(
         )
 
     monkeypatch.setattr(subprocess, "run", _failed_run)
+    caplog.set_level("INFO")
 
     with pytest.raises(ValueError, match="PyInstaller failed with exit code 2"):
         release._run_pyinstaller(repo_root, spec_path)
+    assert "PyInstaller completed with exit code 2" in caplog.text
+    assert "PyInstaller stdout:\nbuild log" in caplog.text
+    assert "PyInstaller stderr:\nerror log" in caplog.text
+    assert f"PyInstaller build failed for spec '{spec_path}'" in caplog.text
+
+
+def test_run_pyinstaller_logs_streams_on_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    spec_path = repo_root / "release.spec"
+    spec_path.write_text("# fake\n", encoding="utf-8")
+
+    def _successful_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(
+            args=["pyinstaller", "-y", str(spec_path)],
+            returncode=0,
+            stdout="success build log",
+            stderr="warning log",
+        )
+
+    monkeypatch.setattr(subprocess, "run", _successful_run)
+    caplog.set_level("INFO")
+
+    release._run_pyinstaller(repo_root, spec_path)
+    assert "PyInstaller completed with exit code 0" in caplog.text
+    assert "PyInstaller stdout:\nsuccess build log" in caplog.text
+    assert "PyInstaller stderr:\nwarning log" in caplog.text
 
 
 def test_validate_version_manifest_consistency_raises_on_mismatch(tmp_path: Path) -> None:
@@ -327,6 +376,6 @@ def test_release_bundle_executable_runs_fixture_replay_and_matches_numeric_fixtu
     assert_numeric_outputs_close(
         actual_numeric_values,
         expected_numeric_values,
-        atol=1e-9,
-        rtol=1e-9,
+        abs_tol=1e-9,
+        rel_tol=1e-9,
     )

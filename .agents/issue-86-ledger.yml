@@ -1,0 +1,1099 @@
+version: 1
+issue: 86
+base: main
+branch: codex/issue-86
+tasks:
+  - id: task-01
+    title: "Create `.github/workflows/release.yml` to: checkout \u2192 `actions/setup-python`\
+      \ \u2192 install deps \u2192 run full test suite \u2192 run `pyinstaller -y\
+      \ release.spec` \u2192 assemble a versioned release bundle \u2192 validate required\
+      \ artifacts (`VERSION`, `manifest.json`, `templates/`, default config file,\
+      \ `run_counter_risk.cmd`, `README` containing `How to run`, and the built executable)\
+      \ \u2192 upload the bundle as a workflow artifact (fail non-zero on any missing\
+      \ artifact)."
+    status: done
+    started_at: '2026-02-13T22:56:39Z'
+    finished_at: '2026-02-13T22:56:49Z'
+    commit: 0c817eec009051488093ff0f92a6226d2d282a20
+    notes: []
+  - id: task-02
+    title: 'Create the basic workflow file structure with checkout (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Create the basic workflow file structure with Python setup steps (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Add dependency installation (verify: dependencies updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'test suite execution steps to the workflow (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Add the PyInstaller build step that runs release.spec to the workflow
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Implement the versioned bundle assembly logic in the workflow (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Add validation steps that check for all required artifacts in the bundle
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Configure artifact upload with failure handling for missing artifacts
+      (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Implement `tests/integration/test_packaged_executable_assets.py` to run
+      `pyinstaller -y release.spec` via `subprocess.run(..., check=True)`, copy/move
+      only the packaged output into a temporary isolated directory (no repo paths),
+      execute the produced binary from that directory, and assert it locates/loads
+      the bundled default configuration and at least one template asset.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Create the test file with PyInstaller subprocess execution (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Create the test file with error handling (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Implement the isolated directory setup that copies only packaged output
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Add test logic to execute the binary from the isolated directory (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Define scope for: Assert that the executable successfully loads the bundled
+      default configuration (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Implement focused slice for: Assert that the executable successfully loads
+      the bundled default configuration (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Validate focused slice for: Assert that the executable successfully loads
+      the bundled default configuration (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Define scope for: Assert that the executable successfully loads at least
+      one template asset (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Implement focused slice for: Assert that the executable successfully loads
+      at least one template asset (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Validate focused slice for: Assert that the executable successfully loads
+      at least one template asset (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Implement `tests/integration/test_windows_runner_cmd.py` to be skipped
+      on non-Windows, copy `run_counter_risk.cmd` and the packaged executable into
+      a temp directory, execute the `.cmd` with `cwd` set to the temp directory, and
+      assert (a) executable path is resolved relative to the `.cmd` location, (b)
+      the `.cmd` does not invoke `python`/`py`/a `.py` entrypoint, and (c) CLI args
+      (including at least one `--flag value`) are forwarded unchanged.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Create the Windows-specific test file with platform skip decorator (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Implement temporary directory setup with cmd (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Implement temporary directory setup with executable files (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Define scope for: Add test execution logic that runs the cmd file from
+      the temp directory (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Implement focused slice for: Add test execution logic that runs the cmd
+      file from the temp directory (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Validate focused slice for: Add test execution logic that runs the cmd
+      file from the temp directory (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Assert that the executable path is resolved relative to cmd location (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Define scope for: Verify that the cmd file does not invoke Python interpreters
+      or py files'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Implement focused slice for: Verify that the cmd file does not invoke
+      Python interpreters or py files'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Validate focused slice for: Verify that the cmd file does not invoke Python
+      interpreters or py files'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Assert that CLI arguments including flags (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Assert that CLI arguments including values are forwarded correctly (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Write `tests/unit/test_template_bundling_duplicates.py` to create at least
+      two template source directories with a colliding template filename, invoke the
+      template bundling logic, and assert either a raised error listing all conflicting
+      filenames and source paths or a deterministic precedence rule documented in
+      code and validated by the test.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: Add or update `tests/utils/assertions.py` to include a shared numeric comparison
+      helper (e.g., `assert_numeric_outputs_close`) that accepts explicit `abs_tol`
+      and `rel_tol` (or provides clearly defined defaults).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: Update fixture-based transformation tests asserting numeric outputs (CSV/TSV/JSON/parquet/etc.)
+      to use `tests/utils/assertions.py` numeric helper instead of byte-for-byte equality
+      for numeric fields, and ensure at least one updated test passes explicit `abs_tol`
+      and `rel_tol`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Identify all fixture-based transformation tests that assert numeric outputs
+      (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Update CSV transformation tests to use the numeric comparison helper (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Update TSV transformation tests to use the numeric comparison helper (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'Update JSON transformation tests to use the numeric comparison helper
+      (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Update parquet transformation tests to use the numeric comparison helper
+      (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Ensure at least one test explicitly passes abs_tol (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'rel_tol parameters (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: Update `src/counter_risk/build/release.py` `_run_pyinstaller` to always
+      capture and log PyInstaller stdout and stderr on both success and failure paths.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: Update `resolve_runtime_path` in `src/counter_risk/**/runtime_paths.py`
+      to explicitly raise a clear exception or emit a warning when an asset cannot
+      be found in any bundle root, and write/extend `tests/unit/test_runtime_paths.py`
+      to cover the missing-asset and misconfiguration scenarios (asserting message
+      contents include the asset name and at least one searched location/root).
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Define scope for: Update resolve_runtime_path to raise an exception or
+      emit a warning for missing assets (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Implement focused slice for: Update resolve_runtime_path to raise an exception
+      or emit a warning for missing assets (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'Validate focused slice for: Update resolve_runtime_path to raise an exception
+      or emit a warning for missing assets (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: 'Ensure the error message includes the asset name (verify: confirm completion
+      in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: 'searched locations (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: 'Add unit test for the missing-asset scenario with message validation (verify:
+      confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: 'Add unit test for misconfiguration scenarios like incorrect MEIPASS (verify:
+      config validated)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: Verify that tests assert message contents include asset name
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: 'searched roots (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: Fix `src/counter_risk/pipeline/run.py` `_refresh_ppt_links` to no longer
+      silently swallow COM failures (re-raise with context or return a structured
+      explicit error), and add `tests/unit/test_refresh_ppt_links_errors.py` using
+      mocking plus `caplog` and/or exception assertions to verify the failure is surfaced.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: 'Update _refresh_ppt_links to re-raise COM failures with added context
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: 'Define scope for: Create the test file test_refresh_ppt_links_errors.py
+      with basic structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: 'Implement focused slice for: Create the test file test_refresh_ppt_links_errors.py
+      with basic structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: 'Validate focused slice for: Create the test file test_refresh_ppt_links_errors.py
+      with basic structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: 'Add test that uses mocking to force a COM operation failure (verify: tests
+      pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: Add assertions that verify the failure is surfaced via exception or logging
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: Verify that error messages contain contextual information about the failure
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: '`.github/workflows/release.yml` exists on the default branch.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: The `release` workflow uses `actions/setup-python` and installs project
+      dependencies before running tests/build steps.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: The `release` workflow runs the full Python test suite before building
+      the release bundle.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: The `release` workflow runs `pyinstaller -y release.spec`.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-67
+    title: The `release` workflow assembles and uploads a versioned release bundle
+      directory whose name includes the version value.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-68
+    title: 'The `release` workflow validates the bundle contains: `VERSION`, `manifest.json`,
+      `templates/` directory, default configuration file, `run_counter_risk.cmd`,
+      `README` containing a line with substring `How to run`, and the built executable.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-69
+    title: The `release` workflow exits non-zero if any required artifact is missing
+      from the assembled bundle.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-70
+    title: '`tests/integration/test_packaged_executable_assets.py` exists and is collected
+      by pytest.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-71
+    title: The packaged-executable integration test runs `pyinstaller -y release.spec`
+      and fails if the command exits non-zero.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-72
+    title: The packaged-executable integration test executes the produced binary from
+      a temporary isolated directory containing only the packaged output (not the
+      repository).
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-73
+    title: The packaged-executable integration test asserts the executable successfully
+      locates and loads the bundled default configuration when run from the isolated
+      directory.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-74
+    title: The packaged-executable integration test asserts the executable successfully
+      locates and loads at least one bundled template asset when run from the isolated
+      directory.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-75
+    title: '`tests/integration/test_windows_runner_cmd.py` exists and is skipped automatically
+      on non-Windows platforms.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-76
+    title: The Windows integration test executes `run_counter_risk.cmd` from a temporary
+      directory (separate from repo root) and verifies it launches the packaged executable
+      using a path resolved relative to the `.cmd` file location.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-77
+    title: '`run_counter_risk.cmd` does not invoke `python`, `py`, or a `.py` entrypoint;
+      it directly invokes the built executable.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-78
+    title: The Windows integration test verifies CLI args passed to `run_counter_risk.cmd`
+      are forwarded unchanged to the packaged executable, including at least one flag
+      and one value.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-79
+    title: '`tests/unit/test_template_bundling_duplicates.py` exists and includes
+      a test that creates at least two different template source directories containing
+      a colliding template filename.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-80
+    title: When duplicate template filenames are present, bundling logic either (A)
+      raises an exception whose message includes every conflicting filename and all
+      corresponding source paths, OR (B) applies a deterministic precedence rule documented
+      in code and validated by unit tests.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-81
+    title: '`tests/utils/assertions.py` contains a shared numeric comparison helper
+      (e.g., `assert_numeric_outputs_close`) that accepts explicit absolute and relative
+      tolerances (or exposes clearly defined defaults).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-82
+    title: All fixture-based transformation tests that assert numeric outputs (CSV/TSV/JSON/parquet/etc.)
+      use the shared numeric comparison helper and do not do byte-for-byte equality
+      checks for numeric fields.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-83
+    title: At least one updated fixture-based test calls the numeric helper with explicit
+      `abs_tol` and `rel_tol`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-84
+    title: '`src/counter_risk/build/release.py` `_run_pyinstaller` captures and logs
+      PyInstaller stdout and stderr on success.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-85
+    title: '`src/counter_risk/build/release.py` `_run_pyinstaller` captures and logs
+      PyInstaller stdout and stderr on failure before raising/returning a non-zero
+      result.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-86
+    title: '`resolve_runtime_path` emits an explicit failure signal on missing assets:
+      either raises a specific exception with a clear message or emits a warning containing
+      the asset name and attempted roots.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-87
+    title: '`tests/unit/test_runtime_paths.py` covers the missing-asset scenario and
+      asserts the chosen behavior (exception or warning) including message contents
+      mentioning the requested asset and at least one searched location.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-88
+    title: '`tests/unit/test_runtime_paths.py` includes a misconfiguration scenario
+      (e.g., wrong bundle root / missing env var / incorrect `_MEIPASS`) and asserts
+      failure is surfaced (exception or warning) rather than silently falling back
+      to an unrelated path.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-89
+    title: '`src/counter_risk/pipeline/run.py` `_refresh_ppt_links` does not silently
+      swallow COM exceptions; it either re-raises with context or returns a structured
+      explicit error value callers can check.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-90
+    title: '`tests/unit/test_refresh_ppt_links_errors.py` exists and includes a test
+      that forces a COM operation failure and asserts the failure is surfaced via
+      (A) a raised exception containing contextual information, or (B) an explicit
+      structured error plus an error log record.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-91
+    title: Add a GitHub Actions workflow at `.github/workflows/release.yml` that sets
+      up Python, installs dependencies, runs the full test suite, runs `pyinstaller
+      -y release.spec`, assembles the versioned release bundle, validates required
+      artifacts exist (VERSION, manifest.json, templates/, default config, run_counter_risk.cmd,
+      README containing a title line with 'How to run', and the built executable),
+      fails on any missing artifact, and uploads the bundle as a workflow artifact.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-92
+    title: Implement an end-to-end integration test that builds via `pyinstaller -y
+      release.spec`, then executes the produced binary from a temporary, isolated
+      directory (without repository paths available) and asserts it can locate and
+      load the bundled default configuration and template assets.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-93
+    title: Add an automated Windows test that executes `run_counter_risk.cmd` from
+      a temp directory and verifies it resolves the executable path relative to the
+      `.cmd` location (not via python) and forwards CLI args to the bundled executable
+      correctly.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-94
+    title: Add unit tests for template bundling duplicate detection by creating conflicting
+      template filenames across multiple source directories and asserting either (A)
+      a raised error includes all conflicting filenames and their source paths, or
+      (B) a documented precedence rule is applied deterministically.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-95
+    title: Update all fixture-based transformation tests that assert numeric outputs
+      (CSV/TSV/JSON/parquet/etc.) to use a shared helper (e.g., `assert_numeric_outputs_close`)
+      with explicit abs/rel tolerances, replacing any byte-for-byte comparisons for
+      numeric fields.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-96
+    title: Update `src/counter_risk/build/release.py` (`_run_pyinstaller`) to always
+      capture and log PyInstaller stdout/stderr on both success and failure so CI
+      logs contain actionable build output.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-97
+    title: 'Tighten and test runtime path resolution behavior: update `resolve_runtime_path`
+      to either raise a clear exception or emit a warning when an asset cannot be
+      found in any bundle root, and add unit tests covering the chosen behavior (including
+      a misconfiguration scenario).'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-98
+    title: Adjust `pipeline/run.py` (`_refresh_ppt_links`) error handling so COM operation
+      failures are not silently swallowed (either re-raise with context or return
+      a structured/explicit error), and add tests that assert failures are surfaced
+      via logging or exceptions.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-99
+    title: A GitHub Actions workflow file exists at `.github/workflows/release.yml`
+      on the default branch.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-100
+    title: The `release` workflow provisions Python using `actions/setup-python` and
+      installs project dependencies prior to running tests/build steps.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-101
+    title: The `release` workflow runs the full Python test suite before building
+      the release bundle.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-102
+    title: The `release` workflow runs `pyinstaller -y release.spec` as part of the
+      workflow execution.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-103
+    title: The `release` workflow assembles a versioned release bundle directory (name
+      includes the version value) and uploads it as a workflow artifact.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-104
+    title: 'The `release` workflow validates the bundle contains all required artifacts:
+      `VERSION`, `manifest.json`, `templates/` directory, default configuration file,
+      `run_counter_risk.cmd`, `README` containing a line with the substring `How to
+      run`, and the built executable.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-105
+    title: The `release` workflow fails the job with a non-zero exit code if any required
+      artifact is missing from the assembled bundle.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-106
+    title: An integration test file exists at `tests/integration/test_packaged_executable_assets.py`
+      and is collected by pytest.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-107
+    title: The integration test executes `pyinstaller -y release.spec` and fails if
+      the PyInstaller command exits non-zero.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-108
+    title: The integration test copies/moves only the produced packaged output (not
+      the repository) into a temporary isolated directory and executes the binary
+      from that isolated directory.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-109
+    title: The integration test asserts the packaged executable successfully locates
+      and loads the bundled default configuration asset when executed from the isolated
+      directory.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-110
+    title: The integration test asserts the packaged executable successfully locates
+      and loads at least one bundled template asset when executed from the isolated
+      directory.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-111
+    title: A Windows-specific integration test file exists at `tests/integration/test_windows_runner_cmd.py`
+      and is skipped automatically on non-Windows platforms.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-112
+    title: The Windows integration test executes `run_counter_risk.cmd` from a temporary
+      directory (separate from repo root) and verifies it launches the packaged executable
+      using a path resolved relative to the `.cmd` file location.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-113
+    title: '`run_counter_risk.cmd` does not invoke `python`, `py`, or a `.py` entrypoint;
+      it directly invokes the built executable.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-114
+    title: The Windows integration test verifies that CLI arguments passed to `run_counter_risk.cmd`
+      are forwarded unchanged to the packaged executable (including at least one flag
+      and one value).
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-115
+    title: A unit test file exists at `tests/unit/test_template_bundling_duplicates.py`
+      and includes a test case that creates at least two different template source
+      directories containing a colliding template filename.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-116
+    title: When duplicate template filenames are present, the bundling logic either
+      (A) raises an exception whose message includes every conflicting filename and
+      all corresponding source paths, OR (B) applies a deterministic precedence rule
+      documented in code and validated by unit tests.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-117
+    title: A shared numeric comparison helper exists (or is updated) at `tests/utils/assertions.py`
+      (e.g., `assert_numeric_outputs_close`) and accepts explicit absolute and relative
+      tolerances as parameters (or exposes clearly defined defaults).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-118
+    title: All fixture-based transformation tests that assert numeric outputs (CSV/TSV/JSON/parquet/etc.)
+      use the shared numeric comparison helper and do not perform byte-for-byte equality
+      checks for numeric fields.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-119
+    title: At least one updated fixture-based test asserts numeric results within
+      both absolute and relative tolerance (i.e., the test calls the helper with explicit
+      tolerances rather than relying on implicit float equality).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-120
+    title: '`src/counter_risk/build/release.py` `_run_pyinstaller` captures PyInstaller
+      stdout and stderr and logs them on success.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-121
+    title: '`src/counter_risk/build/release.py` `_run_pyinstaller` captures PyInstaller
+      stdout and stderr and logs them on failure before raising/returning a non-zero
+      result.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-122
+    title: '`resolve_runtime_path` behavior is tightened such that when an asset cannot
+      be found in any bundle root it either raises a specific exception type with
+      a clear message OR emits a warning containing the asset name and attempted roots.'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-123
+    title: Unit tests in `tests/unit/test_runtime_paths.py` cover the missing-asset
+      scenario and assert the chosen behavior (exception or warning) including message
+      contents mentioning the requested asset and at least one searched location.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-124
+    title: Unit tests in `tests/unit/test_runtime_paths.py` include a misconfiguration
+      scenario (e.g., wrong bundle root / missing env var / incorrect `_MEIPASS`)
+      and assert that the failure is surfaced (exception or warning) rather than silently
+      falling back to an unrelated path.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-125
+    title: '`src/counter_risk/pipeline/run.py` `_refresh_ppt_links` no longer silently
+      swallows COM exceptions; it either re-raises an exception with added context
+      or returns a structured explicit error object/value that callers can check.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-126
+    title: A unit test file exists at `tests/unit/test_refresh_ppt_links_errors.py`
+      and includes a test that forces a COM operation failure and asserts the failure
+      is surfaced via (A) a raised exception containing contextual information, or
+      (B) an explicit structured error plus an error log record.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-127
+    title: "Create `.github/workflows/release.yml` to: checkout \u2192 `actions/setup-python`\
+      \ \u2192 install deps \u2192 run full test suite \u2192 run `pyinstaller -y\
+      \ release.spec` \u2192 assemble a versioned release bundle \u2192 validate required\
+      \ artifacts (`VERSION`, `manifest.json`, `templates/`, default config file,\
+      \ `run_counter_risk.cmd`, `README` containing `How to run`, and the built executable)\
+      \ \u2192 upload the bundle as a workflow artifact (fail non-zero on any missing\
+      \ artifact). (AGENT_LIMITATIONS: Cannot modify .github/workflows/*.yml (protected)\
+      \ | Request manual creation of the workflow file by a maintainer with repository\
+      \ write access, or provide the complete workflow YAML content for manual addition.)"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
