@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Add fixture workbook at a concrete path (e.g., `tests/fixtures/nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx`)
       containing representative exposure summary data needed for WAL
-    status: doing
+    status: done
     started_at: '2026-02-14T20:51:39Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-14T20:51:49Z'
+    commit: 8e39efc12f2e62413c0ba419c1f447f9e7c575f5
     notes: []
   - id: task-02
     title: Create `src/counter_risk/parsers/exposure_maturity_schedule.py` with parsing
