@@ -222,7 +222,9 @@ def test_historical_workbook_update_normalized_headers_and_run_dir_output(
         sheet_by_path[filename] = worksheet
         return _FakeWorkbook({"Total": worksheet})
 
-    monkeypatch.setitem(sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=_load_workbook))
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=_load_workbook)
+    )
 
     output_paths = run_module._update_historical_outputs(
         run_dir=run_dir,
