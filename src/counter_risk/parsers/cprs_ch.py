@@ -238,7 +238,10 @@ def _normalize_text(value: str | None) -> str:
 def _scan_segments(rows: dict[int, dict[int, str | None]]) -> list[SegmentMetadata]:
     segments: list[SegmentMetadata] = []
     for row_number in sorted(rows):
-        label = _normalize_text(rows[row_number].get(1))
+        row = rows[row_number]
+        # Some MOSERS exports place segment labels in column B while legacy
+        # drop-in templates place them in column A.
+        label = _normalize_text(row.get(1) or row.get(2))
         if not label:
             continue
 
@@ -356,7 +359,9 @@ def _build_column_map(
 
 def _header_matches_alias(canonical_name: str, normalized_header: str, alias: str) -> bool:
     if canonical_name == "Notional":
-        return normalized_header == alias
+        if normalized_header == alias:
+            return True
+        return normalized_header.endswith(alias) and "change" not in normalized_header
     return normalized_header == alias or alias in normalized_header
 
 
