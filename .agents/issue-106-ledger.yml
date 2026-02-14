@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Add `tests/fixtures/mosers_reference.xlsx` as an approved MOSERS-format
       workbook fixture used for strict comparisons in tests
-    status: doing
+    status: done
     started_at: '2026-02-14T04:21:10Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-14T04:21:21Z'
+    commit: 074da376451c61d3109d455fd521619d14438de3
     notes: []
   - id: task-02
     title: Create the `tests/utils/xlsx_compare.py` module with basic structure and
