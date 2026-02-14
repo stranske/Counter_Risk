@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 from zipfile import ZipFile
 
-
 RUNNER_WORKBOOK_PATH = Path("Runner.xlsm")
 VBA_PROJECT_BIN_PATH = "xl/vbaProject.bin"
 
