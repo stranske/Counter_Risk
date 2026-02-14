@@ -36,17 +36,28 @@ Public Sub OpenOutputFolder_Click()
     On Error GoTo OpenOutputFolderError
 
     Dim selectedDate As String
-    Dim outputDir As String
+    Dim resolvedPath As String
+    Dim fileSystem As Object
     Dim status As LaunchStatus
 
     selectedDate = ReadSelectedDate()
-    outputDir = ResolveOutputDir(ResolveRepoRoot(), selectedDate)
-    If Not DirectoryExists(outputDir) Then
-        WriteResult "Error Directory not found: " & outputDir
+    resolvedPath = ResolveOutputDir(ResolveRepoRoot(), selectedDate)
+    If Dir$(resolvedPath, vbDirectory) = "" Then
+        Set fileSystem = CreateObject("Scripting.FileSystemObject")
+        If Not fileSystem.FolderExists(resolvedPath) Then
+            MsgBox "Directory not found" & resolvedPath
+            WriteResult "Error Directory not found" & resolvedPath
+            Exit Sub
+        End If
+    End If
+
+    If Not DirectoryExists(resolvedPath) Then
+        MsgBox "Directory not found" & resolvedPath
+        WriteResult "Error Directory not found" & resolvedPath
         Exit Sub
     End If
 
-    status = OpenDirectory(outputDir)
+    status = OpenDirectory(resolvedPath)
     WriteLaunchResult status
     Exit Sub
 
@@ -56,10 +67,11 @@ End Sub
 
 Public Function BuildRunArguments(ByVal asOfMonth As String, ByVal mode As RunnerMode) As String
     Dim outputDir As String
+    Dim parsedDate As Date
 
+    parsedDate = ParseAsOfMonth(asOfMonth)
     outputDir = ResolveOutputDir(".", asOfMonth)
-
-    BuildRunArguments = BuildCommand(ModeToString(mode), asOfMonth, outputDir)
+    BuildRunArguments = BuildCommandArguments(ModeToString(mode), parsedDate, outputDir)
 End Function
 
 Public Function BuildCommand( _
@@ -68,11 +80,50 @@ Public Function BuildCommand( _
     ByVal outputDir As String _
 ) As String
     Dim parsedDate As Date
-    parsedDate = ParseAsOfMonth(selectedDate)
+    Dim parsedDateValue As String
+    Dim resolvedOutputDir As String
+    Dim command As String
+    Dim shellObject As Object
+    Dim shellCommand As String
+    Dim exitCode As Long
 
-    BuildCommand = "run --fixture-replay --config " & _
-                   QuoteArg(ResolveConfigPath(ResolveRunnerMode(runMode))) & _
-                   " --output-dir " & QuoteArg(outputDir)
+    On Error GoTo BuildCommandError
+    WriteStatus "Running..."
+
+    parsedDate = ParseAsOfMonth(selectedDate)
+    parsedDateValue = Format$(parsedDate, "yyyy-mm-dd")
+    resolvedOutputDir = NormalizePathSeparators(ThisWorkbook.Path) & "\runs\" & parsedDateValue
+    outputDir = resolvedOutputDir
+
+    command = BuildCommandArguments(runMode, parsedDate, resolvedOutputDir)
+    shellCommand = BuildExecutableShellCommand(ResolveExecutablePath(), command)
+
+    Set shellObject = CreateObject("WScript.Shell")
+    exitCode = CLng(shellObject.Run(shellCommand, 0, True))
+    If exitCode <> 0 Then
+        Err.Raise SHELL_ERROR_BASE + exitCode, "RunnerLaunch.BuildCommand", _
+                  "Process exited with code " & CStr(exitCode)
+    End If
+
+    WriteStatus "Success"
+    BuildCommand = command
+    Exit Function
+
+BuildCommandError:
+    WriteStatus "Error"
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+    BuildCommand = ""
+End Function
+
+Private Function BuildCommandArguments( _
+    ByVal runMode As String, _
+    ByVal parsedDate As Date, _
+    ByVal outputDir As String _
+) As String
+    BuildCommandArguments = "run --fixture-replay --config " & _
+                            QuoteArg(ResolveConfigPath(ResolveRunnerMode(runMode))) & _
+                            " --as-of-month " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd")) & _
+                            " --output-dir " & QuoteArg(outputDir)
 End Function
 
 Public Function BuildExecutableCommand( _
@@ -175,15 +226,14 @@ Private Sub RunModeClick(ByVal runMode As String)
     Dim selectedDate As String
     Dim outputDir As String
     Dim command As String
-    Dim status As LaunchStatus
 
     selectedDate = ReadSelectedDate()
     outputDir = ResolveOutputDir(ResolveRepoRoot(), selectedDate)
     command = BuildCommand(runMode, selectedDate, outputDir)
-
-    WriteStatus "Running..."
-    status = ExecuteRunnerCommand(ResolveExecutablePath(), command)
-    WriteLaunchResult status
+    If LenB(command) = 0 Then
+        Exit Sub
+    End If
+    WriteResult "Success"
     Exit Sub
 
 RunModeClickError:
