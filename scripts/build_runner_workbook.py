@@ -48,7 +48,7 @@ def _inline_str_cell(cell_ref: str, value: str) -> str:
 def _runner_sheet_xml(validation_formula: str) -> str:
     return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <dimension ref="A1:D12"/>
+  <dimension ref="A1:E12"/>
   <sheetViews>
     <sheetView workbookViewId="0"/>
   </sheetViews>
@@ -69,6 +69,7 @@ def _runner_sheet_xml(validation_formula: str) -> str:
       {_inline_str_cell("B5", "Run Ex Trend")}
       {_inline_str_cell("C5", "Run Trend")}
       {_inline_str_cell("D5", "Open Output Folder")}
+      {_inline_str_cell("E5", "Ask about this run")}
     </row>
   </sheetData>
   <dataValidations count="1">
