@@ -8,7 +8,6 @@ from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
 
-
 REQUIRED_RUN_SNIPPETS = (
     'python -m pip install -e ".[dev]"',
     "pytest tests/",
