@@ -2,6 +2,15 @@
 
 set -euo pipefail
 
+print_needs_human_followup() {
+  local ref_name="$1"
+  echo "[ERROR] needs-human: release workflow updates require agent-high-privilege or a manual maintainer action." >&2
+  echo "[ERROR] Apply label: needs-human" >&2
+  echo "[ERROR] Acceptance criteria requiring manual completion on '${ref_name}':" >&2
+  echo "[ERROR] - [ ] .github/workflows/release.yml exists on the default branch and triggers via workflow_dispatch" >&2
+  echo "[ERROR] - [ ] The workflow_dispatch input version (if present) has required: false or omits required" >&2
+}
+
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
   echo "Usage: $0 <workflow_file> <ref> [artifact_prefix]" >&2
   exit 2
@@ -31,7 +40,7 @@ fi
 if [ ! -f "${WORKFLOW_PATH}" ]; then
   echo "[ERROR] Workflow file not found: ${WORKFLOW_FILE}" >&2
   echo "[ERROR] Expected path: ${WORKFLOW_PATH}" >&2
-  echo "[ERROR] needs-human: release workflow must be promoted in a high-privilege workflow-sync environment." >&2
+  print_needs_human_followup "${REF_NAME}"
   echo "[ERROR] Required manual follow-up on branch '${REF_NAME}':" >&2
   echo "[ERROR] 1) Create .github/workflows/release.yml from docs/release.yml.draft." >&2
   echo "[ERROR] 2) Ensure the workflow includes trigger: on.workflow_dispatch." >&2

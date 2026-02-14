@@ -50,6 +50,15 @@ def test_verify_release_workflow_dispatch_reports_missing_workflow_file() -> Non
     assert result.returncode != 0
     assert "Workflow file not found" in output
     assert "needs-human" in output
+    assert "Apply label: needs-human" in output
+    assert (
+        "- [ ] .github/workflows/release.yml exists on the default branch and triggers via workflow_dispatch"
+        in output
+    )
+    assert (
+        "- [ ] The workflow_dispatch input version (if present) has required: false or omits required"
+        in output
+    )
     assert "Required manual follow-up on branch 'main'" in output
     assert "docs/release.yml.draft" in output
     assert ".github/workflows/release.yml" in output
