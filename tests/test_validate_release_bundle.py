@@ -33,21 +33,29 @@ def _make_test_env(
     tmp_path: Path,
     *,
     uname_output: str = "Linux",
+    include_gh: bool = True,
+    include_uname: bool = True,
+    isolate_path: bool = False,
     extra_env: dict[str, str] | None = None,
 ) -> dict[str, str]:
     env = os.environ.copy()
     bin_dir = tmp_path / "test-bin"
     bin_dir.mkdir(parents=True, exist_ok=True)
 
-    gh_path = bin_dir / "gh"
-    gh_path.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
-    gh_path.chmod(0o755)
+    if include_gh:
+        gh_path = bin_dir / "gh"
+        gh_path.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+        gh_path.chmod(0o755)
 
-    uname_path = bin_dir / "uname"
-    uname_path.write_text(f"#!/usr/bin/env bash\necho '{uname_output}'\n", encoding="utf-8")
-    uname_path.chmod(0o755)
+    if include_uname:
+        uname_path = bin_dir / "uname"
+        uname_path.write_text(f"#!/usr/bin/env bash\necho '{uname_output}'\n", encoding="utf-8")
+        uname_path.chmod(0o755)
 
-    env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
+    if isolate_path:
+        env["PATH"] = str(bin_dir)
+    else:
+        env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
     if extra_env:
         env.update(extra_env)
     return env
@@ -81,6 +89,27 @@ def test_validate_bundle_success(complete_bundle_dir: Path, tmp_path: Path) -> N
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_validate_bundle_fails_when_gh_is_missing(
+    complete_bundle_dir: Path, tmp_path: Path
+) -> None:
+    env = _make_test_env(tmp_path, include_gh=False, include_uname=False, isolate_path=True)
+
+    result = subprocess.run(
+        ["/bin/bash", str(SCRIPT_PATH), str(complete_bundle_dir)],
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+    )
+
+    combined_output = f"{result.stdout}\n{result.stderr}".lower()
+    assert result.returncode != 0
+    assert "gh" in combined_output
+    assert any(
+        keyword in combined_output for keyword in ("not found", "missing", "required", "install")
+    )
 
 
 def test_validate_bundle_missing_artifact(
@@ -146,3 +175,23 @@ def test_windows_detection_env_signals(
         assert result.returncode != 0
         combined_output = f"{result.stdout}\n{result.stderr}"
         assert "counter-risk" in combined_output
+
+
+def test_windows_detection_falls_back_to_env_when_uname_missing(tmp_path: Path) -> None:
+    bundle_dir = tmp_path / "release" / "1.2.3"
+    _write_release_artifacts(bundle_dir, include_unix_binary=False, include_windows_binary=True)
+    env = _make_test_env(
+        tmp_path,
+        include_uname=False,
+        extra_env={"OS": "Windows_NT"},
+    )
+
+    result = subprocess.run(
+        [str(SCRIPT_PATH), str(bundle_dir)],
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
