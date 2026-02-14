@@ -5,10 +5,10 @@ These helpers keep launch decision logic testable in Python without Excel automa
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
-from typing import Callable
 
 SHELL_ERROR_BASE = 7100
 
