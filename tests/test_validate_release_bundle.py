@@ -97,14 +97,21 @@ def test_validate_bundle_missing_artifact(
         env=env,
     )
 
-    combined_output = f"{result.stdout}\n{result.stderr}".lower()
+    stdout_lower = result.stdout.lower()
+    stderr_lower = result.stderr.lower()
+    missing_artifact_lower = missing_artifact.lower()
 
-    assert result.returncode != 0
+    assert result.returncode != 0, "Expected a non-zero exit code when an artifact is missing."
     assert (
-        missing_artifact in combined_output
-        or f"/{missing_artifact}" in combined_output
-        or "missing" in combined_output
-    )
+        missing_artifact_lower in stdout_lower
+        or missing_artifact_lower in stderr_lower
+        or f"/{missing_artifact_lower}" in stdout_lower
+        or f"/{missing_artifact_lower}" in stderr_lower
+        or f"\\{missing_artifact_lower}" in stdout_lower
+        or f"\\{missing_artifact_lower}" in stderr_lower
+        or "missing" in stdout_lower
+        or "missing" in stderr_lower
+    ), "Expected output to reference the missing artifact or include 'missing'."
 
 
 @pytest.mark.parametrize(
