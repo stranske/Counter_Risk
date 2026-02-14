@@ -124,6 +124,10 @@ module = "counter_risk.integrations.powerpoint_com"
 disable_error_code = ["import-untyped"]
 
 [[tool.mypy.overrides]]
+module = "counter_risk.mosers.workbook_generation"
+disable_error_code = ["import-untyped"]
+
+[[tool.mypy.overrides]]
 module = "scripts.*"
 ignore_errors = true
 
