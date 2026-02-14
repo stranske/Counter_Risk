@@ -11,7 +11,6 @@ from counter_risk.parsers.nisa import (
     parse_nisa_all_programs,
 )
 
-
 NisaExTrendData = NisaAllProgramsData
 
 
