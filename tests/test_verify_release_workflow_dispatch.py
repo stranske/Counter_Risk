@@ -50,6 +50,7 @@ def test_verify_release_workflow_dispatch_reports_missing_workflow_file() -> Non
     assert 'python -m pip install -e ".[dev]"' in output
     assert "pyinstaller -y release.spec" in output
     assert "workflow_dispatch.inputs.version" in output
+    assert "cp docs/release.yml.draft .github/workflows/release.yml" in output
 
 
 def test_verify_release_workflow_dispatch_rejects_draft_path() -> None:
