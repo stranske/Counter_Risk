@@ -21,7 +21,7 @@ from tests.utils.assertions import assert_numeric_outputs_close
 
 def _load_openpyxl_or_fail() -> Any:
     try:
-        import openpyxl
+        import openpyxl  # type: ignore[import-untyped]
     except ModuleNotFoundError as exc:
         pytest.fail(f"openpyxl must be installed for drop-in template fixture tests: {exc}")
     return openpyxl

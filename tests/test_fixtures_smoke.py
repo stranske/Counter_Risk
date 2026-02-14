@@ -5,6 +5,23 @@ from pathlib import Path
 import pytest
 
 
+def test_raw_nisa_all_programs_fixture_exists_and_opens() -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+
+    fixture_path = Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx")
+    assert fixture_path.exists(), f"Missing required fixture: {fixture_path}"
+
+    workbook = openpyxl.load_workbook(
+        filename=fixture_path,
+        read_only=True,
+        data_only=True,
+    )
+    try:
+        assert workbook.sheetnames, "Raw NISA fixture workbook has no worksheets."
+    finally:
+        workbook.close()
+
+
 def test_fixture_workbooks_and_presentations_open() -> None:
     pptx = pytest.importorskip("pptx")
     openpyxl = pytest.importorskip("openpyxl")

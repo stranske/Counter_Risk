@@ -218,6 +218,47 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
         assert variant in manifest["top_changes_per_variant"]
 
 
+def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"raw_nisa_all_programs_xlsx: {fixtures / 'NISA Monthly All Programs - Raw.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    generated_mosers_output = run_dir / "all_programs-mosers-input.xlsx"
+    assert generated_mosers_output.exists()
+
+    from openpyxl import load_workbook  # type: ignore[import-untyped]
+
+    workbook = load_workbook(generated_mosers_output, read_only=True, data_only=True)
+    try:
+        assert workbook.sheetnames == ["CPRS - CH", "CPRS - FCM"]
+    finally:
+        workbook.close()
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert "raw_nisa_all_programs_xlsx" in manifest["input_hashes"]
+    assert "Generated All Programs MOSERS workbook from raw NISA input" in manifest["warnings"]
+
+
 def _write_valid_config(tmp_path: Path, output_root: Path) -> Path:
     fixtures = Path("tests/fixtures")
     config_path = tmp_path / "config.yml"
