@@ -47,6 +47,71 @@ def test_runner_workbook_exists() -> None:
     assert Path("Runner.xlsm").is_file(), "Runner.xlsm must be committed to the repository root."
 
 
+def test_runner_workbook_has_required_ooxml_structure_and_content_types() -> None:
+    workbook_path = Path("Runner.xlsm")
+    with ZipFile(workbook_path) as zip_file:
+        members = set(zip_file.namelist())
+        expected_members = {
+            "[Content_Types].xml",
+            "_rels/.rels",
+            "docProps/app.xml",
+            "docProps/core.xml",
+            "xl/workbook.xml",
+            "xl/_rels/workbook.xml.rels",
+            "xl/styles.xml",
+            "xl/vbaProject.bin",
+            "xl/worksheets/sheet1.xml",
+            "xl/worksheets/sheet2.xml",
+        }
+        assert expected_members.issubset(members)
+
+        content_types_root = _read_xml(zip_file, "[Content_Types].xml")
+        overrides = content_types_root.findall(
+            "{http://schemas.openxmlformats.org/package/2006/content-types}Override"
+        )
+        override_content_types = {
+            node.attrib["PartName"]: node.attrib["ContentType"] for node in overrides
+        }
+
+        assert (
+            override_content_types["/xl/workbook.xml"]
+            == "application/vnd.ms-excel.sheet.macroEnabled.main+xml"
+        )
+        assert (
+            override_content_types["/xl/vbaProject.bin"] == "application/vnd.ms-office.vbaProject"
+        )
+        assert (
+            override_content_types["/xl/worksheets/sheet1.xml"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+        )
+        assert (
+            override_content_types["/xl/worksheets/sheet2.xml"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+        )
+        assert (
+            override_content_types["/xl/styles.xml"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"
+        )
+
+        with zip_file.open("xl/vbaProject.bin") as handle:
+            vba_project = handle.read()
+        assert len(vba_project) >= 1024
+
+        workbook_rels_root = _read_xml(zip_file, "xl/_rels/workbook.xml.rels")
+        rels = workbook_rels_root.findall("pr:Relationship", NAMESPACES)
+        vba_project_rel = next(
+            (
+                rel
+                for rel in rels
+                if rel.attrib.get("Type")
+                == "http://schemas.microsoft.com/office/2006/relationships/vbaProject"
+            ),
+            None,
+        )
+        assert vba_project_rel is not None
+        assert vba_project_rel.attrib.get("Target") == "vbaProject.bin"
+
+
 def test_runner_workbook_contains_month_selector_dropdown() -> None:
     workbook_path = Path("Runner.xlsm")
     with ZipFile(workbook_path) as zip_file:
