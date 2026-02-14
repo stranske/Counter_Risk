@@ -18,6 +18,14 @@ from counter_risk.writers.dropin_templates import (
 from tests.utils.assertions import assert_numeric_outputs_close
 
 
+def _load_openpyxl_or_fail() -> Any:
+    try:
+        import openpyxl
+    except ModuleNotFoundError as exc:
+        pytest.fail(f"openpyxl must be installed for drop-in template fixture tests: {exc}")
+    return openpyxl
+
+
 def test_fill_dropin_template_raises_for_missing_template(tmp_path: Path) -> None:
     missing = tmp_path / "missing-template.xlsx"
 
@@ -461,7 +469,7 @@ def _find_metric_columns(worksheet: Any) -> dict[str, int]:
 def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
     tmp_path: Path,
 ) -> None:
-    openpyxl = pytest.importorskip("openpyxl")
+    openpyxl = _load_openpyxl_or_fail()
 
     template = Path("tests/fixtures/NISA Drop-In Template - All Programs.xlsx")
     output = tmp_path / "all-programs-output.xlsx"
@@ -542,11 +550,22 @@ def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
         "JP Morgan": 2550.0,
         "Societe Generale": 3150.0,
     }
+    expected_tips = {
+        "Citigroup": 110.0,
+        "Bank of America, NA": 210.0,
+        "Goldman Sachs Int'l": 310.0,
+        "JP Morgan": 410.0,
+        "Societe Generale": 510.0,
+    }
     actual_notional: dict[str, float] = {}
+    actual_tips: dict[str, float] = {}
     for counterparty in expected_notional:
         row = _find_row_by_label(worksheet, counterparty)
         actual_notional[counterparty] = float(
             worksheet.cell(row=row, column=metric_columns["notional"]).value
+        )
+        actual_tips[counterparty] = float(
+            worksheet.cell(row=row, column=metric_columns["tips"]).value
         )
 
     assert_numeric_outputs_close(
@@ -555,12 +574,13 @@ def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
         abs_tol=1e-9,
         rel_tol=1e-9,
     )
+    assert_numeric_outputs_close(actual_tips, expected_tips, abs_tol=1e-9, rel_tol=1e-9)
 
     workbook.close()
 
 
 def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path: Path) -> None:
-    openpyxl = pytest.importorskip("openpyxl")
+    openpyxl = _load_openpyxl_or_fail()
 
     template = Path("tests/fixtures/NISA Drop-In Template - Ex Trend.xlsx")
     output = tmp_path / "ex-trend-output.xlsx"
@@ -636,11 +656,22 @@ def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path:
         "JP Morgan": -80.0,
         "Societe Generale": 95.0,
     }
+    expected_tips = {
+        "Citigroup": 1001.0,
+        "Bank of America, NA": 2001.0,
+        "Goldman Sachs Int'l": 3001.0,
+        "JP Morgan": 4001.0,
+        "Societe Generale": 5001.0,
+    }
     actual_notional_change: dict[str, float] = {}
+    actual_tips: dict[str, float] = {}
     for counterparty in expected_notional_change:
         row = _find_row_by_label(worksheet, counterparty)
         actual_notional_change[counterparty] = float(
             worksheet.cell(row=row, column=metric_columns["notional_change"]).value
+        )
+        actual_tips[counterparty] = float(
+            worksheet.cell(row=row, column=metric_columns["tips"]).value
         )
 
     assert_numeric_outputs_close(
@@ -649,6 +680,7 @@ def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path:
         abs_tol=1e-9,
         rel_tol=1e-9,
     )
+    assert_numeric_outputs_close(actual_tips, expected_tips, abs_tol=1e-9, rel_tol=1e-9)
 
     workbook.close()
 
@@ -656,7 +688,7 @@ def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path:
 def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
     tmp_path: Path,
 ) -> None:
-    openpyxl = pytest.importorskip("openpyxl")
+    openpyxl = _load_openpyxl_or_fail()
 
     template = Path("tests/fixtures/NISA Drop-In Template - Trend.xlsx")
     output = tmp_path / "trend-output.xlsx"
@@ -740,12 +772,23 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
         "ICE": 165.0,
         "Japan SCC": 170.0,
     }
+    expected_tips = {
+        "CME": 10.0,
+        "EUREX": 11.0,
+        "ICE Euro": 12.0,
+        "ICE": 13.0,
+        "Japan SCC": 14.0,
+    }
     actual_notional: dict[str, float] = {}
+    actual_tips: dict[str, float] = {}
 
     for counterparty in expected_notional:
         row = _find_row_by_label(worksheet, counterparty)
         actual_notional[counterparty] = float(
             worksheet.cell(row=row, column=metric_columns["notional"]).value
+        )
+        actual_tips[counterparty] = float(
+            worksheet.cell(row=row, column=metric_columns["tips"]).value
         )
 
     assert_numeric_outputs_close(
@@ -754,6 +797,7 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
         abs_tol=1e-9,
         rel_tol=1e-9,
     )
+    assert_numeric_outputs_close(actual_tips, expected_tips, abs_tol=1e-9, rel_tol=1e-9)
 
     actual_breakdown = {
         "tips": float(worksheet.cell(row=breakdown_row, column=metric_columns["tips"]).value),
@@ -788,7 +832,7 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
 def test_fill_dropin_template_generated_workbooks_reopen_cleanly_for_all_variants(
     tmp_path: Path,
 ) -> None:
-    openpyxl = pytest.importorskip("openpyxl")
+    openpyxl = _load_openpyxl_or_fail()
 
     cases = [
         (
@@ -840,8 +884,7 @@ def test_fill_dropin_template_generated_workbooks_reopen_cleanly_for_all_variant
 
 
 def test_fill_dropin_template_rejects_malformed_template_file(tmp_path: Path) -> None:
-    openpyxl = pytest.importorskip("openpyxl")
-    assert openpyxl is not None
+    _load_openpyxl_or_fail()
 
     malformed_template = tmp_path / "malformed.xlsx"
     malformed_template.write_bytes(b"not-a-valid-xlsx")
