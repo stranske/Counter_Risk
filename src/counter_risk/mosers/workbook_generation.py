@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, TypeAlias
+from typing import Any, TypeAlias
 
 from counter_risk.mosers.template import load_mosers_template_workbook
 from counter_risk.parsers.nisa import (
