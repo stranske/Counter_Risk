@@ -8,8 +8,12 @@ from typing import Any
 
 import pytest
 
-from counter_risk.mosers.workbook_generation import generate_mosers_workbook
+from counter_risk.mosers.workbook_generation import (
+    generate_mosers_workbook,
+    generate_mosers_workbook_ex_trend,
+)
 from counter_risk.parsers.nisa import parse_nisa_all_programs
+from counter_risk.parsers.nisa_ex_trend import parse_nisa_ex_trend
 
 
 @pytest.mark.parametrize("fixture_path", [Path("tests/fixtures/raw_nisa_all_programs.xlsx")])
@@ -58,6 +62,24 @@ def test_generate_mosers_workbook_reflects_input_annualized_volatility_changes(
     finally:
         base_workbook.close()
         variant_workbook.close()
+
+
+def test_generate_mosers_workbook_ex_trend_populates_values_from_ex_trend_fixture() -> None:
+    fixture_path = Path("tests/fixtures/NISA Monthly Ex Trend - Raw.xlsx")
+    parsed = parse_nisa_ex_trend(fixture_path)
+
+    workbook = generate_mosers_workbook_ex_trend(fixture_path)
+    try:
+        worksheet = workbook["CPRS - CH"]
+        assert worksheet["B5"].value == parsed.ch_rows[0].counterparty
+        expected_vols = _pad_to_slot_count(
+            [row.annualized_volatility for row in parsed.totals_rows], 11
+        )
+        expected_allocations = _pad_to_slot_count(_expected_allocations(parsed), 11)
+        assert _read_column_values(worksheet, "D", 10, 20) == expected_vols
+        assert _read_column_values(worksheet, "E", 10, 20) == expected_allocations
+    finally:
+        workbook.close()
 
 
 def _bump_first_annualized_volatility_column(workbook: Any) -> bool:
