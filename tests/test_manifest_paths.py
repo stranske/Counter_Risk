@@ -69,3 +69,52 @@ def test_manifest_build_rejects_nonexistent_artifact_paths(tmp_path: Path) -> No
             top_changes_per_variant={"all_programs": []},
             warnings=[],
         )
+
+
+def test_to_relative_artifact_path_normalizes_absolute_path_under_run_dir(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13_1"
+    run_dir.mkdir(parents=True)
+
+    artifact = (run_dir / "outputs" / ".." / "histories" / "all.xlsx").resolve()
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_bytes(b"x")
+
+    builder = ManifestBuilder(config=_make_config(tmp_path))
+    relative = builder._to_relative_artifact_path(run_dir=run_dir, artifact_path=artifact)
+
+    assert relative == Path("histories/all.xlsx")
+    assert relative.as_posix() == "histories/all.xlsx"
+
+
+def test_to_relative_artifact_path_normalizes_relative_path_to_posix(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13_1"
+    run_dir.mkdir(parents=True)
+
+    builder = ManifestBuilder(config=_make_config(tmp_path))
+    relative = builder._to_relative_artifact_path(
+        run_dir=run_dir,
+        artifact_path=Path("subdir/./reports/../deck.pptx"),
+    )
+
+    assert relative == Path("subdir/deck.pptx")
+    assert relative.as_posix() == "subdir/deck.pptx"
+
+
+def test_to_relative_artifact_path_rejects_parent_traversal_segments(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13_1"
+    run_dir.mkdir(parents=True)
+
+    builder = ManifestBuilder(config=_make_config(tmp_path))
+    with pytest.raises(ValueError, match=r"cannot contain '\.\.' segments"):
+        builder._to_relative_artifact_path(run_dir=run_dir, artifact_path=Path("../outside.xlsx"))
+
+
+def test_to_relative_artifact_path_rejects_absolute_path_outside_run_dir(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13_1"
+    run_dir.mkdir(parents=True)
+    outside = (tmp_path / "outside.xlsx").resolve()
+    outside.write_bytes(b"outside")
+
+    builder = ManifestBuilder(config=_make_config(tmp_path))
+    with pytest.raises(ValueError, match="must be within run_dir"):
+        builder._to_relative_artifact_path(run_dir=run_dir, artifact_path=outside)
