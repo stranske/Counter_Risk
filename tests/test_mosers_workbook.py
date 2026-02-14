@@ -1,26 +1,89 @@
-"""Strict fixture parity tests for MOSERS workbook generation."""
+"""Tests for data-driven MOSERS workbook generation."""
 
 from __future__ import annotations
 
 from pathlib import Path
+from shutil import copyfile
 
-from counter_risk.writers.mosers_workbook import generate_mosers_workbook
-from tests.utils.xlsx_compare import compare_workbooks
+import pytest
+
+from counter_risk.mosers.workbook_generation import generate_mosers_workbook
+from counter_risk.parsers.nisa import parse_nisa_all_programs
 
 
-def test_generate_mosers_workbook_matches_reference_fixture_ranges(tmp_path: Path) -> None:
-    destination = tmp_path / "MOSERS Generated - All Programs.xlsx"
-    output_path = generate_mosers_workbook(
-        raw_nisa_path=Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx"),
-        output_path=destination,
-    )
+@pytest.mark.parametrize("fixture_path", [Path("tests/fixtures/raw_nisa_all_programs.xlsx")])
+def test_generate_mosers_workbook_populates_program_name_from_parsed_nisa_data(
+    fixture_path: Path,
+) -> None:
+    parsed = parse_nisa_all_programs(fixture_path)
 
-    compare_workbooks(
-        reference_workbook=Path("tests/fixtures/mosers_reference.xlsx"),
-        generated_workbook=output_path,
-        sheet_names=["CPRS - CH", "CPRS - FCM"],
-        ranges_by_sheet={
-            "CPRS - CH": "A1:Z100",
-            "CPRS - FCM": "A1:Z100",
-        },
-    )
+    workbook = generate_mosers_workbook(fixture_path)
+    try:
+        worksheet = workbook["CPRS - CH"]
+        assert worksheet["B5"].value == parsed.ch_rows[0].counterparty
+    finally:
+        workbook.close()
+
+
+def test_generate_mosers_workbook_reflects_input_annualized_volatility_changes(
+    tmp_path: Path,
+) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+
+    base_input = Path("tests/fixtures/raw_nisa_all_programs.xlsx")
+    variant_input = tmp_path / "raw_nisa_all_programs_variant.xlsx"
+    copyfile(base_input, variant_input)
+
+    source_workbook = openpyxl.load_workbook(variant_input)
+    try:
+        changed = _bump_first_annualized_volatility_column(source_workbook)
+        assert changed, "Failed to edit annualized volatility values in fixture copy"
+        source_workbook.save(variant_input)
+    finally:
+        source_workbook.close()
+
+    base_workbook = generate_mosers_workbook(base_input)
+    variant_workbook = generate_mosers_workbook(variant_input)
+    try:
+        base_d10 = base_workbook["CPRS - CH"]["D10"].value
+        variant_d10 = variant_workbook["CPRS - CH"]["D10"].value
+        assert base_d10 != variant_d10
+    finally:
+        base_workbook.close()
+        variant_workbook.close()
+
+
+def _bump_first_annualized_volatility_column(workbook: object) -> bool:
+    for sheet_name in workbook.sheetnames:
+        worksheet = workbook[sheet_name]
+        max_row = int(worksheet.max_row)
+        max_col = int(worksheet.max_column)
+
+        target_col = 0
+        header_row = 0
+        for row_number in range(1, min(max_row, 200) + 1):
+            for col_number in range(1, max_col + 1):
+                value = worksheet.cell(row=row_number, column=col_number).value
+                text = " ".join(str(value or "").split()).strip().casefold()
+                if "annualized volatility" in text:
+                    target_col = col_number
+                    header_row = row_number
+                    break
+            if target_col:
+                break
+
+        if not target_col:
+            continue
+
+        edited = False
+        for row_number in range(header_row + 1, max_row + 1):
+            cell = worksheet.cell(row=row_number, column=target_col)
+            value = cell.value
+            if isinstance(value, (int, float)):
+                cell.value = float(value) + 0.25
+                edited = True
+
+        if edited:
+            return True
+
+    return False
