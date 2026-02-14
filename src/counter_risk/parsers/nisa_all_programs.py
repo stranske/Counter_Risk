@@ -201,9 +201,9 @@ def _select_worksheet_and_headers(*, workbook: Any) -> tuple[Any, int, dict[str,
 
     worksheet, header_row, header_columns, missing_headers, _score = best
     if missing_headers:
-        missing = ", ".join(missing_headers)
+        missing_text = ", ".join(missing_headers)
         raise ValueError(
-            f"Missing required headers: {missing} "
+            f"Missing required headers: {missing_text} "
             f"(sheet '{worksheet.title}', header row {header_row})"
         )
     counterparty_column = _infer_counterparty_column(
