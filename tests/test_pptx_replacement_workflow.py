@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import cast
 
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.shapes.picture import Picture
 from pptx.slide import Slide
 from pptx.util import Inches
@@ -80,7 +81,9 @@ def _make_near_match_workflow_pptx(path: Path, base_image: Path) -> None:
 def _slide_picture_state(
     slide: Slide,
 ) -> tuple[int, tuple[tuple[str, tuple[int, int, int, int]], ...]]:
-    pictures = [cast(Picture, shape) for shape in slide.shapes if shape.shape_type == 13]
+    pictures = [
+        cast(Picture, shape) for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+    ]
     details = tuple(
         (
             hashlib.sha256(picture.image.blob).hexdigest(),
