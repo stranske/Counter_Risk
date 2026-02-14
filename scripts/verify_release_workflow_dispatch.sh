@@ -11,6 +11,40 @@ print_needs_human_followup() {
   echo "[ERROR] - [ ] The workflow_dispatch input version (if present) has required: false or omits required" >&2
 }
 
+ref_has_commit() {
+  local repo_root="$1"
+  local ref_name="$2"
+  git -C "${repo_root}" rev-parse --verify "${ref_name}^{commit}" >/dev/null 2>&1
+}
+
+validate_workflow_on_ref() {
+  local repo_root="$1"
+  local ref_name="$2"
+  local ref_workflow_path="$3"
+  local validator_script="$4"
+
+  local tmp_workflow
+  local validator_output
+  tmp_workflow="$(mktemp)"
+
+  if ! git -C "${repo_root}" show "${ref_name}:${ref_workflow_path}" >"${tmp_workflow}" 2>/dev/null; then
+    rm -f "${tmp_workflow}"
+    echo "[ERROR] Workflow file '${ref_workflow_path}' does not exist on ref '${ref_name}'." >&2
+    print_needs_human_followup "${ref_name}"
+    return 1
+  fi
+
+  if ! validator_output="$(python "${validator_script}" "${tmp_workflow}" 2>&1)"; then
+    rm -f "${tmp_workflow}"
+    echo "[ERROR] Workflow file '${ref_workflow_path}' on ref '${ref_name}' failed validation." >&2
+    echo "${validator_output}" >&2
+    print_needs_human_followup "${ref_name}"
+    return 1
+  fi
+
+  rm -f "${tmp_workflow}"
+}
+
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
   echo "Usage: $0 <workflow_file> <ref> [artifact_prefix]" >&2
   exit 2
@@ -21,6 +55,7 @@ REF_NAME="$2"
 ARTIFACT_PREFIX="${3:-release-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+TARGET_REPO_ROOT="$(pwd)"
 VALIDATOR_SCRIPT="${SCRIPT_DIR}/validate_release_workflow_yaml.py"
 DRAFT_WORKFLOW_PATH="${RELEASE_WORKFLOW_DRAFT_PATH:-}"
 
@@ -35,6 +70,11 @@ fi
 WORKFLOW_PATH="${WORKFLOW_FILE}"
 if [ ! -f "${WORKFLOW_PATH}" ] && [ -f ".github/workflows/${WORKFLOW_FILE}" ]; then
   WORKFLOW_PATH=".github/workflows/${WORKFLOW_FILE}"
+fi
+
+REF_WORKFLOW_PATH="${WORKFLOW_PATH}"
+if [[ "${WORKFLOW_PATH}" != .github/workflows/* ]]; then
+  REF_WORKFLOW_PATH=".github/workflows/$(basename "${WORKFLOW_PATH}")"
 fi
 
 if [ ! -f "${WORKFLOW_PATH}" ]; then
@@ -60,6 +100,14 @@ if [ ! -f "${WORKFLOW_PATH}" ]; then
     fi
   fi
   exit 1
+fi
+
+if ref_has_commit "${TARGET_REPO_ROOT}" "${REF_NAME}"; then
+  if ! validate_workflow_on_ref "${TARGET_REPO_ROOT}" "${REF_NAME}" "${REF_WORKFLOW_PATH}" "${VALIDATOR_SCRIPT}"; then
+    exit 1
+  fi
+else
+  echo "[WARN] Ref '${REF_NAME}' is not available in local git history; skipping ref workflow preflight." >&2
 fi
 
 if [[ "${WORKFLOW_PATH}" == *"/docs/release.yml.draft" ]] || [[ "${WORKFLOW_PATH}" == "docs/release.yml.draft" ]]; then
