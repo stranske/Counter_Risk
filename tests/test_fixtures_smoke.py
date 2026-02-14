@@ -5,10 +5,18 @@ from pathlib import Path
 import pytest
 
 
-def test_raw_nisa_all_programs_fixture_exists_and_opens() -> None:
+@pytest.mark.parametrize(
+    "fixture_name",
+    [
+        "NISA Monthly All Programs - Raw.xlsx",
+        "NISA Monthly Ex Trend - Raw.xlsx",
+        "NISA Monthly Trend - Raw.xlsx",
+    ],
+)
+def test_raw_nisa_fixture_exists_and_opens(fixture_name: str) -> None:
     openpyxl = pytest.importorskip("openpyxl")
 
-    fixture_path = Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx")
+    fixture_path = Path("tests/fixtures") / fixture_name
     assert fixture_path.exists(), f"Missing required fixture: {fixture_path}"
 
     workbook = openpyxl.load_workbook(
