@@ -14,11 +14,12 @@ def test_runner_vba_module_constructs_arguments_from_date_and_mode() -> None:
     module_source = _module_source()
 
     assert "Public Function BuildRunArguments" in module_source
-    assert "BuildCommand(ModeToString(mode), asOfMonth, outputDir)" in module_source
+    assert "BuildCommandArguments(ModeToString(mode), parsedDate, outputDir)" in module_source
 
     assert "Public Function ResolveOutputDir" in module_source
     assert 'ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\\runs\\"' in module_source
     assert 'Format$(parsedDate, "yyyy-mm-dd")' in module_source
+    assert '" --as-of-month " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd"))' in module_source
 
     assert "Case RunnerModeAllPrograms" in module_source
     assert 'ResolveConfigPath = "config\\all_programs.yml"' in module_source
@@ -38,10 +39,11 @@ def test_runner_vba_module_defines_structured_launch_status_and_execution() -> N
     assert "Command As String" in module_source
     assert "ExitCode As Long" in module_source
 
-    assert "Public Function ExecuteRunnerCommand" in module_source
-    assert "On Error GoTo ExecuteRunnerCommandError" in module_source
-    assert "ExecuteShellCommand(shellCommand)" in module_source
-    assert "BuildErrorStatus(command, Err.Number, Err.Description)" in module_source
+    assert "Public Function BuildCommand" in module_source
+    assert "On Error GoTo BuildCommandError" in module_source
+    assert 'Set shellObject = CreateObject("WScript.Shell")' in module_source
+    assert "shellObject.Run(shellCommand, 0, True)" in module_source
+    assert 'WriteStatus "Error"' in module_source
 
 
 def test_runner_vba_module_uses_single_shared_builder_for_all_run_modes() -> None:
@@ -62,18 +64,21 @@ def test_runner_vba_module_updates_status_before_launch_and_writes_error_result(
     module_source = _module_source()
 
     assert 'WriteStatus "Running..."' in module_source
-    assert "WriteLaunchResult status" in module_source
-    assert 'WriteResult "Error " & CStr(status.ErrorCode) & ": " & status.Message' in module_source
+    assert 'WriteStatus "Success"' in module_source
+    assert 'WriteStatus "Error"' in module_source
+    assert 'WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description' in module_source
 
 
 def test_runner_vba_open_output_folder_checks_directory_and_reports_missing_path() -> None:
     module_source = _module_source()
 
     assert "Public Sub OpenOutputFolder_Click()" in module_source
-    assert "outputDir = ResolveOutputDir(ResolveRepoRoot(), selectedDate)" in module_source
-    assert "If Not DirectoryExists(outputDir) Then" in module_source
-    assert 'WriteResult "Error Directory not found: " & outputDir' in module_source
-    assert "status = OpenDirectory(outputDir)" in module_source
+    assert "resolvedPath = ResolveOutputDir(ResolveRepoRoot(), selectedDate)" in module_source
+    assert 'If Dir$(resolvedPath, vbDirectory) = "" Then' in module_source
+    assert 'Set fileSystem = CreateObject("Scripting.FileSystemObject")' in module_source
+    assert "fileSystem.FolderExists(resolvedPath)" in module_source
+    assert 'MsgBox "Directory not found" & resolvedPath' in module_source
+    assert "status = OpenDirectory(resolvedPath)" in module_source
 
 
 def test_runner_vba_module_has_stub_friendly_shell_and_filesystem_boundaries() -> None:
