@@ -22,6 +22,24 @@ def test_raw_nisa_all_programs_fixture_exists_and_opens() -> None:
         workbook.close()
 
 
+def test_mosers_reference_fixture_exists_and_opens() -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+
+    fixture_path = Path("tests/fixtures/mosers_reference.xlsx")
+    assert fixture_path.exists(), f"Missing required fixture: {fixture_path}"
+
+    try:
+        workbook = openpyxl.load_workbook(
+            filename=fixture_path,
+            read_only=True,
+            data_only=False,
+        )
+    except Exception as exc:  # pragma: no cover - depends on local file damage
+        pytest.fail(f"Unable to load fixture workbook at {fixture_path}: {exc}")
+    else:
+        workbook.close()
+
+
 def test_fixture_workbooks_and_presentations_open() -> None:
     pptx = pytest.importorskip("pptx")
     openpyxl = pytest.importorskip("openpyxl")
