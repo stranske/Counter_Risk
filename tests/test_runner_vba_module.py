@@ -74,6 +74,10 @@ def test_runner_vba_open_output_folder_checks_directory_and_reports_missing_path
     assert "If Not DirectoryExists(outputDir) Then" in module_source
     assert 'WriteResult "Error Directory not found: " & outputDir' in module_source
     assert "status = OpenDirectory(outputDir)" in module_source
+    assert (
+        'status.Message = "Failed to open output directory: " & outputDir & " - " & status.Message'
+        in module_source
+    )
 
 
 def test_runner_vba_module_has_stub_friendly_shell_and_filesystem_boundaries() -> None:
