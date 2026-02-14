@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 
+from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline import run as run_module
 
 
@@ -171,3 +172,76 @@ def test_historical_validation_valid_workbook_updates_copy_under_run_dir(
     assert target.cell(row=3, column=1).value == "2026-02-13"
     assert target.cell(row=3, column=2).value == pytest.approx(45.0)
     assert target.cell(row=3, column=3).value == 2
+
+
+def test_historical_workbook_update_normalized_headers_and_run_dir_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    inputs_dir = tmp_path / "inputs"
+    inputs_dir.mkdir(parents=True, exist_ok=True)
+
+    all_programs_input = inputs_dir / "all_programs.xlsx"
+    ex_trend_input = inputs_dir / "ex_trend.xlsx"
+    trend_input = inputs_dir / "trend.xlsx"
+    monthly_pptx = inputs_dir / "monthly.pptx"
+    for file_path in (all_programs_input, ex_trend_input, trend_input, monthly_pptx):
+        file_path.write_bytes(b"input")
+
+    hist_all = inputs_dir / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx"
+    hist_ex = inputs_dir / "Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+    hist_trend = inputs_dir / "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx"
+    for file_path in (hist_all, hist_ex, hist_trend):
+        file_path.write_bytes(b"source")
+
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    config = WorkflowConfig(
+        as_of_date=date(2026, 2, 13),
+        mosers_all_programs_xlsx=all_programs_input,
+        mosers_ex_trend_xlsx=ex_trend_input,
+        mosers_trend_xlsx=trend_input,
+        hist_all_programs_3yr_xlsx=hist_all,
+        hist_ex_llc_3yr_xlsx=hist_ex,
+        hist_llc_3yr_xlsx=hist_trend,
+        monthly_pptx=monthly_pptx,
+        output_root=tmp_path / "unused-output-root",
+    )
+
+    sheet_by_path: dict[Path, _FakeWorksheet] = {}
+
+    def _make_sheet() -> _FakeWorksheet:
+        worksheet = _FakeWorksheet("Total")
+        worksheet.set_value(1, 1, "  AS  OF   DATE ")
+        worksheet.set_value(1, 2, "Series A")
+        worksheet.set_value(1, 3, "Series B")
+        worksheet.set_value(2, 1, "2025-12-31")
+        return worksheet
+
+    def _load_workbook(*, filename: Path) -> _FakeWorkbook:
+        worksheet = _make_sheet()
+        sheet_by_path[filename] = worksheet
+        return _FakeWorkbook({"Total": worksheet})
+
+    monkeypatch.setitem(sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=_load_workbook))
+
+    output_paths = run_module._update_historical_outputs(
+        run_dir=run_dir,
+        config=config,
+        parsed_by_variant={
+            "all_programs": {"totals": [{"counterparty": "A", "Notional": 10.0}], "futures": []},
+            "ex_trend": {"totals": [{"counterparty": "B", "Notional": 4.0}], "futures": []},
+            "trend": {"totals": [{"counterparty": "C", "Notional": 7.0}], "futures": []},
+        },
+        as_of_date=date(2026, 2, 13),
+        warnings=[],
+    )
+
+    assert len(output_paths) == 3
+    assert all(path.is_relative_to(run_dir) for path in output_paths)
+    assert all(path.read_bytes() == b"updated" for path in output_paths)
+    assert hist_all.read_bytes() == b"source"
+
+    all_programs_copy = run_dir / hist_all.name
+    assert sheet_by_path[all_programs_copy].cell(row=3, column=1).value == "2026-02-13"
+    assert sheet_by_path[all_programs_copy].cell(row=3, column=2).value == pytest.approx(10.0)
+    assert sheet_by_path[all_programs_copy].cell(row=3, column=3).value == 1
