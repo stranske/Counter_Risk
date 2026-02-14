@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 class WorkflowConfig(BaseModel):
@@ -28,6 +28,9 @@ class WorkflowConfig(BaseModel):
     hist_ex_llc_3yr_xlsx: Path
     hist_llc_3yr_xlsx: Path
     monthly_pptx: Path
+    enable_screenshot_replacement: bool = False
+    screenshot_replacement_implementation: Literal["zip", "python-pptx"] = "zip"
+    screenshot_inputs: dict[str, Path] = Field(default_factory=dict)
     output_root: Path = Path("runs")
 
 

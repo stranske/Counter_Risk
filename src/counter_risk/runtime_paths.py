@@ -7,6 +7,10 @@ import sys
 from pathlib import Path
 
 
+class RuntimePathResolutionError(FileNotFoundError):
+    """Raised when a bundled runtime asset cannot be resolved."""
+
+
 def _frozen_bundle_roots() -> list[Path]:
     roots: list[Path] = []
 
@@ -42,12 +46,23 @@ def resolve_runtime_path(path: str | Path) -> Path:
     if not getattr(sys, "frozen", False):
         return candidate
 
-    for root in _frozen_bundle_roots():
-        resolved = root / candidate
+    roots = _frozen_bundle_roots()
+    if not roots:
+        raise RuntimePathResolutionError(
+            f"Unable to resolve runtime asset '{candidate}'. "
+            "No bundle roots were discovered from COUNTER_RISK_BUNDLE_ROOT, "
+            "sys._MEIPASS, or sys.executable."
+        )
+
+    attempted_paths = [root / candidate for root in roots]
+    for resolved in attempted_paths:
         if resolved.exists():
             return resolved
 
-    roots = _frozen_bundle_roots()
-    if roots:
-        return roots[0] / candidate
-    return candidate
+    searched_roots = ", ".join(str(root) for root in roots)
+    searched_locations = ", ".join(str(path) for path in attempted_paths) or "<none>"
+    raise RuntimePathResolutionError(
+        f"Unable to resolve runtime asset '{candidate}'. "
+        f"Searched roots: {searched_roots}. "
+        f"Searched locations: {searched_locations}"
+    )
