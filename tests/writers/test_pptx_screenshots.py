@@ -19,6 +19,12 @@ _GREEN_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP4DwQACfsD/QX+vJ8AAAAASUVORK5CYII="
 )
 
+_TARGET_PICTURE_GEOMETRY = {
+    0: (0, 811705, 9144000, 5817695),
+    5: (0, 1304636, 9144000, 5172364),
+    15: (0, 2031298, 9144000, 2795403),
+}
+
 
 def _write_png(path: Path, payload: bytes) -> None:
     path.write_bytes(payload)
@@ -46,13 +52,14 @@ def _make_sample_pptx(path: Path, base_image: Path) -> None:
         )
         textbox.text_frame.text = title
 
-        if idx in {0, 5, 15}:
+        if idx in _TARGET_PICTURE_GEOMETRY:
+            left, top, width, height = _TARGET_PICTURE_GEOMETRY[idx]
             slide.shapes.add_picture(
                 str(base_image),
-                Inches(1.0),
-                Inches(1.2),
-                width=Inches(6.0),
-                height=Inches(3.6),
+                left,
+                top,
+                width=width,
+                height=height,
             )
 
     prs.save(str(path))
