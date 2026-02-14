@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,7 @@ from pathlib import Path
 
 RELEASE_NAME_PREFIX = "counter-risk"
 EXECUTABLE_BASENAME = "counter-risk"
+LOGGER = logging.getLogger(__name__)
 
 
 def repository_root() -> Path:
@@ -175,10 +177,16 @@ def _run_pyinstaller(root: Path, spec_path: Path) -> None:
         capture_output=True,
         check=False,
     )
+    stdout = result.stdout.strip()
+    stderr = result.stderr.strip()
+
+    LOGGER.info("PyInstaller completed with exit code %s", result.returncode)
+    LOGGER.info("PyInstaller stdout:\n%s", stdout if stdout else "<empty>")
+    LOGGER.info("PyInstaller stderr:\n%s", stderr if stderr else "<empty>")
+
     if result.returncode != 0:
-        stdout = result.stdout.strip()
-        stderr = result.stderr.strip()
         details = "\n".join(part for part in [stdout, stderr] if part)
+        LOGGER.error("PyInstaller build failed for spec '%s'", spec_path)
         raise ValueError(
             f"PyInstaller failed with exit code {result.returncode} while building '{spec_path}'."
             + (f"\n{details}" if details else "")

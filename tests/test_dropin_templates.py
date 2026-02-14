@@ -552,8 +552,8 @@ def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
     assert_numeric_outputs_close(
         actual_notional,
         expected_notional,
-        atol=1e-9,
-        rtol=1e-9,
+        abs_tol=1e-9,
+        rel_tol=1e-9,
     )
 
     workbook.close()
@@ -646,8 +646,8 @@ def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path:
     assert_numeric_outputs_close(
         actual_notional_change,
         expected_notional_change,
-        atol=1e-9,
-        rtol=1e-9,
+        abs_tol=1e-9,
+        rel_tol=1e-9,
     )
 
     workbook.close()
@@ -751,8 +751,8 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
     assert_numeric_outputs_close(
         actual_notional,
         expected_notional,
-        atol=1e-9,
-        rtol=1e-9,
+        abs_tol=1e-9,
+        rel_tol=1e-9,
     )
 
     actual_breakdown = {
@@ -778,8 +778,8 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
     assert_numeric_outputs_close(
         actual_breakdown,
         expected_breakdown,
-        atol=1e-9,
-        rtol=1e-9,
+        abs_tol=1e-9,
+        rel_tol=1e-9,
     )
 
     workbook.close()
