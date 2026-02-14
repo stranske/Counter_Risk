@@ -211,3 +211,73 @@ jobs:
     output = f"{result.stdout}\n{result.stderr}"
     assert result.returncode != 0
     assert "must not set required: true" in output
+
+
+def test_validate_release_workflow_yaml_allows_optional_version_input(tmp_path: Path) -> None:
+    workflow = tmp_path / "optional-version.yml"
+    workflow.write_text(
+        """
+name: x
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: false
+jobs:
+  release:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: python -m pip install -e ".[dev]"
+      - run: pytest tests/
+      - run: pyinstaller -y release.spec
+      - run: python -m counter_risk.build.release
+      - run: scripts/validate_release_bundle.sh release/1.2.3
+      - uses: actions/upload-artifact@v4
+        with: {path: release/1.2.3/}
+""",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        ["python", str(SCRIPT_PATH), str(workflow)], text=True, capture_output=True, check=False
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_validate_release_workflow_yaml_rejects_string_required_version_input(
+    tmp_path: Path,
+) -> None:
+    workflow = tmp_path / "string-required-version.yml"
+    workflow.write_text(
+        """
+name: x
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: "true"
+jobs:
+  release:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: python -m pip install -e ".[dev]"
+      - run: pytest tests/
+      - run: pyinstaller -y release.spec
+      - run: python -m counter_risk.build.release
+      - run: scripts/validate_release_bundle.sh release/1.2.3
+      - uses: actions/upload-artifact@v4
+        with: {path: release/1.2.3/}
+""",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        ["python", str(SCRIPT_PATH), str(workflow)], text=True, capture_output=True, check=False
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0
+    assert "must not set required: true" in output

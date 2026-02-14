@@ -63,8 +63,11 @@ def validate_release_workflow(path: Path) -> list[str]:
 
     dispatch_inputs = (workflow_on.get("workflow_dispatch") or {}).get("inputs") or {}
     version_input = dispatch_inputs.get("version")
-    if isinstance(version_input, dict) and version_input.get("required") is True:
-        errors.append("workflow_dispatch.inputs.version must not set required: true")
+    if isinstance(version_input, dict):
+        required_value = version_input.get("required")
+        required_text = str(required_value).strip().lower()
+        if required_value is True or required_text in {"true", "1", "yes", "on"}:
+            errors.append("workflow_dispatch.inputs.version must not set required: true")
 
     try:
         steps = _steps(parsed)
