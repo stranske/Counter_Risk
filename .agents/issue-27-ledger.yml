@@ -1,0 +1,206 @@
+version: 1
+issue: 27
+base: main
+branch: codex/issue-27
+tasks:
+  - id: task-01
+    title: Add fixtures for raw NISA Ex Trend and Trend monthly input files under
+      `tests/fixtures/`
+    status: doing
+    started_at: '2026-02-14T20:51:57Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Create `src/counter_risk/parsers/nisa_ex_trend.py` to parse raw NISA Ex
+      Trend monthly files into the standardized intermediate format used by the Milestone
+      1 pipeline
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Create `src/counter_risk/parsers/nisa_trend.py` to parse raw NISA Trend
+      monthly files into the standardized intermediate format used by the Milestone
+      1 pipeline
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Implement generation of MOSERS-format workbooks for Ex Trend and Trend
+      consistent with Milestone 1 parser outputs (write output files in the same format/location
+      conventions as Milestone 1)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Create the MOSERS-format workbook generator function for Ex Trend data
+      (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Create the MOSERS-format workbook generator function for Trend data (verify:
+      formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Implement file output logic using the same format (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'location conventions as Milestone 1 (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Verify that generated workbooks match the structure
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'schema of Milestone 1 outputs (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Add tests that transform the raw NISA Ex Trend/Trend fixtures through the
+      parsers and compare produced MOSERS-format workbooks against reference outputs
+      under `tests/fixtures/`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Write tests that parse raw NISA Ex Trend fixture files (verify: tests
+      pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'validate the intermediate format output (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Write tests that parse raw NISA Trend fixture files (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Write tests that generate MOSERS-format workbooks from Ex Trend intermediate
+      data (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'compare against reference outputs (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Write tests that generate MOSERS-format workbooks from Trend intermediate
+      data (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: '`src/counter_risk/parsers/nisa_ex_trend.py` exists and can parse a raw
+      NISA Ex Trend fixture file without errors'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: '`src/counter_risk/parsers/nisa_trend.py` exists and can parse a raw NISA
+      Trend fixture file without errors'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Running the test suite validates generated MOSERS-format workbooks match
+      reference outputs for both Ex Trend and Trend
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Raw NISA Ex Trend/Trend inputs can be transformed and then fed into the
+      Milestone 1 pipeline without errors
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Add fixtures: raw NISA Ex Trend and Trend monthly files'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Implement `src/counter_risk/parsers/nisa_ex_trend.py` and `nisa_trend.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Generate MOSERS-format workbooks consistent with Milestone 1 parsers
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Add tests against reference outputs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Raw NISA Ex Trend/Trend inputs can be transformed and then fed into the
+      Milestone 1 pipeline
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
