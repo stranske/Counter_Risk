@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Update `src/counter_risk/chat/ui.py` submit handler to validate provider/model
       selection before calling ChatSession
-    status: doing
+    status: done
     started_at: '2026-02-14T19:47:18Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-14T19:47:28Z'
+    commit: e30f1c3c9b0be5892330249db0d441d7299abdbe
     notes: []
   - id: task-02
     title: Update `src/counter_risk/chat/ui.py` submit handler to call `ChatSession.send(...)`
