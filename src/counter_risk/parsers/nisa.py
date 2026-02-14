@@ -217,7 +217,7 @@ def _select_worksheet_and_headers(*, workbook: Any) -> tuple[Any, int, dict[str,
     required_text = ", ".join(_REQUIRED_HEADERS)
     evaluated_text = ", ".join(evaluated_sheet_names) if evaluated_sheet_names else "<none>"
     raise ValueError(
-        "Missing required headers: " f"{required_text}; evaluated sheets: {evaluated_text}"
+        f"Missing required headers: {required_text}; evaluated sheets: {evaluated_text}"
     )
 
 
