@@ -264,6 +264,9 @@ def test_build_runner_workbook_extracts_searchable_vba_text(tmp_path: Path) -> N
     assert "BuildExecutableCommand" in vba_text
     assert "ReadSelectedDate" in vba_text
     assert "Running..." in vba_text
+    assert "Success" in vba_text
+    assert "Error" in vba_text
+    assert "Directory not found" in vba_text
 
 
 def test_build_runner_workbook_fails_when_vba_project_bin_missing(
