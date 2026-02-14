@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Add preflight check to `scripts/validate_release_bundle.sh` that verifies
       `gh` exists using `command -v gh >/dev/null 2>&1`
-    status: doing
+    status: done
     started_at: '2026-02-14T01:22:57Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-14T01:23:08Z'
+    commit: 82ca35f029bfb62f16338ff68d80536c046fc1c1
     notes: []
   - id: task-02
     title: 'Add error message to `scripts/validate_release_bundle.sh` that prints
