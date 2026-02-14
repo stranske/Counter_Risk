@@ -8,6 +8,7 @@ implemented in follow-on slices.
 from __future__ import annotations
 
 import logging
+from copy import copy
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -94,6 +95,14 @@ class WalSheetAppendLocation:
     wal_column: int
     append_row: int
     last_dated_row: int | None
+
+
+@dataclass(frozen=True)
+class _CellSnapshot:
+    value: Any
+    is_formula: bool
+    style_id: int | None
+    number_format: str | None
 
 
 def _resolve_repo_root() -> Path:
@@ -417,6 +426,79 @@ def read_wal_sheet_append_location(
     )
 
 
+def _snapshot_preserved_wal_cells(
+    worksheet: Any,
+    *,
+    preserve_through_row: int,
+    preserve_through_column: int,
+) -> dict[tuple[int, int], _CellSnapshot]:
+    snapshots: dict[tuple[int, int], _CellSnapshot] = {}
+    existing_cells = getattr(worksheet, "_cells", None)
+    if isinstance(existing_cells, dict):
+        for (row_index, column_index), cell in existing_cells.items():
+            if row_index > preserve_through_row or column_index > preserve_through_column:
+                continue
+            value = getattr(cell, "value", None)
+            snapshots[(row_index, column_index)] = _CellSnapshot(
+                value=value,
+                is_formula=isinstance(value, str) and value.startswith("="),
+                style_id=getattr(cell, "style_id", None),
+                number_format=getattr(cell, "number_format", None),
+            )
+        return snapshots
+
+    for row_index in range(1, preserve_through_row + 1):
+        for column_index in range(1, preserve_through_column + 1):
+            cell = worksheet.cell(row=row_index, column=column_index)
+            value = cell.value
+            snapshots[(row_index, column_index)] = _CellSnapshot(
+                value=value,
+                is_formula=isinstance(value, str) and value.startswith("="),
+                style_id=getattr(cell, "style_id", None),
+                number_format=getattr(cell, "number_format", None),
+            )
+    return snapshots
+
+
+def _validate_preserved_wal_cells(
+    worksheet: Any, expected_snapshots: Mapping[tuple[int, int], _CellSnapshot]
+) -> None:
+    for (row_index, column_index), expected in expected_snapshots.items():
+        cell = worksheet.cell(row=row_index, column=column_index)
+        value = cell.value
+        is_formula = isinstance(value, str) and value.startswith("=")
+        if expected.is_formula != is_formula:
+            raise WorkbookValidationError(
+                "WAL append changed existing formula usage at "
+                f"row={row_index} column={column_index}"
+            )
+        if expected.value != value:
+            raise WorkbookValidationError(
+                "WAL append changed existing cell value at "
+                f"row={row_index} column={column_index}"
+            )
+        if expected.style_id != getattr(cell, "style_id", None):
+            raise WorkbookValidationError(
+                "WAL append changed existing formatting at "
+                f"row={row_index} column={column_index}"
+            )
+        if expected.number_format != getattr(cell, "number_format", None):
+            raise WorkbookValidationError(
+                "WAL append changed existing number format at "
+                f"row={row_index} column={column_index}"
+            )
+
+
+def _copy_row_cell_presentation(
+    worksheet: Any, *, source_row: int, target_row: int, columns: tuple[int, ...]
+) -> None:
+    for column_index in columns:
+        source_cell = worksheet.cell(row=source_row, column=column_index)
+        target_cell = worksheet.cell(row=target_row, column=column_index)
+        target_cell._style = copy(source_cell._style)
+        target_cell.number_format = source_cell.number_format
+
+
 def _append_to_sheet(
     *,
     workbook: Any,
@@ -581,6 +663,16 @@ def append_wal_row(
         workbook = load_workbook(filename=path)
         append_target = read_wal_sheet_append_location(workbook, wal_sheet_name=wal_sheet_name)
         worksheet = workbook[append_target.sheet_name]
+        preserve_up_to_row = append_target.last_dated_row or append_target.header_row
+        preserve_snapshots = _snapshot_preserved_wal_cells(
+            worksheet,
+            preserve_through_row=preserve_up_to_row,
+            preserve_through_column=max(
+                append_target.date_column,
+                append_target.wal_column,
+                int(getattr(worksheet, "max_column", append_target.wal_column)),
+            ),
+        )
 
         if append_target.last_dated_row is not None:
             last_date = _coerce_cell_date(
@@ -598,6 +690,12 @@ def append_wal_row(
                     "Append date must be newer than the last row date: "
                     f"append_date={px_date.isoformat()} last_row_date={last_date.isoformat()}"
                 )
+            _copy_row_cell_presentation(
+                worksheet,
+                source_row=append_target.last_dated_row,
+                target_row=append_target.append_row,
+                columns=(append_target.date_column, append_target.wal_column),
+            )
 
         worksheet.cell(row=append_target.append_row, column=append_target.date_column).value = (
             px_date
@@ -605,6 +703,7 @@ def append_wal_row(
         worksheet.cell(row=append_target.append_row, column=append_target.wal_column).value = float(
             wal_value
         )
+        _validate_preserved_wal_cells(worksheet, preserve_snapshots)
         workbook.save(path)
     finally:
         if workbook is not None:

@@ -608,3 +608,39 @@ def test_append_wal_row_rejects_non_monotonic_date(tmp_path: Path) -> None:
             px_date=date(2026, 1, 31),
             wal_value=2.35,
         )
+
+
+def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    workbook_path = tmp_path / "historical.xlsx"
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = historical_update.SHEET_WAL
+    sheet.cell(row=2, column=1).value = "Date"
+    sheet.cell(row=2, column=2).value = "WAL TIPS REPO"
+    sheet.cell(row=3, column=1).value = date(2026, 1, 31)
+    sheet.cell(row=3, column=1).number_format = "m/d/yyyy"
+    sheet.cell(row=3, column=2).value = "=2.10"
+    sheet.cell(row=3, column=2).number_format = "0.00"
+    preserved_formula = sheet.cell(row=3, column=2).value
+    preserved_style_id = sheet.cell(row=3, column=2).style_id
+    preserved_number_format = sheet.cell(row=3, column=2).number_format
+    workbook.save(workbook_path)
+    workbook.close()
+
+    historical_update.append_wal_row(
+        workbook_path,
+        px_date=date(2026, 2, 28),
+        wal_value=2.35,
+    )
+
+    reloaded = openpyxl.load_workbook(workbook_path)
+    try:
+        wal_sheet = reloaded[historical_update.SHEET_WAL]
+        assert wal_sheet.cell(row=3, column=2).value == preserved_formula
+        assert wal_sheet.cell(row=3, column=2).style_id == preserved_style_id
+        assert wal_sheet.cell(row=3, column=2).number_format == preserved_number_format
+        assert wal_sheet.cell(row=4, column=2).value == pytest.approx(2.35)
+    finally:
+        reloaded.close()
