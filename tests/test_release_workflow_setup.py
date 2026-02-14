@@ -100,6 +100,24 @@ def test_release_workflow_draft_contains_required_steps() -> None:
     assert "python -m counter_risk.build.release" in contents
     assert "scripts/validate_release_bundle.sh" in contents
     assert "actions/upload-artifact@v4" in contents
+    assert "path: release/" in contents
+
+
+def test_release_workflow_draft_dispatch_inputs_do_not_require_version() -> None:
+    workflow_path = REPO_ROOT / "docs" / "release.yml.draft"
+    assert workflow_path.is_file()
+
+    contents = workflow_path.read_text(encoding="utf-8")
+
+    if "inputs:" not in contents or "version:" not in contents:
+        return
+
+    version_section = contents.split("version:", 1)[1]
+    next_top_level = version_section.find("\n  ")
+    if next_top_level != -1:
+        version_section = version_section[:next_top_level]
+
+    assert "required: true" not in version_section
 
 
 def test_release_workflow_setup_doc_exists_with_promotion_steps() -> None:
