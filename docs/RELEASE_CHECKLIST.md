@@ -48,6 +48,12 @@ gh run list --workflow release.yml
 gh run watch
 ```
 
+Or use the helper script to trigger, wait, and verify the release artifact:
+
+```bash
+scripts/verify_release_workflow_dispatch.sh release.yml <branch-or-tag>
+```
+
 ## Expected bundle contents
 
 - `bin/counter-risk` (or `bin/counter-risk.exe` on Windows)
