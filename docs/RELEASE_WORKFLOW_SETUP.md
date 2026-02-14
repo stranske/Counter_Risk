@@ -14,6 +14,9 @@ A draft release workflow is provided at `docs/release.yml.draft`.
 3. Trigger it manually with `workflow_dispatch` and verify a `release/<version>/` artifact uploads.
    Recommended command: `scripts/verify_release_workflow_dispatch.sh release.yml <branch-or-tag>`
 
+Before dispatching, you can run static checks locally:
+`python scripts/validate_release_workflow_yaml.py docs/release.yml.draft`
+
 ## Optional Triggers
 
 After validating manual runs, optionally add `push` and/or tag triggers in
