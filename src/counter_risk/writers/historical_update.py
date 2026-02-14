@@ -52,6 +52,9 @@ SERIES_BY_SHEET: dict[str, tuple[str, ...]] = {
 
 DATE_HEADER_CANDIDATES: tuple[str, ...] = ("date", "as of date", "as-of date")
 HEADER_SCAN_ROWS = 12
+_DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH = Path(
+    "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+)
 
 
 class HistoricalUpdateError(ValueError):
@@ -78,6 +81,10 @@ class DateMonotonicityError(AppendDateError):
     """Raised when append date is not newer than the latest existing row date."""
 
 
+def _resolve_repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
 def _as_path(value: str | Path, *, field_name: str) -> Path:
     if isinstance(value, Path):
         return value
@@ -93,6 +100,42 @@ def _validate_workbook_path(path: Path, *, field_name: str = "workbook_path") ->
         raise FileNotFoundError(f"Workbook not found: {path}")
     if not path.is_file():
         raise WorkbookValidationError(f"{field_name} must point to a file: {path}")
+
+
+def locate_ex_llc_3_year_workbook(
+    *, search_root: str | Path | None = None, expected_relative_path: Path | None = None
+) -> Path:
+    """Resolve the ex LLC 3 Year workbook path under the expected repository location."""
+
+    root = _resolve_repo_root() if search_root is None else _as_path(search_root, field_name="search_root")
+    relative_path = expected_relative_path or _DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH
+    workbook_path = root / relative_path
+    _validate_workbook_path(workbook_path, field_name="hist_ex_llc_3yr_xlsx")
+    return workbook_path
+
+
+def open_ex_llc_3_year_workbook(
+    *, search_root: str | Path | None = None, expected_relative_path: Path | None = None
+) -> tuple[Path, Any]:
+    """Locate and open the ex LLC 3 Year workbook at its expected path."""
+
+    workbook_path = locate_ex_llc_3_year_workbook(
+        search_root=search_root,
+        expected_relative_path=expected_relative_path,
+    )
+    try:
+        from openpyxl import load_workbook  # type: ignore[import-untyped]
+    except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
+        raise RuntimeError(
+            "openpyxl is required to open historical workbooks. "
+            "Install project dev dependencies to enable this feature."
+        ) from exc
+
+    try:
+        workbook = load_workbook(filename=workbook_path)
+    except Exception as exc:
+        raise WorkbookValidationError(f"Unable to load workbook: {workbook_path}") from exc
+    return workbook_path, workbook
 
 
 def _normalize_header(value: Any) -> str:
@@ -464,4 +507,6 @@ __all__ = [
     "append_row_all_programs",
     "append_row_ex_trend",
     "append_row_trend",
+    "locate_ex_llc_3_year_workbook",
+    "open_ex_llc_3_year_workbook",
 ]

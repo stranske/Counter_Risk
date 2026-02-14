@@ -32,6 +32,45 @@ def test_validate_workbook_path_rejects_non_xlsx_file(tmp_path: Path) -> None:
         historical_update._validate_workbook_path(bad_path)
 
 
+def test_locate_ex_llc_3_year_workbook_returns_expected_path_under_search_root(tmp_path: Path) -> None:
+    expected_relative = Path(
+        "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+    )
+    workbook_path = tmp_path / expected_relative
+    workbook_path.parent.mkdir(parents=True, exist_ok=True)
+    workbook_path.write_text("placeholder", encoding="utf-8")
+
+    resolved = historical_update.locate_ex_llc_3_year_workbook(search_root=tmp_path)
+
+    assert resolved == workbook_path
+
+
+def test_locate_ex_llc_3_year_workbook_raises_when_expected_file_missing(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError, match="Workbook not found"):
+        historical_update.locate_ex_llc_3_year_workbook(search_root=tmp_path)
+
+
+def test_open_ex_llc_3_year_workbook_loads_and_returns_workbook_handle(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    expected_relative = Path(
+        "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+    )
+    workbook_path = tmp_path / expected_relative
+    workbook_path.parent.mkdir(parents=True, exist_ok=True)
+
+    workbook = openpyxl.Workbook()
+    workbook.active.title = historical_update.SHEET_EX_LLC_3_YEAR
+    workbook.save(workbook_path)
+    workbook.close()
+
+    resolved, loaded_workbook = historical_update.open_ex_llc_3_year_workbook(search_root=tmp_path)
+    try:
+        assert resolved == workbook_path
+        assert historical_update.SHEET_EX_LLC_3_YEAR in loaded_workbook.sheetnames
+    finally:
+        loaded_workbook.close()
+
+
 def test_resolve_append_date_prefers_explicit_date() -> None:
     explicit = date(2026, 1, 31)
     config_date = date(2026, 1, 1)
