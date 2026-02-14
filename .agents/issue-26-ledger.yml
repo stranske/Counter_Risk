@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: "Add a sanitized raw NISA \u201CMonthly All Programs\u201D workbook fixture\
       \ under `tests/fixtures/`"
-    status: doing
+    status: done
     started_at: '2026-02-14T02:31:59Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-14T02:32:14Z'
+    commit: c9043340b520cd1e6d1f8966a561dccd3ea353a9
     notes: []
   - id: task-02
     title: Create `src/counter_risk/parsers/nisa_all_programs.py` with a parser that
