@@ -6,7 +6,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Final
+from typing import Final, cast
 
 from counter_risk.chat.context import RunContext
 
@@ -231,7 +231,11 @@ def _format_top_exposures(manifest: dict[str, object]) -> str:
 
     sorted_rows = sorted(
         rows,
-        key=lambda row: (-row["value"], row["variant"], row["name"]),
+        key=lambda row: (
+            -cast(float, row["value"]),
+            cast(str, row["variant"]),
+            cast(str, row["name"]),
+        ),
     )
     top_rows = sorted_rows[:5]
     formatted = [f"{row['variant']}: {row['name']} ({row['value']:.2f})" for row in top_rows]
