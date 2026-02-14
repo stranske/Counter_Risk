@@ -60,6 +60,8 @@ def run_fixture_replay(*, config_path: Path, output_dir: Path | None = None) -> 
 
     copied_outputs: dict[str, str] = {}
     for key, source_path in sources.items():
+        if source_path is None:
+            continue
         resolved = _resolve_config_path(source_path, config_dir=config_dir)
         copied_path = _copy_output_file(src_path=resolved, output_dir=run_dir)
         copied_outputs[key] = str(copied_path)
