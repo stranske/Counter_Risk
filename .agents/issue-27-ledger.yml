@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Add fixtures for raw NISA Ex Trend and Trend monthly input files under
       `tests/fixtures/`
-    status: doing
+    status: done
     started_at: '2026-02-14T20:51:57Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-14T20:52:10Z'
+    commit: 4ae0c65b785f0d27dea508e7a3cb2fb06e385c5a
     notes: []
   - id: task-02
     title: Create `src/counter_risk/parsers/nisa_ex_trend.py` to parse raw NISA Ex
