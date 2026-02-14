@@ -263,6 +263,50 @@ def _validate_version_manifest_consistency(bundle_dir: Path) -> None:
         )
 
 
+def validate_release_bundle(bundle_dir: Path) -> None:
+    """Ensure required release artifacts exist and contain required metadata."""
+
+    if not bundle_dir.is_dir():
+        raise ValueError(f"Release bundle directory does not exist: '{bundle_dir}'.")
+
+    required_files = [
+        bundle_dir / "VERSION",
+        bundle_dir / "manifest.json",
+        bundle_dir / "config" / "fixture_replay.yml",
+        bundle_dir / "run_counter_risk.cmd",
+        bundle_dir / "README_HOW_TO_RUN.md",
+    ]
+    missing_files = [path for path in required_files if not path.is_file()]
+
+    templates_dir = bundle_dir / "templates"
+    missing_templates_dir = not templates_dir.is_dir()
+
+    executable_candidates = [
+        bundle_dir / "bin" / _executable_filename(for_windows=False),
+        bundle_dir / "bin" / _executable_filename(for_windows=True),
+    ]
+    has_executable = any(path.is_file() for path in executable_candidates)
+
+    missing_items = [str(path) for path in missing_files]
+    if missing_templates_dir:
+        missing_items.append(str(templates_dir))
+    if not has_executable:
+        missing_items.extend(str(path) for path in executable_candidates)
+
+    readme_path = bundle_dir / "README_HOW_TO_RUN.md"
+    readme_missing_how_to_run = False
+    if readme_path.is_file():
+        readme_missing_how_to_run = "How to run" not in readme_path.read_text(encoding="utf-8")
+
+    if missing_items or readme_missing_how_to_run:
+        problems: list[str] = []
+        if missing_items:
+            problems.append("missing required artifacts: " + ", ".join(missing_items))
+        if readme_missing_how_to_run:
+            problems.append(f"README file '{readme_path}' must contain 'How to run'")
+        raise ValueError("Release bundle validation failed: " + "; ".join(problems))
+
+
 def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> Path:
     """Create the versioned release bundle and return its path."""
 
@@ -301,6 +345,7 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
     manifest_file = _write_manifest(bundle_dir, version, copied)
     copied["manifest"] = [manifest_file]
     _validate_version_manifest_consistency(bundle_dir)
+    validate_release_bundle(bundle_dir)
 
     return bundle_dir
 

@@ -300,6 +300,58 @@ def test_validate_version_manifest_consistency_raises_on_mismatch(tmp_path: Path
         release._validate_version_manifest_consistency(bundle_dir)
 
 
+def test_validate_release_bundle_raises_when_required_artifact_is_missing(tmp_path: Path) -> None:
+    bundle_dir = tmp_path / "bundle"
+    (bundle_dir / "bin").mkdir(parents=True, exist_ok=True)
+    (bundle_dir / "config").mkdir(parents=True, exist_ok=True)
+    (bundle_dir / "templates").mkdir(parents=True, exist_ok=True)
+
+    (bundle_dir / "VERSION").write_text("1.0.0\n", encoding="utf-8")
+    (bundle_dir / "config" / "fixture_replay.yml").write_text("name: fixture\n", encoding="utf-8")
+    (bundle_dir / "run_counter_risk.cmd").write_text("@echo off\n", encoding="utf-8")
+    (bundle_dir / "README_HOW_TO_RUN.md").write_text("## How to run\n", encoding="utf-8")
+    (bundle_dir / "bin" / "counter-risk").write_bytes(b"binary")
+
+    with pytest.raises(ValueError, match="Release bundle validation failed") as exc_info:
+        release.validate_release_bundle(bundle_dir)
+
+    assert "manifest.json" in str(exc_info.value)
+
+
+def test_validate_release_bundle_raises_when_readme_omits_how_to_run(tmp_path: Path) -> None:
+    bundle_dir = tmp_path / "bundle"
+    (bundle_dir / "bin").mkdir(parents=True, exist_ok=True)
+    (bundle_dir / "config").mkdir(parents=True, exist_ok=True)
+    (bundle_dir / "templates").mkdir(parents=True, exist_ok=True)
+
+    (bundle_dir / "VERSION").write_text("1.0.0\n", encoding="utf-8")
+    (bundle_dir / "manifest.json").write_text(json.dumps({"version": "1.0.0"}), encoding="utf-8")
+    (bundle_dir / "config" / "fixture_replay.yml").write_text("name: fixture\n", encoding="utf-8")
+    (bundle_dir / "run_counter_risk.cmd").write_text("@echo off\n", encoding="utf-8")
+    (bundle_dir / "README_HOW_TO_RUN.md").write_text("instructions\n", encoding="utf-8")
+    (bundle_dir / "bin" / "counter-risk").write_bytes(b"binary")
+
+    with pytest.raises(ValueError, match="must contain 'How to run'"):
+        release.validate_release_bundle(bundle_dir)
+
+
+def test_main_exits_nonzero_when_bundle_validation_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    output_dir = tmp_path / "release"
+    version_file = tmp_path / "VERSION"
+    version_file.write_text("1.2.3\n", encoding="utf-8")
+
+    def _fail_assemble_release(*args: object, **kwargs: object) -> Path:
+        raise ValueError("Release bundle validation failed: missing required artifacts")
+
+    monkeypatch.setattr(release, "assemble_release", _fail_assemble_release)
+
+    with pytest.raises(SystemExit) as exc_info:
+        release.main(["--version-file", str(version_file), "--output-dir", str(output_dir)])
+    assert exc_info.value.code == 2
+
+
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="shell-script executable test")
 def test_release_bundle_executable_runs_fixture_replay_and_matches_numeric_fixture_values(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
