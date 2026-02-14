@@ -1,0 +1,360 @@
+version: 1
+issue: 106
+base: main
+branch: codex/issue-106
+tasks:
+  - id: task-01
+    title: Add `tests/fixtures/mosers_reference.xlsx` as an approved MOSERS-format
+      workbook fixture used for strict comparisons in tests
+    status: done
+    started_at: '2026-02-14T04:21:10Z'
+    finished_at: '2026-02-14T04:21:21Z'
+    commit: 074da376451c61d3109d455fd521619d14438de3
+    notes: []
+  - id: task-02
+    title: Create the `tests/utils/xlsx_compare.py` module with basic structure and
+      imports
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Implement the `compare_workbooks` function signature that accepts reference
+      workbook, generated workbook, sheet names, and A1 ranges
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Add cell value comparison logic that reports sheet name, coordinate, expected
+      value, and actual value on mismatch
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Implement number_format attribute comparison with detailed diff reporting
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Implement font attribute comparison handling openpyxl default objects correctly
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Implement fill attribute comparison with detailed diff reporting
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Implement alignment attribute comparison with detailed diff reporting
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Implement border attribute comparison with detailed diff reporting
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Write unit tests for `xlsx_compare.py` that verify assertion messages include
+      all required fields (sheet name, coordinate, property name, expected, actual)
+      by triggering intentional mismatches
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Add `tests/test_mosers_workbook.py` test(s) that generate a MOSERS workbook
+      and use `tests/utils/xlsx_compare.py` to compare defined ranges on `CPRS-CH`
+      and `CPRS-FCM` against `tests/fixtures/mosers_reference.xlsx` (values + formatting)
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Create `src/counter_risk/mosers/template.py` to centralize template retrieval
+      (path/bytes/resource)
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Update `src/counter_risk/mosers/workbook_generation.py` to load/copy an
+      internal template workbook and populate expected ranges, instead of creating
+      a new `openpyxl.Workbook()` as the base
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Update `src/counter_risk/mosers/workbook_generation.py` to use `template.py`
+      for template retrieval
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Implement worksheet scanning logic in `src/counter_risk/parsers/nisa_all_programs.py`
+      to locate the sheet containing expected header text
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Implement header row detection in `src/counter_risk/parsers/nisa_all_programs.py`
+      that tolerates extra leading rows before the actual header
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Build a header-name to column-index mapping in `src/counter_risk/parsers/nisa_all_programs.py`
+      from the detected header row
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Update field extraction logic in `src/counter_risk/parsers/nisa_all_programs.py`
+      to use header-name based column mapping instead of fixed positions
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Implement explicit error handling in `src/counter_risk/parsers/nisa_all_programs.py`
+      that lists missing header names when required headers are not found
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Create or update `tests/fixtures/raw_nisa_all_programs.xlsx` with test
+      data for parser validation
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Write test case in `tests/test_nisa_all_programs_parser.py` verifying parser
+      correctly handles when the relevant worksheet is not the first sheet
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Write test case in `tests/test_nisa_all_programs_parser.py` verifying parser
+      correctly handles extra leading rows before the header row
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Write test case in `tests/test_nisa_all_programs_parser.py` verifying parser
+      correctly handles reordered columns
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Write test case in `tests/test_nisa_all_programs_parser.py` verifying parser
+      raises explicit missing-headers error when required headers are absent
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Update the pipeline code path for `raw_nisa_all_programs_xlsx` to write
+      the generated MOSERS workbook into `run_dir/_generated/` and then copy/rename
+      it to `run_dir/all_programs-mosers-input.xlsx` within the same step
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: '`tests/fixtures/mosers_reference.xlsx` exists in the repository as a binary
+      Excel fixture file'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Unit tests load `tests/fixtures/mosers_reference.xlsx` via openpyxl and
+      fail with a clear error message including the expected path if the fixture is
+      missing or unreadable
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: '`tests/utils/xlsx_compare.py` exists and exposes a callable comparison
+      API (e.g., `compare_workbooks(...)`) that is imported and used by `tests/test_mosers_workbook.py`'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'The comparison helper supports comparing a specified set of sheet names
+      and A1 ranges and validates both cell values and these style attributes at minimum:
+      `number_format`, `font`, `fill`, `alignment`, `border`'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Unit tests for the comparison helper verify that assertion messages include
+      all required fields (sheet name, coordinate, property name, expected, actual)
+      by triggering intentional mismatches
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: '`tests/test_mosers_workbook.py` contains at least one test that generates
+      a MOSERS workbook and compares against `tests/fixtures/mosers_reference.xlsx`
+      using range-level comparisons for sheets `CPRS-CH` and `CPRS-FCM`'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: The MOSERS workbook range-level comparison test(s) verify both values and
+      formatting (not values-only) for the compared ranges
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: The fixture-based test compares all cells in the defined ranges (e.g.,
+      A1:Z100 for CPRS-CH and CPRS-FCM sheets) and passes with zero differences in
+      values and the five specified style attributes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: '`src/counter_risk/mosers/workbook_generation.py` no longer creates a new
+      blank `openpyxl.Workbook()` as the base workbook for MOSERS output, and instead
+      loads/copies an internal template workbook'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: '`src/counter_risk/mosers/template.py` exists and is used by `src/counter_risk/mosers/workbook_generation.py`
+      to obtain the template workbook/path/bytes'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: Parser tests in `tests/test_nisa_all_programs_parser.py` demonstrate that
+      the parser successfully extracts correct field values from fixtures where the
+      data worksheet is not first
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: Parser tests in `tests/test_nisa_all_programs_parser.py` demonstrate that
+      the parser successfully extracts correct field values from fixtures where there
+      are extra leading rows before the header row
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: Parser tests in `tests/test_nisa_all_programs_parser.py` demonstrate that
+      the parser successfully extracts correct field values from fixtures where columns
+      appear in non-standard order
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: When required headers are missing, the raw NISA parser raises an explicit
+      exception whose error message includes the missing header names (or expected
+      headers)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: '`tests/fixtures/raw_nisa_all_programs.xlsx` exists and is used by `tests/test_nisa_all_programs_parser.py`'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: '`tests/test_nisa_all_programs_parser.py` includes a test that validates
+      the parser raises the explicit "missing headers" error when one or more required
+      headers are absent and the error message lists the missing header names'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: For input type `raw_nisa_all_programs_xlsx`, the pipeline writes the generated
+      MOSERS workbook to `run_dir/_generated/` and then copies/renames it to `run_dir/all_programs-mosers-input.xlsx`
+      within the same step
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: The pipeline does not rely on downstream stages to rename the file; the
+      copy/rename to `all_programs-mosers-input.xlsx` occurs within the `raw_nisa_all_programs_xlsx`
+      handling code path
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
