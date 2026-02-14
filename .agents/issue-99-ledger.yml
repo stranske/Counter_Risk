@@ -1,0 +1,390 @@
+version: 1
+issue: 99
+base: main
+branch: codex/issue-99
+tasks:
+  - id: task-01
+    title: Add preflight check to `scripts/validate_release_bundle.sh` that verifies
+      `gh` exists using `command -v gh >/dev/null 2>&1`
+    status: doing
+    started_at: '2026-02-14T01:22:57Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: 'Add error message to `scripts/validate_release_bundle.sh` that prints
+      when `gh` is missing and contains both the substring `gh` and at least one of:
+      `not found`, `missing`, `required`, or `install`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Update `scripts/validate_release_bundle.sh` to exit with non-zero status
+      code when `gh` preflight check fails
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Identify which environment variables (`$OS`, `$MSYSTEM`, `$CYGWIN`, `$MINGW`,
+      `$WSL_DISTRO_NAME`, `$OSTYPE`) are available in target Windows environments
+      for OS detection
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Implement multi-signal Windows detection logic in `scripts/validate_release_bundle.sh`
+      that checks both `uname -s` and at least one environment variable
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Add fallback logic to `scripts/validate_release_bundle.sh` for cases where
+      primary detection signals are unavailable
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Create `tests/test_validate_release_bundle.py` with basic test structure
+      and imports for `subprocess`, `pytest`, and `pathlib`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Implement fixture function in `tests/test_validate_release_bundle.py` that
+      creates a temporary directory with all required release artifacts using `tmp_path`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Write test function `test_validate_bundle_success` that executes `scripts/validate_release_bundle.sh`
+      against the complete fixture and asserts exit code zero
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Implement fixture function in `tests/test_validate_release_bundle.py` that
+      creates a temporary directory missing exactly one required artifact
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Write test function `test_validate_bundle_missing_artifact` that executes
+      `scripts/validate_release_bundle.sh` against the incomplete fixture and captures
+      stdout/stderr
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Add assertion to `test_validate_bundle_missing_artifact` that verifies
+      non-zero exit code
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Add assertion to `test_validate_bundle_missing_artifact` that verifies
+      stderr or stdout contains either: (1) the exact filename of the missing artifact,
+      OR (2) a path substring matching the missing artifact, OR (3) the word `missing`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: '**[MANUAL]** Create `.github/workflows/release.yml` by copying or moving
+      the existing `docs/release.yml.draft` content into `.github/workflows/release.yml`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: '**[MANUAL]** Add `actions/checkout` step to the release workflow job in
+      `.github/workflows/release.yml`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: '**[MANUAL]** Add `actions/setup-python` step with appropriate Python version
+      to the release workflow job in `.github/workflows/release.yml`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: '**[MANUAL]** Add run step to `.github/workflows/release.yml` that installs
+      project dependencies from requirements file'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: '**[MANUAL]** Add run step to `.github/workflows/release.yml` that executes
+      the project test suite'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: '**[MANUAL]** Add run step to `.github/workflows/release.yml` that invokes
+      PyInstaller to build the application binary'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: '**[MANUAL]** Add run step to `.github/workflows/release.yml` that creates
+      and populates the `release/` directory with required artifacts'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: '**[MANUAL]** Add run step to `.github/workflows/release.yml` that executes
+      `scripts/validate_release_bundle.sh` to verify bundle completeness'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: '**[MANUAL]** Add `actions/upload-artifact` step to `.github/workflows/release.yml`
+      with path configured to include the `release/` directory'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: '**[MANUAL]** Add `on: workflow_dispatch:` trigger to `.github/workflows/release.yml`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: '**[MANUAL]** Add optional `version` input to workflow_dispatch trigger
+      in `.github/workflows/release.yml` (ensure `required: false` or omitted)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: A GitHub Actions workflow file exists at `.github/workflows/release.yml`
+      on the default branch
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: '`.github/workflows/release.yml` is valid YAML (passes `yamllint` or GitHub
+      Actions syntax validation)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: '`.github/workflows/release.yml` contains an `actions/checkout` step'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: '`.github/workflows/release.yml` contains an `actions/setup-python` step'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: '`.github/workflows/release.yml` contains a run step that installs dependencies'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: '`.github/workflows/release.yml` contains a run step that executes tests'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: '`.github/workflows/release.yml` contains a run step that invokes PyInstaller'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: '`.github/workflows/release.yml` contains a run step that creates/populates
+      `release/` directory'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: '`.github/workflows/release.yml` contains a run step that calls `scripts/validate_release_bundle.sh`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: '`.github/workflows/release.yml` contains an `actions/upload-artifact`
+      step with `path` parameter that includes `release/`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: '`.github/workflows/release.yml` contains `on: workflow_dispatch:` trigger'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'If `.github/workflows/release.yml` defines a `version` input under `workflow_dispatch`,
+      it is not marked `required: true`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: The workflow YAML contains an `actions/upload-artifact` step with path
+      parameter that includes `release/` (verifiable via static analysis without workflow
+      execution)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: '`scripts/validate_release_bundle.sh` contains a check for `gh` using `command
+      -v gh` or equivalent'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: '`scripts/validate_release_bundle.sh` exits with non-zero status code when
+      `gh` is not available on `PATH`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'When `gh` is missing, `scripts/validate_release_bundle.sh` prints an error
+      message that contains both the substring `gh` and at least one of the following
+      substrings: `not found`, `missing`, `required`, or `install`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: '`scripts/validate_release_bundle.sh` Windows detection logic checks at
+      least two signals: `uname -s` and at least one of `$OS`, `$MSYSTEM`, `$CYGWIN`,
+      `$MINGW`, `$WSL_DISTRO_NAME`, or `$OSTYPE`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: File `tests/test_validate_release_bundle.py` exists
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: '`tests/test_validate_release_bundle.py` contains a test function that
+      executes `scripts/validate_release_bundle.sh` against a fixture directory with
+      all required artifacts'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: The passing test case asserts that `scripts/validate_release_bundle.sh`
+      exits with code 0 when all artifacts are present
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: '`tests/test_validate_release_bundle.py` contains a test function that
+      executes `scripts/validate_release_bundle.sh` against a fixture directory missing
+      exactly one required artifact'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: The failing test case asserts that `scripts/validate_release_bundle.sh`
+      exits with a non-zero code when an artifact is missing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'The failing test case asserts that stderr or stdout contains either: (1)
+      the exact filename of the missing artifact, OR (2) a path substring matching
+      the missing artifact, OR (3) the word `missing`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: All tests in `tests/test_validate_release_bundle.py` pass when executed
+      via `pytest tests/test_validate_release_bundle.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
