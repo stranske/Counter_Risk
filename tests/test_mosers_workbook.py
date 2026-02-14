@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from shutil import copyfile
+from typing import Any
 
 import pytest
 
@@ -59,7 +60,7 @@ def test_generate_mosers_workbook_reflects_input_annualized_volatility_changes(
         variant_workbook.close()
 
 
-def _bump_first_annualized_volatility_column(workbook: object) -> bool:
+def _bump_first_annualized_volatility_column(workbook: Any) -> bool:
     for sheet_name in workbook.sheetnames:
         worksheet = workbook[sheet_name]
         max_row = int(worksheet.max_row)
@@ -96,14 +97,14 @@ def _bump_first_annualized_volatility_column(workbook: object) -> bool:
 
 
 def _read_column_values(
-    worksheet: object, column: str, start_row: int, end_row: int
+    worksheet: Any, column: str, start_row: int, end_row: int
 ) -> list[float | None]:
     return [
         worksheet[f"{column}{row_number}"].value for row_number in range(start_row, end_row + 1)
     ]
 
 
-def _expected_allocations(parsed_data: object) -> list[float]:
+def _expected_allocations(parsed_data: Any) -> list[float]:
     total_notional = sum(row.notional for row in parsed_data.totals_rows)
     if total_notional == 0:
         return [0.0 for _ in parsed_data.totals_rows]
@@ -112,5 +113,6 @@ def _expected_allocations(parsed_data: object) -> list[float]:
 
 def _pad_to_slot_count(values: list[float], slots: int) -> list[float | None]:
     if len(values) >= slots:
-        return values[:slots]
+        trimmed: list[float | None] = [*values[:slots]]
+        return trimmed
     return [*values, *([None] * (slots - len(values)))]

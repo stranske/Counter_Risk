@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -76,7 +77,7 @@ def test_parser_does_not_map_standalone_percent_header_to_annualized_volatility(
 
 
 def _populate_minimal_nisa_sheet(
-    worksheet: object,
+    worksheet: Any,
     *,
     counterparty_name: str,
     drop_headers: set[str] | None = None,

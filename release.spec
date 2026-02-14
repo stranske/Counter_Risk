@@ -6,13 +6,20 @@ from __future__ import annotations
 from pathlib import Path
 
 
-project_root = Path(__file__).resolve().parent
+try:
+    project_root = Path(__file__).resolve().parent
+except NameError:
+    project_root = Path.cwd().resolve()
 
 datas = []
 for relative_path in ("templates", "config"):
     source_path = project_root / relative_path
     if source_path.exists():
         datas.append((str(source_path), relative_path))
+
+fixture_template = project_root / "tests" / "fixtures" / "Monthly Counterparty Exposure Report.pptx"
+if fixture_template.exists():
+    datas.append((str(fixture_template), "templates"))
 
 
 a = Analysis(
@@ -40,6 +47,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
+    contents_directory=".",
     console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,

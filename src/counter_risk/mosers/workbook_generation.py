@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any, TypeAlias
 
 from counter_risk.mosers.template import load_mosers_template_workbook
 from counter_risk.parsers.nisa import NisaTotalsRow, parse_nisa_all_programs
 
-if TYPE_CHECKING:
-    from openpyxl.workbook.workbook import Workbook
-    from openpyxl.worksheet.worksheet import Worksheet
+Workbook: TypeAlias = Any
+Worksheet: TypeAlias = Any
 
 _TARGET_SHEET = "CPRS - CH"
 _PROGRAM_NAME_CELL = "B5"
