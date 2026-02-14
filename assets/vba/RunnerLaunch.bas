@@ -57,7 +57,7 @@ End Sub
 Public Function BuildRunArguments(ByVal asOfMonth As String, ByVal mode As RunnerMode) As String
     Dim outputDir As String
 
-    outputDir = ResolveOutputDir(".", asOfMonth)
+    outputDir = ResolveOutputDir(ResolveRepoRoot(), asOfMonth)
 
     BuildRunArguments = BuildCommand(ModeToString(mode), asOfMonth, outputDir)
 End Function
