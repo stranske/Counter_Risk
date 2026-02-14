@@ -3,14 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from counter_risk.mosers.template import load_mosers_template_workbook
 from counter_risk.parsers.nisa import parse_nisa_all_programs
-
-if TYPE_CHECKING:  # pragma: no cover
-    from openpyxl.workbook.workbook import Workbook
-
 
 _TARGET_SHEET = "CPRS - CH"
 _PROGRAM_NAME_CELL = "B5"
@@ -20,7 +16,7 @@ _START_ROW = 10
 _END_ROW = 20
 
 
-def generate_mosers_workbook(raw_nisa_path: str | Path) -> Workbook:
+def generate_mosers_workbook(raw_nisa_path: str | Path) -> Any:
     """Generate a populated MOSERS workbook from raw NISA input.
 
     The internal MOSERS template workbook is loaded from package resources,
