@@ -7,10 +7,10 @@ tasks:
     title: 'Create the function signature `generate_mosers_workbook(raw_nisa_path:
       str | Path) -> openpyxl.Workbook` in `src/counter_risk/mosers/workbook_generation.py`
       with proper type hints and docstring'
-    status: doing
+    status: done
     started_at: '2026-02-14T19:01:36Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-14T19:01:50Z'
+    commit: bd8ce54238ffc9fa328a79a72d425d16a9fb1b99
     notes: []
   - id: task-02
     title: Implement template loading logic in `generate_mosers_workbook` that uses
