@@ -234,6 +234,7 @@ def test_build_runner_workbook_embeds_valid_vba_binary_with_matching_hash(tmp_pa
     built_vba_project = _extract_vba_project_bytes(output_workbook)
     source_vba_project = Path("assets/vba/vbaProject.bin").read_bytes()
 
+    assert source_vba_project[:8] == runner_builder.OLE_CFB_SIGNATURE
     assert built_vba_project[:8] == runner_builder.OLE_CFB_SIGNATURE
     assert _sha256_bytes(built_vba_project) == _sha256_bytes(source_vba_project)
 
