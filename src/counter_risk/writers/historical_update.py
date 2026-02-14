@@ -421,7 +421,7 @@ def _append_row(
     )
 
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
         raise RuntimeError(
             "openpyxl is required to update historical workbooks. "
