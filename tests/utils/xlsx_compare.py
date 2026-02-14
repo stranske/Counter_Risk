@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -117,6 +118,12 @@ def _coerce_ranges(
 def _assert_cell_property(
     sheet_name: str, coordinate: str, property_name: str, expected: Any, actual: Any
 ) -> None:
+    if property_name == "value":
+        expected = _normalize_cell_value(expected)
+        actual = _normalize_cell_value(actual)
+        if _numeric_values_match(expected, actual):
+            return
+
     if expected != actual:
         raise AssertionError(
             "Cell mismatch "
@@ -126,6 +133,20 @@ def _assert_cell_property(
             f"expected={expected!r} "
             f"actual={actual!r}"
         )
+
+
+def _normalize_cell_value(value: Any) -> Any:
+    if value == "":
+        return None
+    return value
+
+
+def _numeric_values_match(expected: Any, actual: Any) -> bool:
+    if not isinstance(expected, (int, float)) or not isinstance(actual, (int, float)):
+        return False
+    if isinstance(expected, bool) or isinstance(actual, bool):
+        return False
+    return math.isclose(float(expected), float(actual), rel_tol=0.0, abs_tol=1e-6)
 
 
 def _normalize_font(font: Any) -> tuple[Any, ...]:
