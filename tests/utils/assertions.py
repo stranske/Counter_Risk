@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping, Sequence
-from numbers import Real
 from typing import Any
 
 
@@ -63,7 +62,7 @@ def assert_numeric_outputs_close(
             )
         return
 
-    if isinstance(expected, Real) and isinstance(actual, Real):
+    if isinstance(expected, (int, float)) and isinstance(actual, (int, float)):
         if not math.isclose(float(actual), float(expected), abs_tol=abs_tol, rel_tol=rel_tol):
             raise AssertionError(
                 f"{path} numeric mismatch: actual={actual}, expected={expected}, "
