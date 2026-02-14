@@ -7,10 +7,10 @@ tasks:
     title: 'Create the `BuildCommand` function signature accepting three parameters:
       `runMode`, `selectedDate`, and `outputDir` in the appropriate VBA module under
       `assets/vba/src`'
-    status: doing
+    status: done
     started_at: '2026-02-14T01:45:41Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-14T01:45:51Z'
+    commit: 9a6ce51d068ba7446d48e1715c0e61657976788b
     notes: []
   - id: task-02
     title: Add logic to standardize `outputDir` to the pattern `<repo-root>\runs\<date>`
