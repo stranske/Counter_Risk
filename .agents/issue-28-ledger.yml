@@ -1,0 +1,137 @@
+version: 1
+issue: 28
+base: main
+branch: codex/issue-28
+tasks:
+  - id: task-01
+    title: Add fixture workbook at a concrete path (e.g., `tests/fixtures/nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx`)
+      containing representative exposure summary data needed for WAL
+    status: doing
+    started_at: '2026-02-14T20:51:39Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Create `src/counter_risk/parsers/exposure_maturity_schedule.py` with parsing
+      logic to extract the exposure maturity schedule inputs required for WAL
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Implement `calculate_wal(exposure_summary_path, px_date) -> float` (in
+      an appropriate module, e.g., `src/counter_risk/calculations/wal.py`) following
+      the documented manual procedure (fill zeros, remove Return Swaps, compute weighted
+      average life)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Create a function to locate and open the ex LLC 3 Year workbook at the
+      expected path
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Implement logic to read the existing historical WAL sheet structure and
+      identify the append location
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Write a function to append a new WAL row with px_date and calculated value
+      to the historical sheet
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Add validation to ensure existing workbook formatting and formulas are
+      preserved after the append operation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Integrate the WAL append function into the existing historical update workflow
+      entry point
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Create the test file structure at tests/test_wal.py with appropriate imports
+      and test class setup
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Implement a synthetic workbook generator function that creates minimal
+      valid exposure summary data in memory
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Write unit tests for calculate_wal using the synthetic workbook with known
+      expected WAL outputs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Add integration tests using the real fixture workbook to validate parsing
+      of actual data formats
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Create edge case tests for calculate_wal covering empty data, missing Return
+      Swaps, and zero-filled scenarios
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Running `python -m counter_risk.workflows.historical_update --date YYYY-MM-DD`
+      successfully appends a new row to the historical WAL sheet with the correct
+      px_date and calculated WAL value, verifiable by opening the workbook and confirming
+      the new row exists
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: '`calculate_wal(exposure_summary_path, px_date)` returns the same float
+      value across repeated runs given identical inputs'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: All WAL-related unit tests pass (e.g., `pytest tests/test_wal.py`) including
+      synthetic and fixture-based test coverage
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
