@@ -244,7 +244,9 @@ def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
     run_dir = run_pipeline(config_path)
 
     generated_mosers_output = run_dir / "all_programs-mosers-input.xlsx"
+    intermediate_generated_output = run_dir / "_generated" / "all_programs-generated-mosers.xlsx"
     assert generated_mosers_output.exists()
+    assert intermediate_generated_output.exists()
 
     from openpyxl import load_workbook  # type: ignore[import-untyped]
 
