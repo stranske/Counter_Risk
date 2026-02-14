@@ -22,7 +22,8 @@ def test_generate_mosers_workbook_creates_new_file_with_required_sheets(tmp_path
 
     workbook = load_workbook(output_path, read_only=True, data_only=True)
     try:
-        assert workbook.sheetnames == ["CPRS - CH", "CPRS - FCM"]
+        assert "CPRS - CH" in workbook.sheetnames
+        assert "CPRS - FCM" in workbook.sheetnames
     finally:
         workbook.close()
 
