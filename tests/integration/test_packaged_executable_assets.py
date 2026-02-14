@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 _REQUIRED_FIXTURE_KEYS = (
     "mosers_all_programs_xlsx",

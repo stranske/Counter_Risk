@@ -4,6 +4,7 @@ import logging
 import sys
 import types
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -50,9 +51,9 @@ def test_refresh_ppt_links_surfaces_com_failures_with_context(
     app.Quit = lambda: setattr(state, "quit_called", True)
 
     fake_client = types.ModuleType("win32com.client")
-    fake_client.DispatchEx = lambda _prog_id: app
+    cast(Any, fake_client).DispatchEx = lambda _prog_id: app
     fake_win32com = types.ModuleType("win32com")
-    fake_win32com.client = fake_client
+    cast(Any, fake_win32com).client = fake_client
 
     monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
     monkeypatch.setitem(sys.modules, "win32com.client", fake_client)

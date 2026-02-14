@@ -7,13 +7,14 @@ import shutil
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
 
 def test_release_spec_defines_analysis_exe_and_collect() -> None:
     spec_path = Path(__file__).resolve().parents[1] / "release.spec"
-    captures: dict[str, object] = {}
+    captures: dict[str, Any] = {}
 
     def _analysis(*args: object, **kwargs: object) -> SimpleNamespace:
         captures["analysis_args"] = args
