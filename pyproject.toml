@@ -33,7 +33,7 @@ dev = [
     "pytest-cov==7.0.0",
     "pandas>=2.2,<3",
     "python-pptx==1.0.2",
-    "black==26.1.0",
+    "black==24.10.0",
     "ruff==0.15.0",
     "mypy==1.18.2",
 ]
