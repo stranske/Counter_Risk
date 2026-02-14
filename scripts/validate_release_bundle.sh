@@ -57,7 +57,11 @@ elif ! grep -q "How to run" "$readme_file"; then
   fail "README file does not contain required text 'How to run': ${readme_file}"
 fi
 
-# Multi-signal platform detection: uname plus well-known Windows-adjacent env vars.
+# Multi-signal platform detection: uname plus Windows-adjacent env vars.
+# These env vars vary by shell/runtime:
+# - Git Bash / MSYS2: OS=Windows_NT and/or MSYSTEM=MINGW64|MSYS
+# - Cygwin: uname CYGWIN* and CYGWIN is often set (value may not contain "CYGWIN")
+# - WSL: WSL_DISTRO_NAME is set, but userspace is Linux so we keep non-.exe expectation
 platform="$(uname -s 2>/dev/null || true)"
 if [ -z "$platform" ]; then
   platform="unknown"
@@ -78,11 +82,19 @@ case "$platform" in
 esac
 
 if [ "$is_windows" -eq 0 ]; then
-  case "${os_env}:${msystem_env}:${cygwin_env}:${mingw_env}:${wsl_distro_env}:${ostype_env}" in
-    *Windows_NT*|*MSYS*|*MINGW*|*CYGWIN*)
-      is_windows=1
-      ;;
-  esac
+  # Prefer explicit env signal checks over fuzzy matching because some variables
+  # (for example CYGWIN) can have values that do not include the variable name.
+  if [ "$os_env" = "Windows_NT" ] || [ -n "$msystem_env" ] || [ -n "$mingw_env" ]; then
+    is_windows=1
+  elif [ "${CYGWIN+x}" = "x" ] || [ "${MINGW+x}" = "x" ]; then
+    is_windows=1
+  else
+    case "$ostype_env" in
+      cygwin*|msys*|mingw*|win32*)
+        is_windows=1
+        ;;
+    esac
+  fi
 fi
 
 if [ "$is_windows" -eq 1 ]; then
