@@ -19,14 +19,6 @@ from counter_risk.writers.dropin_templates import (
 from tests.utils.assertions import assert_numeric_outputs_close
 
 
-def _load_openpyxl_or_fail() -> Any:
-    try:
-        import openpyxl
-    except ModuleNotFoundError as exc:
-        pytest.fail(f"openpyxl must be installed for drop-in template fixture tests: {exc}")
-    return openpyxl
-
-
 def test_fill_dropin_template_raises_for_missing_template(tmp_path: Path) -> None:
     missing = tmp_path / "missing-template.xlsx"
 
@@ -494,7 +486,10 @@ def _find_metric_columns(worksheet: Any) -> dict[str, int]:
 def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
     tmp_path: Path,
 ) -> None:
-    openpyxl = _load_openpyxl_or_fail()
+    openpyxl = pytest.importorskip(
+        "openpyxl",
+        reason="openpyxl required for Excel file manipulation",
+    )
 
     template = Path("tests/fixtures/NISA Drop-In Template - All Programs.xlsx")
     output = tmp_path / "all-programs-output.xlsx"
@@ -605,7 +600,10 @@ def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
 
 
 def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path: Path) -> None:
-    openpyxl = _load_openpyxl_or_fail()
+    openpyxl = pytest.importorskip(
+        "openpyxl",
+        reason="openpyxl required for Excel file manipulation",
+    )
 
     template = Path("tests/fixtures/NISA Drop-In Template - Ex Trend.xlsx")
     output = tmp_path / "ex-trend-output.xlsx"
@@ -713,7 +711,10 @@ def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path:
 def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
     tmp_path: Path,
 ) -> None:
-    openpyxl = _load_openpyxl_or_fail()
+    openpyxl = pytest.importorskip(
+        "openpyxl",
+        reason="openpyxl required for Excel file manipulation",
+    )
 
     template = Path("tests/fixtures/NISA Drop-In Template - Trend.xlsx")
     output = tmp_path / "trend-output.xlsx"
@@ -857,7 +858,10 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
 def test_fill_dropin_template_generated_workbooks_reopen_cleanly_for_all_variants(
     tmp_path: Path,
 ) -> None:
-    openpyxl = _load_openpyxl_or_fail()
+    openpyxl = pytest.importorskip(
+        "openpyxl",
+        reason="openpyxl required for Excel file manipulation",
+    )
 
     cases = [
         (
@@ -909,7 +913,10 @@ def test_fill_dropin_template_generated_workbooks_reopen_cleanly_for_all_variant
 
 
 def test_fill_dropin_template_rejects_malformed_template_file(tmp_path: Path) -> None:
-    _load_openpyxl_or_fail()
+    pytest.importorskip(
+        "openpyxl",
+        reason="openpyxl required for Excel file manipulation",
+    )
 
     malformed_template = tmp_path / "malformed.xlsx"
     malformed_template.write_bytes(b"not-a-valid-xlsx")

@@ -28,6 +28,13 @@ def test_runner_vba_module_constructs_arguments_from_date_and_mode() -> None:
     assert 'ResolveConfigPath = "config\\trend.yml"' in module_source
 
 
+def test_runner_vba_build_run_arguments_external_path_uses_repo_root_only() -> None:
+    module_source = _module_source()
+
+    assert "outputDir = ResolveOutputDir(ResolveRepoRoot(), asOfMonth)" in module_source
+    assert 'ResolveOutputDir(".")' not in module_source
+
+
 def test_runner_vba_module_defines_structured_launch_status_and_execution() -> None:
     module_source = _module_source()
 
