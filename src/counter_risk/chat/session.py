@@ -31,6 +31,33 @@ _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
     re.compile(r"<\s*system\s*>", re.IGNORECASE),
 )
 
+_INTENT_PATTERNS: Final[tuple[tuple[str, tuple[re.Pattern[str], ...]], ...]] = (
+    (
+        "top_exposures",
+        (
+            re.compile(r"\btop\s+exposures?\b", re.IGNORECASE),
+            re.compile(r"\blargest\s+exposures?\b", re.IGNORECASE),
+            re.compile(r"\bbiggest\s+counterpart(y|ies)\b", re.IGNORECASE),
+        ),
+    ),
+    (
+        "key_warnings",
+        (
+            re.compile(r"\bkey\s+warnings?\b", re.IGNORECASE),
+            re.compile(r"\bwarnings?\b", re.IGNORECASE),
+            re.compile(r"\balerts?\b", re.IGNORECASE),
+        ),
+    ),
+    (
+        "deltas",
+        (
+            re.compile(r"\bdeltas?\b", re.IGNORECASE),
+            re.compile(r"\btop\s+changes?\b", re.IGNORECASE),
+            re.compile(r"\bmovers?\b", re.IGNORECASE),
+        ),
+    ),
+)
+
 
 class ChatSessionError(ValueError):
     """Raised when chat session configuration is invalid."""
@@ -93,9 +120,13 @@ class ChatSession:
         return answer
 
     def _answer_from_context(self, question: str) -> str:
-        question_norm = question.lower()
-        if "top exposures" in question_norm:
+        intent = self._route_intent(question)
+        if intent == "top_exposures":
             return _format_top_exposures(self.context.manifest)
+        if intent == "key_warnings":
+            return _format_key_warnings(self.context.warnings)
+        if intent == "deltas":
+            return _format_deltas(self.context.deltas)
 
         warnings_total = len(self.context.warnings)
         deltas_total = sum(len(records) for records in self.context.deltas.values())
@@ -103,6 +134,12 @@ class ChatSession:
             f"Run summary: {self.context.summary()}. "
             f"Loaded {warnings_total} warnings and {deltas_total} top-change records."
         )
+
+    def _route_intent(self, question: str) -> str:
+        for intent, patterns in _INTENT_PATTERNS:
+            if any(pattern.search(question) for pattern in patterns):
+                return intent
+        return "summary"
 
 
 def is_provider_model_supported(provider: str, model: str) -> bool:
@@ -188,26 +225,134 @@ def sanitize_untrusted_text(raw_text: str) -> str:
 
 
 def _format_top_exposures(manifest: dict[str, object]) -> str:
-    raw = manifest.get("top_exposures")
-    if not isinstance(raw, dict) or not raw:
+    rows = _extract_top_exposure_rows(manifest)
+    if not rows:
         return "No top exposures found in manifest."
 
-    lines: list[str] = []
+    sorted_rows = sorted(
+        rows,
+        key=lambda row: (-row["value"], row["variant"], row["name"]),
+    )
+    top_rows = sorted_rows[:5]
+    formatted = [f"{row['variant']}: {row['name']} ({row['value']:.2f})" for row in top_rows]
+    return "; ".join(formatted)
+
+
+def _extract_top_exposure_rows(manifest: dict[str, object]) -> list[dict[str, str | float]]:
+    raw = manifest.get("top_exposures")
+    if not isinstance(raw, dict) or not raw:
+        return []
+
+    rows: list[dict[str, str | float]] = []
     for variant in sorted(raw):
         records = raw.get(variant)
         if not isinstance(records, list):
             continue
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+
+            value = _extract_numeric_value(record)
+            if value is None:
+                continue
+
+            rows.append(
+                {
+                    "variant": str(variant),
+                    "name": str(record.get("counterparty") or record.get("name") or "unknown"),
+                    "value": value,
+                }
+            )
+
+    return rows
+
+
+def _extract_numeric_value(record: dict[object, object]) -> float | None:
+    candidate_keys = (
+        "notional",
+        "exposure",
+        "value",
+        "amount",
+        "mtm",
+        "gross_exposure",
+        "net_exposure",
+    )
+
+    for key in candidate_keys:
+        parsed = _parse_float(record.get(key))
+        if parsed is not None:
+            return parsed
+
+    for value in record.values():
+        parsed = _parse_float(value)
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def _parse_float(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        return float(value)
+    if isinstance(value, str):
+        cleaned = value.strip().replace(",", "")
+        if not cleaned:
+            return None
+        try:
+            return float(cleaned)
+        except ValueError:
+            return None
+    return None
+
+
+def _format_key_warnings(warnings: list[str]) -> str:
+    if not warnings:
+        return "Key warnings: none."
+
+    preview = "; ".join(f"{index + 1}. {item}" for index, item in enumerate(warnings[:3]))
+    if len(warnings) > 3:
+        preview = f"{preview}; ... (+{len(warnings) - 3} more)"
+    return f"Key warnings ({len(warnings)}): {preview}"
+
+
+def _format_deltas(deltas: dict[str, list[dict[str, object]]]) -> str:
+    if not deltas:
+        return "Top deltas: none."
+
+    lines: list[str] = []
+    for variant in sorted(deltas):
+        records = deltas.get(variant, [])
         if not records:
-            lines.append(f"{variant}: none")
             continue
 
         first = records[0]
         if not isinstance(first, dict):
-            lines.append(f"{variant}: unavailable")
             continue
 
-        counterparty = first.get("counterparty", "unknown")
-        notional = first.get("notional", "unknown")
-        lines.append(f"{variant}: {counterparty} ({notional})")
+        counterparty = str(first.get("counterparty") or first.get("name") or "unknown")
+        metric, metric_value = _find_delta_metric(first)
+        lines.append(f"{variant}: {counterparty} {metric}={metric_value}")
 
-    return "; ".join(lines) if lines else "No top exposures found in manifest."
+    return "; ".join(lines) if lines else "Top deltas: none."
+
+
+def _find_delta_metric(record: dict[str, object]) -> tuple[str, str]:
+    candidate_keys = (
+        "notional_change",
+        "delta",
+        "change",
+        "delta_value",
+        "mtm_change",
+        "exposure_change",
+    )
+    for key in candidate_keys:
+        if key in record:
+            return key, str(record[key])
+
+    for key, value in record.items():
+        if key in {"counterparty", "name"}:
+            continue
+        return str(key), str(value)
+
+    return "value", "unknown"
