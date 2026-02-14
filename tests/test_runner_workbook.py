@@ -230,6 +230,15 @@ def test_build_runner_workbook_embeds_valid_vba_binary_with_matching_hash(tmp_pa
     assert _sha256_bytes(built_vba_project) == _sha256_bytes(source_vba_project)
 
 
+def test_build_runner_workbook_extracts_vba_binary_with_ole_signature(tmp_path: Path) -> None:
+    output_workbook = tmp_path / "Runner.built.xlsm"
+    runner_builder.build_runner_workbook(output_workbook)
+
+    extracted_vba_project = _extract_vba_project_bytes(output_workbook)
+
+    assert extracted_vba_project[:8] == runner_builder.OLE_CFB_SIGNATURE
+
+
 def test_build_runner_workbook_extracts_searchable_vba_text(tmp_path: Path) -> None:
     output_workbook = tmp_path / "Runner.built.xlsm"
     runner_builder.build_runner_workbook(output_workbook)
