@@ -6,7 +6,7 @@ import csv
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 _TABLE_SUFFIXES: tuple[str, ...] = (".csv", ".parquet")
 
@@ -145,12 +145,12 @@ def _load_csv_table(path: Path) -> list[dict[str, Any]]:
 
 def _load_parquet_table(path: Path) -> list[dict[str, Any]]:
     try:
-        import pandas
+        import pandas as pd  # type: ignore[import-untyped]
     except ImportError as exc:
         raise RunContextError(f"Parquet table found but pandas is unavailable: {path}") from exc
 
     try:
-        dataframe = pandas.read_parquet(path)
+        dataframe = pd.read_parquet(path)
     except Exception as exc:  # pragma: no cover - backend-specific parser errors
         raise RunContextError(f"Failed to read Parquet table: {path}") from exc
-    return dataframe.to_dict(orient="records")
+    return cast(list[dict[str, Any]], dataframe.to_dict(orient="records"))
