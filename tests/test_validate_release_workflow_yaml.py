@@ -35,8 +35,7 @@ jobs:
           name: release-${{ env.RELEASE_VERSION }}
           path: release/${{ env.RELEASE_VERSION }}/
           retention-days: 7
-"""
-        + extra,
+""" + extra,
         encoding="utf-8",
     )
 
