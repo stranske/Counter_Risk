@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
 from counter_risk.mosers.template import load_mosers_template_workbook
-from counter_risk.parsers.nisa import parse_nisa_all_programs
+from counter_risk.parsers.nisa import NisaTotalsRow, parse_nisa_all_programs
+
+if TYPE_CHECKING:
+    from openpyxl.workbook.workbook import Workbook
+    from openpyxl.worksheet.worksheet import Worksheet
 
 _TARGET_SHEET = "CPRS - CH"
 _PROGRAM_NAME_CELL = "B5"
@@ -16,7 +20,7 @@ _START_ROW = 10
 _END_ROW = 20
 
 
-def generate_mosers_workbook(raw_nisa_path: str | Path) -> Any:
+def generate_mosers_workbook(raw_nisa_path: str | Path) -> Workbook:
     """Generate a populated MOSERS workbook from raw NISA input.
 
     The internal MOSERS template workbook is loaded from package resources,
@@ -27,7 +31,10 @@ def generate_mosers_workbook(raw_nisa_path: str | Path) -> Any:
     parsed = parse_nisa_all_programs(raw_nisa_path)
     workbook = load_mosers_template_workbook()
 
-    worksheet = workbook[_TARGET_SHEET] if _TARGET_SHEET in workbook.sheetnames else workbook.active
+    if _TARGET_SHEET not in workbook.sheetnames:
+        raise ValueError(f"MOSERS template workbook missing required sheet: {_TARGET_SHEET}")
+
+    worksheet = workbook[_TARGET_SHEET]
     first_program = parsed.ch_rows[0].counterparty if parsed.ch_rows else ""
     worksheet[_PROGRAM_NAME_CELL] = first_program
 
@@ -52,16 +59,16 @@ def generate_mosers_workbook(raw_nisa_path: str | Path) -> Any:
     return workbook
 
 
-def _build_allocation_percentages(totals_rows: tuple[Any, ...]) -> list[float]:
-    total_notional = sum(float(getattr(row, "notional", 0.0)) for row in totals_rows)
+def _build_allocation_percentages(totals_rows: tuple[NisaTotalsRow, ...]) -> list[float]:
+    total_notional = sum(row.notional for row in totals_rows)
     if total_notional == 0:
         return [0.0 for _ in totals_rows]
-    return [float(getattr(row, "notional", 0.0)) / total_notional for row in totals_rows]
+    return [row.notional / total_notional for row in totals_rows]
 
 
 def _write_vertical_values(
     *,
-    worksheet: Any,
+    worksheet: Worksheet,
     column_letter: str,
     start_row: int,
     end_row: int,
