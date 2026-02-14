@@ -11,6 +11,22 @@ WORKFLOW_FILE="$1"
 REF_NAME="$2"
 ARTIFACT_PREFIX="${3:-release-}"
 
+WORKFLOW_PATH="${WORKFLOW_FILE}"
+if [ ! -f "${WORKFLOW_PATH}" ] && [ -f ".github/workflows/${WORKFLOW_FILE}" ]; then
+  WORKFLOW_PATH=".github/workflows/${WORKFLOW_FILE}"
+fi
+
+if [ ! -f "${WORKFLOW_PATH}" ]; then
+  echo "[ERROR] Workflow file not found: ${WORKFLOW_FILE}" >&2
+  echo "[ERROR] Expected path: ${WORKFLOW_PATH}" >&2
+  exit 1
+fi
+
+if ! python scripts/validate_release_workflow_yaml.py "${WORKFLOW_PATH}"; then
+  echo "[ERROR] Workflow validation failed for ${WORKFLOW_PATH}." >&2
+  exit 1
+fi
+
 if ! command -v gh >/dev/null 2>&1; then
   echo "[ERROR] GitHub CLI (gh) is required but was not found on PATH." >&2
   exit 1
