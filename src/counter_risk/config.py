@@ -21,7 +21,8 @@ class WorkflowConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     as_of_date: date | None = None
-    mosers_all_programs_xlsx: Path
+    mosers_all_programs_xlsx: Path | None = None
+    raw_nisa_all_programs_xlsx: Path | None = None
     mosers_ex_trend_xlsx: Path
     mosers_trend_xlsx: Path
     hist_all_programs_3yr_xlsx: Path
