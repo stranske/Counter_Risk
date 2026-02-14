@@ -7,9 +7,9 @@ can be validated deterministically in tests without relying on Excel automation.
 
 from __future__ import annotations
 
+import sys
 from datetime import date
 from pathlib import Path
-import sys
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
@@ -20,7 +20,7 @@ from counter_risk.runner_date_control import (
 
 OUTPUT_PATH = Path("Runner.xlsm")
 VBA_PROJECT_PATH = Path("assets/vba/vbaProject.bin")
-OLE_CFB_SIGNATURE = b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"
+OLE_CFB_SIGNATURE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 
 
 def _month_end_dates(start_year: int, start_month: int, end_year: int, end_month: int) -> list[str]:
