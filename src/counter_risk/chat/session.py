@@ -105,6 +105,17 @@ class ChatSession:
         )
 
 
+def is_provider_model_supported(provider: str, model: str) -> bool:
+    """Return True when provider/model selection is allowed."""
+
+    provider_key = provider.strip().lower()
+    model_key = model.strip()
+    available_models = _PROVIDER_MODELS.get(provider_key)
+    if available_models is None:
+        return False
+    return model_key in available_models
+
+
 # Safeguards reduce injection risk but do not replace model-side safety systems.
 def build_guarded_prompt(context: RunContext, question: str) -> str:
     """Build prompt with explicit trusted/untrusted delimiters."""
