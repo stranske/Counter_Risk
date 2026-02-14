@@ -78,6 +78,8 @@ def test_runner_vba_open_output_folder_checks_directory_and_reports_missing_path
     assert 'Set fileSystem = CreateObject("Scripting.FileSystemObject")' in module_source
     assert "fileSystem.FolderExists(resolvedPath)" in module_source
     assert 'MsgBox "Directory not found" & resolvedPath' in module_source
+    assert 'MsgBox "Directory not found: " & resolvedPath' not in module_source
+    assert 'MsgBox "Directory not found - " & resolvedPath' not in module_source
     assert "status = OpenDirectory(resolvedPath)" in module_source
 
 
