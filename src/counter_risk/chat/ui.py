@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 from counter_risk.chat.context import RunContext
 from counter_risk.chat.session import ChatSession, is_provider_model_supported
