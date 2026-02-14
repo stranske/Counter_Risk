@@ -32,8 +32,7 @@ jobs:
         with:
           name: release-${{ env.RELEASE_VERSION }}
           path: release/${{ env.RELEASE_VERSION }}/
-"""
-        + extra,
+""" + extra,
         encoding="utf-8",
     )
 
