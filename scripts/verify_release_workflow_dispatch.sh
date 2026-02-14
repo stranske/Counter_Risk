@@ -31,10 +31,12 @@ fi
 if [ ! -f "${WORKFLOW_PATH}" ]; then
   echo "[ERROR] Workflow file not found: ${WORKFLOW_FILE}" >&2
   echo "[ERROR] Expected path: ${WORKFLOW_PATH}" >&2
+  echo "[ERROR] needs-human: create .github/workflows/release.yml in a high-privilege workflow-sync environment." >&2
   if [ -f "${DRAFT_WORKFLOW_PATH}" ]; then
     echo "[ERROR] Draft workflow exists at docs/release.yml.draft and must be promoted to .github/workflows/release.yml before dispatch verification." >&2
     echo "[ERROR] Ensure promoted workflow includes run step: python -m pip install -e \".[dev]\"" >&2
     echo "[ERROR] Ensure promoted workflow includes run step: pyinstaller -y release.spec" >&2
+    echo "[ERROR] Ensure promoted workflow includes trigger: on.workflow_dispatch" >&2
     echo "[ERROR] Ensure workflow_dispatch.inputs.version is omitted or not required: true" >&2
     if validator_output="$(python "${VALIDATOR_SCRIPT}" "${DRAFT_WORKFLOW_PATH}" 2>&1)"; then
       echo "[ERROR] Draft workflow passed static validation. Promote it with: cp docs/release.yml.draft .github/workflows/release.yml" >&2
