@@ -1,0 +1,497 @@
+version: 1
+issue: 114
+base: main
+branch: codex/issue-114
+tasks:
+  - id: task-01
+    title: Update `src/counter_risk/chat/ui.py` submit handler to validate provider/model
+      selection before calling ChatSession
+    status: doing
+    started_at: '2026-02-14T19:47:18Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Update `src/counter_risk/chat/ui.py` submit handler to call `ChatSession.send(...)`
+      or `ChatSession.ask(...)` with user text, provider key, and model key
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Update `src/counter_risk/chat/ui.py` to render the returned assistant message
+      in the chat transcript, replacing any label-only scaffold response
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Create `src/counter_risk/chat/providers/base.py` defining a provider client
+      interface with a `generate(messages, model, **kwargs)` method
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Update `src/counter_risk/chat/session.py` to use the provider client abstraction
+      instead of provider-specific logic
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Add `src/counter_risk/chat/providers/openai_stub.py` implementing a deterministic
+      local stub that returns stable assistant text including the selected model key
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Add `src/counter_risk/chat/providers/anthropic_stub.py` implementing a
+      deterministic local stub that returns stable assistant text including the selected
+      model key
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Create a deterministic intent router function in `ChatSession` that maps
+      user queries to handler types using keyword or regex matching
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Implement the top exposures handler that extracts and formats numeric exposure
+      data from `RunContext` manifest fields
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Implement the key warnings handler that extracts warning counts and messages
+      from manifest data
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Implement the deltas handler that extracts and formats delta metric names
+      and values from manifest data
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Create a function to extract numeric exposure fields from `manifest.json`
+      and convert them to a list of name-value dictionaries
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Implement sorting logic that orders exposure entries in descending order
+      by numeric value using tolerance-aware comparisons
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Add a function to limit the sorted exposures list to the top N entries
+      with configurable threshold
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Create numeric tolerance helper functions including `is_close` and `cmp_with_tol`
+      in `src/counter_risk/chat/utils.py` with configurable tolerance parameters
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Update top exposures sorting logic to use tolerance-aware comparison helpers
+      instead of direct numeric comparisons
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Update top exposures formatting logic to use tolerance helpers when displaying
+      or comparing values
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Write `tests/chat/test_top_exposures.py` that loads `tests/fixtures/runs/min_run/manifest.json`
+      and asserts correct ordering of exposures
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Add test case in `tests/chat/test_top_exposures.py` asserting multi-row
+      output length >= 3 when fixture contains at least 3 exposures
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Add test case in `tests/chat/test_top_exposures.py` asserting within-tolerance
+      comparison behavior using numeric tolerance helpers
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Add a normalization function in `src/counter_risk/chat/safety.py` that
+      produces an intermediate normalized string from raw input
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Update `sanitize_untrusted_text` to compare sanitized output against the
+      normalized intermediate string instead of raw input
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Add `logger.warning` heuristic for detecting heavy encoding or escaping
+      patterns (>30% HTML entities/escape sequences) in sanitized output without blocking
+      execution
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Add `logger.warning` heuristic for detecting high non-alphanumeric character
+      ratio (>60% excluding spaces) in sanitized output without blocking execution
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Replace broad `except Exception` blocks in `src/counter_risk/chat/parquet_loader.py`
+      with specific `ImportError` and `ModuleNotFoundError` handlers for missing pandas
+      or pyarrow dependencies
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Add specific exception handlers for pandas parsing errors with targeted
+      error messages explaining data format issues
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Add specific exception handlers for pyarrow IO errors with targeted error
+      messages explaining file access or format problems
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Ensure all exception handlers in `src/counter_risk/chat/parquet_loader.py`
+      include actionable remediation messages with installation or troubleshooting
+      steps
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Wrap optional pandas imports in `src/counter_risk/chat/context.py` to raise
+      `ImportError` with pandas keyword and pip install hint when pandas is missing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Wrap optional pandas imports in `src/counter_risk/chat/parquet_loader.py`
+      to raise `ImportError` with pandas keyword and pip install hint when pandas
+      is missing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Update call sites in `src/counter_risk/chat/context.py` to implement CSV-only
+      fallback behavior when pandas `ImportError` is caught
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Update call sites in `src/counter_risk/chat/parquet_loader.py` to propagate
+      the targeted pandas `ImportError` with clear messaging when pandas is required
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: Update `src/counter_risk/chat/session.py` to replace the invalid model
+      identifier `gpt-4.1-mini` with a single agreed placeholder model name used consistently
+      in defaults and validation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Submitting a non-empty chat message from the UI calls `ChatSession.send(...)`
+      or `ChatSession.ask(...)` with the user text, selected provider key, and selected
+      model key
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: The UI renders the returned assistant message into the chat transcript
+      after calling `ChatSession.send/ask`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: If provider/model selection is invalid, the UI does not call `ChatSession.send/ask`
+      and shows the existing validation error state
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: If provider/model selection is valid, the UI calls `ChatSession.send/ask`
+      exactly once per submit action
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: '`src/counter_risk/chat/providers/base.py` exists and defines a provider
+      client interface used by `ChatSession`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: '`src/counter_risk/chat/providers/openai_stub.py` and `src/counter_risk/chat/providers/anthropic_stub.py`
+      exist and make no network calls'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: Each stub provider returns deterministic assistant text for the same input
+      prompt/model
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: When a valid provider key is selected, `ChatSession` dispatches to the
+      corresponding stub provider and includes the selected model key in the call;
+      the UI displays assistant text that contains a provider-specific identifier
+      string and the selected model key value that were returned by the stub
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Intent routing supports at least three distinct query types: `top exposures`,
+      `key warnings`, and `deltas`, selected via a deterministic router function'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: Each intent generates an answer derived from `RunContext`/manifest data,
+      not a generic summary fallback
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: For key warnings and deltas intents, the answer must include at least one
+      concrete data value (numeric, string literal, or list item) that is present
+      in the `manifest.json` fixture and is formatted distinctly from the unknown-intent
+      fallback template
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: The `top exposures` handler returns a structured multi-row result with
+      consistent keys (e.g., `name` and `value`) and length >= 3 when the fixture
+      manifest contains at least 3 exposures
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: '`top exposures` rows are sorted in non-increasing order by the computed
+      numeric exposure value'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: Numeric tolerance helpers are used so within-tolerance float differences
+      do not fail equality/ordering assertions in tests
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: '`tests/chat/test_top_exposures.py` exists and uses `tests/fixtures/runs/min_run/manifest.json`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: Tests assert correct ordering of exposures in non-increasing order by value
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: Tests assert output length >= 3 when fixture contains at least 3 exposures
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: Tests assert at least one within-tolerance comparison case using numeric
+      tolerance helpers
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: '`sanitize_untrusted_text` compares sanitized output against an intermediate
+      normalized string (not raw input) for transformation/bypass warnings'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: '`sanitize_untrusted_text` emits a WARNING log when (a) more than 30% of
+      characters are HTML entities or escape sequences, or (b) more than 60% of characters
+      are non-alphanumeric (excluding spaces); the function must return a sanitized
+      string without raising exceptions based solely on these thresholds'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: Parquet loading code contains no `except Exception` blocks
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: Parquet loading code catches specific exception types for (1) `ImportError`/`ModuleNotFoundError`
+      and (2) pandas/pyarrow parsing errors
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: 'Each exception handler produces an error message that includes: the missing
+      package name or file format issue, and a concrete pip install command or file
+      format requirement'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: '`src/counter_risk/chat/session.py` no longer uses `gpt-4.1-mini`; a single
+      placeholder model name is used consistently for defaults and validation'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: Optional pandas imports in `src/counter_risk/chat/context.py` and `src/counter_risk/chat/parquet_loader.py`
+      raise an `ImportError` whose message includes `pandas` and an explicit install
+      hint (e.g., `pip install ...[pandas]`) when pandas is missing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: Call sites in `src/counter_risk/chat/context.py` implement CSV-only fallback
+      when pandas `ImportError` is caught
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: Call sites in `src/counter_risk/chat/parquet_loader.py` propagate the targeted
+      pandas `ImportError` when pandas is required
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
