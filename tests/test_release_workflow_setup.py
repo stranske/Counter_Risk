@@ -5,7 +5,6 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -25,9 +24,13 @@ def test_validate_release_bundle_script_exists_and_passes_for_valid_bundle(tmp_p
     script = REPO_ROOT / "scripts" / "validate_release_bundle.sh"
     assert script.is_file()
 
-    executable_name = "counter-risk.exe" if subprocess.run(
-        ["uname", "-s"], text=True, capture_output=True, check=False
-    ).stdout.strip().startswith(("CYGWIN", "MINGW", "MSYS")) else "counter-risk"
+    executable_name = (
+        "counter-risk.exe"
+        if subprocess.run(["uname", "-s"], text=True, capture_output=True, check=False)
+        .stdout.strip()
+        .startswith(("CYGWIN", "MINGW", "MSYS"))
+        else "counter-risk"
+    )
     bundle_dir = tmp_path / "release" / "1.2.3"
     _create_valid_bundle(bundle_dir, executable_name=executable_name)
 
@@ -45,9 +48,13 @@ def test_validate_release_bundle_script_fails_when_manifest_missing(tmp_path: Pa
     script = REPO_ROOT / "scripts" / "validate_release_bundle.sh"
     assert script.is_file()
 
-    executable_name = "counter-risk.exe" if subprocess.run(
-        ["uname", "-s"], text=True, capture_output=True, check=False
-    ).stdout.strip().startswith(("CYGWIN", "MINGW", "MSYS")) else "counter-risk"
+    executable_name = (
+        "counter-risk.exe"
+        if subprocess.run(["uname", "-s"], text=True, capture_output=True, check=False)
+        .stdout.strip()
+        .startswith(("CYGWIN", "MINGW", "MSYS"))
+        else "counter-risk"
+    )
     bundle_dir = tmp_path / "release" / "1.2.3"
     _create_valid_bundle(bundle_dir, executable_name=executable_name)
     (bundle_dir / "manifest.json").unlink()
@@ -72,7 +79,7 @@ def test_release_workflow_draft_contains_required_steps() -> None:
     assert "workflow_dispatch" in contents
     assert "actions/checkout@v4" in contents
     assert "actions/setup-python@v5" in contents
-    assert "python -m pip install -e \".[dev]\"" in contents
+    assert 'python -m pip install -e ".[dev]"' in contents
     assert "python -m pip install pyinstaller" in contents
     assert "pytest tests/" in contents
     assert "pyinstaller -y release.spec" in contents
@@ -88,7 +95,10 @@ def test_release_workflow_setup_doc_exists_with_promotion_steps() -> None:
     contents = setup_path.read_text(encoding="utf-8")
 
     assert "pyproject.toml" in contents
-    assert "python -m counter_risk.build.release --version-file VERSION --output-dir release --force" in contents
+    assert (
+        "python -m counter_risk.build.release --version-file VERSION --output-dir release --force"
+        in contents
+    )
     assert "docs/release.yml.draft" in contents
     assert ".github/workflows/release.yml" in contents
     assert "workflow_dispatch" in contents
