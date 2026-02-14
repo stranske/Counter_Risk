@@ -71,6 +71,25 @@ jobs:
             'python -m pip install -e ".[dev]"',
         ),
         (
+            "missing_pyinstaller",
+            """
+name: x
+on: {workflow_dispatch: null}
+jobs:
+  release:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: python -m pip install -e ".[dev]"
+      - run: pytest tests/
+      - run: python -m counter_risk.build.release
+      - run: scripts/validate_release_bundle.sh release/1.2.3
+      - uses: actions/upload-artifact@v4
+        with: {path: release/1.2.3/}
+""",
+            "pyinstaller -y release.spec",
+        ),
+        (
             "bad_upload_path",
             """
 name: x
@@ -89,6 +108,24 @@ jobs:
         with: {path: dist/}
 """,
             "upload-artifact path must include 'release/'",
+        ),
+        (
+            "missing_upload_step",
+            """
+name: x
+on: {workflow_dispatch: null}
+jobs:
+  release:
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: python -m pip install -e ".[dev]"
+      - run: pytest tests/
+      - run: pyinstaller -y release.spec
+      - run: python -m counter_risk.build.release
+      - run: scripts/validate_release_bundle.sh release/1.2.3
+""",
+            "missing actions/upload-artifact step",
         ),
     ],
 )
