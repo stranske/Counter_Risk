@@ -12,6 +12,7 @@ A draft release workflow is provided at `docs/release.yml.draft`.
    `cp docs/release.yml.draft .github/workflows/release.yml`
 2. Commit and push the new workflow file.
 3. Trigger it manually with `workflow_dispatch` and verify a `release/<version>/` artifact uploads.
+   Recommended command: `scripts/verify_release_workflow_dispatch.sh release.yml <branch-or-tag>`
 
 ## Optional Triggers
 
