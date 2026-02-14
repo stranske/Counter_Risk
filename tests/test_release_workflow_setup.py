@@ -93,7 +93,7 @@ def test_release_workflow_draft_contains_required_steps() -> None:
     contents = workflow_path.read_text(encoding="utf-8")
     parsed = yaml.safe_load(contents)
     workflow_on = parsed.get("on", parsed.get(True, {}))
-    assert workflow_on["workflow_dispatch"] is None
+    assert "workflow_dispatch" in workflow_on
 
     steps = parsed["jobs"]["release"]["steps"]
     uses_steps = [str(step.get("uses", "")) for step in steps]
@@ -122,14 +122,14 @@ def test_release_workflow_draft_dispatch_inputs_do_not_require_version() -> None
     workflow_path = REPO_ROOT / "docs" / "release.yml.draft"
     assert workflow_path.is_file()
 
-    parsed = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+    contents = workflow_path.read_text(encoding="utf-8")
+    parsed = yaml.safe_load(contents)
     workflow_on = parsed.get("on", parsed.get(True, {}))
     dispatch_inputs = (workflow_on or {}).get("workflow_dispatch") or {}
     version_input = (dispatch_inputs.get("inputs") or {}).get("version")
-    if version_input is None:
-        return
-
-    assert version_input.get("required") is not True
+    assert isinstance(version_input, dict)
+    assert version_input.get("required") is False
+    assert "github.event.inputs.version" in contents
 
 
 def test_release_workflow_setup_doc_exists_with_promotion_steps() -> None:
