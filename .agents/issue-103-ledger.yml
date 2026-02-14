@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Update `BuildRunArguments` in `assets/vba/RunnerLaunch.bas` to call `ResolveRepoRoot()`
       instead of `ResolveOutputDir(".")` in the external invocation code path
-    status: doing
+    status: done
     started_at: '2026-02-14T02:19:41Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-14T02:19:54Z'
+    commit: a4a72157545912f0e8f857755721d80276ed8215
     notes: []
   - id: task-02
     title: Update all output directory construction code in `assets/vba/RunnerLaunch.bas`
