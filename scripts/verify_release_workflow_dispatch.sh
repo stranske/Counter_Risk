@@ -10,6 +10,9 @@ fi
 WORKFLOW_FILE="$1"
 REF_NAME="$2"
 ARTIFACT_PREFIX="${3:-release-}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+VALIDATOR_SCRIPT="${SCRIPT_DIR}/validate_release_workflow_yaml.py"
 
 WORKFLOW_PATH="${WORKFLOW_FILE}"
 if [ ! -f "${WORKFLOW_PATH}" ] && [ -f ".github/workflows/${WORKFLOW_FILE}" ]; then
@@ -19,10 +22,18 @@ fi
 if [ ! -f "${WORKFLOW_PATH}" ]; then
   echo "[ERROR] Workflow file not found: ${WORKFLOW_FILE}" >&2
   echo "[ERROR] Expected path: ${WORKFLOW_PATH}" >&2
+  if [ -f "${REPO_ROOT}/docs/release.yml.draft" ]; then
+    echo "[ERROR] Draft workflow exists at docs/release.yml.draft and must be promoted to .github/workflows/release.yml before dispatch verification." >&2
+  fi
   exit 1
 fi
 
-if ! python scripts/validate_release_workflow_yaml.py "${WORKFLOW_PATH}"; then
+if [[ "${WORKFLOW_PATH}" == *"/docs/release.yml.draft" ]] || [[ "${WORKFLOW_PATH}" == "docs/release.yml.draft" ]]; then
+  echo "[ERROR] docs/release.yml.draft cannot be dispatched directly; copy it to .github/workflows/release.yml first." >&2
+  exit 1
+fi
+
+if ! python "${VALIDATOR_SCRIPT}" "${WORKFLOW_PATH}"; then
   echo "[ERROR] Workflow validation failed for ${WORKFLOW_PATH}." >&2
   exit 1
 fi
