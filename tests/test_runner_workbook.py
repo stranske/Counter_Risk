@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 from datetime import date
+import hashlib
 from pathlib import Path
 from xml.etree import ElementTree
 from zipfile import ZipFile
+
+import pytest
+
+from scripts import build_runner_workbook as runner_builder
 
 SPREADSHEET_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 RELATIONSHIP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -41,6 +46,15 @@ def _next_month_end(current: date) -> date:
 def _read_xml(zip_file: ZipFile, member: str) -> ElementTree.Element:
     with zip_file.open(member) as handle:
         return ElementTree.fromstring(handle.read())  # noqa: S314
+
+
+def _sha256_bytes(content: bytes) -> str:
+    return hashlib.sha256(content).hexdigest()
+
+
+def _extract_vba_project_bytes(workbook_path: Path) -> bytes:
+    with ZipFile(workbook_path) as zip_file, zip_file.open("xl/vbaProject.bin") as handle:
+        return handle.read()
 
 
 def test_runner_workbook_exists() -> None:
@@ -204,3 +218,47 @@ def test_runner_workbook_contains_run_controls() -> None:
             )
             assert node is not None
             assert node.text == expected_text
+
+
+def test_build_runner_workbook_embeds_valid_vba_binary_with_matching_hash(tmp_path: Path) -> None:
+    output_workbook = tmp_path / "Runner.built.xlsm"
+    runner_builder.build_runner_workbook(output_workbook)
+
+    built_vba_project = _extract_vba_project_bytes(output_workbook)
+    source_vba_project = Path("assets/vba/vbaProject.bin").read_bytes()
+
+    assert built_vba_project[:8] == runner_builder.OLE_CFB_SIGNATURE
+    assert _sha256_bytes(built_vba_project) == _sha256_bytes(source_vba_project)
+
+
+def test_build_runner_workbook_extracts_searchable_vba_text(tmp_path: Path) -> None:
+    output_workbook = tmp_path / "Runner.built.xlsm"
+    runner_builder.build_runner_workbook(output_workbook)
+
+    vba_text = _extract_vba_project_bytes(output_workbook).decode("latin-1", errors="ignore")
+
+    assert vba_text
+    assert "OpenOutputFolder_Click" in vba_text
+
+
+def test_build_runner_workbook_fails_when_vba_project_bin_missing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    missing_path = tmp_path / "missing-vbaProject.bin"
+    monkeypatch.setattr(runner_builder, "VBA_PROJECT_PATH", missing_path)
+
+    with pytest.raises(FileNotFoundError):
+        runner_builder.build_runner_workbook(tmp_path / "Runner.built.xlsm")
+    assert runner_builder.main() == 1
+
+
+def test_build_runner_workbook_fails_when_vba_project_bin_has_invalid_signature(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    invalid_path = tmp_path / "invalid-vbaProject.bin"
+    invalid_path.write_bytes(b"NOT-OLE-BINARY")
+    monkeypatch.setattr(runner_builder, "VBA_PROJECT_PATH", invalid_path)
+
+    with pytest.raises(ValueError):
+        runner_builder.build_runner_workbook(tmp_path / "Runner.built.xlsm")
+    assert runner_builder.main() == 1

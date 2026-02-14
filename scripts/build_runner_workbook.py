@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+import sys
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
@@ -19,6 +20,7 @@ from counter_risk.runner_date_control import (
 
 OUTPUT_PATH = Path("Runner.xlsm")
 VBA_PROJECT_PATH = Path("assets/vba/vbaProject.bin")
+OLE_CFB_SIGNATURE = b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1"
 
 
 def _month_end_dates(start_year: int, start_month: int, end_year: int, end_month: int) -> list[str]:
@@ -207,6 +209,28 @@ def _write_zip_binary_member(zip_file: ZipFile, member_path: str, content: bytes
     zip_file.writestr(zip_info, content)
 
 
+def _load_vba_project_bin(path: Path | None = None) -> bytes:
+    if path is None:
+        path = VBA_PROJECT_PATH
+
+    if not path.is_file():
+        msg = f"Missing VBA project binary: {path}"
+        raise FileNotFoundError(msg)
+
+    content = path.read_bytes()
+    if (
+        len(content) < len(OLE_CFB_SIGNATURE)
+        or content[: len(OLE_CFB_SIGNATURE)] != OLE_CFB_SIGNATURE
+    ):
+        msg = (
+            "Invalid VBA project binary signature for "
+            f"{path}; expected OLE/CFB header {OLE_CFB_SIGNATURE.hex(' ').upper()}"
+        )
+        raise ValueError(msg)
+
+    return content
+
+
 def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
     scope = define_runner_xlsm_date_control_scope()
     if scope.decision.selected_control is not DateInputControl.MONTH_SELECTOR:
@@ -214,7 +238,7 @@ def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
         raise ValueError(msg)
 
     month_values = _month_end_dates(2020, 1, 2035, 12)
-    vba_project_bin = VBA_PROJECT_PATH.read_bytes()
+    vba_project_bin = _load_vba_project_bin()
     data_start_row = 2
     data_end_row = data_start_row + len(month_values) - 1
     validation_formula = f"ControlData!$A${data_start_row}:$A${data_end_row}"
@@ -238,5 +262,14 @@ def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
         )
 
 
+def main() -> int:
+    try:
+        build_runner_workbook()
+    except Exception as exc:  # pragma: no cover - exercised via unit tests
+        print(str(exc), file=sys.stderr)
+        return 1
+    return 0
+
+
 if __name__ == "__main__":
-    build_runner_workbook()
+    raise SystemExit(main())
