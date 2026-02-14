@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -18,6 +19,17 @@ def _create_valid_bundle(bundle_dir: Path, *, executable_name: str) -> None:
     (bundle_dir / "run_counter_risk.cmd").write_text("@echo off\n", encoding="utf-8")
     (bundle_dir / "README_HOW_TO_RUN.md").write_text("# How to run\n", encoding="utf-8")
     (bundle_dir / "bin" / executable_name).write_text("binary\n", encoding="utf-8")
+
+
+def _env_with_stub_gh(tmp_path: Path) -> dict[str, str]:
+    env = os.environ.copy()
+    bin_dir = tmp_path / "test-bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    gh_path = bin_dir / "gh"
+    gh_path.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    gh_path.chmod(0o755)
+    env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
+    return env
 
 
 def test_validate_release_bundle_script_exists_and_passes_for_valid_bundle(tmp_path: Path) -> None:
@@ -39,6 +51,7 @@ def test_validate_release_bundle_script_exists_and_passes_for_valid_bundle(tmp_p
         text=True,
         capture_output=True,
         check=False,
+        env=_env_with_stub_gh(tmp_path),
     )
 
     assert result.returncode == 0, result.stderr
@@ -64,6 +77,7 @@ def test_validate_release_bundle_script_fails_when_manifest_missing(tmp_path: Pa
         text=True,
         capture_output=True,
         check=False,
+        env=_env_with_stub_gh(tmp_path),
     )
 
     assert result.returncode != 0
