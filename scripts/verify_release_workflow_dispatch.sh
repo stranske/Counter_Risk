@@ -24,6 +24,9 @@ if [ ! -f "${WORKFLOW_PATH}" ]; then
   echo "[ERROR] Expected path: ${WORKFLOW_PATH}" >&2
   if [ -f "${REPO_ROOT}/docs/release.yml.draft" ]; then
     echo "[ERROR] Draft workflow exists at docs/release.yml.draft and must be promoted to .github/workflows/release.yml before dispatch verification." >&2
+    echo "[ERROR] Ensure promoted workflow includes run step: python -m pip install -e \".[dev]\"" >&2
+    echo "[ERROR] Ensure promoted workflow includes run step: pyinstaller -y release.spec" >&2
+    echo "[ERROR] Ensure workflow_dispatch.inputs.version is omitted or not required: true" >&2
   fi
   exit 1
 fi
