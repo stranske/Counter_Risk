@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -36,7 +37,7 @@ _HEADER_LABELS = {
 
 
 def _set_cell_if_header(
-    worksheet: object,
+    worksheet: Any,
     *,
     row: int,
     header_columns: dict[str, int],

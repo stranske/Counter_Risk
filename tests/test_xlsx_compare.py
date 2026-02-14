@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, Callable
 
 import pytest
 
@@ -63,7 +64,7 @@ def _create_workbook(path: Path) -> None:
 def test_compare_workbooks_reports_sheet_coordinate_property_expected_and_actual(
     tmp_path: Path,
     property_name: str,
-    mutate,
+    mutate: Callable[[Any, Any], None],
 ) -> None:
     openpyxl = pytest.importorskip("openpyxl")
 
