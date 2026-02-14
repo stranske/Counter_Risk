@@ -167,13 +167,18 @@ def run_pipeline(config_path: str | Path) -> Path:
 
 
 def _create_run_directory(*, as_of_date: date) -> Path:
-    run_dir = _resolve_repo_root() / "runs" / as_of_date.isoformat()
-    if run_dir.exists():
-        raise FileExistsError(
-            f"Run directory already exists for as_of_date {as_of_date.isoformat()}: {run_dir}"
-        )
-    run_dir.mkdir(parents=True, exist_ok=False)
-    return run_dir
+    runs_root = _resolve_repo_root() / "runs"
+    base_name = as_of_date.isoformat()
+    candidate_names = [base_name, *(f"{base_name}_{index}" for index in range(1, 10_000))]
+
+    for candidate_name in candidate_names:
+        run_dir = runs_root / candidate_name
+        if run_dir.exists():
+            continue
+        run_dir.mkdir(parents=True, exist_ok=False)
+        return run_dir
+
+    raise RuntimeError(f"Unable to create unique run directory for as_of_date {base_name}")
 
 
 def _resolve_repo_root() -> Path:

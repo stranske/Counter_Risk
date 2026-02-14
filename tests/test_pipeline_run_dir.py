@@ -106,7 +106,7 @@ def test_pipeline_writes_outputs_only_to_repo_root_runs_date_dir(
         assert output_path.is_relative_to(expected_run_dir)
 
 
-def test_run_directory_creation_same_date_repeat_run_fails_fast(
+def test_run_directory_creation_same_date_repeat_run_uses_unique_directory_suffix(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     inputs = {
@@ -157,10 +157,9 @@ def test_run_directory_creation_same_date_repeat_run_fails_fast(
     first_run_dir = run_pipeline(config_path)
     assert first_run_dir == tmp_path / "runs" / "2026-02-13"
 
-    with pytest.raises(
-        RuntimeError, match="Pipeline failed during run directory setup stage"
-    ) as exc_info:
-        run_pipeline(config_path)
-
-    assert isinstance(exc_info.value.__cause__, FileExistsError)
-    assert "Run directory already exists for as_of_date 2026-02-13" in str(exc_info.value.__cause__)
+    second_run_dir = run_pipeline(config_path)
+    assert second_run_dir == tmp_path / "runs" / "2026-02-13_1"
+    assert first_run_dir.exists()
+    assert second_run_dir.exists()
+    assert (first_run_dir / "historical-output.xlsx").exists()
+    assert (second_run_dir / "historical-output.xlsx").exists()
