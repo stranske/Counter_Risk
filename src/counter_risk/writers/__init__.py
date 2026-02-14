@@ -7,6 +7,7 @@ from counter_risk.writers.historical_update import (
     append_row_all_programs,
     append_row_ex_trend,
     append_row_trend,
+    append_wal_row,
 )
 from counter_risk.writers.mosers_workbook import generate_mosers_workbook
 from counter_risk.writers.pptx_screenshots import replace_screenshot_pictures
@@ -15,6 +16,7 @@ __all__ = [
     "append_row_all_programs",
     "append_row_ex_trend",
     "append_row_trend",
+    "append_wal_row",
     "fill_dropin_template",
     "generate_mosers_workbook",
     "replace_screenshot_pictures",
