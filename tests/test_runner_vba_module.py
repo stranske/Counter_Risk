@@ -74,10 +74,11 @@ def test_runner_vba_open_output_folder_checks_directory_and_reports_missing_path
 
     assert "Public Sub OpenOutputFolder_Click()" in module_source
     assert "resolvedPath = ResolveOutputDir(ResolveRepoRoot(), selectedDate)" in module_source
+    assert 'missingDirectoryMessage = "Directory not found" & resolvedPath' in module_source
     assert 'If Dir$(resolvedPath, vbDirectory) = "" Then' in module_source
     assert 'Set fileSystem = CreateObject("Scripting.FileSystemObject")' in module_source
     assert "fileSystem.FolderExists(resolvedPath)" in module_source
-    assert 'MsgBox "Directory not found" & resolvedPath' in module_source
+    assert "MsgBox missingDirectoryMessage" in module_source
     assert 'MsgBox "Directory not found: " & resolvedPath' not in module_source
     assert 'MsgBox "Directory not found - " & resolvedPath' not in module_source
     assert "status = OpenDirectory(resolvedPath)" in module_source

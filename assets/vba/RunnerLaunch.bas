@@ -47,14 +47,14 @@ Public Sub OpenOutputFolder_Click()
     If Dir$(resolvedPath, vbDirectory) = "" Then
         Set fileSystem = CreateObject("Scripting.FileSystemObject")
         If Not fileSystem.FolderExists(resolvedPath) Then
-            MsgBox "Directory not found" & resolvedPath
+            MsgBox missingDirectoryMessage
             WriteResult "Error " & missingDirectoryMessage
             Exit Sub
         End If
     End If
 
     If Not DirectoryExists(resolvedPath) Then
-        MsgBox "Directory not found" & resolvedPath
+        MsgBox missingDirectoryMessage
         WriteResult "Error " & missingDirectoryMessage
         Exit Sub
     End If
