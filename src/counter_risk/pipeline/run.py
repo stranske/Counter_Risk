@@ -92,11 +92,13 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during input validation stage") from exc
 
     as_of_date = config.as_of_date or datetime.now(tz=UTC).date()
-    run_dir = _resolve_repo_root() / "runs" / as_of_date.isoformat()
     try:
-        run_dir.mkdir(parents=True, exist_ok=True)
+        run_dir = _create_run_directory(as_of_date=as_of_date)
     except Exception as exc:
-        LOGGER.exception("pipeline_failed stage=run_dir_setup run_dir=%s", run_dir)
+        LOGGER.exception(
+            "pipeline_failed stage=run_dir_setup run_dir=%s",
+            _resolve_repo_root() / "runs" / as_of_date.isoformat(),
+        )
         raise RuntimeError("Pipeline failed during run directory setup stage") from exc
 
     warnings: list[str] = []
@@ -162,6 +164,21 @@ def run_pipeline(config_path: str | Path) -> Path:
     LOGGER.info("pipeline_complete run_dir=%s manifest=%s", run_dir, manifest_path)
 
     return run_dir
+
+
+def _create_run_directory(*, as_of_date: date) -> Path:
+    runs_root = _resolve_repo_root() / "runs"
+    base_name = as_of_date.isoformat()
+    candidate_names = [base_name, *(f"{base_name}_{index}" for index in range(1, 10_000))]
+
+    for candidate_name in candidate_names:
+        run_dir = runs_root / candidate_name
+        if run_dir.exists():
+            continue
+        run_dir.mkdir(parents=True, exist_ok=False)
+        return run_dir
+
+    raise RuntimeError(f"Unable to create unique run directory for as_of_date {base_name}")
 
 
 def _resolve_repo_root() -> Path:
