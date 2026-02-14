@@ -217,6 +217,7 @@ def test_runner_workbook_contains_run_controls() -> None:
             "B5": "Run Ex Trend",
             "C5": "Run Trend",
             "D5": "Open Output Folder",
+            "E5": "Ask about this run",
         }
         for cell_ref, expected_text in action_cells.items():
             node = runner_sheet_root.find(
