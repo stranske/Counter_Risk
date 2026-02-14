@@ -31,7 +31,7 @@ fi
 if [ ! -f "${WORKFLOW_PATH}" ]; then
   echo "[ERROR] Workflow file not found: ${WORKFLOW_FILE}" >&2
   echo "[ERROR] Expected path: ${WORKFLOW_PATH}" >&2
-  echo "[ERROR] needs-human: create .github/workflows/release.yml in a high-privilege workflow-sync environment." >&2
+  echo "[ERROR] needs-human: create .github/workflows/release.yml on the default branch in a high-privilege workflow-sync environment." >&2
   if [ -f "${DRAFT_WORKFLOW_PATH}" ]; then
     echo "[ERROR] Draft workflow exists at docs/release.yml.draft and must be promoted to .github/workflows/release.yml before dispatch verification." >&2
     echo "[ERROR] Ensure promoted workflow includes run step: python -m pip install -r requirements.txt" >&2
