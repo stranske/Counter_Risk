@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ LOGGER = logging.getLogger(__name__)
 SHEET_ALL_PROGRAMS_3_YEAR = "All Programs 3 Year"
 SHEET_EX_LLC_3_YEAR = "ex LLC 3 Year"
 SHEET_LLC_3_YEAR = "LLC 3 Year"
+SHEET_WAL = "WAL"
 
 SERIES_BY_SHEET: dict[str, tuple[str, ...]] = {
     SHEET_ALL_PROGRAMS_3_YEAR: (
@@ -51,6 +53,7 @@ SERIES_BY_SHEET: dict[str, tuple[str, ...]] = {
 }
 
 DATE_HEADER_CANDIDATES: tuple[str, ...] = ("date", "as of date", "as-of date")
+WAL_HEADER_CANDIDATES: tuple[str, ...] = ("wal", "wal tips repo", "weighted average life")
 HEADER_SCAN_ROWS = 12
 _DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH = Path(
     "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
@@ -79,6 +82,18 @@ class AppendDateResolutionError(AppendDateError):
 
 class DateMonotonicityError(AppendDateError):
     """Raised when append date is not newer than the latest existing row date."""
+
+
+@dataclass(frozen=True)
+class WalSheetAppendLocation:
+    """Resolved WAL sheet coordinates for a single-row append."""
+
+    sheet_name: str
+    header_row: int
+    date_column: int
+    wal_column: int
+    append_row: int
+    last_dated_row: int | None
 
 
 def _resolve_repo_root() -> Path:
@@ -358,6 +373,50 @@ def _find_last_dated_row(worksheet: Any, *, header_row: int, date_column: int) -
     return None
 
 
+def _get_wal_column_from_consolidated(header_map: Mapping[int, str], *, date_column: int) -> int:
+    for column_index, normalized in header_map.items():
+        if column_index == date_column:
+            continue
+        if normalized in WAL_HEADER_CANDIDATES:
+            return column_index
+        if normalized.startswith("wal "):
+            return column_index
+    raise WorkbookValidationError("Worksheet header rows are missing a WAL value column")
+
+
+def read_wal_sheet_append_location(
+    workbook: Any,
+    *,
+    wal_sheet_name: str = SHEET_WAL,
+) -> WalSheetAppendLocation:
+    """Resolve WAL sheet structure and row location for appending one WAL observation."""
+
+    if wal_sheet_name not in getattr(workbook, "sheetnames", []):
+        raise WorksheetNotFoundError(f"Required worksheet not found: {wal_sheet_name}")
+
+    worksheet = workbook[wal_sheet_name]
+    header_row = _find_header_row(worksheet)
+    consolidated_headers = _build_consolidated_header_map(
+        worksheet,
+        max_scan_rows=max(header_row, HEADER_SCAN_ROWS),
+    )
+    date_column = _get_date_column_from_consolidated(consolidated_headers)
+    wal_column = _get_wal_column_from_consolidated(
+        consolidated_headers,
+        date_column=date_column,
+    )
+    last_dated_row = _find_last_dated_row(worksheet, header_row=header_row, date_column=date_column)
+    append_row = header_row + 1 if last_dated_row is None else last_dated_row + 1
+    return WalSheetAppendLocation(
+        sheet_name=wal_sheet_name,
+        header_row=header_row,
+        date_column=date_column,
+        wal_column=wal_column,
+        append_row=append_row,
+        last_dated_row=last_dated_row,
+    )
+
+
 def _append_to_sheet(
     *,
     workbook: Any,
@@ -497,6 +556,62 @@ def append_row_trend(
     )
 
 
+def append_wal_row(
+    workbook_path: str | Path,
+    *,
+    px_date: date,
+    wal_value: float,
+    wal_sheet_name: str = SHEET_WAL,
+) -> Path:
+    """Append one WAL row to the historical WAL sheet."""
+
+    path = _as_path(workbook_path, field_name="workbook_path")
+    _validate_workbook_path(path)
+
+    try:
+        from openpyxl import load_workbook
+    except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
+        raise RuntimeError(
+            "openpyxl is required to update historical workbooks. "
+            "Install project dev dependencies to enable this feature."
+        ) from exc
+
+    workbook = None
+    try:
+        workbook = load_workbook(filename=path)
+        append_target = read_wal_sheet_append_location(workbook, wal_sheet_name=wal_sheet_name)
+        worksheet = workbook[append_target.sheet_name]
+
+        if append_target.last_dated_row is not None:
+            last_date = _coerce_cell_date(
+                worksheet.cell(
+                    row=append_target.last_dated_row, column=append_target.date_column
+                ).value
+            )
+            if last_date is None:
+                raise AppendDateError(
+                    "Last worksheet date is blank for WAL sheet "
+                    f"{append_target.sheet_name!r} at row {append_target.last_dated_row}"
+                )
+            if px_date <= last_date:
+                raise DateMonotonicityError(
+                    "Append date must be newer than the last row date: "
+                    f"append_date={px_date.isoformat()} last_row_date={last_date.isoformat()}"
+                )
+
+        worksheet.cell(row=append_target.append_row, column=append_target.date_column).value = (
+            px_date
+        )
+        worksheet.cell(row=append_target.append_row, column=append_target.wal_column).value = float(
+            wal_value
+        )
+        workbook.save(path)
+    finally:
+        if workbook is not None:
+            workbook.close()
+    return path
+
+
 __all__ = [
     "AppendDateError",
     "AppendDateResolutionError",
@@ -505,12 +620,16 @@ __all__ = [
     "SHEET_ALL_PROGRAMS_3_YEAR",
     "SHEET_EX_LLC_3_YEAR",
     "SHEET_LLC_3_YEAR",
+    "SHEET_WAL",
     "SERIES_BY_SHEET",
+    "WalSheetAppendLocation",
     "WorkbookValidationError",
     "WorksheetNotFoundError",
     "append_row_all_programs",
     "append_row_ex_trend",
     "append_row_trend",
+    "append_wal_row",
     "locate_ex_llc_3_year_workbook",
     "open_ex_llc_3_year_workbook",
+    "read_wal_sheet_append_location",
 ]

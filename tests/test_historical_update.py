@@ -17,6 +17,7 @@ def test_module_has_expected_sheet_constants() -> None:
     assert historical_update.SHEET_ALL_PROGRAMS_3_YEAR == "All Programs 3 Year"
     assert historical_update.SHEET_EX_LLC_3_YEAR == "ex LLC 3 Year"
     assert historical_update.SHEET_LLC_3_YEAR == "LLC 3 Year"
+    assert historical_update.SHEET_WAL == "WAL"
 
 
 def test_as_path_rejects_blank_string() -> None:
@@ -154,6 +155,26 @@ def test_append_to_sheet_raises_monotonicity_error_on_less_than_last_row_date_fr
         )
 
     assert historical_update._get_cell_value_no_create(sheet, row=14, column=1) is None
+
+
+def test_read_wal_sheet_append_location_identifies_header_columns_and_next_row() -> None:
+    wal_sheet = _FakeWorksheet(historical_update.SHEET_WAL)
+    wal_sheet.set_value(2, 1, "Date")
+    wal_sheet.set_value(2, 2, "WAL TIPS REPO")
+    wal_sheet.set_value(3, 1, date(2026, 1, 31))
+    wal_sheet.set_value(3, 2, 2.25)
+    wal_sheet.set_value(4, 1, date(2026, 2, 28))
+    wal_sheet.set_value(4, 2, 2.5)
+    workbook = _FakeWorkbook({historical_update.SHEET_WAL: wal_sheet})
+
+    append_target = historical_update.read_wal_sheet_append_location(workbook)
+
+    assert append_target.sheet_name == historical_update.SHEET_WAL
+    assert append_target.header_row == 2
+    assert append_target.date_column == 1
+    assert append_target.wal_column == 2
+    assert append_target.last_dated_row == 4
+    assert append_target.append_row == 5
 
 
 class _FakeCell:
@@ -534,3 +555,56 @@ def test_consolidated_header_map_includes_date_and_multi_row_numeric_series_colu
     assert header_map[4] == "swap (adj.) series"
     assert header_map[5] == "commodity"
     assert set(numeric_columns) == {2, 3, 4, 5}
+
+
+def test_append_wal_row_appends_px_date_and_wal_value(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    workbook_path = tmp_path / "historical.xlsx"
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = historical_update.SHEET_WAL
+    sheet.cell(row=2, column=1).value = "Date"
+    sheet.cell(row=2, column=2).value = "WAL TIPS REPO"
+    sheet.cell(row=3, column=1).value = date(2026, 1, 31)
+    sheet.cell(row=3, column=2).value = 2.1
+    workbook.save(workbook_path)
+    workbook.close()
+
+    historical_update.append_wal_row(
+        workbook_path,
+        px_date=date(2026, 2, 28),
+        wal_value=2.35,
+    )
+
+    reloaded = openpyxl.load_workbook(workbook_path)
+    try:
+        wal_sheet = reloaded[historical_update.SHEET_WAL]
+        assert historical_update._coerce_cell_date(wal_sheet.cell(row=4, column=1).value) == date(
+            2026, 2, 28
+        )
+        assert wal_sheet.cell(row=4, column=2).value == pytest.approx(2.35)
+    finally:
+        reloaded.close()
+
+
+def test_append_wal_row_rejects_non_monotonic_date(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    workbook_path = tmp_path / "historical.xlsx"
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = historical_update.SHEET_WAL
+    sheet.cell(row=2, column=1).value = "Date"
+    sheet.cell(row=2, column=2).value = "WAL TIPS REPO"
+    sheet.cell(row=3, column=1).value = date(2026, 1, 31)
+    sheet.cell(row=3, column=2).value = 2.1
+    workbook.save(workbook_path)
+    workbook.close()
+
+    with pytest.raises(historical_update.DateMonotonicityError, match="must be newer"):
+        historical_update.append_wal_row(
+            workbook_path,
+            px_date=date(2026, 1, 31),
+            wal_value=2.35,
+        )
