@@ -1,0 +1,263 @@
+version: 1
+issue: 93
+base: main
+branch: codex/issue-93
+tasks:
+  - id: task-01
+    title: Identify the dependency file used by the project for installation (requirements.txt,
+      setup.py, pyproject.toml, etc.)
+    status: done
+    started_at: '2026-02-14T00:51:18Z'
+    finished_at: '2026-02-14T00:51:28Z'
+    commit: b57719c5025859e2af8bcf5f04b4faf39d1f3de2
+    notes: []
+  - id: task-02
+    title: Identify the release assembly script location and invocation command
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Create a shell script at `scripts/validate_release_bundle.sh` that checks
+      for the existence of VERSION file in the bundle
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Add validation logic to `scripts/validate_release_bundle.sh` to verify
+      manifest.json exists in the bundle directory
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Add validation logic to `scripts/validate_release_bundle.sh` to verify
+      the templates directory exists in the bundle
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Add validation logic to `scripts/validate_release_bundle.sh` to verify
+      the default config file exists in the bundle
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Add validation logic to `scripts/validate_release_bundle.sh` to verify
+      run_counter_risk.cmd exists in the bundle
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Add validation logic to `scripts/validate_release_bundle.sh` to verify
+      a README file exists containing the substring "How to run"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Add validation logic to `scripts/validate_release_bundle.sh` to verify
+      the built executable exists with platform-specific naming
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Configure `scripts/validate_release_bundle.sh` to exit with non-zero code
+      if any check fails
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Create a complete draft workflow YAML file at `docs/release.yml.draft`
+      defining a `workflow_dispatch` trigger
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Add workflow steps to `docs/release.yml.draft` to check out the repository
+      and set up Python
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Add workflow step to `docs/release.yml.draft` to install Python dependencies
+      using the identified method
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Add workflow step to `docs/release.yml.draft` to install PyInstaller if
+      not included in project dependencies
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Add workflow step to `docs/release.yml.draft` to run the full test suite
+      before any build step
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Add workflow step to `docs/release.yml.draft` to build the executable using
+      `pyinstaller -y release.spec`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Add workflow step to `docs/release.yml.draft` to execute the release assembly
+      script with appropriate arguments
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Add workflow step to `docs/release.yml.draft` to run `scripts/validate_release_bundle.sh`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Add workflow step to `docs/release.yml.draft` to upload the assembled `release/<version>/`
+      directory as a workflow artifact
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Create documentation file at `docs/RELEASE_WORKFLOW_SETUP.md` explaining
+      how to move the draft workflow to `.github/workflows/release.yml`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Copy `docs/release.yml.draft` to `.github/workflows/release.yml`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Commit and push the workflow file to the repository
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Manually trigger the workflow using `workflow_dispatch` to verify it works
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Optionally add push/tag triggers to the workflow if desired
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: The file `scripts/validate_release_bundle.sh` exists and is executable
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Running `scripts/validate_release_bundle.sh` with a valid release bundle
+      directory exits with code 0
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Running `scripts/validate_release_bundle.sh` with a missing required file
+      exits with non-zero code
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: The file `docs/release.yml.draft` exists and contains valid GitHub Actions
+      YAML syntax
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: The file `docs/RELEASE_WORKFLOW_SETUP.md` exists and contains instructions
+      for manual workflow setup
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'The draft workflow YAML includes all required steps: checkout, Python
+      setup, dependency installation, test execution, PyInstaller build, release assembly,
+      validation, and artifact upload'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: The file `.github/workflows/release.yml` exists on `main`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Running the workflow produces an uploaded workflow artifact that contains
+      the assembled versioned release bundle directory `release/<version>/...`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: The workflow run fails with a non-zero exit code if any required bundle
+      artifact is missing (e.g., `VERSION`, `manifest.json`, `templates/`, default
+      config file, `run_counter_risk.cmd`, README containing "How to run", built executable)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
