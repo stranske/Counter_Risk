@@ -63,6 +63,7 @@ STDLIB_MODULES = {
     "logging",
     "math",
     "multiprocessing",
+    "numbers",
     "os",
     "pathlib",
     "pkgutil",
