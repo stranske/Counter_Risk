@@ -148,11 +148,11 @@ A coverage task is NOT complete just because you added tests. It is complete ONL
 ---
 ## PR Tasks and Acceptance Criteria
 
-**Progress:** 1/42 tasks complete, 41 remaining
+**Progress:** 42/42 tasks complete, 0 remaining
 
 ### ⚠️ IMPORTANT: Task Reconciliation Required
 
-The previous iteration changed **5 file(s)** but did not update task checkboxes.
+The previous iteration changed **7 file(s)** but did not update task checkboxes.
 
 **Before continuing, you MUST:**
 1. Review the recent commits to understand what was changed
@@ -179,82 +179,84 @@ Complete these in order. Mark checkbox done ONLY after implementation is verifie
 ### VBA Project Embedding
 - [x] Create a macro-enabled Excel workbook file named `Runner.xlsm` with the correct OOXML structure and content types
 - [x] Embed a valid VBA project binary at `xl/vbaProject.bin` within the `Runner.xlsm` package structure
-- [ ] Add the `RunnerLaunch.bas` module content to the embedded VBA project with all required public subroutines
+- [x] Add the `RunnerLaunch.bas` module content to the embedded VBA project with all required public subroutines
 - [x] Verify the embedded VBA project by unzipping `Runner.xlsm` and confirming `xl/vbaProject.bin` exists and is non-empty
 
 ### UI Control Wiring
-- [ ] Update `Runner.xlsm` form controls to assign macros to buttons: `Run All` -> `RunAll_Click`, `Run Ex Trend` -> `RunExTrend_Click`, `Run Trend` -> `RunTrend_Click`, `Open Output Folder` -> `OpenOutputFolder_Click`
+- [x] Update `Runner.xlsm` form controls to assign macros to buttons: `Run All` -> `RunAll_Click`, `Run Ex Trend` -> `RunExTrend_Click`, `Run Trend` -> `RunTrend_Click`, `Open Output Folder` -> `OpenOutputFolder_Click`
 
 ### VBA Entrypoint Implementation
-- [ ] Implement `Public Sub RunAll_Click()` entrypoint that reads selected date and calls the shared command builder with `All` mode
-- [ ] Implement `Public Sub RunExTrend_Click()` entrypoint that reads selected date and calls the shared command builder with `ExTrend` mode
-- [ ] Implement `Public Sub RunTrend_Click()` entrypoint that reads selected date and calls the shared command builder with `Trend` mode
-- [ ] Implement `Public Sub OpenOutputFolder_Click()` entrypoint that resolves the output directory and opens it with platform-appropriate commands
+- [x] Implement `Public Sub RunAll_Click()` entrypoint that reads selected date and calls the shared command builder with `All` mode
+- [x] Implement `Public Sub RunExTrend_Click()` entrypoint that reads selected date and calls the shared command builder with `ExTrend` mode
+- [x] Implement `Public Sub RunTrend_Click()` entrypoint that reads selected date and calls the shared command builder with `Trend` mode
+- [x] Implement `Public Sub OpenOutputFolder_Click()` entrypoint that resolves the output directory and opens it with platform-appropriate commands
 
 ### Command Building and Execution
-- [ ] Implement a shared VBA command-builder function `BuildCommand(runMode As String, selectedDate As String, outputDir As String) As String` and update the three run entrypoints to call it
-- [ ] Implement command execution in `RunnerLaunch.bas` using `Shell` or `WScript.Shell.Run` to launch the constructed command string
-- [ ] Add structured error handling with `On Error` statements to catch launch failures without showing runtime error dialogs
-- [ ] Implement a launch status return mechanism that provides success or failure indication with error codes or messages
-- [ ] Update the execution logic to capture and return process launch failures as structured status objects
+- [x] Implement a shared VBA command-builder function `BuildCommand(runMode As String, selectedDate As String, outputDir As String) As String` and update the three run entrypoints to call it
+- [x] Implement command execution in `RunnerLaunch.bas` using `Shell` or `WScript.Shell.Run` to launch the constructed command string
+- [x] Add structured error handling with `On Error` statements to catch launch failures without showing runtime error dialogs
+- [x] Implement a launch status return mechanism that provides success or failure indication with error codes or messages
+- [x] Update the execution logic to capture and return process launch failures as structured status objects
 
 ### Output Directory Standardization
-- [ ] Implement a single VBA output-directory resolver `ResolveOutputDir(repoRoot, selectedDate)` that standardizes output to `repo-root/runs/<date>` and update both executable-argument building and `OpenOutputFolder_Click` to use the same resolved path
-- [ ] Implement `OpenOutputFolder_Click` to check directory existence with `Dir()` or `FileSystemObject` before opening, and if the directory does not exist, write an error message containing `Directory not found` and the resolved path string to the UI result area
+- [x] Implement a single VBA output-directory resolver `ResolveOutputDir(repoRoot, selectedDate)` that standardizes output to `repo-root/runs/<date>` and update both executable-argument building and `OpenOutputFolder_Click` to use the same resolved path
+- [x] Implement `OpenOutputFolder_Click` to check directory existence with `Dir()` or `FileSystemObject` before opening, and if the directory does not exist, write an error message containing `Directory not found` and the resolved path string to the UI result area
 
 ### UI Status Updates
-- [ ] Identify or define named ranges or cell references for the UI status area and last-run result area in `Runner.xlsm`
-- [ ] Implement pre-launch status updates that write exactly `Running...` to the status area before command execution begins
-- [ ] Implement post-launch success updates that write `Success` to the last-run result area when launch completes without errors
-- [ ] Implement post-launch error updates that write `Error` with code or message to the last-run result area when launch fails
+- [x] Identify or define named ranges or cell references for the UI status area and last-run result area in `Runner.xlsm`
+- [x] Implement pre-launch status updates that write exactly `Running...` to the status area before command execution begins
+- [x] Implement post-launch success updates that write `Success` to the last-run result area when launch completes without errors
+- [x] Implement post-launch error updates that write `Error` with code or message to the last-run result area when launch fails
 
 ### Unit Test Implementation
-- [ ] Create unit tests that validate command construction for the `All` run mode with at least two distinct date selections
-- [ ] Create unit tests that validate command construction for the `ExTrend` run mode with at least two distinct date selections
-- [ ] Create unit tests that validate command construction for the `Trend` run mode with at least two distinct date selections
-- [ ] Create unit tests that validate output-path standardization including path separator normalization and exact directory strings
-- [ ] Implement test fixtures that stub or mock `Shell` and `WScript.Shell` calls to avoid requiring real executable binaries
-- [ ] Implement test fixtures that stub or mock filesystem and explorer calls to avoid requiring real directories
-- [ ] Write documentation in `README.md` or `TESTING.md` that specifies the single command to run all unit tests locally (e.g., `pytest -q`)
+- [x] Create unit tests that validate command construction for the `All` run mode with at least two distinct date selections
+- [x] Create unit tests that validate command construction for the `ExTrend` run mode with at least two distinct date selections
+- [x] Create unit tests that validate command construction for the `Trend` run mode with at least two distinct date selections
+- [x] Create unit tests that validate output-path standardization including path separator normalization and exact directory strings
+- [x] Implement test fixtures that stub or mock `Shell` and `WScript.Shell` calls to avoid requiring real executable binaries
+- [x] Implement test fixtures that stub or mock filesystem and explorer calls to avoid requiring real directories
+- [x] Write documentation in `README.md` or `TESTING.md` that specifies the single command to run all unit tests locally (e.g., `pytest -q`)
 
 ### Acceptance Criteria
 The PR is complete when ALL of these are satisfied:
 
 ### VBA Project Structure
-- [ ] The committed `Runner.xlsm` file has a `.xlsm` extension, contains `xl/vbaProject.bin` that is at least 1KB in size when unzipped, and can be opened in Excel without macro security warnings (when macros are enabled)
-- [ ] The VBA project in `Runner.xlsm` contains a standard module named `RunnerLaunch` (or `RunnerLaunch.bas` content imported) and it defines `Public Sub RunAll_Click()`, `Public Sub RunExTrend_Click()`, `Public Sub RunTrend_Click()`, and `Public Sub OpenOutputFolder_Click()` as public entrypoints
+- [x] The committed `Runner.xlsm` file has a `.xlsm` extension, contains `xl/vbaProject.bin` that is at least 1KB in size when unzipped, and can be opened in Excel without macro security warnings (when macros are enabled)
+- [x] The VBA project in `Runner.xlsm` contains a standard module named `RunnerLaunch` (or `RunnerLaunch.bas` content imported) and it defines `Public Sub RunAll_Click()`, `Public Sub RunExTrend_Click()`, `Public Sub RunTrend_Click()`, and `Public Sub OpenOutputFolder_Click()` as public entrypoints
 
 ### UI Control Assignment
-- [ ] Each of the four UI controls/buttons in `Runner.xlsm` is assigned to the correct macro name: `Run All` -> `RunAll_Click`, `Run Ex Trend` -> `RunExTrend_Click`, `Run Trend` -> `RunTrend_Click`, and `Open Output Folder` -> `OpenOutputFolder_Click`
+- [x] Each of the four UI controls/buttons in `Runner.xlsm` is assigned to the correct macro name: `Run All` -> `RunAll_Click`, `Run Ex Trend` -> `RunExTrend_Click`, `Run Trend` -> `RunTrend_Click`, and `Open Output Folder` -> `OpenOutputFolder_Click`
 
 ### Command Construction
-- [ ] VBA command construction is centralized: there is exactly one shared command-builder function (e.g., `Function BuildCommand(runMode As String, selectedDate As String, outputDir As String) As String`) invoked by all three run entrypoints (`RunAll_Click`, `RunExTrend_Click`, `RunTrend_Click`)
+- [x] VBA command construction is centralized: there is exactly one shared command-builder function (e.g., `Function BuildCommand(runMode As String, selectedDate As String, outputDir As String) As String`) invoked by all three run entrypoints (`RunAll_Click`, `RunExTrend_Click`, `RunTrend_Click`)
 
 ### Execution Logic
-- [ ] `RunnerLaunch.bas` executes the constructed command via Shell-like invocation (e.g., `Shell`, `WScript.Shell.Run`, or `WScript.Shell.Exec`) and returns a launch status to callers (success/failure and an error message or code)
-- [ ] The execution logic is not build-only: it actually invokes the command and captures the result
-- [ ] When the executable cannot be found or Shell invocation fails, the runner writes an error message to the result area that contains the word `Error` and at least 10 characters of diagnostic information (e.g., file path or error code), and the VBA code includes `On Error Resume Next` or `On Error GoTo` statements before Shell calls
+- [x] `RunnerLaunch.bas` executes the constructed command via Shell-like invocation (e.g., `Shell`, `WScript.Shell.Run`, or `WScript.Shell.Exec`) and returns a launch status to callers (success/failure and an error message or code)
+- [x] The execution logic is not build-only: it actually invokes the command and captures the result
+- [x] When the executable cannot be found or Shell invocation fails, the runner writes an error message to the result area that contains the word `Error` and at least 10 characters of diagnostic information (e.g., file path or error code), and the VBA code includes `On Error Resume Next` or `On Error GoTo` statements before Shell calls
 
 ### Output Directory Standardization
-- [ ] Output directory path construction produces exactly `<repo-root>/runs/<date>` where `<repo-root>` is resolved from the workbook location and `<date>` is in YYYY-MM-DD format, and unit tests verify this exact path format is used in both executable arguments and `OpenOutputFolder_Click`
-- [ ] `OpenOutputFolder_Click` checks directory existence with `Dir()` or `FileSystemObject` before opening, and if the directory does not exist, writes an error message to the result area containing the text `Directory not found` and the resolved path string
+- [x] Output directory path construction produces exactly `<repo-root>/runs/<date>` where `<repo-root>` is resolved from the workbook location and `<date>` is in YYYY-MM-DD format, and unit tests verify this exact path format is used in both executable arguments and `OpenOutputFolder_Click`
+- [x] `OpenOutputFolder_Click` checks directory existence with `Dir()` or `FileSystemObject` before opening, and if the directory does not exist, writes an error message to the result area containing the text `Directory not found` and the resolved path string
 
 ### UI Status Updates
-- [ ] On run start (any of the three run buttons), the UI status area is set to exactly `Running...` before attempting to launch the executable
-- [ ] After the launch attempt completes (success or failure), the UI last-run result area is updated with either `Success` or a string containing `Error` and an associated code/message (exit code if available or a launch error)
+- [x] On run start (any of the three run buttons), the UI status area is set to exactly `Running...` before attempting to launch the executable
+- [x] After the launch attempt completes (success or failure), the UI last-run result area is updated with either `Success` or a string containing `Error` and an associated code/message (exit code if available or a launch error)
 
 ### Unit Test Coverage
-- [ ] Automated unit tests exist that validate command construction for all three run modes (`All`, `ExTrend`, `Trend`) and at least two distinct date/month selections, asserting that the generated command contains the correct run-mode flag(s) and the selected date/month value(s) in the expected argument positions/names
-- [ ] Automated unit tests exist that validate output-path standardization, including at minimum: (a) correct joining/normalization of path separators, and (b) exact output directory string for a fixed repo-root and date input
-- [ ] All newly added tests are runnable locally with a single documented command (e.g., `pytest -q`) without requiring Excel UI automation or a real executable binary present (launch/explorer calls are stubbed/mocked)
-- [ ] The repository contains documentation (in `README.md` or `TESTING.md`) that specifies the exact command to run all unit tests
+- [x] Automated unit tests exist that validate command construction for all three run modes (`All`, `ExTrend`, `Trend`) and at least two distinct date/month selections, asserting that the generated command contains the correct run-mode flag(s) and the selected date/month value(s) in the expected argument positions/names
+- [x] Automated unit tests exist that validate output-path standardization, including at minimum: (a) correct joining/normalization of path separators, and (b) exact output directory string for a fixed repo-root and date input
+- [x] All newly added tests are runnable locally with a single documented command (e.g., `pytest -q`) without requiring Excel UI automation or a real executable binary present (launch/explorer calls are stubbed/mocked)
+- [x] The repository contains documentation (in `README.md` or `TESTING.md`) that specifies the exact command to run all unit tests
 
 ### Recently Attempted Tasks
 Avoid repeating these unless a task needs explicit follow-up:
 
-- Create a macro-enabled Excel workbook file named `Runner.xlsm` with the correct OOXML structure and content types
+- Implement `Public Sub OpenOutputFolder_Click()` entrypoint that resolves the output directory and opens it with platform-appropriate commands
+- Add structured error handling with `On Error` statements to catch launch failures without showing runtime error dialogs
+- Update the execution logic to capture and return process launch failures as structured status objects
 
 ### Suggested Next Task
-- Embed a valid VBA project binary at `xl/vbaProject.bin` within the `Runner.xlsm` package structure
+- Implement test fixtures that stub or mock filesystem and explorer calls to avoid requiring real directories
 
 ---
