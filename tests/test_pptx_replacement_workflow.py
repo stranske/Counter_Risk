@@ -81,7 +81,6 @@ def _make_near_match_workflow_pptx(path: Path, base_image: Path) -> None:
 def _slide_picture_state(
     slide: Slide,
 ) -> tuple[int, tuple[tuple[str, tuple[int, int, int, int]], ...]]:
-    # MSO_SHAPE_TYPE.PICTURE identifies picture shapes before casting to Picture.
     pictures = [
         cast(Picture, shape) for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
     ]

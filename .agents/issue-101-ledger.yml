@@ -1,0 +1,420 @@
+version: 1
+issue: 101
+base: main
+branch: codex/issue-101
+tasks:
+  - id: task-01
+    title: 'Create the `BuildCommand` function signature accepting three parameters:
+      `runMode`, `selectedDate`, and `outputDir` in the appropriate VBA module under
+      `assets/vba/src`'
+    status: done
+    started_at: '2026-02-14T01:45:41Z'
+    finished_at: '2026-02-14T01:45:51Z'
+    commit: 9a6ce51d068ba7446d48e1715c0e61657976788b
+    notes: []
+  - id: task-02
+    title: Add logic to standardize `outputDir` to the pattern `<repo-root>\runs\<date>`
+      using `ThisWorkbook.Path` and VBA path concatenation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Implement status label assignment for `Running...` state at the start of
+      `BuildCommand` execution
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Implement status label assignment for `Success` state upon successful command
+      completion in `BuildCommand`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Implement status label assignment for `Error` state in the error handler
+      of `BuildCommand`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Add `CreateObject("WScript.Shell")` instantiation in `BuildCommand`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Implement command execution using the `.Run` method of the WScript.Shell
+      object
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Add directory existence check using `Dir(path, vbDirectory)` before attempting
+      to open the output folder
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Update `OpenOutputFolder_Click` to check directory existence using `Dir(path,
+      vbDirectory)` before calling Shell or FollowHyperlink
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Add `Scripting.FileSystemObject.FolderExists` as a fallback existence check
+      in `OpenOutputFolder_Click`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Implement `MsgBox` call in `OpenOutputFolder_Click` that displays the concatenated
+      string `"Directory not found" & resolvedPath` with no separator characters when
+      the directory does not exist
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Fix `BuildCommand` to use the parsed date value returned by `parse_as_of_month`
+      (or equivalent) when constructing the command arguments
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Fix `BuildCommand` to use the parsed date value returned by `parse_as_of_month`
+      (or equivalent) when constructing the output directory path
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Add OLE/CFB signature validation to `build_runner_workbook.py` that checks
+      for the 8-byte header `D0 CF 11 E0 A1 B1 1A E1` in `assets/vba/vbaProject.bin`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Update `build_runner_workbook.py` to exit with non-zero status code when
+      `assets/vba/vbaProject.bin` is missing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Update `build_runner_workbook.py` to exit with non-zero status code when
+      `assets/vba/vbaProject.bin` does not have the OLE/CFB signature header
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Create automated test that builds `Runner.xlsm` and extracts `xl/vbaProject.bin`
+      from the zip archive
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Add test assertion that computes SHA-256 hash of extracted `xl/vbaProject.bin`
+      and compares it to the hash of `assets/vba/vbaProject.bin`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Add test that validates the first 8 bytes of `assets/vba/vbaProject.bin`
+      match the OLE/CFB signature `D0 CF 11 E0 A1 B1 1A E1`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Add test that validates the first 8 bytes of extracted `xl/vbaProject.bin`
+      match the OLE/CFB signature `D0 CF 11 E0 A1 B1 1A E1`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Implement test that extracts searchable text from `xl/vbaProject.bin` using
+      latin-1 decoding with error handling
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Add test assertion that verifies the extracted VBA content contains the
+      string `BuildCommand(`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Add test assertion that verifies the extracted VBA content contains the
+      string `OpenOutputFolder_Click`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Add test assertion that verifies the extracted VBA content contains the
+      string `Running...`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Add test assertion that verifies the extracted VBA content contains the
+      string `Success`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Add test assertion that verifies the extracted VBA content contains the
+      string `Error`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Add test assertion that verifies the extracted VBA content contains the
+      exact substring `Directory not found` (used in the missing-directory message)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: '**[MANUAL]** Regenerate `assets/vba/vbaProject.bin` from the updated VBA
+      sources using Microsoft Excel: Open the VBA editor, import all updated `.bas`/`.cls`/`.frm`
+      files from `assets/vba/src`, save the workbook, and extract the compiled `xl/vbaProject.bin`
+      from the saved `.xlsm` file to commit as `assets/vba/vbaProject.bin`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'The VBA source under `assets/vba/src` contains a public procedure named
+      `BuildCommand` with exactly three parameters: `runMode`, `selectedDate`, and
+      `outputDir`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: '`BuildCommand` contains a reference to `WScript.Shell` via `CreateObject("WScript.Shell")`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: '`BuildCommand` calls the `.Run` method on the WScript.Shell object'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: '`BuildCommand` assigns a status string containing the literal text `Running...`
+      to a UI control or variable at function entry'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: '`BuildCommand` assigns a status string containing the literal text `Success`
+      to a UI control or variable upon successful completion'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: '`BuildCommand` assigns a status string containing the literal text `Error`
+      to a UI control or variable in the error handler'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: '`BuildCommand` constructs the output directory path using the pattern
+      `<ThisWorkbook.Path>\runs\<parsedDate>` where `parsedDate` is the validated
+      date value'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: '`BuildCommand` uses the parsed/validated date value (not the raw `selectedDate`
+      parameter) when constructing both the command arguments and the output directory
+      path'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: The VBA code checks directory existence using `Dir(path, vbDirectory)`
+      before attempting to open the output folder
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: '`OpenOutputFolder_Click` checks directory existence before calling Shell,
+      FollowHyperlink, or FileSystemObject methods to open the folder'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: When the directory does not exist, `OpenOutputFolder_Click` calls `MsgBox`
+      with a string that begins with `Directory not found` immediately followed by
+      the resolved path with no colon or additional prefix text
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: '`assets/vba/vbaProject.bin` in the repository begins with the 8-byte OLE/CFB
+      signature `D0 CF 11 E0 A1 B1 1A E1`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: The extracted `xl/vbaProject.bin` from the built `Runner.xlsm` begins with
+      the 8-byte OLE/CFB signature `D0 CF 11 E0 A1 B1 1A E1`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: The SHA-256 hash of `assets/vba/vbaProject.bin` matches the SHA-256 hash
+      of the extracted `xl/vbaProject.bin` from the built `Runner.xlsm`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: '`build_runner_workbook.py` exits with a non-zero status code when `assets/vba/vbaProject.bin`
+      is missing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: '`build_runner_workbook.py` exits with a non-zero status code when `assets/vba/vbaProject.bin`
+      does not begin with the OLE/CFB signature bytes'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: Automated tests successfully extract `xl/vbaProject.bin` from the built
+      `Runner.xlsm` zip archive
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: Automated tests verify the extracted VBA content contains the string `BuildCommand(`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: Automated tests verify the extracted VBA content contains the string `OpenOutputFolder_Click`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: Automated tests verify the extracted VBA content contains the string `Running...`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: Automated tests verify the extracted VBA content contains the string `Success`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: Automated tests verify the extracted VBA content contains the string `Error`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: Automated tests verify the extracted VBA content contains the substring
+      `Directory not found`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: All automated tests pass when run against the built `Runner.xlsm`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

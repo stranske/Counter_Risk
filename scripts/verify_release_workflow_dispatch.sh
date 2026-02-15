@@ -2,6 +2,15 @@
 
 set -euo pipefail
 
+print_needs_human_followup() {
+  local ref_name="$1"
+  echo "[ERROR] needs-human: release workflow updates require agent-high-privilege or a manual maintainer action." >&2
+  echo "[ERROR] Apply label: needs-human" >&2
+  echo "[ERROR] Acceptance criteria requiring manual completion on '${ref_name}':" >&2
+  echo "[ERROR] - [ ] .github/workflows/release.yml exists on the default branch and triggers via workflow_dispatch" >&2
+  echo "[ERROR] - [ ] The workflow_dispatch input version (if present) has required: false or omits required" >&2
+}
+
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
   echo "Usage: $0 <workflow_file> <ref> [artifact_prefix]" >&2
   exit 2
@@ -10,6 +19,58 @@ fi
 WORKFLOW_FILE="$1"
 REF_NAME="$2"
 ARTIFACT_PREFIX="${3:-release-}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+VALIDATOR_SCRIPT="${SCRIPT_DIR}/validate_release_workflow_yaml.py"
+DRAFT_WORKFLOW_PATH="${RELEASE_WORKFLOW_DRAFT_PATH:-}"
+
+if [ -z "${DRAFT_WORKFLOW_PATH}" ]; then
+  if [ -f "docs/release.yml.draft" ]; then
+    DRAFT_WORKFLOW_PATH="docs/release.yml.draft"
+  else
+    DRAFT_WORKFLOW_PATH="${REPO_ROOT}/docs/release.yml.draft"
+  fi
+fi
+
+WORKFLOW_PATH="${WORKFLOW_FILE}"
+if [ ! -f "${WORKFLOW_PATH}" ] && [ -f ".github/workflows/${WORKFLOW_FILE}" ]; then
+  WORKFLOW_PATH=".github/workflows/${WORKFLOW_FILE}"
+fi
+
+if [ ! -f "${WORKFLOW_PATH}" ]; then
+  echo "[ERROR] Workflow file not found: ${WORKFLOW_FILE}" >&2
+  echo "[ERROR] Expected path: ${WORKFLOW_PATH}" >&2
+  print_needs_human_followup "${REF_NAME}"
+  echo "[ERROR] Required manual follow-up on branch '${REF_NAME}':" >&2
+  echo "[ERROR] 1) Create .github/workflows/release.yml from docs/release.yml.draft." >&2
+  echo "[ERROR] 2) Ensure the workflow includes trigger: on.workflow_dispatch." >&2
+  echo "[ERROR] 3) Ensure workflow_dispatch.inputs.version is omitted or sets required: false." >&2
+  if [ -f "${DRAFT_WORKFLOW_PATH}" ]; then
+    echo "[ERROR] Draft workflow exists at docs/release.yml.draft and must be promoted to .github/workflows/release.yml before dispatch verification." >&2
+    echo "[ERROR] Ensure promoted workflow includes run step: python -m pip install -r requirements.txt" >&2
+    echo "[ERROR] Ensure promoted workflow includes run step: pyinstaller -y release.spec" >&2
+    echo "[ERROR] Ensure promoted workflow includes trigger: on.workflow_dispatch" >&2
+    echo "[ERROR] Ensure workflow_dispatch.inputs.version is omitted or sets required: false" >&2
+    if validator_output="$(python "${VALIDATOR_SCRIPT}" "${DRAFT_WORKFLOW_PATH}" 2>&1)"; then
+      echo "[ERROR] Draft workflow passed static validation. Promote it with: cp docs/release.yml.draft .github/workflows/release.yml" >&2
+    else
+      echo "[ERROR] Draft workflow failed static validation." >&2
+      echo "${validator_output}" >&2
+      echo "[ERROR] Run: python scripts/validate_release_workflow_yaml.py docs/release.yml.draft" >&2
+    fi
+  fi
+  exit 1
+fi
+
+if [[ "${WORKFLOW_PATH}" == *"/docs/release.yml.draft" ]] || [[ "${WORKFLOW_PATH}" == "docs/release.yml.draft" ]]; then
+  echo "[ERROR] docs/release.yml.draft cannot be dispatched directly; copy it to .github/workflows/release.yml first." >&2
+  exit 1
+fi
+
+if ! python "${VALIDATOR_SCRIPT}" "${WORKFLOW_PATH}"; then
+  echo "[ERROR] Workflow validation failed for ${WORKFLOW_PATH}." >&2
+  exit 1
+fi
 
 if ! command -v gh >/dev/null 2>&1; then
   echo "[ERROR] GitHub CLI (gh) is required but was not found on PATH." >&2
