@@ -15,9 +15,12 @@ def test_dropin_template_pytest_run_skips_cleanly_without_openpyxl(tmp_path: Pat
             [
                 "import builtins",
                 "import sys",
+                "for _module_name in tuple(sys.modules):",
+                "    if _module_name == 'openpyxl' or _module_name.startswith('openpyxl.'):",
+                "        sys.modules.pop(_module_name, None)",
                 "_original_import = builtins.__import__",
                 "def _block_openpyxl(name, globals_=None, locals_=None, fromlist=(), level=0):",
-                "    if name == 'openpyxl' and 'openpyxl' not in sys.modules:",
+                "    if (name == 'openpyxl' or name.startswith('openpyxl.')) and name not in sys.modules:",
                 "        raise ModuleNotFoundError(\"No module named 'openpyxl'\")",
                 "    return _original_import(name, globals_, locals_, fromlist, level)",
                 "builtins.__import__ = _block_openpyxl",
