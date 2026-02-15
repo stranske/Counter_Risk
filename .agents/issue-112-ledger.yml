@@ -1,0 +1,266 @@
+version: 1
+issue: 112
+base: main
+branch: codex/issue-112
+tasks:
+  - id: task-01
+    title: 'Create the function signature `generate_mosers_workbook(raw_nisa_path:
+      str | Path) -> openpyxl.Workbook` in `src/counter_risk/mosers/workbook_generation.py`
+      with proper type hints and docstring'
+    status: done
+    started_at: '2026-02-14T19:01:36Z'
+    finished_at: '2026-02-14T19:01:50Z'
+    commit: bd8ce54238ffc9fa328a79a72d425d16a9fb1b99
+    notes: []
+  - id: task-02
+    title: Implement template loading logic in `generate_mosers_workbook` that uses
+      `src/counter_risk/mosers/template.py` to load the internal MOSERS XLSX template
+      from package resources
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement data population logic in `generate_mosers_workbook` that parses
+      the raw NISA workbook from `raw_nisa_path` and writes parsed values into specific
+      A1 ranges and cells in the loaded template workbook (minimum: program name to
+      cell B5, annualized volatility values to range D10:D20, allocation percentages
+      to range E10:E20)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Update `generate_mosers_workbook` to return the populated openpyxl Workbook
+      object without writing to a static output path
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Fix workbook-generation routing by consolidating to exactly one authoritative
+      `generate_mosers_workbook` used by tests: either move/alias logic into `src/counter_risk/mosers/workbook_generation.py`
+      or update `src/counter_risk/writers/mosers_workbook.py` to be a thin wrapper
+      that calls the consolidated entrypoint'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Update `tests/test_mosers_workbook.py` to import `generate_mosers_workbook`
+      from `counter_risk.mosers.workbook_generation` (not from `counter_risk.writers.mosers_workbook`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Update `tests/test_mosers_workbook.py` to invoke `generate_mosers_workbook`
+      with the exact fixture path `tests/fixtures/raw_nisa_all_programs.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Add assertion in `tests/test_mosers_workbook.py` that cell B5 in the output
+      workbook equals the program name from the first row of the parsed NISA data
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Add test in `tests/test_mosers_workbook.py` that generates outputs from
+      two different NISA inputs (fixture copy edited in the annualized_volatility
+      field for the first program) and asserts cell D10 value differs between the
+      two output workbooks
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Implement worksheet scoring logic in `src/counter_risk/parsers/nisa.py`
+      that evaluates all worksheets in the NISA workbook and assigns scores based
+      on header matches
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Add header validation logic in `src/counter_risk/parsers/nisa.py` that
+      checks whether a worksheet contains the complete required header set before
+      accepting it as valid
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Implement fallback search behavior in `src/counter_risk/parsers/nisa.py`
+      that continues evaluating remaining worksheets when the highest-scoring sheet
+      fails header validation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Update the error raising logic in `src/counter_risk/parsers/nisa.py` to
+      trigger only after all worksheets have been evaluated and none contain the full
+      required header set, including (1) the required header keys/names and (2) the
+      worksheet names that were evaluated in the exception message
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Update header alias mapping for `annualized_volatility` in `src/counter_risk/parsers/nisa.py`
+      to remove or narrow the overly generic `%` standalone alias so percent-like
+      columns do not incorrectly map to annualized volatility
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Fix hidden test dependency on `parse_a1_range` by either adding a minimal
+      `parse_a1_range` implementation to `tests/helpers/excel_asserts.py` or updating
+      `tests/test_mosers_workbook.py` to avoid importing/using `parse_a1_range` (use
+      openpyxl coordinate utilities/direct addressing instead)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Add parser test in `tests/test_nisa_parser.py` that verifies worksheet
+      selection continues searching other sheets when the highest-scoring sheet is
+      missing required headers
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Add parser test in `tests/test_nisa_parser.py` that verifies headers containing
+      only `%` do not incorrectly map to the `annualized_volatility` field
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: '`src/counter_risk/mosers/workbook_generation.py` defines (or re-exports)
+      a single public function `generate_mosers_workbook(raw_nisa_path: str | Path)
+      -> openpyxl.Workbook` that is importable as `from counter_risk.mosers.workbook_generation
+      import generate_mosers_workbook`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: '`tests/test_mosers_workbook.py` does not import or call `counter_risk.writers.mosers_workbook.generate_mosers_workbook`
+      directly and instead imports from `counter_risk.mosers.workbook_generation`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: '`generate_mosers_workbook(raw_nisa_path)` loads the internal MOSERS template
+      workbook from the library package (not from a test fixture path and not by copying
+      a pre-filled static output) and writes parsed program name to cell B5, annualized
+      volatility values to range D10:D20, and allocation percentages to range E10:E20
+      based on parsed data from `raw_nisa_path`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: When two NISA inputs differ in the annualized_volatility value for the
+      first program, cell D10 in the two generated output workbooks contains different
+      numeric values
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: '`tests/test_mosers_workbook.py` invokes `generate_mosers_workbook` with
+      the exact fixture file path `tests/fixtures/raw_nisa_all_programs.xlsx`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: '`tests/test_mosers_workbook.py` contains an assertion that cell B5 in
+      the output workbook equals the program name from the first row of the parsed
+      NISA data'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'NISA parser worksheet selection evaluates all worksheets before failing:
+      if the highest-scoring initial candidate sheet is missing any required headers,
+      the parser continues searching other sheets and selects a sheet that contains
+      the full required header set when one exists'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: When no worksheet in the NISA workbook contains the full required header
+      set, the parser raises a deterministic exception that includes (1) the required
+      header keys/names and (2) the worksheet names that were evaluated
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Header alias mapping for `annualized_volatility` does not include the generic
+      alias `%` as a standalone alias (and does not match arbitrary percent-formatted
+      columns solely due to containing `%`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: '`tests/helpers/excel_asserts.py` is self-contained with respect to A1
+      parsing (provides its own minimal `parse_a1_range`) OR `tests/test_mosers_workbook.py`
+      contains no imports/usages of `parse_a1_range` and instead uses openpyxl coordinate
+      utilities/direct cell addressing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: All tests in `tests/test_mosers_workbook.py` pass
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: All tests in `tests/test_nisa_parser.py` pass
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

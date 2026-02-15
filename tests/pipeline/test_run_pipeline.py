@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 
 import counter_risk.pipeline.run as run_module
+from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.run import run_pipeline
 
 
@@ -216,6 +217,124 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
     for variant in ("all_programs", "ex_trend", "trend"):
         assert variant in manifest["top_exposures"]
         assert variant in manifest["top_changes_per_variant"]
+
+
+def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"raw_nisa_all_programs_xlsx: {fixtures / 'NISA Monthly All Programs - Raw.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    generated_mosers_output = run_dir / "all_programs-mosers-input.xlsx"
+    intermediate_generated_output = run_dir / "_generated" / "all_programs-generated-mosers.xlsx"
+    assert generated_mosers_output.exists()
+    assert intermediate_generated_output.exists()
+
+    from openpyxl import load_workbook  # type: ignore[import-untyped]
+
+    workbook = load_workbook(generated_mosers_output, read_only=True, data_only=True)
+    try:
+        assert workbook.sheetnames == ["CPRS - CH", "CPRS - FCM"]
+    finally:
+        workbook.close()
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert "raw_nisa_all_programs_xlsx" in manifest["input_hashes"]
+    assert "Generated All Programs MOSERS workbook from raw NISA input" in manifest["warnings"]
+
+
+def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    raw_nisa = tmp_path / "raw.xlsx"
+    raw_nisa.write_text("raw", encoding="utf-8")
+    ex_trend = tmp_path / "ex.xlsx"
+    ex_trend.write_text("ex", encoding="utf-8")
+    trend = tmp_path / "trend.xlsx"
+    trend.write_text("trend", encoding="utf-8")
+    hist_all = tmp_path / "hist_all.xlsx"
+    hist_all.write_text("hist_all", encoding="utf-8")
+    hist_ex = tmp_path / "hist_ex.xlsx"
+    hist_ex.write_text("hist_ex", encoding="utf-8")
+    hist_trend = tmp_path / "hist_trend.xlsx"
+    hist_trend.write_text("hist_trend", encoding="utf-8")
+    monthly_pptx = tmp_path / "monthly.pptx"
+    monthly_pptx.write_text("ppt", encoding="utf-8")
+
+    generated_calls: list[dict[str, Any]] = []
+
+    def _fake_generate_mosers_workbook(
+        *, raw_nisa_path: Path, output_path: Path, as_of_date: date
+    ) -> Path:
+        generated_calls.append(
+            {
+                "raw_nisa_path": raw_nisa_path,
+                "output_path": output_path,
+                "as_of_date": as_of_date,
+            }
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_bytes(b"generated-workbook")
+        return output_path
+
+    monkeypatch.setattr(run_module, "generate_mosers_workbook", _fake_generate_mosers_workbook)
+
+    config = WorkflowConfig(
+        as_of_date=date(2025, 12, 31),
+        raw_nisa_all_programs_xlsx=raw_nisa,
+        mosers_all_programs_xlsx=None,
+        mosers_ex_trend_xlsx=ex_trend,
+        mosers_trend_xlsx=trend,
+        hist_all_programs_3yr_xlsx=hist_all,
+        hist_ex_llc_3yr_xlsx=hist_ex,
+        hist_llc_3yr_xlsx=hist_trend,
+        monthly_pptx=monthly_pptx,
+        output_root=tmp_path / "runs",
+    )
+    warnings: list[str] = []
+
+    runtime_config = run_module._prepare_runtime_config(
+        config=config,
+        run_dir=run_dir,
+        as_of_date=date(2025, 12, 31),
+        warnings=warnings,
+    )
+
+    generated_path = run_dir / "_generated" / "all_programs-generated-mosers.xlsx"
+    canonical_path = run_dir / "all_programs-mosers-input.xlsx"
+
+    assert generated_calls == [
+        {
+            "raw_nisa_path": raw_nisa,
+            "output_path": generated_path,
+            "as_of_date": date(2025, 12, 31),
+        }
+    ]
+    assert generated_path.exists()
+    assert canonical_path.exists()
+    assert generated_path.read_bytes() == canonical_path.read_bytes()
+    assert runtime_config.mosers_all_programs_xlsx == canonical_path
+    assert "Generated All Programs MOSERS workbook from raw NISA input" in warnings
 
 
 def _write_valid_config(tmp_path: Path, output_root: Path) -> Path:

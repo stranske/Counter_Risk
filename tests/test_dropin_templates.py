@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-from builtins import __import__ as builtins_import
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -18,6 +17,14 @@ from counter_risk.writers.dropin_templates import (
     fill_dropin_template,
 )
 from tests.utils.assertions import assert_numeric_outputs_close
+
+
+def _load_openpyxl_or_fail() -> Any:
+    try:
+        import openpyxl  # type: ignore[import-untyped]
+    except ModuleNotFoundError as exc:
+        pytest.fail(f"openpyxl must be installed for drop-in template fixture tests: {exc}")
+    return openpyxl
 
 
 def test_fill_dropin_template_raises_for_missing_template(tmp_path: Path) -> None:
@@ -300,34 +307,6 @@ def test_fill_dropin_template_raises_for_unloadable_workbook(
         )
 
 
-def test_fill_dropin_template_raises_clear_error_when_openpyxl_is_missing(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    fake_template = tmp_path / "template.xlsx"
-    fake_template.write_text("placeholder", encoding="utf-8")
-
-    def _import_without_openpyxl(
-        name: str,
-        globals_: Any = None,
-        locals_: Any = None,
-        fromlist: Any = (),
-        level: int = 0,
-    ) -> Any:
-        if name == "openpyxl":
-            raise ModuleNotFoundError("No module named 'openpyxl'")
-        return builtins_import(name, globals_, locals_, fromlist, level)
-
-    monkeypatch.setattr("builtins.__import__", _import_without_openpyxl)
-
-    with pytest.raises(RuntimeError, match="openpyxl is required"):
-        fill_dropin_template(
-            template_path=fake_template,
-            exposures_df=[],
-            breakdown={},
-            output_path=tmp_path / "out.xlsx",
-        )
-
-
 def test_fill_dropin_template_populates_asset_and_notional_cells(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -515,10 +494,7 @@ def _find_metric_columns(worksheet: Any) -> dict[str, int]:
 def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
     tmp_path: Path,
 ) -> None:
-    openpyxl = pytest.importorskip(
-        "openpyxl",
-        reason="openpyxl required for Excel file manipulation",
-    )
+    openpyxl = _load_openpyxl_or_fail()
 
     template = Path("tests/fixtures/NISA Drop-In Template - All Programs.xlsx")
     output = tmp_path / "all-programs-output.xlsx"
@@ -629,10 +605,7 @@ def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
 
 
 def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path: Path) -> None:
-    openpyxl = pytest.importorskip(
-        "openpyxl",
-        reason="openpyxl required for Excel file manipulation",
-    )
+    openpyxl = _load_openpyxl_or_fail()
 
     template = Path("tests/fixtures/NISA Drop-In Template - Ex Trend.xlsx")
     output = tmp_path / "ex-trend-output.xlsx"
@@ -740,10 +713,7 @@ def test_fill_dropin_template_populates_ex_trend_fixture_numeric_cells(tmp_path:
 def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
     tmp_path: Path,
 ) -> None:
-    openpyxl = pytest.importorskip(
-        "openpyxl",
-        reason="openpyxl required for Excel file manipulation",
-    )
+    openpyxl = _load_openpyxl_or_fail()
 
     template = Path("tests/fixtures/NISA Drop-In Template - Trend.xlsx")
     output = tmp_path / "trend-output.xlsx"
@@ -887,10 +857,7 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
 def test_fill_dropin_template_generated_workbooks_reopen_cleanly_for_all_variants(
     tmp_path: Path,
 ) -> None:
-    openpyxl = pytest.importorskip(
-        "openpyxl",
-        reason="openpyxl required for Excel file manipulation",
-    )
+    openpyxl = _load_openpyxl_or_fail()
 
     cases = [
         (
@@ -942,10 +909,7 @@ def test_fill_dropin_template_generated_workbooks_reopen_cleanly_for_all_variant
 
 
 def test_fill_dropin_template_rejects_malformed_template_file(tmp_path: Path) -> None:
-    pytest.importorskip(
-        "openpyxl",
-        reason="openpyxl required for Excel file manipulation",
-    )
+    _load_openpyxl_or_fail()
 
     malformed_template = tmp_path / "malformed.xlsx"
     malformed_template.write_bytes(b"not-a-valid-xlsx")

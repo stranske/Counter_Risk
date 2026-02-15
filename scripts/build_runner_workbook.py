@@ -7,6 +7,7 @@ can be validated deterministically in tests without relying on Excel automation.
 
 from __future__ import annotations
 
+import sys
 from datetime import date
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -19,6 +20,7 @@ from counter_risk.runner_date_control import (
 
 OUTPUT_PATH = Path("Runner.xlsm")
 VBA_PROJECT_PATH = Path("assets/vba/vbaProject.bin")
+OLE_CFB_SIGNATURE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 
 
 def _month_end_dates(start_year: int, start_month: int, end_year: int, end_month: int) -> list[str]:
@@ -46,7 +48,7 @@ def _inline_str_cell(cell_ref: str, value: str) -> str:
 def _runner_sheet_xml(validation_formula: str) -> str:
     return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <dimension ref="A1:D12"/>
+  <dimension ref="A1:E12"/>
   <sheetViews>
     <sheetView workbookViewId="0"/>
   </sheetViews>
@@ -67,6 +69,7 @@ def _runner_sheet_xml(validation_formula: str) -> str:
       {_inline_str_cell("B5", "Run Ex Trend")}
       {_inline_str_cell("C5", "Run Trend")}
       {_inline_str_cell("D5", "Open Output Folder")}
+      {_inline_str_cell("E5", "Ask about this run")}
     </row>
   </sheetData>
   <dataValidations count="1">
@@ -207,6 +210,28 @@ def _write_zip_binary_member(zip_file: ZipFile, member_path: str, content: bytes
     zip_file.writestr(zip_info, content)
 
 
+def _load_vba_project_bin(path: Path | None = None) -> bytes:
+    if path is None:
+        path = VBA_PROJECT_PATH
+
+    if not path.is_file():
+        msg = f"Missing VBA project binary: {path}"
+        raise FileNotFoundError(msg)
+
+    content = path.read_bytes()
+    if (
+        len(content) < len(OLE_CFB_SIGNATURE)
+        or content[: len(OLE_CFB_SIGNATURE)] != OLE_CFB_SIGNATURE
+    ):
+        msg = (
+            "Invalid VBA project binary signature for "
+            f"{path}; expected OLE/CFB header {OLE_CFB_SIGNATURE.hex(' ').upper()}"
+        )
+        raise ValueError(msg)
+
+    return content
+
+
 def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
     scope = define_runner_xlsm_date_control_scope()
     if scope.decision.selected_control is not DateInputControl.MONTH_SELECTOR:
@@ -214,7 +239,7 @@ def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
         raise ValueError(msg)
 
     month_values = _month_end_dates(2020, 1, 2035, 12)
-    vba_project_bin = VBA_PROJECT_PATH.read_bytes()
+    vba_project_bin = _load_vba_project_bin()
     data_start_row = 2
     data_end_row = data_start_row + len(month_values) - 1
     validation_formula = f"ControlData!$A${data_start_row}:$A${data_end_row}"
@@ -238,5 +263,14 @@ def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
         )
 
 
+def main() -> int:
+    try:
+        build_runner_workbook()
+    except Exception as exc:  # pragma: no cover - exercised via unit tests
+        print(str(exc), file=sys.stderr)
+        return 1
+    return 0
+
+
 if __name__ == "__main__":
-    build_runner_workbook()
+    raise SystemExit(main())

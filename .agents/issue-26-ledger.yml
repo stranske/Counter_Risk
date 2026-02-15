@@ -1,0 +1,212 @@
+version: 1
+issue: 26
+base: main
+branch: codex/issue-26
+tasks:
+  - id: task-01
+    title: "Add a sanitized raw NISA \u201CMonthly All Programs\u201D workbook fixture\
+      \ under `tests/fixtures/`"
+    status: done
+    started_at: '2026-02-14T02:31:59Z'
+    finished_at: '2026-02-14T02:32:14Z'
+    commit: c9043340b520cd1e6d1f8966a561dccd3ea353a9
+    notes: []
+  - id: task-02
+    title: Create `src/counter_risk/parsers/nisa_all_programs.py` with a parser that
+      reads the raw NISA monthly All Programs workbook
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Implement MOSERS-format workbook generation (CPRS-CH + CPRS-FCM) by writing
+      a new workbook from an internal template (not editing the input in place)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Update the generated CPRS-CH and CPRS-FCM sheets to match the structure
+      expected by existing Milestone 1 parsers
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Write tests that generate a MOSERS-format workbook from the fixture and
+      compare it to an approved reference workbook using range-level cell checks
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Create a test fixture for the approved reference MOSERS-format workbook
+      (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Define scope for: Write a test that successfully parses the raw NISA fixture
+      without errors (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement focused slice for: Write a test that successfully parses the
+      raw NISA fixture without errors (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Validate focused slice for: Write a test that successfully parses the
+      raw NISA fixture without errors (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Implement helper functions to perform range-level cell comparisons between
+      workbooks (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Define scope for: Write a test that validates CPRS-CH sheet structure
+      matches the reference workbook (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Implement focused slice for: Write a test that validates CPRS-CH sheet
+      structure matches the reference workbook (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Validate focused slice for: Write a test that validates CPRS-CH sheet
+      structure matches the reference workbook (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Define scope for: Write a test that validates CPRS-FCM sheet structure
+      matches the reference workbook (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Implement focused slice for: Write a test that validates CPRS-FCM sheet
+      structure matches the reference workbook (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Validate focused slice for: Write a test that validates CPRS-FCM sheet
+      structure matches the reference workbook (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Write a test that verifies all expected data fields are correctly transformed
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: "`src/counter_risk/parsers/nisa_all_programs.py` exists and can parse the\
+      \ raw NISA \u201CMonthly All Programs\u201D fixture without errors"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Running the pipeline end-to-end with the raw NISA All Programs fixture
+      completes without requiring manual Excel macros
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Tests that compare the generated MOSERS-format workbook to the approved
+      reference (range-level checks) pass
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: "Add fixtures: one raw NISA \u201CMonthly All Programs\u201D file (sanitized\
+      \ if needed)"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Implement `src/counter_risk/parsers/nisa_all_programs.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: "Generate MOSERS-format output workbook using an internal template (not\
+      \ \u201Cedit in place\u201D)"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Ensure CPRS-CH and CPRS-FCM outputs match the structure expected by Milestone
+      1 parsers
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Add tests comparing generated MOSERS-format workbook against an approved
+      reference (range-level checks)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Given raw NISA All Programs input, pipeline can run end-to-end without
+      manual Excel macros
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

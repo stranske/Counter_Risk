@@ -16,6 +16,7 @@ from typing import Any
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
+from counter_risk.writers import generate_mosers_workbook
 
 LOGGER = logging.getLogger(__name__)
 
@@ -102,8 +103,15 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during run directory setup stage") from exc
 
     warnings: list[str] = []
+    runtime_config = config
     try:
-        parsed_by_variant = _parse_inputs(input_paths)
+        runtime_config = _prepare_runtime_config(
+            config=config,
+            run_dir=run_dir,
+            as_of_date=as_of_date,
+            warnings=warnings,
+        )
+        parsed_by_variant = _parse_inputs(_resolve_input_paths(runtime_config))
         _validate_parsed_inputs(parsed_by_variant)
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=parse_inputs run_dir=%s", run_dir)
@@ -118,7 +126,7 @@ def run_pipeline(config_path: str | Path) -> Path:
     try:
         historical_output_paths = _update_historical_outputs(
             run_dir=run_dir,
-            config=config,
+            config=runtime_config,
             parsed_by_variant=parsed_by_variant,
             as_of_date=as_of_date,
             warnings=warnings,
@@ -130,7 +138,7 @@ def run_pipeline(config_path: str | Path) -> Path:
     try:
         output_result = _write_outputs(
             run_dir=run_dir,
-            config=config,
+            config=runtime_config,
             warnings=warnings,
         )
     except Exception as exc:
@@ -144,7 +152,9 @@ def run_pipeline(config_path: str | Path) -> Path:
     output_paths = historical_output_paths + output_paths
 
     try:
-        input_hashes = {name: _sha256_file(path) for name, path in input_paths.items()}
+        input_hashes = {
+            name: _sha256_file(path) for name, path in _resolve_input_paths(runtime_config).items()
+        }
         manifest_builder = ManifestBuilder(config=config)
         output_paths_for_manifest = [path.relative_to(run_dir) for path in output_paths]
         manifest = manifest_builder.build(
@@ -188,8 +198,7 @@ def _resolve_repo_root() -> Path:
 
 
 def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
-    return {
-        "mosers_all_programs_xlsx": config.mosers_all_programs_xlsx,
+    paths: dict[str, Path] = {
         "mosers_ex_trend_xlsx": config.mosers_ex_trend_xlsx,
         "mosers_trend_xlsx": config.mosers_trend_xlsx,
         "hist_all_programs_3yr_xlsx": config.hist_all_programs_3yr_xlsx,
@@ -197,17 +206,33 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
         "hist_llc_3yr_xlsx": config.hist_llc_3yr_xlsx,
         "monthly_pptx": config.monthly_pptx,
     }
+    if config.mosers_all_programs_xlsx is not None:
+        paths["mosers_all_programs_xlsx"] = config.mosers_all_programs_xlsx
+    if config.raw_nisa_all_programs_xlsx is not None:
+        paths["raw_nisa_all_programs_xlsx"] = config.raw_nisa_all_programs_xlsx
+    return paths
 
 
 def _validate_pipeline_config(config: WorkflowConfig) -> None:
     if config.output_root.exists() and not config.output_root.is_dir():
         raise ValueError(f"output_root must be a directory path: {config.output_root}")
 
-    _validate_extension(
-        field_name="mosers_all_programs_xlsx",
-        path=config.mosers_all_programs_xlsx,
-        expected_suffix=".xlsx",
-    )
+    if config.mosers_all_programs_xlsx is None and config.raw_nisa_all_programs_xlsx is None:
+        raise ValueError(
+            "One of mosers_all_programs_xlsx or raw_nisa_all_programs_xlsx must be configured"
+        )
+    if config.mosers_all_programs_xlsx is not None:
+        _validate_extension(
+            field_name="mosers_all_programs_xlsx",
+            path=config.mosers_all_programs_xlsx,
+            expected_suffix=".xlsx",
+        )
+    if config.raw_nisa_all_programs_xlsx is not None:
+        _validate_extension(
+            field_name="raw_nisa_all_programs_xlsx",
+            path=config.raw_nisa_all_programs_xlsx,
+            expected_suffix=".xlsx",
+        )
     _validate_extension(
         field_name="mosers_ex_trend_xlsx",
         path=config.mosers_ex_trend_xlsx,
@@ -252,6 +277,31 @@ def _validate_input_files(input_paths: dict[str, Path]) -> None:
     if missing:
         details = "; ".join(missing)
         raise FileNotFoundError(f"Missing pipeline input files: {details}")
+
+
+def _prepare_runtime_config(
+    *,
+    config: WorkflowConfig,
+    run_dir: Path,
+    as_of_date: date,
+    warnings: list[str],
+) -> WorkflowConfig:
+    raw_nisa_path = config.raw_nisa_all_programs_xlsx
+    if raw_nisa_path is None:
+        return config
+
+    generated_dir = run_dir / "_generated"
+    generated_dir.mkdir(parents=True, exist_ok=True)
+    generated_mosers_path = generated_dir / "all_programs-generated-mosers.xlsx"
+    canonical_mosers_path = run_dir / "all_programs-mosers-input.xlsx"
+    generate_mosers_workbook(
+        raw_nisa_path=raw_nisa_path,
+        output_path=generated_mosers_path,
+        as_of_date=as_of_date,
+    )
+    shutil.copy2(generated_mosers_path, canonical_mosers_path)
+    warnings.append("Generated All Programs MOSERS workbook from raw NISA input")
+    return config.model_copy(update={"mosers_all_programs_xlsx": canonical_mosers_path})
 
 
 def _parse_inputs(input_paths: dict[str, Path]) -> dict[str, dict[str, Any]]:
@@ -386,7 +436,9 @@ def _write_outputs(
     variant_inputs = [
         _VariantInputs(
             name="all_programs",
-            workbook_path=config.mosers_all_programs_xlsx,
+            workbook_path=_require_path(
+                config.mosers_all_programs_xlsx, field_name="mosers_all_programs_xlsx"
+            ),
             historical_path=config.hist_all_programs_3yr_xlsx,
         ),
         _VariantInputs(
@@ -405,7 +457,8 @@ def _write_outputs(
     for variant_input in variant_inputs:
         source_mosers = variant_input.workbook_path
         target_monthly_book = run_dir / f"{variant_input.name}-mosers-input.xlsx"
-        shutil.copy2(source_mosers, target_monthly_book)
+        if source_mosers.resolve() != target_monthly_book.resolve():
+            shutil.copy2(source_mosers, target_monthly_book)
         output_paths.append(target_monthly_book)
 
     source_ppt = config.monthly_pptx
@@ -578,7 +631,9 @@ def _update_historical_outputs(
     variant_inputs = [
         _VariantInputs(
             name="all_programs",
-            workbook_path=config.mosers_all_programs_xlsx,
+            workbook_path=_require_path(
+                config.mosers_all_programs_xlsx, field_name="mosers_all_programs_xlsx"
+            ),
             historical_path=config.hist_all_programs_3yr_xlsx,
         ),
         _VariantInputs(
@@ -733,6 +788,12 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(64 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _require_path(path: Path | None, *, field_name: str) -> Path:
+    if path is None:
+        raise ValueError(f"{field_name} is required for pipeline execution")
+    return path
 
 
 def _records(table: Any) -> list[dict[str, Any]]:
