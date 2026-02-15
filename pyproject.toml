@@ -34,9 +34,9 @@ dev = [
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
     "pandas>=2.3,<3",
-    "black==24.10.0",
+    "black==26.1.0",
     "ruff==0.15.1",
-    "mypy==1.18.2",
+    "mypy==1.19.1",
     # Required by scripts/sync_test_dependencies.py when --fix is needed in CI
     "tomlkit>=0.13.0",
 ]
