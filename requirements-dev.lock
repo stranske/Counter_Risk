@@ -2,7 +2,7 @@
 #    uv pip compile pyproject.toml --extra dev -o requirements-dev.lock
 coverage==7.13.4
     # via pytest-cov
-black==26.1.0
+black==24.10.0
     # via my-project (pyproject.toml)
 iniconfig==2.3.0
     # via pytest
