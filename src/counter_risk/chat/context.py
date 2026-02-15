@@ -10,6 +10,13 @@ from typing import Any, cast
 
 _TABLE_SUFFIXES: tuple[str, ...] = (".csv", ".parquet")
 
+try:
+    from pyarrow.lib import ArrowIOError as _PyArrowIOError  # type: ignore[import-not-found]
+except (ImportError, ModuleNotFoundError):
+
+    class _PyArrowIOError(OSError):
+        """Fallback Arrow IO error type used when pyarrow is unavailable."""
+
 
 class RunContextError(ValueError):
     """Raised when a run directory cannot be loaded into chat context."""
@@ -146,11 +153,39 @@ def _load_csv_table(path: Path) -> list[dict[str, Any]]:
 def _load_parquet_table(path: Path) -> list[dict[str, Any]]:
     try:
         import pandas as pd  # type: ignore[import-untyped]
-    except ImportError as exc:
-        raise RunContextError(f"Parquet table found but pandas is unavailable: {path}") from exc
+    except (ImportError, ModuleNotFoundError) as exc:
+        raise RunContextError(
+            f"Parquet table found but pandas is unavailable: {path}. "
+            "Install pandas support with `pip install .[pandas]`."
+        ) from exc
+
+    parse_error_types = _pandas_parquet_parse_error_types(pd)
 
     try:
         dataframe = pd.read_parquet(path)
-    except Exception as exc:  # pragma: no cover - backend-specific parser errors
-        raise RunContextError(f"Failed to read Parquet table: {path}") from exc
+    except parse_error_types as exc:
+        raise RunContextError(
+            f"Parquet data format error: {path}. "
+            "Expected a valid tabular Parquet file readable by pandas."
+        ) from exc
+    except _PyArrowIOError as exc:
+        raise RunContextError(
+            f"PyArrow could not access Parquet table: {path}. "
+            "Check file path and permissions, then validate file integrity."
+        ) from exc
+    except OSError as exc:
+        raise RunContextError(
+            f"Failed to access Parquet table on disk: {path}. "
+            "Verify the file exists and is readable."
+        ) from exc
     return cast(list[dict[str, Any]], dataframe.to_dict(orient="records"))
+
+
+def _pandas_parquet_parse_error_types(pandas_module: Any) -> tuple[type[BaseException], ...]:
+    parse_errors: list[type[BaseException]] = [ValueError, TypeError]
+    pandas_errors = getattr(pandas_module, "errors", None)
+    for error_name in ("ParserError", "EmptyDataError"):
+        error_type = getattr(pandas_errors, error_name, None)
+        if isinstance(error_type, type) and issubclass(error_type, BaseException):
+            parse_errors.append(error_type)
+    return tuple(parse_errors)
