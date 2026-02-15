@@ -100,7 +100,7 @@ def test_chat_session_stub_provider_is_deterministic_for_same_prompt(tmp_path: P
     ),
 )
 def test_provider_stubs_are_deterministic_for_same_messages_and_model(
-    provider: object,
+    provider: OpenAIStubProvider | AnthropicStubProvider,
     provider_marker: str,
 ) -> None:
     messages = [
