@@ -33,6 +33,15 @@ _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
     re.compile(r"<\s*system\s*>", re.IGNORECASE),
 )
 
+_HTML_ENTITY_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"&(?:#\d+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]{1,31});"
+)
+_ESCAPE_SEQUENCE_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"\\(?:[abfnrtv\\'\"?]|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|[0-7]{1,3})"
+)
+_HEAVY_ESCAPING_RATIO_THRESHOLD: Final[float] = 0.30
+_NON_ALNUM_RATIO_THRESHOLD: Final[float] = 0.60
+
 _INTENT_PATTERNS: Final[tuple[tuple[str, tuple[re.Pattern[str], ...]], ...]] = (
     (
         "top_exposures",
@@ -223,6 +232,8 @@ def sanitize_untrusted_text(raw_text: str) -> str:
 
     if redacted != normalized:
         _LOGGER.warning("Sanitized untrusted run text before prompt assembly")
+    _warn_on_heavy_encoding_or_escaping(redacted)
+    _warn_on_high_non_alphanumeric_ratio(redacted)
 
     return redacted
 
@@ -231,6 +242,37 @@ def normalize_untrusted_text(raw_text: str) -> str:
     """Return canonical untrusted text used as the sanitization baseline."""
 
     return raw_text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _warn_on_heavy_encoding_or_escaping(text: str) -> None:
+    total_chars = len(text)
+    if total_chars == 0:
+        return
+
+    entity_chars = sum(len(match.group(0)) for match in _HTML_ENTITY_PATTERN.finditer(text))
+    escape_chars = sum(len(match.group(0)) for match in _ESCAPE_SEQUENCE_PATTERN.finditer(text))
+    encoded_ratio = (entity_chars + escape_chars) / total_chars
+
+    if encoded_ratio > _HEAVY_ESCAPING_RATIO_THRESHOLD:
+        _LOGGER.warning(
+            "Sanitized untrusted text contains heavy encoding/escaping patterns: %.1f%%",
+            encoded_ratio * 100,
+        )
+
+
+def _warn_on_high_non_alphanumeric_ratio(text: str) -> None:
+    chars_without_spaces = [char for char in text if char != " "]
+    if not chars_without_spaces:
+        return
+
+    non_alnum_count = sum(1 for char in chars_without_spaces if not char.isalnum())
+    non_alnum_ratio = non_alnum_count / len(chars_without_spaces)
+
+    if non_alnum_ratio > _NON_ALNUM_RATIO_THRESHOLD:
+        _LOGGER.warning(
+            "Sanitized untrusted text contains a high non-alphanumeric ratio: %.1f%%",
+            non_alnum_ratio * 100,
+        )
 
 
 def _format_top_exposures(manifest: dict[str, object]) -> str:
