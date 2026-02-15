@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import cast
 
 from counter_risk.chat.session import (
     _extract_top_exposure_rows,
@@ -16,7 +17,8 @@ _FIXTURE_PATH = Path("tests/fixtures/runs/min_run/manifest.json")
 
 
 def _load_fixture_manifest() -> dict[str, object]:
-    return json.loads(_FIXTURE_PATH.read_text(encoding="utf-8"))
+    payload = json.loads(_FIXTURE_PATH.read_text(encoding="utf-8"))
+    return cast(dict[str, object], payload)
 
 
 def test_top_exposure_rows_sorted_in_non_increasing_order() -> None:
