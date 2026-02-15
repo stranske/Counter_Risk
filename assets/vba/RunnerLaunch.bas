@@ -43,7 +43,7 @@ Public Sub OpenOutputFolder_Click()
 
     selectedDate = ReadSelectedDate()
     resolvedPath = ResolveOutputDir(ResolveRepoRoot(), selectedDate)
-    missingDirectoryMessage = "Directory not found" & resolvedPath
+    missingDirectoryMessage = "Directory not found" & " " & resolvedPath
     If Dir$(resolvedPath, vbDirectory) = "" Then
         Set fileSystem = CreateObject("Scripting.FileSystemObject")
         If Not fileSystem.FolderExists(resolvedPath) Then
