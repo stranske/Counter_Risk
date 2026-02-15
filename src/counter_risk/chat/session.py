@@ -9,8 +9,8 @@ from functools import cmp_to_key
 from typing import Final, cast
 
 from counter_risk.chat.context import RunContext
-from counter_risk.chat.providers.base import ProviderClient
 from counter_risk.chat.providers.anthropic_stub import AnthropicStubProvider
+from counter_risk.chat.providers.base import ProviderClient
 from counter_risk.chat.providers.openai_stub import OpenAIStubProvider
 from counter_risk.chat.utils import cmp_with_tol, is_close
 

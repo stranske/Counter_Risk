@@ -14,9 +14,8 @@ except (ImportError, ModuleNotFoundError):
     _PYARROW_IO_ERROR_TYPES: tuple[type[BaseException], ...] = (OSError,)
 else:
     imported_pyarrow_io_error = getattr(_pyarrow_lib, "ArrowIOError", None)
-    if (
-        isinstance(imported_pyarrow_io_error, type)
-        and issubclass(imported_pyarrow_io_error, BaseException)
+    if isinstance(imported_pyarrow_io_error, type) and issubclass(
+        imported_pyarrow_io_error, BaseException
     ):
         _PYARROW_IO_ERROR_TYPES = (imported_pyarrow_io_error,)
     else:
