@@ -37,28 +37,28 @@ Public Sub OpenOutputFolder_Click()
     On Error GoTo OpenOutputFolderError
 
     Dim selectedDate As String
-    Dim resolvedPath As String
+    Dim p            As String
     Dim fileSystem As Object
     Dim status As LaunchStatus
 
     selectedDate = ReadSelectedDate()
-    resolvedPath = ResolveOutputDir(ResolveRepoRoot(), selectedDate)
-    If Dir$(resolvedPath, vbDirectory) = "" Then
+    p            = ResolveOutputDir(ResolveRepoRoot(), selectedDate)
+    If Dir$(p           , vbDirectory) = "" Then
         Set fileSystem = CreateObject("Scripting.FileSystemObject")
-        If Not fileSystem.FolderExists(resolvedPath) Then
-            MsgBox "Directory not found" & resolvedPath
-            WriteResult "Error Directory not found" & resolvedPath
+        If Not fileSystem.FolderExists(p           ) Then
+            MsgBox "Directory not found" & " " & p     
+            WriteResult "Error Directory not found" & " " & p     
             Exit Sub
         End If
     End If
 
-    If Not DirectoryExists(resolvedPath) Then
-        MsgBox "Directory not found" & resolvedPath
-        WriteResult "Error Directory not found" & resolvedPath
+    If Not DirectoryExists(p           ) Then
+        MsgBox "Directory not found" & " " & p     
+        WriteResult "Error Directory not found" & " " & p     
         Exit Sub
     End If
 
-    status = OpenDirectory(resolvedPath)
+    status = OpenDirectory(p           )
     WriteLaunchResult status
     Exit Sub
 
