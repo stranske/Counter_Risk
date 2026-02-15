@@ -47,4 +47,3 @@ def test_main_parses_date_and_calls_calculate_then_append_once(
         ("calculate_wal", exposure_summary_path, date(2026, 1, 31)),
         ("append_wal_row", workbook_path, (date(2026, 1, 31), 3.14159)),
     ]
-
