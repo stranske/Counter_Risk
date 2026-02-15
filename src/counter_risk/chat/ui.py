@@ -42,5 +42,5 @@ def submit_chat_message(
         )
 
     session = session_factory(context, provider_key, model_key)
-    answer = session.ask(message)
+    answer = session.send(message, provider_key=provider_key, model_key=model_key)
     return SubmitResult(assistant_message=answer, validation_error=None)

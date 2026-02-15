@@ -3,26 +3,24 @@
 from __future__ import annotations
 
 import logging
-import os
 import re
 from dataclasses import dataclass, field
 from functools import cmp_to_key
 from typing import Final, cast
 
 from counter_risk.chat.context import RunContext
+from counter_risk.chat.providers.base import ProviderClient
+from counter_risk.chat.providers.anthropic_stub import AnthropicStubProvider
+from counter_risk.chat.providers.openai_stub import OpenAIStubProvider
 from counter_risk.chat.utils import cmp_with_tol, is_close
 
 _LOGGER = logging.getLogger(__name__)
 
+_PLACEHOLDER_MODEL: Final[str] = "chat-model-placeholder"
 _PROVIDER_MODELS: Final[dict[str, set[str]]] = {
-    "local": {"deterministic"},
-    "openai": {"gpt-4.1-mini", "gpt-4o-mini"},
-    "anthropic": {"claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"},
-}
-
-_PROVIDER_API_KEY_ENV: Final[dict[str, str]] = {
-    "openai": "OPENAI_API_KEY",
-    "anthropic": "ANTHROPIC_API_KEY",
+    "local": {_PLACEHOLDER_MODEL},
+    "openai": {_PLACEHOLDER_MODEL},
+    "anthropic": {_PLACEHOLDER_MODEL},
 }
 
 _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
@@ -86,49 +84,85 @@ class ChatMessage:
     content: str
 
 
+class _LocalStubProvider:
+    """Deterministic local provider client for development/test usage."""
+
+    def generate(self, messages: list[dict[str, str]], model: str, **kwargs: object) -> str:
+        answer = str(kwargs.get("context_answer", "No answer available."))
+        return f"local-stub:{model} | {answer}"
+
+
+_PROVIDER_CLIENTS: Final[dict[str, ProviderClient]] = {
+    "local": _LocalStubProvider(),
+    "openai": OpenAIStubProvider(),
+    "anthropic": AnthropicStubProvider(),
+}
+
+
 @dataclass
 class ChatSession:
     """In-memory chat session with provider/model validation and guarded prompting."""
 
     context: RunContext
     provider: str = "local"
-    model: str = "deterministic"
+    model: str = _PLACEHOLDER_MODEL
     history: list[ChatMessage] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.provider = self.provider.strip().lower()
         self.model = self.model.strip()
 
-        available_models = _PROVIDER_MODELS.get(self.provider)
-        if available_models is None:
-            raise ChatSessionError(f"Unsupported provider: {self.provider}")
-
-        if self.model not in available_models:
+        if not is_provider_model_supported(self.provider, self.model):
+            available_models = _PROVIDER_MODELS.get(self.provider)
+            if available_models is None:
+                raise ChatSessionError(f"Unsupported provider: {self.provider}")
             models_str = ", ".join(sorted(available_models))
             raise ChatSessionError(
                 f"Unsupported model '{self.model}' for provider '{self.provider}'. "
                 f"Available models: {models_str}"
             )
 
-        required_key = _PROVIDER_API_KEY_ENV.get(self.provider)
-        if required_key and not os.getenv(required_key):
-            raise ChatSessionError(
-                f"Provider '{self.provider}' requires environment variable '{required_key}'"
-            )
+    def send(
+        self, question: str, *, provider_key: str | None = None, model_key: str | None = None
+    ) -> str:
+        """Alias for ask to support UI-facing send semantics."""
 
-    def ask(self, question: str) -> str:
+        return self.ask(question, provider_key=provider_key, model_key=model_key)
+
+    def ask(
+        self, question: str, *, provider_key: str | None = None, model_key: str | None = None
+    ) -> str:
         """Validate query, build a guarded prompt, and return a response."""
 
         clean_question = validate_user_query(question)
         prompt = build_guarded_prompt(self.context, clean_question)
+        selected_provider = (provider_key or self.provider).strip().lower()
+        selected_model = (model_key or self.model).strip()
 
-        # For now responses are deterministic from manifest-backed context.
-        answer = self._answer_from_context(clean_question)
+        if not is_provider_model_supported(selected_provider, selected_model):
+            raise ChatSessionError(
+                f"Unsupported provider/model selection: {selected_provider}/{selected_model}"
+            )
+
+        provider_client = _PROVIDER_CLIENTS[selected_provider]
+        context_answer = self._answer_from_context(clean_question)
+        messages = self._build_provider_messages(prompt=prompt, question=clean_question)
+        answer = provider_client.generate(
+            messages=messages,
+            model=selected_model,
+            context_answer=context_answer,
+        )
 
         self.history.append(ChatMessage(role="user", content=clean_question))
         self.history.append(ChatMessage(role="assistant", content=answer))
         _LOGGER.debug("Built guarded prompt of %s characters", len(prompt))
         return answer
+
+    def _build_provider_messages(self, *, prompt: str, question: str) -> list[dict[str, str]]:
+        messages = [{"role": "system", "content": prompt}]
+        messages.extend({"role": item.role, "content": item.content} for item in self.history)
+        messages.append({"role": "user", "content": question})
+        return messages
 
     def _answer_from_context(self, question: str) -> str:
         intent = self._route_intent(question)
