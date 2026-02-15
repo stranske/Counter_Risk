@@ -7,14 +7,17 @@ from typing import cast
 
 import pytest
 
-pptx = pytest.importorskip(
-    "pptx", reason="python-pptx required for PPTX replacement workflow tests"
-)
-from pptx import Presentation
-from pptx.enum.shapes import MSO_SHAPE_TYPE
-from pptx.shapes.picture import Picture
-from pptx.slide import Slide
-from pptx.util import Inches
+try:
+    from pptx import Presentation
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+    from pptx.shapes.picture import Picture
+    from pptx.slide import Slide
+    from pptx.util import Inches
+except ModuleNotFoundError:  # pragma: no cover - environment-dependent optional dependency
+    pytest.skip(
+        "python-pptx required for PPTX replacement workflow tests",
+        allow_module_level=True,
+    )
 
 from counter_risk.writers.pptx_screenshots import replace_screenshot_pictures
 

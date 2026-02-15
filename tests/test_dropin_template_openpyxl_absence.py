@@ -39,7 +39,7 @@ def test_dropin_template_pytest_run_skips_cleanly_without_openpyxl(tmp_path: Pat
         "-m",
         "pytest",
         "-k",
-        "dropin_template",
+        "dropin_template and not openpyxl_absence",
         "-q",
     ]
     result = subprocess.run(
@@ -67,7 +67,7 @@ def test_dropin_template_pytest_run_skips_cleanly_without_openpyxl(tmp_path: Pat
             "-m",
             "pytest",
             "-k",
-            "dropin_template",
+            "dropin_template and not openpyxl_absence",
             "-q",
             "-rs",
         ],
