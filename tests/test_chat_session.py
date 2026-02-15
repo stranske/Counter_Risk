@@ -93,6 +93,19 @@ def test_sanitize_untrusted_text_escapes_delimiters() -> None:
     assert "```" not in sanitized
 
 
+def test_sanitize_untrusted_text_compares_against_normalized_text(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.WARNING)
+
+    sanitized = sanitize_untrusted_text("clean line\r\nsecond line\r")
+
+    assert sanitized == "clean line\nsecond line\n"
+    assert not any(
+        "Sanitized untrusted run text before prompt assembly" in r.message for r in caplog.records
+    )
+
+
 def test_chat_session_routes_key_warnings_to_warning_handler(tmp_path: Path) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
     session = ChatSession(context=context, provider="local", model="deterministic")

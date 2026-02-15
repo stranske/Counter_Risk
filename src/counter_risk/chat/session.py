@@ -207,8 +207,9 @@ def validate_user_query(question: str) -> str:
 def sanitize_untrusted_text(raw_text: str) -> str:
     """Sanitize untrusted workbook/manifest text before prompt insertion."""
 
+    normalized = normalize_untrusted_text(raw_text)
     sanitized = "".join(
-        char if (char.isprintable() or char in {"\n", "\t"}) else " " for char in raw_text
+        char if (char.isprintable() or char in {"\n", "\t"}) else " " for char in normalized
     )
     sanitized = sanitized.replace("```", "` ` `")
     sanitized = sanitized.replace("SYSTEM_INSTRUCTIONS_START", "SYSTEM_INSTRUCTIONS_START_REDACTED")
@@ -220,10 +221,16 @@ def sanitize_untrusted_text(raw_text: str) -> str:
     for pattern in _INJECTION_PATTERNS:
         redacted = pattern.sub("[REDACTED_INJECTION_PATTERN]", redacted)
 
-    if redacted != raw_text:
+    if redacted != normalized:
         _LOGGER.warning("Sanitized untrusted run text before prompt assembly")
 
     return redacted
+
+
+def normalize_untrusted_text(raw_text: str) -> str:
+    """Return canonical untrusted text used as the sanitization baseline."""
+
+    return raw_text.replace("\r\n", "\n").replace("\r", "\n")
 
 
 def _format_top_exposures(manifest: dict[str, object]) -> str:
