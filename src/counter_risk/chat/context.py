@@ -11,11 +11,11 @@ from typing import Any, cast
 _TABLE_SUFFIXES: tuple[str, ...] = (".csv", ".parquet")
 
 try:
-    from pyarrow.lib import ArrowIOError as _PyArrowIOError  # type: ignore[import-not-found]
+    from pyarrow.lib import ArrowIOError as _ImportedPyArrowIOError  # type: ignore[import-not-found]
 except (ImportError, ModuleNotFoundError):
-
-    class _PyArrowIOError(OSError):
-        """Fallback Arrow IO error type used when pyarrow is unavailable."""
+    _PYARROW_IO_ERROR_TYPES: tuple[type[BaseException], ...] = (OSError,)
+else:
+    _PYARROW_IO_ERROR_TYPES = (_ImportedPyArrowIOError,)
 
 
 class RunContextError(ValueError):
@@ -168,7 +168,7 @@ def _load_parquet_table(path: Path) -> list[dict[str, Any]]:
             f"Parquet data format error: {path}. "
             "Expected a valid tabular Parquet file readable by pandas."
         ) from exc
-    except _PyArrowIOError as exc:
+    except _PYARROW_IO_ERROR_TYPES as exc:
         raise RunContextError(
             f"PyArrow could not access Parquet table: {path}. "
             "Check file path and permissions, then validate file integrity."
