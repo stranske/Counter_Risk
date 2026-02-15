@@ -71,3 +71,30 @@ def test_fixture_workbooks_and_presentations_open() -> None:
             data_only=True,
         )
         workbook.close()
+
+
+def test_wal_exposure_summary_fixture_exists_and_has_expected_headers() -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+
+    fixture_path = Path("tests/fixtures/nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx")
+    assert fixture_path.exists(), f"Missing required WAL fixture: {fixture_path}"
+
+    workbook = openpyxl.load_workbook(
+        filename=fixture_path,
+        read_only=True,
+        data_only=True,
+    )
+    try:
+        assert "Exposure Maturity Summary" in workbook.sheetnames
+        worksheet = workbook["Exposure Maturity Summary"]
+        headers = [worksheet.cell(row=1, column=column).value for column in range(1, 7)]
+        assert headers == [
+            "Counterparty",
+            "Product Type",
+            "Current Exposure",
+            "Years to Maturity",
+            "Maturity Date",
+            "Bucket",
+        ]
+    finally:
+        workbook.close()
