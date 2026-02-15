@@ -11,9 +11,11 @@ import pytest
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook,
     generate_mosers_workbook_ex_trend,
+    generate_mosers_workbook_trend,
 )
 from counter_risk.parsers.nisa import parse_nisa_all_programs
 from counter_risk.parsers.nisa_ex_trend import parse_nisa_ex_trend
+from counter_risk.parsers.nisa_trend import parse_nisa_trend
 
 
 @pytest.mark.parametrize("fixture_path", [Path("tests/fixtures/raw_nisa_all_programs.xlsx")])
@@ -69,6 +71,24 @@ def test_generate_mosers_workbook_ex_trend_populates_values_from_ex_trend_fixtur
     parsed = parse_nisa_ex_trend(fixture_path)
 
     workbook = generate_mosers_workbook_ex_trend(fixture_path)
+    try:
+        worksheet = workbook["CPRS - CH"]
+        assert worksheet["B5"].value == parsed.ch_rows[0].counterparty
+        expected_vols = _pad_to_slot_count(
+            [row.annualized_volatility for row in parsed.totals_rows], 11
+        )
+        expected_allocations = _pad_to_slot_count(_expected_allocations(parsed), 11)
+        assert _read_column_values(worksheet, "D", 10, 20) == expected_vols
+        assert _read_column_values(worksheet, "E", 10, 20) == expected_allocations
+    finally:
+        workbook.close()
+
+
+def test_generate_mosers_workbook_trend_populates_values_from_trend_fixture() -> None:
+    fixture_path = Path("tests/fixtures/NISA Monthly Trend - Raw.xlsx")
+    parsed = parse_nisa_trend(fixture_path)
+
+    workbook = generate_mosers_workbook_trend(fixture_path)
     try:
         worksheet = workbook["CPRS - CH"]
         assert worksheet["B5"].value == parsed.ch_rows[0].counterparty
