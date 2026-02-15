@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
+from copy import copy
+from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -18,6 +20,7 @@ LOGGER = logging.getLogger(__name__)
 SHEET_ALL_PROGRAMS_3_YEAR = "All Programs 3 Year"
 SHEET_EX_LLC_3_YEAR = "ex LLC 3 Year"
 SHEET_LLC_3_YEAR = "LLC 3 Year"
+SHEET_WAL = "WAL"
 
 SERIES_BY_SHEET: dict[str, tuple[str, ...]] = {
     SHEET_ALL_PROGRAMS_3_YEAR: (
@@ -51,7 +54,11 @@ SERIES_BY_SHEET: dict[str, tuple[str, ...]] = {
 }
 
 DATE_HEADER_CANDIDATES: tuple[str, ...] = ("date", "as of date", "as-of date")
+WAL_HEADER_CANDIDATES: tuple[str, ...] = ("wal", "wal tips repo", "weighted average life")
 HEADER_SCAN_ROWS = 12
+_DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH = Path(
+    "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+)
 
 
 class HistoricalUpdateError(ValueError):
@@ -78,6 +85,30 @@ class DateMonotonicityError(AppendDateError):
     """Raised when append date is not newer than the latest existing row date."""
 
 
+@dataclass(frozen=True)
+class WalSheetAppendLocation:
+    """Resolved WAL sheet coordinates for a single-row append."""
+
+    sheet_name: str
+    header_row: int
+    date_column: int
+    wal_column: int
+    append_row: int
+    last_dated_row: int | None
+
+
+@dataclass(frozen=True)
+class _CellSnapshot:
+    value: Any
+    is_formula: bool
+    style_id: int | None
+    number_format: str | None
+
+
+def _resolve_repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
 def _as_path(value: str | Path, *, field_name: str) -> Path:
     if isinstance(value, Path):
         return value
@@ -93,6 +124,46 @@ def _validate_workbook_path(path: Path, *, field_name: str = "workbook_path") ->
         raise FileNotFoundError(f"Workbook not found: {path}")
     if not path.is_file():
         raise WorkbookValidationError(f"{field_name} must point to a file: {path}")
+
+
+def locate_ex_llc_3_year_workbook(
+    *, search_root: str | Path | None = None, expected_relative_path: Path | None = None
+) -> Path:
+    """Resolve the ex LLC 3 Year workbook path under the expected repository location."""
+
+    root = (
+        _resolve_repo_root()
+        if search_root is None
+        else _as_path(search_root, field_name="search_root")
+    )
+    relative_path = expected_relative_path or _DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH
+    workbook_path = root / relative_path
+    _validate_workbook_path(workbook_path, field_name="hist_ex_llc_3yr_xlsx")
+    return workbook_path
+
+
+def open_ex_llc_3_year_workbook(
+    *, search_root: str | Path | None = None, expected_relative_path: Path | None = None
+) -> tuple[Path, Any]:
+    """Locate and open the ex LLC 3 Year workbook at its expected path."""
+
+    workbook_path = locate_ex_llc_3_year_workbook(
+        search_root=search_root,
+        expected_relative_path=expected_relative_path,
+    )
+    try:
+        from openpyxl import load_workbook  # type: ignore[import-untyped]
+    except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
+        raise RuntimeError(
+            "openpyxl is required to open historical workbooks. "
+            "Install project dev dependencies to enable this feature."
+        ) from exc
+
+    try:
+        workbook = load_workbook(filename=workbook_path)
+    except Exception as exc:
+        raise WorkbookValidationError(f"Unable to load workbook: {workbook_path}") from exc
+    return workbook_path, workbook
 
 
 def _normalize_header(value: Any) -> str:
@@ -311,6 +382,123 @@ def _find_last_dated_row(worksheet: Any, *, header_row: int, date_column: int) -
     return None
 
 
+def _get_wal_column_from_consolidated(header_map: Mapping[int, str], *, date_column: int) -> int:
+    for column_index, normalized in header_map.items():
+        if column_index == date_column:
+            continue
+        if normalized in WAL_HEADER_CANDIDATES:
+            return column_index
+        if normalized.startswith("wal "):
+            return column_index
+    raise WorkbookValidationError("Worksheet header rows are missing a WAL value column")
+
+
+def read_wal_sheet_append_location(
+    workbook: Any,
+    *,
+    wal_sheet_name: str = SHEET_WAL,
+) -> WalSheetAppendLocation:
+    """Resolve WAL sheet structure and row location for appending one WAL observation."""
+
+    if wal_sheet_name not in getattr(workbook, "sheetnames", []):
+        raise WorksheetNotFoundError(f"Required worksheet not found: {wal_sheet_name}")
+
+    worksheet = workbook[wal_sheet_name]
+    header_row = _find_header_row(worksheet)
+    consolidated_headers = _build_consolidated_header_map(
+        worksheet,
+        max_scan_rows=max(header_row, HEADER_SCAN_ROWS),
+    )
+    date_column = _get_date_column_from_consolidated(consolidated_headers)
+    wal_column = _get_wal_column_from_consolidated(
+        consolidated_headers,
+        date_column=date_column,
+    )
+    last_dated_row = _find_last_dated_row(worksheet, header_row=header_row, date_column=date_column)
+    append_row = header_row + 1 if last_dated_row is None else last_dated_row + 1
+    return WalSheetAppendLocation(
+        sheet_name=wal_sheet_name,
+        header_row=header_row,
+        date_column=date_column,
+        wal_column=wal_column,
+        append_row=append_row,
+        last_dated_row=last_dated_row,
+    )
+
+
+def _snapshot_preserved_wal_cells(
+    worksheet: Any,
+    *,
+    preserve_through_row: int,
+    preserve_through_column: int,
+) -> dict[tuple[int, int], _CellSnapshot]:
+    snapshots: dict[tuple[int, int], _CellSnapshot] = {}
+    existing_cells = getattr(worksheet, "_cells", None)
+    if isinstance(existing_cells, dict):
+        for (row_index, column_index), cell in existing_cells.items():
+            if row_index > preserve_through_row or column_index > preserve_through_column:
+                continue
+            value = getattr(cell, "value", None)
+            snapshots[(row_index, column_index)] = _CellSnapshot(
+                value=value,
+                is_formula=isinstance(value, str) and value.startswith("="),
+                style_id=getattr(cell, "style_id", None),
+                number_format=getattr(cell, "number_format", None),
+            )
+        return snapshots
+
+    for row_index in range(1, preserve_through_row + 1):
+        for column_index in range(1, preserve_through_column + 1):
+            cell = worksheet.cell(row=row_index, column=column_index)
+            value = cell.value
+            snapshots[(row_index, column_index)] = _CellSnapshot(
+                value=value,
+                is_formula=isinstance(value, str) and value.startswith("="),
+                style_id=getattr(cell, "style_id", None),
+                number_format=getattr(cell, "number_format", None),
+            )
+    return snapshots
+
+
+def _validate_preserved_wal_cells(
+    worksheet: Any, expected_snapshots: Mapping[tuple[int, int], _CellSnapshot]
+) -> None:
+    for (row_index, column_index), expected in expected_snapshots.items():
+        cell = worksheet.cell(row=row_index, column=column_index)
+        value = cell.value
+        is_formula = isinstance(value, str) and value.startswith("=")
+        if expected.is_formula != is_formula:
+            raise WorkbookValidationError(
+                "WAL append changed existing formula usage at "
+                f"row={row_index} column={column_index}"
+            )
+        if expected.value != value:
+            raise WorkbookValidationError(
+                "WAL append changed existing cell value at "
+                f"row={row_index} column={column_index}"
+            )
+        if expected.style_id != getattr(cell, "style_id", None):
+            raise WorkbookValidationError(
+                "WAL append changed existing formatting at "
+                f"row={row_index} column={column_index}"
+            )
+        if expected.number_format != getattr(cell, "number_format", None):
+            raise WorkbookValidationError(
+                "WAL append changed existing number format at "
+                f"row={row_index} column={column_index}"
+            )
+
+
+def _copy_row_cell_presentation(
+    worksheet: Any, *, source_row: int, target_row: int, columns: tuple[int, ...]
+) -> None:
+    for column_index in columns:
+        source_cell = worksheet.cell(row=source_row, column=column_index)
+        target_cell = worksheet.cell(row=target_row, column=column_index)
+        target_cell._style = copy(source_cell._style)
+        target_cell.number_format = source_cell.number_format
+
+
 def _append_to_sheet(
     *,
     workbook: Any,
@@ -374,7 +562,7 @@ def _append_row(
     )
 
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
         raise RuntimeError(
             "openpyxl is required to update historical workbooks. "
@@ -450,6 +638,79 @@ def append_row_trend(
     )
 
 
+def append_wal_row(
+    workbook_path: str | Path,
+    *,
+    px_date: date,
+    wal_value: float,
+    wal_sheet_name: str = SHEET_WAL,
+) -> Path:
+    """Append one WAL row to the historical WAL sheet."""
+
+    path = _as_path(workbook_path, field_name="workbook_path")
+    _validate_workbook_path(path)
+
+    try:
+        from openpyxl import load_workbook
+    except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
+        raise RuntimeError(
+            "openpyxl is required to update historical workbooks. "
+            "Install project dev dependencies to enable this feature."
+        ) from exc
+
+    workbook = None
+    try:
+        workbook = load_workbook(filename=path)
+        append_target = read_wal_sheet_append_location(workbook, wal_sheet_name=wal_sheet_name)
+        worksheet = workbook[append_target.sheet_name]
+        preserve_up_to_row = append_target.last_dated_row or append_target.header_row
+        preserve_snapshots = _snapshot_preserved_wal_cells(
+            worksheet,
+            preserve_through_row=preserve_up_to_row,
+            preserve_through_column=max(
+                append_target.date_column,
+                append_target.wal_column,
+                int(getattr(worksheet, "max_column", append_target.wal_column)),
+            ),
+        )
+
+        if append_target.last_dated_row is not None:
+            last_date = _coerce_cell_date(
+                worksheet.cell(
+                    row=append_target.last_dated_row, column=append_target.date_column
+                ).value
+            )
+            if last_date is None:
+                raise AppendDateError(
+                    "Last worksheet date is blank for WAL sheet "
+                    f"{append_target.sheet_name!r} at row {append_target.last_dated_row}"
+                )
+            if px_date <= last_date:
+                raise DateMonotonicityError(
+                    "Append date must be newer than the last row date: "
+                    f"append_date={px_date.isoformat()} last_row_date={last_date.isoformat()}"
+                )
+            _copy_row_cell_presentation(
+                worksheet,
+                source_row=append_target.last_dated_row,
+                target_row=append_target.append_row,
+                columns=(append_target.date_column, append_target.wal_column),
+            )
+
+        worksheet.cell(row=append_target.append_row, column=append_target.date_column).value = (
+            px_date
+        )
+        worksheet.cell(row=append_target.append_row, column=append_target.wal_column).value = float(
+            wal_value
+        )
+        _validate_preserved_wal_cells(worksheet, preserve_snapshots)
+        workbook.save(path)
+    finally:
+        if workbook is not None:
+            workbook.close()
+    return path
+
+
 __all__ = [
     "AppendDateError",
     "AppendDateResolutionError",
@@ -458,10 +719,16 @@ __all__ = [
     "SHEET_ALL_PROGRAMS_3_YEAR",
     "SHEET_EX_LLC_3_YEAR",
     "SHEET_LLC_3_YEAR",
+    "SHEET_WAL",
     "SERIES_BY_SHEET",
+    "WalSheetAppendLocation",
     "WorkbookValidationError",
     "WorksheetNotFoundError",
     "append_row_all_programs",
     "append_row_ex_trend",
     "append_row_trend",
+    "append_wal_row",
+    "locate_ex_llc_3_year_workbook",
+    "open_ex_llc_3_year_workbook",
+    "read_wal_sheet_append_location",
 ]
