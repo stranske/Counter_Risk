@@ -33,6 +33,7 @@ app = []
 dev = [
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
+    "pytest-xdist==3.8.0",
     "pandas>=2.3,<3",
     "black==26.1.0",
     "ruff==0.15.1",
