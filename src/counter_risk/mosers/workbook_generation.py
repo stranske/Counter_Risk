@@ -13,6 +13,7 @@ from counter_risk.parsers.nisa import (
     parse_nisa_all_programs,
 )
 from counter_risk.parsers.nisa_ex_trend import parse_nisa_ex_trend
+from counter_risk.parsers.nisa_trend import parse_nisa_trend
 
 Workbook: TypeAlias = Any
 Worksheet: TypeAlias = Any
@@ -40,6 +41,12 @@ def generate_mosers_workbook_ex_trend(raw_nisa_path: str | Path) -> Workbook:
     """Generate a populated MOSERS workbook from raw NISA Ex Trend input."""
 
     return _generate_mosers_workbook_from_parser(raw_nisa_path, parser=parse_nisa_ex_trend)
+
+
+def generate_mosers_workbook_trend(raw_nisa_path: str | Path) -> Workbook:
+    """Generate a populated MOSERS workbook from raw NISA Trend input."""
+
+    return _generate_mosers_workbook_from_parser(raw_nisa_path, parser=parse_nisa_trend)
 
 
 def _generate_mosers_workbook_from_parser(
