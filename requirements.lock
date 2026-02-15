@@ -38,6 +38,8 @@ pytest==9.0.2
     #   pytest-cov
 pytest-cov==7.0.0
     # via my-project (pyproject.toml)
+pytest-xdist==3.8.0
+    # via my-project (pyproject.toml)
 ruff==0.15.1
     # via my-project (pyproject.toml)
 tomlkit==0.13.3
