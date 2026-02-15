@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import subprocess
 from pathlib import Path
 
@@ -7,6 +8,11 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "scripts" / "validate_release_workflow_yaml.py"
+
+pytestmark = pytest.mark.skipif(
+    importlib.util.find_spec("yaml") is None,
+    reason="PyYAML required for release workflow validator tests",
+)
 
 
 def _write_workflow(path: Path, *, extra: str = "") -> None:
