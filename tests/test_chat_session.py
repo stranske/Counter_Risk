@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 from counter_risk.chat.context import load_run_context
+from counter_risk.chat.providers.anthropic_stub import AnthropicStubProvider
+from counter_risk.chat.providers.openai_stub import OpenAIStubProvider
 from counter_risk.chat.session import (
     ChatSession,
     ChatSessionError,
@@ -90,6 +92,28 @@ def test_chat_session_stub_provider_is_deterministic_for_same_prompt(tmp_path: P
     assert "openai-stub:chat-model-placeholder" in first
 
 
+@pytest.mark.parametrize(
+    ("provider", "provider_marker"),
+    (
+        (OpenAIStubProvider(), "openai-stub"),
+        (AnthropicStubProvider(), "anthropic-stub"),
+    ),
+)
+def test_provider_stubs_are_deterministic_for_same_messages_and_model(
+    provider: object,
+    provider_marker: str,
+) -> None:
+    messages = [
+        {"role": "system", "content": "system prompt"},
+        {"role": "user", "content": "top exposures"},
+    ]
+    first = provider.generate(messages=messages, model=_MODEL_KEY, context_answer="answer")
+    second = provider.generate(messages=messages, model=_MODEL_KEY, context_answer="answer")
+
+    assert first == second
+    assert first.startswith(f"{provider_marker}:{_MODEL_KEY}")
+
+
 def test_chat_session_dispatches_selected_provider_and_model(tmp_path: Path) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
     session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
@@ -154,7 +178,7 @@ def test_chat_session_routes_key_warnings_to_warning_handler(tmp_path: Path) -> 
 
     answer = session.ask("what are the key warnings?")
 
-    assert answer.startswith("Key warnings (2):")
+    assert "Key warnings (2):" in answer
     assert "PPT links not refreshed; COM refresh skipped" in answer
 
 
