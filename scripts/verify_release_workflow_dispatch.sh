@@ -82,6 +82,14 @@ if ! gh auth status >/dev/null 2>&1; then
   exit 1
 fi
 
+# When invoked outside a git checkout, `gh workflow run` (and related commands)
+# fail with a low-signal git-discovery error. Preflight repository context so
+# callers get a clear, actionable failure.
+if ! gh repo view >/dev/null 2>&1; then
+  echo "[ERROR] GitHub CLI (gh) repository context is required. Run this script from within a git clone or set GH_REPO (e.g. 'owner/repo')." >&2
+  exit 1
+fi
+
 echo "Triggering workflow '${WORKFLOW_FILE}' on ref '${REF_NAME}'..."
 gh workflow run "${WORKFLOW_FILE}" --ref "${REF_NAME}"
 
