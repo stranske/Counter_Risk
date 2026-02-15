@@ -3,24 +3,24 @@
 from __future__ import annotations
 
 import logging
-import os
 import re
 from dataclasses import dataclass, field
-from typing import Final
+from functools import cmp_to_key
+from typing import Final, cast
 
 from counter_risk.chat.context import RunContext
+from counter_risk.chat.providers.anthropic_stub import AnthropicStubProvider
+from counter_risk.chat.providers.base import ProviderClient
+from counter_risk.chat.providers.openai_stub import OpenAIStubProvider
+from counter_risk.chat.utils import cmp_with_tol, is_close
 
 _LOGGER = logging.getLogger(__name__)
 
+_PLACEHOLDER_MODEL: Final[str] = "chat-model-placeholder"
 _PROVIDER_MODELS: Final[dict[str, set[str]]] = {
-    "local": {"deterministic"},
-    "openai": {"gpt-4.1-mini", "gpt-4o-mini"},
-    "anthropic": {"claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"},
-}
-
-_PROVIDER_API_KEY_ENV: Final[dict[str, str]] = {
-    "openai": "OPENAI_API_KEY",
-    "anthropic": "ANTHROPIC_API_KEY",
+    "local": {_PLACEHOLDER_MODEL},
+    "openai": {_PLACEHOLDER_MODEL},
+    "anthropic": {_PLACEHOLDER_MODEL},
 }
 
 _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
@@ -29,6 +29,42 @@ _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
     re.compile(r"(reveal|show|print)\s+(the\s+)?(system|developer)\s+prompt", re.IGNORECASE),
     re.compile(r"role\s*:\s*(system|developer)", re.IGNORECASE),
     re.compile(r"<\s*system\s*>", re.IGNORECASE),
+)
+
+_HTML_ENTITY_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"&(?:#\d+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]{1,31});"
+)
+_ESCAPE_SEQUENCE_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"\\(?:[abfnrtv\\'\"?]|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|[0-7]{1,3})"
+)
+_HEAVY_ESCAPING_RATIO_THRESHOLD: Final[float] = 0.30
+_NON_ALNUM_RATIO_THRESHOLD: Final[float] = 0.60
+
+_INTENT_PATTERNS: Final[tuple[tuple[str, tuple[re.Pattern[str], ...]], ...]] = (
+    (
+        "top_exposures",
+        (
+            re.compile(r"\btop\s+exposures?\b", re.IGNORECASE),
+            re.compile(r"\blargest\s+exposures?\b", re.IGNORECASE),
+            re.compile(r"\bbiggest\s+counterpart(y|ies)\b", re.IGNORECASE),
+        ),
+    ),
+    (
+        "key_warnings",
+        (
+            re.compile(r"\bkey\s+warnings?\b", re.IGNORECASE),
+            re.compile(r"\bwarnings?\b", re.IGNORECASE),
+            re.compile(r"\balerts?\b", re.IGNORECASE),
+        ),
+    ),
+    (
+        "deltas",
+        (
+            re.compile(r"\bdeltas?\b", re.IGNORECASE),
+            re.compile(r"\btop\s+changes?\b", re.IGNORECASE),
+            re.compile(r"\bmovers?\b", re.IGNORECASE),
+        ),
+    ),
 )
 
 
@@ -48,54 +84,94 @@ class ChatMessage:
     content: str
 
 
+class _LocalStubProvider:
+    """Deterministic local provider client for development/test usage."""
+
+    def generate(self, messages: list[dict[str, str]], model: str, **kwargs: object) -> str:
+        answer = str(kwargs.get("context_answer", "No answer available."))
+        return f"local-stub:{model} | {answer}"
+
+
+_PROVIDER_CLIENTS: Final[dict[str, ProviderClient]] = {
+    "local": _LocalStubProvider(),
+    "openai": OpenAIStubProvider(),
+    "anthropic": AnthropicStubProvider(),
+}
+
+
 @dataclass
 class ChatSession:
     """In-memory chat session with provider/model validation and guarded prompting."""
 
     context: RunContext
     provider: str = "local"
-    model: str = "deterministic"
+    model: str = _PLACEHOLDER_MODEL
     history: list[ChatMessage] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.provider = self.provider.strip().lower()
         self.model = self.model.strip()
 
-        available_models = _PROVIDER_MODELS.get(self.provider)
-        if available_models is None:
-            raise ChatSessionError(f"Unsupported provider: {self.provider}")
-
-        if self.model not in available_models:
+        if not is_provider_model_supported(self.provider, self.model):
+            available_models = _PROVIDER_MODELS.get(self.provider)
+            if available_models is None:
+                raise ChatSessionError(f"Unsupported provider: {self.provider}")
             models_str = ", ".join(sorted(available_models))
             raise ChatSessionError(
                 f"Unsupported model '{self.model}' for provider '{self.provider}'. "
                 f"Available models: {models_str}"
             )
 
-        required_key = _PROVIDER_API_KEY_ENV.get(self.provider)
-        if required_key and not os.getenv(required_key):
-            raise ChatSessionError(
-                f"Provider '{self.provider}' requires environment variable '{required_key}'"
-            )
+    def send(
+        self, question: str, *, provider_key: str | None = None, model_key: str | None = None
+    ) -> str:
+        """Alias for ask to support UI-facing send semantics."""
 
-    def ask(self, question: str) -> str:
+        return self.ask(question, provider_key=provider_key, model_key=model_key)
+
+    def ask(
+        self, question: str, *, provider_key: str | None = None, model_key: str | None = None
+    ) -> str:
         """Validate query, build a guarded prompt, and return a response."""
 
         clean_question = validate_user_query(question)
         prompt = build_guarded_prompt(self.context, clean_question)
+        selected_provider = (provider_key or self.provider).strip().lower()
+        selected_model = (model_key or self.model).strip()
 
-        # For now responses are deterministic from manifest-backed context.
-        answer = self._answer_from_context(clean_question)
+        if not is_provider_model_supported(selected_provider, selected_model):
+            raise ChatSessionError(
+                f"Unsupported provider/model selection: {selected_provider}/{selected_model}"
+            )
+
+        provider_client = _PROVIDER_CLIENTS[selected_provider]
+        context_answer = self._answer_from_context(clean_question)
+        messages = self._build_provider_messages(prompt=prompt, question=clean_question)
+        answer = provider_client.generate(
+            messages=messages,
+            model=selected_model,
+            context_answer=context_answer,
+        )
 
         self.history.append(ChatMessage(role="user", content=clean_question))
         self.history.append(ChatMessage(role="assistant", content=answer))
         _LOGGER.debug("Built guarded prompt of %s characters", len(prompt))
         return answer
 
+    def _build_provider_messages(self, *, prompt: str, question: str) -> list[dict[str, str]]:
+        messages = [{"role": "system", "content": prompt}]
+        messages.extend({"role": item.role, "content": item.content} for item in self.history)
+        messages.append({"role": "user", "content": question})
+        return messages
+
     def _answer_from_context(self, question: str) -> str:
-        question_norm = question.lower()
-        if "top exposures" in question_norm:
+        intent = self._route_intent(question)
+        if intent == "top_exposures":
             return _format_top_exposures(self.context.manifest)
+        if intent == "key_warnings":
+            return _format_key_warnings(self.context.warnings)
+        if intent == "deltas":
+            return _format_deltas(self.context.deltas)
 
         warnings_total = len(self.context.warnings)
         deltas_total = sum(len(records) for records in self.context.deltas.values())
@@ -103,6 +179,23 @@ class ChatSession:
             f"Run summary: {self.context.summary()}. "
             f"Loaded {warnings_total} warnings and {deltas_total} top-change records."
         )
+
+    def _route_intent(self, question: str) -> str:
+        for intent, patterns in _INTENT_PATTERNS:
+            if any(pattern.search(question) for pattern in patterns):
+                return intent
+        return "summary"
+
+
+def is_provider_model_supported(provider: str, model: str) -> bool:
+    """Return True when provider/model selection is allowed."""
+
+    provider_key = provider.strip().lower()
+    model_key = model.strip()
+    available_models = _PROVIDER_MODELS.get(provider_key)
+    if available_models is None:
+        return False
+    return model_key in available_models
 
 
 # Safeguards reduce injection risk but do not replace model-side safety systems.
@@ -157,8 +250,9 @@ def validate_user_query(question: str) -> str:
 def sanitize_untrusted_text(raw_text: str) -> str:
     """Sanitize untrusted workbook/manifest text before prompt insertion."""
 
+    normalized = normalize_untrusted_text(raw_text)
     sanitized = "".join(
-        char if (char.isprintable() or char in {"\n", "\t"}) else " " for char in raw_text
+        char if (char.isprintable() or char in {"\n", "\t"}) else " " for char in normalized
     )
     sanitized = sanitized.replace("```", "` ` `")
     sanitized = sanitized.replace("SYSTEM_INSTRUCTIONS_START", "SYSTEM_INSTRUCTIONS_START_REDACTED")
@@ -170,33 +264,244 @@ def sanitize_untrusted_text(raw_text: str) -> str:
     for pattern in _INJECTION_PATTERNS:
         redacted = pattern.sub("[REDACTED_INJECTION_PATTERN]", redacted)
 
-    if redacted != raw_text:
+    if redacted != normalized:
         _LOGGER.warning("Sanitized untrusted run text before prompt assembly")
+    _warn_on_heavy_encoding_or_escaping(redacted)
+    _warn_on_high_non_alphanumeric_ratio(redacted)
 
     return redacted
 
 
+def normalize_untrusted_text(raw_text: str) -> str:
+    """Return canonical untrusted text used as the sanitization baseline."""
+
+    return raw_text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _warn_on_heavy_encoding_or_escaping(text: str) -> None:
+    total_chars = len(text)
+    if total_chars == 0:
+        return
+
+    entity_chars = sum(len(match.group(0)) for match in _HTML_ENTITY_PATTERN.finditer(text))
+    escape_chars = sum(len(match.group(0)) for match in _ESCAPE_SEQUENCE_PATTERN.finditer(text))
+    encoded_ratio = (entity_chars + escape_chars) / total_chars
+
+    if encoded_ratio > _HEAVY_ESCAPING_RATIO_THRESHOLD:
+        _LOGGER.warning(
+            "Sanitized untrusted text contains heavy encoding/escaping patterns: %.1f%%",
+            encoded_ratio * 100,
+        )
+
+
+def _warn_on_high_non_alphanumeric_ratio(text: str) -> None:
+    chars_without_spaces = [char for char in text if char != " "]
+    if not chars_without_spaces:
+        return
+
+    non_alnum_count = sum(1 for char in chars_without_spaces if not char.isalnum())
+    non_alnum_ratio = non_alnum_count / len(chars_without_spaces)
+
+    if non_alnum_ratio > _NON_ALNUM_RATIO_THRESHOLD:
+        _LOGGER.warning(
+            "Sanitized untrusted text contains a high non-alphanumeric ratio: %.1f%%",
+            non_alnum_ratio * 100,
+        )
+
+
 def _format_top_exposures(manifest: dict[str, object]) -> str:
-    raw = manifest.get("top_exposures")
-    if not isinstance(raw, dict) or not raw:
+    rows = _extract_top_exposure_rows(manifest)
+    if not rows:
         return "No top exposures found in manifest."
 
-    lines: list[str] = []
+    sorted_rows = _sort_top_exposure_rows(rows)
+    top_rows = _limit_top_exposure_rows(sorted_rows, top_n=5, min_value=0.0)
+    formatted = [
+        f"{row['variant']}: {row['name']} ({_format_exposure_value(cast(float, row['value']))})"
+        for row in top_rows
+    ]
+    return "; ".join(formatted)
+
+
+def _extract_top_exposure_rows(manifest: dict[str, object]) -> list[dict[str, str | float]]:
+    raw = manifest.get("top_exposures")
+    if not isinstance(raw, dict) or not raw:
+        return []
+
+    rows: list[dict[str, str | float]] = []
     for variant in sorted(raw):
         records = raw.get(variant)
         if not isinstance(records, list):
             continue
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+
+            value = _extract_numeric_value(record)
+            if value is None:
+                continue
+
+            rows.append(
+                {
+                    "variant": str(variant),
+                    "name": str(record.get("counterparty") or record.get("name") or "unknown"),
+                    "value": value,
+                }
+            )
+
+    return rows
+
+
+def _sort_top_exposure_rows(
+    rows: list[dict[str, str | float]],
+    *,
+    rel_tol: float = 1e-9,
+    abs_tol: float = 1e-6,
+) -> list[dict[str, str | float]]:
+    def _compare(left: dict[str, str | float], right: dict[str, str | float]) -> int:
+        value_cmp = cmp_with_tol(
+            cast(float, left["value"]),
+            cast(float, right["value"]),
+            rel_tol=rel_tol,
+            abs_tol=abs_tol,
+        )
+        if value_cmp != 0:
+            return -value_cmp
+
+        left_variant = cast(str, left["variant"])
+        right_variant = cast(str, right["variant"])
+        if left_variant != right_variant:
+            return -1 if left_variant < right_variant else 1
+
+        left_name = cast(str, left["name"])
+        right_name = cast(str, right["name"])
+        if left_name == right_name:
+            return 0
+        return -1 if left_name < right_name else 1
+
+    return sorted(rows, key=cmp_to_key(_compare))
+
+
+def _limit_top_exposure_rows(
+    rows: list[dict[str, str | float]],
+    *,
+    top_n: int = 5,
+    min_value: float = 0.0,
+    rel_tol: float = 1e-9,
+    abs_tol: float = 1e-6,
+) -> list[dict[str, str | float]]:
+    if top_n <= 0:
+        return []
+
+    limited: list[dict[str, str | float]] = []
+    for row in rows:
+        if (
+            cmp_with_tol(
+                cast(float, row["value"]),
+                min_value,
+                rel_tol=rel_tol,
+                abs_tol=abs_tol,
+            )
+            >= 0
+        ):
+            limited.append(row)
+        if len(limited) >= top_n:
+            break
+    return limited
+
+
+def _format_exposure_value(value: float, *, abs_tol: float = 1e-6, rel_tol: float = 1e-9) -> str:
+    if is_close(value, 0.0, rel_tol=rel_tol, abs_tol=abs_tol):
+        return "0.00"
+    return f"{value:.2f}"
+
+
+def _extract_numeric_value(record: dict[object, object]) -> float | None:
+    candidate_keys = (
+        "notional",
+        "exposure",
+        "value",
+        "amount",
+        "mtm",
+        "gross_exposure",
+        "net_exposure",
+    )
+
+    for key in candidate_keys:
+        parsed = _parse_float(record.get(key))
+        if parsed is not None:
+            return parsed
+
+    for value in record.values():
+        parsed = _parse_float(value)
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def _parse_float(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        return float(value)
+    if isinstance(value, str):
+        cleaned = value.strip().replace(",", "")
+        if not cleaned:
+            return None
+        try:
+            return float(cleaned)
+        except ValueError:
+            return None
+    return None
+
+
+def _format_key_warnings(warnings: list[str]) -> str:
+    if not warnings:
+        return "Key warnings: none."
+
+    preview = "; ".join(f"{index + 1}. {item}" for index, item in enumerate(warnings[:3]))
+    if len(warnings) > 3:
+        preview = f"{preview}; ... (+{len(warnings) - 3} more)"
+    return f"Key warnings ({len(warnings)}): {preview}"
+
+
+def _format_deltas(deltas: dict[str, list[dict[str, object]]]) -> str:
+    if not deltas:
+        return "Top deltas: none."
+
+    lines: list[str] = []
+    for variant in sorted(deltas):
+        records = deltas.get(variant, [])
         if not records:
-            lines.append(f"{variant}: none")
             continue
 
         first = records[0]
         if not isinstance(first, dict):
-            lines.append(f"{variant}: unavailable")
             continue
 
-        counterparty = first.get("counterparty", "unknown")
-        notional = first.get("notional", "unknown")
-        lines.append(f"{variant}: {counterparty} ({notional})")
+        counterparty = str(first.get("counterparty") or first.get("name") or "unknown")
+        metric, metric_value = _find_delta_metric(first)
+        lines.append(f"{variant}: {counterparty} {metric}={metric_value}")
 
-    return "; ".join(lines) if lines else "No top exposures found in manifest."
+    return "; ".join(lines) if lines else "Top deltas: none."
+
+
+def _find_delta_metric(record: dict[str, object]) -> tuple[str, str]:
+    candidate_keys = (
+        "notional_change",
+        "delta",
+        "change",
+        "delta_value",
+        "mtm_change",
+        "exposure_change",
+    )
+    for key in candidate_keys:
+        if key in record:
+            return key, str(record[key])
+
+    for key, value in record.items():
+        if key in {"counterparty", "name"}:
+            continue
+        return str(key), str(value)
+
+    return "value", "unknown"

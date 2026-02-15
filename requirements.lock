@@ -2,7 +2,7 @@
 #    uv pip compile pyproject.toml --extra dev --universal --output-file requirements.lock
 colorama==0.4.6 ; sys_platform == 'win32'
     # via pytest
-black==26.1.0
+black==24.10.0
     # via my-project (pyproject.toml)
 coverage==7.13.4
     # via pytest-cov
@@ -18,7 +18,7 @@ packaging==25.0
     # via pytest
 pandas==2.2.3
     # via my-project (pyproject.toml)
-pathspec==1.0.1
+pathspec==0.12.1
     # via mypy
 pydantic==2.7.4
     # via my-project (pyproject.toml)
