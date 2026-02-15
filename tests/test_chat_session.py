@@ -106,6 +106,30 @@ def test_sanitize_untrusted_text_compares_against_normalized_text(
     )
 
 
+def test_sanitize_untrusted_text_warns_on_heavy_encoding_or_escaping(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.WARNING)
+
+    text = "\\n\\t\\x41\\u0042\\n\\t\\x41\\u0042&nbsp;&amp;&#169;"
+    sanitized = sanitize_untrusted_text(text)
+
+    assert sanitized == text
+    assert any("heavy encoding/escaping patterns" in r.message for r in caplog.records)
+
+
+def test_sanitize_untrusted_text_warns_on_high_non_alphanumeric_ratio(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.WARNING)
+
+    text = "!!!! ???? //// ++++ ---- @@@@ #### $$$$"
+    sanitized = sanitize_untrusted_text(text)
+
+    assert sanitized == text
+    assert any("high non-alphanumeric ratio" in r.message for r in caplog.records)
+
+
 def test_chat_session_routes_key_warnings_to_warning_handler(tmp_path: Path) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
     session = ChatSession(context=context, provider="local", model="deterministic")
