@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 import os
 import re
-from functools import cmp_to_key
 from dataclasses import dataclass, field
+from functools import cmp_to_key
 from typing import Final, cast
 
 from counter_risk.chat.context import RunContext
