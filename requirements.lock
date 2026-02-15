@@ -16,11 +16,11 @@ openpyxl==3.1.5
     # via my-project (pyproject.toml)
 packaging==25.0
     # via pytest
-pandas==2.2.3
+pandas==2.3.0
     # via my-project (pyproject.toml)
 pathspec==0.12.1
     # via mypy
-pydantic==2.7.4
+pydantic==2.10.3
     # via my-project (pyproject.toml)
 python-pptx==1.0.2
     # via my-project (pyproject.toml)
