@@ -2,13 +2,13 @@
 #    uv pip compile pyproject.toml --extra dev --universal --output-file requirements.lock
 colorama==0.4.6 ; sys_platform == 'win32'
     # via pytest
-black==26.1.0
+black==24.10.0
     # via my-project (pyproject.toml)
 coverage==7.13.4
     # via pytest-cov
 iniconfig==2.3.0
     # via pytest
-mypy==1.19.1
+mypy==1.18.2
     # via my-project (pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
@@ -38,7 +38,7 @@ pytest==9.0.2
     #   pytest-cov
 pytest-cov==7.0.0
     # via my-project (pyproject.toml)
-ruff==0.15.1
+ruff==0.15.0
     # via my-project (pyproject.toml)
 tomlkit==0.13.3
     # via my-project (pyproject.toml)
