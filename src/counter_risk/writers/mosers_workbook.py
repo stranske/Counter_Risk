@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import Protocol
 
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook as _generate_mosers_workbook_in_memory,
@@ -14,6 +15,12 @@ from counter_risk.mosers.workbook_generation import (
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook_trend as _generate_mosers_workbook_trend_in_memory,
 )
+
+
+class _WorkbookLike(Protocol):
+    def save(self, filename: str | Path) -> None: ...
+
+    def close(self) -> None: ...
 
 
 def generate_mosers_workbook(
@@ -69,7 +76,7 @@ def _generate_and_save_mosers_workbook(
     raw_nisa_path: str | Path,
     output_path: str | Path,
     as_of_date: object | None,
-    generator: Callable[[str | Path], object],
+    generator: Callable[[str | Path], _WorkbookLike],
 ) -> Path:
     destination = Path(output_path)
     if destination.suffix.lower() != ".xlsx":
