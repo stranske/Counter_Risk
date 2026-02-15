@@ -5,11 +5,13 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from counter_risk.workflows import historical_update
 
 
 def test_main_parses_date_and_calls_calculate_then_append_once(
-    monkeypatch: object, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     exposure_summary_path = tmp_path / "exposure-summary.xlsx"
     exposure_summary_path.write_text("placeholder", encoding="utf-8")
