@@ -9,13 +9,18 @@ from pathlib import Path
 from typing import Any, cast
 
 try:
-    from pyarrow.lib import (
-        ArrowIOError as _ImportedPyArrowIOError,  # type: ignore[import-not-found]
-    )
+    import pyarrow.lib as _pyarrow_lib  # type: ignore[import-not-found]
 except (ImportError, ModuleNotFoundError):
     _PYARROW_IO_ERROR_TYPES: tuple[type[BaseException], ...] = (OSError,)
 else:
-    _PYARROW_IO_ERROR_TYPES = (_ImportedPyArrowIOError,)
+    imported_pyarrow_io_error = getattr(_pyarrow_lib, "ArrowIOError", None)
+    if (
+        isinstance(imported_pyarrow_io_error, type)
+        and issubclass(imported_pyarrow_io_error, BaseException)
+    ):
+        _PYARROW_IO_ERROR_TYPES = (imported_pyarrow_io_error,)
+    else:
+        _PYARROW_IO_ERROR_TYPES = (OSError,)
 
 _TABLE_SUFFIXES: tuple[str, ...] = (".csv", ".parquet")
 
