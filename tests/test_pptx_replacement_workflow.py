@@ -5,6 +5,9 @@ import hashlib
 from pathlib import Path
 from typing import cast
 
+import pytest
+
+pptx = pytest.importorskip("pptx", reason="python-pptx required for PPTX replacement workflow tests")
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.shapes.picture import Picture
