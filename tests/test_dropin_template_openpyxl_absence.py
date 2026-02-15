@@ -7,8 +7,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 def test_dropin_template_pytest_run_skips_cleanly_without_openpyxl(tmp_path: Path) -> None:
+    if os.environ.get("COUNTER_RISK_OPENPYXL_ABSENCE_CHILD") == "1":
+        pytest.skip("meta-validation test skipped in child pytest run")
+
     sitecustomize = tmp_path / "sitecustomize.py"
     sitecustomize.write_text(
         "\n".join(
@@ -31,6 +36,7 @@ def test_dropin_template_pytest_run_skips_cleanly_without_openpyxl(tmp_path: Pat
     )
 
     env = os.environ.copy()
+    env["COUNTER_RISK_OPENPYXL_ABSENCE_CHILD"] = "1"
     extra_path = str(tmp_path)
     existing_pythonpath = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = (
@@ -42,7 +48,7 @@ def test_dropin_template_pytest_run_skips_cleanly_without_openpyxl(tmp_path: Pat
         "-m",
         "pytest",
         "-k",
-        "dropin_template and not openpyxl_absence",
+        "dropin_template",
         "-q",
     ]
     result = subprocess.run(
@@ -70,7 +76,7 @@ def test_dropin_template_pytest_run_skips_cleanly_without_openpyxl(tmp_path: Pat
             "-m",
             "pytest",
             "-k",
-            "dropin_template and not openpyxl_absence",
+            "dropin_template",
             "-q",
             "-rs",
         ],
