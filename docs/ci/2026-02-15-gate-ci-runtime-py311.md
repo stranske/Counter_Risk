@@ -52,7 +52,7 @@ There are only a few levers that materially reduce a job where tests dominate:
    - Full suite runs on `push` to `main` and/or nightly.
 
 2. **Shard tests across multiple jobs** (parallelize at the workflow level)
-   - Split into 2–4 shards using `pytest_args` (e.g., via `pytest -k`/markers, or a split plugin).
+   - Run 2–4 workflow matrix jobs, each passing different shard parameters via `pytest_args` (for example, using a plugin such as `pytest-split` or `pytest-xdist`, or by computing `SHARD_INDEX`/`SHARD_TOTAL` in the workflow and passing an appropriate `-k`/`-m` selection to each job).
    - This reduces wall time but increases total compute; works best if shards are balanced.
 
 3. **Remove or reduce coverage on PR Gate** (if policy allows)
