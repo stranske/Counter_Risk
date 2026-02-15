@@ -115,7 +115,9 @@ def test_load_parquet_table_pyarrow_io_error_message(
 
     fake_pd = SimpleNamespace(
         errors=SimpleNamespace(),
-        read_parquet=lambda _: (_ for _ in ()).throw(context_module._PYARROW_IO_ERROR_TYPES[0]("io fail")),
+        read_parquet=lambda _: (_ for _ in ()).throw(
+            context_module._PYARROW_IO_ERROR_TYPES[0]("io fail")
+        ),
     )
     monkeypatch.setitem(sys.modules, "pandas", fake_pd)
 
