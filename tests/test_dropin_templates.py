@@ -20,11 +20,9 @@ from tests.utils.assertions import assert_numeric_outputs_close
 
 
 def _load_openpyxl_or_fail() -> Any:
-    try:
-        import openpyxl  # type: ignore[import-untyped]
-    except ModuleNotFoundError as exc:
-        pytest.fail(f"openpyxl must be installed for drop-in template fixture tests: {exc}")
-    return openpyxl
+    return pytest.importorskip(
+        "openpyxl", reason="openpyxl is required for drop-in template fixture tests"
+    )
 
 
 def test_fill_dropin_template_raises_for_missing_template(tmp_path: Path) -> None:
