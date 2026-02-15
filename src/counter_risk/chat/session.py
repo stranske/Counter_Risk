@@ -5,10 +5,12 @@ from __future__ import annotations
 import logging
 import os
 import re
+from functools import cmp_to_key
 from dataclasses import dataclass, field
 from typing import Final, cast
 
 from counter_risk.chat.context import RunContext
+from counter_risk.chat.utils import cmp_with_tol, is_close
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -229,16 +231,12 @@ def _format_top_exposures(manifest: dict[str, object]) -> str:
     if not rows:
         return "No top exposures found in manifest."
 
-    sorted_rows = sorted(
-        rows,
-        key=lambda row: (
-            -cast(float, row["value"]),
-            cast(str, row["variant"]),
-            cast(str, row["name"]),
-        ),
-    )
-    top_rows = sorted_rows[:5]
-    formatted = [f"{row['variant']}: {row['name']} ({row['value']:.2f})" for row in top_rows]
+    sorted_rows = _sort_top_exposure_rows(rows)
+    top_rows = _limit_top_exposure_rows(sorted_rows, top_n=5, min_value=0.0)
+    formatted = [
+        f"{row['variant']}: {row['name']} ({_format_exposure_value(cast(float, row['value']))})"
+        for row in top_rows
+    ]
     return "; ".join(formatted)
 
 
@@ -269,6 +267,70 @@ def _extract_top_exposure_rows(manifest: dict[str, object]) -> list[dict[str, st
             )
 
     return rows
+
+
+def _sort_top_exposure_rows(
+    rows: list[dict[str, str | float]],
+    *,
+    rel_tol: float = 1e-9,
+    abs_tol: float = 1e-6,
+) -> list[dict[str, str | float]]:
+    def _compare(left: dict[str, str | float], right: dict[str, str | float]) -> int:
+        value_cmp = cmp_with_tol(
+            cast(float, left["value"]),
+            cast(float, right["value"]),
+            rel_tol=rel_tol,
+            abs_tol=abs_tol,
+        )
+        if value_cmp != 0:
+            return -value_cmp
+
+        left_variant = cast(str, left["variant"])
+        right_variant = cast(str, right["variant"])
+        if left_variant != right_variant:
+            return -1 if left_variant < right_variant else 1
+
+        left_name = cast(str, left["name"])
+        right_name = cast(str, right["name"])
+        if left_name == right_name:
+            return 0
+        return -1 if left_name < right_name else 1
+
+    return sorted(rows, key=cmp_to_key(_compare))
+
+
+def _limit_top_exposure_rows(
+    rows: list[dict[str, str | float]],
+    *,
+    top_n: int = 5,
+    min_value: float = 0.0,
+    rel_tol: float = 1e-9,
+    abs_tol: float = 1e-6,
+) -> list[dict[str, str | float]]:
+    if top_n <= 0:
+        return []
+
+    limited: list[dict[str, str | float]] = []
+    for row in rows:
+        if (
+            cmp_with_tol(
+                cast(float, row["value"]),
+                min_value,
+                rel_tol=rel_tol,
+                abs_tol=abs_tol,
+            )
+            >= 0
+        ):
+            limited.append(row)
+        if len(limited) >= top_n:
+            break
+    return limited
+
+
+def _format_exposure_value(value: float, *, abs_tol: float = 1e-6, rel_tol: float = 1e-9) -> str:
+    if is_close(value, 0.0, rel_tol=rel_tol, abs_tol=abs_tol):
+        return "0.00"
+    return f"{value:.2f}"
 
 
 def _extract_numeric_value(record: dict[object, object]) -> float | None:
