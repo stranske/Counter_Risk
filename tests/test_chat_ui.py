@@ -55,6 +55,38 @@ def test_submit_chat_message_rejects_invalid_provider_model_before_session_call(
     assert not session_factory_called
 
 
+def test_submit_chat_message_rejects_invalid_provider_before_send_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    send_called = False
+
+    def _failing_send(
+        self: ChatSession,
+        question: str,
+        *,
+        provider_key: str,
+        model_key: str,
+    ) -> str:
+        nonlocal send_called
+        send_called = True
+        raise AssertionError("ChatSession.send should not be called for invalid provider selection")
+
+    monkeypatch.setattr(ChatSession, "send", _failing_send)
+
+    result = submit_chat_message(
+        context=context,
+        user_text="top exposures",
+        provider_key="not-a-provider",
+        model_key=_MODEL_KEY,
+    )
+
+    assert result.assistant_message is None
+    assert "valid provider and model" in (result.validation_error or "")
+    assert not send_called
+
+
 def test_submit_chat_message_calls_send_once_with_selected_provider_and_model(
     tmp_path: Path,
 ) -> None:
