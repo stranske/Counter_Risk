@@ -34,17 +34,16 @@ def test_dropin_template_pytest_run_skips_cleanly_without_openpyxl(tmp_path: Pat
         f"{extra_path}{os.pathsep}{existing_pythonpath}" if existing_pythonpath else extra_path
     )
 
+    command = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "-k",
+        "dropin_template",
+        "-q",
+    ]
     result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pytest",
-            "tests/test_dropin_templates.py",
-            "-k",
-            "dropin_template",
-            "-q",
-            "-rs",
-        ],
+        command,
         capture_output=True,
         text=True,
         cwd=Path(__file__).resolve().parents[1],
@@ -57,7 +56,34 @@ def test_dropin_template_pytest_run_skips_cleanly_without_openpyxl(tmp_path: Pat
         "Expected `pytest -k dropin_template -q` to exit 0 when openpyxl is unavailable. "
         f"Return code: {result.returncode}. Output:\n{combined_output}"
     )
-    assert "SKIPPED" in combined_output and "openpyxl" in combined_output, (
-        "Expected at least one skipped drop-in template test with a reason mentioning openpyxl. "
+    assert "FAILED" not in combined_output, (
+        "Expected zero FAILED tests for `pytest -k dropin_template -q` when openpyxl is unavailable. "
         f"Output:\n{combined_output}"
+    )
+
+    reason_result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-k",
+            "dropin_template",
+            "-q",
+            "-rs",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).resolve().parents[1],
+        env=env,
+        check=False,
+    )
+
+    reason_output = f"{reason_result.stdout}\n{reason_result.stderr}"
+    assert reason_result.returncode == 0, (
+        "Expected `pytest -k dropin_template -q -rs` to exit 0 when openpyxl is unavailable. "
+        f"Return code: {reason_result.returncode}. Output:\n{reason_output}"
+    )
+    assert "SKIPPED" in reason_output and "openpyxl" in reason_output, (
+        "Expected at least one skipped drop-in template test with a reason mentioning openpyxl. "
+        f"Output:\n{reason_output}"
     )
