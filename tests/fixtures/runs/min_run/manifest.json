@@ -1,0 +1,23 @@
+{
+  "as_of_date": "2026-02-13",
+  "run_date": "2026-02-14T00:00:00+00:00",
+  "warnings": [
+    "PPT links not refreshed; COM refresh skipped"
+  ],
+  "top_exposures": {
+    "all_programs": [
+      {"counterparty": "Beta", "notional": 100.0000004},
+      {"counterparty": "Alpha", "notional": 100.0},
+      {"counterparty": "Gamma", "notional": 80.0},
+      {"counterparty": "Delta", "notional": 65.0}
+    ],
+    "ex_trend": [
+      {"counterparty": "Epsilon", "notional": 60.0}
+    ]
+  },
+  "top_changes_per_variant": {
+    "all_programs": [
+      {"counterparty": "Alpha", "notional_change": 2.5}
+    ]
+  }
+}

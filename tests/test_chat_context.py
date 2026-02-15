@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from counter_risk.chat.context import (
     RunContextError,
+    _load_parquet_table,
     discover_tables,
     load_manifest,
     load_run_context,
@@ -79,3 +82,46 @@ def test_discover_tables_loads_csv_and_parquet(
     assert "totals.csv" in tables
     assert "nested/futures.parquet" in tables
     assert tables["nested/futures.parquet"][0]["counterparty"] == "B"
+
+
+def test_load_parquet_table_parse_error_message(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class FakeParserError(ValueError):
+        pass
+
+    parquet_path = tmp_path / "broken.parquet"
+    parquet_path.write_bytes(b"broken")
+
+    fake_pd = SimpleNamespace(
+        errors=SimpleNamespace(ParserError=FakeParserError, EmptyDataError=FakeParserError),
+        read_parquet=lambda _: (_ for _ in ()).throw(FakeParserError("not parquet")),
+    )
+    monkeypatch.setitem(sys.modules, "pandas", fake_pd)
+
+    with pytest.raises(RunContextError, match="Parquet data format error") as exc_info:
+        _load_parquet_table(parquet_path)
+
+    assert "valid tabular Parquet file" in str(exc_info.value)
+
+
+def test_load_parquet_table_pyarrow_io_error_message(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from counter_risk.chat import context as context_module
+
+    parquet_path = tmp_path / "unreadable.parquet"
+    parquet_path.write_bytes(b"broken")
+
+    fake_pd = SimpleNamespace(
+        errors=SimpleNamespace(),
+        read_parquet=lambda _: (_ for _ in ()).throw(
+            context_module._PYARROW_IO_ERROR_TYPES[0]("io fail")
+        ),
+    )
+    monkeypatch.setitem(sys.modules, "pandas", fake_pd)
+
+    with pytest.raises(RunContextError, match="PyArrow could not access Parquet table") as exc_info:
+        _load_parquet_table(parquet_path)
+
+    assert "Check file path and permissions" in str(exc_info.value)
