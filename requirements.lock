@@ -40,7 +40,11 @@ pytest-cov==7.0.0
     # via my-project (pyproject.toml)
 ruff==0.15.1
     # via my-project (pyproject.toml)
+setuptools==79.0.1
+    # required by build-system for editable install in isolated CI envs
 tomlkit==0.13.3
     # via my-project (pyproject.toml)
 typing-extensions==4.15.0
     # via mypy
+wheel==0.45.1
+    # required by build-system for editable install in isolated CI envs
