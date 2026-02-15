@@ -2,7 +2,7 @@
 
 ## Summary (what the data says)
 
-Recent measurements of Counter_Risk GitHub Actions runs show that **Gate and CI runtime is dominated by pytest execution time**, not dependency installation or caching.
+Recent measurements of Counter_Risk GitHub Actions runs show that **Gate and CI runtime are dominated by pytest execution time**, not dependency installation or caching.
 
 - **Gate → “Python CI / python 3.11”** (sample n=29)
   - avg: **~7m47s**
