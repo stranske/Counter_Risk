@@ -26,7 +26,7 @@ def test_top_exposure_rows_sorted_in_non_increasing_order() -> None:
     sorted_rows = _sort_top_exposure_rows(rows)
     values = [float(row["value"]) for row in sorted_rows]
 
-    for left, right in zip(values, values[1:]):
+    for left, right in zip(values, values[1:], strict=False):
         assert cmp_with_tol(left, right) >= 0
 
 
