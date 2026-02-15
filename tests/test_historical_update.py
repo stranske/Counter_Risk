@@ -17,6 +17,7 @@ def test_module_has_expected_sheet_constants() -> None:
     assert historical_update.SHEET_ALL_PROGRAMS_3_YEAR == "All Programs 3 Year"
     assert historical_update.SHEET_EX_LLC_3_YEAR == "ex LLC 3 Year"
     assert historical_update.SHEET_LLC_3_YEAR == "LLC 3 Year"
+    assert historical_update.SHEET_WAL == "WAL"
 
 
 def test_as_path_rejects_blank_string() -> None:
@@ -30,6 +31,47 @@ def test_validate_workbook_path_rejects_non_xlsx_file(tmp_path: Path) -> None:
 
     with pytest.raises(historical_update.WorkbookValidationError, match=r"\.xlsx"):
         historical_update._validate_workbook_path(bad_path)
+
+
+def test_locate_ex_llc_3_year_workbook_returns_expected_path_under_search_root(
+    tmp_path: Path,
+) -> None:
+    expected_relative = Path(
+        "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+    )
+    workbook_path = tmp_path / expected_relative
+    workbook_path.parent.mkdir(parents=True, exist_ok=True)
+    workbook_path.write_text("placeholder", encoding="utf-8")
+
+    resolved = historical_update.locate_ex_llc_3_year_workbook(search_root=tmp_path)
+
+    assert resolved == workbook_path
+
+
+def test_locate_ex_llc_3_year_workbook_raises_when_expected_file_missing(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError, match="Workbook not found"):
+        historical_update.locate_ex_llc_3_year_workbook(search_root=tmp_path)
+
+
+def test_open_ex_llc_3_year_workbook_loads_and_returns_workbook_handle(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    expected_relative = Path(
+        "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+    )
+    workbook_path = tmp_path / expected_relative
+    workbook_path.parent.mkdir(parents=True, exist_ok=True)
+
+    workbook = openpyxl.Workbook()
+    workbook.active.title = historical_update.SHEET_EX_LLC_3_YEAR
+    workbook.save(workbook_path)
+    workbook.close()
+
+    resolved, loaded_workbook = historical_update.open_ex_llc_3_year_workbook(search_root=tmp_path)
+    try:
+        assert resolved == workbook_path
+        assert historical_update.SHEET_EX_LLC_3_YEAR in loaded_workbook.sheetnames
+    finally:
+        loaded_workbook.close()
 
 
 def test_resolve_append_date_prefers_explicit_date() -> None:
@@ -113,6 +155,26 @@ def test_append_to_sheet_raises_monotonicity_error_on_less_than_last_row_date_fr
         )
 
     assert historical_update._get_cell_value_no_create(sheet, row=14, column=1) is None
+
+
+def test_read_wal_sheet_append_location_identifies_header_columns_and_next_row() -> None:
+    wal_sheet = _FakeWorksheet(historical_update.SHEET_WAL)
+    wal_sheet.set_value(2, 1, "Date")
+    wal_sheet.set_value(2, 2, "WAL TIPS REPO")
+    wal_sheet.set_value(3, 1, date(2026, 1, 31))
+    wal_sheet.set_value(3, 2, 2.25)
+    wal_sheet.set_value(4, 1, date(2026, 2, 28))
+    wal_sheet.set_value(4, 2, 2.5)
+    workbook = _FakeWorkbook({historical_update.SHEET_WAL: wal_sheet})
+
+    append_target = historical_update.read_wal_sheet_append_location(workbook)
+
+    assert append_target.sheet_name == historical_update.SHEET_WAL
+    assert append_target.header_row == 2
+    assert append_target.date_column == 1
+    assert append_target.wal_column == 2
+    assert append_target.last_dated_row == 4
+    assert append_target.append_row == 5
 
 
 class _FakeCell:
@@ -493,3 +555,92 @@ def test_consolidated_header_map_includes_date_and_multi_row_numeric_series_colu
     assert header_map[4] == "swap (adj.) series"
     assert header_map[5] == "commodity"
     assert set(numeric_columns) == {2, 3, 4, 5}
+
+
+def test_append_wal_row_appends_px_date_and_wal_value(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    workbook_path = tmp_path / "historical.xlsx"
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = historical_update.SHEET_WAL
+    sheet.cell(row=2, column=1).value = "Date"
+    sheet.cell(row=2, column=2).value = "WAL TIPS REPO"
+    sheet.cell(row=3, column=1).value = date(2026, 1, 31)
+    sheet.cell(row=3, column=2).value = 2.1
+    workbook.save(workbook_path)
+    workbook.close()
+
+    historical_update.append_wal_row(
+        workbook_path,
+        px_date=date(2026, 2, 28),
+        wal_value=2.35,
+    )
+
+    reloaded = openpyxl.load_workbook(workbook_path)
+    try:
+        wal_sheet = reloaded[historical_update.SHEET_WAL]
+        assert historical_update._coerce_cell_date(wal_sheet.cell(row=4, column=1).value) == date(
+            2026, 2, 28
+        )
+        assert wal_sheet.cell(row=4, column=2).value == pytest.approx(2.35)
+    finally:
+        reloaded.close()
+
+
+def test_append_wal_row_rejects_non_monotonic_date(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    workbook_path = tmp_path / "historical.xlsx"
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = historical_update.SHEET_WAL
+    sheet.cell(row=2, column=1).value = "Date"
+    sheet.cell(row=2, column=2).value = "WAL TIPS REPO"
+    sheet.cell(row=3, column=1).value = date(2026, 1, 31)
+    sheet.cell(row=3, column=2).value = 2.1
+    workbook.save(workbook_path)
+    workbook.close()
+
+    with pytest.raises(historical_update.DateMonotonicityError, match="must be newer"):
+        historical_update.append_wal_row(
+            workbook_path,
+            px_date=date(2026, 1, 31),
+            wal_value=2.35,
+        )
+
+
+def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    workbook_path = tmp_path / "historical.xlsx"
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = historical_update.SHEET_WAL
+    sheet.cell(row=2, column=1).value = "Date"
+    sheet.cell(row=2, column=2).value = "WAL TIPS REPO"
+    sheet.cell(row=3, column=1).value = date(2026, 1, 31)
+    sheet.cell(row=3, column=1).number_format = "m/d/yyyy"
+    sheet.cell(row=3, column=2).value = "=2.10"
+    sheet.cell(row=3, column=2).number_format = "0.00"
+    preserved_formula = sheet.cell(row=3, column=2).value
+    preserved_style_id = sheet.cell(row=3, column=2).style_id
+    preserved_number_format = sheet.cell(row=3, column=2).number_format
+    workbook.save(workbook_path)
+    workbook.close()
+
+    historical_update.append_wal_row(
+        workbook_path,
+        px_date=date(2026, 2, 28),
+        wal_value=2.35,
+    )
+
+    reloaded = openpyxl.load_workbook(workbook_path)
+    try:
+        wal_sheet = reloaded[historical_update.SHEET_WAL]
+        assert wal_sheet.cell(row=3, column=2).value == preserved_formula
+        assert wal_sheet.cell(row=3, column=2).style_id == preserved_style_id
+        assert wal_sheet.cell(row=3, column=2).number_format == preserved_number_format
+        assert wal_sheet.cell(row=4, column=2).value == pytest.approx(2.35)
+    finally:
+        reloaded.close()

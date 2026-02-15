@@ -17,12 +17,24 @@ def _create_workbook(path: Path) -> None:
     sheet.title = "Sheet1"
     sheet["A1"] = "base"
     sheet["A1"].number_format = "0.00"
-    sheet["A1"].font = openpyxl.styles.Font(name="Calibri", bold=True, size=11)
-    sheet["A1"].fill = openpyxl.styles.PatternFill(
-        fill_type="solid", fgColor="00FF0000", bgColor="00FF0000"
+    sheet["A1"].font = openpyxl.styles.Font(
+        name="Calibri",
+        bold=True,
+        size=11,
     )
-    sheet["A1"].alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center")
-    sheet["A1"].border = openpyxl.styles.Border(left=openpyxl.styles.Side(style="thin"))
+    sheet["A1"].fill = openpyxl.styles.PatternFill(
+        fill_type="solid",
+        fgColor="00FF0000",
+        bgColor="00FF0000",
+    )
+    sheet["A1"].alignment = openpyxl.styles.Alignment(
+        horizontal="center",
+        vertical="center",
+    )
+    sheet["A1"].border = openpyxl.styles.Border(
+        left=openpyxl.styles.Side(style="thin"),
+    )
+
     workbook.save(path)
     workbook.close()
 
@@ -34,14 +46,21 @@ def _create_workbook(path: Path) -> None:
         ("number_format", lambda cell, openpyxl: setattr(cell, "number_format", "0%")),
         (
             "font",
-            lambda cell, openpyxl: setattr(cell, "font", openpyxl.styles.Font(name="Arial")),
+            lambda cell, openpyxl: setattr(
+                cell,
+                "font",
+                openpyxl.styles.Font(name="Arial"),
+            ),
         ),
         (
             "fill",
             lambda cell, openpyxl: setattr(
                 cell,
                 "fill",
-                openpyxl.styles.PatternFill(fill_type="solid", fgColor="0000FF00"),
+                openpyxl.styles.PatternFill(
+                    fill_type="solid",
+                    fgColor="0000FF00",
+                ),
             ),
         ),
         (
@@ -49,7 +68,10 @@ def _create_workbook(path: Path) -> None:
             lambda cell, openpyxl: setattr(
                 cell,
                 "alignment",
-                openpyxl.styles.Alignment(horizontal="left", vertical="bottom"),
+                openpyxl.styles.Alignment(
+                    horizontal="left",
+                    vertical="bottom",
+                ),
             ),
         ),
         (
@@ -57,7 +79,9 @@ def _create_workbook(path: Path) -> None:
             lambda cell, openpyxl: setattr(
                 cell,
                 "border",
-                openpyxl.styles.Border(right=openpyxl.styles.Side(style="medium")),
+                openpyxl.styles.Border(
+                    right=openpyxl.styles.Side(style="medium"),
+                ),
             ),
         ),
     ],
