@@ -8,10 +8,10 @@ tasks:
       `--date` and call `calculate_wal(exposure_summary_path, px_date)` followed by
       `append_wal_row(workbook_path, px_date, wal_value)` using the ex LLC 3 Year
       workbook path.
-    status: doing
+    status: done
     started_at: '2026-02-15T10:15:33Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-15T10:15:42Z'
+    commit: d1cf67cbafda8f9b4716213bf19a3736c2fa3aad
     notes: []
   - id: task-02
     title: Fix the `_DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH` typo and add a unit test
