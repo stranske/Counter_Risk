@@ -243,7 +243,7 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
 
 
 def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
-    tmp_path: Path, fake_pandas: None
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     fixtures = Path("tests/fixtures")
     config_path = tmp_path / "config.yml"
@@ -263,6 +263,21 @@ def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
         )
         + "\n",
         encoding="utf-8",
+    )
+
+    # Keep the raw-NISA generation path real, but stub downstream heavy stages
+    # that are covered by dedicated integration tests.
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant())
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
     )
 
     run_dir = run_pipeline(config_path)
