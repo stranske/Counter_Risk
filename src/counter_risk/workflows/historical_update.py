@@ -6,7 +6,7 @@ import argparse
 from datetime import date
 from pathlib import Path
 
-from counter_risk.calculations.wal import calculate_wal
+from counter_risk.calculations.wal import _coerce_px_date, calculate_wal
 from counter_risk.writers.historical_update import append_wal_row, locate_ex_llc_3_year_workbook
 
 
@@ -41,7 +41,7 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = build_parser()
     args = parser.parse_args(argv)
-    px_date = date.fromisoformat(args.date)
+    px_date = _coerce_px_date(args.date)
     run(px_date=px_date, exposure_summary_path=args.exposure_summary_path)
     return 0
 
