@@ -17,6 +17,8 @@ from counter_risk.chat.session import (
     validate_user_query,
 )
 
+_MODEL_KEY = "chat-model-placeholder"
+
 
 def _write_minimal_run(tmp_path: Path) -> Path:
     run_dir = tmp_path / "run"
@@ -66,24 +68,40 @@ def test_build_guarded_prompt_uses_delimiters_and_sanitizes_untrusted_text(tmp_p
 
 def test_chat_session_returns_manifest_top_exposure(tmp_path: Path) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
-    session = ChatSession(context=context, provider="local", model="deterministic")
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
 
     answer = session.ask("top exposures")
 
+    assert answer.startswith("local-stub:chat-model-placeholder | ")
     assert "all_programs: B (20.00)" in answer
     assert "all_programs: A (10.00)" in answer
     assert answer.index("all_programs: B (20.00)") < answer.index("all_programs: A (10.00)")
     assert len(session.history) == 2
 
 
-def test_chat_session_requires_provider_api_key(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_chat_session_stub_provider_is_deterministic_for_same_prompt(tmp_path: Path) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    session = ChatSession(context=context, provider="openai", model=_MODEL_KEY)
 
-    with pytest.raises(ChatSessionError, match="OPENAI_API_KEY"):
-        ChatSession(context=context, provider="openai", model="gpt-4.1-mini")
+    first = session.ask("show deltas")
+    second = session.ask("show deltas")
+
+    assert first == second
+    assert "openai-stub:chat-model-placeholder" in first
+
+
+def test_chat_session_dispatches_selected_provider_and_model(tmp_path: Path) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
+
+    answer = session.send(
+        "what are the key warnings?",
+        provider_key="anthropic",
+        model_key=_MODEL_KEY,
+    )
+
+    assert "anthropic-stub:chat-model-placeholder" in answer
+    assert "Key warnings (2):" in answer
 
 
 def test_sanitize_untrusted_text_escapes_delimiters() -> None:
@@ -132,7 +150,7 @@ def test_sanitize_untrusted_text_warns_on_high_non_alphanumeric_ratio(
 
 def test_chat_session_routes_key_warnings_to_warning_handler(tmp_path: Path) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
-    session = ChatSession(context=context, provider="local", model="deterministic")
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
 
     answer = session.ask("what are the key warnings?")
 
@@ -142,8 +160,15 @@ def test_chat_session_routes_key_warnings_to_warning_handler(tmp_path: Path) -> 
 
 def test_chat_session_routes_deltas_to_delta_handler(tmp_path: Path) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
-    session = ChatSession(context=context, provider="local", model="deterministic")
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
 
     answer = session.ask("show deltas")
 
     assert "all_programs: A notional_change=2.5" in answer
+
+
+def test_chat_session_rejects_invalid_model_for_provider(tmp_path: Path) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+
+    with pytest.raises(ChatSessionError, match="Unsupported model"):
+        ChatSession(context=context, provider="openai", model="not-a-real-model")
