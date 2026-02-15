@@ -445,22 +445,26 @@ def main(argv: list[str] | None = None) -> int:
         non_blocking_changes = [change for change in changes if _is_non_blocking_drift(change)]
         blocking_changes = [change for change in changes if change not in non_blocking_changes]
 
+        if args.check and not blocking_changes:
+            print(
+                "Warning: non-blocking drift detected for protected shared tool pins; "
+                "continuing without failure."
+            )
+            for change in non_blocking_changes:
+                print(f"  - {change}")
+            print("\n✓ All blocking dev dependency versions are in sync")
+            return 0
+
         print(f"{'Applied' if args.apply else 'Found'} {len(changes)} version updates:")
         for change in changes:
             print(f"  - {change}")
 
         if args.check:
-            if blocking_changes:
-                print("\nRun with --apply to update dependency files")
-                return 1
-            print(
-                "\nWarning: non-blocking drift detected for protected shared tool pins; "
-                "continuing without failure."
-            )
-            return 0
-        else:
-            print("\n✓ Dependency files updated")
-            return 0
+            print("\nRun with --apply to update dependency files")
+            return 1
+
+        print("\n✓ Dependency files updated")
+        return 0
     else:
         print("✓ All dev dependency versions are in sync")
         return 0
