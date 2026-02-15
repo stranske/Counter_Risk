@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Update BuildCommand procedure to call ResolveRepoRoot() for external invocation
       path construction
-    status: doing
+    status: done
     started_at: '2026-02-15T21:34:35Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-15T21:34:45Z'
+    commit: 9baba50e9bbb8b37e0bfad0a739d52b119c83404
     notes: []
   - id: task-02
     title: Update ExecuteRunnerCommand procedure to call ResolveRepoRoot() for external
