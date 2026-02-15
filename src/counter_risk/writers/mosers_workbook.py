@@ -7,7 +7,11 @@ from pathlib import Path
 
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook as _generate_mosers_workbook_in_memory,
+)
+from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook_ex_trend as _generate_mosers_workbook_ex_trend_in_memory,
+)
+from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook_trend as _generate_mosers_workbook_trend_in_memory,
 )
 
