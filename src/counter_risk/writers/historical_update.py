@@ -57,6 +57,9 @@ DATE_HEADER_CANDIDATES: tuple[str, ...] = ("date", "as of date", "as-of date")
 WAL_HEADER_CANDIDATES: tuple[str, ...] = ("wal", "wal tips repo", "weighted average life")
 HEADER_SCAN_ROWS = 12
 _DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH = Path(
+    "docs/Ratings Instructions/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+)
+_LEGACY_EX_LLC_3_YEAR_RELATIVE_PATH = Path(
     "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
 )
 
@@ -138,6 +141,12 @@ def locate_ex_llc_3_year_workbook(
     )
     relative_path = expected_relative_path or _DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH
     workbook_path = root / relative_path
+    if (
+        expected_relative_path is None
+        and not workbook_path.exists()
+        and (root / _LEGACY_EX_LLC_3_YEAR_RELATIVE_PATH).exists()
+    ):
+        workbook_path = root / _LEGACY_EX_LLC_3_YEAR_RELATIVE_PATH
     _validate_workbook_path(workbook_path, field_name="hist_ex_llc_3yr_xlsx")
     return workbook_path
 

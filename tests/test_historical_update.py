@@ -37,7 +37,7 @@ def test_locate_ex_llc_3_year_workbook_returns_expected_path_under_search_root(
     tmp_path: Path,
 ) -> None:
     expected_relative = Path(
-        "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+        "docs/Ratings Instructions/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
     )
     workbook_path = tmp_path / expected_relative
     workbook_path.parent.mkdir(parents=True, exist_ok=True)
@@ -56,7 +56,7 @@ def test_locate_ex_llc_3_year_workbook_raises_when_expected_file_missing(tmp_pat
 def test_open_ex_llc_3_year_workbook_loads_and_returns_workbook_handle(tmp_path: Path) -> None:
     openpyxl = pytest.importorskip("openpyxl")
     expected_relative = Path(
-        "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+        "docs/Ratings Instructions/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
     )
     workbook_path = tmp_path / expected_relative
     workbook_path.parent.mkdir(parents=True, exist_ok=True)
@@ -72,6 +72,20 @@ def test_open_ex_llc_3_year_workbook_loads_and_returns_workbook_handle(tmp_path:
         assert historical_update.SHEET_EX_LLC_3_YEAR in loaded_workbook.sheetnames
     finally:
         loaded_workbook.close()
+
+
+def test_locate_ex_llc_3_year_workbook_supports_relative_path_override(tmp_path: Path) -> None:
+    relative_override = Path("fixtures/historical/ex-llc-3-year.xlsx")
+    workbook_path = tmp_path / relative_override
+    workbook_path.parent.mkdir(parents=True, exist_ok=True)
+    workbook_path.write_text("placeholder", encoding="utf-8")
+
+    resolved = historical_update.locate_ex_llc_3_year_workbook(
+        search_root=tmp_path,
+        expected_relative_path=relative_override,
+    )
+
+    assert resolved == workbook_path
 
 
 def test_resolve_append_date_prefers_explicit_date() -> None:
