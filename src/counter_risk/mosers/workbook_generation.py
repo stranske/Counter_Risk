@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypeAlias
 
 from counter_risk.mosers.template import load_mosers_template_workbook
-from counter_risk.parsers.nisa import NisaTotalsRow, parse_nisa_all_programs
+from counter_risk.parsers.nisa import (
+    NisaAllProgramsData,
+    NisaTotalsRow,
+    parse_nisa_all_programs,
+)
+from counter_risk.parsers.nisa_ex_trend import parse_nisa_ex_trend
+from counter_risk.parsers.nisa_trend import parse_nisa_trend
 
 Workbook: TypeAlias = Any
 Worksheet: TypeAlias = Any
@@ -27,7 +34,27 @@ def generate_mosers_workbook(raw_nisa_path: str | Path) -> Workbook:
     populated openpyxl workbook is returned without writing it to disk.
     """
 
-    parsed = parse_nisa_all_programs(raw_nisa_path)
+    return _generate_mosers_workbook_from_parser(raw_nisa_path, parser=parse_nisa_all_programs)
+
+
+def generate_mosers_workbook_ex_trend(raw_nisa_path: str | Path) -> Workbook:
+    """Generate a populated MOSERS workbook from raw NISA Ex Trend input."""
+
+    return _generate_mosers_workbook_from_parser(raw_nisa_path, parser=parse_nisa_ex_trend)
+
+
+def generate_mosers_workbook_trend(raw_nisa_path: str | Path) -> Workbook:
+    """Generate a populated MOSERS workbook from raw NISA Trend input."""
+
+    return _generate_mosers_workbook_from_parser(raw_nisa_path, parser=parse_nisa_trend)
+
+
+def _generate_mosers_workbook_from_parser(
+    raw_nisa_path: str | Path,
+    *,
+    parser: Callable[[str | Path], NisaAllProgramsData],
+) -> Workbook:
+    parsed = parser(raw_nisa_path)
     workbook = load_mosers_template_workbook()
 
     if _TARGET_SHEET not in workbook.sheetnames:
