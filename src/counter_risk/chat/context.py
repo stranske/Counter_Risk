@@ -11,7 +11,9 @@ from typing import Any, cast
 _TABLE_SUFFIXES: tuple[str, ...] = (".csv", ".parquet")
 
 try:
-    from pyarrow.lib import ArrowIOError as _ImportedPyArrowIOError  # type: ignore[import-not-found]
+    from pyarrow.lib import (
+        ArrowIOError as _ImportedPyArrowIOError,  # type: ignore[import-not-found]
+    )
 except (ImportError, ModuleNotFoundError):
     _PYARROW_IO_ERROR_TYPES: tuple[type[BaseException], ...] = (OSError,)
 else:
