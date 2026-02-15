@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from counter_risk.chat.context import load_run_context
+from counter_risk.chat.session import ChatSession
 from counter_risk.chat.ui import submit_chat_message
 
 _MODEL_KEY = "chat-model-placeholder"
@@ -79,16 +82,55 @@ def test_submit_chat_message_calls_send_once_with_selected_provider_and_model(
     assert result.assistant_message == "assistant:openai:chat-model-placeholder:top exposures"
 
 
-def test_submit_chat_message_renders_stub_provider_response_in_transcript(tmp_path: Path) -> None:
+def test_submit_chat_message_uses_default_chat_session_and_calls_send_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    send_calls: list[tuple[str, str, str]] = []
+
+    def _spy_send(
+        self: ChatSession,
+        question: str,
+        *,
+        provider_key: str,
+        model_key: str,
+    ) -> str:
+        send_calls.append((question, provider_key, model_key))
+        return f"spy:{provider_key}:{model_key}:{question}"
+
+    monkeypatch.setattr(ChatSession, "send", _spy_send)
+
+    result = submit_chat_message(
+        context=context,
+        user_text=" top exposures ",
+        provider_key="openai",
+        model_key=_MODEL_KEY,
+    )
+
+    assert send_calls == [("top exposures", "openai", _MODEL_KEY)]
+    assert result.validation_error is None
+    assert result.assistant_message == "spy:openai:chat-model-placeholder:top exposures"
+
+
+@pytest.mark.parametrize(
+    ("provider_key", "provider_marker"),
+    (("openai", "openai-stub"), ("anthropic", "anthropic-stub")),
+)
+def test_submit_chat_message_renders_stub_provider_response_in_transcript(
+    tmp_path: Path,
+    provider_key: str,
+    provider_marker: str,
+) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
 
     result = submit_chat_message(
         context=context,
         user_text="top exposures",
-        provider_key="anthropic",
+        provider_key=provider_key,
         model_key=_MODEL_KEY,
     )
 
     assert result.validation_error is None
     assert result.assistant_message is not None
-    assert "anthropic-stub:chat-model-placeholder" in result.assistant_message
+    assert f"{provider_marker}:chat-model-placeholder" in result.assistant_message
