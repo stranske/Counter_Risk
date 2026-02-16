@@ -497,7 +497,11 @@ def _copy_row_cell_presentation(
         target_cell.number_format = source_cell.number_format
 
         source_value = source_cell.value
-        if translator_cls is not None and isinstance(source_value, str) and source_value.startswith("="):
+        if (
+            translator_cls is not None
+            and isinstance(source_value, str)
+            and source_value.startswith("=")
+        ):
             target_cell.value = translator_cls(
                 source_value, origin=source_cell.coordinate
             ).translate_formula(target_cell.coordinate)
