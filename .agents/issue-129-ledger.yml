@@ -1,0 +1,455 @@
+version: 1
+issue: 129
+base: main
+branch: codex/issue-129
+tasks:
+  - id: task-01
+    title: Update BuildCommand procedure to call ResolveRepoRoot() for external invocation
+      path construction
+    status: done
+    started_at: '2026-02-15T21:34:35Z'
+    finished_at: '2026-02-15T21:34:45Z'
+    commit: 9baba50e9bbb8b37e0bfad0a739d52b119c83404
+    notes: []
+  - id: task-02
+    title: Update ExecuteRunnerCommand procedure to call ResolveRepoRoot() for external
+      invocation path construction
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Remove or replace any ResolveOutputDir(".") calls used for external invocation
+      path construction
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Define the explicit VBA date/time format string literal that matches the
+      Windows runs-date regex pattern
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Implement the output directory string construction using the defined format
+      string in a Format$() call
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Verify the format string produces output matching the expected Windows
+      runs-date regex pattern
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Add pre-launch status string literal write to the appropriate status cell
+      before command execution
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Add post-launch status string literal write to the appropriate status cell
+      after command execution
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Add complete status string literal write to the appropriate status cell
+      upon successful completion
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Rebuild `assets/workbooks/Runner.xlsm` so the embedded VBA project includes
+      the updated `RunnerLaunch` module with all procedure changes from `assets/vba/RunnerLaunch.bas`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Implement VBA source text extraction from the embedded workbook project
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Implement VBA source text extraction from assets/vba/RunnerLaunch.bas file
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Add assertion to verify BuildCommand procedure is present in extracted
+      VBA source
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Add assertion to verify ExecuteRunnerCommand procedure is present in extracted
+      VBA source
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Add assertion to verify ResolveOutputDir procedure is present in extracted
+      VBA source
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Add positive assertion that ResolveRepoRoot() appears in the external invocation
+      path construction code
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Add negative assertion that ResolveOutputDir(".") does not appear in the
+      external invocation path construction code
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Define the Windows run-folder regex pattern constant in the test module
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Implement assertion that searches extracted VBA source for Format$() call
+      with matching date/time format tokens
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Verify the regex pattern correctly matches the expected VBA format string
+      literal
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Add full-line patterns for `coverage.json` and `pytest-junit.xml` to `.gitignore`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Check if coverage.json is currently tracked in version control using git
+      ls-files
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Check if pytest-junit.xml is currently tracked in version control using
+      git ls-files
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Remove coverage.json from git tracking using git rm --cached if it is tracked
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Remove pytest-junit.xml from git tracking using git rm --cached if it is
+      tracked
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Revert scripts/sync_dev_dependencies.py to restore non-zero exit behavior
+      for Black drift
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Ensure scripts/sync_dev_dependencies.py raises SystemExit when Black formatting
+      is out of sync
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Add or verify error message emission that clearly indicates Black formatting
+      mismatch
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Create or update test that simulates Black drift condition in a controlled
+      environment
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Add assertion that scripts/sync_dev_dependencies.py exits with non-zero
+      status code under Black drift
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Add assertion that scripts/sync_dev_dependencies.py raises SystemExit exception
+      under Black drift
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Verify the test fails if the script only emits a warning instead of failing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: In `assets/vba/RunnerLaunch.bas`, the `BuildCommand` procedure contains
+      at least one call to `ResolveRepoRoot()` for external invocation path construction
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: In `assets/vba/RunnerLaunch.bas`, the `ExecuteRunnerCommand` procedure
+      contains at least one call to `ResolveRepoRoot()` for external invocation path
+      construction
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: In `assets/vba/RunnerLaunch.bas`, neither `BuildCommand` nor `ExecuteRunnerCommand`
+      calls `ResolveOutputDir(".")` for external invocation path construction
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: '`assets/vba/RunnerLaunch.bas` contains a `Format$()` call with an explicit
+      date/time format string literal that matches the Windows runs-date regex expected
+      by the test suite'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: '`assets/vba/RunnerLaunch.bas` contains at least one string literal write
+      for pre-launch status to a status cell'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: '`assets/vba/RunnerLaunch.bas` contains at least one string literal write
+      for post-launch or complete status to a status cell'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: Extracted VBA from `assets/workbooks/Runner.xlsm` contains at least one
+      call to `ResolveRepoRoot()` in `BuildCommand` or `ExecuteRunnerCommand`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: Extracted VBA from `assets/workbooks/Runner.xlsm` contains a `Format$()`
+      call with the exact date/time format string literal defined in the test regex
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: Extracted VBA from `assets/workbooks/Runner.xlsm` contains the exact pre-launch
+      status string literal present in `assets/vba/RunnerLaunch.bas`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: Extracted VBA from `assets/workbooks/Runner.xlsm` contains the exact post-launch
+      or complete status string literal present in `assets/vba/RunnerLaunch.bas`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: '`tests/test_runner_xlsm_vba_project.py` fails when `BuildCommand` procedure
+      is missing from extracted VBA source'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: '`tests/test_runner_xlsm_vba_project.py` fails when `ExecuteRunnerCommand`
+      procedure is missing from extracted VBA source'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: '`tests/test_runner_xlsm_vba_project.py` fails when `ResolveOutputDir`
+      procedure is missing from extracted VBA source'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: '`tests/test_runner_xlsm_vba_project.py` fails if extracted VBA source
+      uses `ResolveOutputDir(".")` in the external invocation path construction'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: The test asserts the Windows run-folder regex pattern matches at least
+      one `Format$()` call argument in the extracted VBA source, and the test fails
+      if no match is found
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: '`.gitignore` contains the full-line entry `/coverage.json`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: '`.gitignore` contains the full-line entry `/pytest-junit.xml`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: '`git ls-files coverage.json` returns no output (file is not tracked)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: '`git ls-files pytest-junit.xml` returns no output (file is not tracked)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: '`scripts/sync_dev_dependencies.py` exits with non-zero status code when
+      Black formatting is out of sync'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: '`scripts/sync_dev_dependencies.py` raises `SystemExit` when Black formatting
+      is out of sync'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: 'The error message emitted by `scripts/sync_dev_dependencies.py` contains
+      the word "Black" and at least one of: "drift", "mismatch", "out of sync", or
+      "formatting"'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: An automated test exists that simulates Black drift and asserts `scripts/sync_dev_dependencies.py`
+      exits with non-zero status code
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: An automated test exists that simulates Black drift and asserts `scripts/sync_dev_dependencies.py`
+      raises `SystemExit`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: The automated test fails if `scripts/sync_dev_dependencies.py` only emits
+      a warning instead of failing
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

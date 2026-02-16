@@ -55,15 +55,10 @@ CORE_DEV_TOOLS = [
 LOCKFILE_PATTERN = re.compile(
     r"^(?P<lead>\s*)(?P<name>[A-Za-z0-9_.-]+)==(?P<version>[^\s#]+)(?P<trail>\s*(?:#.*)?)$"
 )
-NON_BLOCKING_DRIFT_PACKAGES = {"black"}
 
 
-def _is_non_blocking_drift(change: str) -> bool:
-    change_lc = change.lower()
-    for package in NON_BLOCKING_DRIFT_PACKAGES:
-        if change_lc.startswith(f"{package}:") or f":{package}:" in change_lc:
-            return True
-    return False
+def _is_black_drift(change: str) -> bool:
+    return change.strip().lower().startswith("black:")
 
 
 def parse_env_file(path: Path) -> dict[str, str]:
@@ -442,18 +437,11 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if changes:
-        non_blocking_changes = [change for change in changes if _is_non_blocking_drift(change)]
-        blocking_changes = [change for change in changes if change not in non_blocking_changes]
-
-        if args.check and not blocking_changes:
+        if args.check and any(_is_black_drift(change) for change in changes):
             print(
-                "Warning: non-blocking drift detected for protected shared tool pins; "
-                "continuing without failure."
+                "Error: Black formatting pin drift detected (version mismatch/out of sync).",
+                file=sys.stderr,
             )
-            for change in non_blocking_changes:
-                print(f"  - {change}")
-            print("\n✓ All blocking dev dependency versions are in sync")
-            return 0
 
         print(f"{'Applied' if args.apply else 'Found'} {len(changes)} version updates:")
         for change in changes:
