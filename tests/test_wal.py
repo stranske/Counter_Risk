@@ -26,6 +26,27 @@ def test_calculate_wal_is_deterministic_for_same_inputs() -> None:
     assert first == second
 
 
+def test_calculate_wal_is_deterministic_across_shifted_header_variants(tmp_path: Path) -> None:
+    rows = [
+        ("Alpha", "Interest Rate Swap", 100.0, 1.0),
+        ("Bravo", "Repo", 50.0, 4.0),
+    ]
+    standard = _create_exposure_summary_workbook(
+        tmp_path / "standard.xlsx",
+        rows=rows,
+        header_row=1,
+    )
+    shifted = _create_exposure_summary_workbook(
+        tmp_path / "shifted.xlsx",
+        rows=rows,
+        header_row=5,
+    )
+
+    first = calculate_wal(standard, "2026-01-31")
+    second = calculate_wal(shifted, "2026-01-31")
+    assert first == second
+
+
 def test_calculate_wal_missing_return_swaps_uses_all_rows(tmp_path: Path) -> None:
     workbook = _create_exposure_summary_workbook(
         tmp_path / "no_return_swaps.xlsx",
@@ -77,7 +98,9 @@ def test_calculate_wal_invalid_px_date_raises_value_error(tmp_path: Path) -> Non
         calculate_wal(workbook, "01-31-2026")
 
 
-def _create_exposure_summary_workbook(path: Path, rows: list[tuple[Any, Any, Any, Any]]) -> Path:
+def _create_exposure_summary_workbook(
+    path: Path, rows: list[tuple[Any, Any, Any, Any]], *, header_row: int = 1
+) -> Path:
     openpyxl = pytest.importorskip("openpyxl")
     workbook = openpyxl.Workbook()
     sheet = workbook.active
@@ -92,9 +115,11 @@ def _create_exposure_summary_workbook(path: Path, rows: list[tuple[Any, Any, Any
         "Bucket",
     )
     for column_index, header in enumerate(headers, start=1):
-        sheet.cell(row=1, column=column_index).value = header
+        sheet.cell(row=header_row, column=column_index).value = header
 
-    for row_index, (counterparty, product_type, exposure, years) in enumerate(rows, start=2):
+    for row_index, (counterparty, product_type, exposure, years) in enumerate(
+        rows, start=header_row + 1
+    ):
         sheet.cell(row=row_index, column=1).value = counterparty
         sheet.cell(row=row_index, column=2).value = product_type
         sheet.cell(row=row_index, column=3).value = exposure

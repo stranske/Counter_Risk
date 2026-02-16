@@ -1,0 +1,219 @@
+version: 1
+issue: 127
+base: main
+branch: codex/issue-127
+tasks:
+  - id: task-01
+    title: Implement CLI wiring in `counter_risk.workflows.historical_update` to parse
+      `--date` and call `calculate_wal(exposure_summary_path, px_date)` followed by
+      `append_wal_row(workbook_path, px_date, wal_value)` using the ex LLC 3 Year
+      workbook path.
+    status: done
+    started_at: '2026-02-15T10:15:33Z'
+    finished_at: '2026-02-15T10:15:42Z'
+    commit: d1cf67cbafda8f9b4716213bf19a3736c2fa3aad
+    notes: []
+  - id: task-02
+    title: Fix the `_DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH` typo and add a unit test
+      that validates path resolution using a temp/fixture path override (no dependency
+      on a real repo workbook).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Update CLI date parsing to call `_coerce_px_date` and use its return value
+      throughout WAL calculation + append logic; add tests covering valid and invalid
+      date inputs.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Refactor `append_wal_row` to copy cell styles using only public openpyxl
+      attributes instead of internal attributes like `worksheet._cells` and `cell.style_id`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Add tests that verify `number_format` and `font` attributes are preserved
+      when appending WAL rows.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Add tests that verify `fill`, `border`, and `alignment` attributes are
+      preserved when appending WAL rows.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Add tests that verify formula strings beginning with equals signs are preserved
+      with correct row-relative references.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Implement header-row auto-detection in `src/counter_risk/parsers/exposure_maturity_schedule.py`
+      by scanning the first 50 rows for all required column names.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Add test fixtures with exposure maturity schedule headers starting at row
+      5 or later within the scan range.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Add tests that verify correct data parsing when headers are shifted down
+      from row 1.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Add determinism tests for `calculate_wal` across multiple fixture/synthetic
+      workbooks (including header shifts) to ensure identical float output for identical
+      inputs and to guard against nondeterminism from workbook iteration order.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Replace broad `except Exception` clauses in `src/counter_risk/parsers/exposure_maturity_schedule.py`
+      with specific exception types for workbook load failures, missing sheets, and
+      missing columns.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Add tests that verify specific exception types are raised with error messages
+      containing the missing item names.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Add a test or linting guard that fails if `except Exception` appears in
+      `src/counter_risk/parsers/exposure_maturity_schedule.py`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Update `.agents/issue-28-ledger.yml` to mark already-implemented tasks
+      as `done` and keep only remaining tasks as `todo` (status-only change; no functional
+      config edits).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: '`counter_risk.workflows.historical_update` accepts `--date YYYY-MM-DD`,
+      coerces it via `_coerce_px_date`, calls `calculate_wal(exposure_summary_path,
+      px_date)` exactly once, and calls `append_wal_row(workbook_path, px_date, wal_value)`
+      exactly once using the same coerced `px_date` value.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Running the workflow against a temporary (test) ex LLC 3 Year workbook
+      appends exactly one new row to the historical WAL sheet containing the provided
+      `px_date` and the WAL value returned by `calculate_wal` (no extra rows and no
+      overwrites).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: '`_DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH` is spelled correctly, and path
+      resolution supports overriding the base/anchor path in tests so no test requires
+      a real repository workbook.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: '`_coerce_px_date` is not dead code: WAL calculation + append logic uses
+      the coerced return value, and invalid date inputs fail before any workbook I/O
+      occurs.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: '`append_wal_row` preserves formatting using only public openpyxl attributes:
+      appended cells match the template row for `number_format`, `font`, `fill`, `border`,
+      and `alignment`, and any formulas are preserved as formula strings (e.g., values
+      beginning with `=`) with correct row-relative references where applicable.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Exposure maturity schedule parsing auto-detects headers not starting at
+      row 1 by scanning the first 50 rows for all required column names and correctly
+      parses data when headers are shifted down within that scan range.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: '`calculate_wal` is deterministic: repeated invocations on identical cashflow
+      inputs (including shifted-header workbook variants) return exactly the same
+      float with bitwise equality (or within 1e-10 absolute difference if bitwise
+      equality is not achievable, with justification documented in test comments).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: '`src/counter_risk/parsers/exposure_maturity_schedule.py` does not use
+      broad `except Exception` on main load/parse paths and instead raises specific
+      exception types for (1) workbook load failures, (2) missing required sheet,
+      and (3) missing required columns; each error message includes the missing item
+      name.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: '`.agents/issue-28-ledger.yml` reflects implementation state: tasks implemented
+      in this follow-up are marked `done` and unimplemented tasks remain `todo`, with
+      no new functional configuration keys added.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
