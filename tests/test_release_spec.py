@@ -74,6 +74,7 @@ def test_release_spec_defines_analysis_exe_and_collect() -> None:
     assert captures["collect_kwargs"]["name"] == "counter-risk"
 
 
+@pytest.mark.release
 def test_release_spec_pyinstaller_build_outputs_expected_executable(
     tmp_path: Path,
 ) -> None:
