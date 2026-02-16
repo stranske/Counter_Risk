@@ -119,7 +119,9 @@ def _build_header_map(worksheet: Any, *, header_row: int) -> dict[str, int]:
     return header_map
 
 
-def _find_header_row_and_map(worksheet: Any, *, max_scan_rows: int = 50) -> tuple[int, dict[str, int]]:
+def _find_header_row_and_map(
+    worksheet: Any, *, max_scan_rows: int = 50
+) -> tuple[int, dict[str, int]]:
     max_row = min(int(getattr(worksheet, "max_row", 0) or 0), max_scan_rows)
     best_missing: tuple[str, ...] = _REQUIRED_HEADERS
     for row_index in range(1, max_row + 1):

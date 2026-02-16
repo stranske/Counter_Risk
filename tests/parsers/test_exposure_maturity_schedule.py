@@ -48,7 +48,9 @@ def test_parse_exposure_maturity_schedule_workbook_load_failure_is_specific(tmp_
     workbook_path = tmp_path / "not_a_workbook.xlsx"
     workbook_path.write_text("not really an xlsx", encoding="utf-8")
 
-    with pytest.raises(ExposureMaturityWorkbookLoadError, match="Unable to open exposure maturity workbook"):
+    with pytest.raises(
+        ExposureMaturityWorkbookLoadError, match="Unable to open exposure maturity workbook"
+    ):
         parse_exposure_maturity_schedule(workbook_path)
 
 
@@ -71,13 +73,13 @@ def test_parse_exposure_maturity_schedule_missing_required_header_raises(tmp_pat
     workbook.save(workbook_path)
     workbook.close()
 
-    with pytest.raises(
-        ExposureMaturityColumnsMissingError, match="Missing required headers"
-    ):
+    with pytest.raises(ExposureMaturityColumnsMissingError, match="Missing required headers"):
         parse_exposure_maturity_schedule(workbook_path)
 
 
-def test_parse_exposure_maturity_schedule_headers_shifted_down_within_scan_range(tmp_path: Path) -> None:
+def test_parse_exposure_maturity_schedule_headers_shifted_down_within_scan_range(
+    tmp_path: Path,
+) -> None:
     openpyxl = pytest.importorskip("openpyxl")
     workbook_path = tmp_path / "shifted_headers.xlsx"
 

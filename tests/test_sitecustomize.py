@@ -29,7 +29,9 @@ def test_strip_pytest_xdist_args_keeps_other_args() -> None:
     assert stripped == argv
 
 
-def test_disable_xdist_cli_flags_for_pytest_keeps_when_xdist_available(monkeypatch: MonkeyPatch) -> None:
+def test_disable_xdist_cli_flags_for_pytest_keeps_when_xdist_available(
+    monkeypatch: MonkeyPatch,
+) -> None:
     argv = ["pytest", "-q", "-n", "auto", "--dist", "loadscope"]
     monkeypatch.setattr(sys, "argv", argv)
     monkeypatch.setattr(sitecustomize, "_xdist_is_available", lambda: True)
@@ -40,7 +42,9 @@ def test_disable_xdist_cli_flags_for_pytest_keeps_when_xdist_available(monkeypat
     assert sys.argv == argv
 
 
-def test_disable_xdist_cli_flags_for_pytest_strips_when_xdist_missing(monkeypatch: MonkeyPatch) -> None:
+def test_disable_xdist_cli_flags_for_pytest_strips_when_xdist_missing(
+    monkeypatch: MonkeyPatch,
+) -> None:
     argv = ["pytest", "-q", "-n", "auto", "--dist", "loadscope"]
     monkeypatch.setattr(sys, "argv", argv)
     monkeypatch.setattr(sitecustomize, "_xdist_is_available", lambda: False)
@@ -61,7 +65,9 @@ def test_disable_xdist_cli_flags_for_pytest_strips_when_env_set(monkeypatch: Mon
     assert sys.argv == ["pytest", "-q"]
 
 
-def test_disable_xdist_cli_flags_for_pytest_keeps_when_keep_env_set(monkeypatch: MonkeyPatch) -> None:
+def test_disable_xdist_cli_flags_for_pytest_keeps_when_keep_env_set(
+    monkeypatch: MonkeyPatch,
+) -> None:
     argv = ["pytest", "-q", "-n", "auto", "--dist", "loadscope"]
     monkeypatch.setattr(sys, "argv", argv)
     monkeypatch.setattr(sitecustomize, "_xdist_is_available", lambda: False)
