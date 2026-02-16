@@ -23,7 +23,7 @@ def calculate_wal(exposure_summary_path: Path | str, px_date: date | datetime | 
        sum(current_exposure * years_to_maturity) / sum(current_exposure)
     """
 
-    _coerce_px_date(px_date)
+    px_date = _coerce_px_date(px_date)
     rows = parse_exposure_maturity_schedule(exposure_summary_path)
     filtered_rows = [row for row in rows if not _is_return_swap(row)]
 

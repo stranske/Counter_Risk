@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from zipfile import BadZipFile
 
 _TARGET_SHEET_NAME = "Exposure Maturity Summary"
 _REQUIRED_HEADERS: tuple[str, ...] = (
@@ -13,6 +14,22 @@ _REQUIRED_HEADERS: tuple[str, ...] = (
     "current exposure",
     "years to maturity",
 )
+
+
+class ExposureMaturityScheduleError(ValueError):
+    """Base error for exposure maturity schedule parsing failures."""
+
+
+class ExposureMaturityWorkbookLoadError(ExposureMaturityScheduleError):
+    """Raised when the workbook cannot be opened/loaded."""
+
+
+class ExposureMaturityWorksheetMissingError(ExposureMaturityScheduleError):
+    """Raised when the required worksheet is missing."""
+
+
+class ExposureMaturityColumnsMissingError(ExposureMaturityScheduleError):
+    """Raised when required columns cannot be found within the scan range."""
 
 
 @dataclass(frozen=True)
@@ -40,18 +57,27 @@ def parse_exposure_maturity_schedule(path: Path | str) -> tuple[ExposureMaturity
         raise RuntimeError("openpyxl is required to parse exposure maturity workbooks") from exc
 
     try:
+        from openpyxl.utils.exceptions import InvalidFileException  # type: ignore[import-untyped]
+
+        invalid_file_exception = InvalidFileException
+    except ModuleNotFoundError:  # pragma: no cover - environment dependent
+        invalid_file_exception = ValueError
+
+    try:
         workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
-    except Exception as exc:
-        raise ValueError(f"Unable to open exposure maturity workbook: {workbook_path}") from exc
+    except (OSError, BadZipFile, invalid_file_exception, ValueError, TypeError) as exc:
+        raise ExposureMaturityWorkbookLoadError(
+            f"Unable to open exposure maturity workbook: {workbook_path}"
+        ) from exc
 
     try:
         if _TARGET_SHEET_NAME not in workbook.sheetnames:
-            raise ValueError(
+            raise ExposureMaturityWorksheetMissingError(
                 f"Missing required worksheet {_TARGET_SHEET_NAME!r} in workbook: {workbook_path}"
             )
         worksheet = workbook[_TARGET_SHEET_NAME]
-        header_map = _build_header_map(worksheet)
-        rows = _parse_rows(worksheet=worksheet, header_map=header_map)
+        header_row, header_map = _find_header_row_and_map(worksheet)
+        rows = _parse_rows(worksheet=worksheet, header_row=header_row, header_map=header_map)
     finally:
         workbook.close()
 
@@ -83,26 +109,40 @@ def _coerce_float(value: Any) -> float:
         raise ValueError(f"Unable to parse numeric cell value: {value!r}") from exc
 
 
-def _build_header_map(worksheet: Any) -> dict[str, int]:
+def _build_header_map(worksheet: Any, *, header_row: int) -> dict[str, int]:
     header_map: dict[str, int] = {}
     max_column = int(worksheet.max_column)
     for column in range(1, max_column + 1):
-        key = _normalize_text(worksheet.cell(row=1, column=column).value).casefold()
+        key = _normalize_text(worksheet.cell(row=header_row, column=column).value).casefold()
         if key:
             header_map[key] = column
-
-    missing = tuple(header for header in _REQUIRED_HEADERS if header not in header_map)
-    if missing:
-        missing_text = ", ".join(missing)
-        raise ValueError(f"Missing required headers in exposure maturity worksheet: {missing_text}")
-
     return header_map
 
 
-def _parse_rows(*, worksheet: Any, header_map: dict[str, int]) -> list[ExposureMaturityRow]:
+def _find_header_row_and_map(worksheet: Any, *, max_scan_rows: int = 50) -> tuple[int, dict[str, int]]:
+    max_row = min(int(getattr(worksheet, "max_row", 0) or 0), max_scan_rows)
+    best_missing: tuple[str, ...] = _REQUIRED_HEADERS
+    for row_index in range(1, max_row + 1):
+        header_map = _build_header_map(worksheet, header_row=row_index)
+        missing = tuple(header for header in _REQUIRED_HEADERS if header not in header_map)
+        if not missing:
+            return row_index, header_map
+        if len(missing) < len(best_missing):
+            best_missing = missing
+
+    missing_text = ", ".join(best_missing)
+    raise ExposureMaturityColumnsMissingError(
+        "Missing required headers in exposure maturity worksheet within scan range: "
+        f"{missing_text}"
+    )
+
+
+def _parse_rows(
+    *, worksheet: Any, header_row: int, header_map: dict[str, int]
+) -> list[ExposureMaturityRow]:
     parsed: list[ExposureMaturityRow] = []
     max_row = int(worksheet.max_row)
-    for row_number in range(2, max_row + 1):
+    for row_number in range(header_row + 1, max_row + 1):
         counterparty = _normalize_text(
             worksheet.cell(row=row_number, column=header_map["counterparty"]).value
         )
