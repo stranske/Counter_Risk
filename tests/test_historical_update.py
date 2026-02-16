@@ -37,7 +37,7 @@ def test_locate_ex_llc_3_year_workbook_returns_expected_path_under_search_root(
     tmp_path: Path,
 ) -> None:
     expected_relative = Path(
-        "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+        "docs/Ratings Instructions/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
     )
     workbook_path = tmp_path / expected_relative
     workbook_path.parent.mkdir(parents=True, exist_ok=True)
@@ -56,7 +56,7 @@ def test_locate_ex_llc_3_year_workbook_raises_when_expected_file_missing(tmp_pat
 def test_open_ex_llc_3_year_workbook_loads_and_returns_workbook_handle(tmp_path: Path) -> None:
     openpyxl = pytest.importorskip("openpyxl")
     expected_relative = Path(
-        "docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
+        "docs/Ratings Instructions/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx"
     )
     workbook_path = tmp_path / expected_relative
     workbook_path.parent.mkdir(parents=True, exist_ok=True)
@@ -72,6 +72,20 @@ def test_open_ex_llc_3_year_workbook_loads_and_returns_workbook_handle(tmp_path:
         assert historical_update.SHEET_EX_LLC_3_YEAR in loaded_workbook.sheetnames
     finally:
         loaded_workbook.close()
+
+
+def test_locate_ex_llc_3_year_workbook_supports_relative_path_override(tmp_path: Path) -> None:
+    relative_override = Path("fixtures/historical/ex-llc-3-year.xlsx")
+    workbook_path = tmp_path / relative_override
+    workbook_path.parent.mkdir(parents=True, exist_ok=True)
+    workbook_path.write_text("placeholder", encoding="utf-8")
+
+    resolved = historical_update.locate_ex_llc_3_year_workbook(
+        search_root=tmp_path,
+        expected_relative_path=relative_override,
+    )
+
+    assert resolved == workbook_path
 
 
 def test_resolve_append_date_prefers_explicit_date() -> None:
@@ -612,6 +626,8 @@ def test_append_wal_row_rejects_non_monotonic_date(tmp_path: Path) -> None:
 
 def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Path) -> None:
     openpyxl = pytest.importorskip("openpyxl")
+    styles = pytest.importorskip("openpyxl.styles")
+
     workbook_path = tmp_path / "historical.xlsx"
 
     workbook = openpyxl.Workbook()
@@ -623,8 +639,26 @@ def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Pat
     sheet.cell(row=3, column=1).number_format = "m/d/yyyy"
     sheet.cell(row=3, column=2).value = "=2.10"
     sheet.cell(row=3, column=2).number_format = "0.00"
+    sheet.cell(row=3, column=2).font = styles.Font(bold=True)
+    sheet.cell(row=3, column=2).fill = styles.PatternFill(
+        patternType="solid", fgColor="FFFF00"
+    )
+    sheet.cell(row=3, column=2).border = styles.Border(
+        left=styles.Side(style="thin"),
+        right=styles.Side(style="thin"),
+        top=styles.Side(style="thin"),
+        bottom=styles.Side(style="thin"),
+    )
+    sheet.cell(row=3, column=2).alignment = styles.Alignment(horizontal="right")
+
+    # Extra computed column to verify formula copying + row-relative translation.
+    sheet.cell(row=2, column=3).value = "Double"
+    sheet.cell(row=3, column=3).value = "=B3*2"
+    sheet.cell(row=3, column=3).number_format = "0.00"
+    sheet.cell(row=3, column=3).font = styles.Font(italic=True)
+    sheet.cell(row=3, column=3).alignment = styles.Alignment(horizontal="left")
+
     preserved_formula = sheet.cell(row=3, column=2).value
-    preserved_style_id = sheet.cell(row=3, column=2).style_id
     preserved_number_format = sheet.cell(row=3, column=2).number_format
     workbook.save(workbook_path)
     workbook.close()
@@ -639,8 +673,35 @@ def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Pat
     try:
         wal_sheet = reloaded[historical_update.SHEET_WAL]
         assert wal_sheet.cell(row=3, column=2).value == preserved_formula
-        assert wal_sheet.cell(row=3, column=2).style_id == preserved_style_id
         assert wal_sheet.cell(row=3, column=2).number_format == preserved_number_format
+
+        preserved_cell = wal_sheet.cell(row=3, column=2)
+        assert preserved_cell.font.bold is True
+        assert preserved_cell.fill.patternType == "solid"
+        assert (preserved_cell.fill.fgColor.rgb or "").endswith("FFFF00")
+        assert preserved_cell.border.left.style == "thin"
+        assert preserved_cell.border.right.style == "thin"
+        assert preserved_cell.border.top.style == "thin"
+        assert preserved_cell.border.bottom.style == "thin"
+        assert preserved_cell.alignment.horizontal == "right"
+
+        # New row values.
         assert wal_sheet.cell(row=4, column=2).value == pytest.approx(2.35)
+        assert wal_sheet.cell(row=4, column=2).number_format == preserved_number_format
+        appended_cell = wal_sheet.cell(row=4, column=2)
+        assert appended_cell.font.bold is True
+        assert appended_cell.fill.patternType == "solid"
+        assert (appended_cell.fill.fgColor.rgb or "").endswith("FFFF00")
+        assert appended_cell.border.left.style == "thin"
+        assert appended_cell.border.right.style == "thin"
+        assert appended_cell.border.top.style == "thin"
+        assert appended_cell.border.bottom.style == "thin"
+        assert appended_cell.alignment.horizontal == "right"
+
+        # Formula in the extra computed column is copied + translated.
+        assert wal_sheet.cell(row=4, column=3).value == "=B4*2"
+        assert wal_sheet.cell(row=4, column=3).number_format == "0.00"
+        assert wal_sheet.cell(row=4, column=3).font.italic is True
+        assert wal_sheet.cell(row=4, column=3).alignment.horizontal == "left"
     finally:
         reloaded.close()
