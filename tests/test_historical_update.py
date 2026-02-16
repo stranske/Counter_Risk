@@ -626,6 +626,13 @@ def test_append_wal_row_rejects_non_monotonic_date(tmp_path: Path) -> None:
 
 def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Path) -> None:
     openpyxl = pytest.importorskip("openpyxl")
+    styles = pytest.importorskip("openpyxl.styles")
+    Alignment = styles.Alignment
+    Border = styles.Border
+    Font = styles.Font
+    PatternFill = styles.PatternFill
+    Side = styles.Side
+
     workbook_path = tmp_path / "historical.xlsx"
 
     workbook = openpyxl.Workbook()
@@ -637,8 +644,24 @@ def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Pat
     sheet.cell(row=3, column=1).number_format = "m/d/yyyy"
     sheet.cell(row=3, column=2).value = "=2.10"
     sheet.cell(row=3, column=2).number_format = "0.00"
+    sheet.cell(row=3, column=2).font = Font(bold=True)
+    sheet.cell(row=3, column=2).fill = PatternFill(patternType="solid", fgColor="FFFF00")
+    sheet.cell(row=3, column=2).border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
+    )
+    sheet.cell(row=3, column=2).alignment = Alignment(horizontal="right")
+
+    # Extra computed column to verify formula copying + row-relative translation.
+    sheet.cell(row=2, column=3).value = "Double"
+    sheet.cell(row=3, column=3).value = "=B3*2"
+    sheet.cell(row=3, column=3).number_format = "0.00"
+    sheet.cell(row=3, column=3).font = Font(italic=True)
+    sheet.cell(row=3, column=3).alignment = Alignment(horizontal="left")
+
     preserved_formula = sheet.cell(row=3, column=2).value
-    preserved_style_id = sheet.cell(row=3, column=2).style_id
     preserved_number_format = sheet.cell(row=3, column=2).number_format
     workbook.save(workbook_path)
     workbook.close()
@@ -653,8 +676,35 @@ def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Pat
     try:
         wal_sheet = reloaded[historical_update.SHEET_WAL]
         assert wal_sheet.cell(row=3, column=2).value == preserved_formula
-        assert wal_sheet.cell(row=3, column=2).style_id == preserved_style_id
         assert wal_sheet.cell(row=3, column=2).number_format == preserved_number_format
+
+        preserved_cell = wal_sheet.cell(row=3, column=2)
+        assert preserved_cell.font.bold is True
+        assert preserved_cell.fill.patternType == "solid"
+        assert (preserved_cell.fill.fgColor.rgb or "").endswith("FFFF00")
+        assert preserved_cell.border.left.style == "thin"
+        assert preserved_cell.border.right.style == "thin"
+        assert preserved_cell.border.top.style == "thin"
+        assert preserved_cell.border.bottom.style == "thin"
+        assert preserved_cell.alignment.horizontal == "right"
+
+        # New row values.
         assert wal_sheet.cell(row=4, column=2).value == pytest.approx(2.35)
+        assert wal_sheet.cell(row=4, column=2).number_format == preserved_number_format
+        appended_cell = wal_sheet.cell(row=4, column=2)
+        assert appended_cell.font.bold is True
+        assert appended_cell.fill.patternType == "solid"
+        assert (appended_cell.fill.fgColor.rgb or "").endswith("FFFF00")
+        assert appended_cell.border.left.style == "thin"
+        assert appended_cell.border.right.style == "thin"
+        assert appended_cell.border.top.style == "thin"
+        assert appended_cell.border.bottom.style == "thin"
+        assert appended_cell.alignment.horizontal == "right"
+
+        # Formula in the extra computed column is copied + translated.
+        assert wal_sheet.cell(row=4, column=3).value == "=B4*2"
+        assert wal_sheet.cell(row=4, column=3).number_format == "0.00"
+        assert wal_sheet.cell(row=4, column=3).font.italic is True
+        assert wal_sheet.cell(row=4, column=3).alignment.horizontal == "left"
     finally:
         reloaded.close()
