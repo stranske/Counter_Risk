@@ -46,7 +46,9 @@ def normalize_path_separators(raw_path: str) -> str:
 
 def resolve_output_dir(repo_root: str, selected_date: str) -> str:
     parsed_date = parse_as_of_month(selected_date)
-    return f"{normalize_path_separators(repo_root)}\\runs\\{parsed_date.isoformat()}"
+    # Mirror RunnerLaunch.bas: Format$(parsedDate, "yyyy-mm-dd_hhnnss") on a date-only value.
+    # VBA dates carry a midnight time component by default, so the time segment is deterministic.
+    return f"{normalize_path_separators(repo_root)}\\runs\\{parsed_date.isoformat()}_000000"
 
 
 def resolve_config_path(run_mode: RunnerMode) -> str:

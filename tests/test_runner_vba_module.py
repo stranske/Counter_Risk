@@ -18,7 +18,8 @@ def test_runner_vba_module_constructs_arguments_from_date_and_mode() -> None:
 
     assert "Public Function ResolveOutputDir" in module_source
     assert 'ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\\runs\\"' in module_source
-    assert 'Format$(parsedDate, "yyyy-mm-dd")' in module_source
+    assert 'Format$(parsedDate, RUN_FOLDER_FORMAT)' in module_source
+    assert 'RUN_FOLDER_FORMAT As String = "yyyy-mm-dd_hhnnss"' in module_source
     assert '" --as-of-month " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd"))' in module_source
 
     assert "Case RunnerModeAllPrograms" in module_source
@@ -66,6 +67,12 @@ def test_runner_vba_module_updates_status_before_launch_and_writes_error_result(
     assert 'WriteStatus "Running..."' in module_source
     assert 'WriteStatus "Success"' in module_source
     assert 'WriteStatus "Error"' in module_source
+    assert 'WriteStatus PRE_LAUNCH_STATUS' in module_source
+    assert 'WriteStatus POST_LAUNCH_STATUS' in module_source
+    assert 'WriteStatus COMPLETE_STATUS' in module_source
+    assert 'PRE_LAUNCH_STATUS As String = "Launching..."' in module_source
+    assert 'POST_LAUNCH_STATUS As String = "Finished"' in module_source
+    assert 'COMPLETE_STATUS As String = "Complete"' in module_source
     assert 'WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description' in module_source
 
 

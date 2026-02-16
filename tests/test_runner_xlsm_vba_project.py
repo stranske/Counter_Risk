@@ -1,53 +1,68 @@
-"""Deterministic tests for the embedded VBA project in Runner.xlsm."""
+"""Deterministic tests for the embedded VBA project in Runner.xlsm.
+
+These tests intentionally avoid checksum fixtures and instead validate the
+presence/absence of specific VBA source markers that define the required
+Runner behavior.
+"""
 
 from __future__ import annotations
 
-import hashlib
+import re
 from pathlib import Path
 from zipfile import ZipFile
 
 RUNNER_WORKBOOK_PATH = Path("Runner.xlsm")
 VBA_PROJECT_BIN_PATH = "xl/vbaProject.bin"
-VBA_PROJECT_CHECKSUM_FIXTURE_PATH = Path("tests/fixtures/vba/vbaProject.bin.sha256")
+
+WINDOWS_RUN_FOLDER_FORMAT_LITERAL = "yyyy-mm-dd_hhnnss"
+WINDOWS_RUN_FOLDER_FORMAT_REGEX = re.compile(
+    r"Format\$\(\s*parsedDate\s*,\s*RUN_FOLDER_FORMAT\s*\)",
+    flags=re.IGNORECASE,
+)
 
 
-def _extract_vba_project_bin_bytes(workbook_path: Path = RUNNER_WORKBOOK_PATH) -> bytes:
-    """Return raw bytes for the embedded VBA project from a macro-enabled workbook."""
+def _extract_embedded_vba_text(workbook_path: Path = RUNNER_WORKBOOK_PATH) -> str:
     with ZipFile(workbook_path) as zip_file, zip_file.open(VBA_PROJECT_BIN_PATH) as handle:
-        return handle.read()
+        return handle.read().decode("latin-1", errors="ignore")
 
 
-def _compute_sha256(payload: bytes) -> str:
-    """Return lowercase SHA-256 for payload bytes."""
-    return hashlib.sha256(payload).hexdigest()
+def _load_runnerlaunch_bas_source() -> str:
+    return Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
 
 
-def _load_expected_vba_project_checksum(
-    fixture_path: Path = VBA_PROJECT_CHECKSUM_FIXTURE_PATH,
-) -> str:
-    """Load expected checksum from `<checksum>  xl/vbaProject.bin` fixture content."""
-    fixture_content = fixture_path.read_text(encoding="utf-8").strip()
-    checksum, _, artifact_path = fixture_content.partition("  ")
-    assert artifact_path == VBA_PROJECT_BIN_PATH, (
-        f"Expected fixture artifact path '{VBA_PROJECT_BIN_PATH}', got '{artifact_path}' in "
-        f"{fixture_path}"
-    )
-    return checksum
+def test_runnerlaunch_bas_contains_required_behavior_markers() -> None:
+    source = _load_runnerlaunch_bas_source()
+
+    assert "Public Function BuildCommand" in source
+    assert "Public Function ExecuteRunnerCommand" in source
+    assert "Public Function ResolveOutputDir" in source
+
+    assert "ResolveRepoRoot()" in source
+    assert "RUN_FOLDER_FORMAT" in source
+    assert f'RUN_FOLDER_FORMAT As String = "{WINDOWS_RUN_FOLDER_FORMAT_LITERAL}"' in source
+
+    assert "PRE_LAUNCH_STATUS" in source
+    assert "POST_LAUNCH_STATUS" in source
+    assert "COMPLETE_STATUS" in source
+
+    assert "ResolveOutputDir(\".\"" not in source
+    assert WINDOWS_RUN_FOLDER_FORMAT_REGEX.search(source) is not None
 
 
-def test_extract_vba_project_bin_bytes_returns_binary_payload() -> None:
-    vba_project = _extract_vba_project_bin_bytes()
+def test_runner_workbook_embeds_required_runnerlaunch_markers() -> None:
+    vba_text = _extract_embedded_vba_text()
 
-    assert isinstance(vba_project, bytes)
-    assert len(vba_project) > 0
+    assert 'Attribute VB_Name = "RunnerLaunch"' in vba_text
+    assert "Public Function BuildCommand" in vba_text
+    assert "Public Function ExecuteRunnerCommand" in vba_text
+    assert "Public Function ResolveOutputDir" in vba_text
 
+    assert "ResolveRepoRoot()" in vba_text
+    assert f'RUN_FOLDER_FORMAT As String = "{WINDOWS_RUN_FOLDER_FORMAT_LITERAL}"' in vba_text
 
-def test_runner_vba_project_bin_checksum_matches_fixture() -> None:
-    expected_checksum = _load_expected_vba_project_checksum()
-    actual_checksum = _compute_sha256(_extract_vba_project_bin_bytes())
+    assert 'PRE_LAUNCH_STATUS As String = "Launching..."' in vba_text
+    assert 'POST_LAUNCH_STATUS As String = "Finished"' in vba_text
+    assert 'COMPLETE_STATUS As String = "Complete"' in vba_text
 
-    assert actual_checksum == expected_checksum, (
-        "Embedded VBA project checksum mismatch for "
-        f"{RUNNER_WORKBOOK_PATH}:{VBA_PROJECT_BIN_PATH}. "
-        f"Expected {expected_checksum}, got {actual_checksum}."
-    )
+    assert "ResolveOutputDir(\".\"" not in vba_text
+    assert WINDOWS_RUN_FOLDER_FORMAT_REGEX.search(vba_text) is not None
