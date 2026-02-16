@@ -267,7 +267,9 @@ def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
 
     # Keep the raw-NISA generation path real, but stub downstream heavy stages
     # that are covered by dedicated integration tests.
-    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant())
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
         lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
