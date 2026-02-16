@@ -21,10 +21,10 @@ jobs:
   release-tests:
     name: Release / Packaging Tests
     if: >-
-      ${
+      ${{
         github.event_name != 'pull_request' ||
         github.event.label.name == 'run-release'
-      }
+      }}
     runs-on: ubuntu-latest
 
     steps:
