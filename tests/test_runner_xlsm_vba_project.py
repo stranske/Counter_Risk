@@ -45,7 +45,7 @@ def test_runnerlaunch_bas_contains_required_behavior_markers() -> None:
     assert "POST_LAUNCH_STATUS" in source
     assert "COMPLETE_STATUS" in source
 
-    assert "ResolveOutputDir(\".\"" not in source
+    assert 'ResolveOutputDir("."' not in source
     assert WINDOWS_RUN_FOLDER_FORMAT_REGEX.search(source) is not None
 
 
@@ -64,5 +64,5 @@ def test_runner_workbook_embeds_required_runnerlaunch_markers() -> None:
     assert 'POST_LAUNCH_STATUS As String = "Finished"' in vba_text
     assert 'COMPLETE_STATUS As String = "Complete"' in vba_text
 
-    assert "ResolveOutputDir(\".\"" not in vba_text
+    assert 'ResolveOutputDir("."' not in vba_text
     assert WINDOWS_RUN_FOLDER_FORMAT_REGEX.search(vba_text) is not None

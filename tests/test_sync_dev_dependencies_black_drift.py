@@ -30,7 +30,7 @@ def _write_pyproject(path: Path, *, black_version: str) -> None:
             [
                 "[project]",
                 'name = "counter-risk"',
-                "version = \"0.0.0\"",
+                'version = "0.0.0"',
                 "",
                 "[project.optional-dependencies]",
                 "dev = [",
@@ -58,7 +58,18 @@ def test_sync_dev_dependencies_exits_nonzero_on_black_drift(
     _write_pyproject(pyproject, black_version="24.1.0")
 
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(sys, "argv", ["sync_dev_dependencies.py", "--check", "--pin-file", str(pin_file), "--pyproject", str(pyproject)])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "sync_dev_dependencies.py",
+            "--check",
+            "--pin-file",
+            str(pin_file),
+            "--pyproject",
+            str(pyproject),
+        ],
+    )
 
     script_path = Path(__file__).resolve().parents[1] / "scripts" / "sync_dev_dependencies.py"
 
