@@ -136,6 +136,29 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _minimal_parsed_by_variant() -> dict[str, dict[str, _FakeDataFrame]]:
+    totals = _FakeDataFrame(
+        records=[{"counterparty": "Counterparty A", "Notional": 1.0, "NotionalChange": 0.5}]
+    )
+    futures = _FakeDataFrame(
+        records=[
+            {
+                "account": "account-a",
+                "description": "desc",
+                "class": "class-a",
+                "fcm": "fcm-a",
+                "clearing_house": "ch-a",
+                "notional": 1.0,
+            }
+        ]
+    )
+    return {
+        "all_programs": {"totals": totals, "futures": futures},
+        "ex_trend": {"totals": totals, "futures": futures},
+        "trend": {"totals": totals, "futures": futures},
+    }
+
+
 def test_run_pipeline_writes_expected_outputs_and_manifest(
     tmp_path: Path, fake_pandas: None
 ) -> None:
@@ -220,7 +243,7 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
 
 
 def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
-    tmp_path: Path, fake_pandas: None
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     fixtures = Path("tests/fixtures")
     config_path = tmp_path / "config.yml"
@@ -240,6 +263,23 @@ def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
         )
         + "\n",
         encoding="utf-8",
+    )
+
+    # Keep the raw-NISA generation path real, but stub downstream heavy stages
+    # that are covered by dedicated integration tests.
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
     )
 
     run_dir = run_pipeline(config_path)
@@ -413,6 +453,13 @@ def test_run_pipeline_wraps_output_write_errors(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
 
     def _boom(*, run_dir: Path, config: Any, warnings: list[str]) -> list[Path]:
         _ = (run_dir, config, warnings)
@@ -496,6 +543,20 @@ def test_run_pipeline_wraps_manifest_generation_errors(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
+    )
 
     def _boom(self: Any, *, run_dir: Path, manifest: dict[str, Any]) -> Path:
         _ = (self, run_dir, manifest)
@@ -551,6 +612,13 @@ def test_run_pipeline_invokes_ppt_link_refresh(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
     seen: dict[str, Path] = {}
 
     def _refresh(pptx_path: Path) -> bool:
@@ -567,10 +635,24 @@ def test_run_pipeline_invokes_ppt_link_refresh(
 
 
 def test_run_pipeline_ignores_config_output_root_for_run_directory(
-    tmp_path: Path, fake_pandas: None
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = _write_valid_config(
         tmp_path=tmp_path, output_root=tmp_path / "different-output-root"
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
     )
 
     run_dir = run_pipeline(config_path)

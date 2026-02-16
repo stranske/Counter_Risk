@@ -70,6 +70,38 @@ Never silently drop exposures. If a new counterparty appears and there is no mat
    - Do not edit `.github/workflows/**` unless explicitly operating under a high-privilege environment and the task requires it.
    - If workflow changes are needed, fix them in **stranske/Workflows** then sync.
 
+## CI test situation (what runs when)
+
+This repo is tuned so PR Gate stays reasonably fast by skipping the most expensive suites.
+
+### PR Gate
+
+PR Gate uses `.github/workflows/pr-00-gate.yml`:
+
+- Runs pytest **in parallel** with xdist (`-n auto --dist loadscope`).
+- Runs pytest **without coverage**.
+- Skips `tests/integration/` and `tests/integrations/`.
+- Skips `release`-marked tests (`pytest_markers: "not release"`).
+
+### Main CI (push to `main`)
+
+Main CI uses `.github/workflows/ci.yml`:
+
+- Runs pytest **with coverage** and enforces `coverage-min`.
+- Runs pytest **in parallel** with xdist.
+- Runs the full test suite.
+
+### Release tests (nightly or label)
+
+The slowest release/packaging checks are isolated behind the `release` marker and can be triggered via:
+
+- Nightly schedule (`.github/workflows/release-e2e.yml`)
+- PR label: `run-release`
+
+### Agent guidance
+
+When a PR touches release/packaging mechanics (e.g., `release.spec`, `pyinstaller_runtime_hook.py`, templates/config bundling), make sure `release` tests run by applying the `run-release` label.
+
 ## Agent guardrails (must follow)
 
 - Also read: `.github/codex/AGENT_INSTRUCTIONS.md`

@@ -9,6 +9,10 @@ codex-output.md
 verifier-context.md
 autofix_report_enriched.json
 
+# CI artifacts (uploaded/stored elsewhere; never commit)
+/coverage.json
+/pytest-junit.xml
+
 # Python runtime/build artifacts
 __pycache__/
 *.py[cod]

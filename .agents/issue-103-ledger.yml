@@ -1,0 +1,368 @@
+version: 1
+issue: 103
+base: main
+branch: codex/issue-103
+tasks:
+  - id: task-01
+    title: Update `BuildRunArguments` in `assets/vba/RunnerLaunch.bas` to call `ResolveRepoRoot()`
+      instead of `ResolveOutputDir(".")` in the external invocation code path
+    status: done
+    started_at: '2026-02-14T02:19:41Z'
+    finished_at: '2026-02-14T02:19:54Z'
+    commit: a4a72157545912f0e8f857755721d80276ed8215
+    notes: []
+  - id: task-02
+    title: Update all output directory construction code in `assets/vba/RunnerLaunch.bas`
+      to return strings in the format `<repo-root>\runs\<YYYY-MM-DD>` with single
+      backslashes and no dot-relative paths
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Update `OpenOutputFolder_Click` in `assets/vba/RunnerLaunch.bas` to set
+      the status cell value to the string `"Running..."` before any directory open
+      attempt
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Update error handling in `OpenOutputFolder_Click` so that when `OpenDirectory(path)`
+      fails after `DirectoryExists(path)` returns true, `WriteLaunchResult` is called
+      with an error message containing the attempted `path` string
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Create a helper function in `tests/test_runner_xlsm_vba_project.py` to
+      extract the `xl/vbaProject.bin` bytes from `assets/workbooks/Runner.xlsm` using
+      zipfile
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Implement a checksum-based verification function in `tests/test_runner_xlsm_vba_project.py`
+      that computes SHA-256 of the extracted `xl/vbaProject.bin` bytes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Create a test that compares the computed checksum against an expected checksum
+      loaded from a fixture file
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Remove all latin-1 string-search assertions from `tests/test_runner_xlsm_vba_project.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Update the test to fail with a descriptive message when the extracted binary
+      checksum differs from the canonical checksum
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Create the directory `tests/fixtures/vba/` if it does not exist
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Extract the `xl/vbaProject.bin` from the current `assets/workbooks/Runner.xlsm`
+      and compute its SHA-256 checksum
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Create a file `tests/fixtures/vba/vbaProject.bin.sha256` containing the
+      computed checksum in the format `<checksum>  xl/vbaProject.bin`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Update `tests/test_runner_xlsm_vba_project.py` to load the expected checksum
+      from `tests/fixtures/vba/vbaProject.bin.sha256`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Replace `_load_openpyxl_or_fail()` in test files with direct calls to `pytest.importorskip("openpyxl",
+      reason="openpyxl required for Excel file manipulation")`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Update all test functions that previously called `_load_openpyxl_or_fail()`
+      to call `pytest.importorskip("openpyxl")` at the beginning of the test function
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Remove the `_load_openpyxl_or_fail()` helper function definition from test
+      files
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Add `from pptx.enum.shapes import MSO_SHAPE_TYPE` import to `tests/test_pptx_replacement_workflow.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Replace all occurrences of `shape_type == 13` or `shape.shape_type == 13`
+      with `shape.shape_type == MSO_SHAPE_TYPE.PICTURE` in `tests/test_pptx_replacement_workflow.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Add a docstring comment above the first usage explaining that `MSO_SHAPE_TYPE.PICTURE`
+      identifies picture shapes before casting to `Picture` type
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Add a test in `tests/test_runner_xlsm_vba_project.py` (or appropriate test
+      file) that validates output directory strings match the regex pattern `^[A-Z]:\\.*\\runs\\\\d{4}-\d{2}-\d{2}$`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Add a test that verifies the external invocation code path calls `ResolveRepoRoot()`
+      and does not call `ResolveOutputDir(".")`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: '**Open `assets/workbooks/Runner.xlsm` in Microsoft Excel** (requires Excel
+      application)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: '**Import the updated `assets/vba/RunnerLaunch.bas` module** into the VBA
+      project using the VBA Editor (Alt+F11)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: '**Save the workbook** to embed the updated VBA code into `xl/vbaProject.bin`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: '**Extract the new `xl/vbaProject.bin`** from the saved workbook (unzip
+      the .xlsm file)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: '**Compute the SHA-256 checksum** of the new `xl/vbaProject.bin` and update
+      `tests/fixtures/vba/vbaProject.bin.sha256`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: '**Verify the embedded VBA project** contains callable procedures `BuildCommand`,
+      `ExecuteRunnerCommand`, and `ResolveOutputDir` by opening the workbook in Excel
+      and checking the VBA Editor'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: The embedded VBA in `assets/workbooks/Runner.xlsm` contains a `RunnerLaunch`
+      module with callable procedures `BuildCommand`, `ExecuteRunnerCommand`, and
+      `ResolveOutputDir` (verify by opening in Excel VBA Editor)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: The file `tests/fixtures/vba/vbaProject.bin.sha256` exists and contains
+      a SHA-256 checksum in the format `<64-hex-chars>  xl/vbaProject.bin`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Running `pytest tests/test_runner_xlsm_vba_project.py -v` passes when the
+      `xl/vbaProject.bin` extracted from `assets/workbooks/Runner.xlsm` matches the
+      checksum in the fixture file
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Running `pytest tests/test_runner_xlsm_vba_project.py -v` fails with a
+      descriptive message when the extracted binary checksum differs from the fixture
+      checksum
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: The test file `tests/test_runner_xlsm_vba_project.py` contains zero occurrences
+      of `.decode('latin-1')` or string searches within binary data
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: When `BuildRunArguments` is invoked in the external invocation code path,
+      the VBA code calls `ResolveRepoRoot()` (verify by code inspection of `assets/vba/RunnerLaunch.bas`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: When `BuildRunArguments` is invoked in the external invocation code path,
+      the VBA code does not call `ResolveOutputDir(".")` (verify by code inspection)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: All output directory computation code paths in `assets/vba/RunnerLaunch.bas`
+      return strings matching the regex pattern `^[A-Z]:\\.*\\runs\\\\d{4}-\d{2}-\d{2}$`
+      (absolute path with single backslashes, no dot-relative paths)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: The `OpenOutputFolder_Click` procedure in `assets/vba/RunnerLaunch.bas`
+      contains a statement that sets the status cell value to the string `"Running..."`
+      (case-sensitive, with three periods) before any `Shell.Application` or directory
+      open API call
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: The error handling code in `OpenOutputFolder_Click` calls `WriteLaunchResult`
+      with an error message that includes the attempted `path` variable when `OpenDirectory(path)`
+      fails after `DirectoryExists(path)` returns true
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: The function `_load_openpyxl_or_fail()` does not exist in any test file
+      (verify with `git grep "_load_openpyxl_or_fail"`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: Running `pytest -k dropin_template -q` in an environment without openpyxl
+      installed results in zero FAILED tests and at least one SKIPPED test with reason
+      containing "openpyxl"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: Running `pytest -k dropin_template -q` in an environment without openpyxl
+      installed exits with status code 0
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: The file `tests/test_pptx_replacement_workflow.py` contains zero occurrences
+      of the literal comparison `== 13` when checking shape types (verify with `git
+      grep "== 13" tests/test_pptx_replacement_workflow.py`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: The file `tests/test_pptx_replacement_workflow.py` imports `MSO_SHAPE_TYPE`
+      from `pptx.enum.shapes`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: All picture shape detection in `tests/test_pptx_replacement_workflow.py`
+      uses `shape.shape_type == MSO_SHAPE_TYPE.PICTURE` before casting or handling
+      a shape as a `Picture` object
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: Running `pytest tests/test_pptx_replacement_workflow.py -v` passes with
+      the updated type checking code
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

@@ -5,6 +5,10 @@ Private Const RUNNER_SHEET_NAME As String = "Runner"
 Private Const STATUS_CELL As String = "B7"
 Private Const RESULT_CELL As String = "B8"
 Private Const SHELL_ERROR_BASE As Long = vbObjectError + 7100
+Private Const RUN_FOLDER_FORMAT As String = "yyyy-mm-dd_hhnnss"
+Private Const PRE_LAUNCH_STATUS As String = "Launching..."
+Private Const POST_LAUNCH_STATUS As String = "Finished"
+Private Const COMPLETE_STATUS As String = "Complete"
 
 Public Enum RunnerMode
     RunnerModeAllPrograms = 0
@@ -72,7 +76,7 @@ Public Function BuildRunArguments(ByVal asOfMonth As String, ByVal mode As Runne
     Dim parsedDate As Date
 
     parsedDate = ParseAsOfMonth(asOfMonth)
-    outputDir = ResolveOutputDir(".", asOfMonth)
+    outputDir = ResolveOutputDir(ResolveRepoRoot(), asOfMonth)
     BuildRunArguments = BuildCommandArguments(ModeToString(mode), parsedDate, outputDir)
 End Function
 
@@ -83,32 +87,33 @@ Public Function BuildCommand( _
 ) As String
     Dim parsedDate As Date
     Dim parsedDateValue As String
+    Dim repoRoot As String
     Dim resolvedOutputDir As String
     Dim command As String
-    Dim shellObject As Object
-    Dim shellCommand As String
-    Dim exitCode As Long
+    Dim status As LaunchStatus
 
     On Error GoTo BuildCommandError
+
+    WriteStatus PRE_LAUNCH_STATUS
     WriteStatus "Running..."
 
     parsedDate = ParseAsOfMonth(selectedDate)
     parsedDate = CDate(parsedDate)
-    parsedDateValue = Format$(parsedDate, "yyyy-mm-dd")
-    resolvedOutputDir = NormalizePathSeparators(ThisWorkbook.Path) & "\runs\" & parsedDateValue
+    parsedDateValue = Format$(parsedDate, RUN_FOLDER_FORMAT)
+    repoRoot = ResolveRepoRoot()
+    resolvedOutputDir = NormalizePathSeparators(repoRoot) & "\runs\" & parsedDateValue
     outputDir = resolvedOutputDir
 
     command = BuildCommandArguments(runMode, parsedDate, resolvedOutputDir)
-    shellCommand = BuildExecutableShellCommand(ResolveExecutablePath(), command)
 
-    Set shellObject = CreateObject("WScript.Shell")
-    exitCode = CLng(shellObject.Run(shellCommand, 0, True))
-    If exitCode <> 0 Then
-        Err.Raise SHELL_ERROR_BASE + exitCode, "RunnerLaunch.BuildCommand", _
-                  "Process exited with code " & CStr(exitCode)
+    status = ExecuteRunnerCommand(ResolveExecutablePath(), command)
+    WriteStatus POST_LAUNCH_STATUS
+    If Not status.Success Then
+        Err.Raise status.ErrorCode, "RunnerLaunch.BuildCommand", status.Message
     End If
 
     WriteStatus "Success"
+    WriteStatus COMPLETE_STATUS
     BuildCommand = command
     Exit Function
 
@@ -141,15 +146,22 @@ Public Function ResolveOutputDir(ByVal repoRoot As String, ByVal selectedDate As
     Dim parsedDate As Date
     parsedDate = ParseAsOfMonth(selectedDate)
 
-    ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\runs\" & Format$(parsedDate, "yyyy-mm-dd")
+    ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\runs\" & Format$(parsedDate, RUN_FOLDER_FORMAT)
 End Function
 
 Public Function ExecuteRunnerCommand(ByVal executablePath As String, ByVal command As String) As LaunchStatus
     Dim status As LaunchStatus
+    Dim repoRoot As String
     Dim shellCommand As String
     Dim exitCode As Long
 
     On Error GoTo ExecuteRunnerCommandError
+
+    repoRoot = ResolveRepoRoot()
+    If LenB(Trim$(executablePath)) = 0 Then
+        executablePath = NormalizePathSeparators(repoRoot) & "\dist\counter-risk.exe"
+    End If
+
     shellCommand = BuildExecutableShellCommand(executablePath, command)
     exitCode = ExecuteShellCommand(shellCommand)
     status = BuildSuccessStatus(shellCommand, exitCode)
