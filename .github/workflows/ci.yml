@@ -29,4 +29,5 @@ jobs:
       typecheck: true
       coverage: true
       coverage-min: '80'
+      pytest_args: "-n auto --dist loadscope"
     secrets: inherit

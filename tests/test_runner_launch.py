@@ -46,7 +46,7 @@ def test_build_command_all_mode_for_distinct_dates(
     command = build_command(RunnerMode.ALL, selected_date, output_dir)
 
     assert '--config "config\\all_programs.yml"' in command
-    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
+    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}_000000"' in command
 
 
 @pytest.mark.parametrize(
@@ -64,7 +64,7 @@ def test_build_command_ex_trend_mode_for_distinct_dates(
     command = build_command(RunnerMode.EX_TREND, selected_date, output_dir)
 
     assert '--config "config\\ex_trend.yml"' in command
-    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
+    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}_000000"' in command
 
 
 @pytest.mark.parametrize(
@@ -82,7 +82,7 @@ def test_build_command_trend_mode_for_distinct_dates(
     command = build_command(RunnerMode.TREND, selected_date, output_dir)
 
     assert '--config "config\\trend.yml"' in command
-    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
+    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}_000000"' in command
 
 
 def test_open_output_folder_returns_missing_directory_error_without_open_call(
@@ -101,7 +101,7 @@ def test_open_output_folder_returns_missing_directory_error_without_open_call(
 
     assert status.success is False
     assert "Directory not found" in status.message
-    assert "C:\\repo\\runs\\2025-05-31" in status.message
+    assert "C:\\repo\\runs\\2025-05-31_000000" in status.message
     assert opened_directories == []
 
 
