@@ -11,6 +11,8 @@ from pathlib import Path
 import pytest
 import yaml  # type: ignore[import-untyped]
 
+pytestmark = pytest.mark.release
+
 _REQUIRED_FIXTURE_KEYS = (
     "mosers_all_programs_xlsx",
     "mosers_ex_trend_xlsx",
