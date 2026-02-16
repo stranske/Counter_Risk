@@ -627,11 +627,6 @@ def test_append_wal_row_rejects_non_monotonic_date(tmp_path: Path) -> None:
 def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Path) -> None:
     openpyxl = pytest.importorskip("openpyxl")
     styles = pytest.importorskip("openpyxl.styles")
-    Alignment = styles.Alignment
-    Border = styles.Border
-    Font = styles.Font
-    PatternFill = styles.PatternFill
-    Side = styles.Side
 
     workbook_path = tmp_path / "historical.xlsx"
 
@@ -644,22 +639,24 @@ def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Pat
     sheet.cell(row=3, column=1).number_format = "m/d/yyyy"
     sheet.cell(row=3, column=2).value = "=2.10"
     sheet.cell(row=3, column=2).number_format = "0.00"
-    sheet.cell(row=3, column=2).font = Font(bold=True)
-    sheet.cell(row=3, column=2).fill = PatternFill(patternType="solid", fgColor="FFFF00")
-    sheet.cell(row=3, column=2).border = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin"),
+    sheet.cell(row=3, column=2).font = styles.Font(bold=True)
+    sheet.cell(row=3, column=2).fill = styles.PatternFill(
+        patternType="solid", fgColor="FFFF00"
     )
-    sheet.cell(row=3, column=2).alignment = Alignment(horizontal="right")
+    sheet.cell(row=3, column=2).border = styles.Border(
+        left=styles.Side(style="thin"),
+        right=styles.Side(style="thin"),
+        top=styles.Side(style="thin"),
+        bottom=styles.Side(style="thin"),
+    )
+    sheet.cell(row=3, column=2).alignment = styles.Alignment(horizontal="right")
 
     # Extra computed column to verify formula copying + row-relative translation.
     sheet.cell(row=2, column=3).value = "Double"
     sheet.cell(row=3, column=3).value = "=B3*2"
     sheet.cell(row=3, column=3).number_format = "0.00"
-    sheet.cell(row=3, column=3).font = Font(italic=True)
-    sheet.cell(row=3, column=3).alignment = Alignment(horizontal="left")
+    sheet.cell(row=3, column=3).font = styles.Font(italic=True)
+    sheet.cell(row=3, column=3).alignment = styles.Alignment(horizontal="left")
 
     preserved_formula = sheet.cell(row=3, column=2).value
     preserved_number_format = sheet.cell(row=3, column=2).number_format
