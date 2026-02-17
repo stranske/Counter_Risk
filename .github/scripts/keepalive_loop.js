@@ -1870,12 +1870,73 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
     let gateRateLimit = false;
 
     const config = parseConfig(pr.body || '');
-    const labels = Array.isArray(pr.labels) ? pr.labels.map((label) => normalise(label.name).toLowerCase()) : [];
+    const labels = Array.isArray(pr.labels)
+      ? pr.labels.map((label) => normalise(label.name).toLowerCase())
+      : [];
 
-    // Extract agent type from agent:* labels (supports agent:codex, agent:claude, etc.)
-    const agentLabel = labels.find((label) => label.startsWith('agent:'));
-    const agentType = agentLabel ? agentLabel.replace('agent:', '') : '';
-    const hasAgentLabel = Boolean(agentType);
+    // Phase 2: Resolve agent via registry helper when an explicit agent:* label is present.
+    // Keepalive stays opt-in: no agent label => keepalive disabled.
+    const labelObjects = Array.isArray(pr.labels) ? pr.labels : [];
+    const agentPrefix = 'agent:';
+    let routingLabelCandidates = labelObjects;
+    let requestedAgentKeys = [];
+    let hasAgentLabel = false;
+
+    try {
+      const { loadAgentRegistry } = require('./agent_registry.js');
+      const registry = loadAgentRegistry();
+      const validAgentKeys = new Set(
+        Object.keys(registry.agents || {}).map((key) => normalise(String(key || '')).toLowerCase()),
+      );
+      validAgentKeys.add('auto');
+      const nonRoutingAgentKeys = new Set(['needs-attention', 'rate-limited', 'retry']);
+
+      const normalizedAgentLabels = labelObjects
+        .map((label) => ({
+          label,
+          normalized: normalise(label.name).toLowerCase(),
+        }))
+        .filter(({ normalized }) => normalized.startsWith(agentPrefix));
+
+      const routingEntries = normalizedAgentLabels
+        .map(({ label, normalized }) => ({
+          label,
+          key: normalized.slice(agentPrefix.length),
+        }))
+        .filter(({ key }) => key && !nonRoutingAgentKeys.has(key));
+
+      const registryEntries = routingEntries.filter(({ key }) => validAgentKeys.has(key));
+      const entriesForRouting = registryEntries.length > 0 ? registryEntries : routingEntries;
+
+      routingLabelCandidates = entriesForRouting.map(({ label }) => label);
+      requestedAgentKeys = Array.from(new Set(routingEntries.map(({ key }) => key).filter(Boolean)));
+    } catch (error) {
+      routingLabelCandidates = labelObjects;
+      requestedAgentKeys = Array.from(
+        new Set(
+          labels
+            .filter((label) => label.startsWith(agentPrefix))
+            .map((label) => label.slice(agentPrefix.length)),
+        ),
+      );
+    }
+
+    hasAgentLabel = requestedAgentKeys.length > 0;
+    let agentType = '';
+    if (hasAgentLabel) {
+      try {
+        const { resolveAgentRoutingFromLabels } = require('./agent_registry.js');
+        const routing = resolveAgentRoutingFromLabels(routingLabelCandidates.length ? routingLabelCandidates : pr.labels);
+        agentType = routing.agentKey;
+      } catch (error) {
+        if (requestedAgentKeys.length > 1) {
+          hasAgentLabel = false;
+          agentType = '';
+        } else {
+          agentType = requestedAgentKeys[0] || '';
+        }
+      }
+    }
     const hasHighPrivilege = labels.includes('agent-high-privilege');
     const keepaliveEnabled = config.keepalive_enabled && hasAgentLabel;
 
