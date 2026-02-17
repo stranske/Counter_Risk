@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Add `reconcile_series_coverage()` to compare counterparties/clearing houses
       in current-month parsed data vs historical workbook series headers (per sheet).
-    status: doing
+    status: done
     started_at: '2026-02-17T23:03:28Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-17T23:03:42Z'
+    commit: 6d7273c626e3f45f00c9296b7e455f6e92efeab5
     notes: []
   - id: task-02
     title: 'Define scope for: Create the reconcile_series_coverage function signature
