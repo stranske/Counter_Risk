@@ -32,7 +32,7 @@ LOCKFILE_FILE = Path("requirements.lock")
 # Format: ENV_KEY -> (package_name, optional_alternative_names)
 TOOL_MAPPING: dict[str, tuple[str, ...]] = {
     "RUFF_VERSION": ("ruff",),
-    "BLACK_VERSION": ("black",),
+    "BLACK_VERSION": ("black",), (mismatch)
     "ISORT_VERSION": ("isort",),
     "MYPY_VERSION": ("mypy",),
     "PYTEST_VERSION": ("pytest",),
@@ -55,10 +55,6 @@ CORE_DEV_TOOLS = [
 LOCKFILE_PATTERN = re.compile(
     r"^(?P<lead>\s*)(?P<name>[A-Za-z0-9_.-]+)==(?P<version>[^\s#]+)(?P<trail>\s*(?:#.*)?)$"
 )
-
-
-def _is_black_drift(change: str) -> bool:
-    return change.strip().lower().startswith("black:")
 
 
 def parse_env_file(path: Path) -> dict[str, str]:
@@ -437,12 +433,6 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if changes:
-        if args.check and any(_is_black_drift(change) for change in changes):
-            print(
-                "Error: Black formatting pin drift detected (version mismatch/out of sync).",
-                file=sys.stderr,
-            )
-
         print(f"{'Applied' if args.apply else 'Found'} {len(changes)} version updates:")
         for change in changes:
             print(f"  - {change}")
@@ -450,9 +440,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.check:
             print("\nRun with --apply to update dependency files")
             return 1
-
-        print("\n✓ Dependency files updated")
-        return 0
+        else:
+            print("\n✓ Dependency files updated")
+            return 0
     else:
         print("✓ All dev dependency versions are in sync")
         return 0
