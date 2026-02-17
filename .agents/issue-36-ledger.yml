@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Update config schema/parsing to support optional `as_of_date` and optional
       `run_date`
-    status: doing
+    status: done
     started_at: '2026-02-17T23:03:37Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-17T23:03:48Z'
+    commit: ada08c6ed2a3f01d0d8b83fe1abb969ec9132269
     notes: []
   - id: task-02
     title: 'Define scope for: Define the config schema fields for optional as_of_date
