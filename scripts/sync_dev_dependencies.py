@@ -57,10 +57,6 @@ LOCKFILE_PATTERN = re.compile(
 )
 
 
-def _is_black_drift(change: str) -> bool:
-    return change.strip().lower().startswith("black:")
-
-
 def parse_env_file(path: Path) -> dict[str, str]:
     """Parse the autofix-versions.env file into a dict of key=value pairs."""
     if not path.exists():
@@ -437,12 +433,6 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if changes:
-        if args.check and any(_is_black_drift(change) for change in changes):
-            print(
-                "Error: Black formatting pin drift detected (version mismatch/out of sync).",
-                file=sys.stderr,
-            )
-
         print(f"{'Applied' if args.apply else 'Found'} {len(changes)} version updates:")
         for change in changes:
             print(f"  - {change}")
@@ -450,9 +440,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.check:
             print("\nRun with --apply to update dependency files")
             return 1
-
-        print("\n✓ Dependency files updated")
-        return 0
+        else:
+            print("\n✓ Dependency files updated")
+            return 0
     else:
         print("✓ All dev dependency versions are in sync")
         return 0
