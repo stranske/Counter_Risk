@@ -71,8 +71,9 @@ The PR is complete when ALL of these are satisfied:
 Avoid repeating these unless a task needs explicit follow-up:
 
 - Add a pipeline output mode: `distribution_static=true`
+- Implement chart-to-image conversion strategy:
 
 ### Suggested Next Task
-- Implement chart-to-image conversion strategy:
+- Preferred: PowerPoint COM export slide(s) to images, then reinsert images (Windows-only)
 
 ---
