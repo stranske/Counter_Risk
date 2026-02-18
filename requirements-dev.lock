@@ -2,7 +2,7 @@
 #    uv pip compile pyproject.toml --extra dev --universal --output-file requirements-dev.lock
 annotated-types==0.7.0
     # via pydantic
-black==24.10.0
+black==26.1.0
     # via my-project (pyproject.toml)
 click==8.3.1
     # via black
@@ -38,7 +38,7 @@ packaging==25.0
     #   pytest
 pandas==2.2.3
     # via my-project (pyproject.toml)
-pathspec==0.12.1
+pathspec==1.0.4
     # via
     #   black
     #   mypy
@@ -69,6 +69,8 @@ python-dateutil==2.9.0.post0
     # via pandas
 python-pptx==1.0.2
     # via my-project (pyproject.toml)
+pytokens==0.4.1
+    # via black
 pytz==2025.2
     # via pandas
 pyyaml==6.0.2
@@ -77,8 +79,6 @@ ruff==0.15.1
     # via my-project (pyproject.toml)
 six==1.17.0
     # via python-dateutil
-tomli==2.4.0 ; python_full_version <= '3.11'
-    # via coverage
 tomlkit==0.13.3
     # via my-project (pyproject.toml)
 typing-extensions==4.15.0

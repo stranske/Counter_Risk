@@ -32,7 +32,7 @@ LOCKFILE_FILE = Path("requirements.lock")
 # Format: ENV_KEY -> (package_name, optional_alternative_names)
 TOOL_MAPPING: dict[str, tuple[str, ...]] = {
     "RUFF_VERSION": ("ruff",),
-    "BLACK_VERSION": ("black",), (mismatch)
+    "BLACK_VERSION": ("black",),
     "ISORT_VERSION": ("isort",),
     "MYPY_VERSION": ("mypy",),
     "PYTEST_VERSION": ("pytest",),
@@ -433,6 +433,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if changes:
+        if args.check:
+            print("Formatting drift detected: dev tool versions are out of sync with pin file.")
+
         print(f"{'Applied' if args.apply else 'Found'} {len(changes)} version updates:")
         for change in changes:
             print(f"  - {change}")
