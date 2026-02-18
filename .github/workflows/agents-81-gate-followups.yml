@@ -68,9 +68,6 @@ jobs:
       prompt_mode: ${{ steps.evaluate.outputs.prompt_mode }}
       prompt_file: ${{ steps.evaluate.outputs.prompt_file }}
       start_ts: ${{ steps.timestamps.outputs.start_ts }}
-      delegation_reason: ${{ steps.evaluate.outputs.delegation_reason }}
-      delegation_should_switch: ${{ steps.evaluate.outputs.delegation_should_switch }}
-      agent_routing_mode: ${{ steps.evaluate.outputs.agent_routing_mode }}
       security_blocked: ${{ steps.security_gate.outputs.blocked }}
       security_reason: ${{ steps.security_gate.outputs.reason }}
     steps:
@@ -184,9 +181,6 @@ jobs:
                 prompt_file: String(
                   result.promptFile || '.github/codex/prompts/keepalive_next_task.md'
                 ),
-              delegation_reason: String(result.delegationReason || ''),
-              delegation_should_switch: String(result.delegationShouldSwitch || 'false'),
-              agent_routing_mode: String(result.agentRoutingMode || ''),
             };
             for (const [key, value] of Object.entries(output)) {
               core.setOutput(key, value);
@@ -508,10 +502,6 @@ jobs:
               autofix_enabled: '${{ needs.evaluate.outputs.autofix_enabled }}',
               agent_type: '${{ needs.evaluate.outputs.agent_type }}',
               trace: '${{ needs.evaluate.outputs.trace }}',
-              // Delegation policy outputs (agent:auto mode)
-              delegation_reason: '${{ needs.evaluate.outputs.delegation_reason }}',
-              delegation_should_switch: '${{ needs.evaluate.outputs.delegation_should_switch }}',
-              agent_routing_mode: '${{ needs.evaluate.outputs.agent_routing_mode }}',
               // Agent run result - check which agent ran
               run_result: '${{ needs.run-codex.result }}',
               // Agent output details for visibility (Codex for now)
