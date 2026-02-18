@@ -72,8 +72,9 @@ Avoid repeating these unless a task needs explicit follow-up:
 
 - Add a pipeline output mode: `distribution_static=true`
 - Implement chart-to-image conversion strategy:
+- Preferred: PowerPoint COM export slide(s) to images, then reinsert images (Windows-only)
 
 ### Suggested Next Task
-- Preferred: PowerPoint COM export slide(s) to images, then reinsert images (Windows-only)
+- Fallback: export entire PPT to PDF (COM), keep PDF as deliverable, note limitations
 
 ---
