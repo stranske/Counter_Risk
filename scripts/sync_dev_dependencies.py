@@ -32,7 +32,7 @@ LOCKFILE_FILE = Path("requirements.lock")
 # Format: ENV_KEY -> (package_name, optional_alternative_names)
 TOOL_MAPPING: dict[str, tuple[str, ...]] = {
     "RUFF_VERSION": ("ruff",),
-    "BLACK_VERSION": ("black",), (mismatch)
+    "BLACK_VERSION": ("black",),
     "ISORT_VERSION": ("isort",),
     "MYPY_VERSION": ("mypy",),
     "PYTEST_VERSION": ("pytest",),
