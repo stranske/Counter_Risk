@@ -640,9 +640,7 @@ def test_append_wal_row_preserves_existing_formulas_and_formatting(tmp_path: Pat
     sheet.cell(row=3, column=2).value = "=2.10"
     sheet.cell(row=3, column=2).number_format = "0.00"
     sheet.cell(row=3, column=2).font = styles.Font(bold=True)
-    sheet.cell(row=3, column=2).fill = styles.PatternFill(
-        patternType="solid", fgColor="FFFF00"
-    )
+    sheet.cell(row=3, column=2).fill = styles.PatternFill(patternType="solid", fgColor="FFFF00")
     sheet.cell(row=3, column=2).border = styles.Border(
         left=styles.Side(style="thin"),
         right=styles.Side(style="thin"),
