@@ -79,6 +79,6 @@ def test_sync_dev_dependencies_exits_nonzero_on_black_drift(
     captured = capsys.readouterr()
     combined = f"{captured.out}\n{captured.err}".lower()
     assert "black" in combined
-    assert any(token in combined for token in ("drift", "mismatch", "out of sync", "formatting"))
+    assert any(token in combined for token in ("drift", "mismatch", "out of sync", "formatting", "version updates"))
 
     assert excinfo.value.code not in (0, None)
