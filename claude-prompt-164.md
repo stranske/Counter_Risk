@@ -9,10 +9,10 @@ Guidance:
 - Re-run or suggest the smallest relevant checks to verify the fix.
 
 ## Run context
-Gate run: https://github.com/stranske/Counter_Risk/actions/runs/22131358066
+Gate run: https://github.com/stranske/Counter_Risk/actions/runs/22131409044
 Conclusion: cancelled
 PR: #164
-Head SHA: 6215228347cd0c95acc444648f188d666a9b1204
+Head SHA: bab9d4c494d72586abb55ae187b889babf793932
 Autofix attempts for this head: 1 / 2
 Fix scope: src/, tests/, tools/, scripts/, agents/, templates/, .github/
 Failing jobs: none reported.
