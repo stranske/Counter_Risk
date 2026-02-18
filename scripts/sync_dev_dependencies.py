@@ -433,6 +433,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if changes:
+        if args.check:
+            print("Formatting drift detected: dev tool versions are out of sync with pin file.")
+
         print(f"{'Applied' if args.apply else 'Found'} {len(changes)} version updates:")
         for change in changes:
             print(f"  - {change}")
