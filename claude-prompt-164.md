@@ -1,18 +1,77 @@
-# Autofix from CI failure
+## Keepalive Next Task
 
-You are Codex running in autofix mode after a CI failure. Use the available logs and repository context to repair the failing checks.
+Your objective is to satisfy the **Acceptance Criteria** by completing each **Task** within the defined **Scope**.
 
-Guidance:
-- Inspect the latest CI output provided by the caller (logs or summaries) to pinpoint the root cause.
-- Focus on minimal, targeted fixes that unblock the failing job.
-- Leave diagnostic breadcrumbs when a failure cannot be reproduced or fully addressed.
-- Re-run or suggest the smallest relevant checks to verify the fix.
+**This round you MUST:**
+1. Implement actual code or test changes that advance at least one incomplete task toward acceptance.
+2. Commit meaningful source code (.py, .yml, .js, etc.)—not just status/docs updates.
+3. Mark a task checkbox complete ONLY after verifying the implementation works.
+4. Focus on the FIRST unchecked task unless blocked, then move to the next.
+
+**Guidelines:**
+- Keep edits scoped to the current task rather than reshaping the entire PR.
+- Use repository instructions, conventions, and tests to validate work.
+- Prefer small, reviewable commits; leave clear notes when follow-up is required.
+- Do NOT work on unrelated improvements until all PR tasks are complete.
+
+## Pre-Commit Formatting Gate (Black)
+
+Before you commit or push any Python (`.py`) changes, you MUST:
+1. Run Black to format the relevant files (line length 100).
+2. Verify formatting passes CI by running:
+   `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .`
+3. If the check fails, do NOT commit/push; format again until it passes.
+
+**COVERAGE TASKS - SPECIAL RULES:**
+If a task mentions "coverage" or a percentage target (e.g., "≥95%", "to 95%"), you MUST:
+1. After adding tests, run TARGETED coverage verification to avoid timeouts:
+   - For a specific script like `scripts/foo.py`, run:
+     `pytest tests/scripts/test_foo.py --cov=scripts/foo --cov-report=term-missing -m "not slow"`
+   - If no matching test file exists, run:
+     `pytest tests/ --cov=scripts/foo --cov-report=term-missing -m "not slow" -x`
+2. Find the specific script in the coverage output table
+3. Verify the `Cover` column shows the target percentage or higher
+4. Only mark the task complete if the actual coverage meets the target
+5. If coverage is below target, add more tests until it meets the target
+
+IMPORTANT: Always use `-m "not slow"` to skip slow integration tests that may timeout.
+IMPORTANT: Use targeted `--cov=scripts/specific_module` instead of `--cov=scripts` for faster feedback.
+
+A coverage task is NOT complete just because you added tests. It is complete ONLY when the coverage command output confirms the target is met.
+
+**The Tasks and Acceptance Criteria are provided in the appendix below.** Work through them in order.
 
 ## Run context
-Gate run: https://github.com/stranske/Counter_Risk/actions/runs/22130652827
-Conclusion: cancelled
-PR: #164
-Head SHA: 68a3eade8cb0a401614873d7dd21184d6730f2dc
-Autofix attempts for this head: 1 / 2
-Fix scope: src/, tests/, tools/, scripts/, agents/, templates/, .github/
-Failing jobs: none reported.
+---
+## PR Tasks and Acceptance Criteria
+
+**Progress:** 0/6 tasks complete, 6 remaining
+
+### Scope
+A single leading/trailing space or inconsistent punctuation can break series matching across Excel headers, PPT chart series, and parsed counterparty names.
+
+### Tasks
+Complete these in order. Mark checkbox done ONLY after implementation is verified:
+
+- [ ] Implement `canonicalize_name()`: strip leading/trailing whitespace collapse repeated spaces normalize apostrophes/hyphens where appropriate
+- [ ] Add a “safe display name” function separate from “matching key”
+- [ ] Apply canonicalization before all lookup/match operations
+- [ ] Add tests with known tricky cases (spaces, punctuation, capitalization)
+
+### Acceptance Criteria
+The PR is complete when ALL of these are satisfied:
+
+- [ ] Matching behavior is stable even when headers have extra spaces
+- [ ] A run manifest includes the canonical key used for each matched counterparty/series
+
+### Recently Attempted Tasks
+Avoid repeating these unless a task needs explicit follow-up:
+
+- Apply canonicalization before all lookup/match operations
+- Add tests with known tricky cases (spaces, punctuation, capitalization)
+- Implement `canonicalize_name()`: strip leading/trailing whitespace collapse repeated spaces normalize apostrophes/hyphens where appropriate
+
+### Suggested Next Task
+- Implement `canonicalize_name()`: strip leading/trailing whitespace collapse repeated spaces normalize apostrophes/hyphens where appropriate
+
+---
