@@ -9,16 +9,10 @@ Guidance:
 - Re-run or suggest the smallest relevant checks to verify the fix.
 
 ## Run context
-Gate run: https://github.com/stranske/Counter_Risk/actions/runs/22132015217
+Gate run: https://github.com/stranske/Counter_Risk/actions/runs/22132066297
 Conclusion: cancelled
 PR: #170
-Head SHA: 19bd7ea42c15402e5501ab78843ff15bb799d6b4
+Head SHA: 14f64d4b1549f0710160fdb309795f1c2160c6a7
 Autofix attempts for this head: 1 / 2
 Fix scope: src/, tests/, tools/, scripts/, agents/, templates/, .github/
-Failing jobs:
-- Python CI / typecheck-mypy (cancelled)
-  - steps: Set up job (cancelled)
-- Python CI / lint-ruff (cancelled)
-  - steps: Checkout repository (cancelled)
-- Python CI / python 3.11 (cancelled)
-  - steps: Set up job (cancelled)
+Failing jobs: none reported.
