@@ -70,9 +70,9 @@ The PR is complete when ALL of these are satisfied:
 ### Recently Attempted Tasks
 Avoid repeating these unless a task needs explicit follow-up:
 
-- Fallback: export entire PPT to PDF (COM), keep PDF as deliverable, note limitations
 - Replace embedded chart shapes with images while keeping titles/positions stable
 - Add tests for fallback logic when COM not available (writes a clear warning + still produces non-static outputs)
+- Add a pipeline output mode: `distribution_static=true`
 
 ### Suggested Next Task
 - Add a pipeline output mode: `distribution_static=true`
