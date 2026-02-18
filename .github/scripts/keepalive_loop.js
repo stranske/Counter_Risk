@@ -1934,11 +1934,13 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
 
     hasAgentLabel = requestedAgentKeys.length > 0;
     let agentType = '';
+    let agentRoutingMode = 'default';
     if (hasAgentLabel) {
       try {
         const { resolveAgentRoutingFromLabels } = require('./agent_registry.js');
         const routing = resolveAgentRoutingFromLabels(routingLabelCandidates.length ? routingLabelCandidates : pr.labels);
         agentType = routing.agentKey;
+        agentRoutingMode = routing.mode || 'default';
       } catch (error) {
         // Treat any routing failure (unknown agent, conflicting labels, missing helper)
         // as invalid to avoid enabling keepalive when no downstream runner is eligible.
@@ -2030,6 +2032,45 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
 
     // Build task appendix for the agent prompt (after state load for reconciliation info)
     const taskAppendix = buildTaskAppendix(normalisedSections, checkboxCounts, state, { prBody: pr.body });
+
+    // Agent delegation: when agent:auto label is present, use delegation policy
+    // to decide which agent should run based on effectiveness metrics and stall detection.
+    let delegationReason = '';
+    let delegationShouldSwitch = false;
+    if (agentRoutingMode === 'auto') {
+      try {
+        const { decideNextAgent } = require('./agent_delegation_policy');
+        const { loadAgentRegistry } = require('./agent_registry.js');
+        const registry = loadAgentRegistry();
+        // Build secrets map from environment - check which agent secrets are present
+        const secretKeys = Object.values(registry.agents || {})
+          .flatMap((agentCfg) => agentCfg.required_secrets || []);
+        const secrets = {};
+        for (const key of secretKeys) {
+          if (process.env[key]) {
+            secrets[key] = true;
+          }
+        }
+        const decision = decideNextAgent({
+          state,
+          labels,
+          secrets,
+          registry,
+          core,
+        });
+        if (decision.agent) {
+          agentType = decision.agent;
+        }
+        delegationReason = decision.reason || '';
+        delegationShouldSwitch = Boolean(decision.shouldSwitch);
+        if (core) {
+          core.info(`Delegation policy: agent=${decision.agent}, reason=${decision.reason}, switch=${decision.shouldSwitch}`);
+        }
+      } catch (delegationError) {
+        // Delegation failure is non-fatal - fall back to default routing
+        if (core) core.warning(`Delegation policy failed: ${delegationError.message} - using default agent`);
+      }
+    }
 
     // Check for merge conflicts - this takes priority over other work
     let conflictResult = { hasConflict: false };
@@ -2197,6 +2238,10 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
       roundsWithoutTaskCompletion,
       // Rate limit status for monitoring
       rateLimitStatus,
+      // Delegation policy outputs (agent:auto mode)
+      delegationReason,
+      delegationShouldSwitch,
+      agentRoutingMode,
     };
   } catch (error) {
     const rateLimitMessage = [error?.message, error?.response?.data?.message]
@@ -2283,6 +2328,11 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
     const agentType = normalise(inputs.agent_type ?? inputs.agentType) || 'codex';
     const runResult = normalise(inputs.runResult || inputs.run_result);
     const stateTrace = normalise(inputs.trace || inputs.keepalive_trace || '');
+
+    // Delegation policy inputs (from evaluate step when agent:auto is active)
+    const delegationReason = normalise(inputs.delegation_reason ?? inputs.delegationReason);
+    const delegationShouldSwitch = toBool(inputs.delegation_should_switch ?? inputs.delegationShouldSwitch, false);
+    const agentRoutingMode = normalise(inputs.agent_routing_mode ?? inputs.agentRoutingMode);
 
     const { state: previousState, commentId } = await loadKeepaliveState({
       github,
@@ -2656,6 +2706,26 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
       core.warning(`Timeout warning (${reason}): ${percent}% consumed, ${remaining}m remaining${thresholdSuffix}.`);
     }
 
+    // Add delegation info when in auto mode
+    if (agentRoutingMode === 'auto' && delegationReason) {
+      summaryLines.push(
+        '',
+        '### Agent Delegation (auto mode)',
+        `| Field | Value |`,
+        `|-------|-------|`,
+        `| Selected agent | ${agentDisplayName} |`,
+        `| Reason | ${delegationReason} |`,
+      );
+      if (delegationShouldSwitch) {
+        const prevAgent = previousState?.current_agent || 'unknown';
+        summaryLines.push(`| Switch | ${prevAgent} → ${agentType} |`);
+      }
+      const switchCount = toNumber(previousState?.switch_count, 0) + (delegationShouldSwitch ? 1 : 0);
+      if (switchCount > 0) {
+        summaryLines.push(`| Total switches | ${switchCount} |`);
+      }
+    }
+
     // Add agent run details if we ran an agent
     if (action === 'run' && runResult) {
       const runLinkText = runUrl ? ` ([view logs](${runUrl}))` : '';
@@ -2984,6 +3054,57 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
         warning: timeoutStatus.warning || null,
       },
     };
+
+    // Persist agent delegation state when in auto mode
+    if (agentRoutingMode === 'auto' || previousState?.current_agent) {
+      const previousDelegationLog = Array.isArray(previousState?.delegation_log)
+        ? previousState.delegation_log
+        : [];
+      const previousSwitchCount = toNumber(previousState?.switch_count, 0);
+      const previousLastSwitchIteration = toNumber(previousState?.last_switch_iteration, 0);
+      const previousEffectivenessHistory = Array.isArray(previousState?.effectiveness_history)
+        ? previousState.effectiveness_history
+        : [];
+
+      // Build effectiveness entry for this round (only when agent ran)
+      const effectivenessEntry = action === 'run' ? {
+        iteration: nextIteration,
+        agent: agentType,
+        commits: agentCommitSha ? 1 : 0,
+        tasks: Math.max(0, tasksCompletedThisRound),
+        gate: gateConclusion === 'success' ? 'pass' : 'fail',
+        files_changed: agentFilesChanged,
+      } : null;
+
+      const effectivenessHistory = effectivenessEntry
+        ? [...previousEffectivenessHistory, effectivenessEntry].slice(-10)
+        : previousEffectivenessHistory;
+
+      newState.current_agent = agentType;
+      newState.delegation_reason = delegationReason || previousState?.delegation_reason || '';
+      newState.effectiveness_history = effectivenessHistory;
+
+      if (delegationShouldSwitch) {
+        newState.switch_count = previousSwitchCount + 1;
+        newState.last_switch_iteration = nextIteration;
+        // Append to delegation log (keep last 10 entries)
+        newState.delegation_log = [
+          ...previousDelegationLog,
+          {
+            iteration: nextIteration,
+            previous_agent: previousState?.current_agent || '',
+            chosen_agent: agentType,
+            reason: delegationReason,
+            timestamp: new Date().toISOString(),
+          },
+        ].slice(-10);
+      } else {
+        newState.switch_count = previousSwitchCount;
+        newState.last_switch_iteration = previousLastSwitchIteration;
+        newState.delegation_log = previousDelegationLog;
+      }
+    }
+
     const attemptEntry = buildAttemptEntry({
       iteration: metricsIteration,
       action,
