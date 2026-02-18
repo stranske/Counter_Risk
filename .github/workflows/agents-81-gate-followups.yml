@@ -546,6 +546,8 @@ jobs:
       trigger_step: ${{ steps.evaluate.outputs.trigger_step }}
       gate_conclusion: ${{ steps.evaluate.outputs.gate_conclusion }}
       gate_run_id: ${{ steps.evaluate.outputs.gate_run_id }}
+      agent_type: ${{ steps.evaluate.outputs.agent_type }}
+      has_high_privilege: ${{ steps.evaluate.outputs.has_high_privilege }}
       security_blocked: ${{ steps.security_gate.outputs.blocked }}
       security_reason: ${{ steps.security_gate.outputs.reason }}
     steps:
@@ -556,6 +558,8 @@ jobs:
             .github/scripts/prompt_injection_guard.js
             .github/scripts/github-api-with-retry.js
             .github/scripts/token_load_balancer.js
+            .github/scripts/agent_registry.js
+            .github/agents/registry.yml
           sparse-checkout-cone-mode: false
 
       - name: Setup API client
@@ -653,6 +657,8 @@ jobs:
               trigger_step: '',
               gate_conclusion: String(run?.conclusion || run?.status || ''),
               gate_run_id: String(run?.id || ''),
+              agent_type: 'codex',
+              has_high_privilege: 'false',
             };
 
             const stop = (reason, stopReason = '') => {
@@ -713,6 +719,21 @@ jobs:
                   .filter(Boolean)
               : [];
             const hasAgentLabel = labels.includes('agent:codex');
+
+            // Resolve agent type from registry when available
+            let agentType = 'codex';
+            try {
+              const fs = require('fs');
+              const registryPath = './.github/scripts/agent_registry.js';
+              if (fs.existsSync(registryPath)) {
+                const { resolveAgentFromLabels } = require(registryPath);
+                agentType = resolveAgentFromLabels(prData.labels) || 'codex';
+              }
+            } catch (err) {
+              core.debug(`Agent registry lookup failed: ${err.message} - using default`);
+            }
+            outputs.agent_type = agentType;
+            outputs.has_high_privilege = String(labels.includes('agent-high-privilege'));
 
             const body = prData.body || '';
             const configMatch = body.match(/autofix\s*:\s*(true|false)/i);
