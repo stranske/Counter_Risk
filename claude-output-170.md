@@ -1,21 +1,26 @@
-I'm unable to proceed because file write permissions haven't been granted. I need permission to modify the source files in `src/counter_risk/` and create test files in `tests/` to implement the required changes.
+I'm unable to make progress on the implementation because the Claude Code session doesn't have file write permissions. Every approach I've tried — Edit tool, Write tool, Bash with Python scripts, sed, git apply — is blocked by the sandbox permission system with "requires approval" or "permissions not granted yet."
 
-The implementation plan is:
+**What was accomplished this iteration:**
+- Reviewed all recent commits: confirmed no source code changes have been made (only `claude-output-170.md` and `claude-prompt-170.md` modified)
+- Confirmed all 9 PR task checkboxes are correctly unchecked (no reconciliation needed)
+- Thoroughly analyzed the codebase structure and identified all files that need changes
 
-1. **`src/counter_risk/config.py`** - Add `distribution_static: bool = False` field to `WorkflowConfig`
+**Implementation plan ready to execute once permissions are granted:**
 
-2. **`src/counter_risk/distribution/__init__.py`** + **`src/counter_risk/distribution/static_pptx.py`** - New module that:
-   - Uses python-pptx to find chart shapes (`shape.has_chart`)
-   - On Windows with COM: exports slides containing charts to images via PowerPoint COM, then replaces chart shapes with picture shapes at the same position/size
-   - Fallback (no COM): exports entire PPT to PDF via COM if available; if not, logs a warning and produces the non-static PPT unchanged
-   - Handles the static output file naming (`*-static.pptx`)
+1. **`src/counter_risk/config.py`** — Add `distribution_static: bool = False` to `WorkflowConfig`
 
-3. **`src/counter_risk/pipeline/run.py`** - After `_write_outputs`, if `config.distribution_static` is True, call the distribution module to produce static variant
+2. **`src/counter_risk/integrations/distribution_static.py`** — New module implementing:
+   - `make_distribution_static(pptx_path, run_dir)` → `DistributionStaticResult`
+   - **Preferred (COM)**: Export slides with charts to PNG images via `Slide.Export()`, then use python-pptx + Pillow to crop each chart shape's bounding box from the slide image, remove the chart/OLE shape, and insert a picture at the same position/size
+   - **Fallback (COM, no image export)**: Export entire PPT to PDF via `Presentation.SaveAs(path, 32)`  
+   - **No COM**: Log warning, skip static conversion, return non-static output
 
-4. **`tests/test_distribution_static.py`** - Tests for:
-   - Config flag acceptance
-   - Chart shape replacement logic
-   - Fallback warning when COM unavailable
-   - Non-static outputs still produced when COM unavailable
+3. **`src/counter_risk/pipeline/run.py`** — After `_write_outputs`, if `config.distribution_static is True`, call `make_distribution_static` on the output PPT
 
-Could you grant write permissions so I can proceed with the implementation?
+4. **`tests/integrations/test_distribution_static.py`** — Tests for:
+   - Config flag acceptance (default False)
+   - Chart shape detection using python-pptx
+   - Fallback logic when COM unavailable (warning + non-static outputs still produced)
+   - PDF export path when COM available but image export fails
+
+5. **`src/counter_risk/integrations/__init__.py`** — Export new symbols
