@@ -810,7 +810,7 @@ def test_merge_historical_workbook_prefers_configured_total_sheet(
         warnings=[],
     )
 
-    assert target.cell(row=3, column=1).value == "2026-02-13"
+    assert target.cell(row=3, column=1).value == date(2026, 2, 13)
     assert target.cell(row=3, column=2).value == pytest.approx(10.0)
     assert target.cell(row=3, column=3).value == 1
     assert decoy.cell(row=3, column=1).value is None
@@ -850,7 +850,7 @@ def test_merge_historical_workbook_uses_deterministic_fallback_sheet_when_prefer
         warnings=[],
     )
 
-    assert alpha.cell(row=3, column=1).value == "2026-02-13"
+    assert alpha.cell(row=3, column=1).value == date(2026, 2, 13)
     assert alpha.cell(row=3, column=2).value == pytest.approx(25.0)
     assert alpha.cell(row=3, column=3).value == 2
     assert zulu.cell(row=3, column=1).value is None
