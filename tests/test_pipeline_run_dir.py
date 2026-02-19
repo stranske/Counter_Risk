@@ -16,24 +16,23 @@ def _write_placeholder(path: Path, *, content: bytes = b"fixture") -> None:
     path.write_bytes(content)
 
 
-def _write_config(*, path: Path, output_root: Path, inputs: dict[str, Path]) -> None:
-    path.write_text(
-        "\n".join(
-            [
-                "as_of_date: 2026-02-13",
-                f"mosers_all_programs_xlsx: {inputs['all_programs']}",
-                f"mosers_ex_trend_xlsx: {inputs['ex_trend']}",
-                f"mosers_trend_xlsx: {inputs['trend']}",
-                f"hist_all_programs_3yr_xlsx: {inputs['hist_all']}",
-                f"hist_ex_llc_3yr_xlsx: {inputs['hist_ex']}",
-                f"hist_llc_3yr_xlsx: {inputs['hist_llc']}",
-                f"monthly_pptx: {inputs['monthly_pptx']}",
-                f"output_root: {output_root}",
-            ]
-        )
-        + "\n",
-        encoding="utf-8",
-    )
+def _write_config(
+    *, path: Path, output_root: Path, inputs: dict[str, Path], run_date: str | None = None
+) -> None:
+    lines = [
+        "as_of_date: 2026-02-13",
+        f"mosers_all_programs_xlsx: {inputs['all_programs']}",
+        f"mosers_ex_trend_xlsx: {inputs['ex_trend']}",
+        f"mosers_trend_xlsx: {inputs['trend']}",
+        f"hist_all_programs_3yr_xlsx: {inputs['hist_all']}",
+        f"hist_ex_llc_3yr_xlsx: {inputs['hist_ex']}",
+        f"hist_llc_3yr_xlsx: {inputs['hist_llc']}",
+        f"monthly_pptx: {inputs['monthly_pptx']}",
+        f"output_root: {output_root}",
+    ]
+    if run_date is not None:
+        lines.insert(1, f"run_date: {run_date}")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def test_pipeline_writes_outputs_only_to_repo_root_runs_date_dir(
@@ -163,3 +162,44 @@ def test_run_directory_creation_same_date_repeat_run_uses_unique_directory_suffi
     assert second_run_dir.exists()
     assert (first_run_dir / "historical-output.xlsx").exists()
     assert (second_run_dir / "historical-output.xlsx").exists()
+
+
+def test_pipeline_run_directory_includes_run_date_when_configured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    inputs = {
+        "all_programs": tmp_path / "inputs" / "all_programs.xlsx",
+        "ex_trend": tmp_path / "inputs" / "ex_trend.xlsx",
+        "trend": tmp_path / "inputs" / "trend.xlsx",
+        "hist_all": tmp_path / "inputs" / "hist_all.xlsx",
+        "hist_ex": tmp_path / "inputs" / "hist_ex.xlsx",
+        "hist_llc": tmp_path / "inputs" / "hist_llc.xlsx",
+        "monthly_pptx": tmp_path / "inputs" / "monthly.pptx",
+    }
+    for path in inputs.values():
+        _write_placeholder(path)
+
+    config_path = tmp_path / "config.yml"
+    _write_config(
+        path=config_path,
+        output_root=tmp_path / "unused-output-root",
+        inputs=inputs,
+        run_date="2026-02-14",
+    )
+
+    monkeypatch.setattr("counter_risk.pipeline.run._resolve_repo_root", lambda: tmp_path)
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: {})
+    monkeypatch.setattr("counter_risk.pipeline.run._validate_parsed_inputs", lambda _: None)
+    monkeypatch.setattr("counter_risk.pipeline.run._compute_metrics", lambda _: ({}, {}))
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, warnings: [],
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    assert run_dir == tmp_path / "runs" / "2026-02-13__run_2026-02-14"

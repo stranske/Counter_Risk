@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date
 from pathlib import Path
 
 import pytest
 
 from counter_risk.config import WorkflowConfig
-from counter_risk.dates import derive_as_of_date
+from counter_risk.dates import derive_as_of_date, derive_run_date
 
 
 def _config(*, as_of_date: date | None) -> WorkflowConfig:
@@ -59,3 +59,20 @@ def test_derive_as_of_date_raises_clear_error_when_no_valid_source() -> None:
 
     with pytest.raises(ValueError, match="Unable to derive as_of_date"):
         derive_as_of_date(config, {"header": "not a date"})
+
+
+def test_derive_run_date_prefers_config_value() -> None:
+    config = _config(as_of_date=None).model_copy(update={"run_date": date(2026, 2, 14)})
+
+    derived = derive_run_date(config)
+
+    assert derived == date(2026, 2, 14)
+
+
+def test_derive_run_date_is_deterministic_for_explicit_timezone() -> None:
+    config = _config(as_of_date=None)
+
+    first = derive_run_date(config, tzinfo=UTC)
+    second = derive_run_date(config, tzinfo=UTC)
+
+    assert first == second

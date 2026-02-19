@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping
-from datetime import date, datetime
+from datetime import date, datetime, tzinfo
 from typing import Any
 
 from counter_risk.config import WorkflowConfig
@@ -38,6 +38,18 @@ def derive_as_of_date(
         return inferred_date
 
     raise ValueError("Unable to derive as_of_date from config.as_of_date or CPRS headers.")
+
+
+def derive_run_date(config: WorkflowConfig, tzinfo: tzinfo | None = None) -> date:
+    """Derive run_date from config or default to today's local date."""
+
+    if config.run_date is not None:
+        return config.run_date
+
+    if tzinfo is not None:
+        return datetime.now(tz=tzinfo).date()
+
+    return datetime.now().astimezone().date()
 
 
 def _infer_date_from_cprs_headers(
