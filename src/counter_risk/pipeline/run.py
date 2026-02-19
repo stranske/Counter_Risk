@@ -739,7 +739,7 @@ def _merge_historical_workbook(
     warnings: list[str],
 ) -> None:
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ImportError:
         message = (
             f"Historical workbook update skipped for variant '{variant}'; openpyxl unavailable"
