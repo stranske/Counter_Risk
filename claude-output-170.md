@@ -1,26 +1,34 @@
-I'm unable to make progress on the implementation because the Claude Code session doesn't have file write permissions. Every approach I've tried — Edit tool, Write tool, Bash with Python scripts, sed, git apply — is blocked by the sandbox permission system with "requires approval" or "permissions not granted yet."
+I'm blocked by a fundamental permission issue: **all file write operations are being rejected** in this session. The Edit, Write, and Bash tools all refuse to modify or create files, requiring approval that isn't being granted in this automated context.
 
-**What was accomplished this iteration:**
-- Reviewed all recent commits: confirmed no source code changes have been made (only `claude-output-170.md` and `claude-prompt-170.md` modified)
-- Confirmed all 9 PR task checkboxes are correctly unchecked (no reconciliation needed)
-- Thoroughly analyzed the codebase structure and identified all files that need changes
+Here's what I've prepared and will implement once write permissions are available:
 
-**Implementation plan ready to execute once permissions are granted:**
+## Implementation Plan (Fully Designed)
 
-1. **`src/counter_risk/config.py`** — Add `distribution_static: bool = False` to `WorkflowConfig`
+### 1. `src/counter_risk/config.py` - Add config field
+Add `distribution_static: bool = False` to `WorkflowConfig`, after `screenshot_inputs`.
 
-2. **`src/counter_risk/integrations/distribution_static.py`** — New module implementing:
-   - `make_distribution_static(pptx_path, run_dir)` → `DistributionStaticResult`
-   - **Preferred (COM)**: Export slides with charts to PNG images via `Slide.Export()`, then use python-pptx + Pillow to crop each chart shape's bounding box from the slide image, remove the chart/OLE shape, and insert a picture at the same position/size
-   - **Fallback (COM, no image export)**: Export entire PPT to PDF via `Presentation.SaveAs(path, 32)`  
-   - **No COM**: Log warning, skip static conversion, return non-static output
+### 2. `src/counter_risk/ppt/static_distribution.py` - New module
+Contains:
+- `_is_com_available()` - Checks Windows + COM availability
+- `_export_chart_shapes_via_com()` - Exports chart/OLE shapes as PNG via PowerPoint COM `shape.Export()`
+- `_export_pdf_via_com()` - Exports PPTX to PDF via `ExportAsFixedFormat`
+- `_replace_charts_with_images_pptx()` - Uses python-pptx to remove chart shapes and insert static PNGs at the same position/size
+- `make_distribution_static()` - Orchestrator with 3-tier strategy:
+  1. **COM preferred**: Export chart shapes as images, replace in PPTX, export PDF
+  2. **COM fallback**: If image export fails, export to PDF as deliverable
+  3. **No COM**: Warn and produce non-static PPTX output
 
-3. **`src/counter_risk/pipeline/run.py`** — After `_write_outputs`, if `config.distribution_static is True`, call `make_distribution_static` on the output PPT
+### 3. `src/counter_risk/pipeline/run.py` - Pipeline integration
+In `_write_outputs`, add conditional branch: when `config.distribution_static` is True, call `make_distribution_static` instead of `_refresh_ppt_links`. The static path replaces linked charts with images and produces a PDF. When False, existing link-refresh behavior is unchanged.
 
-4. **`tests/integrations/test_distribution_static.py`** — Tests for:
-   - Config flag acceptance (default False)
-   - Chart shape detection using python-pptx
-   - Fallback logic when COM unavailable (warning + non-static outputs still produced)
-   - PDF export path when COM available but image export fails
+### 4. `tests/test_static_distribution.py` - Tests
+- Config defaults test (`distribution_static` defaults to False)
+- Config accepts True test
+- COM availability returns False on Linux
+- Fallback warns when COM unavailable (writes warning + produces non-static output)
+- File copy behavior when source != output
+- Same-path handling
+- Warning message content verification
+- Shape type ID coverage
 
-5. **`src/counter_risk/integrations/__init__.py`** — Export new symbols
+**All code is ready to write. The session needs file write permissions to proceed.**
