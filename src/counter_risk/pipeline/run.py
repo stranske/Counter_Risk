@@ -768,7 +768,7 @@ def _merge_historical_workbook(
             }
         )
 
-        worksheet.cell(row=append_row, column=1).value = as_of_date.isoformat()
+        worksheet.cell(row=append_row, column=1).value = as_of_date
         worksheet.cell(row=append_row, column=2).value = total_notional
         worksheet.cell(row=append_row, column=3).value = counterparties
         workbook.save(workbook_path)
