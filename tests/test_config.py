@@ -38,7 +38,61 @@ def test_load_config_raises_for_invalid_field_types(tmp_path: Path) -> None:
         "\n".join(
             [
                 "as_of_date: not-a-date",
+                "run_date: not-a-date",
                 "mosers_all_programs_xlsx: 123",
+                "mosers_ex_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+                "mosers_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+                "hist_all_programs_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+                "hist_ex_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+                "hist_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+                "monthly_pptx: docs/Ratings Instructiosns/Monthly Counterparty Exposure Report.pptx",
+                "output_root: runs/test",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Configuration validation failed"):
+        load_config(bad_config)
+
+
+def test_load_config_parses_optional_run_date(tmp_path: Path) -> None:
+    config_path = tmp_path / "with_run_date.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                "run_date: 2026-01-05",
+                "mosers_all_programs_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
+                "mosers_ex_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+                "mosers_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+                "hist_all_programs_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+                "hist_ex_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+                "hist_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+                "monthly_pptx: docs/Ratings Instructiosns/Monthly Counterparty Exposure Report.pptx",
+                "output_root: runs/test",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+    assert config.as_of_date is not None
+    assert config.as_of_date.isoformat() == "2025-12-31"
+    assert config.run_date is not None
+    assert config.run_date.isoformat() == "2026-01-05"
+
+
+def test_load_config_raises_for_invalid_run_date_format(tmp_path: Path) -> None:
+    bad_config = tmp_path / "invalid_run_date.yml"
+    bad_config.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                "run_date: 2026-01-05T00:00:00Z",
+                "mosers_all_programs_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
                 "mosers_ex_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
                 "mosers_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
                 "hist_all_programs_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
