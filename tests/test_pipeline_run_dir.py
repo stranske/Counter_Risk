@@ -201,7 +201,7 @@ def test_pipeline_run_directory_includes_run_date_when_configured(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
-        lambda *, run_dir, config, warnings: [],
+        lambda *, run_dir, config, as_of_date, warnings: [],
     )
 
     run_dir = run_pipeline(config_path)
