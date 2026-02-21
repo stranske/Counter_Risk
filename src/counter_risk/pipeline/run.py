@@ -73,14 +73,27 @@ def reconcile_series_coverage(
     *,
     parsed_data_by_sheet: Mapping[str, Mapping[str, Any]],
     historical_series_headers_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]],
+    variant: str | None = None,
+    expected_segments_by_variant: (
+        Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
+    ) = None,
 ) -> dict[str, Any]:
     """Reconcile parsed series labels against historical workbook headers per sheet.
 
-    This scaffold establishes the reconciliation function contract. Follow-on slices
-    populate extraction/comparison logic and expanded reporting details.
+    Compares current-month series labels from parsed tables against historical workbook
+    headers and optionally validates variant-specific segment expectations.
     """
 
     by_sheet: dict[str, dict[str, Any]] = {}
+    missing_series: list[dict[str, Any]] = []
+    missing_segments: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    gap_count = 0
+
+    expected_segments = _expected_segments_for_variant(
+        variant=variant,
+        expected_segments_by_variant=expected_segments_by_variant,
+    )
     sheet_names = sorted(
         set(parsed_data_by_sheet).union(historical_series_headers_by_sheet), key=str.casefold
     )
@@ -117,16 +130,92 @@ def reconcile_series_coverage(
                 if value
             }
         )
+        current_series_labels = sorted(set(counterparties_in_data).union(clearing_houses_in_data))
+        missing_from_historical = sorted(
+            set(current_series_labels).difference(historical_series_headers), key=str.casefold
+        )
+        missing_from_data = sorted(
+            set(historical_series_headers).difference(current_series_labels), key=str.casefold
+        )
+        parsed_segments = _extract_segments_from_records(parsed_sections)
+        missing_expected_segments = sorted(
+            expected_segments.difference(parsed_segments), key=str.casefold
+        )
+
+        if missing_from_historical:
+            gap_count += len(missing_from_historical)
+            missing_series.append(
+                {
+                    "sheet": sheet_name,
+                    "missing_from_historical_headers": missing_from_historical,
+                    "data_source_context": "counterparties_and_clearing_houses",
+                }
+            )
+            warnings.append(
+                "Reconciliation gap in sheet "
+                f"{sheet_name!r}: series present in parsed data but missing from historical "
+                f"headers ({', '.join(missing_from_historical)})"
+            )
+
+        if missing_expected_segments:
+            gap_count += len(missing_expected_segments)
+            missing_segments.append(
+                {
+                    "variant": variant,
+                    "sheet": sheet_name,
+                    "expected_segment_identifiers": missing_expected_segments,
+                }
+            )
+            warnings.append(
+                "Reconciliation gap in variant "
+                f"{variant!r} sheet {sheet_name!r}: expected segments missing from parsed "
+                f"results ({', '.join(missing_expected_segments)})"
+            )
+
         by_sheet[sheet_name] = {
             "counterparties_in_data": counterparties_in_data,
             "clearing_houses_in_data": clearing_houses_in_data,
             "historical_series_headers": historical_series_headers,
-            "current_series_labels": sorted(
-                set(counterparties_in_data).union(clearing_houses_in_data)
-            ),
+            "current_series_labels": current_series_labels,
+            "missing_from_historical_headers": missing_from_historical,
+            "missing_from_data": missing_from_data,
+            "segments_in_data": sorted(parsed_segments, key=str.casefold),
+            "missing_expected_segments": missing_expected_segments,
         }
 
-    return {"by_sheet": by_sheet, "gap_count": 0, "warnings": []}
+    return {
+        "by_sheet": by_sheet,
+        "gap_count": gap_count,
+        "warnings": warnings,
+        "missing_series": missing_series,
+        "missing_segments": missing_segments,
+    }
+
+
+def _expected_segments_for_variant(
+    *,
+    variant: str | None,
+    expected_segments_by_variant: Mapping[str, tuple[str, ...] | list[str] | set[str]] | None,
+) -> set[str]:
+    if not variant or not expected_segments_by_variant:
+        return set()
+
+    for key, values in expected_segments_by_variant.items():
+        if str(key).strip().casefold() != variant.strip().casefold():
+            continue
+        return {str(value).strip() for value in values if str(value).strip()}
+    return set()
+
+
+def _extract_segments_from_records(parsed_sections: Mapping[str, Any]) -> set[str]:
+    segments: set[str] = set()
+    for table in parsed_sections.values():
+        for record in _records(table):
+            raw_segment = record.get("segment", record.get("Segment", ""))
+            label = str(raw_segment).strip()
+            if label:
+                segments.add(label)
+    return segments
 
 
 def run_pipeline(config_path: str | Path) -> Path:
