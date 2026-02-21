@@ -81,9 +81,23 @@ def reconcile_series_coverage(
     """
 
     by_sheet: dict[str, dict[str, Any]] = {}
-    for sheet_name, parsed_sections in parsed_data_by_sheet.items():
+    sheet_names = sorted(
+        set(parsed_data_by_sheet).union(historical_series_headers_by_sheet), key=str.casefold
+    )
+    for sheet_name in sheet_names:
+        parsed_sections = parsed_data_by_sheet.get(sheet_name, {})
         totals_records = _records(parsed_sections.get("totals", []))
         futures_records = _records(parsed_sections.get("futures", []))
+        historical_series_headers = sorted(
+            {
+                value
+                for value in (
+                    str(header).strip()
+                    for header in historical_series_headers_by_sheet.get(sheet_name, ())
+                )
+                if value
+            }
+        )
 
         counterparties_in_data = sorted(
             {
@@ -106,12 +120,12 @@ def reconcile_series_coverage(
         by_sheet[sheet_name] = {
             "counterparties_in_data": counterparties_in_data,
             "clearing_houses_in_data": clearing_houses_in_data,
+            "historical_series_headers": historical_series_headers,
             "current_series_labels": sorted(
                 set(counterparties_in_data).union(clearing_houses_in_data)
             ),
         }
 
-    _ = historical_series_headers_by_sheet
     return {"by_sheet": by_sheet, "gap_count": 0, "warnings": []}
 
 
