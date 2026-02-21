@@ -8,10 +8,10 @@ tasks:
       to normalize parsed counterparties, compare against normalized mapping keys,
       and emit warn-mode warnings including both raw and normalized names (without
       aborting).
-    status: doing
+    status: done
     started_at: '2026-02-21T19:17:56Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-21T19:18:06Z'
+    commit: 18c4d373697f5f2dbfce6c46e11fce29098e83f2
     notes: []
   - id: task-02
     title: 'Define scope for: Create a function to normalize counterparty names from
