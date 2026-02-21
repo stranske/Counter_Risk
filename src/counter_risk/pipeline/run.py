@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import datetime as _dt
 import hashlib
 import logging
 import platform
 import shutil
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import date
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -241,7 +242,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         LOGGER.exception("pipeline_failed stage=input_validation config_path=%s", config_path)
         raise RuntimeError("Pipeline failed during input validation stage") from exc
 
-    as_of_date = config.as_of_date or datetime.now(tz=UTC).date()
+    as_of_date = config.as_of_date or _dt.datetime.now(tz=UTC).date()
     try:
         run_dir = _create_run_directory(as_of_date=as_of_date)
     except Exception as exc:
@@ -1099,7 +1100,7 @@ def _write_needs_mapping_updates(
     impacted_series_count: int,
     impacted_rows_count: int,
 ) -> Path:
-    timestamp = datetime.now(tz=UTC).isoformat()
+    timestamp = _dt.datetime.now(tz=UTC).isoformat()
     lines: list[str] = [
         "Counter Risk Reconciliation Gaps",
         f"timestamp_utc: {timestamp}",
@@ -1146,3 +1147,7 @@ def _write_needs_mapping_updates(
     output_path = run_dir / "NEEDS_MAPPING_UPDATES.txt"
     output_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     return output_path
+try:
+    UTC = _dt.UTC
+except AttributeError:  # pragma: no cover -- Python <3.11 fallback
+    UTC = _dt.timezone.utc  # noqa: UP017
