@@ -1,0 +1,607 @@
+version: 1
+issue: 36
+base: main
+branch: codex/issue-36
+tasks:
+  - id: task-01
+    title: Update config schema/parsing to support optional `as_of_date` and optional
+      `run_date`
+    status: done
+    started_at: '2026-02-17T23:03:37Z'
+    finished_at: '2026-02-17T23:03:48Z'
+    commit: ada08c6ed2a3f01d0d8b83fe1abb969ec9132269
+    notes: []
+  - id: task-02
+    title: 'Define scope for: Define the config schema fields for optional as_of_date
+      and optional run_date with appropriate types (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement focused slice for: Define the config schema fields for optional
+      as_of_date and optional run_date with appropriate types (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Validate focused slice for: Define the config schema fields for optional
+      as_of_date and optional run_date with appropriate types (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define scope for: Define the config schema fields for optional as_of_date
+      and optional run_date with validation rules (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement focused slice for: Define the config schema fields for optional
+      as_of_date and optional run_date with validation rules (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Validate focused slice for: Define the config schema fields for optional
+      as_of_date and optional run_date with validation rules (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement parsing logic to read as_of_date (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'run_date from configuration files into the config object (verify: config
+      validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Add unit tests verifying config parsing handles present, absent, (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'invalid date values correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Create `dates.py` module with `derive_as_of_date(config, cprs_headers)`
+      implementing precedence: (1) `config.as_of_date`, else (2) parse from input
+      CPRS headers, else raise an error'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Create the dates.py module with basic structure (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Create the dates.py module with imports (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Define scope for: Implement derive_as_of_date function that checks config.as_of_date
+      first (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Implement focused slice for: Implement derive_as_of_date function that
+      checks config.as_of_date first (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Validate focused slice for: Implement derive_as_of_date function that
+      checks config.as_of_date first (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'returns it if present (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Define scope for: Add CPRS header parsing logic to extract date when config.as_of_date
+      is not provided (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Implement focused slice for: Add CPRS header parsing logic to extract
+      date when config.as_of_date is not provided (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Validate focused slice for: Add CPRS header parsing logic to extract date
+      when config.as_of_date is not provided (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Define scope for: Implement error handling that raises a clear exception
+      when neither source provides a valid date (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Implement focused slice for: Implement error handling that raises a clear
+      exception when neither source provides a valid date (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Validate focused slice for: Implement error handling that raises a clear
+      exception when neither source provides a valid date (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Write unit tests covering all three precedence cases (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'edge cases for derive_as_of_date (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Create `dates.py` module with `derive_run_date(config, tzinfo=None)` defaulting
+      to today's date in local timezone unless `config.run_date` is supplied
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Update writers/entrypoints to use `dates.py` for all date derivation instead
+      of local/inline logic
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Identify all writer modules (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'entrypoints that currently perform date derivation inline (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Define scope for: Refactor each writer module to import (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Implement focused slice for: Refactor each writer module to import (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Validate focused slice for: Refactor each writer module to import (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'use dates.py functions instead of local date logic (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Define scope for: Refactor each entrypoint to import (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Implement focused slice for: Refactor each entrypoint to import (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Validate focused slice for: Refactor each entrypoint to import (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'use dates.py functions instead of inline date calculations (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Update tests for each modified writer (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: entrypoint to verify correct dates.py integration
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: Update historical workbook append logic to use `as_of_date` exclusively
+      as the appended row date
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: Update output folder naming and filenames to include `as_of_date` (and
+      optionally `run_date`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'Define scope for: Update output folder naming logic to incorporate as_of_date
+      in the directory path structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Implement focused slice for: Update output folder naming logic to incorporate
+      as_of_date in the directory path structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Validate focused slice for: Update output folder naming logic to incorporate
+      as_of_date in the directory path structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Update filename generation logic to include as_of_date (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'optionally run_date in output file names (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'Add tests verifying folder (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: 'filename patterns match expected formats with date values (verify: formatter
+      passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: Update manifest writing to include both `as_of_date` and `run_date` in
+      `manifest.json`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: Add tests verifying derived dates are stable/deterministic for fixtures
+      and that appended row date equals `as_of_date`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: Write tests that verify derive_as_of_date
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: 'Define scope for: derive_run_date produce consistent results when called
+      multiple times with the same inputs (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: 'Implement focused slice for: derive_run_date produce consistent results
+      when called multiple times with the same inputs (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: 'Validate focused slice for: derive_run_date produce consistent results
+      when called multiple times with the same inputs (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: 'Define scope for: Write tests that verify historical workbook appended
+      rows contain as_of_date in the date column'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: 'Implement focused slice for: Write tests that verify historical workbook
+      appended rows contain as_of_date in the date column'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: 'Validate focused slice for: Write tests that verify historical workbook
+      appended rows contain as_of_date in the date column'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: 'Define scope for: Create fixture data with known dates to support deterministic
+      testing of date derivation logic (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: 'Implement focused slice for: Create fixture data with known dates to support
+      deterministic testing of date derivation logic (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: 'Validate focused slice for: Create fixture data with known dates to support
+      deterministic testing of date derivation logic (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: '`manifest.json` includes both `as_of_date` and `run_date` on every run'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: Historical workbook appended rows use `as_of_date` (and do not use `run_date`
+      for the row date)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: When `as_of_date` cannot be derived from config or CPRS headers, the pipeline
+      exits non-zero with a clear error message
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: Extend config to include optional `as_of_date` and optional `run_date`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: 'Implement `derive_as_of_date()` from inputs (CPRS headers) with clear
+      fallback precedence:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-67
+    title: (1) config.as_of_date, else (2) parse from input headers, else hard fail
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-68
+    title: Implement `derive_run_date()` default = today (local timezone) unless supplied
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-69
+    title: Add a centralized `dates.py` module used by all writers
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-70
+    title: Update historical append logic to use as_of_date exclusively for row date
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-71
+    title: Update output folder naming and filenames to include as_of_date (and optionally
+      run_date)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-72
+    title: 'Add tests that verify:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-73
+    title: derived dates are stable and deterministic for fixtures
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-74
+    title: appended row date equals as_of_date
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-75
+    title: Every run writes both as_of_date and run_date into manifest.json
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-76
+    title: Historical workbook appended rows always use as_of_date (never run_date)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-77
+    title: If date cannot be derived, pipeline fails with a clear error message
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

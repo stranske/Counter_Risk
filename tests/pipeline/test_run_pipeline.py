@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sys
 import types
 from datetime import date
@@ -206,6 +207,7 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["as_of_date"] == "2025-12-31"
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", manifest["run_date"])
     assert manifest["config_snapshot"]["output_root"] == str(output_root)
 
     for output_path in manifest["output_paths"]:
@@ -415,6 +417,40 @@ def test_run_pipeline_wraps_parse_errors(
 
     assert isinstance(exc_info.value.__cause__, ValueError)
     assert "bad parser input" in str(exc_info.value.__cause__)
+
+
+def test_run_pipeline_fails_when_as_of_date_is_not_derivable(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._collect_cprs_header_candidates", lambda config: []
+    )
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during date derivation stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "Unable to derive as_of_date" in str(exc_info.value.__cause__)
 
 
 def test_run_pipeline_wraps_parse_validation_errors(
@@ -774,7 +810,7 @@ def test_merge_historical_workbook_prefers_configured_total_sheet(
         warnings=[],
     )
 
-    assert target.cell(row=3, column=1).value == "2026-02-13"
+    assert target.cell(row=3, column=1).value == date(2026, 2, 13)
     assert target.cell(row=3, column=2).value == pytest.approx(10.0)
     assert target.cell(row=3, column=3).value == 1
     assert decoy.cell(row=3, column=1).value is None
@@ -814,7 +850,7 @@ def test_merge_historical_workbook_uses_deterministic_fallback_sheet_when_prefer
         warnings=[],
     )
 
-    assert alpha.cell(row=3, column=1).value == "2026-02-13"
+    assert alpha.cell(row=3, column=1).value == date(2026, 2, 13)
     assert alpha.cell(row=3, column=2).value == pytest.approx(25.0)
     assert alpha.cell(row=3, column=3).value == 2
     assert zulu.cell(row=3, column=1).value is None
