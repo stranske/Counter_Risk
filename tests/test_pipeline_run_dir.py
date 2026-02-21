@@ -72,8 +72,10 @@ def test_pipeline_writes_outputs_only_to_repo_root_runs_date_dir(
         output.write_bytes(b"historical")
         return [output]
 
-    def _fake_write_outputs(*, run_dir: Path, config: Any, warnings: list[str]) -> list[Path]:
-        _ = (config, warnings)
+    def _fake_write_outputs(
+        *, run_dir: Path, config: Any, as_of_date: Any, warnings: list[str]
+    ) -> list[Path]:
+        _ = (config, as_of_date, warnings)
         workbook = run_dir / "current-month.xlsx"
         pptx = run_dir / "current-month.pptx"
         workbook.write_bytes(b"monthly-workbook")
@@ -141,8 +143,10 @@ def test_run_directory_creation_same_date_repeat_run_uses_unique_directory_suffi
         output.write_bytes(b"historical")
         return [output]
 
-    def _fake_write_outputs(*, run_dir: Path, config: Any, warnings: list[str]) -> list[Path]:
-        _ = (config, warnings)
+    def _fake_write_outputs(
+        *, run_dir: Path, config: Any, as_of_date: Any, warnings: list[str]
+    ) -> list[Path]:
+        _ = (config, as_of_date, warnings)
         output = run_dir / "current-month.xlsx"
         output.write_bytes(b"monthly-workbook")
         return [output]
@@ -197,7 +201,7 @@ def test_pipeline_run_directory_includes_run_date_when_configured(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
-        lambda *, run_dir, config, warnings: [],
+        lambda *, run_dir, config, as_of_date, warnings: [],
     )
 
     run_dir = run_pipeline(config_path)
