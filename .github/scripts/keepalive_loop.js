@@ -31,6 +31,8 @@ const TIMEOUT_VARIABLE_NAMES = [
   'WORKFLOW_TIMEOUT_WARNING_MINUTES',
 ];
 
+// NOTE: Prompt files live under .github/codex/prompts/ — this directory name is
+// an API contract (baked into consumer repos). The prompts are agent-agnostic.
 const PROMPT_ROUTES = {
   fix_ci: {
     mode: 'fix_ci',
@@ -49,6 +51,15 @@ const PROMPT_ROUTES = {
     file: '.github/codex/prompts/keepalive_next_task.md',
   },
 };
+
+const AGENT_EXECUTION_ACTIONS = new Set(['run', 'fix', 'conflict']);
+
+// Resolve default agent from registry
+let _defaultAgent = 'codex';
+try {
+  const { loadAgentRegistry } = require('./agent_registry.js');
+  _defaultAgent = loadAgentRegistry().default_agent || 'codex';
+} catch (_) { /* registry not available */ }
 
 function normalise(value) {
   return String(value ?? '').trim();
@@ -820,12 +831,13 @@ function classifyFailureDetails({ action, runResult, summaryReason, agentExitCod
   }
 
   // Detect dirty git state issues - agent saw unexpected changes before starting.
-  // These are typically workflow artifacts (.workflows-lib, codex-session-*.jsonl)
+  // These are typically workflow artifacts (.workflows-lib, agent session *.jsonl)
   // that should have been cleaned up but weren't. Classify as transient.
   const dirtyGitPatterns = [
     /unexpected\s*changes/i,
     /\.workflows-lib.*modified/i,
-    /codex-session.*untracked/i,
+    /codex-session.*untracked/i, // Codex-specific session artifact pattern
+    /agent-session.*untracked/i,
     /existing\s*changes/i,
     /how\s*would\s*you\s*like\s*me\s*to\s*proceed/i,
     /before\s*making\s*edits/i,
@@ -846,7 +858,7 @@ function classifyFailureDetails({ action, runResult, summaryReason, agentExitCod
     if (category === ERROR_CATEGORIES.transient) {
       type = 'infrastructure';
     } else if (agentExitCode && agentExitCode !== '0') {
-      type = 'codex';
+      type = 'agent';
     } else {
       type = 'infrastructure';
     }
@@ -1085,7 +1097,9 @@ function extractConfigSnippet(body) {
     return '';
   }
 
+  // API contract: all naming variants exist in production PR bodies
   const commentBlockPatterns = [
+    /<!--\s*agent-config:start\s*-->([\s\S]*?)<!--\s*agent-config:end\s*-->/i,
     /<!--\s*keepalive-config:start\s*-->([\s\S]*?)<!--\s*keepalive-config:end\s*-->/i,
     /<!--\s*codex-config:start\s*-->([\s\S]*?)<!--\s*codex-config:end\s*-->/i,
     /<!--\s*keepalive-config:\s*({[\s\S]*?})\s*-->/i,
@@ -1934,11 +1948,15 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
 
     hasAgentLabel = requestedAgentKeys.length > 0;
     let agentType = '';
+    let agentRoutingMode = 'default';
+    let delegationReason = '';
+    let delegationShouldSwitch = false;
     if (hasAgentLabel) {
       try {
         const { resolveAgentRoutingFromLabels } = require('./agent_registry.js');
         const routing = resolveAgentRoutingFromLabels(routingLabelCandidates.length ? routingLabelCandidates : pr.labels);
         agentType = routing.agentKey;
+        agentRoutingMode = routing.mode;
       } catch (error) {
         // Treat any routing failure (unknown agent, conflicting labels, missing helper)
         // as invalid to avoid enabling keepalive when no downstream runner is eligible.
@@ -1966,6 +1984,37 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
       trace: config.trace,
     });
     const state = stateResult.state || {};
+
+    // agent:auto delegation — resolve actual agent via policy after state is available
+    if (agentRoutingMode === 'auto') {
+      try {
+        const { decideNextAgent } = require('./agent_delegation_policy.js');
+        const { loadAgentRegistry } = require('./agent_registry.js');
+        const registry = loadAgentRegistry();
+        // Build secrets availability from env vars set by the workflow
+        const secrets = {};
+        if (process.env.HAS_CODEX_AUTH === 'true') secrets.CODEX_AUTH_JSON = true;
+        if (process.env.HAS_CLAUDE_AUTH === 'true') secrets.CLAUDE_AUTH_JSON = true;
+        const decision = decideNextAgent({
+          state,
+          labels: labels.map(String),
+          secrets,
+          registry,
+          core,
+        });
+        if (decision.agent) {
+          agentType = decision.agent;
+          delegationReason = decision.reason;
+          delegationShouldSwitch = Boolean(decision.shouldSwitch);
+          core?.info?.(`Delegation policy: ${decision.agent} (${decision.reason}, switch=${decision.shouldSwitch})`);
+        } else {
+          core?.warning?.(`Delegation policy returned no agent: ${decision.reason}`);
+        }
+      } catch (err) {
+        core?.warning?.(`Delegation policy failed, keeping ${agentType}: ${err.message}`);
+      }
+    }
+
     // Prefer state iteration unless config explicitly sets it (0 from config is default, not explicit)
     const configHasExplicitIteration = config.iteration > 0;
     const iteration = configHasExplicitIteration ? config.iteration : toNumber(state.iteration, 0);
@@ -2002,6 +2051,13 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
       ? 0
       : prevRoundsWithoutCompletion + (iteration > 0 ? 1 : 0);
 
+    // Track consecutive zero-activity rounds (no files + no tasks completed).
+    // Treat the persisted state as the source of truth; updateKeepaliveLoopSummary
+    // increments or resets this counter after each agent run.
+    const zeroActivityThreshold = 2;
+    const persistedConsecutiveZeroActivityRounds = toNumber(state.consecutive_zero_activity_rounds, 0);
+    const shouldStopForZeroActivity = persistedConsecutiveZeroActivityRounds >= zeroActivityThreshold;
+
     const prevCompleteGateFailureRounds = toNumber(state.complete_gate_failure_rounds, 0);
     const completeGateFailureRounds = allComplete && gateNormalized !== 'success'
       ? prevCompleteGateFailureRounds + 1
@@ -2024,9 +2080,10 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
     // An iteration is productive if it has a reasonable productivity score
     const isProductive = productivityScore >= 20 && !hasRecentFailures;
 
-    // max_iterations is a "stuck detection" threshold, not a hard cap
-    // Continue past max if productive work is happening
-    const shouldStopForMaxIterations = iteration >= maxIterations && !isProductive;
+    // max_iterations caps *unproductive* runs.
+    const hasMaxIterations = maxIterations > 0;
+    const reachedMaxIterations = hasMaxIterations && iteration >= maxIterations;
+    const shouldStopForMaxIterations = reachedMaxIterations && !isProductive;
 
     // Build task appendix for the agent prompt (after state load for reconciliation info)
     const taskAppendix = buildTaskAppendix(normalisedSections, checkboxCounts, state, { prBody: pr.body });
@@ -2127,6 +2184,16 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
         action = 'stop';
         reason = 'tasks-complete';
       }
+    } else if (shouldStopForZeroActivity) {
+      // Zero file changes and zero task completion for multiple consecutive rounds = infrastructure failure.
+      // Stop immediately — no amount of retries will help without manual intervention.
+      action = 'stop';
+      reason = 'zero-activity-infrastructure';
+      if (core) {
+        core.warning(
+          `Agent produced 0 file changes and 0 tasks completed for ${persistedConsecutiveZeroActivityRounds} consecutive rounds — likely infrastructure failure (auth, permissions, sandbox). Stopping.`,
+        );
+      }
     } else if (shouldStopForMaxIterations && forceRetry && tasksRemaining) {
       action = 'run';
       reason = 'force-retry-max-iterations';
@@ -2184,6 +2251,9 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
       hasAgentLabel,
       hasHighPrivilege,
       agentType,
+      agentRoutingMode,
+      delegationReason,
+      delegationShouldSwitch,
       taskAppendix,
       keepaliveEnabled,
       stateCommentId: stateResult.commentId || 0,
@@ -2214,7 +2284,7 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
         action: 'defer',
         reason: 'api-rate-limit',
         promptMode: 'normal',
-        promptFile: '.github/codex/prompts/keepalive_next_task.md',
+        promptFile: PROMPT_ROUTES.normal.file,
         gateConclusion: '',
         config: {},
         iteration: 0,
@@ -2280,9 +2350,14 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
     const failureThresholdInput = inputs.failureThreshold ?? inputs.failure_threshold;
     const roundsWithoutTaskCompletionInput =
       inputs.roundsWithoutTaskCompletion ?? inputs.rounds_without_task_completion;
-    const agentType = normalise(inputs.agent_type ?? inputs.agentType) || 'codex';
+    const agentType = normalise(inputs.agent_type ?? inputs.agentType) || _defaultAgent;
     const runResult = normalise(inputs.runResult || inputs.run_result);
     const stateTrace = normalise(inputs.trace || inputs.keepalive_trace || '');
+
+    // Delegation policy inputs (from evaluate step when agent:auto is active)
+    const delegationReason = normalise(inputs.delegation_reason ?? inputs.delegationReason);
+    const delegationShouldSwitch = toBool(inputs.delegation_should_switch ?? inputs.delegationShouldSwitch, false);
+    const agentRoutingMode = normalise(inputs.agent_routing_mode ?? inputs.agentRoutingMode);
 
     const { state: previousState, commentId } = await loadKeepaliveState({
       github,
@@ -2339,7 +2414,7 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
       ? toNumber(roundsWithoutTaskCompletionInput, 0)
       : toNumber(previousState?.rounds_without_task_completion, 0);
 
-    // Agent output details (agent-agnostic, with fallback to old codex_ names)
+    // Agent output details (agent-agnostic, with backwards-compat fallback to codex_ names)
     const agentExitCode = normalise(inputs.agent_exit_code ?? inputs.agentExitCode ?? inputs.codex_exit_code ?? inputs.codexExitCode);
     const agentChangesMade = normalise(inputs.agent_changes_made ?? inputs.agentChangesMade ?? inputs.codex_changes_made ?? inputs.codexChangesMade);
     const agentCommitSha = normalise(inputs.agent_commit_sha ?? inputs.agentCommitSha ?? inputs.codex_commit_sha ?? inputs.codexCommitSha);
@@ -2549,6 +2624,25 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
       allTasksComplete && gateConclusion && gateConclusion !== 'success'
         ? previousCompleteGateFailureRounds + 1
         : 0;
+    const previousZeroActivityRounds = toNumber(previousState?.consecutive_zero_activity_rounds, 0);
+    const previousTasksTotal = toNumber(previousTasks.total, tasksTotal);
+    const previousTasksUnchecked = toNumber(previousTasks.unchecked, tasksUnchecked);
+    const totalsStable = previousTasksTotal === tasksTotal;
+    const checklistChanged = previousTasksTotal !== tasksTotal || previousTasksUnchecked !== tasksUnchecked;
+    // Clamp to zero: tasksCompletedThisRound can be negative when new tasks are added,
+    // tasks are re-opened (unchecked), or task parsing changes between iterations.
+    // Negative deltas should not be treated as activity for zero-activity detection.
+    const zeroActivityTaskDelta = totalsStable ? Math.max(0, tasksCompletedThisRound) : 0;
+    const actionRunsAgent = AGENT_EXECUTION_ACTIONS.has(action);
+    const consecutiveZeroActivityRounds =
+      !actionRunsAgent
+        ? previousZeroActivityRounds
+        : (currentIteration > 0 &&
+            agentFilesChanged === 0 &&
+            zeroActivityTaskDelta === 0 &&
+            !checklistChanged
+            ? previousZeroActivityRounds + 1
+            : 0);
     const metricsIteration = action === 'run' ? currentIteration + 1 : currentIteration;
     const durationMs = resolveDurationMs({
       durationMs: toOptionalNumber(inputs.duration_ms ?? inputs.durationMs),
@@ -2654,6 +2748,26 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
       }
       const thresholdSuffix = thresholdParts.length ? ` (thresholds: ${thresholdParts.join(', ')})` : '';
       core.warning(`Timeout warning (${reason}): ${percent}% consumed, ${remaining}m remaining${thresholdSuffix}.`);
+    }
+
+    // Add delegation info when in auto mode
+    if (agentRoutingMode === 'auto' && delegationReason) {
+      summaryLines.push(
+        '',
+        '### Agent Delegation (auto mode)',
+        `| Field | Value |`,
+        `|-------|-------|`,
+        `| Selected agent | ${agentDisplayName} |`,
+        `| Reason | ${delegationReason} |`,
+      );
+      if (delegationShouldSwitch) {
+        const prevAgent = previousState?.current_agent || 'unknown';
+        summaryLines.push(`| Switch | ${prevAgent} → ${agentType} |`);
+      }
+      const switchCount = toNumber(previousState?.switch_count, 0) + (delegationShouldSwitch ? 1 : 0);
+      if (switchCount > 0) {
+        summaryLines.push(`| Total switches | ${switchCount} |`);
+      }
     }
 
     // Add agent run details if we ran an agent
@@ -2956,11 +3070,18 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
       running: false,
       // Track task reconciliation for next iteration
       needs_task_reconciliation: madeChangesButNoTasksChecked,
-      // Productivity tracking for evidence-based decisions
-      last_files_changed: agentFilesChanged,
-      prev_files_changed: toNumber(previousState?.last_files_changed, 0),
+      // Preserve last/previous file-change counts when no agent actually ran so
+      // that productivity history isn't destroyed by wait/review iterations.
+      last_files_changed: actionRunsAgent
+        ? agentFilesChanged
+        : toNumber(previousState?.last_files_changed, 0),
+      prev_files_changed: actionRunsAgent
+        ? toNumber(previousState?.last_files_changed, 0)
+        : toNumber(previousState?.prev_files_changed, 0),
       // Track consecutive rounds without task completion for progress review
       rounds_without_task_completion: roundsWithoutTaskCompletion,
+      // Infrastructure failure detection (zero files + zero tasks multiple rounds)
+      consecutive_zero_activity_rounds: consecutiveZeroActivityRounds,
       complete_gate_failure_rounds: completeGateFailureRounds,
       complete_gate_failure_rounds_max: completeGateFailureMax,
       // Quality metrics for analysis validation
@@ -2984,6 +3105,56 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
         warning: timeoutStatus.warning || null,
       },
     };
+
+    // Persist agent delegation state when in auto mode
+    if (agentRoutingMode === 'auto' || previousState?.current_agent) {
+      const previousDelegationLog = Array.isArray(previousState?.delegation_log)
+        ? previousState.delegation_log
+        : [];
+      const previousSwitchCount = toNumber(previousState?.switch_count, 0);
+      const previousLastSwitchIteration = toNumber(previousState?.last_switch_iteration, 0);
+      const previousEffectivenessHistory = Array.isArray(previousState?.effectiveness_history)
+        ? previousState.effectiveness_history
+        : [];
+
+      // Build effectiveness entry for this round (only when agent ran)
+      const effectivenessEntry = action === 'run' ? {
+        iteration: nextIteration,
+        agent: agentType,
+        commits: agentCommitSha ? 1 : 0,
+        tasks: Math.max(0, tasksCompletedThisRound),
+        gate: gateConclusion === 'success' ? 'pass' : 'fail',
+        files_changed: agentFilesChanged,
+      } : null;
+
+      const effectivenessHistory = effectivenessEntry
+        ? [...previousEffectivenessHistory, effectivenessEntry].slice(-10)
+        : previousEffectivenessHistory;
+
+      newState.current_agent = agentType;
+      newState.delegation_reason = delegationReason || previousState?.delegation_reason || '';
+      newState.effectiveness_history = effectivenessHistory;
+
+      if (delegationShouldSwitch) {
+        newState.switch_count = previousSwitchCount + 1;
+        newState.last_switch_iteration = nextIteration;
+        newState.delegation_log = [
+          ...previousDelegationLog,
+          {
+            iteration: nextIteration,
+            previous_agent: previousState?.current_agent || '',
+            chosen_agent: agentType,
+            reason: delegationReason,
+            timestamp: new Date().toISOString(),
+          },
+        ].slice(-10);
+      } else {
+        newState.switch_count = previousSwitchCount;
+        newState.last_switch_iteration = previousLastSwitchIteration;
+        newState.delegation_log = previousDelegationLog;
+      }
+    }
+
     const attemptEntry = buildAttemptEntry({
       iteration: metricsIteration,
       action,
@@ -3034,7 +3205,7 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
     const attentionKey = [summaryReason, runResult, errorCategory, errorType, agentExitCode].filter(Boolean).join('|');
     const priorAttentionKey = normalise(previousAttention.key);
 
-    // NOTE: Failure comment posting removed - handled by reusable-codex-run.yml with proper deduplication
+    // NOTE: Failure comment posting removed - handled by reusable-*-run.yml with proper deduplication
     // This prevents duplicate failure notifications on PRs
 
     summaryLines.push('', formatStateComment(newState));
@@ -3166,7 +3337,7 @@ async function markAgentRunning({ github: rawGithub, context, core, inputs }) {
     return;
   }
 
-  const agentType = normalise(inputs.agent_type ?? inputs.agentType) || 'codex';
+  const agentType = normalise(inputs.agent_type ?? inputs.agentType) || _defaultAgent;
   const iteration = toNumber(inputs.iteration, 0);
   const maxIterations = toNumber(inputs.maxIterations ?? inputs.max_iterations, 0);
   const tasksTotal = toNumber(inputs.tasksTotal ?? inputs.tasks_total, 0);

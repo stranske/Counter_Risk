@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 
 class ReconciliationConfig(BaseModel):
@@ -30,6 +30,7 @@ class WorkflowConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     as_of_date: date | None = None
+    run_date: date | None = None
     mosers_all_programs_xlsx: Path | None = None
     raw_nisa_all_programs_xlsx: Path | None = None
     mosers_ex_trend_xlsx: Path
@@ -43,6 +44,25 @@ class WorkflowConfig(BaseModel):
     screenshot_inputs: dict[str, Path] = Field(default_factory=dict)
     reconciliation: ReconciliationConfig = Field(default_factory=ReconciliationConfig)
     output_root: Path = Path("runs")
+
+    @field_validator("as_of_date", "run_date", mode="before")
+    @classmethod
+    def _validate_optional_iso_date(cls, value: Any) -> Any:
+        if value is None:
+            return value
+        if isinstance(value, datetime):
+            raise ValueError("Value must be a valid ISO date (YYYY-MM-DD)")
+        if isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return None
+            try:
+                return date.fromisoformat(text)
+            except ValueError as exc:
+                raise ValueError("Value must be a valid ISO date (YYYY-MM-DD)") from exc
+        raise ValueError("Value must be a valid ISO date (YYYY-MM-DD)")
 
 
 def _format_validation_error(error: ValidationError) -> str:

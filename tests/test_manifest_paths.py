@@ -33,7 +33,11 @@ def test_manifest_paths_are_relative_and_resolve_to_existing_files(tmp_path: Pat
     workbook_path.write_bytes(b"hist")
     ppt_path.write_bytes(b"ppt")
 
-    builder = ManifestBuilder(config=_make_config(tmp_path))
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
     manifest = builder.build(
         run_dir=run_dir,
         input_hashes={"monthly_pptx": "abc123"},
@@ -59,7 +63,11 @@ def test_manifest_build_rejects_nonexistent_artifact_paths(tmp_path: Path) -> No
     run_dir = tmp_path / "runs" / "2026-02-13"
     run_dir.mkdir(parents=True)
 
-    builder = ManifestBuilder(config=_make_config(tmp_path))
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
     with pytest.raises(ValueError, match="do not exist"):
         builder.build(
             run_dir=run_dir,
@@ -79,7 +87,11 @@ def test_to_relative_artifact_path_normalizes_absolute_path_under_run_dir(tmp_pa
     artifact.parent.mkdir(parents=True, exist_ok=True)
     artifact.write_bytes(b"x")
 
-    builder = ManifestBuilder(config=_make_config(tmp_path))
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
     relative = builder._to_relative_artifact_path(run_dir=run_dir, artifact_path=artifact)
 
     assert relative == Path("histories/all.xlsx")
@@ -90,7 +102,11 @@ def test_to_relative_artifact_path_normalizes_relative_path_to_posix(tmp_path: P
     run_dir = tmp_path / "runs" / "2026-02-13_1"
     run_dir.mkdir(parents=True)
 
-    builder = ManifestBuilder(config=_make_config(tmp_path))
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
     relative = builder._to_relative_artifact_path(
         run_dir=run_dir,
         artifact_path=Path("subdir/./reports/../deck.pptx"),
@@ -104,7 +120,11 @@ def test_to_relative_artifact_path_rejects_parent_traversal_segments(tmp_path: P
     run_dir = tmp_path / "runs" / "2026-02-13_1"
     run_dir.mkdir(parents=True)
 
-    builder = ManifestBuilder(config=_make_config(tmp_path))
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
     with pytest.raises(ValueError, match=r"cannot contain '\.\.' segments"):
         builder._to_relative_artifact_path(run_dir=run_dir, artifact_path=Path("../outside.xlsx"))
 
@@ -115,6 +135,10 @@ def test_to_relative_artifact_path_rejects_absolute_path_outside_run_dir(tmp_pat
     outside = (tmp_path / "outside.xlsx").resolve()
     outside.write_bytes(b"outside")
 
-    builder = ManifestBuilder(config=_make_config(tmp_path))
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
     with pytest.raises(ValueError, match="must be within run_dir"):
         builder._to_relative_artifact_path(run_dir=run_dir, artifact_path=outside)

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import posixpath
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -17,6 +17,8 @@ class ManifestBuilder:
     """Build and write run manifests."""
 
     config: WorkflowConfig
+    as_of_date: date
+    run_date: date
 
     def build(
         self,
@@ -43,8 +45,8 @@ class ManifestBuilder:
         self._validate_artifact_paths_exist(run_dir=run_dir, relative_paths=normalized_output_paths)
         config_snapshot = self._serialize_config_snapshot(self.config)
         return {
-            "as_of_date": str(self._resolve_as_of_date(self.config)),
-            "run_date": datetime.now(tz=UTC).isoformat(),
+            "as_of_date": self.as_of_date.isoformat(),
+            "run_date": self.run_date.isoformat(),
             "run_dir": ".",
             "config_snapshot": config_snapshot,
             "input_hashes": input_hashes,
@@ -77,9 +79,6 @@ class ManifestBuilder:
             else:
                 snapshot[key] = value
         return snapshot
-
-    def _resolve_as_of_date(self, config: WorkflowConfig) -> date:
-        return config.as_of_date or datetime.now(tz=UTC).date()
 
     def _normalize_output_paths(self, *, run_dir: Path, output_paths: list[Path]) -> list[Path]:
         normalized_paths: list[Path] = []
