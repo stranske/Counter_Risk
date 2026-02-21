@@ -12,10 +12,11 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
+from counter_risk.normalize import normalize_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.writers import generate_mosers_workbook
@@ -79,6 +80,7 @@ def reconcile_series_coverage(
     expected_segments_by_variant: (
         Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
     ) = None,
+    fail_policy: Literal["warn", "strict"] = "warn",
 ) -> dict[str, Any]:
     """Reconcile parsed series labels against historical workbook headers per sheet.
 
@@ -123,6 +125,7 @@ def reconcile_series_coverage(
                 if value
             }
         )
+        normalized_counterparties_in_data = _normalized_counterparties_from_records(totals_records)
         clearing_houses_in_data = sorted(
             {
                 value
@@ -132,9 +135,29 @@ def reconcile_series_coverage(
                 if value
             }
         )
-        current_series_labels = sorted(set(counterparties_in_data).union(clearing_houses_in_data))
+        normalized_historical_series_headers = {
+            normalize_counterparty(header) for header in historical_series_headers
+        }
+        missing_normalized_counterparties = sorted(
+            set(normalized_counterparties_in_data).difference(normalized_historical_series_headers),
+            key=str.casefold,
+        )
+        missing_counterparty_labels = sorted(
+            {
+                raw_name
+                for normalized_name in missing_normalized_counterparties
+                for raw_name in normalized_counterparties_in_data.get(normalized_name, ())
+            },
+            key=str.casefold,
+        )
+        missing_clearing_houses = sorted(
+            set(clearing_houses_in_data).difference(historical_series_headers), key=str.casefold
+        )
+        current_series_labels = sorted(
+            set(counterparties_in_data).union(clearing_houses_in_data), key=str.casefold
+        )
         missing_from_historical = sorted(
-            set(current_series_labels).difference(historical_series_headers), key=str.casefold
+            set(missing_counterparty_labels).union(missing_clearing_houses), key=str.casefold
         )
         missing_from_data = sorted(
             set(historical_series_headers).difference(current_series_labels), key=str.casefold
@@ -159,6 +182,39 @@ def reconcile_series_coverage(
                 f"headers ({', '.join(missing_from_historical)})"
             )
 
+        if missing_normalized_counterparties:
+            unmapped_counterparties: list[dict[str, Any]] = []
+            for normalized_name in missing_normalized_counterparties:
+                raw_names = sorted(
+                    set(normalized_counterparties_in_data.get(normalized_name, ())),
+                    key=str.casefold,
+                )
+                raw_display = ", ".join(raw_names)
+                warnings.append(
+                    "Reconciliation unmapped counterparty in sheet "
+                    f"{sheet_name!r}: raw={raw_display!r}, normalized={normalized_name!r}"
+                )
+                unmapped_counterparties.append(
+                    {
+                        "sheet": sheet_name,
+                        "raw_counterparty_labels": raw_names,
+                        "normalized_counterparty": normalized_name,
+                    }
+                )
+
+            if fail_policy == "strict":
+                raise ValueError(
+                    "Reconciliation strict mode failed due to unmapped normalized counterparties "
+                    f"in sheet {sheet_name!r}: "
+                    + ", ".join(
+                        (
+                            f"raw={item['raw_counterparty_labels']!r} "
+                            f"normalized={item['normalized_counterparty']!r}"
+                        )
+                        for item in unmapped_counterparties
+                    )
+                )
+
         if missing_expected_segments:
             gap_count += len(missing_expected_segments)
             missing_segments.append(
@@ -176,10 +232,17 @@ def reconcile_series_coverage(
 
         by_sheet[sheet_name] = {
             "counterparties_in_data": counterparties_in_data,
+            "normalized_counterparties_in_data": sorted(
+                normalized_counterparties_in_data, key=str.casefold
+            ),
             "clearing_houses_in_data": clearing_houses_in_data,
             "historical_series_headers": historical_series_headers,
+            "normalized_historical_series_headers": sorted(
+                normalized_historical_series_headers, key=str.casefold
+            ),
             "current_series_labels": current_series_labels,
             "missing_from_historical_headers": missing_from_historical,
+            "missing_normalized_counterparties": missing_normalized_counterparties,
             "missing_from_data": missing_from_data,
             "segments_in_data": sorted(parsed_segments, key=str.casefold),
             "missing_expected_segments": missing_expected_segments,
@@ -218,6 +281,19 @@ def _extract_segments_from_records(parsed_sections: Mapping[str, Any]) -> set[st
             if label:
                 segments.add(label)
     return segments
+
+
+def _normalized_counterparties_from_records(
+    totals_records: list[dict[str, Any]],
+) -> dict[str, set[str]]:
+    normalized_to_raw: dict[str, set[str]] = {}
+    for record in totals_records:
+        raw_name = str(record.get("counterparty", "")).strip()
+        if not raw_name:
+            continue
+        normalized_name = normalize_counterparty(raw_name)
+        normalized_to_raw.setdefault(normalized_name, set()).add(raw_name)
+    return normalized_to_raw
 
 
 def run_pipeline(config_path: str | Path) -> Path:
@@ -1079,6 +1155,7 @@ def _run_reconciliation_checks(
             historical_series_headers_by_sheet=historical_headers_by_sheet,
             variant=variant,
             expected_segments_by_variant=config.reconciliation.expected_segments_by_variant,
+            fail_policy=config.reconciliation.fail_policy,
         )
         reconciliation_by_variant[variant] = result
         total_gap_count += int(result.get("gap_count", 0))
