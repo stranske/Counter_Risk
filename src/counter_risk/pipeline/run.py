@@ -8,12 +8,13 @@ import platform
 import shutil
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import date
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 from counter_risk.config import WorkflowConfig, load_config
+from counter_risk.dates import derive_as_of_date, derive_run_date
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.writers import generate_mosers_workbook
@@ -92,9 +93,17 @@ def run_pipeline(config_path: str | Path) -> Path:
         LOGGER.exception("pipeline_failed stage=input_validation config_path=%s", config_path)
         raise RuntimeError("Pipeline failed during input validation stage") from exc
 
-    as_of_date = config.as_of_date or datetime.now(tz=UTC).date()
     try:
-        run_dir = _create_run_directory(as_of_date=as_of_date)
+        cprs_headers = _collect_cprs_header_candidates(config=config)
+        as_of_date = derive_as_of_date(config, cprs_headers)
+        run_date = derive_run_date(config)
+        run_date_for_directory = config.run_date
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=date_derivation config_path=%s", config_path)
+        raise RuntimeError("Pipeline failed during date derivation stage") from exc
+
+    try:
+        run_dir = _create_run_directory(as_of_date=as_of_date, run_date=run_date_for_directory)
     except Exception as exc:
         LOGGER.exception(
             "pipeline_failed stage=run_dir_setup run_dir=%s",
@@ -155,7 +164,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         input_hashes = {
             name: _sha256_file(path) for name, path in _resolve_input_paths(runtime_config).items()
         }
-        manifest_builder = ManifestBuilder(config=config)
+        manifest_builder = ManifestBuilder(config=config, as_of_date=as_of_date, run_date=run_date)
         output_paths_for_manifest = [path.relative_to(run_dir) for path in output_paths]
         manifest = manifest_builder.build(
             run_dir=run_dir,
@@ -176,9 +185,13 @@ def run_pipeline(config_path: str | Path) -> Path:
     return run_dir
 
 
-def _create_run_directory(*, as_of_date: date) -> Path:
+def _create_run_directory(*, as_of_date: date, run_date: date | None = None) -> Path:
     runs_root = _resolve_repo_root() / "runs"
-    base_name = as_of_date.isoformat()
+    base_name = (
+        as_of_date.isoformat()
+        if run_date is None
+        else f"{as_of_date.isoformat()}__run_{run_date.isoformat()}"
+    )
     candidate_names = [base_name, *(f"{base_name}_{index}" for index in range(1, 10_000))]
 
     for candidate_name in candidate_names:
@@ -195,6 +208,56 @@ def _resolve_repo_root() -> Path:
     """Resolve the repository root for deterministic run output layout."""
 
     return Path(__file__).resolve().parents[3]
+
+
+def _collect_cprs_header_candidates(*, config: WorkflowConfig) -> list[str]:
+    header_candidates: list[str] = []
+    candidate_paths = [
+        config.mosers_all_programs_xlsx,
+        config.mosers_ex_trend_xlsx,
+        config.mosers_trend_xlsx,
+    ]
+    for path in candidate_paths:
+        if path is None:
+            continue
+        header_candidates.extend(_extract_header_text_lines(path))
+    return header_candidates
+
+
+def _extract_header_text_lines(
+    workbook_path: Path, *, max_rows: int = 15, max_cols: int = 6
+) -> list[str]:
+    try:
+        from openpyxl import load_workbook  # type: ignore[import-untyped]
+    except ModuleNotFoundError:
+        return []
+    except Exception:
+        return []
+
+    workbook = None
+    try:
+        workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+        if not workbook.sheetnames:
+            return []
+        worksheet = workbook[workbook.sheetnames[0]]
+        lines: list[str] = []
+        for row in range(1, min(int(worksheet.max_row), max_rows) + 1):
+            pieces: list[str] = []
+            for col in range(1, max_cols + 1):
+                value = worksheet.cell(row=row, column=col).value
+                if value is None:
+                    continue
+                text = str(value).strip()
+                if text:
+                    pieces.append(text)
+            if pieces:
+                lines.append(" ".join(pieces))
+        return lines
+    except Exception:
+        return []
+    finally:
+        if workbook is not None:
+            workbook.close()
 
 
 def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
@@ -676,7 +739,7 @@ def _merge_historical_workbook(
     warnings: list[str],
 ) -> None:
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ImportError:
         message = (
             f"Historical workbook update skipped for variant '{variant}'; openpyxl unavailable"
@@ -705,7 +768,7 @@ def _merge_historical_workbook(
             }
         )
 
-        worksheet.cell(row=append_row, column=1).value = as_of_date.isoformat()
+        worksheet.cell(row=append_row, column=1).value = as_of_date
         worksheet.cell(row=append_row, column=2).value = total_notional
         worksheet.cell(row=append_row, column=3).value = counterparties
         workbook.save(workbook_path)
