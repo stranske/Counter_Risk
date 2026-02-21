@@ -217,8 +217,8 @@ def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_he
         historical_series_headers_by_sheet={"Total": ("Bank of America",)},
     )
 
-    assert result["gap_count"] == 1
-    assert result["by_sheet"]["Total"]["missing_from_data"] == ["Bank of America"]
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Total"]["missing_from_data"] == []
     assert result["by_sheet"]["Total"]["missing_normalized_counterparties"] == []
     assert not any("unmapped counterparty" in warning for warning in result["warnings"])
 

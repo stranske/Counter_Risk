@@ -156,11 +156,19 @@ def reconcile_series_coverage(
         current_series_labels = sorted(
             set(counterparties_in_data).union(clearing_houses_in_data), key=str.casefold
         )
+        normalized_current_series_labels = set(normalized_counterparties_in_data).union(
+            {normalize_counterparty(clearing_house) for clearing_house in clearing_houses_in_data}
+        )
         missing_from_historical = sorted(
             set(missing_counterparty_labels).union(missing_clearing_houses), key=str.casefold
         )
         missing_from_data = sorted(
-            set(historical_series_headers).difference(current_series_labels), key=str.casefold
+            {
+                header
+                for header in historical_series_headers
+                if normalize_counterparty(header) not in normalized_current_series_labels
+            },
+            key=str.casefold,
         )
         parsed_segments = _extract_segments_from_records(parsed_sections)
         missing_expected_segments = sorted(
