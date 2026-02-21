@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as _dt
 import hashlib
 import logging
 import platform
@@ -70,6 +71,155 @@ class PptProcessingResult:
 ScreenshotReplacer = Callable[[Path, Path, dict[str, Path]], None]
 
 
+def reconcile_series_coverage(
+    *,
+    parsed_data_by_sheet: Mapping[str, Mapping[str, Any]],
+    historical_series_headers_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]],
+    variant: str | None = None,
+    expected_segments_by_variant: (
+        Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
+    ) = None,
+) -> dict[str, Any]:
+    """Reconcile parsed series labels against historical workbook headers per sheet.
+
+    Compares current-month series labels from parsed tables against historical workbook
+    headers and optionally validates variant-specific segment expectations.
+    """
+
+    by_sheet: dict[str, dict[str, Any]] = {}
+    missing_series: list[dict[str, Any]] = []
+    missing_segments: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    gap_count = 0
+
+    expected_segments = _expected_segments_for_variant(
+        variant=variant,
+        expected_segments_by_variant=expected_segments_by_variant,
+    )
+    sheet_names = sorted(
+        set(parsed_data_by_sheet).union(historical_series_headers_by_sheet), key=str.casefold
+    )
+    for sheet_name in sheet_names:
+        parsed_sections = parsed_data_by_sheet.get(sheet_name, {})
+        totals_records = _records(parsed_sections.get("totals", []))
+        futures_records = _records(parsed_sections.get("futures", []))
+        historical_series_headers = sorted(
+            {
+                value
+                for value in (
+                    str(header).strip()
+                    for header in historical_series_headers_by_sheet.get(sheet_name, ())
+                )
+                if value
+            }
+        )
+
+        counterparties_in_data = sorted(
+            {
+                value
+                for value in (
+                    str(record.get("counterparty", "")).strip() for record in totals_records
+                )
+                if value
+            }
+        )
+        clearing_houses_in_data = sorted(
+            {
+                value
+                for value in (
+                    str(record.get("clearing_house", "")).strip() for record in futures_records
+                )
+                if value
+            }
+        )
+        current_series_labels = sorted(set(counterparties_in_data).union(clearing_houses_in_data))
+        missing_from_historical = sorted(
+            set(current_series_labels).difference(historical_series_headers), key=str.casefold
+        )
+        missing_from_data = sorted(
+            set(historical_series_headers).difference(current_series_labels), key=str.casefold
+        )
+        parsed_segments = _extract_segments_from_records(parsed_sections)
+        missing_expected_segments = sorted(
+            expected_segments.difference(parsed_segments), key=str.casefold
+        )
+
+        if missing_from_historical:
+            gap_count += len(missing_from_historical)
+            missing_series.append(
+                {
+                    "sheet": sheet_name,
+                    "missing_from_historical_headers": missing_from_historical,
+                    "data_source_context": "counterparties_and_clearing_houses",
+                }
+            )
+            warnings.append(
+                "Reconciliation gap in sheet "
+                f"{sheet_name!r}: series present in parsed data but missing from historical "
+                f"headers ({', '.join(missing_from_historical)})"
+            )
+
+        if missing_expected_segments:
+            gap_count += len(missing_expected_segments)
+            missing_segments.append(
+                {
+                    "variant": variant,
+                    "sheet": sheet_name,
+                    "expected_segment_identifiers": missing_expected_segments,
+                }
+            )
+            warnings.append(
+                "Reconciliation gap in variant "
+                f"{variant!r} sheet {sheet_name!r}: expected segments missing from parsed "
+                f"results ({', '.join(missing_expected_segments)})"
+            )
+
+        by_sheet[sheet_name] = {
+            "counterparties_in_data": counterparties_in_data,
+            "clearing_houses_in_data": clearing_houses_in_data,
+            "historical_series_headers": historical_series_headers,
+            "current_series_labels": current_series_labels,
+            "missing_from_historical_headers": missing_from_historical,
+            "missing_from_data": missing_from_data,
+            "segments_in_data": sorted(parsed_segments, key=str.casefold),
+            "missing_expected_segments": missing_expected_segments,
+        }
+
+    return {
+        "by_sheet": by_sheet,
+        "gap_count": gap_count,
+        "warnings": warnings,
+        "missing_series": missing_series,
+        "missing_segments": missing_segments,
+    }
+
+
+def _expected_segments_for_variant(
+    *,
+    variant: str | None,
+    expected_segments_by_variant: Mapping[str, tuple[str, ...] | list[str] | set[str]] | None,
+) -> set[str]:
+    if not variant or not expected_segments_by_variant:
+        return set()
+
+    for key, values in expected_segments_by_variant.items():
+        if str(key).strip().casefold() != variant.strip().casefold():
+            continue
+        return {str(value).strip() for value in values if str(value).strip()}
+    return set()
+
+
+def _extract_segments_from_records(parsed_sections: Mapping[str, Any]) -> set[str]:
+    segments: set[str] = set()
+    for table in parsed_sections.values():
+        for record in _records(table):
+            raw_segment = record.get("segment", record.get("Segment", ""))
+            label = str(raw_segment).strip()
+            if label:
+                segments.add(label)
+    return segments
+
+
 def run_pipeline(config_path: str | Path) -> Path:
     """Run the Counter Risk pipeline and return the output run directory."""
 
@@ -122,6 +272,12 @@ def run_pipeline(config_path: str | Path) -> Path:
         )
         parsed_by_variant = _parse_inputs(_resolve_input_paths(runtime_config))
         _validate_parsed_inputs(parsed_by_variant)
+        _run_reconciliation_checks(
+            run_dir=run_dir,
+            config=runtime_config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=parse_inputs run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during parse stage") from exc
@@ -887,3 +1043,176 @@ def _column_names(table: Any) -> set[str]:
 
 def _row_count(table: Any) -> int:
     return len(_records(table))
+
+
+def _has_reconciliation_rows(parsed_sections: Any) -> bool:
+    if not isinstance(parsed_sections, Mapping):
+        return False
+    return any(_row_count(table) > 0 for table in parsed_sections.values())
+
+
+def _run_reconciliation_checks(
+    *,
+    run_dir: Path,
+    config: WorkflowConfig,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    warnings: list[str],
+) -> None:
+    variant_historical_paths: dict[str, Path] = {
+        "all_programs": config.hist_all_programs_3yr_xlsx,
+        "ex_trend": config.hist_ex_llc_3yr_xlsx,
+        "trend": config.hist_llc_3yr_xlsx,
+    }
+
+    total_gap_count = 0
+    impacted_series_count = 0
+    impacted_rows_count = 0
+    reconciliation_by_variant: dict[str, dict[str, Any]] = {}
+    for variant, historical_path in variant_historical_paths.items():
+        parsed_sections = parsed_by_variant.get(variant, {})
+        if not _has_reconciliation_rows(parsed_sections):
+            continue
+        parsed_data_by_sheet = {"Total": parsed_sections}
+        historical_headers_by_sheet = _extract_historical_series_headers_by_sheet(historical_path)
+        result = reconcile_series_coverage(
+            parsed_data_by_sheet=parsed_data_by_sheet,
+            historical_series_headers_by_sheet=historical_headers_by_sheet,
+            variant=variant,
+            expected_segments_by_variant=config.reconciliation.expected_segments_by_variant,
+        )
+        reconciliation_by_variant[variant] = result
+        total_gap_count += int(result.get("gap_count", 0))
+        impacted_series_count += sum(
+            len(item.get("missing_from_historical_headers", []))
+            for item in result.get("missing_series", [])
+            if isinstance(item, Mapping)
+        )
+        if int(result.get("gap_count", 0)) > 0:
+            impacted_rows_count += _row_count(parsed_sections.get("totals", []))
+            impacted_rows_count += _row_count(parsed_sections.get("futures", []))
+        for warning in result.get("warnings", []):
+            warnings.append(f"Reconciliation ({variant}): {warning}")
+
+    if total_gap_count == 0:
+        return
+
+    warnings.append(
+        "Reconciliation summary: "
+        f"gaps={total_gap_count}, impacted_series={impacted_series_count}, "
+        f"impacted_rows={impacted_rows_count}"
+    )
+    _write_needs_mapping_updates(
+        run_dir=run_dir,
+        fail_policy=config.reconciliation.fail_policy,
+        reconciliation_by_variant=reconciliation_by_variant,
+        total_gap_count=total_gap_count,
+        impacted_series_count=impacted_series_count,
+        impacted_rows_count=impacted_rows_count,
+    )
+    if config.reconciliation.fail_policy == "strict":
+        raise ValueError(
+            "Reconciliation strict mode failed due to missing/unmapped series; "
+            f"gap_count={total_gap_count}"
+        )
+
+
+def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str, tuple[str, ...]]:
+    try:
+        from openpyxl import load_workbook
+    except ImportError as exc:
+        raise RuntimeError(
+            "Reconciliation requires openpyxl to read historical workbook headers"
+        ) from exc
+
+    workbook = None
+    try:
+        workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+        headers_by_sheet: dict[str, tuple[str, ...]] = {}
+        for sheet_name in getattr(workbook, "sheetnames", []):
+            worksheet = workbook[sheet_name]
+            try:
+                header_row = _find_historical_header_row(worksheet=worksheet)
+            except ValueError:
+                continue
+            max_column = int(getattr(worksheet, "max_column", 0))
+            headers = [
+                label
+                for label in (
+                    str(worksheet.cell(row=header_row, column=column_index).value or "").strip()
+                    for column_index in range(2, max_column + 1)
+                )
+                if label
+            ]
+            headers_by_sheet[sheet_name] = tuple(headers)
+        return headers_by_sheet
+    except Exception as exc:
+        raise RuntimeError(
+            f"Unable to extract historical series headers from workbook: {workbook_path}"
+        ) from exc
+    finally:
+        if workbook is not None:
+            workbook.close()
+
+
+def _write_needs_mapping_updates(
+    *,
+    run_dir: Path,
+    fail_policy: str,
+    reconciliation_by_variant: Mapping[str, Mapping[str, Any]],
+    total_gap_count: int,
+    impacted_series_count: int,
+    impacted_rows_count: int,
+) -> Path:
+    timestamp = _dt.datetime.now(tz=UTC).isoformat()
+    lines: list[str] = [
+        "Counter Risk Reconciliation Gaps",
+        f"timestamp_utc: {timestamp}",
+        f"run_identifier: {run_dir.name}",
+        f"fail_policy: {fail_policy}",
+        f"total_gap_count: {total_gap_count}",
+        f"impacted_series_count: {impacted_series_count}",
+        f"impacted_rows_count: {impacted_rows_count}",
+        "",
+    ]
+
+    for variant in sorted(reconciliation_by_variant, key=str.casefold):
+        payload = reconciliation_by_variant[variant]
+        lines.append(f"[variant: {variant}]")
+
+        missing_series = payload.get("missing_series", [])
+        if isinstance(missing_series, list):
+            for item in missing_series:
+                if not isinstance(item, Mapping):
+                    continue
+                sheet_name = str(item.get("sheet", "unknown"))
+                missing_labels = item.get("missing_from_historical_headers", [])
+                if isinstance(missing_labels, list) and missing_labels:
+                    lines.append(
+                        f"- sheet {sheet_name}: missing_from_historical_headers="
+                        f"{', '.join(str(label) for label in missing_labels)}"
+                    )
+
+        missing_segments = payload.get("missing_segments", [])
+        if isinstance(missing_segments, list):
+            for item in missing_segments:
+                if not isinstance(item, Mapping):
+                    continue
+                sheet_name = str(item.get("sheet", "unknown"))
+                expected_labels = item.get("expected_segment_identifiers", [])
+                if isinstance(expected_labels, list) and expected_labels:
+                    lines.append(
+                        f"- sheet {sheet_name}: missing_expected_segments="
+                        f"{', '.join(str(label) for label in expected_labels)}"
+                    )
+
+        lines.append("")
+
+    output_path = run_dir / "NEEDS_MAPPING_UPDATES.txt"
+    output_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    return output_path
+
+
+try:
+    UTC = _dt.UTC
+except AttributeError:  # pragma: no cover -- Python <3.11 fallback
+    UTC = _dt.timezone.utc  # noqa: UP017

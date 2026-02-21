@@ -433,7 +433,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if changes:
-        print(f"{'Applied' if args.apply else 'Found'} {len(changes)} version updates:")
+        if args.apply:
+            print(f"Applied {len(changes)} version updates:")
+        else:
+            print(f"Found {len(changes)} version drift updates:")
         for change in changes:
             print(f"  - {change}")
 
