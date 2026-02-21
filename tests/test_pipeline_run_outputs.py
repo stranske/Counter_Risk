@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from datetime import date
+from pathlib import Path
 from zipfile import ZipFile
 
 import counter_risk.pipeline.run as run_module
