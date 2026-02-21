@@ -80,8 +80,39 @@ def reconcile_series_coverage(
     populate extraction/comparison logic and expanded reporting details.
     """
 
-    _ = (parsed_data_by_sheet, historical_series_headers_by_sheet)
-    return {"by_sheet": {}, "gap_count": 0, "warnings": []}
+    by_sheet: dict[str, dict[str, Any]] = {}
+    for sheet_name, parsed_sections in parsed_data_by_sheet.items():
+        totals_records = _records(parsed_sections.get("totals", []))
+        futures_records = _records(parsed_sections.get("futures", []))
+
+        counterparties_in_data = sorted(
+            {
+                value
+                for value in (
+                    str(record.get("counterparty", "")).strip() for record in totals_records
+                )
+                if value
+            }
+        )
+        clearing_houses_in_data = sorted(
+            {
+                value
+                for value in (
+                    str(record.get("clearing_house", "")).strip() for record in futures_records
+                )
+                if value
+            }
+        )
+        by_sheet[sheet_name] = {
+            "counterparties_in_data": counterparties_in_data,
+            "clearing_houses_in_data": clearing_houses_in_data,
+            "current_series_labels": sorted(
+                set(counterparties_in_data).union(clearing_houses_in_data)
+            ),
+        }
+
+    _ = historical_series_headers_by_sheet
+    return {"by_sheet": by_sheet, "gap_count": 0, "warnings": []}
 
 
 def run_pipeline(config_path: str | Path) -> Path:

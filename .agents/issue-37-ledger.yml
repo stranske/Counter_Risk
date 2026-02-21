@@ -14,51 +14,51 @@ tasks:
   - id: task-02
     title: 'Define scope for: Create the reconcile_series_coverage function signature
       with input parameters for parsed data (verify: confirm completion in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-21T07:14:31Z'
+    finished_at: '2026-02-21T07:17:11Z'
+    commit: 9b4b890466a4b0823d36b641a06427c1b68de100
     notes: []
   - id: task-03
     title: 'Implement focused slice for: Create the reconcile_series_coverage function
       signature with input parameters for parsed data (verify: confirm completion
       in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-21T07:14:31Z'
+    finished_at: '2026-02-21T07:17:11Z'
+    commit: 9b4b890466a4b0823d36b641a06427c1b68de100
     notes: []
   - id: task-04
     title: 'Validate focused slice for: Create the reconcile_series_coverage function
       signature with input parameters for parsed data (verify: confirm completion
       in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-21T07:14:31Z'
+    finished_at: '2026-02-21T07:17:11Z'
+    commit: 9b4b890466a4b0823d36b641a06427c1b68de100
     notes: []
   - id: task-05
     title: 'Create the reconcile_series_coverage function signature with historical
       headers (verify: confirm completion in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-21T07:14:31Z'
+    finished_at: '2026-02-21T07:17:11Z'
+    commit: 9b4b890466a4b0823d36b641a06427c1b68de100
     notes: []
   - id: task-06
     title: 'Implement logic to extract counterparties (verify: confirm completion
       in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
+    status: done
+    started_at: '2026-02-21T07:34:00Z'
+    finished_at: '2026-02-21T07:35:00Z'
     commit: ''
     notes: []
   - id: task-07
     title: 'clearing houses from current-month parsed data (verify: confirm completion
       in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
+    status: done
+    started_at: '2026-02-21T07:34:00Z'
+    finished_at: '2026-02-21T07:35:00Z'
     commit: ''
     notes: []
   - id: task-08
