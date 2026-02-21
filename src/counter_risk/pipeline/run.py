@@ -69,6 +69,21 @@ class PptProcessingResult:
 ScreenshotReplacer = Callable[[Path, Path, dict[str, Path]], None]
 
 
+def reconcile_series_coverage(
+    *,
+    parsed_data_by_sheet: Mapping[str, Mapping[str, Any]],
+    historical_series_headers_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]],
+) -> dict[str, Any]:
+    """Reconcile parsed series labels against historical workbook headers per sheet.
+
+    This scaffold establishes the reconciliation function contract. Follow-on slices
+    populate extraction/comparison logic and expanded reporting details.
+    """
+
+    _ = (parsed_data_by_sheet, historical_series_headers_by_sheet)
+    return {"by_sheet": {}, "gap_count": 0, "warnings": []}
+
+
 def run_pipeline(config_path: str | Path) -> Path:
     """Run the Counter Risk pipeline and return the output run directory."""
 
