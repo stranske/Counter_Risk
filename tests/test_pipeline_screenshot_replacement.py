@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Literal
 
@@ -89,15 +90,24 @@ def test_write_outputs_calls_zip_backend_once_when_enabled(
     )
 
     warnings: list[str] = []
-    output_paths, _ = run_module._write_outputs(run_dir=run_dir, config=config, warnings=warnings)
+    output_paths, _ = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2026, 2, 13),
+        warnings=warnings,
+    )
 
     assert len(calls) == 1
-    assert calls[0].output == run_dir / "monthly.pptx"
+    assert calls[0].output == (
+        run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx"
+    )
     assert list(calls[0].mapping) == ["slide1", "slide2"]
     assert len(calls[0].mapping) == 2
     assert all(path.suffix.lower() == ".png" for path in calls[0].mapping.values())
-    assert output_paths[-1] == run_dir / "monthly.pptx"
-    assert (run_dir / "monthly.pptx").exists()
+    assert output_paths[-2] == run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx"
+    assert output_paths[-1] == run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx"
+    assert (run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx").exists()
+    assert (run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx").exists()
     assert all("not implemented" not in warning for warning in warnings)
     assert all("disabled; copied source deck unchanged" not in warning for warning in warnings)
 
@@ -140,11 +150,48 @@ def test_write_outputs_routes_python_pptx_backend_when_selected(
     )
 
     warnings: list[str] = []
-    run_module._write_outputs(run_dir=run_dir, config=config, warnings=warnings)
+    run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2026, 2, 13),
+        warnings=warnings,
+    )
 
     assert called["python_pptx"] == 1
     assert called["zip"] == 0
     assert all("not implemented" not in warning for warning in warnings)
+
+
+def test_write_outputs_derives_distribution_from_refreshed_master(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+
+    config = _build_config(
+        tmp_path=tmp_path,
+        enable_screenshot_replacement=False,
+    )
+    config.monthly_pptx.write_bytes(b"base-ppt")
+
+    def _refresh(path: Path) -> PptProcessingResult:
+        path.write_bytes(path.read_bytes() + b"-refreshed")
+        return PptProcessingResult(status=PptProcessingStatus.SUCCESS)
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", _refresh)
+
+    output_paths, _ = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2026, 2, 13),
+        warnings=[],
+    )
+
+    master = run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx"
+    distribution = run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx"
+    assert output_paths[-2:] == [master, distribution]
+    assert master.read_bytes().endswith(b"-refreshed")
+    assert distribution.read_bytes() == master.read_bytes()
 
 
 def test_resolve_screenshot_input_mapping_rejects_non_png_paths(tmp_path: Path) -> None:

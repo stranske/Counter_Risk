@@ -18,6 +18,7 @@ from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
+from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.writers import generate_mosers_workbook
 
 LOGGER = logging.getLogger(__name__)
@@ -304,6 +305,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         output_result = _write_outputs(
             run_dir=run_dir,
             config=runtime_config,
+            as_of_date=as_of_date,
             warnings=warnings,
         )
     except Exception as exc:
@@ -648,7 +650,7 @@ def _compute_metrics(
 
 
 def _write_outputs(
-    *, run_dir: Path, config: WorkflowConfig, warnings: list[str]
+    *, run_dir: Path, config: WorkflowConfig, as_of_date: date, warnings: list[str]
 ) -> tuple[list[Path], PptProcessingResult]:
     LOGGER.info("write_outputs_start run_dir=%s", run_dir)
 
@@ -681,18 +683,22 @@ def _write_outputs(
         output_paths.append(target_monthly_book)
 
     source_ppt = config.monthly_pptx
-    target_ppt = run_dir / source_ppt.name
+    output_names = resolve_ppt_output_names(as_of_date)
+    target_master_ppt = run_dir / output_names.master_filename
+    target_distribution_ppt = run_dir / output_names.distribution_filename
     screenshot_inputs = _resolve_screenshot_input_mapping(config)
     if config.enable_screenshot_replacement:
         replacer = _get_screenshot_replacer(config.screenshot_replacement_implementation)
-        replacer(source_ppt, target_ppt, screenshot_inputs)
+        replacer(source_ppt, target_master_ppt, screenshot_inputs)
     else:
-        shutil.copy2(source_ppt, target_ppt)
+        shutil.copy2(source_ppt, target_master_ppt)
         if screenshot_inputs:
-            warnings.append("PPT screenshots replacement disabled; copied source deck unchanged")
-    output_paths.append(target_ppt)
+            warnings.append(
+                "PPT screenshots replacement disabled; copied source deck to Master unchanged"
+            )
+    output_paths.append(target_master_ppt)
 
-    refresh_result = _refresh_ppt_links(target_ppt)
+    refresh_result = _refresh_ppt_links(target_master_ppt)
     if isinstance(refresh_result, bool):
         refresh_result = PptProcessingResult(
             status=PptProcessingStatus.SUCCESS if refresh_result else PptProcessingStatus.SKIPPED
@@ -707,8 +713,20 @@ def _write_outputs(
             else f"PPT links refresh failed; {refresh_result.error_detail}"
         )
 
+    _derive_distribution_ppt(
+        master_pptx_path=target_master_ppt,
+        distribution_pptx_path=target_distribution_ppt,
+    )
+    output_paths.append(target_distribution_ppt)
+
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
     return output_paths, refresh_result
+
+
+def _derive_distribution_ppt(*, master_pptx_path: Path, distribution_pptx_path: Path) -> None:
+    """Derive the distribution PPT from the generated Master PPT."""
+
+    shutil.copy2(master_pptx_path, distribution_pptx_path)
 
 
 def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]:

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import date
 from zipfile import ZipFile
 
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
+from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 
 
 def _write_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
@@ -66,11 +68,21 @@ def test_write_outputs_screenshot_replacement_replaces_expected_number_of_media_
     source_ppt = config.monthly_pptx
     input_media = _read_media_payloads(source_ppt)
 
-    output_paths, _ = run_module._write_outputs(run_dir=run_dir, config=config, warnings=[])
-    output_ppt = run_dir / source_ppt.name
+    as_of_date = date(2025, 12, 31)
+    output_paths, _ = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=as_of_date,
+        warnings=[],
+    )
+    output_names = resolve_ppt_output_names(as_of_date)
+    output_ppt = run_dir / output_names.master_filename
+    distribution_ppt = run_dir / output_names.distribution_filename
 
     assert output_ppt in output_paths
+    assert distribution_ppt in output_paths
     assert output_ppt.exists()
+    assert distribution_ppt.exists()
     assert output_ppt.read_bytes() != source_ppt.read_bytes()
 
     output_media = _read_media_payloads(output_ppt)
