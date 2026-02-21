@@ -59,7 +59,7 @@ def test_reconcile_series_coverage_extracts_historical_series_headers_per_sheet(
         parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}]}},
         historical_series_headers_by_sheet={
             "Total": ("  B  ", "A", "", "A"),
-            "Futures": {"  ICE  ", "CME", "CME"},
+            "Futures": ("  ICE  ", "CME", "CME"),
         },
     )
 
