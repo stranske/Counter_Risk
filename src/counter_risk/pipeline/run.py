@@ -981,6 +981,12 @@ def _row_count(table: Any) -> int:
     return len(_records(table))
 
 
+def _has_reconciliation_rows(parsed_sections: Any) -> bool:
+    if not isinstance(parsed_sections, Mapping):
+        return False
+    return any(_row_count(table) > 0 for table in parsed_sections.values())
+
+
 def _run_reconciliation_checks(
     *,
     run_dir: Path,
@@ -1000,6 +1006,8 @@ def _run_reconciliation_checks(
     reconciliation_by_variant: dict[str, dict[str, Any]] = {}
     for variant, historical_path in variant_historical_paths.items():
         parsed_sections = parsed_by_variant.get(variant, {})
+        if not _has_reconciliation_rows(parsed_sections):
+            continue
         parsed_data_by_sheet = {"Total": parsed_sections}
         historical_headers_by_sheet = _extract_historical_series_headers_by_sheet(historical_path)
         result = reconcile_series_coverage(
@@ -1046,7 +1054,7 @@ def _run_reconciliation_checks(
 
 def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str, tuple[str, ...]]:
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ImportError as exc:
         raise RuntimeError(
             "Reconciliation requires openpyxl to read historical workbook headers"
