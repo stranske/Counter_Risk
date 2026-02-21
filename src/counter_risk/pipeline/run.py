@@ -182,6 +182,14 @@ def reconcile_series_coverage(
                 f"headers ({', '.join(missing_from_historical)})"
             )
 
+        if missing_from_data:
+            gap_count += len(missing_from_data)
+            warnings.append(
+                "Reconciliation gap in sheet "
+                f"{sheet_name!r}: series present in historical headers but missing from parsed "
+                f"data ({', '.join(missing_from_data)})"
+            )
+
         if missing_normalized_counterparties:
             unmapped_counterparties: list[dict[str, Any]] = []
             for normalized_name in missing_normalized_counterparties:

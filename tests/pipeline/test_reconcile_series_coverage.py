@@ -40,8 +40,10 @@ def test_reconcile_series_coverage_accepts_historical_headers_parameter() -> Non
                 "missing_expected_segments": [],
             }
         },
-        "gap_count": 0,
-        "warnings": [],
+        "gap_count": 1,
+        "warnings": [
+            "Reconciliation gap in sheet 'Total': series present in historical headers but missing from parsed data (B)"
+        ],
         "missing_series": [],
         "missing_segments": [],
     }
@@ -123,6 +125,17 @@ def test_reconcile_series_coverage_extracts_historical_series_headers_per_sheet(
         "segments_in_data": [],
         "missing_expected_segments": [],
     }
+    assert result["gap_count"] == 3
+
+
+def test_reconcile_series_coverage_counts_each_historical_series_missing_from_data() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}]}},
+        historical_series_headers_by_sheet={"Total": ("A", "B", "C")},
+    )
+
+    assert result["by_sheet"]["Total"]["missing_from_data"] == ["B", "C"]
+    assert result["gap_count"] == 2
 
 
 def test_reconcile_series_coverage_reports_missing_expected_segments_by_variant() -> None:
@@ -163,7 +176,7 @@ def test_reconcile_series_coverage_warn_mode_includes_raw_and_normalized_counter
         fail_policy="warn",
     )
 
-    assert result["gap_count"] == 1
+    assert result["gap_count"] == 2
     assert any(
         "raw='Bank of America, NA'" in warning and "normalized='Bank of America'" in warning
         for warning in result["warnings"]
@@ -201,6 +214,7 @@ def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_he
         historical_series_headers_by_sheet={"Total": ("Bank of America",)},
     )
 
-    assert result["gap_count"] == 0
+    assert result["gap_count"] == 1
+    assert result["by_sheet"]["Total"]["missing_from_data"] == ["Bank of America"]
     assert result["by_sheet"]["Total"]["missing_normalized_counterparties"] == []
     assert not any("unmapped counterparty" in warning for warning in result["warnings"])
