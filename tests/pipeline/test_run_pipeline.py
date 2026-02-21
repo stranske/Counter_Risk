@@ -449,6 +449,82 @@ def test_run_pipeline_wraps_parse_validation_errors(
     assert "missing required columns" in str(exc_info.value.__cause__)
 
 
+def test_run_pipeline_warn_mode_writes_mapping_updates_and_completes(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8")
+        + "\n".join(
+            [
+                "reconciliation:",
+                "  fail_policy: warn",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._extract_historical_series_headers_by_sheet",
+        lambda _: {"Total": ("Legacy Counterparty",)},
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
+    )
+
+    run_dir = run_pipeline(config_path)
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    mapping_updates = run_dir / "NEEDS_MAPPING_UPDATES.txt"
+
+    assert mapping_updates.exists()
+    text = mapping_updates.read_text(encoding="utf-8")
+    assert "run_identifier: 2025-12-31" in text
+    assert "fail_policy: warn" in text
+    assert "missing_from_historical_headers" in text
+    assert any("Reconciliation summary:" in warning for warning in manifest["warnings"])
+
+
+def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8")
+        + "\n".join(
+            [
+                "reconciliation:",
+                "  fail_policy: strict",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._extract_historical_series_headers_by_sheet",
+        lambda _: {"Total": ("Legacy Counterparty",)},
+    )
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "Reconciliation strict mode failed" in str(exc_info.value.__cause__)
+
+
 def test_run_pipeline_wraps_output_write_errors(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:

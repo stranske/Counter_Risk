@@ -10,6 +10,15 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
+class ReconciliationConfig(BaseModel):
+    """Configuration for series reconciliation behavior."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    fail_policy: Literal["warn", "strict"] = "warn"
+    expected_segments_by_variant: dict[str, list[str]] = Field(default_factory=dict)
+
+
 class WorkflowConfig(BaseModel):
     """Configuration for a single Counter Risk workflow execution.
 
@@ -32,6 +41,7 @@ class WorkflowConfig(BaseModel):
     enable_screenshot_replacement: bool = False
     screenshot_replacement_implementation: Literal["zip", "python-pptx"] = "zip"
     screenshot_inputs: dict[str, Path] = Field(default_factory=dict)
+    reconciliation: ReconciliationConfig = Field(default_factory=ReconciliationConfig)
     output_root: Path = Path("runs")
 
 

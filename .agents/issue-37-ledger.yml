@@ -64,7 +64,7 @@ tasks:
   - id: task-08
     title: 'Implement logic to extract series headers from historical workbook per
       sheet (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -72,14 +72,14 @@ tasks:
   - id: task-09
     title: 'Implement comparison logic to identify differences between current data
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-10
     title: 'historical headers (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -87,14 +87,14 @@ tasks:
   - id: task-11
     title: 'Add per-sheet reconciliation result aggregation (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-12
     title: 'reporting (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -142,7 +142,7 @@ tasks:
   - id: task-18
     title: Add checks in `reconcile_series_coverage()` to detect counterparties present
       in data but missing in historical headers.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -151,7 +151,7 @@ tasks:
     title: 'Define scope for: Implement logic to identify counterparties present in
       parsed data but absent from historical headers (verify: confirm completion in
       repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -160,7 +160,7 @@ tasks:
     title: 'Implement focused slice for: Implement logic to identify counterparties
       present in parsed data but absent from historical headers (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -169,7 +169,7 @@ tasks:
     title: 'Validate focused slice for: Implement logic to identify counterparties
       present in parsed data but absent from historical headers (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -177,7 +177,7 @@ tasks:
   - id: task-22
     title: 'Add differentiation logic to distinguish new counterparties from normalization
       mapping failures (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -185,7 +185,7 @@ tasks:
   - id: task-23
     title: 'Create structured output format for missing counterparty reports including
       sheet (verify: formatter passes)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -193,7 +193,7 @@ tasks:
   - id: task-24
     title: 'Create structured output format for missing counterparty reports including
       data source context (verify: formatter passes)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -201,7 +201,7 @@ tasks:
   - id: task-25
     title: Add checks in `reconcile_series_coverage()` to detect segments expected
       by variant but missing in parsed results.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -209,7 +209,7 @@ tasks:
   - id: task-26
     title: 'Define the structure for variant segment expectations in configuration
       (verify: config validated)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -217,7 +217,7 @@ tasks:
   - id: task-27
     title: 'Implement logic to read expected segments from variant configuration (verify:
       config validated)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -225,7 +225,7 @@ tasks:
   - id: task-28
     title: 'Implement validation logic to compare expected segments against parsed
       results (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -233,7 +233,7 @@ tasks:
   - id: task-29
     title: 'Add reporting for missing segments including variant name (verify: confirm
       completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -241,7 +241,7 @@ tasks:
   - id: task-30
     title: 'Add reporting for missing segments including expected segment identifiers
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -249,7 +249,7 @@ tasks:
   - id: task-31
     title: Implement a fail-policy configuration for reconciliation with modes `strict`
       (fail run on any missing series) and `warn` (continue but write warnings).
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -257,7 +257,7 @@ tasks:
   - id: task-32
     title: 'Define the fail-policy configuration schema with strict (verify: config
       validated)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -265,21 +265,21 @@ tasks:
   - id: task-33
     title: 'Define the fail-policy configuration schema with warn mode options (verify:
       config validated)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-34
     title: 'Implement configuration parsing (verify: config validated)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-35
     title: 'validation for fail-policy settings (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -287,7 +287,7 @@ tasks:
   - id: task-36
     title: 'Implement strict mode behavior to raise exceptions when reconciliation
       gaps are detected (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -295,7 +295,7 @@ tasks:
   - id: task-37
     title: 'Implement warn mode behavior to log warnings (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -303,7 +303,7 @@ tasks:
   - id: task-38
     title: 'continue execution when gaps are detected (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -325,21 +325,21 @@ tasks:
   - id: task-41
     title: Write `NEEDS_MAPPING_UPDATES.txt` into the run folder when reconciliation
       gaps exist, containing a human-readable summary of missing/unmapped series.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-42
     title: 'Define the content structure (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-43
     title: 'format for NEEDS_MAPPING_UPDATES.txt file (verify: formatter passes)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -347,7 +347,7 @@ tasks:
   - id: task-44
     title: 'Implement logic to generate human-readable summary text from reconciliation
       gap data (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -355,7 +355,7 @@ tasks:
   - id: task-45
     title: 'Define scope for: Implement file writing logic to create NEEDS_MAPPING_UPDATES.txt
       in the run folder (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -363,7 +363,7 @@ tasks:
   - id: task-46
     title: 'Implement focused slice for: Implement file writing logic to create NEEDS_MAPPING_UPDATES.txt
       in the run folder (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -371,14 +371,14 @@ tasks:
   - id: task-47
     title: 'Validate focused slice for: Implement file writing logic to create NEEDS_MAPPING_UPDATES.txt
       in the run folder (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-48
     title: 'Add timestamp (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -386,7 +386,7 @@ tasks:
   - id: task-49
     title: 'run identifier metadata to the mapping updates file (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -394,7 +394,7 @@ tasks:
   - id: task-50
     title: Add tests that introduce a fake new counterparty and verify `warn` mode
       emits warnings and `strict` mode fails.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -402,7 +402,7 @@ tasks:
   - id: task-51
     title: 'Create test fixture with fake new counterparty data for reconciliation
       testing (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -410,7 +410,7 @@ tasks:
   - id: task-52
     title: 'Define scope for: Implement test case verifying warn mode emits warnings
       when new counterparty is detected (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -418,7 +418,7 @@ tasks:
   - id: task-53
     title: 'Implement focused slice for: Implement test case verifying warn mode emits
       warnings when new counterparty is detected (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -426,7 +426,7 @@ tasks:
   - id: task-54
     title: 'Validate focused slice for: Implement test case verifying warn mode emits
       warnings when new counterparty is detected (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -434,7 +434,7 @@ tasks:
   - id: task-55
     title: 'Define scope for: Implement test case verifying warn mode completes successfully
       despite new counterparty (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -442,7 +442,7 @@ tasks:
   - id: task-56
     title: 'Implement focused slice for: Implement test case verifying warn mode completes
       successfully despite new counterparty (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -450,7 +450,7 @@ tasks:
   - id: task-57
     title: 'Validate focused slice for: Implement test case verifying warn mode completes
       successfully despite new counterparty (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -458,7 +458,7 @@ tasks:
   - id: task-58
     title: 'Define scope for: Implement test case verifying strict mode raises exception
       when new counterparty is detected (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -467,7 +467,7 @@ tasks:
     title: 'Implement focused slice for: Implement test case verifying strict mode
       raises exception when new counterparty is detected (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -476,7 +476,7 @@ tasks:
     title: 'Validate focused slice for: Implement test case verifying strict mode
       raises exception when new counterparty is detected (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -484,7 +484,7 @@ tasks:
   - id: task-61
     title: 'Implement test case verifying strict mode prevents run completion when
       gaps exist (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -492,7 +492,7 @@ tasks:
   - id: task-62
     title: In `warn` mode, a run with a new/unmapped counterparty produces a reconciliation
       warning and still completes (non-zero gaps result in warnings).
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -500,7 +500,7 @@ tasks:
   - id: task-63
     title: In `strict` mode, a run with a new/unmapped counterparty fails (non-zero
       gaps cause a failure/exception/exit as implemented).
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -508,7 +508,7 @@ tasks:
   - id: task-64
     title: When reconciliation gaps exist, `NEEDS_MAPPING_UPDATES.txt` is created
       in the run folder.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -516,7 +516,7 @@ tasks:
   - id: task-65
     title: The run manifest includes reconciliation warnings and the count of impacted
       rows and/or series.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
