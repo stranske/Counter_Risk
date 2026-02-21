@@ -2646,7 +2646,7 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
       : actionRunsAgent
         ? 0
         : previousZeroActivityRounds;
-    const metricsIteration = actionRunsAgent ? currentIteration + 1 : currentIteration;
+    const metricsIteration = nextIteration;
     const durationMs = resolveDurationMs({
       durationMs: toOptionalNumber(inputs.duration_ms ?? inputs.durationMs),
       startTs: toOptionalNumber(inputs.start_ts ?? inputs.startTs),
