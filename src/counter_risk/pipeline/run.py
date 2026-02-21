@@ -1210,6 +1210,8 @@ def _write_needs_mapping_updates(
     output_path = run_dir / "NEEDS_MAPPING_UPDATES.txt"
     output_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     return output_path
+
+
 try:
     UTC = _dt.UTC
 except AttributeError:  # pragma: no cover -- Python <3.11 fallback

@@ -2,7 +2,20 @@
 
 from __future__ import annotations
 
+from inspect import Parameter, signature
+
 from counter_risk.pipeline.run import reconcile_series_coverage
+
+
+def test_reconcile_series_coverage_requires_parsed_data_input_parameter() -> None:
+    params = signature(reconcile_series_coverage).parameters
+    parsed_data_param = params["parsed_data_by_sheet"]
+    historical_headers_param = params["historical_series_headers_by_sheet"]
+
+    assert parsed_data_param.kind is Parameter.KEYWORD_ONLY
+    assert parsed_data_param.default is Parameter.empty
+    assert historical_headers_param.kind is Parameter.KEYWORD_ONLY
+    assert historical_headers_param.default is Parameter.empty
 
 
 def test_reconcile_series_coverage_accepts_historical_headers_parameter() -> None:
