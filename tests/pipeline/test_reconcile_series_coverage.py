@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from inspect import Parameter, signature
 
-from counter_risk.pipeline.run import reconcile_series_coverage
+from counter_risk.pipeline.run import (
+    _normalized_counterparties_from_records,
+    reconcile_series_coverage,
+)
 
 
 def test_reconcile_series_coverage_requires_parsed_data_input_parameter() -> None:
@@ -218,3 +221,31 @@ def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_he
     assert result["by_sheet"]["Total"]["missing_from_data"] == ["Bank of America"]
     assert result["by_sheet"]["Total"]["missing_normalized_counterparties"] == []
     assert not any("unmapped counterparty" in warning for warning in result["warnings"])
+
+
+def test_normalized_counterparties_from_records_uses_normalization_mapping() -> None:
+    totals_records = [
+        {"counterparty": "Bank of America, NA"},
+        {"counterparty": "Bank of America NA"},
+        {"counterparty": "  Citigroup  "},
+    ]
+
+    normalized = _normalized_counterparties_from_records(totals_records)
+
+    assert normalized == {
+        "Bank of America": {"Bank of America, NA", "Bank of America NA"},
+        "Citibank": {"Citigroup"},
+    }
+
+
+def test_normalized_counterparties_from_records_ignores_blank_counterparties() -> None:
+    totals_records = [
+        {"counterparty": ""},
+        {"counterparty": "   "},
+        {"counterparty": "JP Morgan"},
+        {},
+    ]
+
+    normalized = _normalized_counterparties_from_records(totals_records)
+
+    assert normalized == {"JP Morgan": {"JP Morgan"}}
