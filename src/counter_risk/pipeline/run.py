@@ -1575,6 +1575,11 @@ def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str
         raise RuntimeError(
             f"Unable to extract historical series headers from workbook: {workbook_path}"
         ) from exc
+    except Exception as exc:
+        _raise_with_context(
+            exc=exc,
+            context=f"Unexpected error while loading historical workbook {workbook_path!s}",
+        )
     workbook_obj: Any = workbook
     try:
         headers_by_sheet: dict[str, tuple[str, ...]] = {}

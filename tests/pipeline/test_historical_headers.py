@@ -133,6 +133,26 @@ def test_extract_historical_series_headers_handles_expected_key_and_value_errors
     assert workbook.closed is True
 
 
+def test_extract_historical_series_headers_reraises_unexpected_workbook_load_errors_with_context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _load_workbook(*, filename: Path, read_only: bool, data_only: bool) -> _FakeWorkbook:
+        del read_only, data_only
+        raise TypeError(f"bad workbook payload for {filename}")
+
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=_load_workbook)
+    )
+
+    with pytest.raises(
+        TypeError, match="Unexpected error while loading historical workbook"
+    ) as exc_info:
+        run_module._extract_historical_series_headers_by_sheet(Path("unused.xlsx"))
+
+    assert "unused.xlsx" in str(exc_info.value)
+    assert "bad workbook payload" in str(exc_info.value)
+
+
 def test_extract_historical_series_headers_reraises_unexpected_sheet_load_errors_with_context(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
