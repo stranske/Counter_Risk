@@ -37,9 +37,14 @@ class _FakeWorksheet:
 
 
 class _FakeWorkbook:
-    def __init__(self, sheets: dict[str, _FakeWorksheet]) -> None:
+    def __init__(
+        self,
+        sheets: dict[str, _FakeWorksheet],
+        *,
+        sheetnames: list[str] | None = None,
+    ) -> None:
         self._sheets = dict(sheets)
-        self.sheetnames = list(sheets)
+        self.sheetnames = list(sheetnames) if sheetnames is not None else list(sheets)
         self.closed = False
 
     def __getitem__(self, item: str) -> _FakeWorksheet:
@@ -98,4 +103,53 @@ def test_extract_historical_series_headers_reraises_unexpected_errors_with_conte
 
     assert "unused.xlsx" in str(exc_info.value)
     assert "bad worksheet payload" in str(exc_info.value)
+    assert workbook.closed is True
+
+
+def test_extract_historical_series_headers_handles_expected_key_and_value_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target_sheet = _FakeWorksheet("Totals")
+    target_sheet.set_value(1, 1, "As Of Date")
+    workbook = _FakeWorkbook(
+        {"Totals": target_sheet},
+        sheetnames=["MissingSheet", "Totals"],
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "openpyxl",
+        types.SimpleNamespace(load_workbook=lambda **_: workbook),
+    )
+
+    def _raise_value_error(*, worksheet: Any, max_scan_rows: int = 25) -> int:
+        del worksheet, max_scan_rows
+        raise ValueError("header row not found")
+
+    monkeypatch.setattr(run_module, "_find_historical_header_row", _raise_value_error)
+
+    headers = run_module._extract_historical_series_headers_by_sheet(Path("unused.xlsx"))
+
+    assert headers == {}
+    assert workbook.closed is True
+
+
+def test_extract_historical_series_headers_reraises_unexpected_sheet_load_errors_with_context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _TypeErrorWorkbook(_FakeWorkbook):
+        def __getitem__(self, item: str) -> _FakeWorksheet:
+            raise TypeError(f"broken workbook for {item}")
+
+    workbook = _TypeErrorWorkbook({}, sheetnames=["Totals"])
+    monkeypatch.setitem(
+        sys.modules,
+        "openpyxl",
+        types.SimpleNamespace(load_workbook=lambda **_: workbook),
+    )
+
+    with pytest.raises(TypeError, match="sheet 'Totals'") as exc_info:
+        run_module._extract_historical_series_headers_by_sheet(Path("unused.xlsx"))
+
+    assert "loading historical worksheet" in str(exc_info.value)
+    assert "unused.xlsx" in str(exc_info.value)
     assert workbook.closed is True

@@ -1569,15 +1569,28 @@ def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str
             "Reconciliation requires openpyxl to read historical workbook headers"
         ) from exc
 
-    workbook = None
     try:
         workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+    except (KeyError, ValueError, OSError) as exc:
+        raise RuntimeError(
+            f"Unable to extract historical series headers from workbook: {workbook_path}"
+        ) from exc
+    workbook_obj: Any = workbook
+    try:
         headers_by_sheet: dict[str, tuple[str, ...]] = {}
-        for sheet_name in getattr(workbook, "sheetnames", []):
+        for sheet_name in getattr(workbook_obj, "sheetnames", []):
             try:
-                worksheet = workbook[sheet_name]
+                worksheet = workbook_obj[sheet_name]
             except KeyError:
                 continue
+            except Exception as exc:
+                _raise_with_context(
+                    exc=exc,
+                    context=(
+                        "Unexpected error while loading historical worksheet in "
+                        f"workbook {workbook_path!s}, sheet {sheet_name!r}"
+                    ),
+                )
 
             try:
                 header_row = _find_historical_header_row(worksheet=worksheet)
@@ -1592,32 +1605,31 @@ def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str
                     ),
                 )
 
-            max_column = int(getattr(worksheet, "max_column", 0))
-            headers = [
-                label
-                for label in (
-                    str(worksheet.cell(row=header_row, column=column_index).value or "").strip()
-                    for column_index in range(2, max_column + 1)
+            try:
+                max_column = int(getattr(worksheet, "max_column", 0))
+                headers = [
+                    label
+                    for label in (
+                        str(worksheet.cell(row=header_row, column=column_index).value or "").strip()
+                        for column_index in range(2, max_column + 1)
+                    )
+                    if label
+                ]
+            except (KeyError, ValueError):
+                continue
+            except Exception as exc:
+                _raise_with_context(
+                    exc=exc,
+                    context=(
+                        "Unexpected error while reading historical series headers in "
+                        f"workbook {workbook_path!s}, sheet {sheet_name!r}"
+                    ),
                 )
-                if label
-            ]
+
             headers_by_sheet[sheet_name] = tuple(headers)
         return headers_by_sheet
-    except (KeyError, ValueError, OSError) as exc:
-        raise RuntimeError(
-            f"Unable to extract historical series headers from workbook: {workbook_path}"
-        ) from exc
-    except Exception as exc:
-        _raise_with_context(
-            exc=exc,
-            context=(
-                "Unexpected error while extracting historical series headers from "
-                f"workbook: {workbook_path}"
-            ),
-        )
     finally:
-        if workbook is not None:
-            workbook.close()
+        workbook_obj.close()
 
 
 def _write_needs_mapping_updates(
