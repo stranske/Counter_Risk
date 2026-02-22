@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from typing import Any
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
@@ -80,7 +81,7 @@ class NameRegistryConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    schema_version: int
+    schema_version: Literal[1]
     entries: list[NameRegistryEntry] = Field(min_length=1)
 
     @model_validator(mode="after")

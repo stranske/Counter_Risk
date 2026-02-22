@@ -1,3 +1,6 @@
+# Top-level schema:
+# - schema_version: required integer, currently must be 1.
+# - entries: required non-empty list of registry entry objects.
 # Schema version for forward-compatible validation rules.
 schema_version: 1
 
