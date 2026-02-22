@@ -1338,15 +1338,15 @@ def test_run_pipeline_manifest_includes_distribution_static_warning(
 
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
 
-    # Regular PPT is still produced.
-    assert (run_dir / "Monthly Counterparty Exposure Report.pptx").exists()
+    # Regular PPT is still produced (distribution filename for as_of_date 2025-12-31).
+    assert (run_dir / "Monthly Counterparty Exposure Report - 2025-12-31.pptx").exists()
 
     # Warning about static distribution being unavailable is present.
     assert any("distribution_static" in w for w in manifest["warnings"])
 
     # No static distribution files produced (no COM available).
-    assert not (run_dir / "Monthly Counterparty Exposure Report_distribution_static.pptx").exists()
-    assert not (run_dir / "Monthly Counterparty Exposure Report_distribution.pdf").exists()
+    assert not (run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31_distribution_static.pptx").exists()
+    assert not (run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31_distribution.pdf").exists()
 
     # Config snapshot captures the flag.
     assert manifest["config_snapshot"]["distribution_static"] is True

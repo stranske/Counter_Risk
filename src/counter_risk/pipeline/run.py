@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import logging
 import platform
@@ -1146,7 +1147,7 @@ def _create_static_distribution(
         return []
 
     try:
-        import win32com.client  # type: ignore[import-untyped]
+        import win32com.client
     except ImportError:
         warnings.append(
             "distribution_static requested but win32com is not installed; "
@@ -1198,15 +1199,11 @@ def _create_static_distribution(
         LOGGER.exception("distribution_static_failed")
     finally:
         if presentation is not None:
-            try:
+            with contextlib.suppress(Exception):
                 presentation.Close()
-            except Exception:
-                pass
         if app is not None:
-            try:
+            with contextlib.suppress(Exception):
                 app.Quit()
-            except Exception:
-                pass
 
     return output_paths
 
@@ -1224,11 +1221,11 @@ def _rebuild_pptx_from_slide_images(
     contains no live Excel chart links.
     """
 
-    from pptx import Presentation  # type: ignore[import-untyped]
+    from pptx import Presentation
 
-    source_prs = Presentation(source_pptx)
-    slide_width = source_prs.slide_width
-    slide_height = source_prs.slide_height
+    source_prs = Presentation(str(source_pptx))
+    slide_width: int = source_prs.slide_width or 0
+    slide_height: int = source_prs.slide_height or 0
 
     new_prs = Presentation()
     new_prs.slide_width = slide_width
@@ -1243,7 +1240,7 @@ def _rebuild_pptx_from_slide_images(
             str(img_path), left=0, top=0, width=slide_width, height=slide_height
         )
 
-    new_prs.save(output_path)
+    new_prs.save(str(output_path))
 
 
 def _update_historical_outputs(
