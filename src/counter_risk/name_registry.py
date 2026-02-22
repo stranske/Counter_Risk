@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any
-from typing import Literal
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
