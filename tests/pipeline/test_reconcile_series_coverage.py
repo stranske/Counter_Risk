@@ -5,6 +5,7 @@ from __future__ import annotations
 from inspect import Parameter, signature
 
 from counter_risk.pipeline.run import (
+    _normalized_counterparties_from_parsed_data,
     _normalized_counterparties_from_records,
     reconcile_series_coverage,
 )
@@ -277,3 +278,31 @@ def test_normalized_counterparties_from_records_ignores_blank_counterparties() -
     normalized = _normalized_counterparties_from_records(totals_records)
 
     assert normalized == {"JP Morgan": {"JP Morgan"}}
+
+
+def test_normalized_counterparties_from_parsed_data_uses_totals_records() -> None:
+    parsed_sections = {
+        "totals": [
+            {"counterparty": "Bank of America, NA"},
+            {"counterparty": "Bank of America NA"},
+            {"counterparty": "  Citigroup  "},
+            {"counterparty": "   "},
+            {},
+        ],
+        "futures": [{"clearing_house": "CME"}],
+    }
+
+    normalized = _normalized_counterparties_from_parsed_data(parsed_sections)
+
+    assert normalized == {
+        "Bank of America": {"Bank of America, NA", "Bank of America NA"},
+        "Citibank": {"Citigroup"},
+    }
+
+
+def test_normalized_counterparties_from_parsed_data_handles_missing_totals_key() -> None:
+    normalized = _normalized_counterparties_from_parsed_data(
+        {"futures": [{"clearing_house": "ICE"}]}
+    )
+
+    assert normalized == {}

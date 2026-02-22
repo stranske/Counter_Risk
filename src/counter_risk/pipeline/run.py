@@ -125,7 +125,9 @@ def reconcile_series_coverage(
                 if value
             }
         )
-        normalized_counterparties_in_data = _normalized_counterparties_from_records(totals_records)
+        normalized_counterparties_in_data = _normalized_counterparties_from_parsed_data(
+            parsed_sections
+        )
         clearing_houses_in_data = sorted(
             {
                 value
@@ -310,6 +312,13 @@ def _normalized_counterparties_from_records(
         normalized_name = normalize_counterparty(raw_name)
         normalized_to_raw.setdefault(normalized_name, set()).add(raw_name)
     return normalized_to_raw
+
+
+def _normalized_counterparties_from_parsed_data(
+    parsed_sections: Mapping[str, Any],
+) -> dict[str, set[str]]:
+    totals_records = _records(parsed_sections.get("totals", []))
+    return _normalized_counterparties_from_records(totals_records)
 
 
 def run_pipeline(config_path: str | Path) -> Path:
