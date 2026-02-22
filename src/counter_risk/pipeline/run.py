@@ -26,6 +26,7 @@ from counter_risk.pipeline.parsing_types import (
     ParsedDataMissingKeyError,
 )
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
+from counter_risk.pipeline.time_utils import utc_now_isoformat
 from counter_risk.writers import generate_mosers_workbook
 
 LOGGER = logging.getLogger(__name__)
@@ -1629,7 +1630,7 @@ def _write_needs_mapping_updates(
     impacted_series_count: int,
     impacted_rows_count: int,
 ) -> Path:
-    timestamp = _dt.datetime.now(tz=UTC).isoformat()
+    timestamp = utc_now_isoformat()
     lines: list[str] = [
         "Counter Risk Reconciliation Gaps",
         f"timestamp_utc: {timestamp}",
@@ -1676,9 +1677,3 @@ def _write_needs_mapping_updates(
     output_path = run_dir / "NEEDS_MAPPING_UPDATES.txt"
     output_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     return output_path
-
-
-try:
-    UTC = _dt.UTC
-except AttributeError:  # pragma: no cover -- Python <3.11 fallback
-    UTC = _dt.timezone.utc  # noqa: UP017
