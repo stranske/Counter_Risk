@@ -1,0 +1,81 @@
+# Schema version for forward-compatible validation rules.
+schema_version: 1
+
+# Canonical counterparty/series registry used for deterministic name normalization.
+entries:
+  - canonical_key: citibank # Required snake_case key: ^[a-z0-9]+(?:_[a-z0-9]+)*$, unique across entries.
+    display_name: Citibank # Required canonical series/header label (1-80 chars, workbook-safe punctuation).
+    aliases: # Required list[str], at least one value, deduplicated case-insensitively after whitespace normalization.
+      - Citibank
+      - Citigroup
+    # Optional per-variant include flags. If omitted, defaults to included for all variants.
+    series_included:
+      all_programs: true
+      ex_trend: true
+      trend: true
+
+  - canonical_key: bank_of_america # canonical_key values must remain globally unique.
+    display_name: Bank of America
+    aliases:
+      - Bank of America
+      - Bank of America, NA
+      - Bank of America NA
+
+  - canonical_key: goldman_sachs
+    display_name: Goldman Sachs
+    aliases:
+      - Goldman Sachs
+      - Goldman Sachs Int'l
+
+  - canonical_key: soc_gen
+    display_name: Soc Gen
+    aliases:
+      - Soc Gen
+      - Societe Generale
+
+  - canonical_key: barclays
+    display_name: Barclays
+    aliases:
+      - Barclays
+      - Barclays Bank PLC
+
+  - canonical_key: cme
+    display_name: CME
+    aliases:
+      - CME
+      - CME Clearing House
+
+  - canonical_key: ice
+    display_name: ICE
+    aliases:
+      - ICE
+      - ICE Clear U.S.
+      - ICE Clear US
+
+  - canonical_key: ice_euro
+    display_name: ICE Euro
+    aliases:
+      - ICE Euro
+      - ICE Clear Europe
+    series_included:
+      all_programs: true
+      ex_trend: true
+      trend: false
+
+  - canonical_key: eurex
+    display_name: EUREX
+    aliases:
+      - EUREX
+      - EUREX Clearing
+
+  - canonical_key: japan_scc
+    display_name: Japan SCC
+    aliases:
+      - Japan SCC
+      - Japan Securities Clearing Corporation
+
+  - canonical_key: korea_exchange
+    display_name: Korea Exchange
+    aliases:
+      - Korea Exchange
+      - Korea Exchange (in-house)
