@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: 'Create `config/name_registry.yml` with fields: `canonical_key`, `aliases`,
       `display_name`, and optional per-variant `series_included` flags'
-    status: doing
+    status: done
     started_at: '2026-02-22T21:31:34Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-22T21:31:48Z'
+    commit: 8cbb63a5d9bdf9e8ef45572cd1c98960ad5331d5
     notes: []
   - id: task-02
     title: 'Create the `config/name_registry.yml` file with basic YAML structure (verify:
