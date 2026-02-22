@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from zipfile import BadZipFile, ZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
@@ -787,7 +787,7 @@ def _remove_external_relationship_targets(xml_bytes: bytes) -> bytes:
 
     if not changed:
         return xml_bytes
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    return cast(bytes, ET.tostring(root, encoding="utf-8", xml_declaration=True))
 
 
 def _assert_master_preserves_external_link_targets(

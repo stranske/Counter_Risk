@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Literal
 from zipfile import ZipFile
-import xml.etree.ElementTree as ET
 
 import pytest
 
