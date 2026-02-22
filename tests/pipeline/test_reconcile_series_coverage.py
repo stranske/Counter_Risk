@@ -141,6 +141,34 @@ def test_reconcile_series_coverage_counts_each_historical_series_missing_from_da
     assert result["gap_count"] == 2
 
 
+def test_reconcile_series_coverage_counts_missing_historical_series_with_no_other_gaps() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={"SheetA": {"totals": [{"counterparty": "A"}], "futures": []}},
+        historical_series_headers_by_sheet={"SheetA": ("A", "B")},
+    )
+
+    assert result["by_sheet"]["SheetA"]["missing_from_data"] == ["B"]
+    assert result["by_sheet"]["SheetA"]["missing_expected_segments"] == []
+    assert result["gap_count"] == 1
+
+
+def test_reconcile_series_coverage_counts_missing_historical_series_exactly_per_sheet() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "SheetA": {"totals": [{"counterparty": "A"}]},
+            "SheetB": {"totals": [{"counterparty": "X"}, {"counterparty": "Y"}]},
+        },
+        historical_series_headers_by_sheet={
+            "SheetA": ("A", "B", "C"),
+            "SheetB": ("X", "Y"),
+        },
+    )
+
+    assert result["by_sheet"]["SheetA"]["missing_from_data"] == ["B", "C"]
+    assert result["by_sheet"]["SheetB"]["missing_from_data"] == []
+    assert result["gap_count"] == 2
+
+
 def test_reconcile_series_coverage_reports_missing_expected_segments_by_variant() -> None:
     result = reconcile_series_coverage(
         parsed_data_by_sheet={
