@@ -9,12 +9,12 @@ import sys
 import types
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import pytest
 
 import counter_risk.pipeline.run as run_module
-from counter_risk.config import WorkflowConfig
+from counter_risk.config import ReconciliationConfig, WorkflowConfig
 from counter_risk.pipeline.run import run_pipeline
 
 
@@ -160,21 +160,20 @@ def _minimal_parsed_by_variant() -> dict[str, dict[str, _FakeDataFrame]]:
     }
 
 
-def _minimal_workflow_config(tmp_path: Path, *, fail_policy: str = "warn") -> WorkflowConfig:
-    path_map = {
-        "mosers_all_programs_xlsx": tmp_path / "all.xlsx",
-        "mosers_ex_trend_xlsx": tmp_path / "ex.xlsx",
-        "mosers_trend_xlsx": tmp_path / "trend.xlsx",
-        "hist_all_programs_3yr_xlsx": tmp_path / "hist-all.xlsx",
-        "hist_ex_llc_3yr_xlsx": tmp_path / "hist-ex.xlsx",
-        "hist_llc_3yr_xlsx": tmp_path / "hist-trend.xlsx",
-        "monthly_pptx": tmp_path / "monthly.pptx",
-    }
+def _minimal_workflow_config(
+    tmp_path: Path, *, fail_policy: Literal["warn", "strict"] = "warn"
+) -> WorkflowConfig:
     return WorkflowConfig(
         as_of_date=date(2025, 12, 31),
         output_root=tmp_path / "runs",
-        reconciliation={"fail_policy": fail_policy},
-        **path_map,
+        reconciliation=ReconciliationConfig(fail_policy=fail_policy),
+        mosers_all_programs_xlsx=tmp_path / "all.xlsx",
+        mosers_ex_trend_xlsx=tmp_path / "ex.xlsx",
+        mosers_trend_xlsx=tmp_path / "trend.xlsx",
+        hist_all_programs_3yr_xlsx=tmp_path / "hist-all.xlsx",
+        hist_ex_llc_3yr_xlsx=tmp_path / "hist-ex.xlsx",
+        hist_llc_3yr_xlsx=tmp_path / "hist-trend.xlsx",
+        monthly_pptx=tmp_path / "monthly.pptx",
     )
 
 

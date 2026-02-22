@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal, NoReturn, cast
 from zipfile import BadZipFile, ZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
@@ -1517,7 +1517,7 @@ def _sheet_for_series_label(
 
 
 def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str, tuple[str, ...]]:
-    def _raise_with_context(*, exc: Exception, context: str) -> None:
+    def _raise_with_context(*, exc: Exception, context: str) -> NoReturn:
         message = str(exc)
         suffix = f": {message}" if message else ""
         raise type(exc)(f"{context}{suffix}") from exc
