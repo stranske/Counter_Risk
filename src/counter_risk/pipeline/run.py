@@ -488,6 +488,14 @@ def _write_outputs(
             else f"PPT links refresh failed; {refresh_result.error_detail}"
         )
 
+    static_output_paths = _create_static_distribution(
+        source_pptx=target_ppt,
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+    )
+    output_paths.extend(static_output_paths)
+
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
     return output_paths, refresh_result
 
@@ -617,6 +625,136 @@ def _refresh_ppt_links(pptx_path: Path) -> PptProcessingResult:
             presentation.Close()
         if app is not None:
             app.Quit()
+
+
+def _create_static_distribution(
+    *,
+    source_pptx: Path,
+    run_dir: Path,
+    config: WorkflowConfig,
+    warnings: list[str],
+) -> list[Path]:
+    """Produce a static distribution copy of the presentation.
+
+    On Windows with COM available: exports each slide as a PNG image and rebuilds
+    the deck as a flat image-only PPTX (no live Excel links).  When that succeeds,
+    also attempts a PDF export.
+
+    When COM is unavailable (non-Windows or missing pywin32): appends a human-readable
+    warning to *warnings* and returns an empty list so the caller's regular
+    (non-static) PPT remains the sole deliverable.
+    """
+
+    if not config.distribution_static:
+        return []
+
+    if platform.system().lower() != "windows":
+        warnings.append(
+            "distribution_static requested but PowerPoint COM is only available on Windows; "
+            "no static distribution produced"
+        )
+        LOGGER.info("distribution_static_skipped reason=non_windows")
+        return []
+
+    try:
+        import win32com.client  # type: ignore[import-untyped]
+    except ImportError:
+        warnings.append(
+            "distribution_static requested but win32com is not installed; "
+            "no static distribution produced"
+        )
+        LOGGER.info("distribution_static_skipped reason=win32com_unavailable")
+        return []
+
+    output_paths: list[Path] = []
+    slide_images_dir = run_dir / "_distribution_slides"
+    static_pptx_path = run_dir / f"{source_pptx.stem}_distribution_static.pptx"
+    pdf_path = run_dir / f"{source_pptx.stem}_distribution.pdf"
+
+    app = None
+    presentation = None
+    try:
+        app = win32com.client.DispatchEx("PowerPoint.Application")
+        app.Visible = False
+        presentation = app.Presentations.Open(str(source_pptx), WithWindow=False)
+        slide_count = presentation.Slides.Count
+
+        # Attempt PDF export (simpler fallback deliverable).
+        try:
+            presentation.ExportAsFixedFormat(str(pdf_path), 2)  # 2 = ppFixedFormatTypePDF
+            output_paths.append(pdf_path)
+            LOGGER.info("distribution_static_pdf_complete path=%s", pdf_path)
+        except Exception as pdf_exc:
+            warnings.append(f"distribution_static PDF export failed: {pdf_exc}")
+            LOGGER.warning("distribution_static_pdf_failed exc=%s", pdf_exc)
+
+        # Preferred: export every slide as PNG and rebuild a flat image-only PPTX.
+        slide_images_dir.mkdir(parents=True, exist_ok=True)
+        slide_images: list[Path] = []
+        for slide_index in range(1, slide_count + 1):
+            img_path = slide_images_dir / f"slide_{slide_index:04d}.png"
+            presentation.Slides[slide_index].Export(str(img_path), "PNG")
+            slide_images.append(img_path)
+
+        _rebuild_pptx_from_slide_images(
+            source_pptx=source_pptx,
+            slide_images=slide_images,
+            output_path=static_pptx_path,
+        )
+        output_paths.append(static_pptx_path)
+        LOGGER.info("distribution_static_pptx_complete path=%s", static_pptx_path)
+
+    except Exception as exc:
+        warnings.append(f"distribution_static generation failed: {exc}")
+        LOGGER.exception("distribution_static_failed")
+    finally:
+        if presentation is not None:
+            try:
+                presentation.Close()
+            except Exception:
+                pass
+        if app is not None:
+            try:
+                app.Quit()
+            except Exception:
+                pass
+
+    return output_paths
+
+
+def _rebuild_pptx_from_slide_images(
+    *,
+    source_pptx: Path,
+    slide_images: list[Path],
+    output_path: Path,
+) -> None:
+    """Create a new PPTX where every slide is a single full-bleed PNG image.
+
+    The new deck preserves the slide dimensions of *source_pptx* so that the
+    layout appears identical to the original when opened in PowerPoint, but
+    contains no live Excel chart links.
+    """
+
+    from pptx import Presentation  # type: ignore[import-untyped]
+
+    source_prs = Presentation(source_pptx)
+    slide_width = source_prs.slide_width
+    slide_height = source_prs.slide_height
+
+    new_prs = Presentation()
+    new_prs.slide_width = slide_width
+    new_prs.slide_height = slide_height
+
+    # Slide layout index 6 is the universally blank layout in stock python-pptx templates.
+    blank_layout = new_prs.slide_layouts[6]
+
+    for img_path in slide_images:
+        new_slide = new_prs.slides.add_slide(blank_layout)
+        new_slide.shapes.add_picture(
+            str(img_path), left=0, top=0, width=slide_width, height=slide_height
+        )
+
+    new_prs.save(output_path)
 
 
 def _update_historical_outputs(

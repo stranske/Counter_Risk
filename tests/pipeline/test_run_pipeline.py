@@ -851,3 +851,160 @@ def test_merge_historical_workbook_fails_fast_when_required_headers_missing(
     assert "Total" in message
     assert "value series 1" in message
     assert broken.cell(row=3, column=1).value is None
+
+
+# ---------------------------------------------------------------------------
+# Static distribution fallback tests
+# ---------------------------------------------------------------------------
+
+
+def _make_minimal_config(tmp_path: Path, *, distribution_static: bool = False) -> WorkflowConfig:
+    """Return a minimal WorkflowConfig with placeholder files."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    for name in (
+        "all.xlsx",
+        "ex.xlsx",
+        "trend.xlsx",
+        "hist_all.xlsx",
+        "hist_ex.xlsx",
+        "hist_llc.xlsx",
+        "monthly.pptx",
+    ):
+        (tmp_path / name).write_bytes(b"placeholder")
+    return WorkflowConfig(
+        as_of_date=date(2025, 12, 31),
+        mosers_all_programs_xlsx=tmp_path / "all.xlsx",
+        mosers_ex_trend_xlsx=tmp_path / "ex.xlsx",
+        mosers_trend_xlsx=tmp_path / "trend.xlsx",
+        hist_all_programs_3yr_xlsx=tmp_path / "hist_all.xlsx",
+        hist_ex_llc_3yr_xlsx=tmp_path / "hist_ex.xlsx",
+        hist_llc_3yr_xlsx=tmp_path / "hist_llc.xlsx",
+        monthly_pptx=tmp_path / "monthly.pptx",
+        distribution_static=distribution_static,
+        output_root=tmp_path / "runs",
+    )
+
+
+def test_create_static_distribution_is_noop_when_flag_is_false(
+    tmp_path: Path,
+) -> None:
+    """When distribution_static=False the function returns no paths and no warnings."""
+    source_pptx = tmp_path / "deck.pptx"
+    source_pptx.write_bytes(b"fake-pptx")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    config = _make_minimal_config(tmp_path / "cfg", distribution_static=False)
+    warnings: list[str] = []
+
+    output = run_module._create_static_distribution(
+        source_pptx=source_pptx,
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+    )
+
+    assert output == []
+    assert warnings == []
+
+
+def test_create_static_distribution_warns_on_non_windows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """On non-Windows platforms a clear warning is emitted and no paths are returned."""
+    monkeypatch.setattr(run_module.platform, "system", lambda: "Linux")
+
+    source_pptx = tmp_path / "deck.pptx"
+    source_pptx.write_bytes(b"fake-pptx")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    config = _make_minimal_config(tmp_path / "cfg", distribution_static=True)
+    warnings: list[str] = []
+
+    output = run_module._create_static_distribution(
+        source_pptx=source_pptx,
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+    )
+
+    assert output == []
+    assert len(warnings) == 1
+    assert "distribution_static" in warnings[0]
+    assert "Windows" in warnings[0]
+
+
+def test_create_static_distribution_warns_when_win32com_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When win32com is absent on a simulated Windows host a warning is emitted."""
+    monkeypatch.setattr(run_module.platform, "system", lambda: "Windows")
+    # Ensure win32com.client cannot be imported.
+    monkeypatch.setitem(sys.modules, "win32com", None)
+    monkeypatch.setitem(sys.modules, "win32com.client", None)
+
+    source_pptx = tmp_path / "deck.pptx"
+    source_pptx.write_bytes(b"fake-pptx")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    config = _make_minimal_config(tmp_path / "cfg", distribution_static=True)
+    warnings: list[str] = []
+
+    output = run_module._create_static_distribution(
+        source_pptx=source_pptx,
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+    )
+
+    assert output == []
+    assert len(warnings) == 1
+    assert "distribution_static" in warnings[0]
+    assert "win32com" in warnings[0]
+
+
+def test_run_pipeline_manifest_includes_distribution_static_warning(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Full pipeline: distribution_static=True on non-Windows emits manifest warning."""
+    fixtures = Path("tests/fixtures")
+    output_root = tmp_path / "runs"
+
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {output_root}",
+                "distribution_static: true",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    # Force non-Windows so the fallback path is exercised.
+    monkeypatch.setattr(run_module.platform, "system", lambda: "Linux")
+
+    run_dir = run_pipeline(config_path)
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    # Regular PPT is still produced.
+    assert (run_dir / "Monthly Counterparty Exposure Report.pptx").exists()
+
+    # Warning about static distribution being unavailable is present.
+    assert any("distribution_static" in w for w in manifest["warnings"])
+
+    # No static distribution files produced (no COM available).
+    assert not (run_dir / "Monthly Counterparty Exposure Report_distribution_static.pptx").exists()
+    assert not (run_dir / "Monthly Counterparty Exposure Report_distribution.pdf").exists()
+
+    # Config snapshot captures the flag.
+    assert manifest["config_snapshot"]["distribution_static"] is True

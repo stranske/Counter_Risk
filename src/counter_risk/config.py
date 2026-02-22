@@ -32,6 +32,7 @@ class WorkflowConfig(BaseModel):
     enable_screenshot_replacement: bool = False
     screenshot_replacement_implementation: Literal["zip", "python-pptx"] = "zip"
     screenshot_inputs: dict[str, Path] = Field(default_factory=dict)
+    distribution_static: bool = False
     output_root: Path = Path("runs")
 
 
