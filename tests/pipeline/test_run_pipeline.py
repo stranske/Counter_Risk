@@ -200,7 +200,8 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
         run_dir / "all_programs-mosers-input.xlsx",
         run_dir / "ex_trend-mosers-input.xlsx",
         run_dir / "trend-mosers-input.xlsx",
-        run_dir / "Monthly Counterparty Exposure Report.pptx",
+        run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx",
+        run_dir / "Monthly Counterparty Exposure Report - 2025-12-31.pptx",
     ]
     for output_file in expected_outputs:
         assert output_file.exists(), f"Missing output file: {output_file}"
@@ -278,7 +279,7 @@ def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
-        lambda *, run_dir, config, warnings: (
+        lambda *, run_dir, config, as_of_date, warnings: (
             [],
             run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
         ),
@@ -513,7 +514,7 @@ def test_run_pipeline_warn_mode_writes_mapping_updates_and_completes(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
-        lambda *, run_dir, config, warnings: (
+        lambda *, run_dir, config, as_of_date, warnings: (
             [],
             run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
         ),
@@ -573,8 +574,8 @@ def test_run_pipeline_wraps_output_write_errors(
         lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
     )
 
-    def _boom(*, run_dir: Path, config: Any, warnings: list[str]) -> list[Path]:
-        _ = (run_dir, config, warnings)
+    def _boom(*, run_dir: Path, config: Any, as_of_date: date, warnings: list[str]) -> list[Path]:
+        _ = (run_dir, config, as_of_date, warnings)
         raise OSError("disk full")
 
     monkeypatch.setattr("counter_risk.pipeline.run._write_outputs", _boom)
@@ -664,7 +665,7 @@ def test_run_pipeline_wraps_manifest_generation_errors(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
-        lambda *, run_dir, config, warnings: (
+        lambda *, run_dir, config, as_of_date, warnings: (
             [],
             run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
         ),
@@ -742,7 +743,9 @@ def test_run_pipeline_invokes_ppt_link_refresh(
     run_dir = run_pipeline(config_path)
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
 
-    assert seen["path"] == run_dir / "Monthly Counterparty Exposure Report.pptx"
+    assert (
+        seen["path"] == run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx"
+    )
     assert "PPT links not refreshed; COM refresh skipped" not in manifest["warnings"]
 
 
@@ -761,7 +764,7 @@ def test_run_pipeline_ignores_config_output_root_for_run_directory(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
-        lambda *, run_dir, config, warnings: (
+        lambda *, run_dir, config, as_of_date, warnings: (
             [],
             run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
         ),
