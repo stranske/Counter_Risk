@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Literal
+from zipfile import ZipFile
 
 import pytest
 
@@ -21,6 +24,30 @@ class _ScreenshotBackendCall:
 def _write_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(payload)
+
+
+def _write_pptx_with_external_link(path: Path, target: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rels_xml = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="{target}" TargetMode="External"/>
+</Relationships>
+"""
+    with ZipFile(path, "w") as archive:
+        archive.writestr("ppt/slides/_rels/slide1.xml.rels", rels_xml)
+
+
+def _read_relationship_targets(path: Path, rel_path: str) -> list[str]:
+    with ZipFile(path) as archive:
+        xml_bytes = archive.read(rel_path)
+    root = ET.fromstring(xml_bytes)
+    return [
+        rel.attrib.get("Target", "").strip()
+        for rel in root.findall(
+            ".//{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
+        )
+        if rel.attrib.get("Target", "").strip()
+    ]
 
 
 def _build_config(
@@ -89,15 +116,27 @@ def test_write_outputs_calls_zip_backend_once_when_enabled(
     )
 
     warnings: list[str] = []
-    output_paths, _ = run_module._write_outputs(run_dir=run_dir, config=config, warnings=warnings)
+    output_paths, _ = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2026, 2, 13),
+        warnings=warnings,
+    )
 
     assert len(calls) == 1
-    assert calls[0].output == run_dir / "monthly.pptx"
+    assert calls[0].output == (
+        run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx"
+    )
     assert list(calls[0].mapping) == ["slide1", "slide2"]
     assert len(calls[0].mapping) == 2
     assert all(path.suffix.lower() == ".png" for path in calls[0].mapping.values())
-    assert output_paths[-1] == run_dir / "monthly.pptx"
-    assert (run_dir / "monthly.pptx").exists()
+    assert (
+        output_paths[-2]
+        == run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx"
+    )
+    assert output_paths[-1] == run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx"
+    assert (run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx").exists()
+    assert (run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx").exists()
     assert all("not implemented" not in warning for warning in warnings)
     assert all("disabled; copied source deck unchanged" not in warning for warning in warnings)
 
@@ -140,11 +179,154 @@ def test_write_outputs_routes_python_pptx_backend_when_selected(
     )
 
     warnings: list[str] = []
-    run_module._write_outputs(run_dir=run_dir, config=config, warnings=warnings)
+    run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2026, 2, 13),
+        warnings=warnings,
+    )
 
     assert called["python_pptx"] == 1
     assert called["zip"] == 0
     assert all("not implemented" not in warning for warning in warnings)
+
+
+def test_write_outputs_derives_distribution_from_refreshed_master(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+
+    config = _build_config(
+        tmp_path=tmp_path,
+        enable_screenshot_replacement=False,
+    )
+    config.monthly_pptx.write_bytes(b"base-ppt")
+
+    def _refresh(path: Path) -> PptProcessingResult:
+        path.write_bytes(path.read_bytes() + b"-refreshed")
+        return PptProcessingResult(status=PptProcessingStatus.SUCCESS)
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", _refresh)
+
+    output_paths, _ = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2026, 2, 13),
+        warnings=[],
+    )
+
+    master = run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx"
+    distribution = run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx"
+    assert output_paths[-2:] == [master, distribution]
+    assert master.read_bytes().endswith(b"-refreshed")
+    assert distribution.read_bytes() == master.read_bytes()
+
+
+def test_write_outputs_raises_when_master_generation_drops_external_links(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    image_1 = tmp_path / "screenshots" / "slide_1.png"
+    _write_placeholder(image_1, payload=b"img-1")
+
+    config = _build_config(
+        tmp_path=tmp_path,
+        enable_screenshot_replacement=True,
+        screenshot_replacement_implementation="zip",
+        screenshot_inputs={"slide1": image_1},
+    )
+    _write_pptx_with_external_link(config.monthly_pptx, "X:\\linked\\book.xlsx")
+
+    def _drop_links(_source: Path, output: Path, _mapping: dict[str, Path]) -> None:
+        with ZipFile(output, "w") as archive:
+            archive.writestr("ppt/slides/slide1.xml", "<p:sld/>")
+
+    monkeypatch.setattr(run_module, "_replace_screenshots_with_zip_backend", _drop_links)
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: PptProcessingResult(status=PptProcessingStatus.SUCCESS),
+    )
+
+    with pytest.raises(RuntimeError, match="did not preserve linked chart references"):
+        run_module._write_outputs(
+            run_dir=run_dir,
+            config=config,
+            as_of_date=date(2026, 2, 13),
+            warnings=[],
+        )
+
+
+def test_write_outputs_keeps_master_external_links_when_backend_preserves_relationships(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    image_1 = tmp_path / "screenshots" / "slide_1.png"
+    _write_placeholder(image_1, payload=b"img-1")
+
+    config = _build_config(
+        tmp_path=tmp_path,
+        enable_screenshot_replacement=True,
+        screenshot_replacement_implementation="zip",
+        screenshot_inputs={"slide1": image_1},
+    )
+    _write_pptx_with_external_link(config.monthly_pptx, "X:\\linked\\book.xlsx")
+
+    def _preserve_links(source: Path, output: Path, _mapping: dict[str, Path]) -> None:
+        output.write_bytes(source.read_bytes())
+
+    monkeypatch.setattr(run_module, "_replace_screenshots_with_zip_backend", _preserve_links)
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: PptProcessingResult(status=PptProcessingStatus.SUCCESS),
+    )
+
+    output_paths, _ = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2026, 2, 13),
+        warnings=[],
+    )
+
+    assert output_paths[-2:] == [
+        run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx",
+        run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx",
+    ]
+
+
+def test_derive_distribution_ppt_removes_external_link_relationships_from_master(
+    tmp_path: Path,
+) -> None:
+    master = tmp_path / "master.pptx"
+    distribution = tmp_path / "distribution.pptx"
+    with ZipFile(master, "w") as archive:
+        archive.writestr(
+            "ppt/slides/_rels/slide1.xml.rels",
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="X:\\linked\\book.xlsx" TargetMode="External"/>
+</Relationships>
+""",
+        )
+        archive.writestr("ppt/media/image1.png", b"png-data")
+
+    run_module._derive_distribution_ppt(
+        master_pptx_path=master, distribution_pptx_path=distribution
+    )
+
+    assert run_module._list_external_link_targets(master) == {"X:\\linked\\book.xlsx"}
+    assert run_module._list_external_link_targets(distribution) == set()
+    assert (tmp_path / "distribution.pptx").exists()
+    assert _read_relationship_targets(distribution, "ppt/slides/_rels/slide1.xml.rels") == [
+        "../media/image1.png"
+    ]
+    with ZipFile(distribution) as archive:
+        assert archive.read("ppt/media/image1.png") == b"png-data"
 
 
 def test_resolve_screenshot_input_mapping_rejects_non_png_paths(tmp_path: Path) -> None:
