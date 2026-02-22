@@ -1178,14 +1178,17 @@ def _run_reconciliation_checks(
         )
         reconciliation_by_variant[variant] = result
         total_gap_count += int(result.get("gap_count", 0))
-        impacted_series_count += sum(
-            len(item.get("missing_from_historical_headers", []))
-            for item in result.get("missing_series", [])
-            if isinstance(item, Mapping)
-        )
-        if int(result.get("gap_count", 0)) > 0:
-            impacted_rows_count += _row_count(parsed_sections.get("totals", []))
-            impacted_rows_count += _row_count(parsed_sections.get("futures", []))
+        by_sheet_result = result.get("by_sheet", {})
+        if isinstance(by_sheet_result, Mapping):
+            for sheet_name, sheet_result in by_sheet_result.items():
+                if not isinstance(sheet_result, Mapping):
+                    continue
+                series_delta, rows_delta = _calculate_impacted_scope_for_sheet(
+                    parsed_sections=parsed_data_by_sheet.get(str(sheet_name), {}),
+                    reconciliation_sheet_result=sheet_result,
+                )
+                impacted_series_count += series_delta
+                impacted_rows_count += rows_delta
         for warning in result.get("warnings", []):
             warnings.append(f"Reconciliation ({variant}): {warning}")
 
@@ -1277,6 +1280,41 @@ def _build_parsed_data_by_sheet(
             parsed_data_by_sheet[target_sheet]["futures"].append(record)
 
     return parsed_data_by_sheet
+
+
+def _calculate_impacted_scope_for_sheet(
+    *,
+    parsed_sections: Mapping[str, Any],
+    reconciliation_sheet_result: Mapping[str, Any],
+) -> tuple[int, int]:
+    missing_series_labels = {
+        str(label).strip()
+        for label in reconciliation_sheet_result.get("missing_from_historical_headers", [])
+        if str(label).strip()
+    }
+    normalized_missing_series = {normalize_counterparty(label) for label in missing_series_labels}
+    missing_segments = {
+        str(segment).strip()
+        for segment in reconciliation_sheet_result.get("missing_expected_segments", [])
+        if str(segment).strip()
+    }
+    impacted_rows = 0
+    for record in _records(parsed_sections.get("totals", [])):
+        raw_label = str(record.get("counterparty", "")).strip()
+        normalized_label = normalize_counterparty(raw_label) if raw_label else ""
+        raw_segment = str(record.get("segment", record.get("Segment", ""))).strip()
+        if normalized_label in normalized_missing_series or raw_segment in missing_segments:
+            impacted_rows += 1
+
+    for record in _records(parsed_sections.get("futures", [])):
+        raw_label = str(record.get("clearing_house", "")).strip()
+        normalized_label = normalize_counterparty(raw_label) if raw_label else ""
+        raw_segment = str(record.get("segment", record.get("Segment", ""))).strip()
+        if normalized_label in normalized_missing_series or raw_segment in missing_segments:
+            impacted_rows += 1
+
+    impacted_series = len(normalized_missing_series) + len(missing_segments)
+    return impacted_series, impacted_rows
 
 
 def _select_fallback_sheet_name(
