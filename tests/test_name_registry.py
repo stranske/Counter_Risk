@@ -101,3 +101,32 @@ def test_load_name_registry_rejects_duplicate_aliases_across_entries(tmp_path: P
 
     with pytest.raises(ValueError, match="Name registry validation failed"):
         load_name_registry(config_path)
+
+
+def test_load_name_registry_rejects_unsupported_schema_version(tmp_path: Path) -> None:
+    config_path = tmp_path / "name_registry.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 2",
+                "entries:",
+                "  - canonical_key: sample_name",
+                "    display_name: Sample Name",
+                "    aliases:",
+                "      - Sample Name",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Name registry validation failed"):
+        load_name_registry(config_path)
+
+
+def test_load_name_registry_rejects_missing_top_level_entries(tmp_path: Path) -> None:
+    config_path = tmp_path / "name_registry.yml"
+    config_path.write_text("schema_version: 1\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Name registry validation failed"):
+        load_name_registry(config_path)
