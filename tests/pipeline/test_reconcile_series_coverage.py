@@ -4,7 +4,17 @@ from __future__ import annotations
 
 from inspect import Parameter, signature
 
-from counter_risk.pipeline.run import reconcile_series_coverage
+import pytest
+
+from counter_risk.pipeline.parsing_types import (
+    ParsedDataInvalidShapeError,
+    ParsedDataMissingKeyError,
+)
+from counter_risk.pipeline.run import (
+    _normalized_counterparties_from_parsed_data,
+    _normalized_counterparties_from_records,
+    reconcile_series_coverage,
+)
 
 
 def test_reconcile_series_coverage_requires_parsed_data_input_parameter() -> None:
@@ -20,7 +30,7 @@ def test_reconcile_series_coverage_requires_parsed_data_input_parameter() -> Non
 
 def test_reconcile_series_coverage_accepts_historical_headers_parameter() -> None:
     result = reconcile_series_coverage(
-        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}]}},
+        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}], "futures": []}},
         historical_series_headers_by_sheet={"Total": ("A", "B")},
     )
 
@@ -28,17 +38,22 @@ def test_reconcile_series_coverage_accepts_historical_headers_parameter() -> Non
         "by_sheet": {
             "Total": {
                 "counterparties_in_data": ["A"],
+                "normalized_counterparties_in_data": ["A"],
                 "clearing_houses_in_data": [],
                 "historical_series_headers": ["A", "B"],
+                "normalized_historical_series_headers": ["A", "B"],
                 "current_series_labels": ["A"],
                 "missing_from_historical_headers": [],
+                "missing_normalized_counterparties": [],
                 "missing_from_data": ["B"],
                 "segments_in_data": [],
                 "missing_expected_segments": [],
             }
         },
-        "gap_count": 0,
-        "warnings": [],
+        "gap_count": 1,
+        "warnings": [
+            "Reconciliation gap in sheet 'Total': series present in historical headers but missing from parsed data (B)"
+        ],
         "missing_series": [],
         "missing_segments": [],
     }
@@ -67,16 +82,19 @@ def test_reconcile_series_coverage_extracts_counterparties_and_clearing_houses()
 
     assert result["by_sheet"]["All Programs"] == {
         "counterparties_in_data": ["Citibank", "JPMorgan"],
+        "normalized_counterparties_in_data": ["Citibank", "JPMorgan"],
         "clearing_houses_in_data": ["CME", "ICE"],
         "historical_series_headers": [],
-        "current_series_labels": ["CME", "Citibank", "ICE", "JPMorgan"],
+        "normalized_historical_series_headers": [],
+        "current_series_labels": ["Citibank", "CME", "ICE", "JPMorgan"],
         "missing_from_historical_headers": ["Citibank", "CME", "ICE", "JPMorgan"],
+        "missing_normalized_counterparties": ["Citibank", "JPMorgan"],
         "missing_from_data": [],
         "segments_in_data": [],
         "missing_expected_segments": [],
     }
     assert result["gap_count"] == 4
-    assert len(result["warnings"]) == 1
+    assert len(result["warnings"]) == 3
     assert result["missing_series"] == [
         {
             "sheet": "All Programs",
@@ -84,11 +102,19 @@ def test_reconcile_series_coverage_extracts_counterparties_and_clearing_houses()
             "data_source_context": "counterparties_and_clearing_houses",
         }
     ]
+    assert any(
+        "raw='Citibank'" in warning and "normalized='Citibank'" in warning
+        for warning in result["warnings"]
+    )
+    assert any(
+        "raw='JPMorgan'" in warning and "normalized='JPMorgan'" in warning
+        for warning in result["warnings"]
+    )
 
 
 def test_reconcile_series_coverage_extracts_historical_series_headers_per_sheet() -> None:
     result = reconcile_series_coverage(
-        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}]}},
+        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}], "futures": []}},
         historical_series_headers_by_sheet={
             "Total": ("  B  ", "A", "", "A"),
             "Futures": ("  ICE  ", "CME", "CME"),
@@ -98,24 +124,67 @@ def test_reconcile_series_coverage_extracts_historical_series_headers_per_sheet(
     assert result["by_sheet"]["Total"]["historical_series_headers"] == ["A", "B"]
     assert result["by_sheet"]["Futures"] == {
         "counterparties_in_data": [],
+        "normalized_counterparties_in_data": [],
         "clearing_houses_in_data": [],
         "historical_series_headers": ["CME", "ICE"],
+        "normalized_historical_series_headers": ["CME", "ICE"],
         "current_series_labels": [],
         "missing_from_historical_headers": [],
+        "missing_normalized_counterparties": [],
         "missing_from_data": ["CME", "ICE"],
         "segments_in_data": [],
         "missing_expected_segments": [],
     }
+    assert result["gap_count"] == 3
+
+
+def test_reconcile_series_coverage_counts_each_historical_series_missing_from_data() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}], "futures": []}},
+        historical_series_headers_by_sheet={"Total": ("A", "B", "C")},
+    )
+
+    assert result["by_sheet"]["Total"]["missing_from_data"] == ["B", "C"]
+    assert result["gap_count"] == 2
+
+
+def test_reconcile_series_coverage_counts_missing_historical_series_with_no_other_gaps() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={"SheetA": {"totals": [{"counterparty": "A"}], "futures": []}},
+        historical_series_headers_by_sheet={"SheetA": ("A", "B")},
+    )
+
+    assert result["by_sheet"]["SheetA"]["missing_from_data"] == ["B"]
+    assert result["by_sheet"]["SheetA"]["missing_expected_segments"] == []
+    assert result["gap_count"] == 1
+
+
+def test_reconcile_series_coverage_counts_missing_historical_series_exactly_per_sheet() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "SheetA": {"totals": [{"counterparty": "A"}], "futures": []},
+            "SheetB": {"totals": [{"counterparty": "X"}, {"counterparty": "Y"}], "futures": []},
+        },
+        historical_series_headers_by_sheet={
+            "SheetA": ("A", "B", "C"),
+            "SheetB": ("X", "Y"),
+        },
+    )
+
+    assert result["by_sheet"]["SheetA"]["missing_from_data"] == ["B", "C"]
+    assert result["by_sheet"]["SheetB"]["missing_from_data"] == []
+    assert result["gap_count"] == 2
 
 
 def test_reconcile_series_coverage_reports_missing_expected_segments_by_variant() -> None:
     result = reconcile_series_coverage(
         parsed_data_by_sheet={
             "CPRS - CH": {
+                "totals": [],
                 "futures": [
                     {"clearing_house": "CME", "segment": "swaps"},
                     {"clearing_house": "ICE", "segment": "repo"},
-                ]
+                ],
             }
         },
         historical_series_headers_by_sheet={"CPRS - CH": ("CME", "ICE")},
@@ -137,3 +206,145 @@ def test_reconcile_series_coverage_reports_missing_expected_segments_by_variant(
         }
     ]
     assert "expected segments missing from parsed results (futures_cdx)" in result["warnings"][0]
+
+
+def test_reconcile_series_coverage_warn_mode_includes_raw_and_normalized_counterparty() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "Bank of America, NA"}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+        fail_policy="warn",
+    )
+
+    assert result["gap_count"] == 2
+    assert any(
+        "raw='Bank of America, NA'" in warning and "normalized='Bank of America'" in warning
+        for warning in result["warnings"]
+    )
+
+
+def test_reconcile_series_coverage_strict_mode_raises_for_unmapped_normalized_counterparty() -> (
+    None
+):
+    try:
+        reconcile_series_coverage(
+            parsed_data_by_sheet={
+                "Total": {"totals": [{"counterparty": "Bank of America, NA"}], "futures": []}
+            },
+            historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+            fail_policy="strict",
+        )
+    except ValueError as exc:
+        text = str(exc)
+        assert "unmapped normalized counterparties" in text
+        assert "Bank of America, NA" in text
+        assert "Bank of America" in text
+    else:
+        raise AssertionError("expected strict mode reconciliation to raise")
+
+
+def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_header_key() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {
+                "totals": [
+                    {"counterparty": "Bank of America, NA"},
+                    {"counterparty": "Bank of America NA"},
+                ],
+                "futures": [],
+            }
+        },
+        historical_series_headers_by_sheet={"Total": ("Bank of America",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Total"]["missing_from_data"] == []
+    assert result["by_sheet"]["Total"]["missing_normalized_counterparties"] == []
+    assert not any("unmapped counterparty" in warning for warning in result["warnings"])
+
+
+def test_normalized_counterparties_from_records_uses_normalization_mapping() -> None:
+    totals_records = [
+        {"counterparty": "Bank of America, NA"},
+        {"counterparty": "Bank of America NA"},
+        {"counterparty": "  Citigroup  "},
+    ]
+
+    normalized = _normalized_counterparties_from_records(totals_records)
+
+    assert normalized == {
+        "Bank of America": {"Bank of America, NA", "Bank of America NA"},
+        "Citibank": {"Citigroup"},
+    }
+
+
+def test_normalized_counterparties_from_records_ignores_blank_counterparties() -> None:
+    totals_records = [
+        {"counterparty": ""},
+        {"counterparty": "   "},
+        {"counterparty": "JP Morgan"},
+        {},
+    ]
+
+    normalized = _normalized_counterparties_from_records(totals_records)
+
+    assert normalized == {"JP Morgan": {"JP Morgan"}}
+
+
+def test_normalized_counterparties_from_parsed_data_uses_totals_records() -> None:
+    parsed_sections = {
+        "totals": [
+            {"counterparty": "Bank of America, NA"},
+            {"counterparty": "Bank of America NA"},
+            {"counterparty": "  Citigroup  "},
+            {"counterparty": "   "},
+            {},
+        ],
+        "futures": [{"clearing_house": "CME"}],
+    }
+
+    normalized = _normalized_counterparties_from_parsed_data(parsed_sections)
+
+    assert normalized == {
+        "Bank of America": {"Bank of America, NA", "Bank of America NA"},
+        "Citibank": {"Citigroup"},
+    }
+
+
+def test_normalized_counterparties_from_parsed_data_handles_missing_totals_key() -> None:
+    normalized = _normalized_counterparties_from_parsed_data(
+        {"futures": [{"clearing_house": "ICE"}]}
+    )
+
+    assert normalized == {}
+
+
+def test_reconcile_series_coverage_fails_fast_when_required_sections_missing() -> None:
+    with pytest.raises(ParsedDataMissingKeyError, match="Missing required parsed_data section"):
+        reconcile_series_coverage(
+            parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}]}},
+            historical_series_headers_by_sheet={"Total": ("A",)},
+        )
+
+
+def test_reconcile_series_coverage_fails_fast_when_section_shape_is_invalid() -> None:
+    with pytest.raises(ParsedDataInvalidShapeError, match="Invalid parsed_data shape"):
+        reconcile_series_coverage(
+            parsed_data_by_sheet={"Total": {"totals": {"counterparty": "A"}, "futures": []}},
+            historical_series_headers_by_sheet={"Total": ("A",)},
+        )
+
+
+def test_reconcile_series_coverage_accepts_list_of_mapping_sections() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {
+                "totals": [{"counterparty": "A", "Notional": 1.0}],
+                "futures": [{"clearing_house": "ICE", "notional": 1.0}],
+            }
+        },
+        historical_series_headers_by_sheet={"Total": ("A", "ICE")},
+    )
+
+    assert result["gap_count"] == 0

@@ -9,12 +9,12 @@ import sys
 import types
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import pytest
 
 import counter_risk.pipeline.run as run_module
-from counter_risk.config import WorkflowConfig
+from counter_risk.config import ReconciliationConfig, WorkflowConfig
 from counter_risk.pipeline.run import run_pipeline
 
 
@@ -158,6 +158,233 @@ def _minimal_parsed_by_variant() -> dict[str, dict[str, _FakeDataFrame]]:
         "ex_trend": {"totals": totals, "futures": futures},
         "trend": {"totals": totals, "futures": futures},
     }
+
+
+def _minimal_workflow_config(
+    tmp_path: Path, *, fail_policy: Literal["warn", "strict"] = "warn"
+) -> WorkflowConfig:
+    return WorkflowConfig(
+        as_of_date=date(2025, 12, 31),
+        output_root=tmp_path / "runs",
+        reconciliation=ReconciliationConfig(fail_policy=fail_policy),
+        mosers_all_programs_xlsx=tmp_path / "all.xlsx",
+        mosers_ex_trend_xlsx=tmp_path / "ex.xlsx",
+        mosers_trend_xlsx=tmp_path / "trend.xlsx",
+        hist_all_programs_3yr_xlsx=tmp_path / "hist-all.xlsx",
+        hist_ex_llc_3yr_xlsx=tmp_path / "hist-ex.xlsx",
+        hist_llc_3yr_xlsx=tmp_path / "hist-trend.xlsx",
+        monthly_pptx=tmp_path / "monthly.pptx",
+    )
+
+
+def test_build_parsed_data_by_sheet_uses_historical_sheet_names_without_total_key() -> None:
+    parsed_sections = {
+        "totals": _FakeDataFrame(
+            records=[
+                {"counterparty": "Counterparty A", "Notional": 10.0},
+                {"counterparty": "Counterparty B", "Notional": 20.0},
+            ]
+        ),
+        "futures": _FakeDataFrame(
+            records=[
+                {
+                    "account": "acct",
+                    "description": "desc",
+                    "class": "cls",
+                    "fcm": "fcm",
+                    "clearing_house": "Clearing B",
+                    "notional": 5.0,
+                }
+            ]
+        ),
+    }
+    historical_headers_by_sheet = {
+        "Sheet A": ("Counterparty A",),
+        "Sheet B": ("Counterparty B", "Clearing B"),
+    }
+
+    parsed_data_by_sheet = run_module._build_parsed_data_by_sheet(
+        parsed_sections=parsed_sections,
+        historical_series_headers_by_sheet=historical_headers_by_sheet,
+    )
+
+    assert set(parsed_data_by_sheet) == {"Sheet A", "Sheet B"}
+    assert "Total" not in parsed_data_by_sheet
+    assert [row["counterparty"] for row in parsed_data_by_sheet["Sheet A"]["totals"]] == [
+        "Counterparty A"
+    ]
+    assert [row["counterparty"] for row in parsed_data_by_sheet["Sheet B"]["totals"]] == [
+        "Counterparty B"
+    ]
+    assert [row["clearing_house"] for row in parsed_data_by_sheet["Sheet B"]["futures"]] == [
+        "Clearing B"
+    ]
+
+
+def test_run_reconciliation_checks_reports_gap_only_for_impacted_sheet(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "Counterparty A", "Notional": 1.0}]),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",), "Sheet B": ("Counterparty B",)},
+    )
+
+    run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert any("sheet 'Sheet B'" in warning for warning in warnings)
+    assert not any("sheet 'Sheet A'" in warning for warning in warnings)
+
+
+def test_run_reconciliation_checks_counts_only_rows_tied_to_missing_series(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Counterparty A", "Notional": 1.0},
+                    {"counterparty": "Counterparty B", "Notional": 2.0},
+                    {"counterparty": "Counterparty C", "Notional": 3.0},
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A", "Counterparty C")},
+    )
+
+    run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    mapping_updates = tmp_path / "NEEDS_MAPPING_UPDATES.txt"
+    assert mapping_updates.exists()
+    assert "impacted_series_count: 1" in mapping_updates.read_text(encoding="utf-8")
+    assert "impacted_rows_count: 1" in mapping_updates.read_text(encoding="utf-8")
+    assert any("impacted_series=1" in warning for warning in warnings)
+    assert any("impacted_rows=1" in warning for warning in warnings)
+
+
+def test_run_reconciliation_checks_counts_only_impacted_series_when_other_rows_unaffected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Counterparty A", "Notional": 1.0},
+                    {"counterparty": "Counterparty B", "Notional": 2.0},
+                    {"counterparty": "Counterparty C", "Notional": 3.0},
+                    {"counterparty": "Counterparty D", "Notional": 4.0},
+                ]
+            ),
+            "futures": _FakeDataFrame(
+                records=[
+                    {
+                        "account": "acct",
+                        "description": "desc",
+                        "class": "cls",
+                        "fcm": "fcm",
+                        "clearing_house": "CME",
+                        "notional": 5.0,
+                    }
+                ]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A", "Counterparty D", "CME")},
+    )
+
+    run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    mapping_updates = tmp_path / "NEEDS_MAPPING_UPDATES.txt"
+    assert mapping_updates.exists()
+    text = mapping_updates.read_text(encoding="utf-8")
+    assert "impacted_series_count: 2" in text
+    assert "impacted_rows_count: 2" in text
+    assert any("impacted_series=2" in warning for warning in warnings)
+    assert any("impacted_rows=2" in warning for warning in warnings)
+
+
+def test_run_reconciliation_checks_counts_missing_from_data_as_impacted_series_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Counterparty A", "Notional": 1.0},
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A", "Counterparty B", "Counterparty C")},
+    )
+
+    run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    mapping_updates = tmp_path / "NEEDS_MAPPING_UPDATES.txt"
+    assert mapping_updates.exists()
+    text = mapping_updates.read_text(encoding="utf-8")
+    assert "impacted_series_count: 2" in text
+    assert "impacted_rows_count: 0" in text
+    assert any("impacted_series=2" in warning for warning in warnings)
+    assert any("impacted_rows=0" in warning for warning in warnings)
 
 
 def test_run_pipeline_writes_expected_outputs_and_manifest(

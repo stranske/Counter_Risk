@@ -1,0 +1,870 @@
+version: 1
+issue: 190
+base: main
+branch: codex/issue-190
+tasks:
+  - id: task-01
+    title: Implement counterparty normalization reconciliation in `src/**/reconciliation.py`
+      to normalize parsed counterparties, compare against normalized mapping keys,
+      and emit warn-mode warnings including both raw and normalized names (without
+      aborting).
+    status: done
+    started_at: '2026-02-21T19:17:56Z'
+    finished_at: '2026-02-21T19:18:06Z'
+    commit: 18c4d373697f5f2dbfce6c46e11fce29098e83f2
+    notes: []
+  - id: task-02
+    title: 'Define scope for: Create a function to normalize counterparty names from
+      parsed data using the existing normalization utilities (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement focused slice for: Create a function to normalize counterparty
+      names from parsed data using the existing normalization utilities (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Validate focused slice for: Create a function to normalize counterparty
+      names from parsed data using the existing normalization utilities (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Implement comparison logic that matches normalized parsed counterparties
+      against normalized mapping keys (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Add warning event emission that includes both raw (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'normalized counterparty names when mismatches are detected (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement mode-specific behavior to continue execution in warn mode (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'raise errors in strict mode (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: "Update gap accounting in `src/**/reconciliation.py` to increment `gap_count`\
+      \ when a series exists in historical headers for a sheet but is missing from\
+      \ that sheet\u2019s current `parsed_data`."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Refactor `parsed_data_by_sheet` construction in `src/**/pipeline.py` to
+      use actual workbook sheet names (remove hard-coded `"Total"`) and run reconciliation
+      independently per sheet with per-sheet aggregation.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Define scope for: Extract actual sheet names from the workbook structure
+      instead of using hard-coded values (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Implement focused slice for: Extract actual sheet names from the workbook
+      structure instead of using hard-coded values (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Validate focused slice for: Extract actual sheet names from the workbook
+      structure instead of using hard-coded values (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Define scope for: Refactor parsed_data_by_sheet construction to use the
+      extracted sheet names as keys (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Implement focused slice for: Refactor parsed_data_by_sheet construction
+      to use the extracted sheet names as keys (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Validate focused slice for: Refactor parsed_data_by_sheet construction
+      to use the extracted sheet names as keys (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Define scope for: Update reconciliation to execute independently for each
+      sheet using the new data structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Implement focused slice for: Update reconciliation to execute independently
+      for each sheet using the new data structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Validate focused slice for: Update reconciliation to execute independently
+      for each sheet using the new data structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Implement per-sheet result aggregation that preserves sheet-specific gap
+      information (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Fix impacted counting logic in `src/**/manifest.py` to compute `impacted_rows`/`impacted_series`
+      only from rows/series tied to missing/unmapped series or segments (not all rows
+      in a variant when any gap exists).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Create a function to identify rows (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'series directly associated with missing or unmapped entities (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Define scope for: Update impacted_rows calculation to count only rows
+      tied to the identified affected entities (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Implement focused slice for: Update impacted_rows calculation to count
+      only rows tied to the identified affected entities (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Validate focused slice for: Update impacted_rows calculation to count
+      only rows tied to the identified affected entities (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Define scope for: Update impacted_series calculation to count only series
+      tied to the identified affected entities (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Implement focused slice for: Update impacted_series calculation to count
+      only series tied to the identified affected entities (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Validate focused slice for: Update impacted_series calculation to count
+      only series tied to the identified affected entities (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Add validation to ensure unaffected rows (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'series are excluded from impact counts (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: Fix `_find_historical_header_row` dependency by defining it in the module
+      that uses it or correcting the import in the relevant `src/**` module(s), and
+      add an end-to-end unit test in `tests/**/test_historical_headers.py` covering
+      historical header row detection.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Define scope for: Resolve the _find_historical_header_row dependency by
+      defining it in the correct module or fixing the import statement (verify: dependencies
+      updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Implement focused slice for: Resolve the _find_historical_header_row dependency
+      by defining it in the correct module or fixing the import statement (verify:
+      dependencies updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Validate focused slice for: Resolve the _find_historical_header_row dependency
+      by defining it in the correct module or fixing the import statement (verify:
+      dependencies updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Define scope for: Add an end-to-end unit test in test_historical_headers.py
+      that exercises the historical header row detection path (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Implement focused slice for: Add an end-to-end unit test in test_historical_headers.py
+      that exercises the historical header row detection path (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Validate focused slice for: Add an end-to-end unit test in test_historical_headers.py
+      that exercises the historical header row detection path (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: Update `_extract_historical_series_headers_by_sheet` in `src/**/historical_headers.py`
+      to catch only intended exceptions (e.g., `KeyError`, `ValueError`) and re-raise
+      unexpected exceptions with added context including the sheet name (and/or workbook
+      identifier).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Define scope for: Replace broad exception handling in _extract_historical_series_headers_by_sheet
+      with specific exception types like KeyError (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Implement focused slice for: Replace broad exception handling in _extract_historical_series_headers_by_sheet
+      with specific exception types like KeyError (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'Validate focused slice for: Replace broad exception handling in _extract_historical_series_headers_by_sheet
+      with specific exception types like KeyError (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Define scope for: Replace broad exception handling in _extract_historical_series_headers_by_sheet
+      with ValueError (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Implement focused slice for: Replace broad exception handling in _extract_historical_series_headers_by_sheet
+      with ValueError (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Validate focused slice for: Replace broad exception handling in _extract_historical_series_headers_by_sheet
+      with ValueError (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Add context enrichment to re-raised unexpected exceptions that includes
+      sheet name (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'workbook identifier (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: Add fast-fail `parsed_data` shape validation in `src/**/reconciliation.py`
+      (and structured error types in `src/**/parsing_types.py` if needed) to check
+      required top-level keys (e.g., `"totals"`/`"futures"`) and expected section
+      shapes before reconciliation.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: 'Define scope for: Define structured validation error types in parsing_types.py
+      for missing or invalid parsed_data structures (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: 'Implement focused slice for: Define structured validation error types
+      in parsing_types.py for missing or invalid parsed_data structures (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: 'Validate focused slice for: Define structured validation error types in
+      parsing_types.py for missing or invalid parsed_data structures (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: 'Define scope for: Implement validation logic to check for required top-level
+      keys in parsed_data before reconciliation (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: 'Implement focused slice for: Implement validation logic to check for required
+      top-level keys in parsed_data before reconciliation (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: 'Validate focused slice for: Implement validation logic to check for required
+      top-level keys in parsed_data before reconciliation (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: Add validation logic to verify expected section shapes match the required
+      schema
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: 'Integrate fast-fail behavior that raises structured errors when validation
+      fails (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: Update `src/**/time_utils.py` to remove or gate the `datetime.UTC` compatibility
+      fallback based on supported Python versions (e.g., simplify to `datetime.UTC`
+      if minimum is 3.11) and update `tests/**/test_time_utils.py` accordingly.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: 'Define scope for: Update time_utils.py to remove or gate the datetime.UTC
+      compatibility fallback based on minimum supported Python version (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: 'Implement focused slice for: Update time_utils.py to remove or gate the
+      datetime.UTC compatibility fallback based on minimum supported Python version
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: 'Validate focused slice for: Update time_utils.py to remove or gate the
+      datetime.UTC compatibility fallback based on minimum supported Python version
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: 'Update test_time_utils.py to reflect the simplified UTC handling logic
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: In warn mode, when parsed data contains a counterparty whose normalized
+      name is not present in the normalized counterparty mapping, reconciliation emits
+      a warning event that includes BOTH (a) the raw counterparty label as parsed
+      and (b) the normalized counterparty name, and the pipeline completes without
+      raising/aborting.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: In fail/strict mode, when parsed data contains a counterparty whose normalized
+      name is not present in the normalized counterparty mapping, reconciliation raises
+      the documented structured reconciliation error (or returns a failure result)
+      and does not report success.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: 'Normalization reconciliation compares against the normalized mapping keys
+      (not raw labels): if two different raw names normalize to the same mapped normalized
+      name, no unmapped-counterparty warning is emitted for those entries.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: '`gap_count` increments when a series exists in historical headers for
+      a sheet but is absent from the current `parsed_data` for that same sheet (even
+      if no other gaps like missing_expected_segments are present).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-67
+    title: When multiple series exist in historical headers but multiple are missing
+      from `parsed_data`, `gap_count` increases by exactly the number of missing historical
+      series for that sheet.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-68
+    title: '`parsed_data_by_sheet` is constructed using the actual workbook sheet
+      names and does not introduce a hard-coded `"Total"` sheet key unless the workbook
+      truly has a sheet named `"Total"`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-69
+    title: 'Reconciliation executes independently per sheet: if SheetA has a gap and
+      SheetB has no gaps, the aggregated result reports a gap only for SheetA and
+      does not mark SheetB as impacted.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-70
+    title: Manifest `impacted_rows` and/or `impacted_series` counts include ONLY the
+      rows/series directly associated with missing/unmapped series or segments; they
+      do not count all rows in a variant merely because any gap exists.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-71
+    title: When two distinct gaps affect two distinct series, `impacted_series` equals
+      2 (and `impacted_rows` equals the sum of rows tied to those two series only),
+      regardless of how many other unaffected series exist in the same variant/sheet.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-72
+    title: The function `_find_historical_header_row` is resolvable at runtime from
+      the module(s) that call it (no `NameError`/`ImportError`), and a unit test exercises
+      the historical header row detection path end-to-end.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-73
+    title: '`_extract_historical_series_headers_by_sheet` catches only the explicitly
+      intended exception types (e.g., `KeyError`, `ValueError`) for expected "not
+      found/invalid" conditions; unexpected exceptions (e.g., `TypeError`) are not
+      swallowed and are re-raised with additional context mentioning the sheet name
+      (and/or workbook identifier).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-74
+    title: 'Reconciliation validates `parsed_data` structure before processing: if
+      required top-level keys/sections are missing or have an invalid shape, reconciliation
+      fails fast by raising a structured validation error that names the missing/invalid
+      key(s).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-75
+    title: When `parsed_data` is valid, reconciliation proceeds and produces the same
+      outputs as before for a baseline happy-path fixture (no false validation failures).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-76
+    title: "`time_utils` uses `datetime.UTC` directly (or gates any fallback based\
+      \ on the project\u2019s supported Python versions) such that, under the supported\
+      \ runtime (e.g., Python 3.11+), no compatibility fallback branch is executed\
+      \ or required."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-77
+    title: 'Implement counterparty normalization reconciliation: normalize counterparties
+      from parsed data, compare against normalized mapping, and emit reconciliation
+      warnings that include both raw and normalized names when unmapped (warn-mode
+      should not abort the run).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-78
+    title: Update gap accounting to increment `gap_count` for series that exist in
+      historical headers but are missing from current `parsed_data` (in addition to
+      existing missing_from_historical_headers/missing_expected_segments gaps).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-79
+    title: Refactor `parsed_data_by_sheet` construction to use actual workbook sheet
+      names (remove hard-coded `"Total"`) and run reconciliation independently per
+      sheet with per-sheet aggregation.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-80
+    title: 'Refine impacted-rows/series counting: compute counts only for rows/series
+      directly tied to missing/unmapped series or segments rather than counting all
+      rows in a variant once any gap exists.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-81
+    title: 'Fix module dependency for `_find_historical_header_row`: define it in
+      the module that uses it or correct the import, and add a unit test that exercises
+      the historical header row detection path.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-82
+    title: Narrow exception handling in `_extract_historical_series_headers_by_sheet`
+      to catch specific exceptions (e.g., `KeyError`, `ValueError`) and re-raise unexpected
+      exceptions with context.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-83
+    title: Add defensive validations for expected parsed-data structures before reconciliation
+      (e.g., required keys like `"totals"`/`"futures"` or expected section shapes)
+      and raise a structured error when invalid.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-84
+    title: Remove or gate the `datetime.UTC` compatibility fallback based on the project's
+      supported Python versions (e.g., simplify to `datetime.UTC` if minimum is 3.11),
+      and update tests accordingly.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-85
+    title: In warn mode, when parsed data contains a counterparty whose normalized
+      name is not present in the normalized counterparty mapping, reconciliation emits
+      a warning event that includes BOTH (a) the raw counterparty label as parsed
+      and (b) the normalized counterparty name, and the pipeline completes without
+      raising/aborting.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-86
+    title: In fail/strict mode, when parsed data contains a counterparty whose normalized
+      name is not present in the normalized counterparty mapping, reconciliation raises
+      the documented structured reconciliation error (or returns a failure result)
+      and does not report success.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-87
+    title: 'Normalization reconciliation compares against the normalized mapping keys
+      (not raw labels): if two different raw names normalize to the same mapped normalized
+      name, no unmapped-counterparty warning is emitted for those entries.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-88
+    title: '`gap_count` increments when a series exists in historical headers for
+      a sheet but is absent from the current `parsed_data` for that same sheet (even
+      if no other gaps like missing_expected_segments are present).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-89
+    title: When multiple series exist in historical headers but multiple are missing
+      from `parsed_data`, `gap_count` increases by exactly the number of missing historical
+      series for that sheet (no undercount or overcount).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-90
+    title: '`parsed_data_by_sheet` is constructed using the actual workbook sheet
+      names and does not introduce a hard-coded `"Total"` sheet key unless the workbook
+      truly has a sheet named `"Total"`.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-91
+    title: 'Reconciliation executes independently per sheet: if SheetA has a gap and
+      SheetB has no gaps, the aggregated result reports a gap only for SheetA and
+      does not mark SheetB as impacted.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-92
+    title: Manifest `impacted_rows` and/or `impacted_series` counts include ONLY the
+      rows/series directly associated with missing/unmapped series or segments; they
+      do not count all rows in a variant merely because any gap exists.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-93
+    title: When two distinct gaps affect two distinct series, `impacted_series` equals
+      2 (and `impacted_rows` equals the sum of rows tied to those two series only),
+      regardless of how many other unaffected series exist in the same variant/sheet.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-94
+    title: The function `_find_historical_header_row` is resolvable at runtime from
+      the module(s) that call it (no `NameError`/`ImportError`), and a unit test exercises
+      the historical header row detection path end-to-end.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-95
+    title: '`_extract_historical_series_headers_by_sheet` catches only the explicitly
+      intended exception types (e.g., `KeyError`, `ValueError`) for expected "not
+      found/invalid" conditions; unexpected exceptions (e.g., `TypeError`) are not
+      swallowed and are re-raised with additional context mentioning the sheet name
+      (and/or workbook identifier).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-96
+    title: 'Reconciliation validates `parsed_data` structure before processing: if
+      required top-level keys/sections are missing or have an invalid shape, reconciliation
+      fails fast by raising a structured validation error that names the missing/invalid
+      key(s).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-97
+    title: When `parsed_data` is valid, reconciliation proceeds and produces the same
+      outputs as before for a baseline happy-path fixture (no false validation failures).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-98
+    title: "`time_utils` uses `datetime.UTC` directly (or gates any fallback based\
+      \ on the project\u2019s supported Python versions) such that, under the supported\
+      \ runtime (e.g., Python 3.11+), no compatibility fallback branch is executed\
+      \ or required."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
