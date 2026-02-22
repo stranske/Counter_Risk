@@ -73,3 +73,28 @@ def test_extract_historical_series_headers_uses_detected_header_row(
 
     assert headers == {"Totals": ("Series A", "Series B")}
     assert workbook.closed is True
+
+
+def test_extract_historical_series_headers_reraises_unexpected_errors_with_context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    target_sheet = _FakeWorksheet("Totals")
+    target_sheet.set_value(1, 1, "As Of Date")
+    workbook = _FakeWorkbook({"Totals": target_sheet})
+    monkeypatch.setitem(
+        sys.modules,
+        "openpyxl",
+        types.SimpleNamespace(load_workbook=lambda **_: workbook),
+    )
+
+    def _raise_type_error(*, worksheet: Any, max_scan_rows: int = 25) -> int:
+        del worksheet, max_scan_rows
+        raise TypeError("bad worksheet payload")
+
+    monkeypatch.setattr(run_module, "_find_historical_header_row", _raise_type_error)
+
+    with pytest.raises(RuntimeError, match="sheet 'Totals'") as exc_info:
+        run_module._extract_historical_series_headers_by_sheet(Path("unused.xlsx"))
+
+    assert "unused.xlsx" in str(exc_info.value)
+    assert workbook.closed is True

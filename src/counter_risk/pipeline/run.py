@@ -1399,11 +1399,21 @@ def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str
         workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
         headers_by_sheet: dict[str, tuple[str, ...]] = {}
         for sheet_name in getattr(workbook, "sheetnames", []):
-            worksheet = workbook[sheet_name]
+            try:
+                worksheet = workbook[sheet_name]
+            except KeyError:
+                continue
+
             try:
                 header_row = _find_historical_header_row(worksheet=worksheet)
             except ValueError:
                 continue
+            except Exception as exc:
+                raise RuntimeError(
+                    "Unexpected error while scanning historical header row in "
+                    f"workbook {workbook_path!s}, sheet {sheet_name!r}"
+                ) from exc
+
             max_column = int(getattr(worksheet, "max_column", 0))
             headers = [
                 label
@@ -1415,9 +1425,16 @@ def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str
             ]
             headers_by_sheet[sheet_name] = tuple(headers)
         return headers_by_sheet
-    except Exception as exc:
+    except (KeyError, ValueError, OSError) as exc:
         raise RuntimeError(
             f"Unable to extract historical series headers from workbook: {workbook_path}"
+        ) from exc
+    except RuntimeError:
+        raise
+    except Exception as exc:
+        raise RuntimeError(
+            "Unexpected error while extracting historical series headers from "
+            f"workbook: {workbook_path}"
         ) from exc
     finally:
         if workbook is not None:
