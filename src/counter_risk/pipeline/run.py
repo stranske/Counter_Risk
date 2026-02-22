@@ -7,12 +7,14 @@ import hashlib
 import logging
 import platform
 import shutil
+import xml.etree.ElementTree as ET
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
+from zipfile import BadZipFile, ZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
@@ -696,6 +698,10 @@ def _write_outputs(
             warnings.append(
                 "PPT screenshots replacement disabled; copied source deck to Master unchanged"
             )
+    _assert_master_preserves_external_link_targets(
+        source_pptx_path=source_ppt,
+        master_pptx_path=target_master_ppt,
+    )
     output_paths.append(target_master_ppt)
 
     refresh_result = _refresh_ppt_links(target_master_ppt)
@@ -727,6 +733,59 @@ def _derive_distribution_ppt(*, master_pptx_path: Path, distribution_pptx_path: 
     """Derive the distribution PPT from the generated Master PPT."""
 
     shutil.copy2(master_pptx_path, distribution_pptx_path)
+
+
+def _assert_master_preserves_external_link_targets(
+    *, source_pptx_path: Path, master_pptx_path: Path
+) -> None:
+    source_targets = _list_external_link_targets(source_pptx_path)
+    if not source_targets:
+        return
+
+    master_targets = _list_external_link_targets(master_pptx_path)
+    if source_targets.issubset(master_targets):
+        return
+
+    missing_targets = sorted(source_targets.difference(master_targets))
+    missing_list = ", ".join(missing_targets)
+    raise RuntimeError(
+        "Master PPT generation did not preserve linked chart references. "
+        f"Missing external link targets: {missing_list}"
+    )
+
+
+def _list_external_link_targets(pptx_path: Path) -> set[str]:
+    if not pptx_path.exists() or not pptx_path.is_file():
+        return set()
+
+    try:
+        with ZipFile(pptx_path) as archive:
+            rel_paths = [
+                name
+                for name in archive.namelist()
+                if name.endswith(".rels")
+                and (
+                    name.startswith("ppt/slides/_rels/")
+                    or name.startswith("ppt/charts/_rels/")
+                    or name == "ppt/_rels/presentation.xml.rels"
+                )
+            ]
+            targets: set[str] = set()
+            for rel_path in rel_paths:
+                xml_bytes = archive.read(rel_path)
+                root = ET.fromstring(xml_bytes)
+                for relationship in root.findall(
+                    ".//{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
+                ):
+                    if relationship.attrib.get("TargetMode") != "External":
+                        continue
+                    target = relationship.attrib.get("Target", "").strip()
+                    if target:
+                        targets.add(target)
+            return targets
+    except (BadZipFile, ET.ParseError, KeyError):
+        LOGGER.debug("Skipping external link target scan for non-standard PPTX: %s", pptx_path)
+        return set()
 
 
 def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]:

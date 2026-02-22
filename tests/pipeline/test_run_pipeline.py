@@ -743,7 +743,9 @@ def test_run_pipeline_invokes_ppt_link_refresh(
     run_dir = run_pipeline(config_path)
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
 
-    assert seen["path"] == run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx"
+    assert (
+        seen["path"] == run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx"
+    )
     assert "PPT links not refreshed; COM refresh skipped" not in manifest["warnings"]
 
 
