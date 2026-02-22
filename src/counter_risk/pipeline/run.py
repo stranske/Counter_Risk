@@ -7,18 +7,21 @@ import hashlib
 import logging
 import platform
 import shutil
+import xml.etree.ElementTree as ET
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
+from zipfile import BadZipFile, ZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
 from counter_risk.normalize import normalize_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
+from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.writers import generate_mosers_workbook
 
 LOGGER = logging.getLogger(__name__)
@@ -44,6 +47,8 @@ _REQUIRED_HISTORICAL_APPEND_HEADERS: tuple[str, ...] = (
     "value series 1",
     "value series 2",
 )
+_PACKAGE_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
+_RELATIONSHIP_QNAME = f"{{{_PACKAGE_REL_NS}}}Relationship"
 
 
 @dataclass(frozen=True)
@@ -396,6 +401,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         output_result = _write_outputs(
             run_dir=run_dir,
             config=runtime_config,
+            as_of_date=as_of_date,
             warnings=warnings,
         )
     except Exception as exc:
@@ -740,7 +746,7 @@ def _compute_metrics(
 
 
 def _write_outputs(
-    *, run_dir: Path, config: WorkflowConfig, warnings: list[str]
+    *, run_dir: Path, config: WorkflowConfig, as_of_date: date, warnings: list[str]
 ) -> tuple[list[Path], PptProcessingResult]:
     LOGGER.info("write_outputs_start run_dir=%s", run_dir)
 
@@ -773,18 +779,26 @@ def _write_outputs(
         output_paths.append(target_monthly_book)
 
     source_ppt = config.monthly_pptx
-    target_ppt = run_dir / source_ppt.name
+    output_names = resolve_ppt_output_names(as_of_date)
+    target_master_ppt = run_dir / output_names.master_filename
+    target_distribution_ppt = run_dir / output_names.distribution_filename
     screenshot_inputs = _resolve_screenshot_input_mapping(config)
     if config.enable_screenshot_replacement:
         replacer = _get_screenshot_replacer(config.screenshot_replacement_implementation)
-        replacer(source_ppt, target_ppt, screenshot_inputs)
+        replacer(source_ppt, target_master_ppt, screenshot_inputs)
     else:
-        shutil.copy2(source_ppt, target_ppt)
+        shutil.copy2(source_ppt, target_master_ppt)
         if screenshot_inputs:
-            warnings.append("PPT screenshots replacement disabled; copied source deck unchanged")
-    output_paths.append(target_ppt)
+            warnings.append(
+                "PPT screenshots replacement disabled; copied source deck to Master unchanged"
+            )
+    _assert_master_preserves_external_link_targets(
+        source_pptx_path=source_ppt,
+        master_pptx_path=target_master_ppt,
+    )
+    output_paths.append(target_master_ppt)
 
-    refresh_result = _refresh_ppt_links(target_ppt)
+    refresh_result = _refresh_ppt_links(target_master_ppt)
     if isinstance(refresh_result, bool):
         refresh_result = PptProcessingResult(
             status=PptProcessingStatus.SUCCESS if refresh_result else PptProcessingStatus.SKIPPED
@@ -799,8 +813,124 @@ def _write_outputs(
             else f"PPT links refresh failed; {refresh_result.error_detail}"
         )
 
+    _derive_distribution_ppt(
+        master_pptx_path=target_master_ppt,
+        distribution_pptx_path=target_distribution_ppt,
+    )
+    output_paths.append(target_distribution_ppt)
+
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
     return output_paths, refresh_result
+
+
+def _derive_distribution_ppt(*, master_pptx_path: Path, distribution_pptx_path: Path) -> None:
+    """Derive the distribution PPT from the generated Master PPT."""
+
+    distribution_pptx_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with (
+            ZipFile(master_pptx_path) as source_archive,
+            ZipFile(distribution_pptx_path, "w") as output_archive,
+        ):
+            for item in source_archive.infolist():
+                xml_bytes = source_archive.read(item.filename)
+                if not _is_link_relationship_part(item.filename):
+                    output_archive.writestr(item, xml_bytes)
+                    continue
+
+                output_archive.writestr(item, _remove_external_relationship_targets(xml_bytes))
+    except BadZipFile:
+        shutil.copy2(master_pptx_path, distribution_pptx_path)
+        LOGGER.debug(
+            "Distribution derivation skipped link stripping for non-standard PPTX: %s",
+            master_pptx_path,
+        )
+        return
+
+    remaining_targets = _list_external_link_targets(distribution_pptx_path)
+    if remaining_targets:
+        targets_list = ", ".join(sorted(remaining_targets))
+        raise RuntimeError(
+            "Distribution PPT derivation did not remove all external link targets. "
+            f"Remaining targets: {targets_list}"
+        )
+
+
+def _is_link_relationship_part(archive_name: str) -> bool:
+    return archive_name.endswith(".rels") and (
+        archive_name.startswith("ppt/slides/_rels/")
+        or archive_name.startswith("ppt/charts/_rels/")
+        or archive_name == "ppt/_rels/presentation.xml.rels"
+    )
+
+
+def _remove_external_relationship_targets(xml_bytes: bytes) -> bytes:
+    try:
+        root = ET.fromstring(xml_bytes)
+    except ET.ParseError:
+        return xml_bytes
+
+    changed = False
+    for relationship in list(root.findall(f".//{_RELATIONSHIP_QNAME}")):
+        if relationship.attrib.get("TargetMode") != "External":
+            continue
+        root.remove(relationship)
+        changed = True
+
+    if not changed:
+        return xml_bytes
+    return cast(bytes, ET.tostring(root, encoding="utf-8", xml_declaration=True))
+
+
+def _assert_master_preserves_external_link_targets(
+    *, source_pptx_path: Path, master_pptx_path: Path
+) -> None:
+    source_targets = _list_external_link_targets(source_pptx_path)
+    if not source_targets:
+        return
+
+    master_targets = _list_external_link_targets(master_pptx_path)
+    if source_targets.issubset(master_targets):
+        return
+
+    missing_targets = sorted(source_targets.difference(master_targets))
+    missing_list = ", ".join(missing_targets)
+    raise RuntimeError(
+        "Master PPT generation did not preserve linked chart references. "
+        f"Missing external link targets: {missing_list}"
+    )
+
+
+def _list_external_link_targets(pptx_path: Path) -> set[str]:
+    if not pptx_path.exists() or not pptx_path.is_file():
+        return set()
+
+    try:
+        with ZipFile(pptx_path) as archive:
+            rel_paths = [
+                name
+                for name in archive.namelist()
+                if name.endswith(".rels")
+                and (
+                    name.startswith("ppt/slides/_rels/")
+                    or name.startswith("ppt/charts/_rels/")
+                    or name == "ppt/_rels/presentation.xml.rels"
+                )
+            ]
+            targets: set[str] = set()
+            for rel_path in rel_paths:
+                xml_bytes = archive.read(rel_path)
+                root = ET.fromstring(xml_bytes)
+                for relationship in root.findall(f".//{_RELATIONSHIP_QNAME}"):
+                    if relationship.attrib.get("TargetMode") != "External":
+                        continue
+                    target = relationship.attrib.get("Target", "").strip()
+                    if target:
+                        targets.add(target)
+            return targets
+    except (BadZipFile, ET.ParseError, KeyError):
+        LOGGER.debug("Skipping external link target scan for non-standard PPTX: %s", pptx_path)
+        return set()
 
 
 def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]:
