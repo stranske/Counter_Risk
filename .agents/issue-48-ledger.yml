@@ -1,0 +1,506 @@
+version: 1
+issue: 48
+base: main
+branch: codex/issue-48
+tasks:
+  - id: task-01
+    title: 'Create `config/name_registry.yml` with fields: `canonical_key`, `aliases`,
+      `display_name`, and optional per-variant `series_included` flags'
+    status: done
+    started_at: '2026-02-22T21:31:34Z'
+    finished_at: '2026-02-22T21:31:48Z'
+    commit: 8cbb63a5d9bdf9e8ef45572cd1c98960ad5331d5
+    notes: []
+  - id: task-02
+    title: 'Create the `config/name_registry.yml` file with basic YAML structure (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Create the `config/name_registry.yml` file with top-level schema definition
+      (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Define the `canonical_key` field specification including format requirements
+      (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define the `canonical_key` field specification including uniqueness constraints
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Define scope for: Define the `aliases` field specification as a list type
+      with validation rules for duplicate detection (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Implement focused slice for: Define the `aliases` field specification
+      as a list type with validation rules for duplicate detection (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Validate focused slice for: Define the `aliases` field specification as
+      a list type with validation rules for duplicate detection (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Define the `display_name` field specification with character limits (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Define the `display_name` field specification with formatting guidelines
+      (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Define the optional `series_included` flags structure with per-variant
+      boolean logic (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Define the optional `series_included` flags structure with default behavior
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Add inline YAML comments documenting each field''s purpose (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'expected values (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Create unit tests validating the registry file can be parsed (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'loaded correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Update name normalization logic to consult `config/name_registry.yml` first,
+      then fall back to existing hardcoded mappings
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Create a registry loader module that parses (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'validates the `config/name_registry.yml` file on startup (verify: config
+      validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Implement a lookup function that searches the registry by canonical key
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'aliases (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Define scope for: Refactor existing name normalization logic to call the
+      registry lookup function first (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Implement focused slice for: Refactor existing name normalization logic
+      to call the registry lookup function first (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Validate focused slice for: Refactor existing name normalization logic
+      to call the registry lookup function first (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Define scope for: Implement fallback logic that uses existing hardcoded
+      mappings when registry lookup returns no match (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Implement focused slice for: Implement fallback logic that uses existing
+      hardcoded mappings when registry lookup returns no match (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Validate focused slice for: Implement fallback logic that uses existing
+      hardcoded mappings when registry lookup returns no match (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Define scope for: Add error handling for registry file missing or malformed
+      scenarios with appropriate fallback behavior (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Implement focused slice for: Add error handling for registry file missing
+      or malformed scenarios with appropriate fallback behavior (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Validate focused slice for: Add error handling for registry file missing
+      or malformed scenarios with appropriate fallback behavior (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Create unit tests verifying registry-first lookup with fallback to hardcoded
+      mappings (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Add integration tests confirming backward compatibility with existing
+      normalization behavior (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: "Implement a developer-only maintainer command to generate a monthly \u201C\
+      mapping diff report\u201D that lists: new names not in the registry, names that\
+      \ mapped via fallback, and suggested canonicalization"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Write documentation describing safe, manual, reviewed steps to add a new
+      counterparty series to historical workbooks
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Define scope for: Document the step-by-step process for adding a new entry
+      to the `config/name_registry.yml` file with validation checks (verify: config
+      validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Implement focused slice for: Document the step-by-step process for adding
+      a new entry to the `config/name_registry.yml` file with validation checks (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Validate focused slice for: Document the step-by-step process for adding
+      a new entry to the `config/name_registry.yml` file with validation checks (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Define scope for: Document the manual procedure for adding new series
+      headers to historical workbook templates without breaking existing formulas
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Implement focused slice for: Document the manual procedure for adding
+      new series headers to historical workbook templates without breaking existing
+      formulas (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'Validate focused slice for: Document the manual procedure for adding new
+      series headers to historical workbook templates without breaking existing formulas
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Define scope for: Document the validation steps to verify that updated
+      mappings correctly resolve historical transaction data'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Implement focused slice for: Document the validation steps to verify that
+      updated mappings correctly resolve historical transaction data'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'Validate focused slice for: Document the validation steps to verify that
+      updated mappings correctly resolve historical transaction data'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Document the review checklist maintainers should complete before committing
+      registry changes (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Document the rollback procedure if a registry update causes unexpected
+      reconciliation issues (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Create example scenarios showing common counterparty addition workflows
+      with before (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Create example scenarios showing common counterparty addition workflows
+      with after states (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: "Running the monthly \u201Cmapping diff report\u201D command produces an\
+      \ explicit report listing new names not present in `config/name_registry.yml`"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: After updating `config/name_registry.yml`, re-running the reconciliation/normalization
+      flow produces no warnings for previously reported names and the report no longer
+      lists them
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: 'Add `config/name_registry.yml`:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: canonical_key
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: aliases
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: display_name
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: "optional \u201Cseries_included\u201D flags per variant"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: Update normalization to consult registry first, then fallback to hardcoded
+      mappings
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: "Add a maintainer command (developer-only) to generate a \u201Cmapping\
+      \ diff report\u201D for the month:"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: new names not in registry
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: names that mapped via fallback
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: suggested canonicalization
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: 'Add docs: safe steps to add a new counterparty series to historical workbooks
+      (manual, reviewed)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: The system produces an explicit report when new names appear
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: Maintainers can update the registry and re-run to clear reconciliation
+      warnings
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
