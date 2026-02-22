@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 from typing import Literal
 from zipfile import ZipFile
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -34,6 +35,19 @@ def _write_pptx_with_external_link(path: Path, target: str) -> None:
 """
     with ZipFile(path, "w") as archive:
         archive.writestr("ppt/slides/_rels/slide1.xml.rels", rels_xml)
+
+
+def _read_relationship_targets(path: Path, rel_path: str) -> list[str]:
+    with ZipFile(path) as archive:
+        xml_bytes = archive.read(rel_path)
+    root = ET.fromstring(xml_bytes)
+    return [
+        rel.attrib.get("Target", "").strip()
+        for rel in root.findall(
+            ".//{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
+        )
+        if rel.attrib.get("Target", "").strip()
+    ]
 
 
 def _build_config(
@@ -282,6 +296,37 @@ def test_write_outputs_keeps_master_external_links_when_backend_preserves_relati
         run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx",
         run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx",
     ]
+
+
+def test_derive_distribution_ppt_removes_external_link_relationships_from_master(
+    tmp_path: Path,
+) -> None:
+    master = tmp_path / "master.pptx"
+    distribution = tmp_path / "distribution.pptx"
+    with ZipFile(master, "w") as archive:
+        archive.writestr(
+            "ppt/slides/_rels/slide1.xml.rels",
+            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="X:\\linked\\book.xlsx" TargetMode="External"/>
+</Relationships>
+""",
+        )
+        archive.writestr("ppt/media/image1.png", b"png-data")
+
+    run_module._derive_distribution_ppt(
+        master_pptx_path=master, distribution_pptx_path=distribution
+    )
+
+    assert run_module._list_external_link_targets(master) == {"X:\\linked\\book.xlsx"}
+    assert run_module._list_external_link_targets(distribution) == set()
+    assert (tmp_path / "distribution.pptx").exists()
+    assert _read_relationship_targets(distribution, "ppt/slides/_rels/slide1.xml.rels") == [
+        "../media/image1.png"
+    ]
+    with ZipFile(distribution) as archive:
+        assert archive.read("ppt/media/image1.png") == b"png-data"
 
 
 def test_resolve_screenshot_input_mapping_rejects_non_png_paths(tmp_path: Path) -> None:

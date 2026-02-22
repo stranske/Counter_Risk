@@ -46,6 +46,8 @@ _REQUIRED_HISTORICAL_APPEND_HEADERS: tuple[str, ...] = (
     "value series 1",
     "value series 2",
 )
+_PACKAGE_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
+_RELATIONSHIP_QNAME = f"{{{_PACKAGE_REL_NS}}}Relationship"
 
 
 @dataclass(frozen=True)
@@ -732,7 +734,60 @@ def _write_outputs(
 def _derive_distribution_ppt(*, master_pptx_path: Path, distribution_pptx_path: Path) -> None:
     """Derive the distribution PPT from the generated Master PPT."""
 
-    shutil.copy2(master_pptx_path, distribution_pptx_path)
+    distribution_pptx_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with (
+            ZipFile(master_pptx_path) as source_archive,
+            ZipFile(distribution_pptx_path, "w") as output_archive,
+        ):
+            for item in source_archive.infolist():
+                xml_bytes = source_archive.read(item.filename)
+                if not _is_link_relationship_part(item.filename):
+                    output_archive.writestr(item, xml_bytes)
+                    continue
+
+                output_archive.writestr(item, _remove_external_relationship_targets(xml_bytes))
+    except BadZipFile:
+        shutil.copy2(master_pptx_path, distribution_pptx_path)
+        LOGGER.debug(
+            "Distribution derivation skipped link stripping for non-standard PPTX: %s",
+            master_pptx_path,
+        )
+        return
+
+    remaining_targets = _list_external_link_targets(distribution_pptx_path)
+    if remaining_targets:
+        targets_list = ", ".join(sorted(remaining_targets))
+        raise RuntimeError(
+            "Distribution PPT derivation did not remove all external link targets. "
+            f"Remaining targets: {targets_list}"
+        )
+
+
+def _is_link_relationship_part(archive_name: str) -> bool:
+    return archive_name.endswith(".rels") and (
+        archive_name.startswith("ppt/slides/_rels/")
+        or archive_name.startswith("ppt/charts/_rels/")
+        or archive_name == "ppt/_rels/presentation.xml.rels"
+    )
+
+
+def _remove_external_relationship_targets(xml_bytes: bytes) -> bytes:
+    try:
+        root = ET.fromstring(xml_bytes)
+    except ET.ParseError:
+        return xml_bytes
+
+    changed = False
+    for relationship in list(root.findall(f".//{_RELATIONSHIP_QNAME}")):
+        if relationship.attrib.get("TargetMode") != "External":
+            continue
+        root.remove(relationship)
+        changed = True
+
+    if not changed:
+        return xml_bytes
+    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
 def _assert_master_preserves_external_link_targets(
@@ -774,9 +829,7 @@ def _list_external_link_targets(pptx_path: Path) -> set[str]:
             for rel_path in rel_paths:
                 xml_bytes = archive.read(rel_path)
                 root = ET.fromstring(xml_bytes)
-                for relationship in root.findall(
-                    ".//{http://schemas.openxmlformats.org/package/2006/relationships}Relationship"
-                ):
+                for relationship in root.findall(f".//{_RELATIONSHIP_QNAME}"):
                     if relationship.attrib.get("TargetMode") != "External":
                         continue
                     target = relationship.attrib.get("Target", "").strip()
