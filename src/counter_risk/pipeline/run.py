@@ -1517,6 +1517,11 @@ def _sheet_for_series_label(
 
 
 def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str, tuple[str, ...]]:
+    def _raise_with_context(*, exc: Exception, context: str) -> None:
+        message = str(exc)
+        suffix = f": {message}" if message else ""
+        raise type(exc)(f"{context}{suffix}") from exc
+
     try:
         from openpyxl import load_workbook
     except ImportError as exc:
@@ -1539,10 +1544,13 @@ def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str
             except ValueError:
                 continue
             except Exception as exc:
-                raise RuntimeError(
+                _raise_with_context(
+                    exc=exc,
+                    context=(
                     "Unexpected error while scanning historical header row in "
                     f"workbook {workbook_path!s}, sheet {sheet_name!r}"
-                ) from exc
+                    ),
+                )
 
             max_column = int(getattr(worksheet, "max_column", 0))
             headers = [
@@ -1559,13 +1567,14 @@ def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str
         raise RuntimeError(
             f"Unable to extract historical series headers from workbook: {workbook_path}"
         ) from exc
-    except RuntimeError:
-        raise
     except Exception as exc:
-        raise RuntimeError(
+        _raise_with_context(
+            exc=exc,
+            context=(
             "Unexpected error while extracting historical series headers from "
             f"workbook: {workbook_path}"
-        ) from exc
+            ),
+        )
     finally:
         if workbook is not None:
             workbook.close()

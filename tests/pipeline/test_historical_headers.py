@@ -93,8 +93,9 @@ def test_extract_historical_series_headers_reraises_unexpected_errors_with_conte
 
     monkeypatch.setattr(run_module, "_find_historical_header_row", _raise_type_error)
 
-    with pytest.raises(RuntimeError, match="sheet 'Totals'") as exc_info:
+    with pytest.raises(TypeError, match="sheet 'Totals'") as exc_info:
         run_module._extract_historical_series_headers_by_sheet(Path("unused.xlsx"))
 
     assert "unused.xlsx" in str(exc_info.value)
+    assert "bad worksheet payload" in str(exc_info.value)
     assert workbook.closed is True
