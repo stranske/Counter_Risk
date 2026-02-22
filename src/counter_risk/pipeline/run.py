@@ -21,6 +21,10 @@ from counter_risk.dates import derive_as_of_date, derive_run_date
 from counter_risk.normalize import normalize_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
+from counter_risk.pipeline.parsing_types import (
+    ParsedDataInvalidShapeError,
+    ParsedDataMissingKeyError,
+)
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.writers import generate_mosers_workbook
 
@@ -92,6 +96,7 @@ def reconcile_series_coverage(
     Compares current-month series labels from parsed tables against historical workbook
     headers and optionally validates variant-specific segment expectations.
     """
+    _validate_reconciliation_parsed_data_by_sheet(parsed_data_by_sheet=parsed_data_by_sheet)
 
     by_sheet: dict[str, dict[str, Any]] = {}
     missing_series: list[dict[str, Any]] = []
@@ -278,6 +283,41 @@ def reconcile_series_coverage(
         "missing_series": missing_series,
         "missing_segments": missing_segments,
     }
+
+
+def _validate_reconciliation_parsed_data_by_sheet(
+    *, parsed_data_by_sheet: Mapping[str, Mapping[str, Any]]
+) -> None:
+    for raw_sheet_name, raw_sections in parsed_data_by_sheet.items():
+        sheet_name = str(raw_sheet_name)
+        if not isinstance(raw_sections, Mapping):
+            raise ParsedDataInvalidShapeError(
+                f"Invalid parsed_data shape for sheet {sheet_name!r}: expected a mapping/object"
+            )
+
+        missing_sections = [
+            section for section in ("totals", "futures") if section not in raw_sections
+        ]
+        if missing_sections:
+            raise ParsedDataMissingKeyError(
+                f"Missing required parsed_data section(s) for sheet {sheet_name!r}: "
+                f"{', '.join(missing_sections)}"
+            )
+
+        for section_name in ("totals", "futures"):
+            section_value = raw_sections[section_name]
+            if not _is_supported_table_shape(section_value):
+                raise ParsedDataInvalidShapeError(
+                    f"Invalid parsed_data shape for sheet {sheet_name!r} section "
+                    f"{section_name!r}: expected list of mappings or tabular object with "
+                    "to_dict(orient='records')/to_records()"
+                )
+
+
+def _is_supported_table_shape(table: Any) -> bool:
+    if isinstance(table, list):
+        return all(isinstance(record, Mapping) for record in table)
+    return hasattr(table, "to_dict") or hasattr(table, "to_records")
 
 
 def _expected_segments_for_variant(
@@ -1547,8 +1587,8 @@ def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str
                 _raise_with_context(
                     exc=exc,
                     context=(
-                    "Unexpected error while scanning historical header row in "
-                    f"workbook {workbook_path!s}, sheet {sheet_name!r}"
+                        "Unexpected error while scanning historical header row in "
+                        f"workbook {workbook_path!s}, sheet {sheet_name!r}"
                     ),
                 )
 
@@ -1571,8 +1611,8 @@ def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str
         _raise_with_context(
             exc=exc,
             context=(
-            "Unexpected error while extracting historical series headers from "
-            f"workbook: {workbook_path}"
+                "Unexpected error while extracting historical series headers from "
+                f"workbook: {workbook_path}"
             ),
         )
     finally:

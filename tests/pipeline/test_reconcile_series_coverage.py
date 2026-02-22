@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from inspect import Parameter, signature
 
+import pytest
+
+from counter_risk.pipeline.parsing_types import (
+    ParsedDataInvalidShapeError,
+    ParsedDataMissingKeyError,
+)
 from counter_risk.pipeline.run import (
     _normalized_counterparties_from_parsed_data,
     _normalized_counterparties_from_records,
@@ -24,7 +30,7 @@ def test_reconcile_series_coverage_requires_parsed_data_input_parameter() -> Non
 
 def test_reconcile_series_coverage_accepts_historical_headers_parameter() -> None:
     result = reconcile_series_coverage(
-        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}]}},
+        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}], "futures": []}},
         historical_series_headers_by_sheet={"Total": ("A", "B")},
     )
 
@@ -108,7 +114,7 @@ def test_reconcile_series_coverage_extracts_counterparties_and_clearing_houses()
 
 def test_reconcile_series_coverage_extracts_historical_series_headers_per_sheet() -> None:
     result = reconcile_series_coverage(
-        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}]}},
+        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}], "futures": []}},
         historical_series_headers_by_sheet={
             "Total": ("  B  ", "A", "", "A"),
             "Futures": ("  ICE  ", "CME", "CME"),
@@ -134,7 +140,7 @@ def test_reconcile_series_coverage_extracts_historical_series_headers_per_sheet(
 
 def test_reconcile_series_coverage_counts_each_historical_series_missing_from_data() -> None:
     result = reconcile_series_coverage(
-        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}]}},
+        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}], "futures": []}},
         historical_series_headers_by_sheet={"Total": ("A", "B", "C")},
     )
 
@@ -156,8 +162,8 @@ def test_reconcile_series_coverage_counts_missing_historical_series_with_no_othe
 def test_reconcile_series_coverage_counts_missing_historical_series_exactly_per_sheet() -> None:
     result = reconcile_series_coverage(
         parsed_data_by_sheet={
-            "SheetA": {"totals": [{"counterparty": "A"}]},
-            "SheetB": {"totals": [{"counterparty": "X"}, {"counterparty": "Y"}]},
+            "SheetA": {"totals": [{"counterparty": "A"}], "futures": []},
+            "SheetB": {"totals": [{"counterparty": "X"}, {"counterparty": "Y"}], "futures": []},
         },
         historical_series_headers_by_sheet={
             "SheetA": ("A", "B", "C"),
@@ -174,10 +180,11 @@ def test_reconcile_series_coverage_reports_missing_expected_segments_by_variant(
     result = reconcile_series_coverage(
         parsed_data_by_sheet={
             "CPRS - CH": {
+                "totals": [],
                 "futures": [
                     {"clearing_house": "CME", "segment": "swaps"},
                     {"clearing_house": "ICE", "segment": "repo"},
-                ]
+                ],
             }
         },
         historical_series_headers_by_sheet={"CPRS - CH": ("CME", "ICE")},
@@ -203,7 +210,9 @@ def test_reconcile_series_coverage_reports_missing_expected_segments_by_variant(
 
 def test_reconcile_series_coverage_warn_mode_includes_raw_and_normalized_counterparty() -> None:
     result = reconcile_series_coverage(
-        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "Bank of America, NA"}]}},
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "Bank of America, NA"}], "futures": []}
+        },
         historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
         fail_policy="warn",
     )
@@ -220,7 +229,9 @@ def test_reconcile_series_coverage_strict_mode_raises_for_unmapped_normalized_co
 ):
     try:
         reconcile_series_coverage(
-            parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "Bank of America, NA"}]}},
+            parsed_data_by_sheet={
+                "Total": {"totals": [{"counterparty": "Bank of America, NA"}], "futures": []}
+            },
             historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
             fail_policy="strict",
         )
@@ -240,7 +251,8 @@ def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_he
                 "totals": [
                     {"counterparty": "Bank of America, NA"},
                     {"counterparty": "Bank of America NA"},
-                ]
+                ],
+                "futures": [],
             }
         },
         historical_series_headers_by_sheet={"Total": ("Bank of America",)},
@@ -306,3 +318,33 @@ def test_normalized_counterparties_from_parsed_data_handles_missing_totals_key()
     )
 
     assert normalized == {}
+
+
+def test_reconcile_series_coverage_fails_fast_when_required_sections_missing() -> None:
+    with pytest.raises(ParsedDataMissingKeyError, match="Missing required parsed_data section"):
+        reconcile_series_coverage(
+            parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "A"}]}},
+            historical_series_headers_by_sheet={"Total": ("A",)},
+        )
+
+
+def test_reconcile_series_coverage_fails_fast_when_section_shape_is_invalid() -> None:
+    with pytest.raises(ParsedDataInvalidShapeError, match="Invalid parsed_data shape"):
+        reconcile_series_coverage(
+            parsed_data_by_sheet={"Total": {"totals": {"counterparty": "A"}, "futures": []}},
+            historical_series_headers_by_sheet={"Total": ("A",)},
+        )
+
+
+def test_reconcile_series_coverage_accepts_list_of_mapping_sections() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {
+                "totals": [{"counterparty": "A", "Notional": 1.0}],
+                "futures": [{"clearing_house": "ICE", "notional": 1.0}],
+            }
+        },
+        historical_series_headers_by_sheet={"Total": ("A", "ICE")},
+    )
+
+    assert result["gap_count"] == 0
