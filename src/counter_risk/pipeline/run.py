@@ -1224,8 +1224,10 @@ def _rebuild_pptx_from_slide_images(
     from pptx import Presentation
 
     source_prs = Presentation(str(source_pptx))
-    slide_width: int = source_prs.slide_width or 0
-    slide_height: int = source_prs.slide_height or 0
+    assert source_prs.slide_width is not None, "source PPT has no slide width"
+    assert source_prs.slide_height is not None, "source PPT has no slide height"
+    slide_width = source_prs.slide_width
+    slide_height = source_prs.slide_height
 
     new_prs = Presentation()
     new_prs.slide_width = slide_width
