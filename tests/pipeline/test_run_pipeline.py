@@ -514,7 +514,7 @@ def test_run_pipeline_warn_mode_writes_mapping_updates_and_completes(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
-        lambda *, run_dir, config, warnings: (
+        lambda *, run_dir, config, as_of_date, warnings: (
             [],
             run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
         ),
