@@ -160,6 +160,99 @@ def _minimal_parsed_by_variant() -> dict[str, dict[str, _FakeDataFrame]]:
     }
 
 
+def _minimal_workflow_config(tmp_path: Path, *, fail_policy: str = "warn") -> WorkflowConfig:
+    path_map = {
+        "mosers_all_programs_xlsx": tmp_path / "all.xlsx",
+        "mosers_ex_trend_xlsx": tmp_path / "ex.xlsx",
+        "mosers_trend_xlsx": tmp_path / "trend.xlsx",
+        "hist_all_programs_3yr_xlsx": tmp_path / "hist-all.xlsx",
+        "hist_ex_llc_3yr_xlsx": tmp_path / "hist-ex.xlsx",
+        "hist_llc_3yr_xlsx": tmp_path / "hist-trend.xlsx",
+        "monthly_pptx": tmp_path / "monthly.pptx",
+    }
+    return WorkflowConfig(
+        as_of_date=date(2025, 12, 31),
+        output_root=tmp_path / "runs",
+        reconciliation={"fail_policy": fail_policy},
+        **path_map,
+    )
+
+
+def test_build_parsed_data_by_sheet_uses_historical_sheet_names_without_total_key() -> None:
+    parsed_sections = {
+        "totals": _FakeDataFrame(
+            records=[
+                {"counterparty": "Counterparty A", "Notional": 10.0},
+                {"counterparty": "Counterparty B", "Notional": 20.0},
+            ]
+        ),
+        "futures": _FakeDataFrame(
+            records=[
+                {
+                    "account": "acct",
+                    "description": "desc",
+                    "class": "cls",
+                    "fcm": "fcm",
+                    "clearing_house": "Clearing B",
+                    "notional": 5.0,
+                }
+            ]
+        ),
+    }
+    historical_headers_by_sheet = {
+        "Sheet A": ("Counterparty A",),
+        "Sheet B": ("Counterparty B", "Clearing B"),
+    }
+
+    parsed_data_by_sheet = run_module._build_parsed_data_by_sheet(
+        parsed_sections=parsed_sections,
+        historical_series_headers_by_sheet=historical_headers_by_sheet,
+    )
+
+    assert set(parsed_data_by_sheet) == {"Sheet A", "Sheet B"}
+    assert "Total" not in parsed_data_by_sheet
+    assert [row["counterparty"] for row in parsed_data_by_sheet["Sheet A"]["totals"]] == [
+        "Counterparty A"
+    ]
+    assert [row["counterparty"] for row in parsed_data_by_sheet["Sheet B"]["totals"]] == [
+        "Counterparty B"
+    ]
+    assert [row["clearing_house"] for row in parsed_data_by_sheet["Sheet B"]["futures"]] == [
+        "Clearing B"
+    ]
+
+
+def test_run_reconciliation_checks_reports_gap_only_for_impacted_sheet(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "Counterparty A", "Notional": 1.0}]),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",), "Sheet B": ("Counterparty B",)},
+    )
+
+    run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert any("sheet 'Sheet B'" in warning for warning in warnings)
+    assert not any("sheet 'Sheet A'" in warning for warning in warnings)
+
+
 def test_run_pipeline_writes_expected_outputs_and_manifest(
     tmp_path: Path, fake_pandas: None
 ) -> None:

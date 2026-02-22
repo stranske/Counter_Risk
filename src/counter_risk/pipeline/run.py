@@ -1164,8 +1164,11 @@ def _run_reconciliation_checks(
         parsed_sections = parsed_by_variant.get(variant, {})
         if not _has_reconciliation_rows(parsed_sections):
             continue
-        parsed_data_by_sheet = {"Total": parsed_sections}
         historical_headers_by_sheet = _extract_historical_series_headers_by_sheet(historical_path)
+        parsed_data_by_sheet = _build_parsed_data_by_sheet(
+            parsed_sections=parsed_sections,
+            historical_series_headers_by_sheet=historical_headers_by_sheet,
+        )
         result = reconcile_series_coverage(
             parsed_data_by_sheet=parsed_data_by_sheet,
             historical_series_headers_by_sheet=historical_headers_by_sheet,
@@ -1207,6 +1210,102 @@ def _run_reconciliation_checks(
             "Reconciliation strict mode failed due to missing/unmapped series; "
             f"gap_count={total_gap_count}"
         )
+
+
+def _build_parsed_data_by_sheet(
+    *,
+    parsed_sections: Mapping[str, Any],
+    historical_series_headers_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]],
+) -> dict[str, dict[str, list[dict[str, Any]]]]:
+    sheet_names = [
+        str(name).strip() for name in historical_series_headers_by_sheet if str(name).strip()
+    ]
+    if not sheet_names:
+        return {}
+
+    parsed_data_by_sheet: dict[str, dict[str, list[dict[str, Any]]]] = {
+        sheet_name: {"totals": [], "futures": []} for sheet_name in sheet_names
+    }
+    normalized_headers_by_sheet: dict[str, set[str]] = {
+        sheet_name: {
+            normalize_counterparty(header)
+            for header in (
+                str(value).strip()
+                for value in historical_series_headers_by_sheet.get(sheet_name, ())
+            )
+            if header
+        }
+        for sheet_name in sheet_names
+    }
+
+    totals_fallback_sheet = _select_fallback_sheet_name(
+        sheet_names=sheet_names,
+        preferred_tokens=("total", "counterparty", "fcm"),
+    )
+    futures_fallback_sheet = _select_fallback_sheet_name(
+        sheet_names=sheet_names,
+        preferred_tokens=("future", "fcm", "ch", "clearing"),
+        default=totals_fallback_sheet,
+    )
+
+    for record in _records(parsed_sections.get("totals", [])):
+        raw_counterparty = str(record.get("counterparty", "")).strip()
+        normalized_counterparty = (
+            normalize_counterparty(raw_counterparty) if raw_counterparty else ""
+        )
+        target_sheet = _sheet_for_series_label(
+            normalized_label=normalized_counterparty,
+            sheet_names=sheet_names,
+            normalized_headers_by_sheet=normalized_headers_by_sheet,
+            fallback_sheet=totals_fallback_sheet,
+        )
+        if target_sheet:
+            parsed_data_by_sheet[target_sheet]["totals"].append(record)
+
+    for record in _records(parsed_sections.get("futures", [])):
+        raw_clearing_house = str(record.get("clearing_house", "")).strip()
+        normalized_clearing_house = (
+            normalize_counterparty(raw_clearing_house) if raw_clearing_house else ""
+        )
+        target_sheet = _sheet_for_series_label(
+            normalized_label=normalized_clearing_house,
+            sheet_names=sheet_names,
+            normalized_headers_by_sheet=normalized_headers_by_sheet,
+            fallback_sheet=futures_fallback_sheet,
+        )
+        if target_sheet:
+            parsed_data_by_sheet[target_sheet]["futures"].append(record)
+
+    return parsed_data_by_sheet
+
+
+def _select_fallback_sheet_name(
+    *,
+    sheet_names: list[str],
+    preferred_tokens: tuple[str, ...],
+    default: str | None = None,
+) -> str | None:
+    for sheet_name in sheet_names:
+        normalized_sheet_name = sheet_name.casefold()
+        if any(token in normalized_sheet_name for token in preferred_tokens):
+            return sheet_name
+    if default:
+        return default
+    return sheet_names[0] if sheet_names else None
+
+
+def _sheet_for_series_label(
+    *,
+    normalized_label: str,
+    sheet_names: list[str],
+    normalized_headers_by_sheet: Mapping[str, set[str]],
+    fallback_sheet: str | None,
+) -> str | None:
+    if normalized_label:
+        for sheet_name in sheet_names:
+            if normalized_label in normalized_headers_by_sheet.get(sheet_name, set()):
+                return sheet_name
+    return fallback_sheet
 
 
 def _extract_historical_series_headers_by_sheet(workbook_path: Path) -> dict[str, tuple[str, ...]]:
