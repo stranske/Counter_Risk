@@ -1723,3 +1723,79 @@ def test_rebuild_pptx_replacing_charts_preserves_position(
     assert new_shape.top == orig_top
     assert new_shape.width == orig_width
     assert new_shape.height == orig_height
+
+
+def test_shape_match_confidence_high_when_name_is_unique() -> None:
+    class _Shape:
+        def __init__(self) -> None:
+            self.name = "Chart 1"
+            self.left = 10
+            self.top = 10
+            self.width = 100
+            self.height = 100
+
+    confidence = run_module._shape_match_confidence(
+        target_name="Chart 1",
+        candidate_shapes=[_Shape()],
+    )
+
+    assert confidence >= 0.95
+
+
+def test_shape_match_confidence_low_when_name_is_duplicated() -> None:
+    class _Shape:
+        def __init__(self) -> None:
+            self.name = "Chart 1"
+            self.left = 10
+            self.top = 10
+            self.width = 100
+            self.height = 100
+
+    confidence = run_module._shape_match_confidence(
+        target_name="Chart 1",
+        candidate_shapes=[_Shape(), _Shape()],
+    )
+
+    assert confidence < 0.8
+
+
+def test_rebuild_pptx_replacing_charts_replaces_whole_slide_on_low_confidence(
+    tmp_path: Path,
+) -> None:
+    from pptx import Presentation
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+    from pptx.util import Inches
+
+    # Build a slide with duplicate names to force low-confidence per-shape matching.
+    source = _make_test_pptx_with_picture(tmp_path, "Chart OLE")
+    prs = Presentation(str(source))
+    slide = prs.slides[0]
+    second_shape_image = tmp_path / "shape2.png"
+    second_shape_image.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    duplicate = slide.shapes.add_picture(str(second_shape_image), Inches(2), Inches(2))
+    duplicate.name = "Chart OLE"
+    prs.save(str(source))
+
+    replacement = tmp_path / "replacement.png"
+    replacement.write_bytes(second_shape_image.read_bytes())
+    slide_fallback = tmp_path / "slide_fallback.png"
+    slide_fallback.write_bytes(second_shape_image.read_bytes())
+
+    output = tmp_path / "out.pptx"
+    run_module._rebuild_pptx_replacing_charts(
+        source_pptx=source,
+        output_path=output,
+        chart_images={(1, "Chart OLE"): replacement},
+        fallback_slide_images={1: slide_fallback},
+    )
+
+    rebuilt = Presentation(str(output))
+    shapes = list(rebuilt.slides[0].shapes)
+    assert len(shapes) == 1
+    assert shapes[0].shape_type == MSO_SHAPE_TYPE.PICTURE
