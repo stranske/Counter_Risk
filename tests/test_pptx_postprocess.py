@@ -95,3 +95,31 @@ def test_scrub_external_relationships_from_pptx_returns_new_default_scrubbed_cop
     assert source.exists()
     assert list_external_relationship_targets(source) == {"https://example.com"}
     assert list_external_relationship_targets(scrubbed) == set()
+
+
+def test_scrub_external_relationships_from_pptx_accepts_str_paths_and_creates_parent_dirs(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "input" / "source.pptx"
+    destination = tmp_path / "output" / "nested" / "distribution.pptx"
+    source.parent.mkdir(parents=True, exist_ok=True)
+
+    with ZipFile(source, "w") as archive:
+        archive.writestr(
+            "ppt/slides/_rels/slide1.xml.rels",
+            """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">
+  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject\" Target=\"X:\\\\linked\\\\book.xlsx\" TargetMode=\"External\"/>
+</Relationships>
+""",
+        )
+
+    scrubbed = scrub_external_relationships_from_pptx(
+        str(source),
+        scrubbed_pptx_path=str(destination),
+    )
+
+    assert scrubbed == destination
+    assert destination.exists()
+    assert list_external_relationship_targets(str(source)) == {"X:\\\\linked\\\\book.xlsx"}
+    assert list_external_relationship_targets(str(destination)) == set()

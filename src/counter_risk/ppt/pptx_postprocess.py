@@ -13,9 +13,9 @@ _RELATIONSHIP_QNAME = f"{{{_PACKAGE_REL_NS}}}Relationship"
 
 
 def scrub_external_relationships_from_pptx(
-    source_pptx_path: Path,
+    source_pptx_path: Path | str,
     *,
-    scrubbed_pptx_path: Path | None = None,
+    scrubbed_pptx_path: Path | str | None = None,
 ) -> Path:
     """Create a PPTX copy with external relationship targets removed."""
 
@@ -42,7 +42,7 @@ def scrub_external_relationships_from_pptx(
     return destination
 
 
-def list_external_relationship_targets(pptx_path: Path) -> set[str]:
+def list_external_relationship_targets(pptx_path: Path | str) -> set[str]:
     """Return external relationship targets under PPT relationship parts."""
 
     pptx_path = Path(pptx_path)
