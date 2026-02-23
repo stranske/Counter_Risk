@@ -1,9 +1,13 @@
 """Structured parsing/reconciliation validation error types.
 
 Exception API contract
-- ``UnmappedCounterpartyError.normalized_counterparty``: ``str``
-- ``UnmappedCounterpartyError.raw_counterparty``: ``str``
-- ``UnmappedCounterpartyError.sheet``: ``str | None``
+- ``UnmappedCounterpartyError`` is raised for unmapped reconciliation counterparties.
+- ``UnmappedCounterpartyError.normalized_counterparty`` is a ``str`` and stores the
+  exact normalized counterparty value that triggered the error.
+- ``UnmappedCounterpartyError.raw_counterparty`` is a ``str`` and stores the exact
+  original parsed counterparty value that triggered the error.
+- ``UnmappedCounterpartyError.sheet`` is ``str | None`` and stores optional worksheet
+  context for the mismatch.
 """
 
 from __future__ import annotations
@@ -23,6 +27,11 @@ class ParsedDataInvalidShapeError(ParsedDataValidationError):
 
 class UnmappedCounterpartyError(ValueError):
     """Raised when reconciliation cannot map a parsed counterparty to historical series.
+
+    Contract:
+        This exception exposes machine-readable context fields as direct attributes.
+        ``normalized_counterparty`` and ``raw_counterparty`` are always populated with
+        the exact triggering values.
 
     Attributes:
         normalized_counterparty (str): Deterministic normalized counterparty label.
