@@ -143,6 +143,31 @@ def test_load_name_registry_rejects_duplicate_aliases_across_entries(tmp_path: P
         load_name_registry(config_path)
 
 
+def test_load_name_registry_rejects_duplicate_canonical_keys(tmp_path: Path) -> None:
+    config_path = tmp_path / "name_registry.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: duplicate_name",
+                "    display_name: Duplicate Name One",
+                "    aliases:",
+                "      - Duplicate Name One",
+                "  - canonical_key: duplicate_name",
+                "    display_name: Duplicate Name Two",
+                "    aliases:",
+                "      - Duplicate Name Two",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Duplicate canonical_key found"):
+        load_name_registry(config_path)
+
+
 def test_load_name_registry_rejects_unsupported_schema_version(tmp_path: Path) -> None:
     config_path = tmp_path / "name_registry.yml"
     config_path.write_text(
