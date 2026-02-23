@@ -24,6 +24,7 @@ from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
     ParsedDataMissingKeyError,
+    UnmappedCounterpartyError,
 )
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.time_utils import utc_now_isoformat
@@ -107,6 +108,7 @@ def reconcile_series_coverage(
     by_sheet: dict[str, dict[str, Any]] = {}
     missing_series: list[dict[str, Any]] = []
     missing_segments: list[dict[str, Any]] = []
+    exceptions: list[UnmappedCounterpartyError] = []
     warnings: list[str] = []
     gap_count = 0
 
@@ -217,7 +219,7 @@ def reconcile_series_coverage(
             )
 
         if missing_normalized_counterparties:
-            unmapped_counterparties: list[dict[str, Any]] = []
+            sheet_exceptions: list[UnmappedCounterpartyError] = []
             for normalized_name in missing_normalized_counterparties:
                 raw_names = sorted(
                     set(normalized_counterparties_in_data.get(normalized_name, ())),
@@ -228,25 +230,22 @@ def reconcile_series_coverage(
                     "Reconciliation unmapped counterparty in sheet "
                     f"{sheet_name!r}: raw={raw_display!r}, normalized={normalized_name!r}"
                 )
-                unmapped_counterparties.append(
-                    {
-                        "sheet": sheet_name,
-                        "raw_counterparty_labels": raw_names,
-                        "normalized_counterparty": normalized_name,
-                    }
-                )
+                for raw_name in raw_names:
+                    error = UnmappedCounterpartyError(
+                        normalized_counterparty=normalized_name,
+                        raw_counterparty=raw_name,
+                        sheet=sheet_name,
+                    )
+                    sheet_exceptions.append(error)
+                    exceptions.append(error)
 
             if fail_policy == "strict":
-                raise ValueError(
-                    "Reconciliation strict mode failed due to unmapped normalized counterparties "
-                    f"in sheet {sheet_name!r}: "
-                    + ", ".join(
-                        (
-                            f"raw={item['raw_counterparty_labels']!r} "
-                            f"normalized={item['normalized_counterparty']!r}"
-                        )
-                        for item in unmapped_counterparties
-                    )
+                if sheet_exceptions:
+                    raise sheet_exceptions[0]
+                raise UnmappedCounterpartyError(
+                    normalized_counterparty=missing_normalized_counterparties[0],
+                    raw_counterparty=missing_normalized_counterparties[0],
+                    sheet=sheet_name,
                 )
 
         if missing_expected_segments:
@@ -281,14 +280,16 @@ def reconcile_series_coverage(
             "segments_in_data": sorted(parsed_segments, key=str.casefold),
             "missing_expected_segments": missing_expected_segments,
         }
-
-    return {
+    result = {
         "by_sheet": by_sheet,
         "gap_count": gap_count,
         "warnings": warnings,
         "missing_series": missing_series,
         "missing_segments": missing_segments,
     }
+    if exceptions:
+        result["exceptions"] = list(exceptions)
+    return result
 
 
 def _validate_reconciliation_parsed_data_by_sheet(
