@@ -1799,3 +1799,36 @@ def test_rebuild_pptx_replacing_charts_replaces_whole_slide_on_low_confidence(
     shapes = list(rebuilt.slides[0].shapes)
     assert len(shapes) == 1
     assert shapes[0].shape_type == MSO_SHAPE_TYPE.PICTURE
+
+
+def test_rebuild_pptx_replacing_charts_raises_when_low_confidence_has_no_slide_fallback(
+    tmp_path: Path,
+) -> None:
+    from pptx import Presentation
+    from pptx.util import Inches
+
+    source = _make_test_pptx_with_picture(tmp_path, "Chart OLE")
+    prs = Presentation(str(source))
+    slide = prs.slides[0]
+    second_shape_image = tmp_path / "shape2.png"
+    second_shape_image.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    duplicate = slide.shapes.add_picture(str(second_shape_image), Inches(2), Inches(2))
+    duplicate.name = "Chart OLE"
+    prs.save(str(source))
+
+    replacement = tmp_path / "replacement.png"
+    replacement.write_bytes(second_shape_image.read_bytes())
+    output = tmp_path / "out.pptx"
+
+    with pytest.raises(RuntimeError, match="no slide-image fallback"):
+        run_module._rebuild_pptx_replacing_charts(
+            source_pptx=source,
+            output_path=output,
+            chart_images={(1, "Chart OLE"): replacement},
+        )
