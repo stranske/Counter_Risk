@@ -7,19 +7,22 @@ import hashlib
 import logging
 import platform
 import shutil
-import xml.etree.ElementTree as ET
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Literal, NoReturn, cast
+from typing import Any, Literal, NoReturn
 from zipfile import BadZipFile, ZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
 from counter_risk.normalize import normalize_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
+from counter_risk.ppt.pptx_postprocess import (
+    list_external_relationship_targets,
+    scrub_external_relationships_from_pptx,
+)
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
@@ -57,8 +60,6 @@ _REQUIRED_HISTORICAL_APPEND_HEADERS: tuple[str, ...] = (
     "value series 1",
     "value series 2",
 )
-_PACKAGE_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
-_RELATIONSHIP_QNAME = f"{{{_PACKAGE_REL_NS}}}Relationship"
 
 
 @dataclass(frozen=True)
@@ -890,17 +891,10 @@ def _derive_distribution_ppt(*, master_pptx_path: Path, distribution_pptx_path: 
 
     distribution_pptx_path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        with (
-            ZipFile(master_pptx_path) as source_archive,
-            ZipFile(distribution_pptx_path, "w") as output_archive,
-        ):
-            for item in source_archive.infolist():
-                xml_bytes = source_archive.read(item.filename)
-                if not _is_link_relationship_part(item.filename):
-                    output_archive.writestr(item, xml_bytes)
-                    continue
-
-                output_archive.writestr(item, _remove_external_relationship_targets(xml_bytes))
+        scrub_external_relationships_from_pptx(
+            master_pptx_path,
+            scrubbed_pptx_path=distribution_pptx_path,
+        )
     except BadZipFile:
         shutil.copy2(master_pptx_path, distribution_pptx_path)
         LOGGER.debug(
@@ -916,32 +910,6 @@ def _derive_distribution_ppt(*, master_pptx_path: Path, distribution_pptx_path: 
             "Distribution PPT derivation did not remove all external link targets. "
             f"Remaining targets: {targets_list}"
         )
-
-
-def _is_link_relationship_part(archive_name: str) -> bool:
-    return archive_name.endswith(".rels") and (
-        archive_name.startswith("ppt/slides/_rels/")
-        or archive_name.startswith("ppt/charts/_rels/")
-        or archive_name == "ppt/_rels/presentation.xml.rels"
-    )
-
-
-def _remove_external_relationship_targets(xml_bytes: bytes) -> bytes:
-    try:
-        root = ET.fromstring(xml_bytes)
-    except ET.ParseError:
-        return xml_bytes
-
-    changed = False
-    for relationship in list(root.findall(f".//{_RELATIONSHIP_QNAME}")):
-        if relationship.attrib.get("TargetMode") != "External":
-            continue
-        root.remove(relationship)
-        changed = True
-
-    if not changed:
-        return xml_bytes
-    return cast(bytes, ET.tostring(root, encoding="utf-8", xml_declaration=True))
 
 
 def _assert_master_preserves_external_link_targets(
@@ -964,35 +932,7 @@ def _assert_master_preserves_external_link_targets(
 
 
 def _list_external_link_targets(pptx_path: Path) -> set[str]:
-    if not pptx_path.exists() or not pptx_path.is_file():
-        return set()
-
-    try:
-        with ZipFile(pptx_path) as archive:
-            rel_paths = [
-                name
-                for name in archive.namelist()
-                if name.endswith(".rels")
-                and (
-                    name.startswith("ppt/slides/_rels/")
-                    or name.startswith("ppt/charts/_rels/")
-                    or name == "ppt/_rels/presentation.xml.rels"
-                )
-            ]
-            targets: set[str] = set()
-            for rel_path in rel_paths:
-                xml_bytes = archive.read(rel_path)
-                root = ET.fromstring(xml_bytes)
-                for relationship in root.findall(f".//{_RELATIONSHIP_QNAME}"):
-                    if relationship.attrib.get("TargetMode") != "External":
-                        continue
-                    target = relationship.attrib.get("Target", "").strip()
-                    if target:
-                        targets.add(target)
-            return targets
-    except (BadZipFile, ET.ParseError, KeyError):
-        LOGGER.debug("Skipping external link target scan for non-standard PPTX: %s", pptx_path)
-        return set()
+    return list_external_relationship_targets(pptx_path)
 
 
 def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]:
