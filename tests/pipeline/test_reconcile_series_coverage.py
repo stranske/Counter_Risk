@@ -9,6 +9,7 @@ import pytest
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
     ParsedDataMissingKeyError,
+    UnmappedCounterpartyError,
 )
 from counter_risk.pipeline.run import (
     _normalized_counterparties_from_parsed_data,
@@ -227,7 +228,7 @@ def test_reconcile_series_coverage_warn_mode_includes_raw_and_normalized_counter
 def test_reconcile_series_coverage_strict_mode_raises_for_unmapped_normalized_counterparty() -> (
     None
 ):
-    try:
+    with pytest.raises(UnmappedCounterpartyError) as exc_info:
         reconcile_series_coverage(
             parsed_data_by_sheet={
                 "Total": {"totals": [{"counterparty": "Bank of America, NA"}], "futures": []}
@@ -235,13 +236,28 @@ def test_reconcile_series_coverage_strict_mode_raises_for_unmapped_normalized_co
             historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
             fail_policy="strict",
         )
-    except ValueError as exc:
-        text = str(exc)
-        assert "unmapped normalized counterparties" in text
-        assert "Bank of America, NA" in text
-        assert "Bank of America" in text
-    else:
-        raise AssertionError("expected strict mode reconciliation to raise")
+
+    error = exc_info.value
+    assert error.normalized_counterparty == "Bank of America"
+    assert error.raw_counterparty == "Bank of America, NA"
+    assert error.sheet == "Total"
+
+
+def test_reconcile_series_coverage_warn_mode_records_structured_exception_without_raising() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "Bank of America, NA"}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+        fail_policy="warn",
+    )
+
+    exceptions = result.get("exceptions")
+    assert isinstance(exceptions, list)
+    assert len(exceptions) == 1
+    assert isinstance(exceptions[0], UnmappedCounterpartyError)
+    assert exceptions[0].normalized_counterparty == "Bank of America"
+    assert exceptions[0].raw_counterparty == "Bank of America, NA"
 
 
 def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_header_key() -> None:
