@@ -13,16 +13,12 @@ from datetime import date
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Literal, NoReturn
-from zipfile import BadZipFile, ZipFile
+from zipfile import BadZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
 from counter_risk.normalize import normalize_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
-from counter_risk.ppt.pptx_postprocess import (
-    list_external_relationship_targets,
-    scrub_external_relationships_from_pptx,
-)
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
@@ -30,6 +26,10 @@ from counter_risk.pipeline.parsing_types import (
 )
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.time_utils import utc_now_isoformat
+from counter_risk.ppt.pptx_postprocess import (
+    list_external_relationship_targets,
+    scrub_external_relationships_from_pptx,
+)
 from counter_risk.writers import generate_mosers_workbook
 
 LOGGER = logging.getLogger(__name__)
