@@ -30,6 +30,7 @@ from counter_risk.ppt.pptx_postprocess import (
     list_external_relationship_targets,
     scrub_external_relationships_from_pptx,
 )
+from counter_risk.ppt.pptx_static import _rebuild_pptx_from_slide_images
 from counter_risk.writers import generate_mosers_workbook
 
 LOGGER = logging.getLogger(__name__)
@@ -1122,19 +1123,18 @@ def _create_static_distribution(
             warnings.append(f"distribution_static PDF export failed: {pdf_exc}")
             LOGGER.warning("distribution_static_pdf_failed exc=%s", pdf_exc)
 
-        # Preferred: export each OLE/chart shape as an individual PNG then
-        # rebuild the PPTX replacing only those shapes.  Titles, text boxes, and
-        # other non-chart shapes remain as live text so the deck stays editable.
+        # Preferred: export each slide as a PNG and rebuild the entire deck as
+        # one picture per slide, removing all live chart/OLE objects.
         slide_images_dir.mkdir(parents=True, exist_ok=True)
-        chart_images = _export_chart_shapes_as_images(
+        slide_images = _export_slides_as_images(
             com_presentation=presentation,
             slide_images_dir=slide_images_dir,
             warnings=warnings,
         )
-        _rebuild_pptx_replacing_charts(
+        _rebuild_pptx_from_slide_images(
             source_pptx=source_pptx,
             output_path=static_pptx_path,
-            chart_images=chart_images,
+            slide_images=slide_images,
         )
         output_paths.append(static_pptx_path)
         LOGGER.info("distribution_static_pptx_complete path=%s", static_pptx_path)
@@ -1153,41 +1153,27 @@ def _create_static_distribution(
     return output_paths
 
 
-def _rebuild_pptx_from_slide_images(
+def _export_slides_as_images(
     *,
-    source_pptx: Path,
-    slide_images: list[Path],
-    output_path: Path,
-) -> None:
-    """Create a new PPTX where every slide is a single full-bleed PNG image.
-
-    The new deck preserves the slide dimensions of *source_pptx* so that the
-    layout appears identical to the original when opened in PowerPoint, but
-    contains no live Excel chart links.
-    """
-
-    from pptx import Presentation
-
-    source_prs = Presentation(str(source_pptx))
-    assert source_prs.slide_width is not None, "source PPT has no slide width"
-    assert source_prs.slide_height is not None, "source PPT has no slide height"
-    slide_width = source_prs.slide_width
-    slide_height = source_prs.slide_height
-
-    new_prs = Presentation()
-    new_prs.slide_width = slide_width
-    new_prs.slide_height = slide_height
-
-    # Slide layout index 6 is the universally blank layout in stock python-pptx templates.
-    blank_layout = new_prs.slide_layouts[6]
-
-    for img_path in slide_images:
-        new_slide = new_prs.slides.add_slide(blank_layout)
-        new_slide.shapes.add_picture(
-            str(img_path), left=0, top=0, width=slide_width, height=slide_height
-        )
-
-    new_prs.save(str(output_path))
+    com_presentation: Any,
+    slide_images_dir: Path,
+    warnings: list[str],
+) -> list[Path]:
+    """Export each slide in the COM presentation as a PNG image."""
+    slide_images: list[Path] = []
+    slide_count = int(com_presentation.Slides.Count)
+    for slide_idx in range(1, slide_count + 1):
+        image_path = slide_images_dir / f"slide_{slide_idx:04d}.png"
+        try:
+            com_presentation.Slides[slide_idx].Export(str(image_path), "PNG")
+            slide_images.append(image_path)
+        except Exception as exc:
+            warnings.append(f"distribution_static slide export failed (slide {slide_idx}): {exc}")
+            LOGGER.warning(
+                "distribution_static_slide_export_failed slide=%d exc=%s", slide_idx, exc
+            )
+            raise
+    return slide_images
 
 
 def _export_chart_shapes_as_images(

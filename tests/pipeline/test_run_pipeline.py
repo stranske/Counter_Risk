@@ -1305,6 +1305,94 @@ def test_create_static_distribution_warns_when_win32com_missing(
     assert "win32com" in warnings[0]
 
 
+def test_create_static_distribution_rebuilds_from_slide_images(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """On Windows with COM, static output is rebuilt from one exported image per slide."""
+    from pptx import Presentation
+
+    monkeypatch.setattr(platform, "system", lambda: "Windows")
+
+    source_pptx = tmp_path / "source.pptx"
+    source_prs = Presentation()
+    blank_layout = source_prs.slide_layouts[6]
+    source_prs.slides.add_slide(blank_layout)
+    source_prs.slides.add_slide(blank_layout)
+    source_prs.save(str(source_pptx))
+
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    config = _make_minimal_config(tmp_path / "cfg", distribution_static=True)
+    warnings: list[str] = []
+
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+
+    class _FakeSlide:
+        def __init__(self, slide_idx: int) -> None:
+            self._slide_idx = slide_idx
+
+        def Export(self, path: str, fmt: str) -> None:  # noqa: N802
+            assert fmt == "PNG"
+            Path(path).write_bytes(png_bytes)
+
+    class _FakeSlides:
+        def __init__(self, count: int) -> None:
+            self.Count = count
+            self._slides = {idx: _FakeSlide(idx) for idx in range(1, count + 1)}
+
+        def __getitem__(self, idx: int) -> _FakeSlide:
+            return self._slides[idx]
+
+    class _FakePresentation:
+        def __init__(self) -> None:
+            self.Slides = _FakeSlides(2)
+
+        def ExportAsFixedFormat(self, path: str, fmt: int) -> None:  # noqa: N802
+            assert fmt == 2
+            Path(path).write_bytes(b"%PDF-1.4\n")
+
+        def Close(self) -> None:  # noqa: N802
+            return None
+
+    class _FakePowerPointApplication:
+        def __init__(self) -> None:
+            self.Visible = False
+            self.Presentations = types.SimpleNamespace(
+                Open=lambda *_args, **_kwargs: _FakePresentation()
+            )
+
+        def Quit(self) -> None:  # noqa: N802
+            return None
+
+    fake_client = types.SimpleNamespace(
+        DispatchEx=lambda *_args, **_kwargs: _FakePowerPointApplication()
+    )
+    fake_win32com = types.ModuleType("win32com")
+    fake_win32com.client = fake_client
+    monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+
+    output = run_module._create_static_distribution(
+        source_pptx=source_pptx,
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+    )
+
+    static_paths = [path for path in output if path.suffix == ".pptx"]
+    assert len(static_paths) == 1
+    assert warnings == []
+
+    output_prs = Presentation(str(static_paths[0]))
+    assert len(output_prs.slides) == 2
+
+
 def test_run_pipeline_manifest_includes_distribution_static_warning(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
