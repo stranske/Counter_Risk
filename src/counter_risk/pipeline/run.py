@@ -871,12 +871,16 @@ def _write_outputs(
             if not refresh_result.error_detail
             else f"PPT links refresh failed; {refresh_result.error_detail}"
         )
-
-    _derive_distribution_ppt(
-        master_pptx_path=target_master_ppt,
-        distribution_pptx_path=target_distribution_ppt,
-    )
-    output_paths.append(target_distribution_ppt)
+        LOGGER.warning(
+            "Skipping distribution PPT derivation because Master PPT refresh failed: %s",
+            target_master_ppt,
+        )
+    else:
+        _derive_distribution_ppt(
+            master_pptx_path=target_master_ppt,
+            distribution_pptx_path=target_distribution_ppt,
+        )
+        output_paths.append(target_distribution_ppt)
     static_output_paths = _create_static_distribution(
         source_pptx=target_master_ppt,
         run_dir=run_dir,
