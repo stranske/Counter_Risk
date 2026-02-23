@@ -8,7 +8,8 @@ from counter_risk.pipeline import time_utils
 
 
 def test_utc_constant_uses_datetime_utc() -> None:
-    assert time_utils.UTC is dt.UTC
+    expected_utc = dt.UTC if hasattr(dt, "UTC") else dt.timezone.utc
+    assert time_utils.UTC is expected_utc
 
 
 def test_utc_now_isoformat_returns_utc_timestamp() -> None:
