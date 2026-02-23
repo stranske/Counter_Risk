@@ -90,3 +90,28 @@ def test_write_outputs_screenshot_replacement_replaces_expected_number_of_media_
         name for name, payload in output_media.items() if input_media.get(name) != payload
     )
     assert len(changed_media_parts) == len(screenshot_inputs)
+
+
+def test_write_outputs_skips_all_ppt_generation_when_disabled(tmp_path: Path, monkeypatch) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, screenshot_inputs={})
+    config = config.model_copy(update={"enable_ppt_output": False})
+
+    def _unexpected_call(*args, **kwargs):  # type: ignore[no-untyped-def]
+        raise AssertionError("PPT generation should not be called when PPT output is disabled")
+
+    monkeypatch.setattr(run_module, "_get_screenshot_replacer", _unexpected_call)
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", _unexpected_call)
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", _unexpected_call)
+
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        warnings=[],
+    )
+
+    assert ppt_result.status == run_module.PptProcessingStatus.SKIPPED
+    assert all(path.suffix.lower() != ".pptx" for path in output_paths)
+    assert list(run_dir.glob("*.pptx")) == []
