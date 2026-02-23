@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Define the configuration property or method that determines whether PPT
       generation is enabled (e.g., `config.ppt_output_enabled` boolean property)
-    status: doing
+    status: done
     started_at: '2026-02-23T05:28:26Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-23T05:28:35Z'
+    commit: 53ffc1ff508f9f16be3e5868fea18a254402fe8c
     notes: []
   - id: task-02
     title: Update the monthly report pipeline in `src/**/monthly_report_pipeline.py`
