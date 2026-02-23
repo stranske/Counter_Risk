@@ -1345,8 +1345,292 @@ def test_run_pipeline_manifest_includes_distribution_static_warning(
     assert any("distribution_static" in w for w in manifest["warnings"])
 
     # No static distribution files produced (no COM available).
-    assert not (run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31_distribution_static.pptx").exists()
-    assert not (run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31_distribution.pdf").exists()
+    assert not (
+        run_dir
+        / "Monthly Counterparty Exposure Report (Master) - 2025-12-31_distribution_static.pptx"
+    ).exists()
+    assert not (
+        run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31_distribution.pdf"
+    ).exists()
 
     # Config snapshot captures the flag.
     assert manifest["config_snapshot"]["distribution_static"] is True
+
+
+# ---------------------------------------------------------------------------
+# _export_chart_shapes_as_images tests
+# ---------------------------------------------------------------------------
+
+
+def test_export_chart_shapes_as_images_returns_empty_when_no_ole_shapes(
+    tmp_path: Path,
+) -> None:
+    """When a presentation has no OLE/chart shapes the result dict is empty."""
+    # Build a fake COM presentation with one slide containing a plain shape.
+    slide_images_dir = tmp_path / "imgs"
+    slide_images_dir.mkdir()
+
+    class _FakeShape:
+        Type = 1  # msoAutoShape – not OLE
+        HasChart = False
+        Id = 1
+        Name = "Shape 1"
+
+        def Export(self, path: str, fmt: int) -> None:  # pragma: no cover
+            raise AssertionError("Export should not be called for non-OLE shapes")
+
+    class _FakeSlide:
+        Shapes = [_FakeShape()]
+
+    class _FakePres:
+        Slides = [_FakeSlide()]
+
+        @property
+        def Count(self) -> int:  # pragma: no cover
+            return 1
+
+    # Build a Slides-like object with .Count and index access.
+    class _SlideList:
+        def __init__(self) -> None:
+            self._slides = [_FakeSlide()]
+            self.Count = 1
+
+        def __iter__(self):  # type: ignore[no-untyped-def]
+            return iter(self._slides)
+
+        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+            return self._slides[idx - 1]
+
+    class _Presentation:
+        def __init__(self) -> None:
+            self.Slides = _SlideList()
+
+    warnings: list[str] = []
+    result = run_module._export_chart_shapes_as_images(
+        com_presentation=_Presentation(),
+        slide_images_dir=slide_images_dir,
+        warnings=warnings,
+    )
+
+    assert result == {}
+    assert warnings == []
+
+
+def test_export_chart_shapes_as_images_records_warning_on_export_failure(
+    tmp_path: Path,
+) -> None:
+    """When Export() raises, a warning is recorded and the shape is skipped."""
+    slide_images_dir = tmp_path / "imgs"
+    slide_images_dir.mkdir()
+
+    class _FailingShape:
+        Type = 7  # msoEmbeddedOLEObject
+        HasChart = False
+        Id = 5
+        Name = "Chart 5"
+
+        def Export(self, path: str, fmt: int) -> None:
+            raise RuntimeError("COM export failed")
+
+    class _SlideList:
+        def __init__(self) -> None:
+            self.Count = 1
+
+        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+            class _Slide:
+                Shapes = [_FailingShape()]
+
+            return _Slide()
+
+    class _Presentation:
+        def __init__(self) -> None:
+            self.Slides = _SlideList()
+
+    warnings: list[str] = []
+    result = run_module._export_chart_shapes_as_images(
+        com_presentation=_Presentation(),
+        slide_images_dir=slide_images_dir,
+        warnings=warnings,
+    )
+
+    assert result == {}
+    assert len(warnings) == 1
+    assert "Chart 5" in warnings[0]
+    assert "distribution_static chart export failed" in warnings[0]
+
+
+def test_export_chart_shapes_as_images_collects_ole_shapes(
+    tmp_path: Path,
+) -> None:
+    """OLE shapes that export successfully are included in the result mapping."""
+    slide_images_dir = tmp_path / "imgs"
+    slide_images_dir.mkdir()
+    written: list[str] = []
+
+    class _OleShape:
+        Type = 10  # msoLinkedOLEObject
+        HasChart = False
+        Id = 3
+        Name = "Chart 3"
+
+        def Export(self, path: str, fmt: int) -> None:
+            Path(path).write_bytes(b"fake-png")
+            written.append(path)
+
+    class _SlideList:
+        def __init__(self) -> None:
+            self.Count = 1
+
+        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+            class _Slide:
+                Shapes = [_OleShape()]
+
+            return _Slide()
+
+    class _Presentation:
+        def __init__(self) -> None:
+            self.Slides = _SlideList()
+
+    warnings: list[str] = []
+    result = run_module._export_chart_shapes_as_images(
+        com_presentation=_Presentation(),
+        slide_images_dir=slide_images_dir,
+        warnings=warnings,
+    )
+
+    assert (1, "Chart 3") in result
+    assert result[(1, "Chart 3")].exists()
+    assert warnings == []
+
+
+# ---------------------------------------------------------------------------
+# _rebuild_pptx_replacing_charts tests
+# ---------------------------------------------------------------------------
+
+
+def _make_test_pptx_with_picture(tmp_path: Path, shape_name: str) -> Path:
+    """Create a minimal PPTX containing one slide with a single picture shape."""
+    from pptx import Presentation
+    from pptx.util import Inches
+
+    prs = Presentation()
+    # Use blank slide layout.
+    blank_layout = prs.slide_layouts[6]
+    slide = prs.slides.add_slide(blank_layout)
+
+    # Create a tiny 1x1 PNG (minimal valid PNG bytes).
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"  # PNG signature
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"  # 1x1 RGB
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    img_path = tmp_path / "placeholder.png"
+    img_path.write_bytes(png_bytes)
+
+    pic = slide.shapes.add_picture(str(img_path), Inches(1), Inches(1), Inches(4), Inches(3))
+    pic.name = shape_name
+
+    out = tmp_path / "source.pptx"
+    prs.save(str(out))
+    return out
+
+
+def test_rebuild_pptx_replacing_charts_empty_mapping_preserves_slide(
+    tmp_path: Path,
+) -> None:
+    """With an empty chart_images mapping the output PPTX has the same slide count."""
+    from pptx import Presentation
+
+    source = _make_test_pptx_with_picture(tmp_path, "SomeShape")
+    output = tmp_path / "out.pptx"
+
+    run_module._rebuild_pptx_replacing_charts(
+        source_pptx=source,
+        output_path=output,
+        chart_images={},
+    )
+
+    assert output.exists()
+    prs = Presentation(str(output))
+    assert len(prs.slides) == 1
+    # Shape count unchanged when no replacements requested.
+    assert len(list(prs.slides[0].shapes)) == 1
+
+
+def test_rebuild_pptx_replacing_charts_replaces_named_shape(
+    tmp_path: Path,
+) -> None:
+    """A shape matching a chart_images key is removed and replaced with a picture."""
+    from pptx import Presentation
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    shape_name = "Chart OLE 1"
+    source = _make_test_pptx_with_picture(tmp_path, shape_name)
+
+    # Replacement image (minimal valid PNG).
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    replacement = tmp_path / "replacement.png"
+    replacement.write_bytes(png_bytes)
+
+    output = tmp_path / "out.pptx"
+    run_module._rebuild_pptx_replacing_charts(
+        source_pptx=source,
+        output_path=output,
+        chart_images={(1, shape_name): replacement},
+    )
+
+    assert output.exists()
+    prs = Presentation(str(output))
+    slide = prs.slides[0]
+    # The slide should still have exactly one shape (the replacement picture).
+    shapes = list(slide.shapes)
+    assert len(shapes) == 1
+    assert shapes[0].shape_type == MSO_SHAPE_TYPE.PICTURE
+
+
+def test_rebuild_pptx_replacing_charts_preserves_position(
+    tmp_path: Path,
+) -> None:
+    """The replacement picture is placed at the same geometry as the original shape."""
+    from pptx import Presentation
+
+    shape_name = "OLE Chart"
+    source = _make_test_pptx_with_picture(tmp_path, shape_name)
+
+    # Record original shape geometry.
+    original_prs = Presentation(str(source))
+    orig_shape = list(original_prs.slides[0].shapes)[0]
+    orig_left, orig_top = orig_shape.left, orig_shape.top
+    orig_width, orig_height = orig_shape.width, orig_shape.height
+
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    replacement = tmp_path / "replacement.png"
+    replacement.write_bytes(png_bytes)
+
+    output = tmp_path / "out.pptx"
+    run_module._rebuild_pptx_replacing_charts(
+        source_pptx=source,
+        output_path=output,
+        chart_images={(1, shape_name): replacement},
+    )
+
+    prs = Presentation(str(output))
+    new_shape = list(prs.slides[0].shapes)[0]
+    assert new_shape.left == orig_left
+    assert new_shape.top == orig_top
+    assert new_shape.width == orig_width
+    assert new_shape.height == orig_height
