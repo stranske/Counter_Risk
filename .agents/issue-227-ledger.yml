@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Add `mapping_diff_report` console script entrypoint to `pyproject.toml`
       under `[project.scripts]` pointing to `<package>.cli.mapping_diff_report:main`
-    status: doing
+    status: done
     started_at: '2026-02-23T18:21:21Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-23T18:21:38Z'
+    commit: 1257ec8041e7df00837f982b536348187dc3cea7
     notes: []
   - id: task-02
     title: Create `src/<package>/cli/mapping_diff_report.py` with argument parser
