@@ -833,6 +833,10 @@ def _write_outputs(
             shutil.copy2(source_mosers, target_monthly_book)
         output_paths.append(target_monthly_book)
 
+    if not config.ppt_output_enabled:
+        LOGGER.info("write_outputs_skip_ppt run_dir=%s", run_dir)
+        return output_paths, PptProcessingResult(status=PptProcessingStatus.SKIPPED)
+
     source_ppt = config.monthly_pptx
     output_names = resolve_ppt_output_names(as_of_date)
     target_master_ppt = run_dir / output_names.master_filename
