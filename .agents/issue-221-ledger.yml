@@ -7,10 +7,10 @@ tasks:
     title: Define the structured exception class for unmapped counterparties with
       required attributes `normalized_counterparty` and `raw_counterparty` in `src/**/errors.py`
       (or existing exceptions module)
-    status: doing
+    status: done
     started_at: '2026-02-23T05:27:13Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-23T05:27:21Z'
+    commit: 7d1ed0fd91b489f9b812a6240f4d56c49421ba58
     notes: []
   - id: task-02
     title: Implement the exception class with machine-readable context fields accessible
