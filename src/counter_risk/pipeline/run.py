@@ -1706,22 +1706,21 @@ def _calculate_impacted_scope_for_sheet(
     parsed_sections: Mapping[str, Any],
     reconciliation_sheet_result: Mapping[str, Any],
 ) -> tuple[int, int]:
-    normalized_impacted_series, missing_segments = _identify_impacted_entities_for_sheet(
+    normalized_impacted_series = _identify_impacted_entities_for_sheet(
         reconciliation_sheet_result=reconciliation_sheet_result
     )
     impacted_rows = _count_rows_for_impacted_entities(
         parsed_sections=parsed_sections,
         normalized_impacted_series=normalized_impacted_series,
-        missing_segments=missing_segments,
     )
-    impacted_series = len(normalized_impacted_series) + len(missing_segments)
+    impacted_series = len(normalized_impacted_series)
     return impacted_series, impacted_rows
 
 
 def _identify_impacted_entities_for_sheet(
     *,
     reconciliation_sheet_result: Mapping[str, Any],
-) -> tuple[set[str], set[str]]:
+) -> set[str]:
     missing_series_labels = {
         str(label).strip()
         for key in (
@@ -1735,33 +1734,25 @@ def _identify_impacted_entities_for_sheet(
     normalized_impacted_series = {
         normalize_counterparty(label) for label in missing_series_labels if label
     }
-    missing_segments = {
-        str(segment).strip()
-        for segment in reconciliation_sheet_result.get("missing_expected_segments", [])
-        if str(segment).strip()
-    }
-    return normalized_impacted_series, missing_segments
+    return normalized_impacted_series
 
 
 def _count_rows_for_impacted_entities(
     *,
     parsed_sections: Mapping[str, Any],
     normalized_impacted_series: set[str],
-    missing_segments: set[str],
 ) -> int:
     impacted_rows = 0
     for record in _records(parsed_sections.get("totals", [])):
         raw_label = str(record.get("counterparty", "")).strip()
         normalized_label = normalize_counterparty(raw_label) if raw_label else ""
-        raw_segment = str(record.get("segment", record.get("Segment", ""))).strip()
-        if normalized_label in normalized_impacted_series or raw_segment in missing_segments:
+        if normalized_label in normalized_impacted_series:
             impacted_rows += 1
 
     for record in _records(parsed_sections.get("futures", [])):
         raw_label = str(record.get("clearing_house", "")).strip()
         normalized_label = normalize_counterparty(raw_label) if raw_label else ""
-        raw_segment = str(record.get("segment", record.get("Segment", ""))).strip()
-        if normalized_label in normalized_impacted_series or raw_segment in missing_segments:
+        if normalized_label in normalized_impacted_series:
             impacted_rows += 1
 
     return impacted_rows

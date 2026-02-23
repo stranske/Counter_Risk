@@ -388,6 +388,95 @@ def test_run_reconciliation_checks_counts_missing_from_data_as_impacted_series_o
     assert any("impacted_rows=0" in warning for warning in warnings)
 
 
+def test_run_reconciliation_checks_segment_gaps_do_not_increase_impacted_scope(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    config.reconciliation = ReconciliationConfig(
+        fail_policy="warn",
+        expected_segments_by_variant={"all_programs": ("swaps", "repo")},
+    )
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "Counterparty A", "Notional": 1.0}]),
+            "futures": _FakeDataFrame(
+                records=[{"clearing_house": "CME", "segment": "swaps", "notional": 2.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A", "CME")},
+    )
+
+    run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    mapping_updates = tmp_path / "NEEDS_MAPPING_UPDATES.txt"
+    assert mapping_updates.exists()
+    text = mapping_updates.read_text(encoding="utf-8")
+    assert "impacted_series_count: 0" in text
+    assert "impacted_rows_count: 0" in text
+    assert any("impacted_series=0" in warning for warning in warnings)
+    assert any("impacted_rows=0" in warning for warning in warnings)
+
+
+def test_run_reconciliation_checks_segment_gaps_do_not_change_direct_impacted_count(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    config.reconciliation = ReconciliationConfig(
+        fail_policy="warn",
+        expected_segments_by_variant={"all_programs": ("swaps", "repo")},
+    )
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Counterparty A", "Notional": 1.0},
+                    {"counterparty": "Counterparty B", "Notional": 2.0},
+                ]
+            ),
+            "futures": _FakeDataFrame(
+                records=[{"clearing_house": "CME", "segment": "swaps", "notional": 3.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A", "CME")},
+    )
+
+    run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    mapping_updates = tmp_path / "NEEDS_MAPPING_UPDATES.txt"
+    assert mapping_updates.exists()
+    text = mapping_updates.read_text(encoding="utf-8")
+    assert "impacted_series_count: 1" in text
+    assert "impacted_rows_count: 1" in text
+    assert any("impacted_series=1" in warning for warning in warnings)
+    assert any("impacted_rows=1" in warning for warning in warnings)
+
+
 def test_run_pipeline_writes_expected_outputs_and_manifest(
     tmp_path: Path, fake_pandas: None
 ) -> None:
