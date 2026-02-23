@@ -46,6 +46,9 @@ dev = [
 Homepage = "https://github.com/stranske/Template"
 Repository = "https://github.com/stranske/Template"
 
+[project.scripts]
+mapping_diff_report = "counter_risk.cli.mapping_diff_report:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
