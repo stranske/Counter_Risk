@@ -1256,6 +1256,7 @@ def _rebuild_pptx_replacing_charts(
     fallback_slide_images = fallback_slide_images or {}
     prs = Presentation(str(source_pptx))
     low_confidence_slides: set[int] = set()
+    unresolved_low_confidence_slides: set[int] = set()
 
     for slide_idx, slide in enumerate(prs.slides, start=1):
         replacements: list[tuple[Path, int, int, int, int]] = []
@@ -1303,8 +1304,21 @@ def _rebuild_pptx_replacing_charts(
         for img_path, left, top, width, height in replacements:
             slide.shapes.add_picture(str(img_path), left, top, width, height)
 
-        if slide_idx in low_confidence_slides and slide_idx in fallback_slide_images:
-            _replace_slide_with_image(slide=slide, slide_image=fallback_slide_images[slide_idx])
+        if slide_idx in low_confidence_slides:
+            fallback_image = fallback_slide_images.get(slide_idx)
+            if fallback_image is None:
+                unresolved_low_confidence_slides.add(slide_idx)
+            else:
+                _replace_slide_with_image(slide=slide, slide_image=fallback_image)
+
+    if unresolved_low_confidence_slides:
+        unresolved_list = ", ".join(
+            str(index) for index in sorted(unresolved_low_confidence_slides)
+        )
+        raise RuntimeError(
+            "Chart replacement confidence check failed and no slide-image fallback was provided "
+            f"for slide(s): {unresolved_list}"
+        )
 
     if low_confidence_slides and fallback_to_full_deck_rebuild:
         low_confidence_list = ", ".join(str(index) for index in sorted(low_confidence_slides))
