@@ -2,26 +2,112 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
+from typing import Any
 
 from counter_risk.name_registry import load_name_registry
 from counter_risk.normalize import resolve_counterparty
+
+_NORMALIZATION_NAME_KEYS = {
+    "counterparty",
+    "counterparty_name",
+    "name",
+    "raw_counterparty",
+    "raw_name",
+}
+_RECONCILIATION_NAME_KEYS = {
+    "counterparties_in_data",
+    "raw_counterparty_labels",
+}
 
 
 def _title_case_suggestion(raw_name: str) -> str:
     return raw_name.title()
 
 
-def _iter_input_names(input_sources: Mapping[str, Iterable[str]]) -> Iterable[str]:
+def _iter_string_values(value: Any) -> Iterator[str]:
+    if isinstance(value, str):
+        normalized = value.strip()
+        if normalized:
+            yield normalized
+        return
+    if isinstance(value, Mapping):
+        return
+    if isinstance(value, Iterable):
+        for item in value:
+            yield from _iter_string_values(item)
+
+
+def _iter_names_from_payload(
+    value: Any,
+    *,
+    name_keys: set[str],
+    collect_strings: bool = False,
+) -> Iterator[str]:
+    if isinstance(value, str):
+        if collect_strings:
+            normalized = value.strip()
+            if normalized:
+                yield normalized
+        return
+
+    if isinstance(value, Mapping):
+        for raw_key, raw_child in value.items():
+            key = str(raw_key).strip().casefold()
+            child_collect = collect_strings or key in name_keys
+            yield from _iter_names_from_payload(
+                raw_child,
+                name_keys=name_keys,
+                collect_strings=child_collect,
+            )
+        return
+
+    if isinstance(value, Iterable):
+        for child in value:
+            yield from _iter_names_from_payload(
+                child,
+                name_keys=name_keys,
+                collect_strings=collect_strings,
+            )
+
+
+def _iter_flat_string_sequence(payload: Any) -> Iterator[str]:
+    if isinstance(payload, str) or isinstance(payload, Mapping):
+        return
+    if not isinstance(payload, Iterable):
+        return
+
+    values = list(payload)
+    if not values or not all(isinstance(value, str) for value in values):
+        return
+
+    for value in values:
+        normalized = value.strip()
+        if normalized:
+            yield normalized
+
+
+def _iter_input_names(input_sources: Mapping[str, Any]) -> Iterable[str]:
     for source_name in sorted(input_sources):
-        for raw_name in input_sources[source_name]:
-            yield raw_name
+        payload = input_sources[source_name]
+        source_key = str(source_name).strip().casefold()
+        if source_key == "normalization":
+            yield from _iter_flat_string_sequence(payload)
+            yield from _iter_names_from_payload(payload, name_keys=_NORMALIZATION_NAME_KEYS)
+            continue
+        if source_key == "reconciliation":
+            yield from _iter_flat_string_sequence(payload)
+            yield from _iter_names_from_payload(payload, name_keys=_RECONCILIATION_NAME_KEYS)
+            continue
+
+        # Backward-compatible fallback for legacy callers that pass a flat list of names.
+        yield from _iter_string_values(payload)
 
 
 def generate_mapping_diff_report(
     registry_path: str | Path,
-    input_sources: Mapping[str, Iterable[str]],
+    input_sources: Mapping[str, Any],
 ) -> str:
     """Generate a deterministic mapping diff report."""
 
