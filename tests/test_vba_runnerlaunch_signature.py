@@ -31,15 +31,15 @@ def test_buildcommand_signature_has_exactly_three_parameters() -> None:
         r"Sub\s+BuildCommand\s*\([^,]+,[^,]+,[^,]+\)",
         flags=re.IGNORECASE | re.DOTALL,
     )
-    assert (
-        signature_pattern.search(normalized_source) is not None
-    ), "BuildCommand signature must contain exactly three parameters."
+    assert signature_pattern.search(normalized_source) is not None, (
+        "BuildCommand signature must contain exactly three parameters."
+    )
 
 
 def test_buildcommand_contains_date_parsing_call() -> None:
     source = _load_runnerlaunch_source()
     body = _extract_buildcommand_body(source)
     date_pattern = re.compile(r"(CDate|DateValue|DateSerial)\s*\(", flags=re.IGNORECASE)
-    assert (
-        date_pattern.search(body) is not None
-    ), "BuildCommand body must contain CDate, DateValue, or DateSerial date parsing."
+    assert date_pattern.search(body) is not None, (
+        "BuildCommand body must contain CDate, DateValue, or DateSerial date parsing."
+    )
