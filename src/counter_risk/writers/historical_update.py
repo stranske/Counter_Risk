@@ -467,8 +467,7 @@ def _validate_preserved_wal_cells(
             )
         if expected.value != value:
             raise WorkbookValidationError(
-                "WAL append changed existing cell value at "
-                f"row={row_index} column={column_index}"
+                f"WAL append changed existing cell value at row={row_index} column={column_index}"
             )
         if expected.number_format != getattr(cell, "number_format", None):
             raise WorkbookValidationError(
@@ -708,9 +707,9 @@ def append_wal_row(
                 columns=tuple(range(1, preserve_through_column + 1)),
             )
 
-        worksheet.cell(row=append_target.append_row, column=append_target.date_column).value = (
-            px_date
-        )
+        worksheet.cell(
+            row=append_target.append_row, column=append_target.date_column
+        ).value = px_date
         worksheet.cell(row=append_target.append_row, column=append_target.wal_column).value = float(
             wal_value
         )
