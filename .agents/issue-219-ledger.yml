@@ -10,10 +10,10 @@ tasks:
       deletes any `<Relationship>` with `TargetMode="External"` (including external
       hyperlink and OLE relationship Types), and writes a new scrubbed `.pptx` (likely
       in `src/**/pptx_postprocess*.py` and wired via `src/**/distribution*.py`).
-    status: doing
+    status: done
     started_at: '2026-02-23T05:24:01Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-23T05:24:11Z'
+    commit: 932a2b5a3c02d35919513f9ad97a2ebce7fd92d9
     notes: []
   - id: task-02
     title: 'Define scope for: Create a new module for PPTX relationship scrubbing
