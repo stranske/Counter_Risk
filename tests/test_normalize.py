@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from counter_risk.normalize import normalize_clearing_house, normalize_counterparty
+from counter_risk.normalize import (
+    canonicalize_name,
+    normalize_clearing_house,
+    normalize_counterparty,
+    safe_display_name,
+)
 
 
 @pytest.mark.parametrize(
@@ -50,3 +55,79 @@ def test_normalize_counterparty_unknown_name_is_noop() -> None:
 
 def test_normalize_clearing_house_unknown_name_is_noop() -> None:
     assert normalize_clearing_house("LCH") == "LCH"
+
+
+# ---------------------------------------------------------------------------
+# canonicalize_name
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw_name", "expected"),
+    [
+        # Leading/trailing whitespace stripped
+        ("  Morgan Stanley  ", "Morgan Stanley"),
+        # Internal whitespace collapsed
+        ("Morgan  Stanley", "Morgan Stanley"),
+        # Mixed leading, trailing, and internal
+        ("  Goldman   Sachs  ", "Goldman Sachs"),
+        # Tabs and newlines treated as whitespace
+        ("Barclays\tBank\nPLC", "Barclays Bank PLC"),
+        # Curly right apostrophe → ASCII apostrophe
+        ("Goldman Sachs Int\u2019l", "Goldman Sachs Int'l"),
+        # Curly left apostrophe → ASCII apostrophe
+        ("Goldman Sachs Int\u2018l", "Goldman Sachs Int'l"),
+        # Backtick → ASCII apostrophe
+        ("Goldman Sachs Int`l", "Goldman Sachs Int'l"),
+        # En-dash → hyphen-minus
+        ("Korea Exchange\u2013Seoul", "Korea Exchange-Seoul"),
+        # Em-dash → hyphen-minus
+        ("Korea Exchange\u2014Seoul", "Korea Exchange-Seoul"),
+        # Minus sign → hyphen-minus
+        ("Korea Exchange\u2212Seoul", "Korea Exchange-Seoul"),
+        # Already canonical: no change
+        ("Citibank", "Citibank"),
+        # Empty string stays empty
+        ("", ""),
+        # Only whitespace → empty
+        ("   ", ""),
+    ],
+)
+def test_canonicalize_name(raw_name: str, expected: str) -> None:
+    assert canonicalize_name(raw_name) == expected
+
+
+def test_canonicalize_name_preserves_case() -> None:
+    assert canonicalize_name("  BANK of america  ") == "BANK of america"
+
+
+def test_canonicalize_name_normalizes_apostrophe_before_mapping() -> None:
+    # Curly-apostrophe variant of "Goldman Sachs Int'l" should map correctly
+    # after canonicalization feeds into normalize_counterparty
+    curly = "Goldman Sachs Int\u2019l"
+    assert normalize_counterparty(curly) == "Goldman Sachs"
+
+
+def test_canonicalize_name_hyphen_preserved_in_known_name() -> None:
+    # Hyphens that are already ASCII hyphen-minus must be unchanged
+    assert canonicalize_name("Korea Exchange-Seoul") == "Korea Exchange-Seoul"
+
+
+# ---------------------------------------------------------------------------
+# safe_display_name
+# ---------------------------------------------------------------------------
+
+
+def test_safe_display_name_is_identical_to_canonicalize_name() -> None:
+    names = [
+        "  Morgan Stanley  ",
+        "Goldman Sachs Int\u2019l",
+        "Korea Exchange\u2013Seoul",
+        "",
+    ]
+    for name in names:
+        assert safe_display_name(name) == canonicalize_name(name)
+
+
+def test_safe_display_name_preserves_case() -> None:
+    assert safe_display_name("  ICE CLEAR europe  ") == "ICE CLEAR europe"
