@@ -1,0 +1,433 @@
+version: 1
+issue: 222
+base: main
+branch: codex/issue-222
+tasks:
+  - id: task-01
+    title: Define the configuration property or method that determines whether PPT
+      generation is enabled (e.g., `config.ppt_output_enabled` boolean property)
+    status: doing
+    started_at: '2026-02-23T05:28:26Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Update the monthly report pipeline in `src/**/monthly_report_pipeline.py`
+      to check the PPT enabled flag before invoking any PPT generation code
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Add unit tests verifying the configuration check returns correct boolean
+      values for enabled and disabled states
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Create a function in `src/**/paths.py` or `src/**/ppt_generation.py` that
+      generates the Master PPT filename using the exact format `Monthly Counterparty
+      Exposure Report (Master) - <as_of_date>.pptx` with as_of_date parameter
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Create a function in `src/**/paths.py` or `src/**/ppt_generation.py` that
+      generates the Distribution PPT filename using the exact format `Monthly Counterparty
+      Exposure Report - <as_of_date>.pptx` with as_of_date parameter
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Add unit tests verifying both filename functions produce exact expected
+      strings for sample dates
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Implement Master-then-Distribution orchestration in `src/**/monthly_report_pipeline.py`
+      so the Master PPT is generated first
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Implement logic to ensure Distribution derivation runs exactly once per
+      run when enabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Add control flow logic to skip Distribution derivation when Master generation
+      or refresh fails
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Update the manifest recording function in `src/**/run_manifest.py` to accept
+      both Master and Distribution PPT file paths as parameters
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Implement logic in `src/**/run_manifest.py` to resolve PPT file paths to
+      absolute paths within the run folder
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Add conditional logic in `src/**/run_manifest.py` to only record PPT entries
+      when PPT generation is enabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Update the manifest schema in `src/**/manifest_schema.py` to define the
+      structure for PPT output entries including Master and Distribution fields
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Implement validation logic in `src/**/manifest_schema.py` that checks for
+      presence of both PPT entries when PPT is enabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Implement validation logic in `src/**/manifest_schema.py` that rejects
+      manifests with only Master PPT entry when PPT is enabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Implement validation logic in `src/**/manifest_schema.py` that rejects
+      manifests with only Distribution PPT entry when PPT is enabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Create a function in `src/**/run_folder_outputs.py` that generates README
+      content with both PPT filenames and at least three numbered instruction steps
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Implement logic in `src/**/run_folder_outputs.py` to write the README file
+      to the run folder only when PPT generation is enabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Add unit tests verifying README content includes exact filenames and numbered
+      steps in correct format
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Add try-except block in `src/**/ppt_generation.py` around the link refresh
+      function (e.g., `_refresh_ppt_links`) to catch and handle exceptions
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Implement error logging in `src/**/ppt_generation.py` at ERROR level that
+      includes the substrings "Master", "PPT", and the exception message text
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Create a validation function in `src/**/ppt_validation.py` that opens a
+      PPTX file as a zip and scans rels files for external relationships
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Implement logic in `src/**/ppt_validation.py` to return validation success
+      or failure based on presence of TargetMode External attributes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Integrate the validation function call into the pipeline after Distribution
+      PPT generation completes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Write test in `tests/**/test_monthly_pipeline_ppt_outputs.py` verifying
+      that PPT disabled configuration results in zero pptx files in run folder
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Write test in `tests/**/test_monthly_pipeline_ppt_outputs.py` verifying
+      that PPT enabled configuration produces exactly two pptx files with correct
+      exact names
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Write test in `tests/**/test_monthly_pipeline_ppt_outputs.py` using mocks
+      to verify Master generation is called before Distribution derivation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Write test in `tests/**/test_monthly_pipeline_ppt_outputs.py` verifying
+      that Master refresh failure prevents Distribution derivation from being called
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Write test in `tests/**/test_monthly_pipeline_ppt_outputs.py` verifying
+      that failed Master generation results in no Distribution pptx file
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Write test in `tests/**/test_monthly_pipeline_ppt_outputs.py` verifying
+      Distribution PPT contains no external relationships after generation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Write test in `tests/**/test_run_manifest_ppt_entries.py` verifying manifest
+      contains no PPT entries when PPT is disabled and validation passes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Write test in `tests/**/test_run_manifest_ppt_entries.py` verifying manifest
+      contains two PPT entries with existing file paths when PPT is enabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: Write test in `tests/**/test_run_manifest_ppt_entries.py` verifying manifest
+      validation fails when only Master PPT entry is present
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Write test in `tests/**/test_run_manifest_ppt_entries.py` verifying manifest
+      validation fails when only Distribution PPT entry is present
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: Write test in `tests/**/test_run_folder_readme.py` verifying README file
+      exists in run folder when PPT generation is enabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: Write test in `tests/**/test_run_folder_readme.py` verifying README file
+      does not exist in run folder when PPT generation is disabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: Write test in `tests/**/test_run_folder_readme.py` verifying README content
+      includes both exact Master and Distribution PPT filenames
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: Write test in `tests/**/test_run_folder_readme.py` verifying README content
+      contains at least three lines beginning with numbered step markers (matching
+      regex `^1\.`, `^2\.`, `^3\.` in order)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: With PPT disabled (`config.ppt_output_enabled == False`), no code path
+      calls the PPT generation entrypoint (e.g., `generate_monthly_pptx_outputs()`),
+      and the run folder contains zero `*.pptx` files (verifiable via `pytest -k "ppt_disabled"`
+      in `tests/**/test_monthly_pipeline_ppt_outputs.py`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: With PPT disabled, the run manifest contains no Master/Distribution PPT
+      output entries and manifest validation succeeds (verifiable via `pytest -k "manifest.*ppt.*disabled"`
+      in `tests/**/test_run_manifest_ppt_entries.py`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: With PPT enabled and `as_of_date = YYYY-MM-DD`, the run folder contains
+      exactly two `.pptx` files named exactly `Monthly Counterparty Exposure Report
+      (Master) - YYYY-MM-DD.pptx` and `Monthly Counterparty Exposure Report - YYYY-MM-DD.pptx`,
+      with no additional `.pptx` files (verifiable via `pytest -k "ppt_enabled.*names"`
+      in `tests/**/test_monthly_pipeline_ppt_outputs.py`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: With PPT enabled, Master generation is invoked before Distribution derivation
+      and Distribution derivation is invoked exactly once per run (verifiable via
+      `pytest -k "ppt_enabled.*order"` in `tests/**/test_monthly_pipeline_ppt_outputs.py`
+      using mocks/spies)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: With PPT enabled, the manifest records two distinct PPT outputs (Master
+      and Distribution) and each entry contains a fully resolved path to an existing
+      file in the run folder (verifiable via `pytest -k "manifest.*ppt.*enabled"`
+      in `tests/**/test_run_manifest_ppt_entries.py` asserting `Path(path).exists()`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: With PPT enabled, manifest schema/validation fails deterministically if
+      exactly one of the two PPT entries is present (missing Master or missing Distribution)
+      (verifiable via `pytest -k "manifest_schema.*ppt"` in `tests/**/test_run_manifest_ppt_entries.py`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: A README file is created in the run folder if and only if PPT output is
+      enabled (verifiable via `pytest -k "run_folder_readme"` in `tests/**/test_run_folder_readme.py`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: On PPT-enabled runs, the README content includes the exact filenames `Monthly
+      Counterparty Exposure Report - <as_of_date>.pptx` and `Monthly Counterparty
+      Exposure Report (Master) - <as_of_date>.pptx` and contains at least 3 consecutive
+      numbered steps (lines matching regex `^1\.`, `^2\.`, `^3\.` in order) describing
+      the distribution process (verifiable via `pytest -k "readme.*content"` in `tests/**/test_run_folder_readme.py`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: If Master PPT link refresh raises (e.g., `_refresh_ppt_links` throws),
+      logs include a message at ERROR level containing the substrings "Master", "PPT",
+      and the exception message text, and Distribution derivation is not called (verifiable
+      via `pytest -k "master_refresh_failure"` in `tests/**/test_monthly_pipeline_ppt_outputs.py`
+      with log capture + mocks)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: If Master PPT generation fails such that no Master file is produced, the
+      run folder contains no Distribution `.pptx` and the manifest does not record
+      a Distribution entry (verifiable via `pytest -k "no_distribution_without_master"`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: 'Post-generation Distribution validation asserts standalone output: scanning
+      the `.pptx` zip for `TargetMode="External"` across relevant `*.rels` files finds
+      zero occurrences and the validator returns success (verifiable via `pytest -k
+      "distribution_standalone"` in `tests/**/test_monthly_pipeline_ppt_outputs.py`
+      or `tests/**/test_ppt_validation.py`)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: 'Running `pytest -k "(test_monthly_pipeline_ppt_outputs or test_run_manifest_ppt_entries
+      or test_run_folder_readme)"` yields at least one passing test covering each
+      scenario: (1) disabled => no `.pptx`; (2) enabled => exactly two `.pptx` with
+      correct names; (3) enabled => manifest contains both outputs; (4) README created
+      only when enabled'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
