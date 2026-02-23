@@ -1376,7 +1376,7 @@ def test_export_chart_shapes_as_images_returns_empty_when_no_ole_shapes(
         Id = 1
         Name = "Shape 1"
 
-        def Export(self, path: str, fmt: int) -> None:  # pragma: no cover
+        def Export(self, path: str, fmt: int) -> None:  # noqa: N802  # pragma: no cover
             raise AssertionError("Export should not be called for non-OLE shapes")
 
     class _FakeSlide:
@@ -1386,7 +1386,7 @@ def test_export_chart_shapes_as_images_returns_empty_when_no_ole_shapes(
         Slides = [_FakeSlide()]
 
         @property
-        def Count(self) -> int:  # pragma: no cover
+        def Count(self) -> int:  # noqa: N802  # pragma: no cover
             return 1
 
     # Build a Slides-like object with .Count and index access.
@@ -1429,7 +1429,7 @@ def test_export_chart_shapes_as_images_records_warning_on_export_failure(
         Id = 5
         Name = "Chart 5"
 
-        def Export(self, path: str, fmt: int) -> None:
+        def Export(self, path: str, fmt: int) -> None:  # noqa: N802
             raise RuntimeError("COM export failed")
 
     class _SlideList:
@@ -1473,7 +1473,7 @@ def test_export_chart_shapes_as_images_collects_ole_shapes(
         Id = 3
         Name = "Chart 3"
 
-        def Export(self, path: str, fmt: int) -> None:
+        def Export(self, path: str, fmt: int) -> None:  # noqa: N802
             Path(path).write_bytes(b"fake-png")
             written.append(path)
 
