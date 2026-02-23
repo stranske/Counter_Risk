@@ -15,6 +15,7 @@ import pytest
 
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import ReconciliationConfig, WorkflowConfig
+from counter_risk.pipeline.parsing_types import UnmappedCounterpartyError
 from counter_risk.pipeline.run import run_pipeline
 
 
@@ -785,8 +786,8 @@ def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
     with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
         run_pipeline(config_path)
 
-    assert isinstance(exc_info.value.__cause__, ValueError)
-    assert "Reconciliation strict mode failed" in str(exc_info.value.__cause__)
+    assert isinstance(exc_info.value.__cause__, UnmappedCounterpartyError)
+    assert "Unmapped normalized counterparty" in str(exc_info.value.__cause__)
 
 
 def test_run_pipeline_wraps_output_write_errors(
@@ -1253,7 +1254,7 @@ def test_create_static_distribution_warns_on_non_windows(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """On non-Windows platforms a clear warning is emitted and no paths are returned."""
-    monkeypatch.setattr(run_module.platform, "system", lambda: "Linux")
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Linux")
 
     source_pptx = tmp_path / "deck.pptx"
     source_pptx.write_bytes(b"fake-pptx")
@@ -1279,7 +1280,7 @@ def test_create_static_distribution_warns_when_win32com_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """When win32com is absent on a simulated Windows host a warning is emitted."""
-    monkeypatch.setattr(run_module.platform, "system", lambda: "Windows")
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Windows")
     # Ensure win32com.client cannot be imported.
     monkeypatch.setitem(sys.modules, "win32com", None)
     monkeypatch.setitem(sys.modules, "win32com.client", None)
@@ -1332,7 +1333,7 @@ def test_run_pipeline_manifest_includes_distribution_static_warning(
     )
 
     # Force non-Windows so the fallback path is exercised.
-    monkeypatch.setattr(run_module.platform, "system", lambda: "Linux")
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Linux")
 
     run_dir = run_pipeline(config_path)
 
@@ -1395,7 +1396,7 @@ def test_export_chart_shapes_as_images_returns_empty_when_no_ole_shapes(
             self._slides = [_FakeSlide()]
             self.Count = 1
 
-        def __iter__(self):  # type: ignore[no-untyped-def]
+        def __iter__(self):
             return iter(self._slides)
 
         def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
