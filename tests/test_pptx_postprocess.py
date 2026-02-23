@@ -70,3 +70,28 @@ def test_scrub_external_relationships_from_pptx_removes_external_targets_across_
 
     with ZipFile(output) as archive:
         assert archive.read("ppt/media/image1.png") == b"png"
+
+
+def test_scrub_external_relationships_from_pptx_returns_new_default_scrubbed_copy(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.pptx"
+    expected_output = tmp_path / "source_scrubbed.pptx"
+
+    with ZipFile(source, "w") as archive:
+        archive.writestr(
+            "ppt/_rels/presentation.xml.rels",
+            """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">
+  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink\" Target=\"https://example.com\" TargetMode=\"External\"/>
+</Relationships>
+""",
+        )
+
+    scrubbed = scrub_external_relationships_from_pptx(source)
+
+    assert scrubbed == expected_output
+    assert scrubbed.exists()
+    assert source.exists()
+    assert list_external_relationship_targets(source) == {"https://example.com"}
+    assert list_external_relationship_targets(scrubbed) == set()
