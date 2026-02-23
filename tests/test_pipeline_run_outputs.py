@@ -6,6 +6,8 @@ from datetime import date
 from pathlib import Path
 from zipfile import ZipFile
 
+import pytest
+
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
@@ -115,3 +117,43 @@ def test_write_outputs_skips_all_ppt_generation_when_disabled(tmp_path: Path, mo
     assert ppt_result.status == run_module.PptProcessingStatus.SKIPPED
     assert all(path.suffix.lower() != ".pptx" for path in output_paths)
     assert list(run_dir.glob("*.pptx")) == []
+
+
+def test_write_outputs_skips_distribution_when_master_refresh_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, screenshot_inputs={})
+    config = config.model_copy(update={"enable_screenshot_replacement": False})
+    called: dict[str, int] = {"derive_distribution": 0}
+    warnings: list[str] = []
+
+    def _refresh(_path: Path) -> run_module.PptProcessingResult:
+        return run_module.PptProcessingResult(
+            status=run_module.PptProcessingStatus.FAILED,
+            error_detail="forced refresh failure",
+        )
+
+    def _derive_distribution(*args, **kwargs):  # type: ignore[no-untyped-def]
+        _ = (args, kwargs)
+        called["derive_distribution"] += 1
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", _refresh)
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", _derive_distribution)
+
+    as_of_date = date(2025, 12, 31)
+    output_names = resolve_ppt_output_names(as_of_date)
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=as_of_date,
+        warnings=warnings,
+    )
+
+    assert ppt_result.status == run_module.PptProcessingStatus.FAILED
+    assert called["derive_distribution"] == 0
+    assert any("PPT links refresh failed; forced refresh failure" in w for w in warnings)
+    assert (run_dir / output_names.master_filename) in output_paths
+    assert (run_dir / output_names.distribution_filename) not in output_paths
+    assert not (run_dir / output_names.distribution_filename).exists()
