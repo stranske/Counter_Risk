@@ -41,6 +41,7 @@ _EXPECTED_VARIANTS: tuple[str, ...] = ("all_programs", "ex_trend", "trend")
 _COM_SHAPE_TYPE_EMBEDDED_OLE: int = 7  # msoEmbeddedOLEObject
 _COM_SHAPE_TYPE_LINKED_OLE: int = 10  # msoLinkedOLEObject
 _COM_SHAPE_FORMAT_PNG: int = 2  # ppShapeFormatPNG
+_SHAPE_MATCH_CONFIDENCE_THRESHOLD: float = 0.8
 _REQUIRED_TOTAL_COLUMNS: tuple[str, ...] = ("counterparty", "Notional", "NotionalChange")
 _REQUIRED_FUTURES_COLUMNS: tuple[str, ...] = (
     "account",
@@ -1236,6 +1237,8 @@ def _rebuild_pptx_replacing_charts(
     source_pptx: Path,
     output_path: Path,
     chart_images: dict[tuple[int, str], Path],
+    fallback_slide_images: dict[int, Path] | None = None,
+    fallback_to_full_deck_rebuild: bool = False,
 ) -> None:
     """Create a PPTX replacing OLE/chart shapes with static PNG images.
 
@@ -1250,18 +1253,47 @@ def _rebuild_pptx_replacing_charts(
     """
     from pptx import Presentation
 
+    fallback_slide_images = fallback_slide_images or {}
     prs = Presentation(str(source_pptx))
+    low_confidence_slides: set[int] = set()
+
     for slide_idx, slide in enumerate(prs.slides, start=1):
         replacements: list[tuple[Path, int, int, int, int]] = []
         shapes_to_remove: list[Any] = []
+        replacement_requests = {
+            shape_name: image_path
+            for (shape_slide_idx, shape_name), image_path in chart_images.items()
+            if shape_slide_idx == slide_idx
+        }
 
-        for shape in list(slide.shapes):
-            key = (slide_idx, shape.name)
-            if key not in chart_images:
+        for shape_name, img_path in replacement_requests.items():
+            candidate_shapes = [
+                shape
+                for shape in list(slide.shapes)
+                if str(getattr(shape, "name", "")) == shape_name
+            ]
+            confidence = _shape_match_confidence(
+                target_name=shape_name,
+                candidate_shapes=candidate_shapes,
+            )
+            if confidence < _SHAPE_MATCH_CONFIDENCE_THRESHOLD:
+                low_confidence_slides.add(slide_idx)
+                LOGGER.warning(
+                    "chart_replace_low_confidence slide=%d shape=%s confidence=%.2f",
+                    slide_idx,
+                    shape_name,
+                    confidence,
+                )
                 continue
-            img_path = chart_images[key]
-            left, top, width, height = shape.left, shape.top, shape.width, shape.height
-            shapes_to_remove.append(shape)
+
+            matched_shape = candidate_shapes[0]
+            left, top, width, height = (
+                matched_shape.left,
+                matched_shape.top,
+                matched_shape.width,
+                matched_shape.height,
+            )
+            shapes_to_remove.append(matched_shape)
             replacements.append((img_path, left, top, width, height))
 
         for shape in shapes_to_remove:
@@ -1271,7 +1303,65 @@ def _rebuild_pptx_replacing_charts(
         for img_path, left, top, width, height in replacements:
             slide.shapes.add_picture(str(img_path), left, top, width, height)
 
+        if slide_idx in low_confidence_slides and slide_idx in fallback_slide_images:
+            _replace_slide_with_image(slide=slide, slide_image=fallback_slide_images[slide_idx])
+
+    if low_confidence_slides and fallback_to_full_deck_rebuild:
+        low_confidence_list = ", ".join(str(index) for index in sorted(low_confidence_slides))
+        raise RuntimeError(
+            "Chart replacement confidence check failed; full-deck static rebuild required "
+            f"for slide(s): {low_confidence_list}"
+        )
+
     prs.save(str(output_path))
+
+
+def _shape_match_confidence(*, target_name: str, candidate_shapes: list[Any]) -> float:
+    """Score chart shape matching confidence using name uniqueness and optional geometry.
+
+    Name uniqueness is weighted heavily because duplicate names on a slide make
+    deterministic replacement unreliable. When one candidate is present and no
+    geometry information is available, confidence remains high.
+    """
+
+    if not candidate_shapes:
+        return 0.0
+
+    unique_name_score = 1.0 if len(candidate_shapes) == 1 else 0.2
+    position_scores = [
+        _shape_position_confidence(shape)
+        for shape in candidate_shapes
+        if str(getattr(shape, "name", "")) == target_name
+    ]
+    position_score = max(position_scores, default=0.0)
+    return min(1.0, (0.75 * unique_name_score) + (0.25 * position_score))
+
+
+def _shape_position_confidence(shape: Any) -> float:
+    """Return a bounded confidence based on shape geometry validity."""
+
+    width = int(getattr(shape, "width", 0) or 0)
+    height = int(getattr(shape, "height", 0) or 0)
+    if width <= 0 or height <= 0:
+        return 0.0
+
+    left = int(getattr(shape, "left", 0) or 0)
+    top = int(getattr(shape, "top", 0) or 0)
+    if left < 0 or top < 0:
+        return 0.5
+    return 1.0
+
+
+def _replace_slide_with_image(*, slide: Any, slide_image: Path) -> None:
+    """Fallback for low-confidence matching: flatten the full slide to one image."""
+
+    width = slide.part.slide_layout.part.package.presentation_part.presentation.slide_width
+    height = slide.part.slide_layout.part.package.presentation_part.presentation.slide_height
+
+    for shape in list(slide.shapes):
+        sp_tree = shape.element.getparent()
+        sp_tree.remove(shape.element)
+    slide.shapes.add_picture(str(slide_image), left=0, top=0, width=width, height=height)
 
 
 def _update_historical_outputs(
