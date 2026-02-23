@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import cast
 from zipfile import BadZipFile, ZipFile
 
 LOGGER = logging.getLogger(__name__)
@@ -93,4 +94,4 @@ def _remove_external_relationship_targets(xml_bytes: bytes) -> bytes:
 
     if not changed:
         return xml_bytes
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    return cast(bytes, ET.tostring(root, encoding="utf-8", xml_declaration=True))
