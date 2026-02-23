@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import logging
 import platform
@@ -31,6 +32,11 @@ from counter_risk.writers import generate_mosers_workbook
 LOGGER = logging.getLogger(__name__)
 
 _EXPECTED_VARIANTS: tuple[str, ...] = ("all_programs", "ex_trend", "trend")
+
+# PowerPoint COM shape type constants used when identifying OLE/chart shapes.
+_COM_SHAPE_TYPE_EMBEDDED_OLE: int = 7  # msoEmbeddedOLEObject
+_COM_SHAPE_TYPE_LINKED_OLE: int = 10  # msoLinkedOLEObject
+_COM_SHAPE_FORMAT_PNG: int = 2  # ppShapeFormatPNG
 _REQUIRED_TOTAL_COLUMNS: tuple[str, ...] = ("counterparty", "Notional", "NotionalChange")
 _REQUIRED_FUTURES_COLUMNS: tuple[str, ...] = (
     "account",
@@ -867,6 +873,13 @@ def _write_outputs(
         distribution_pptx_path=target_distribution_ppt,
     )
     output_paths.append(target_distribution_ppt)
+    static_output_paths = _create_static_distribution(
+        source_pptx=target_master_ppt,
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+    )
+    output_paths.extend(static_output_paths)
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
     return output_paths, refresh_result
@@ -1107,6 +1120,232 @@ def _refresh_ppt_links(pptx_path: Path) -> PptProcessingResult:
             presentation.Close()
         if app is not None:
             app.Quit()
+
+
+def _create_static_distribution(
+    *,
+    source_pptx: Path,
+    run_dir: Path,
+    config: WorkflowConfig,
+    warnings: list[str],
+) -> list[Path]:
+    """Produce a static distribution copy of the presentation.
+
+    On Windows with COM available: exports each slide as a PNG image and rebuilds
+    the deck as a flat image-only PPTX (no live Excel links).  When that succeeds,
+    also attempts a PDF export.
+
+    When COM is unavailable (non-Windows or missing pywin32): appends a human-readable
+    warning to *warnings* and returns an empty list so the caller's regular
+    (non-static) PPT remains the sole deliverable.
+    """
+
+    if not config.distribution_static:
+        return []
+
+    if platform.system().lower() != "windows":
+        warnings.append(
+            "distribution_static requested but PowerPoint COM is only available on Windows; "
+            "no static distribution produced"
+        )
+        LOGGER.info("distribution_static_skipped reason=non_windows")
+        return []
+
+    try:
+        import win32com.client
+    except ImportError:
+        warnings.append(
+            "distribution_static requested but win32com is not installed; "
+            "no static distribution produced"
+        )
+        LOGGER.info("distribution_static_skipped reason=win32com_unavailable")
+        return []
+
+    output_paths: list[Path] = []
+    slide_images_dir = run_dir / "_distribution_slides"
+    static_pptx_path = run_dir / f"{source_pptx.stem}_distribution_static.pptx"
+    pdf_path = run_dir / f"{source_pptx.stem}_distribution.pdf"
+
+    app = None
+    presentation = None
+    try:
+        app = win32com.client.DispatchEx("PowerPoint.Application")
+        app.Visible = False
+        presentation = app.Presentations.Open(str(source_pptx), WithWindow=False)
+
+        # Attempt PDF export (simpler fallback deliverable).
+        try:
+            presentation.ExportAsFixedFormat(str(pdf_path), 2)  # 2 = ppFixedFormatTypePDF
+            output_paths.append(pdf_path)
+            LOGGER.info("distribution_static_pdf_complete path=%s", pdf_path)
+        except Exception as pdf_exc:
+            warnings.append(f"distribution_static PDF export failed: {pdf_exc}")
+            LOGGER.warning("distribution_static_pdf_failed exc=%s", pdf_exc)
+
+        # Preferred: export each OLE/chart shape as an individual PNG then
+        # rebuild the PPTX replacing only those shapes.  Titles, text boxes, and
+        # other non-chart shapes remain as live text so the deck stays editable.
+        slide_images_dir.mkdir(parents=True, exist_ok=True)
+        chart_images = _export_chart_shapes_as_images(
+            com_presentation=presentation,
+            slide_images_dir=slide_images_dir,
+            warnings=warnings,
+        )
+        _rebuild_pptx_replacing_charts(
+            source_pptx=source_pptx,
+            output_path=static_pptx_path,
+            chart_images=chart_images,
+        )
+        output_paths.append(static_pptx_path)
+        LOGGER.info("distribution_static_pptx_complete path=%s", static_pptx_path)
+
+    except Exception as exc:
+        warnings.append(f"distribution_static generation failed: {exc}")
+        LOGGER.exception("distribution_static_failed")
+    finally:
+        if presentation is not None:
+            with contextlib.suppress(Exception):
+                presentation.Close()
+        if app is not None:
+            with contextlib.suppress(Exception):
+                app.Quit()
+
+    return output_paths
+
+
+def _rebuild_pptx_from_slide_images(
+    *,
+    source_pptx: Path,
+    slide_images: list[Path],
+    output_path: Path,
+) -> None:
+    """Create a new PPTX where every slide is a single full-bleed PNG image.
+
+    The new deck preserves the slide dimensions of *source_pptx* so that the
+    layout appears identical to the original when opened in PowerPoint, but
+    contains no live Excel chart links.
+    """
+
+    from pptx import Presentation
+
+    source_prs = Presentation(str(source_pptx))
+    assert source_prs.slide_width is not None, "source PPT has no slide width"
+    assert source_prs.slide_height is not None, "source PPT has no slide height"
+    slide_width = source_prs.slide_width
+    slide_height = source_prs.slide_height
+
+    new_prs = Presentation()
+    new_prs.slide_width = slide_width
+    new_prs.slide_height = slide_height
+
+    # Slide layout index 6 is the universally blank layout in stock python-pptx templates.
+    blank_layout = new_prs.slide_layouts[6]
+
+    for img_path in slide_images:
+        new_slide = new_prs.slides.add_slide(blank_layout)
+        new_slide.shapes.add_picture(
+            str(img_path), left=0, top=0, width=slide_width, height=slide_height
+        )
+
+    new_prs.save(str(output_path))
+
+
+def _export_chart_shapes_as_images(
+    *,
+    com_presentation: Any,
+    slide_images_dir: Path,
+    warnings: list[str],
+) -> dict[tuple[int, str], Path]:
+    """Export OLE/chart shapes from a COM presentation to individual PNG files.
+
+    Iterates every slide in *com_presentation* and exports shapes whose COM
+    type is ``msoEmbeddedOLEObject`` (7), ``msoLinkedOLEObject`` (10), or
+    whose ``HasChart`` property is ``True``.  The resulting PNG files are
+    written into *slide_images_dir*.
+
+    Returns a mapping of ``(1-based slide index, shape name)`` to the exported
+    image ``Path``.  Shapes that fail to export are recorded in *warnings* and
+    omitted from the result so the caller can decide how to handle them.
+    """
+    chart_images: dict[tuple[int, str], Path] = {}
+    slide_count: int = com_presentation.Slides.Count
+    for slide_idx in range(1, slide_count + 1):
+        com_slide = com_presentation.Slides[slide_idx]
+        for com_shape in com_slide.Shapes:
+            shape_type: int = com_shape.Type
+            has_chart = False
+            with contextlib.suppress(Exception):
+                has_chart = bool(com_shape.HasChart)
+            if (
+                shape_type not in (_COM_SHAPE_TYPE_EMBEDDED_OLE, _COM_SHAPE_TYPE_LINKED_OLE)
+                and not has_chart
+            ):
+                continue
+            img_path = slide_images_dir / f"chart_{slide_idx:04d}_{com_shape.Id}.png"
+            try:
+                com_shape.Export(str(img_path), _COM_SHAPE_FORMAT_PNG)
+                chart_images[(slide_idx, com_shape.Name)] = img_path
+                LOGGER.info(
+                    "chart_shape_exported slide=%d shape=%s path=%s",
+                    slide_idx,
+                    com_shape.Name,
+                    img_path,
+                )
+            except Exception as exc:
+                warnings.append(
+                    f"distribution_static chart export failed "
+                    f"(slide {slide_idx}, shape '{com_shape.Name}'): {exc}"
+                )
+                LOGGER.warning(
+                    "chart_shape_export_failed slide=%d shape=%s exc=%s",
+                    slide_idx,
+                    com_shape.Name,
+                    exc,
+                )
+    return chart_images
+
+
+def _rebuild_pptx_replacing_charts(
+    *,
+    source_pptx: Path,
+    output_path: Path,
+    chart_images: dict[tuple[int, str], Path],
+) -> None:
+    """Create a PPTX replacing OLE/chart shapes with static PNG images.
+
+    For each entry in *chart_images* the corresponding shape is removed from
+    its slide and replaced with a ``Picture`` shape at the exact same position
+    and size.  All other shapes (titles, text boxes, decorative elements) are
+    left untouched so the deck remains editable and titles stay selectable.
+
+    When *chart_images* is empty (no chart shapes found or all exports failed)
+    the source presentation is saved unchanged to *output_path*, ensuring a
+    deliverable is always produced.
+    """
+    from pptx import Presentation
+
+    prs = Presentation(str(source_pptx))
+    for slide_idx, slide in enumerate(prs.slides, start=1):
+        replacements: list[tuple[Path, int, int, int, int]] = []
+        shapes_to_remove: list[Any] = []
+
+        for shape in list(slide.shapes):
+            key = (slide_idx, shape.name)
+            if key not in chart_images:
+                continue
+            img_path = chart_images[key]
+            left, top, width, height = shape.left, shape.top, shape.width, shape.height
+            shapes_to_remove.append(shape)
+            replacements.append((img_path, left, top, width, height))
+
+        for shape in shapes_to_remove:
+            sp_tree = shape.element.getparent()
+            sp_tree.remove(shape.element)
+
+        for img_path, left, top, width, height in replacements:
+            slide.shapes.add_picture(str(img_path), left, top, width, height)
+
+    prs.save(str(output_path))
 
 
 def _update_historical_outputs(

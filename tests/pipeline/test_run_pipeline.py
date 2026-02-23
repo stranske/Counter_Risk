@@ -1193,3 +1193,444 @@ def test_merge_historical_workbook_fails_fast_when_required_headers_missing(
     assert "Total" in message
     assert "value series 1" in message
     assert broken.cell(row=3, column=1).value is None
+
+
+# ---------------------------------------------------------------------------
+# Static distribution fallback tests
+# ---------------------------------------------------------------------------
+
+
+def _make_minimal_config(tmp_path: Path, *, distribution_static: bool = False) -> WorkflowConfig:
+    """Return a minimal WorkflowConfig with placeholder files."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    for name in (
+        "all.xlsx",
+        "ex.xlsx",
+        "trend.xlsx",
+        "hist_all.xlsx",
+        "hist_ex.xlsx",
+        "hist_llc.xlsx",
+        "monthly.pptx",
+    ):
+        (tmp_path / name).write_bytes(b"placeholder")
+    return WorkflowConfig(
+        as_of_date=date(2025, 12, 31),
+        mosers_all_programs_xlsx=tmp_path / "all.xlsx",
+        mosers_ex_trend_xlsx=tmp_path / "ex.xlsx",
+        mosers_trend_xlsx=tmp_path / "trend.xlsx",
+        hist_all_programs_3yr_xlsx=tmp_path / "hist_all.xlsx",
+        hist_ex_llc_3yr_xlsx=tmp_path / "hist_ex.xlsx",
+        hist_llc_3yr_xlsx=tmp_path / "hist_llc.xlsx",
+        monthly_pptx=tmp_path / "monthly.pptx",
+        distribution_static=distribution_static,
+        output_root=tmp_path / "runs",
+    )
+
+
+def test_create_static_distribution_is_noop_when_flag_is_false(
+    tmp_path: Path,
+) -> None:
+    """When distribution_static=False the function returns no paths and no warnings."""
+    source_pptx = tmp_path / "deck.pptx"
+    source_pptx.write_bytes(b"fake-pptx")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    config = _make_minimal_config(tmp_path / "cfg", distribution_static=False)
+    warnings: list[str] = []
+
+    output = run_module._create_static_distribution(
+        source_pptx=source_pptx,
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+    )
+
+    assert output == []
+    assert warnings == []
+
+
+def test_create_static_distribution_warns_on_non_windows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """On non-Windows platforms a clear warning is emitted and no paths are returned."""
+    monkeypatch.setattr(run_module.platform, "system", lambda: "Linux")
+
+    source_pptx = tmp_path / "deck.pptx"
+    source_pptx.write_bytes(b"fake-pptx")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    config = _make_minimal_config(tmp_path / "cfg", distribution_static=True)
+    warnings: list[str] = []
+
+    output = run_module._create_static_distribution(
+        source_pptx=source_pptx,
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+    )
+
+    assert output == []
+    assert len(warnings) == 1
+    assert "distribution_static" in warnings[0]
+    assert "Windows" in warnings[0]
+
+
+def test_create_static_distribution_warns_when_win32com_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When win32com is absent on a simulated Windows host a warning is emitted."""
+    monkeypatch.setattr(run_module.platform, "system", lambda: "Windows")
+    # Ensure win32com.client cannot be imported.
+    monkeypatch.setitem(sys.modules, "win32com", None)
+    monkeypatch.setitem(sys.modules, "win32com.client", None)
+
+    source_pptx = tmp_path / "deck.pptx"
+    source_pptx.write_bytes(b"fake-pptx")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    config = _make_minimal_config(tmp_path / "cfg", distribution_static=True)
+    warnings: list[str] = []
+
+    output = run_module._create_static_distribution(
+        source_pptx=source_pptx,
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+    )
+
+    assert output == []
+    assert len(warnings) == 1
+    assert "distribution_static" in warnings[0]
+    assert "win32com" in warnings[0]
+
+
+def test_run_pipeline_manifest_includes_distribution_static_warning(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Full pipeline: distribution_static=True on non-Windows emits manifest warning."""
+    fixtures = Path("tests/fixtures")
+    output_root = tmp_path / "runs"
+
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {output_root}",
+                "distribution_static: true",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    # Force non-Windows so the fallback path is exercised.
+    monkeypatch.setattr(run_module.platform, "system", lambda: "Linux")
+
+    run_dir = run_pipeline(config_path)
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    # Regular PPT is still produced (distribution filename for as_of_date 2025-12-31).
+    assert (run_dir / "Monthly Counterparty Exposure Report - 2025-12-31.pptx").exists()
+
+    # Warning about static distribution being unavailable is present.
+    assert any("distribution_static" in w for w in manifest["warnings"])
+
+    # No static distribution files produced (no COM available).
+    assert not (
+        run_dir
+        / "Monthly Counterparty Exposure Report (Master) - 2025-12-31_distribution_static.pptx"
+    ).exists()
+    assert not (
+        run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31_distribution.pdf"
+    ).exists()
+
+    # Config snapshot captures the flag.
+    assert manifest["config_snapshot"]["distribution_static"] is True
+
+
+# ---------------------------------------------------------------------------
+# _export_chart_shapes_as_images tests
+# ---------------------------------------------------------------------------
+
+
+def test_export_chart_shapes_as_images_returns_empty_when_no_ole_shapes(
+    tmp_path: Path,
+) -> None:
+    """When a presentation has no OLE/chart shapes the result dict is empty."""
+    # Build a fake COM presentation with one slide containing a plain shape.
+    slide_images_dir = tmp_path / "imgs"
+    slide_images_dir.mkdir()
+
+    class _FakeShape:
+        Type = 1  # msoAutoShape – not OLE
+        HasChart = False
+        Id = 1
+        Name = "Shape 1"
+
+        def Export(self, path: str, fmt: int) -> None:  # noqa: N802  # pragma: no cover
+            raise AssertionError("Export should not be called for non-OLE shapes")
+
+    class _FakeSlide:
+        Shapes = [_FakeShape()]
+
+    class _FakePres:
+        Slides = [_FakeSlide()]
+
+        @property
+        def Count(self) -> int:  # noqa: N802  # pragma: no cover
+            return 1
+
+    # Build a Slides-like object with .Count and index access.
+    class _SlideList:
+        def __init__(self) -> None:
+            self._slides = [_FakeSlide()]
+            self.Count = 1
+
+        def __iter__(self):  # type: ignore[no-untyped-def]
+            return iter(self._slides)
+
+        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+            return self._slides[idx - 1]
+
+    class _Presentation:
+        def __init__(self) -> None:
+            self.Slides = _SlideList()
+
+    warnings: list[str] = []
+    result = run_module._export_chart_shapes_as_images(
+        com_presentation=_Presentation(),
+        slide_images_dir=slide_images_dir,
+        warnings=warnings,
+    )
+
+    assert result == {}
+    assert warnings == []
+
+
+def test_export_chart_shapes_as_images_records_warning_on_export_failure(
+    tmp_path: Path,
+) -> None:
+    """When Export() raises, a warning is recorded and the shape is skipped."""
+    slide_images_dir = tmp_path / "imgs"
+    slide_images_dir.mkdir()
+
+    class _FailingShape:
+        Type = 7  # msoEmbeddedOLEObject
+        HasChart = False
+        Id = 5
+        Name = "Chart 5"
+
+        def Export(self, path: str, fmt: int) -> None:  # noqa: N802
+            raise RuntimeError("COM export failed")
+
+    class _SlideList:
+        def __init__(self) -> None:
+            self.Count = 1
+
+        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+            class _Slide:
+                Shapes = [_FailingShape()]
+
+            return _Slide()
+
+    class _Presentation:
+        def __init__(self) -> None:
+            self.Slides = _SlideList()
+
+    warnings: list[str] = []
+    result = run_module._export_chart_shapes_as_images(
+        com_presentation=_Presentation(),
+        slide_images_dir=slide_images_dir,
+        warnings=warnings,
+    )
+
+    assert result == {}
+    assert len(warnings) == 1
+    assert "Chart 5" in warnings[0]
+    assert "distribution_static chart export failed" in warnings[0]
+
+
+def test_export_chart_shapes_as_images_collects_ole_shapes(
+    tmp_path: Path,
+) -> None:
+    """OLE shapes that export successfully are included in the result mapping."""
+    slide_images_dir = tmp_path / "imgs"
+    slide_images_dir.mkdir()
+    written: list[str] = []
+
+    class _OleShape:
+        Type = 10  # msoLinkedOLEObject
+        HasChart = False
+        Id = 3
+        Name = "Chart 3"
+
+        def Export(self, path: str, fmt: int) -> None:  # noqa: N802
+            Path(path).write_bytes(b"fake-png")
+            written.append(path)
+
+    class _SlideList:
+        def __init__(self) -> None:
+            self.Count = 1
+
+        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+            class _Slide:
+                Shapes = [_OleShape()]
+
+            return _Slide()
+
+    class _Presentation:
+        def __init__(self) -> None:
+            self.Slides = _SlideList()
+
+    warnings: list[str] = []
+    result = run_module._export_chart_shapes_as_images(
+        com_presentation=_Presentation(),
+        slide_images_dir=slide_images_dir,
+        warnings=warnings,
+    )
+
+    assert (1, "Chart 3") in result
+    assert result[(1, "Chart 3")].exists()
+    assert warnings == []
+
+
+# ---------------------------------------------------------------------------
+# _rebuild_pptx_replacing_charts tests
+# ---------------------------------------------------------------------------
+
+
+def _make_test_pptx_with_picture(tmp_path: Path, shape_name: str) -> Path:
+    """Create a minimal PPTX containing one slide with a single picture shape."""
+    from pptx import Presentation
+    from pptx.util import Inches
+
+    prs = Presentation()
+    # Use blank slide layout.
+    blank_layout = prs.slide_layouts[6]
+    slide = prs.slides.add_slide(blank_layout)
+
+    # Create a tiny 1x1 PNG (minimal valid PNG bytes).
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"  # PNG signature
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"  # 1x1 RGB
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    img_path = tmp_path / "placeholder.png"
+    img_path.write_bytes(png_bytes)
+
+    pic = slide.shapes.add_picture(str(img_path), Inches(1), Inches(1), Inches(4), Inches(3))
+    pic.name = shape_name
+
+    out = tmp_path / "source.pptx"
+    prs.save(str(out))
+    return out
+
+
+def test_rebuild_pptx_replacing_charts_empty_mapping_preserves_slide(
+    tmp_path: Path,
+) -> None:
+    """With an empty chart_images mapping the output PPTX has the same slide count."""
+    from pptx import Presentation
+
+    source = _make_test_pptx_with_picture(tmp_path, "SomeShape")
+    output = tmp_path / "out.pptx"
+
+    run_module._rebuild_pptx_replacing_charts(
+        source_pptx=source,
+        output_path=output,
+        chart_images={},
+    )
+
+    assert output.exists()
+    prs = Presentation(str(output))
+    assert len(prs.slides) == 1
+    # Shape count unchanged when no replacements requested.
+    assert len(list(prs.slides[0].shapes)) == 1
+
+
+def test_rebuild_pptx_replacing_charts_replaces_named_shape(
+    tmp_path: Path,
+) -> None:
+    """A shape matching a chart_images key is removed and replaced with a picture."""
+    from pptx import Presentation
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    shape_name = "Chart OLE 1"
+    source = _make_test_pptx_with_picture(tmp_path, shape_name)
+
+    # Replacement image (minimal valid PNG).
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    replacement = tmp_path / "replacement.png"
+    replacement.write_bytes(png_bytes)
+
+    output = tmp_path / "out.pptx"
+    run_module._rebuild_pptx_replacing_charts(
+        source_pptx=source,
+        output_path=output,
+        chart_images={(1, shape_name): replacement},
+    )
+
+    assert output.exists()
+    prs = Presentation(str(output))
+    slide = prs.slides[0]
+    # The slide should still have exactly one shape (the replacement picture).
+    shapes = list(slide.shapes)
+    assert len(shapes) == 1
+    assert shapes[0].shape_type == MSO_SHAPE_TYPE.PICTURE
+
+
+def test_rebuild_pptx_replacing_charts_preserves_position(
+    tmp_path: Path,
+) -> None:
+    """The replacement picture is placed at the same geometry as the original shape."""
+    from pptx import Presentation
+
+    shape_name = "OLE Chart"
+    source = _make_test_pptx_with_picture(tmp_path, shape_name)
+
+    # Record original shape geometry.
+    original_prs = Presentation(str(source))
+    orig_shape = list(original_prs.slides[0].shapes)[0]
+    orig_left, orig_top = orig_shape.left, orig_shape.top
+    orig_width, orig_height = orig_shape.width, orig_shape.height
+
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    replacement = tmp_path / "replacement.png"
+    replacement.write_bytes(png_bytes)
+
+    output = tmp_path / "out.pptx"
+    run_module._rebuild_pptx_replacing_charts(
+        source_pptx=source,
+        output_path=output,
+        chart_images={(1, shape_name): replacement},
+    )
+
+    prs = Presentation(str(output))
+    new_shape = list(prs.slides[0].shapes)[0]
+    assert new_shape.left == orig_left
+    assert new_shape.top == orig_top
+    assert new_shape.width == orig_width
+    assert new_shape.height == orig_height
