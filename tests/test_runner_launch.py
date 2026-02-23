@@ -15,9 +15,9 @@ from counter_risk.runner_launch import (
 
 
 @pytest.fixture
-def filesystem_and_explorer_stubs() -> tuple[
-    set[str], list[str], Callable[[str], bool], Callable[[str], int]
-]:
+def filesystem_and_explorer_stubs() -> (
+    tuple[set[str], list[str], Callable[[str], bool], Callable[[str], int]]
+):
     existing_directories: set[str] = set()
     opened_directories: list[str] = []
 
