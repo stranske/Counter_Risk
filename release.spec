@@ -23,7 +23,7 @@ if fixture_template.exists():
 
 
 a = Analysis(
-    [str(project_root / "src" / "counter_risk" / "cli.py")],
+    [str(project_root / "src" / "counter_risk" / "cli" / "__main__.py")],
     pathex=[str(project_root / "src")],
     binaries=[],
     datas=datas,

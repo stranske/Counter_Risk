@@ -18,7 +18,7 @@ from zipfile import BadZipFile, ZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
-from counter_risk.normalize import canonicalize_name, normalize_counterparty
+from counter_risk.normalize import canonicalize_name, normalize_counterparty, resolve_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
@@ -28,6 +28,7 @@ from counter_risk.pipeline.parsing_types import (
 )
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
+from counter_risk.pipeline.run_folder_outputs import build_run_folder_readme_content
 from counter_risk.pipeline.time_utils import utc_now_isoformat
 from counter_risk.writers import generate_mosers_workbook
 
@@ -144,9 +145,10 @@ def reconcile_series_coverage(
                 if value
             }
         )
-        normalized_counterparties_in_data = _normalized_counterparties_from_parsed_data(
-            parsed_sections
-        )
+        (
+            normalized_counterparties_in_data,
+            counterparty_sources_by_raw_name,
+        ) = _counterparty_resolution_maps_from_records(totals_records)
         clearing_houses_in_data = sorted(
             {
                 value
@@ -230,7 +232,16 @@ def reconcile_series_coverage(
                 raw_display = ", ".join(raw_names)
                 warnings.append(
                     "Reconciliation unmapped counterparty in sheet "
-                    f"{sheet_name!r}: raw={raw_display!r}, normalized={normalized_name!r}"
+                    f"{sheet_name!r}: raw={raw_display!r}, normalized={normalized_name!r}, "
+                    "source="
+                    + ",".join(
+                        sorted(
+                            {
+                                counterparty_sources_by_raw_name.get(raw_name, "unmapped")
+                                for raw_name in raw_names
+                            }
+                        )
+                    )
                 )
                 for raw_name in raw_names:
                     error = UnmappedCounterpartyError(
@@ -363,16 +374,25 @@ def _extract_segments_from_records(parsed_sections: Mapping[str, Any]) -> set[st
     return segments
 
 
-def _normalized_counterparties_from_records(
+def _counterparty_resolution_maps_from_records(
     totals_records: list[dict[str, Any]],
-) -> dict[str, set[str]]:
+) -> tuple[dict[str, set[str]], dict[str, str]]:
     normalized_to_raw: dict[str, set[str]] = {}
+    sources_by_raw_name: dict[str, str] = {}
     for record in totals_records:
         raw_name = str(record.get("counterparty", "")).strip()
         if not raw_name:
             continue
-        normalized_name = normalize_counterparty(raw_name)
-        normalized_to_raw.setdefault(normalized_name, set()).add(raw_name)
+        resolution = resolve_counterparty(raw_name)
+        normalized_to_raw.setdefault(resolution.canonical_name, set()).add(raw_name)
+        sources_by_raw_name[raw_name] = resolution.source
+    return normalized_to_raw, sources_by_raw_name
+
+
+def _normalized_counterparties_from_records(
+    totals_records: list[dict[str, Any]],
+) -> dict[str, set[str]]:
+    normalized_to_raw, _ = _counterparty_resolution_maps_from_records(totals_records)
     return normalized_to_raw
 
 
@@ -925,6 +945,10 @@ def _write_outputs(
         warnings=warnings,
     )
     output_paths.extend(static_output_paths)
+    if config.ppt_output_enabled and any(path.suffix.lower() == ".pptx" for path in output_paths):
+        readme_path = run_dir / "README.txt"
+        readme_path.write_text(build_run_folder_readme_content(as_of_date), encoding="utf-8")
+        output_paths.append(readme_path)
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
     return output_paths, refresh_result

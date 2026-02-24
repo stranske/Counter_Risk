@@ -2233,13 +2233,6 @@ async function evaluateKeepaliveLoop({ github: rawGithub, context, core, payload
       : toNumber(state.consecutive_zero_activity_rounds, 0);
     const shouldStopForZeroActivity = persistedConsecutiveZeroActivityRounds >= zeroActivityThreshold;
 
-    // Track consecutive zero-activity rounds (no files + no tasks completed).
-    // Treat the persisted state as the source of truth; updateKeepaliveLoopSummary
-    // increments or resets this counter after each agent run.
-    const zeroActivityThreshold = 2;
-    const persistedConsecutiveZeroActivityRounds = toNumber(state.consecutive_zero_activity_rounds, 0);
-    const shouldStopForZeroActivity = persistedConsecutiveZeroActivityRounds >= zeroActivityThreshold;
-
     const prevCompleteGateFailureRounds = toNumber(state.complete_gate_failure_rounds, 0);
     // Only increment the complete-gate-failure counter when gate actually failed
     // (not when cancelled/pending, which are transient states that shouldn't
