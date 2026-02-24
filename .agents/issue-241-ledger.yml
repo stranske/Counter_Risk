@@ -8,10 +8,10 @@ tasks:
       to accept resolved PPT output paths (e.g., a `{master: Path, distribution: Path}`-like
       structure) and render links/paths from those values instead of any hardcoded/default
       `.pptx` filename strings.'
-    status: doing
+    status: done
     started_at: '2026-02-24T19:11:28Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-24T19:11:44Z'
+    commit: eaa723de04a50488439c397dfbf9d4e1cde7418e
     notes: []
   - id: task-02
     title: 'Define scope for: Update the function signature of build_run_folder_readme_content
