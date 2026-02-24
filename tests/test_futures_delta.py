@@ -230,8 +230,6 @@ class TestWorkbookWriteBack:
 
     def test_write_only_modifies_prior_month_column(self, tmp_path: Path) -> None:
         """Only the prior-month notional column is modified; all other cells unchanged."""
-        import openpyxl
-
         wb_before = load_mosers_workbook(_FIXTURE_PATH)
         wb_after = load_mosers_workbook(_FIXTURE_PATH)
         section = locate_futures_detail_section(wb_after)
@@ -478,7 +476,7 @@ class TestNotionalValidation:
             _extract_notional(row, row_id="my-row-identifier", strict=True)
         assert "my-row-identifier" in str(exc_info.value)
 
-    def test_notional_alias_Notional(self) -> None:
+    def test_notional_alias_capitalized(self) -> None:
         row = {"Notional": 999.0}
         assert _extract_notional(row) == pytest.approx(999.0)
 
