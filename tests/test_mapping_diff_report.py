@@ -100,3 +100,37 @@ def test_generate_mapping_diff_report_preserves_raw_names(tmp_path: Path) -> Non
 
     assert "UNMAPPED\n  Unknown House  \n" in report
     assert "Unknown House\n" not in report
+
+
+def test_generate_mapping_diff_report_fallback_section_is_deterministic(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {
+            "normalization": [
+                {"counterparty": "Citigroup"},
+                {"counterparty": "Bank of America, NA"},
+                {"counterparty": "Societe Generale"},
+            ],
+            "reconciliation": {
+                "counterparties_in_data": [
+                    "Societe Generale",
+                    "Citigroup",
+                    "Bank of America, NA",
+                ]
+            },
+        },
+    )
+
+    expected_section = "\n".join(
+        [
+            "FALLBACK_MAPPED",
+            "Bank of America, NA -> Bank of America",
+            "Citigroup -> Citibank",
+            "Societe Generale -> Soc Gen",
+            "",
+        ]
+    )
+    assert expected_section in report

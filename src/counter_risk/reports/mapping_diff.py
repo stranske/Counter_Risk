@@ -26,6 +26,12 @@ def _title_case_suggestion(raw_name: str) -> str:
     return raw_name.title()
 
 
+def _sorted_raw_names(values: Iterable[str]) -> list[str]:
+    """Sort names deterministically with case-insensitive primary ordering."""
+
+    return sorted(values, key=lambda raw_name: (raw_name.casefold(), raw_name))
+
+
 def _is_nonblank(value: str) -> bool:
     return bool(value.strip())
 
@@ -127,16 +133,16 @@ def generate_mapping_diff_report(
             unmapped_names.setdefault(raw_name, None)
 
     lines: list[str] = ["UNMAPPED"]
-    lines.extend(sorted(unmapped_names, key=str.casefold))
+    lines.extend(_sorted_raw_names(unmapped_names))
     lines.append("")
 
     lines.append("FALLBACK_MAPPED")
-    for raw_name in sorted(fallback_mapped, key=str.casefold):
+    for raw_name in _sorted_raw_names(fallback_mapped):
         lines.append(f"{raw_name} -> {fallback_mapped[raw_name]}")
     lines.append("")
 
     lines.append("SUGGESTIONS")
-    for raw_name in sorted(unmapped_names, key=str.casefold):
+    for raw_name in _sorted_raw_names(unmapped_names):
         lines.append(f"{raw_name} -> {_title_case_suggestion(raw_name)}")
 
     return "\n".join(lines) + "\n"
