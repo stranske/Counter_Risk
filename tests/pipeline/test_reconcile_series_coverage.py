@@ -265,6 +265,7 @@ def test_strict_unmapped_counterparty_raises_with_raw_value() -> None:
             fail_policy="strict",
         )
 
+    assert isinstance(exc_info.value, UnmappedCounterpartyError)
     assert exc_info.value.raw_counterparty == raw_value
 
 
