@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -18,7 +18,7 @@ from counter_risk.pipeline.manifest import WarningsCollector
 
 def _records(result: Any) -> list[dict[str, Any]]:
     if hasattr(result, "to_dict"):
-        return result.to_dict(orient="records")
+        return cast(list[dict[str, Any]], result.to_dict(orient="records"))
     return [dict(row) for row in result]
 
 

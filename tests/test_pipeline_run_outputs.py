@@ -95,13 +95,15 @@ def test_write_outputs_screenshot_replacement_replaces_expected_number_of_media_
     assert len(changed_media_parts) == len(screenshot_inputs)
 
 
-def test_write_outputs_skips_all_ppt_generation_when_disabled(tmp_path: Path, monkeypatch) -> None:
+def test_write_outputs_skips_all_ppt_generation_when_disabled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     run_dir = tmp_path / "run"
     run_dir.mkdir(parents=True)
     config = _build_config(tmp_path, screenshot_inputs={})
     config = config.model_copy(update={"enable_ppt_output": False})
 
-    def _unexpected_call(*args, **kwargs):  # type: ignore[no-untyped-def]
+    def _unexpected_call(*args: object, **kwargs: object) -> None:
         raise AssertionError("PPT generation should not be called when PPT output is disabled")
 
     monkeypatch.setattr(run_module, "_get_screenshot_replacer", _unexpected_call)
@@ -136,7 +138,7 @@ def test_write_outputs_skips_distribution_when_master_refresh_fails(
             error_detail="forced refresh failure",
         )
 
-    def _derive_distribution(*args, **kwargs):  # type: ignore[no-untyped-def]
+    def _derive_distribution(*args: object, **kwargs: object) -> None:
         _ = (args, kwargs)
         called["derive_distribution"] += 1
 
@@ -173,7 +175,7 @@ def test_write_outputs_handles_master_refresh_exception_and_logs_error(
     def _refresh_raises(_path: Path) -> run_module.PptProcessingResult:
         raise RuntimeError("refresh exploded")
 
-    def _derive_distribution(*args, **kwargs):  # type: ignore[no-untyped-def]
+    def _derive_distribution(*args: object, **kwargs: object) -> None:
         _ = (args, kwargs)
         called["derive_distribution"] += 1
 
