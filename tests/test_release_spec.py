@@ -54,7 +54,7 @@ def test_release_spec_defines_analysis_exe_and_collect() -> None:
 
     analysis_scripts = captures["analysis_args"][0]
     assert len(analysis_scripts) == 1
-    assert analysis_scripts[0].endswith("src/counter_risk/cli.py")
+    assert analysis_scripts[0].endswith("src/counter_risk/cli/__main__.py")
 
     runtime_hooks = captures["analysis_kwargs"]["runtime_hooks"]
     assert len(runtime_hooks) == 1

@@ -44,7 +44,14 @@ class WorkflowConfig(BaseModel):
     screenshot_inputs: dict[str, Path] = Field(default_factory=dict)
     reconciliation: ReconciliationConfig = Field(default_factory=ReconciliationConfig)
     distribution_static: bool = False
+    enable_ppt_output: bool = True
     output_root: Path = Path("runs")
+
+    @property
+    def ppt_output_enabled(self) -> bool:
+        """Return whether PPT generation should run for this workflow."""
+
+        return self.enable_ppt_output
 
     @field_validator("as_of_date", "run_date", mode="before")
     @classmethod
