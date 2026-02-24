@@ -50,7 +50,7 @@ def test_ppt_disabled_skips_ppt_entrypoint_and_produces_no_pptx(
     run_dir.mkdir(parents=True)
     config = _build_config(tmp_path, enable_ppt_output=False)
 
-    def _unexpected_call(*args, **kwargs):  # type: ignore[no-untyped-def]
+    def _unexpected_call(*args: object, **kwargs: object) -> None:
         _ = (args, kwargs)
         raise AssertionError("PPT code path should not be called when PPT output is disabled")
 
@@ -109,7 +109,7 @@ def test_master_refresh_failure_logs_error_and_skips_distribution_derivation(
     def _refresh_raises(_path: Path) -> run_module.PptProcessingResult:
         raise RuntimeError("refresh exploded")
 
-    def _derive_distribution(*args, **kwargs):  # type: ignore[no-untyped-def]
+    def _derive_distribution(*args: object, **kwargs: object) -> None:
         _ = (args, kwargs)
         calls["distribution"] += 1
 

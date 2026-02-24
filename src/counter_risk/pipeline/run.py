@@ -1235,7 +1235,7 @@ def _export_pptx_to_pdf(*, source_pptx: Path, pdf_path: Path) -> None:
         raise error
 
     try:
-        import win32com.client  # type: ignore[import-untyped]
+        import win32com.client
     except ImportError as exc:
         error = RuntimeError("win32com is not installed")
         LOGGER.error("PDF export failed: %s", error)

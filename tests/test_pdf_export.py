@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import types
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -73,7 +74,7 @@ def test_export_distribution_pdf_raises_and_logs_when_export_fails(
         DispatchEx=lambda *_args, **_kwargs: _FakePowerPointApplication()
     )
     fake_win32com = types.ModuleType("win32com")
-    fake_win32com.client = fake_client
+    cast(Any, fake_win32com).client = fake_client
     monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
     monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
 
