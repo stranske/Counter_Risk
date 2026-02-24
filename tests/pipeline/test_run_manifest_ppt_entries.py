@@ -43,3 +43,43 @@ def test_manifest_ppt_enabled_contains_both_outputs_with_existing_paths(tmp_path
     assert error is None
     assert Path(manifest["ppt_outputs"]["master"]["path"]).exists()
     assert Path(manifest["ppt_outputs"]["distribution"]["path"]).exists()
+
+
+def test_manifest_schema_ppt_rejects_only_master_entry(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    master = run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx"
+    master.write_bytes(b"master")
+
+    manifest = {
+        "as_of_date": "2025-12-31",
+        "run_date": "2026-01-02",
+        "ppt_outputs": {
+            "master": {"path": str(master.resolve())},
+        },
+    }
+
+    is_valid, error = validate_manifest_ppt_outputs(manifest, ppt_enabled=True)
+
+    assert is_valid is False
+    assert error == "Manifest ppt_outputs is missing required Distribution PPT entry."
+
+
+def test_manifest_schema_ppt_rejects_only_distribution_entry(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    distribution = run_dir / "Monthly Counterparty Exposure Report - 2025-12-31.pptx"
+    distribution.write_bytes(b"distribution")
+
+    manifest = {
+        "as_of_date": "2025-12-31",
+        "run_date": "2026-01-02",
+        "ppt_outputs": {
+            "distribution": {"path": str(distribution.resolve())},
+        },
+    }
+
+    is_valid, error = validate_manifest_ppt_outputs(manifest, ppt_enabled=True)
+
+    assert is_valid is False
+    assert error == "Manifest ppt_outputs is missing required Master PPT entry."
