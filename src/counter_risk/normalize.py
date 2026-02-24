@@ -43,12 +43,16 @@ def canonicalize_name(name: str) -> str:
 def safe_display_name(name: str) -> str:
     """Return a clean, human-readable display name for *name*.
 
-    This is identical to :func:`canonicalize_name` but is exposed as a
-    separate public symbol to make the intent explicit at call sites: the
-    caller wants a label that is safe to show to the user, not necessarily
-    a lookup key.
+    Unlike the matching key returned by :func:`canonicalize_name`, this
+    function **only** collapses whitespace.  Unicode punctuation variants
+    (curly apostrophes, en-dashes, em-dashes, etc.) are intentionally left
+    intact so the rendered text looks natural to human readers.
+
+    Use :func:`canonicalize_name` (the *matching key*) when you need a
+    stable token for dictionary lookups or string comparisons.  Use this
+    function when you need a label safe to display in a report or UI.
     """
-    return canonicalize_name(name)
+    return " ".join(name.split())
 
 
 def _normalize_whitespace(name: str) -> str:

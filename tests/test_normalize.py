@@ -118,16 +118,42 @@ def test_canonicalize_name_hyphen_preserved_in_known_name() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_safe_display_name_is_identical_to_canonicalize_name() -> None:
-    names = [
-        "  Morgan Stanley  ",
-        "Goldman Sachs Int\u2019l",
-        "Korea Exchange\u2013Seoul",
-        "",
-    ]
-    for name in names:
-        assert safe_display_name(name) == canonicalize_name(name)
+def test_safe_display_name_collapses_whitespace() -> None:
+    # Leading/trailing whitespace removed, internal runs collapsed
+    assert safe_display_name("  Morgan  Stanley  ") == "Morgan Stanley"
 
 
 def test_safe_display_name_preserves_case() -> None:
     assert safe_display_name("  ICE CLEAR europe  ") == "ICE CLEAR europe"
+
+
+def test_safe_display_name_preserves_unicode_apostrophe() -> None:
+    # Curly apostrophe is kept intact – it is a legitimate display character
+    curly = "Goldman Sachs Int\u2019l"
+    assert safe_display_name(curly) == curly
+
+
+def test_safe_display_name_preserves_en_dash() -> None:
+    # En-dash is kept intact for display; only whitespace is cleaned
+    en_dash = "Korea Exchange\u2013Seoul"
+    assert safe_display_name(en_dash) == en_dash
+
+
+def test_safe_display_name_differs_from_canonicalize_name_on_unicode_punctuation() -> None:
+    # canonicalize_name (the matching key) normalises Unicode punctuation;
+    # safe_display_name intentionally does not.
+    curly_input = "Goldman Sachs Int\u2019l"
+    assert canonicalize_name(curly_input) == "Goldman Sachs Int'l"
+    assert safe_display_name(curly_input) == curly_input  # unchanged
+
+    en_dash_input = "Korea Exchange\u2013Seoul"
+    assert canonicalize_name(en_dash_input) == "Korea Exchange-Seoul"
+    assert safe_display_name(en_dash_input) == en_dash_input  # unchanged
+
+
+def test_safe_display_name_empty_string() -> None:
+    assert safe_display_name("") == ""
+
+
+def test_safe_display_name_only_whitespace() -> None:
+    assert safe_display_name("   ") == ""
