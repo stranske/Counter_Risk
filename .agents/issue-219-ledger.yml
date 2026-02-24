@@ -1,0 +1,1195 @@
+version: 1
+issue: 219
+base: main
+branch: codex/issue-219
+tasks:
+  - id: task-01
+    title: Implement a PPTX relationship scrubber that opens the generated distribution
+      `.pptx` via `zipfile`, scans `ppt/_rels/presentation.xml.rels`, `ppt/slides/_rels/slide*.xml.rels`
+      (and optionally all `ppt/**/_rels/*.rels`), parses with `xml.etree.ElementTree`,
+      deletes any `<Relationship>` with `TargetMode="External"` (including external
+      hyperlink and OLE relationship Types), and writes a new scrubbed `.pptx` (likely
+      in `src/**/pptx_postprocess*.py` and wired via `src/**/distribution*.py`).
+    status: done
+    started_at: '2026-02-23T05:24:01Z'
+    finished_at: '2026-02-23T05:24:11Z'
+    commit: 932a2b5a3c02d35919513f9ad97a2ebce7fd92d9
+    notes: []
+  - id: task-02
+    title: 'Define scope for: Create a new module for PPTX relationship scrubbing
+      with a function that accepts a PPTX file path (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement focused slice for: Create a new module for PPTX relationship
+      scrubbing with a function that accepts a PPTX file path (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Validate focused slice for: Create a new module for PPTX relationship
+      scrubbing with a function that accepts a PPTX file path (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define scope for: Create a new module for PPTX relationship scrubbing
+      with returns a scrubbed version (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement focused slice for: Create a new module for PPTX relationship
+      scrubbing with returns a scrubbed version (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Validate focused slice for: Create a new module for PPTX relationship
+      scrubbing with returns a scrubbed version (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Define scope for: Implement zipfile-based reading of PPTX packages to
+      extract all relationship files from ppt/_rels (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Implement focused slice for: Implement zipfile-based reading of PPTX packages
+      to extract all relationship files from ppt/_rels (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Validate focused slice for: Implement zipfile-based reading of PPTX packages
+      to extract all relationship files from ppt/_rels (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'ppt/slides/_rels directories (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Define scope for: Implement XML parsing logic using xml.etree.ElementTree
+      with proper namespace handling for Office Open XML relationship files (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Implement focused slice for: Implement XML parsing logic using xml.etree.ElementTree
+      with proper namespace handling for Office Open XML relationship files (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Validate focused slice for: Implement XML parsing logic using xml.etree.ElementTree
+      with proper namespace handling for Office Open XML relationship files (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Define scope for: Implement the deletion logic to remove all Relationship
+      elements with TargetMode equals External from parsed XML trees (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Implement focused slice for: Implement the deletion logic to remove all
+      Relationship elements with TargetMode equals External from parsed XML trees
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Validate focused slice for: Implement the deletion logic to remove all
+      Relationship elements with TargetMode equals External from parsed XML trees
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Define scope for: Implement zipfile-based writing to create a new PPTX
+      package with modified relationship files while preserving all other content
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Implement focused slice for: Implement zipfile-based writing to create
+      a new PPTX package with modified relationship files while preserving all other
+      content (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Validate focused slice for: Implement zipfile-based writing to create
+      a new PPTX package with modified relationship files while preserving all other
+      content (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Define scope for: Wire the relationship scrubber into the distribution
+      workflow in src/**/distribution*.py to run after PPTX generation (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Implement focused slice for: Wire the relationship scrubber into the distribution
+      workflow in src/**/distribution*.py to run after PPTX generation (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Validate focused slice for: Wire the relationship scrubber into the distribution
+      workflow in src/**/distribution*.py to run after PPTX generation (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Add a COM-free test `tests/test_pptx_relationships.py` that generates a
+      distribution PPTX fixture, reads the output as a zip, parses all `.rels` files,
+      and asserts zero `<Relationship>` entries with `TargetMode="External"` and none
+      of the known external/OLE Types remain external.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Update the static distribution generation path in `src/**/distribution*.py`
+      to call `_rebuild_pptx_from_slide_images` (from `src/**/pptx_static.py`) when
+      `distribution_static` is enabled, ensuring slide count is preserved.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Fix chart/object replacement logic in `src/**/chart_replace*.py` to reduce
+      reliance on `(slide index, shape name)` by adding a confidence check and implementing
+      a deterministic fallback that replaces the entire slide with a slide image (or
+      triggers full-deck rebuild when static mode is enabled) instead of leaving the
+      live object in place.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Define scope for: Implement a confidence scoring function in chart_replace*.py
+      that evaluates shape matching quality based on name uniqueness (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Implement focused slice for: Implement a confidence scoring function in
+      chart_replace*.py that evaluates shape matching quality based on name uniqueness
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Validate focused slice for: Implement a confidence scoring function in
+      chart_replace*.py that evaluates shape matching quality based on name uniqueness
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'position (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Define scope for: Add a confidence threshold check that determines when
+      per-shape replacement should be attempted versus falling back to alternatives
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Implement focused slice for: Add a confidence threshold check that determines
+      when per-shape replacement should be attempted versus falling back to alternatives
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Validate focused slice for: Add a confidence threshold check that determines
+      when per-shape replacement should be attempted versus falling back to alternatives
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Define scope for: Implement slide-level image replacement fallback that
+      replaces an entire slide with its rendered image when shape matching confidence
+      is low (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Implement focused slice for: Implement slide-level image replacement fallback
+      that replaces an entire slide with its rendered image when shape matching confidence
+      is low (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Validate focused slice for: Implement slide-level image replacement fallback
+      that replaces an entire slide with its rendered image when shape matching confidence
+      is low (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Define scope for: Implement logic to trigger full-deck rebuild via _rebuild_pptx_from_slide_images
+      when static mode is enabled (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Implement focused slice for: Implement logic to trigger full-deck rebuild
+      via _rebuild_pptx_from_slide_images when static mode is enabled (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Validate focused slice for: Implement logic to trigger full-deck rebuild
+      via _rebuild_pptx_from_slide_images when static mode is enabled (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'confidence checks fail (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Update the replacement workflow to use the confidence check (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'fallback chain instead of always attempting per-shape replacement (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: Add an `export_pdf` boolean configuration option in `src/**/config.py`
+      and `src/**/cli.py`, and update the distribution workflow in `src/**/distribution*.py`
+      to honor it independently of `distribution_static`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: Update PDF export handling in `src/**/pdf_export*.py` / `src/**/distribution*.py`
+      to log `PDF export failed` and re-raise exceptions when `export_pdf=true`, and
+      write `tests/test_pdf_export.py` to simulate an export failure and assert the
+      error is raised and logged.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Define scope for: Update PDF export error handling in src/**/pdf_export*.py
+      to catch exceptions (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Implement focused slice for: Update PDF export error handling in src/**/pdf_export*.py
+      to catch exceptions (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Validate focused slice for: Update PDF export error handling in src/**/pdf_export*.py
+      to catch exceptions (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'log messages containing the phrase PDF export failed with exception details
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: 'Define scope for: Update PDF export error handling to re-raise caught
+      exceptions when the export_pdf configuration option is set to true (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: 'Implement focused slice for: Update PDF export error handling to re-raise
+      caught exceptions when the export_pdf configuration option is set to true (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: 'Validate focused slice for: Update PDF export error handling to re-raise
+      caught exceptions when the export_pdf configuration option is set to true (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: 'Define scope for: Update distribution workflow in src/**/distribution*.py
+      to propagate PDF export exceptions when export_pdf is enabled (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: 'Implement focused slice for: Update distribution workflow in src/**/distribution*.py
+      to propagate PDF export exceptions when export_pdf is enabled (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: 'Validate focused slice for: Update distribution workflow in src/**/distribution*.py
+      to propagate PDF export exceptions when export_pdf is enabled (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: 'Define scope for: Create tests/test_pdf_export.py with a test that mocks
+      PDF export to raise an exception (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: 'Implement focused slice for: Create tests/test_pdf_export.py with a test
+      that mocks PDF export to raise an exception (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: 'Validate focused slice for: Create tests/test_pdf_export.py with a test
+      that mocks PDF export to raise an exception (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: 'Create tests/test_pdf_export.py with verifies the exception is propagated
+      (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: 'Define scope for: Add a test case that verifies the logged error message
+      contains both PDF export failed (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: 'Implement focused slice for: Add a test case that verifies the logged
+      error message contains both PDF export failed (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: 'Validate focused slice for: Add a test case that verifies the logged error
+      message contains both PDF export failed (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: 'the underlying exception message (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: 'Remove blanket exception suppression (e.g., `contextlib.suppress(Exception)`
+      / `except: pass`) in COM cleanup code in `src/**/com_automation*.py`, replace
+      with targeted exception handling that logs unexpected cleanup failures (and
+      optionally re-raises in debug/test mode), and add `tests/test_com_cleanup.py`
+      to verify cleanup exceptions are not silently swallowed.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: 'Identify (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: 'remove all instances of contextlib.suppress(Exception) (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: 'bare except clauses from COM cleanup code in src/**/com_automation*.py
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-67
+    title: 'Define scope for: Replace removed exception suppression with targeted
+      exception handling that catches specific expected exception types during COM
+      cleanup (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-68
+    title: 'Implement focused slice for: Replace removed exception suppression with
+      targeted exception handling that catches specific expected exception types during
+      COM cleanup (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-69
+    title: 'Validate focused slice for: Replace removed exception suppression with
+      targeted exception handling that catches specific expected exception types during
+      COM cleanup (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-70
+    title: 'Define scope for: Add logging statements at error level for all caught
+      exceptions during COM cleanup that include the exception type (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-71
+    title: 'Implement focused slice for: Add logging statements at error level for
+      all caught exceptions during COM cleanup that include the exception type (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-72
+    title: 'Validate focused slice for: Add logging statements at error level for
+      all caught exceptions during COM cleanup that include the exception type (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-73
+    title: 'message (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-74
+    title: 'Define scope for: Implement optional re-raising of cleanup exceptions
+      when running in debug or test mode based on configuration or environment variables
+      (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-75
+    title: 'Implement focused slice for: Implement optional re-raising of cleanup
+      exceptions when running in debug or test mode based on configuration or environment
+      variables (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-76
+    title: 'Validate focused slice for: Implement optional re-raising of cleanup exceptions
+      when running in debug or test mode based on configuration or environment variables
+      (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-77
+    title: 'Define scope for: Create tests/test_com_cleanup.py with test cases that
+      simulate COM cleanup failures (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-78
+    title: 'Implement focused slice for: Create tests/test_com_cleanup.py with test
+      cases that simulate COM cleanup failures (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-79
+    title: 'Validate focused slice for: Create tests/test_com_cleanup.py with test
+      cases that simulate COM cleanup failures (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-80
+    title: Create tests/test_com_cleanup.py with verify exceptions are logged
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-81
+    title: 'Create tests/test_com_cleanup.py with not silently suppressed (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-82
+    title: Implement PNG integrity validation (existence, size > 0, and Pillow `Image.open(...).verify()`)
+      for slide image inputs before insertion in `src/**/pptx_static.py` (or a helper
+      like `src/**/image_validate*.py`), and add `tests/test_png_validation.py` that
+      passes a corrupted/empty PNG and asserts a clear error referencing the file
+      path is raised before writing the final distribution PPTX.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-83
+    title: 'Create a PNG validation helper function that checks file existence (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-84
+    title: 'Define scope for: raises an exception with the file path if the file is
+      not found (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-85
+    title: 'Implement focused slice for: raises an exception with the file path if
+      the file is not found (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-86
+    title: 'Validate focused slice for: raises an exception with the file path if
+      the file is not found (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-87
+    title: 'Define scope for: Add file size validation to check that PNG files are
+      greater than zero bytes (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-88
+    title: 'Implement focused slice for: Add file size validation to check that PNG
+      files are greater than zero bytes (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-89
+    title: 'Validate focused slice for: Add file size validation to check that PNG
+      files are greater than zero bytes (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-90
+    title: 'raise an exception with the file path if empty (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-91
+    title: 'Add Pillow-based validation using Image.open (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-92
+    title: verify method to detect corrupted PNG files
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-93
+    title: 'raise exceptions with file paths (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-94
+    title: 'Define scope for: Integrate the PNG validation helper into src/**/pptx_static.py
+      to validate all slide images before insertion into the PPTX package (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-95
+    title: 'Implement focused slice for: Integrate the PNG validation helper into
+      src/**/pptx_static.py to validate all slide images before insertion into the
+      PPTX package (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-96
+    title: 'Validate focused slice for: Integrate the PNG validation helper into src/**/pptx_static.py
+      to validate all slide images before insertion into the PPTX package (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-97
+    title: 'Create tests/test_png_validation.py with test cases using corrupted (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-98
+    title: 'Define scope for: Create tests/test_png_validation.py with empty PNG fixtures
+      that verify appropriate exceptions are raised'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-99
+    title: 'Implement focused slice for: Create tests/test_png_validation.py with
+      empty PNG fixtures that verify appropriate exceptions are raised'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-100
+    title: 'Validate focused slice for: Create tests/test_png_validation.py with empty
+      PNG fixtures that verify appropriate exceptions are raised'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-101
+    title: 'Define scope for: Add a test case that verifies PNG validation errors
+      abort PPTX generation before the final distribution file is written to disk
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-102
+    title: 'Implement focused slice for: Add a test case that verifies PNG validation
+      errors abort PPTX generation before the final distribution file is written to
+      disk (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-103
+    title: 'Validate focused slice for: Add a test case that verifies PNG validation
+      errors abort PPTX generation before the final distribution file is written to
+      disk (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-104
+    title: After generating a distribution PPTX, every relationships part in the final
+      `.pptx` zip package under `ppt/_rels/*.rels` and `ppt/slides/_rels/slide*.xml.rels`
+      contains zero `<Relationship>` entries with `TargetMode="External"`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-105
+    title: No `.rels` file in the final `.pptx` contains a `<Relationship>` with `TargetMode="External"`
+      whose `Type` equals `http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink`
+      or `http://schemas.microsoft.com/office/2006/relationships/oleObject`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-106
+    title: '`tests/test_pptx_relationships.py` exists and fails if any `.rels` file
+      in the generated output deck contains forbidden external relationships, without
+      using COM automation.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-107
+    title: When `distribution_static` is enabled, the static distribution generation
+      path calls `_rebuild_pptx_from_slide_images` and produces an output PPTX with
+      the same slide count as the source deck.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-108
+    title: When static mode is enabled, inspecting the rebuilt PPTX with `python-pptx`
+      shows each slide contains exactly one picture shape and contains zero chart
+      shapes (`MSO_SHAPE_TYPE.CHART`).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-109
+    title: If per-shape replacement cannot confidently match a target (e.g., duplicate/missing
+      shape name for a slide), the run replaces that entire slide with a slide image
+      (or triggers full-deck rebuild when static mode is enabled) and does not leave
+      the original live object in place.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-110
+    title: A new boolean configuration option `export_pdf` exists, is parsed from
+      the configured source (e.g., CLI/env/config file), and determines whether PDF
+      export is attempted; PDF export is not implicitly enabled/disabled by `distribution_static`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-111
+    title: When `export_pdf=true` and PDF export fails, the distribution run raises
+      an exception (non-zero exit in CLI usage) and logs an error message that includes
+      `PDF export failed` and the underlying exception message.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-112
+    title: When `export_pdf=false`, the code either does not call the exporter or,
+      if invoked, logs a warning/error stating export is disabled or skipped (no silent
+      swallowing).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-113
+    title: 'No blanket exception suppression remains around COM cleanup: `contextlib.suppress(Exception)`
+      (or equivalent broad suppression) is not used in COM cleanup paths, and unexpected
+      cleanup exceptions are logged with the exception type.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-114
+    title: 'PNG integrity validation is performed before inserting slide images: for
+      each PNG path, the code checks (1) file exists, (2) file size > 0, and (3) Pillow
+      can open and `verify()` the image; any failure raises a specific exception whose
+      message contains the failing file path.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-115
+    title: When a corrupted/empty PNG is provided to the static rebuild path, PPTX
+      generation aborts before writing the final distribution PPTX, and the raised
+      error references PNG validation (e.g., contains `invalid PNG` or `PNG validation
+      failed`).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-116
+    title: 'Implement PPTX relationship scrubber: after generating the distribution
+      PPTX, open it as a zip package and remove/neutralize any external relationships
+      (e.g., external hyperlinks, OLE/external data links) from relevant *.rels parts
+      (presentation.xml.rels and slide*.xml.rels). Re-zip to produce the final distribution
+      PPTX.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-117
+    title: Add automated test that builds a distribution PPTX, inspects it as a zip,
+      parses all *.rels files, and asserts there are no Relationship elements with
+      TargetMode="External" (and no known external/OLE relationship types).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-118
+    title: Wire the existing `_rebuild_pptx_from_slide_images` into the "static distribution"
+      generation path so that, when enabled, the output deck is rebuilt entirely from
+      slide images (one image per slide) with matching slide count.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-119
+    title: 'Refactor chart/object replacement logic to eliminate sole reliance on
+      (slide index, shape name). Add a robust fallback: if per-shape replacement cannot
+      confidently match, default to full-slide image replacement for that slide (or
+      full-deck rebuild when static mode is enabled).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-120
+    title: Introduce a dedicated configuration toggle for PDF export (e.g., `export_pdf=true/false`)
+      independent of `distribution_static`, and update the workflow to honor it.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-121
+    title: 'Change PDF export error handling: replace warning-only/suppressed exceptions
+      with explicit error logging and propagate exceptions when `export_pdf=true`
+      (so CI can fail). Add a unit test that simulates an export failure and asserts
+      the error is raised/logged.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-122
+    title: Remove `contextlib.suppress` (or equivalent blanket suppression) around
+      COM automation cleanup; replace with targeted exception handling that logs unexpected
+      COM cleanup failures (and optionally re-raises in debug/test mode). Add a unit
+      test that verifies cleanup exceptions are not silently swallowed.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-123
+    title: Add PNG integrity validation before inserting slide images into the rebuilt/static
+      PPTX (e.g., verify file exists, non-zero size, and can be opened/verified via
+      Pillow). Add a test that feeds a corrupted/empty PNG and asserts a clear error
+      is raised.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-124
+    title: After generating a distribution PPTX, every relationships part in the final
+      .pptx zip package under `ppt/_rels/*.rels` and `ppt/slides/_rels/slide*.xml.rels`
+      contains zero `<Relationship>` entries with `TargetMode="External"`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-125
+    title: The relationship scrubber removes or neutralizes any external hyperlink
+      relationships such that no `.rels` file contains a `<Relationship>` whose `Type`
+      equals either `http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink`
+      or `http://schemas.microsoft.com/office/2006/relationships/oleObject` while
+      also having `TargetMode="External"`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-126
+    title: An automated test exists that builds a distribution PPTX fixture and fails
+      if any `.rels` file in the output deck contains external relationships (per
+      the rules in the test), without using COM automation.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-127
+    title: When `distribution_static` (or equivalent static-mode flag) is enabled,
+      the static distribution generation path calls `_rebuild_pptx_from_slide_images`
+      and produces an output PPTX with the same slide count as the source deck used
+      to generate it.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-128
+    title: When static mode is enabled, each slide in the rebuilt PPTX contains exactly
+      one inserted slide image (one per slide) and contains zero chart shapes (`MSO_SHAPE_TYPE.CHART`)
+      in the rebuilt output.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-129
+    title: If per-shape replacement cannot confidently match a target (e.g., duplicate/missing
+      shape name for a given slide), the implementation replaces that entire slide
+      with a slide image (or triggers full-deck rebuild when static mode is enabled)
+      rather than leaving the original live object in place.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-130
+    title: A new configuration option `export_pdf` (boolean) exists, is parsed from
+      the configured source (e.g., CLI/env/config file), and is used to decide whether
+      PDF export is attempted; PDF export is not implicitly enabled/disabled by `distribution_static`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-131
+    title: When `export_pdf=true` and PDF export fails (exception thrown by the export
+      implementation), the distribution run raises an exception (non-zero exit in
+      CLI usage) and logs an error message that includes the phrase `PDF export failed`
+      and the underlying exception message.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-132
+    title: 'When `export_pdf=false`, PDF export failures (even if the exporter is
+      accidentally invoked) must not be silently swallowed without a log entry: the
+      code must either not call the exporter or, if called, must log a clear warning/error
+      stating export is disabled or skipped.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-133
+    title: 'No blanket exception suppression remains around COM cleanup: `contextlib.suppress(Exception)`
+      (or equivalent that suppresses broad exceptions) is not used in COM cleanup
+      paths; unexpected cleanup exceptions are logged (at error or warning level)
+      with the exception type.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-134
+    title: 'PNG integrity validation is performed before inserting slide images: for
+      each PNG path, the code checks (1) file exists, (2) file size > 0, and (3) Pillow
+      can open and `verify()` the image; any failure raises a specific exception (e.g.,
+      `ValueError` or custom) whose message contains the failing file path.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-135
+    title: When a corrupted/empty PNG is provided to the static rebuild path, PPTX
+      generation aborts before writing the final distribution PPTX, and the raised
+      error references PNG validation (e.g., contains `invalid PNG` or `PNG validation
+      failed`).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

@@ -35,6 +35,20 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Output directory override for --fixture-replay mode.",
     )
+    run_parser.add_argument(
+        "--export-pdf",
+        dest="export_pdf",
+        action="store_true",
+        default=None,
+        help="Enable PDF export in workflow-mode runs.",
+    )
+    run_parser.add_argument(
+        "--no-export-pdf",
+        dest="export_pdf",
+        action="store_false",
+        default=None,
+        help="Disable PDF export in workflow-mode runs.",
+    )
     run_parser.set_defaults(handler=_run_command)
     return parser
 
