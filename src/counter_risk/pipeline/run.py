@@ -872,7 +872,7 @@ def _write_outputs(
 
     if refresh_result.status == PptProcessingStatus.SKIPPED:
         warnings.append("PPT links not refreshed; COM refresh skipped")
-    elif refresh_result.status == PptProcessingStatus.FAILED:
+    if refresh_result.status == PptProcessingStatus.FAILED:
         warnings.append(
             "PPT links refresh failed; COM refresh encountered an error"
             if not refresh_result.error_detail
