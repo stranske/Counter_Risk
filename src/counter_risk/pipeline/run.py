@@ -266,8 +266,8 @@ def reconcile_series_coverage(
             )
 
         canonical_key_by_series: dict[str, str] = {}
-        for canonical_name, raw_names in normalized_counterparties_in_data.items():
-            for raw in raw_names:
+        for canonical_name, raw_name_set in normalized_counterparties_in_data.items():
+            for raw in raw_name_set:
                 canonical_key_by_series[raw] = canonical_name
         for ch in clearing_houses_in_data:
             canonical_key_by_series[ch] = normalize_counterparty(ch)
