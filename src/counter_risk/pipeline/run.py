@@ -886,6 +886,13 @@ def _write_outputs(
         distribution_pptx_path=target_distribution_ppt,
     )
     output_paths.append(target_distribution_ppt)
+    distribution_pdf_path = _export_distribution_pdf(
+        source_pptx=target_distribution_ppt,
+        run_dir=run_dir,
+        config=config,
+    )
+    if distribution_pdf_path is not None:
+        output_paths.append(distribution_pdf_path)
     static_output_paths = _create_static_distribution(
         source_pptx=target_master_ppt,
         run_dir=run_dir,
@@ -1084,8 +1091,7 @@ def _create_static_distribution(
     """Produce a static distribution copy of the presentation.
 
     On Windows with COM available: exports each slide as a PNG image and rebuilds
-    the deck as a flat image-only PPTX (no live Excel links).  When that succeeds,
-    also attempts a PDF export.
+    the deck as a flat image-only PPTX (no live Excel links).
 
     When COM is unavailable (non-Windows or missing pywin32): appends a human-readable
     warning to *warnings* and returns an empty list so the caller's regular
@@ -1116,23 +1122,12 @@ def _create_static_distribution(
     output_paths: list[Path] = []
     slide_images_dir = run_dir / "_distribution_slides"
     static_pptx_path = run_dir / f"{source_pptx.stem}_distribution_static.pptx"
-    pdf_path = run_dir / f"{source_pptx.stem}_distribution.pdf"
-
     app = None
     presentation = None
     try:
         app = win32com.client.DispatchEx("PowerPoint.Application")
         app.Visible = False
         presentation = app.Presentations.Open(str(source_pptx), WithWindow=False)
-
-        # Attempt PDF export (simpler fallback deliverable).
-        try:
-            presentation.ExportAsFixedFormat(str(pdf_path), 2)  # 2 = ppFixedFormatTypePDF
-            output_paths.append(pdf_path)
-            LOGGER.info("distribution_static_pdf_complete path=%s", pdf_path)
-        except Exception as pdf_exc:
-            warnings.append(f"distribution_static PDF export failed: {pdf_exc}")
-            LOGGER.warning("distribution_static_pdf_failed exc=%s", pdf_exc)
 
         # Preferred: export each slide as a PNG and rebuild the entire deck as
         # one picture per slide, removing all live chart/OLE objects.
@@ -1162,6 +1157,58 @@ def _create_static_distribution(
                 app.Quit()
 
     return output_paths
+
+
+def _export_distribution_pdf(
+    *,
+    source_pptx: Path,
+    run_dir: Path,
+    config: WorkflowConfig,
+) -> Path | None:
+    if not config.export_pdf:
+        LOGGER.warning("distribution_pdf_skipped reason=export_pdf_disabled")
+        return None
+
+    pdf_path = run_dir / f"{source_pptx.stem}.pdf"
+    _export_pptx_to_pdf(source_pptx=source_pptx, pdf_path=pdf_path)
+    return pdf_path
+
+
+def _export_pptx_to_pdf(*, source_pptx: Path, pdf_path: Path) -> None:
+    if platform.system().lower() != "windows":
+        error = RuntimeError("unsupported platform for COM PDF export")
+        LOGGER.error("PDF export failed: %s", error)
+        raise error
+
+    try:
+        import win32com.client  # type: ignore[import-untyped]
+    except ImportError as exc:
+        error = RuntimeError("win32com is not installed")
+        LOGGER.error("PDF export failed: %s", error)
+        raise error from exc
+
+    app = None
+    presentation = None
+    try:
+        app = win32com.client.DispatchEx("PowerPoint.Application")
+        app.Visible = False
+        presentation = app.Presentations.Open(str(source_pptx), WithWindow=False)
+        presentation.ExportAsFixedFormat(str(pdf_path), 2)  # 2 = ppFixedFormatTypePDF
+        LOGGER.info("distribution_pdf_complete path=%s", pdf_path)
+    except Exception as exc:
+        LOGGER.error("PDF export failed: %s", exc)
+        raise RuntimeError(f"PDF export failed: {exc}") from exc
+    finally:
+        if presentation is not None:
+            try:
+                presentation.Close()
+            except Exception as exc:
+                LOGGER.warning("distribution_pdf_cleanup_failed action=close exc=%s", exc)
+        if app is not None:
+            try:
+                app.Quit()
+            except Exception as exc:
+                LOGGER.warning("distribution_pdf_cleanup_failed action=quit exc=%s", exc)
 
 
 def _export_slides_as_images(
