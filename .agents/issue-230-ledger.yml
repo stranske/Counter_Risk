@@ -1,0 +1,246 @@
+version: 1
+issue: 230
+base: main
+branch: codex/issue-230
+tasks:
+  - id: task-01
+    title: Update `_build_parsed_data_by_sheet` to iterate over `workbook.sheet_names`
+      instead of `parsed_rows_by_sheet` keys when building the result dictionary
+    status: done
+    started_at: '2026-02-24T15:08:05Z'
+    finished_at: '2026-02-24T15:08:18Z'
+    commit: 90b856d2bc64ffe0b3ebc8ad6bba78bef898b3ad
+    notes: []
+  - id: task-02
+    title: Modify `_build_parsed_data_by_sheet` to initialize the result dictionary
+      with all sheet names from workbook metadata before populating with parsed rows
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Add logic to return an empty list for sheets that exist in workbook metadata
+      but have no corresponding parsed rows
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Write unit test `test_build_parsed_data_by_sheet_keys_exact_sheet_names`
+      asserting `set(result.keys()) == set(workbook.sheet_names)` for a constructed
+      workbook with known sheet names
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Write unit test `test_build_parsed_data_by_sheet_multi_sheet_row_partition`
+      asserting multi-sheet parsed rows are partitioned 1:1 under correct sheet-name
+      keys
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Change the exception raised in strict mode from `ValueError` to `UnmappedCounterpartyError`
+      when an unmapped counterparty is encountered
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Capture and preserve the original unnormalized counterparty string from
+      parsed input before any normalization occurs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Pass the raw counterparty value to the `raw_counterparty` field and the
+      normalized value to the normalized field when constructing `UnmappedCounterpartyError`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Write unit test `test_strict_unmapped_counterparty_raises_with_raw_value`
+      triggering strict-mode unmapped counterparty and asserting `isinstance(exc,
+      UnmappedCounterpartyError)` and `exc.raw_counterparty` equals the original raw
+      string (e.g., `' ACME  LTD '`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Write unit test `test_strict_unmapped_counterparty_exception_contains_normalized_value`
+      asserting the exception's normalized field equals the expected normalized value
+      and differs from `raw_counterparty` when normalization changes it
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Add assertion in `test_strict_unmapped_counterparty_exception_contains_normalized_value`
+      to verify normalized field absence if `UnmappedCounterpartyError` does not expose
+      such a field
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Define the metadata schema for unmapped counterparty entries with fields:
+      `"error_type": "unmapped_counterparty"` and `"raw_counterparties": [list]`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Implement logic to detect unmapped counterparties in non-strict mode and
+      collect them without raising exceptions
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Populate or extend `result['missing_series']` list with unmapped counterparty
+      metadata entries using the defined schema
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Verify that the new metadata structure does not break existing consumers
+      of the `missing_series` field by checking existing test compatibility
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Write unit test `test_non_strict_unmapped_counterparty_sets_missing_series`
+      asserting non-strict mode with an unmapped counterparty yields `'missing_series'
+      in result` and `len(result['missing_series']) >= 1`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Write unit test `test_non_strict_missing_series_contains_mapping_metadata`
+      asserting at least one `missing_series` entry includes `error_type == 'unmapped_counterparty'`
+      and a `raw_counterparties` list containing the original raw string
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Implement filtering logic to select only parsed rows whose `normalized_label`
+      matches the target missing or unmapped series label
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Update the `impacted_rows` calculation to count only the filtered rows
+      for each sheet and series combination
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Add validation to ensure rows from other series on the same sheet are excluded
+      from the count
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Write unit test `test_manifest_impacted_rows_counts_only_matching_normalized_label`
+      using a single sheet with >=3 parsed rows across >=2 `normalized_label` values
+      to assert `impacted_rows` counts only the targeted missing/unmapped series rows
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: '`src/**/pipeline.py::_build_parsed_data_by_sheet(workbook, parsed_rows_by_sheet)`
+      returns a `dict` whose keys are exactly the set of sheet names present in the
+      input workbook metadata (no extra keys, no missing keys)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: For a workbook with multiple sheets (>=2), `_build_parsed_data_by_sheet`
+      preserves the 1:1 mapping between each workbook sheet name and that sheet's
+      parsed rows
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: In strict mode, when an unmapped counterparty is encountered, the pipeline
+      raises `UnmappedCounterpartyError` (not `ValueError`), and `exc.raw_counterparty`
+      equals the original unnormalized counterparty string from parsed input
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: If `UnmappedCounterpartyError` exposes a normalized field (e.g., `exc.normalized_counterparty`
+      or `exc.normalized_value`), that field equals the normalized form of the raw
+      input and differs from `raw_counterparty` when normalization changes the value
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: In non-strict mode, when at least one unmapped counterparty is detected,
+      the pipeline result includes `result['missing_series']` and it is non-empty
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Each non-strict unmapped-counterparty entry in `result['missing_series']`
+      contains an `"error_type"` field with value `"unmapped_counterparty"` and a
+      `"raw_counterparties"` field containing a list of the original unnormalized
+      counterparty strings
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: When a series is directly missing/unmapped for a given sheet, the manifest's
+      `impacted_rows` for that sheet and series equals the number of parsed rows on
+      that sheet whose `normalized_label` exactly matches the missing/unmapped series
+      label
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
