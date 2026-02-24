@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Update `_build_parsed_data_by_sheet` to iterate over `workbook.sheet_names`
       instead of `parsed_rows_by_sheet` keys when building the result dictionary
-    status: doing
+    status: done
     started_at: '2026-02-24T15:08:05Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-24T15:08:18Z'
+    commit: 90b856d2bc64ffe0b3ebc8ad6bba78bef898b3ad
     notes: []
   - id: task-02
     title: Modify `_build_parsed_data_by_sheet` to initialize the result dictionary
