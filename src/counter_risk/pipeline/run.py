@@ -17,12 +17,13 @@ from zipfile import BadZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
-from counter_risk.normalize import normalize_counterparty
+from counter_risk.normalize import canonicalize_name, normalize_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
     ParsedDataMissingKeyError,
+    UnmappedCounterpartyError,
 )
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.time_utils import utc_now_isoformat
@@ -110,6 +111,7 @@ def reconcile_series_coverage(
     by_sheet: dict[str, dict[str, Any]] = {}
     missing_series: list[dict[str, Any]] = []
     missing_segments: list[dict[str, Any]] = []
+    exceptions: list[UnmappedCounterpartyError] = []
     warnings: list[str] = []
     gap_count = 0
 
@@ -128,7 +130,7 @@ def reconcile_series_coverage(
             {
                 value
                 for value in (
-                    str(header).strip()
+                    canonicalize_name(str(header))
                     for header in historical_series_headers_by_sheet.get(sheet_name, ())
                 )
                 if value
@@ -151,7 +153,8 @@ def reconcile_series_coverage(
             {
                 value
                 for value in (
-                    str(record.get("clearing_house", "")).strip() for record in futures_records
+                    canonicalize_name(str(record.get("clearing_house", "")))
+                    for record in futures_records
                 )
                 if value
             }
@@ -220,7 +223,7 @@ def reconcile_series_coverage(
             )
 
         if missing_normalized_counterparties:
-            unmapped_counterparties: list[dict[str, Any]] = []
+            sheet_exceptions: list[UnmappedCounterpartyError] = []
             for normalized_name in missing_normalized_counterparties:
                 raw_names = sorted(
                     set(normalized_counterparties_in_data.get(normalized_name, ())),
@@ -231,25 +234,22 @@ def reconcile_series_coverage(
                     "Reconciliation unmapped counterparty in sheet "
                     f"{sheet_name!r}: raw={raw_display!r}, normalized={normalized_name!r}"
                 )
-                unmapped_counterparties.append(
-                    {
-                        "sheet": sheet_name,
-                        "raw_counterparty_labels": raw_names,
-                        "normalized_counterparty": normalized_name,
-                    }
-                )
+                for raw_name in raw_names:
+                    error = UnmappedCounterpartyError(
+                        normalized_counterparty=normalized_name,
+                        raw_counterparty=raw_name,
+                        sheet=sheet_name,
+                    )
+                    sheet_exceptions.append(error)
+                    exceptions.append(error)
 
             if fail_policy == "strict":
-                raise ValueError(
-                    "Reconciliation strict mode failed due to unmapped normalized counterparties "
-                    f"in sheet {sheet_name!r}: "
-                    + ", ".join(
-                        (
-                            f"raw={item['raw_counterparty_labels']!r} "
-                            f"normalized={item['normalized_counterparty']!r}"
-                        )
-                        for item in unmapped_counterparties
-                    )
+                if sheet_exceptions:
+                    raise sheet_exceptions[0]
+                raise UnmappedCounterpartyError(
+                    normalized_counterparty=missing_normalized_counterparties[0],
+                    raw_counterparty=missing_normalized_counterparties[0],
+                    sheet=sheet_name,
                 )
 
         if missing_expected_segments:
@@ -267,6 +267,13 @@ def reconcile_series_coverage(
                 f"results ({', '.join(missing_expected_segments)})"
             )
 
+        canonical_key_by_series: dict[str, str] = {}
+        for canonical_name, raw_name_set in normalized_counterparties_in_data.items():
+            for raw in raw_name_set:
+                canonical_key_by_series[raw] = canonical_name
+        for ch in clearing_houses_in_data:
+            canonical_key_by_series[ch] = normalize_counterparty(ch)
+
         by_sheet[sheet_name] = {
             "counterparties_in_data": counterparties_in_data,
             "normalized_counterparties_in_data": sorted(
@@ -283,15 +290,18 @@ def reconcile_series_coverage(
             "missing_from_data": missing_from_data,
             "segments_in_data": sorted(parsed_segments, key=str.casefold),
             "missing_expected_segments": missing_expected_segments,
+            "canonical_key_by_series": canonical_key_by_series,
         }
-
-    return {
+    result = {
         "by_sheet": by_sheet,
         "gap_count": gap_count,
         "warnings": warnings,
         "missing_series": missing_series,
         "missing_segments": missing_segments,
     }
+    if exceptions:
+        result["exceptions"] = list(exceptions)
+    return result
 
 
 def _validate_reconciliation_parsed_data_by_sheet(
@@ -1738,22 +1748,21 @@ def _calculate_impacted_scope_for_sheet(
     parsed_sections: Mapping[str, Any],
     reconciliation_sheet_result: Mapping[str, Any],
 ) -> tuple[int, int]:
-    normalized_impacted_series, missing_segments = _identify_impacted_entities_for_sheet(
+    normalized_impacted_series = _identify_impacted_entities_for_sheet(
         reconciliation_sheet_result=reconciliation_sheet_result
     )
     impacted_rows = _count_rows_for_impacted_entities(
         parsed_sections=parsed_sections,
         normalized_impacted_series=normalized_impacted_series,
-        missing_segments=missing_segments,
     )
-    impacted_series = len(normalized_impacted_series) + len(missing_segments)
+    impacted_series = len(normalized_impacted_series)
     return impacted_series, impacted_rows
 
 
 def _identify_impacted_entities_for_sheet(
     *,
     reconciliation_sheet_result: Mapping[str, Any],
-) -> tuple[set[str], set[str]]:
+) -> set[str]:
     missing_series_labels = {
         str(label).strip()
         for key in (
@@ -1767,33 +1776,25 @@ def _identify_impacted_entities_for_sheet(
     normalized_impacted_series = {
         normalize_counterparty(label) for label in missing_series_labels if label
     }
-    missing_segments = {
-        str(segment).strip()
-        for segment in reconciliation_sheet_result.get("missing_expected_segments", [])
-        if str(segment).strip()
-    }
-    return normalized_impacted_series, missing_segments
+    return normalized_impacted_series
 
 
 def _count_rows_for_impacted_entities(
     *,
     parsed_sections: Mapping[str, Any],
     normalized_impacted_series: set[str],
-    missing_segments: set[str],
 ) -> int:
     impacted_rows = 0
     for record in _records(parsed_sections.get("totals", [])):
         raw_label = str(record.get("counterparty", "")).strip()
         normalized_label = normalize_counterparty(raw_label) if raw_label else ""
-        raw_segment = str(record.get("segment", record.get("Segment", ""))).strip()
-        if normalized_label in normalized_impacted_series or raw_segment in missing_segments:
+        if normalized_label in normalized_impacted_series:
             impacted_rows += 1
 
     for record in _records(parsed_sections.get("futures", [])):
         raw_label = str(record.get("clearing_house", "")).strip()
         normalized_label = normalize_counterparty(raw_label) if raw_label else ""
-        raw_segment = str(record.get("segment", record.get("Segment", ""))).strip()
-        if normalized_label in normalized_impacted_series or raw_segment in missing_segments:
+        if normalized_label in normalized_impacted_series:
             impacted_rows += 1
 
     return impacted_rows

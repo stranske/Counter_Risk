@@ -1,0 +1,313 @@
+version: 1
+issue: 221
+base: main
+branch: codex/issue-221
+tasks:
+  - id: task-01
+    title: Define the structured exception class for unmapped counterparties with
+      required attributes `normalized_counterparty` and `raw_counterparty` in `src/**/errors.py`
+      (or existing exceptions module)
+    status: done
+    started_at: '2026-02-23T05:27:13Z'
+    finished_at: '2026-02-23T05:27:21Z'
+    commit: 7d1ed0fd91b489f9b812a6240f4d56c49421ba58
+    notes: []
+  - id: task-02
+    title: Implement the exception class with machine-readable context fields accessible
+      as direct attributes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Document the exception API contract including all accessible attributes
+      and their types in docstring or module documentation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Update `src/**/reconciliation.py` to raise the structured unmapped-counterparty
+      exception in strict/fail mode instead of `ValueError`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Update `src/**/reconciliation.py` non-strict path to record/return the
+      same structured unmapped-counterparty exception type (without raising) via the
+      existing non-throwing mechanism
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Fix `impacted_series` computation in `src/**/reconciliation.py` to count
+      only directly missing series and unmapped series, excluding any `missing_expected_segments`/segment-gap
+      contributions
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Fix per-sheet `impacted_rows` accounting in `src/**/reconciliation.py`
+      (including `_count_rows_for_impacted_entities` if present) so rows attributable
+      only to segment gaps are counted only when their parent series is directly missing/unmapped
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Update `src/**/time_utils.py` to gate `UTC` assignment (use `datetime.UTC`
+      on Python >=3.11, otherwise fallback to `datetime.timezone.utc`) without import-time
+      failure
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Update `src/**/pipeline.py` `_build_parsed_data_by_sheet` to key parsed
+      data by actual workbook sheet names, only include a `'Total'` key when a sheet
+      named exactly `'Total'` exists, and avoid hard-coded defaults when headers vary
+      historically
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Write test in `tests/**/test_reconciliation.py` to verify strict-mode raises
+      the structured exception type instead of ValueError for unmapped counterparties
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Write test in `tests/**/test_reconciliation.py` to verify the structured
+      exception exposes `normalized_counterparty` attribute with correct value
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Write test in `tests/**/test_reconciliation.py` to verify the structured
+      exception exposes `raw_counterparty` attribute with correct value
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Write test in `tests/**/test_reconciliation.py` to verify non-strict mode
+      records the structured exception type without raising for unmapped counterparties
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Write test in `tests/**/test_reconciliation_manifest.py` to verify `impacted_series`
+      count excludes segment gaps and only counts directly missing or unmapped series
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Write test in `tests/**/test_reconciliation_manifest.py` to verify per-sheet
+      `impacted_rows` only counts rows for directly missing or unmapped series
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Write test in `tests/**/test_reconciliation_manifest.py` to verify segment
+      gaps alone do not increase `impacted_series` or `impacted_rows` when parent
+      series is mapped
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Write test in `tests/**/test_pipeline.py` to verify `_build_parsed_data_by_sheet`
+      uses actual workbook sheet names as dictionary keys
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Write test in `tests/**/test_pipeline.py` to verify `_build_parsed_data_by_sheet`
+      only includes Total key when a sheet named exactly Total exists in the workbook
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Write test in `tests/**/test_pipeline.py` to verify `_build_parsed_data_by_sheet`
+      correctly parses workbooks with historical header variants using each sheet's
+      own header row
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Write test in `tests/**/test_normalization.py` to verify `normalize_counterparty`
+      is idempotent for all test case strings
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Write test in `tests/**/test_normalization.py` to verify `normalize_counterparty`
+      returns identical output across 100 repeated calls with the same input
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: In strict/fail mode, when reconciliation encounters a parsed counterparty
+      whose normalized name is not present in the normalized counterparty mapping,
+      it raises the structured exception type designated for unmapped counterparties
+      (e.g., `UnmappedCounterpartyError`/`ReconciliationException` subtype) and does
+      not raise `ValueError`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: The structured unmapped-counterparty exception must expose both `normalized_counterparty`
+      (string) and `raw_counterparty` (string) as direct attributes, and these attributes
+      must return the exact normalized and original counterparty values that triggered
+      the error
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: In non-strict mode, the same unmapped counterparty input does not raise
+      an exception and the reconciliation result indicates failure/exception presence
+      via the existing non-throwing mechanism (e.g., returned result contains an exception
+      entry) while still using the same structured error type (not `ValueError`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: '`impacted_series` is computed solely from directly missing series and
+      unmapped series; introducing only segment gaps (with no missing/unmapped series)
+      results in `impacted_series == 0`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: When there is exactly N directly missing/unmapped series and additionally
+      there are segment gaps present, `impacted_series == N` (segment gaps do not
+      change the count)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Per-sheet `impacted_rows` does not increase due solely to segment gaps
+      when the parent series is not directly missing/unmapped; if only segment gaps
+      exist for otherwise-present/mapped series, per-sheet `impacted_rows == 0`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: When a series is directly missing/unmapped, `impacted_rows` for a sheet
+      equals the number of parsed rows that belong to that directly impacted series
+      on that sheet; rows belonging only to other non-impacted series are not counted
+      even if segment-gap logic touches them
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Importing `src/**/time_utils.py` does not raise `AttributeError` on Python
+      < 3.11 due to referencing `datetime.UTC` at import time
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: On Python >= 3.11, `time_utils.UTC is datetime.UTC`; on Python < 3.11,
+      `time_utils.UTC is datetime.timezone.utc` (or documented fallback) and is a
+      tzinfo suitable for aware datetimes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: '`_build_parsed_data_by_sheet` returns parsed-data keys that exactly match
+      the workbook''s actual sheet names; it does not introduce a `''Total''` key
+      when the workbook does not contain a sheet named exactly `''Total''`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: If the workbook contains a sheet named exactly `'Total'`, `_build_parsed_data_by_sheet`
+      includes a `'Total'` key whose value corresponds to the parsed output from that
+      sheet (and does not remap other sheets to `'Total'`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: '`_build_parsed_data_by_sheet` successfully parses workbooks where different
+      sheets use historical header variants (e.g., synonymous column headers) without
+      falling back to a hard-coded default sheet key; each sheet is parsed using its
+      own header row and returned under its actual name'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: '`normalize_counterparty` is idempotent: for each test case string `S`,
+      `normalize_counterparty(normalize_counterparty(S)) == normalize_counterparty(S)`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: '`normalize_counterparty` must return identical string output when called
+      multiple times with the same input string within a single test run, verified
+      by calling the function 100 times with the same input and asserting all outputs
+      are equal'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
