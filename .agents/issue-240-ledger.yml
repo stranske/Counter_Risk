@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Add helper function `is_blank_description(desc)` in `src/**/futures_delta*.py`
       that returns `True` when `desc` is `None`, `""`, or whitespace-only
-    status: doing
+    status: done
     started_at: '2026-02-24T19:13:08Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-24T19:13:20Z'
+    commit: 2d713197f56dcd1171ab308f851e6656b497df84
     notes: []
   - id: task-02
     title: Update normalized-key generation logic in `src/**/futures_delta*.py` to
