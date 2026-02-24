@@ -1,0 +1,674 @@
+version: 1
+issue: 240
+base: main
+branch: codex/issue-240
+tasks:
+  - id: task-01
+    title: Add helper function `is_blank_description(desc)` in `src/**/futures_delta*.py`
+      that returns `True` when `desc` is `None`, `""`, or whitespace-only
+    status: doing
+    started_at: '2026-02-24T19:13:08Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Update normalized-key generation logic in `src/**/futures_delta*.py` to
+      skip rows where `is_blank_description(Description)` returns `True`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Modify matching algorithm in `src/**/futures_delta*.py` to filter out rows
+      with blank Description from both current and prior datasets before matching
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Update grouping logic in `src/**/futures_delta*.py` to exclude blank-Description
+      rows before creating groups
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Update aggregation logic in `src/**/futures_delta*.py` to filter out blank-Description
+      rows before computing aggregates
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Modify delta computation in `src/**/futures_delta*.py` to exclude blank-Description
+      rows from calculations
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Write unit test in `tests/**/test_futures_delta*.py` that verifies blank
+      Description rows (`None`) are excluded from matching
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Write unit test in `tests/**/test_futures_delta*.py` that verifies empty
+      string Description rows are excluded from matching
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Write unit test in `tests/**/test_futures_delta*.py` that verifies whitespace-only
+      Description rows are excluded from matching
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Write unit test in `tests/**/test_futures_delta*.py` that verifies blank
+      Description rows in prior-month dataset are excluded from matching
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Add constant `NO_PRIOR_MONTH_MATCH` in `src/**/errors*.py` for unmatched
+      current-month rows
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Add constant `NO_PRIOR_MATCH` in `src/**/errors*.py` for unmatched prior-month
+      rows
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Update futures delta emission sites in `src/**/futures_delta*.py` to use
+      `NO_PRIOR_MONTH_MATCH` constant for unmatched current-month rows
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Update futures delta emission sites in `src/**/futures_delta*.py` to use
+      `NO_PRIOR_MATCH` constant for unmatched prior-month rows
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Write unit test in `tests/**/test_futures_delta*.py` asserting unmatched
+      current-month rows emit `NO_PRIOR_MONTH_MATCH`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Write unit test in `tests/**/test_futures_delta*.py` asserting unmatched
+      prior-month rows emit `NO_PRIOR_MATCH`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Create wrapper function `atomic_writeback_with_section_locate` in `src/**/workbook_writeback*.py`
+      that locates futures detail section before any write operations
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Implement early abort logic in `atomic_writeback_with_section_locate` that
+      prevents output artifact creation when section location fails
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Add cleanup logic in `atomic_writeback_with_section_locate` using try/finally
+      to remove temporary files when write-back fails during section location
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Update write-back flow in `src/**/workbook_writeback*.py` and/or `src/**/excel*.py`
+      to use `atomic_writeback_with_section_locate`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Add integration test in `tests/**/integration/**` that triggers futures
+      detail section locate failure and asserts no output workbook exists at target
+      path
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Add integration test in `tests/**/integration/**` that verifies temporary
+      files are removed after locate failure
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Update `src/**/write_prior_month_notional*.py` to detect duplicate normalized
+      Description keys when building the mapping dictionary
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Create exception class `DuplicateDescriptionError` in `src/**/errors*.py`
+      that accepts duplicate key value and list of row indices
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Update `src/**/write_prior_month_notional*.py` to raise `DuplicateDescriptionError`
+      before any cell writes when duplicates are detected
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Write unit test in `tests/**/test_write_prior_month_notional*.py` that
+      constructs workbook with duplicate normalized Description values
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Write unit test in `tests/**/test_write_prior_month_notional*.py` that
+      asserts `DuplicateDescriptionError` is raised with correct key and row indices
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Write unit test in `tests/**/test_write_prior_month_notional*.py` that
+      verifies no write-back side effects occur when duplicates are present
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Define structured warning record format as dict with required `row_idx`
+      field in `src/**/warnings*.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: Update `WarningsCollector` internal storage in `src/**/warnings*.py` to
+      use list of structured dicts instead of strings
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Implement field filtering logic in `WarningsCollector.add()` to exclude
+      `None`, empty string, and whitespace-only values from extra fields
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Add method `WarningsCollector.add_structured(row_idx, **extra_fields)`
+      for adding structured warning records
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: Identify all call sites in `src/**/futures_delta*.py` that currently emit
+      warning strings to `WarningsCollector`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Update futures delta warning emission sites in `src/**/futures_delta*.py`
+      to use `add_structured()` with `row_idx` and extra fields
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: Update workbook write-back warning emission sites in `src/**/workbook_writeback*.py`
+      to use `add_structured()` with `row_idx` and extra fields
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: Modify unit tests in `tests/**/test_futures_delta*.py` to assert on structured
+      warning record fields (`row_idx`, extra fields) instead of string matching
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: Modify unit tests in `tests/**/test_warnings*.py` to validate structured
+      warning records preserve non-empty extra fields
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: Update integration tests in `tests/**/integration/**` to validate structured
+      warning records are propagated through the pipeline
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: Fix `compute_futures_delta` in `src/**/futures_delta*.py` to return tuple
+      `(result, warnings)` instead of single value
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: Identify all internal callers of `compute_futures_delta` in `src/**/*.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: Update each caller of `compute_futures_delta` to unpack two return values
+      `(result, warnings)`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: Update unit tests in `tests/**/test_futures_delta*.py` to assert `compute_futures_delta`
+      returns exactly two values
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: Update integration tests in `tests/**/integration/**` that invoke `compute_futures_delta`
+      to handle two-value return
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: Update workbook comparison logic in `src/**/workbook_compare*.py` to skip
+      core-properties modified timestamp field during comparison
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: Update workbook comparison logic in `src/**/workbook_compare*.py` to skip
+      core-properties modified-by field during comparison
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: Add unit test in `tests/**/test_workbook_compare*.py` that creates two
+      workbooks with identical cells but different modified timestamps and asserts
+      they compare as equal
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: Add unit test in `tests/**/test_workbook_compare*.py` that creates two
+      workbooks with different cell values and asserts they compare as different despite
+      identical metadata
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: Modify existing tests in `tests/**/test_workbook_compare*.py` to verify
+      metadata-only differences do not produce diffs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: When `Description` is `None`, the row is excluded from normalized-key generation
+      and does not appear in any matching group
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: When `Description` is empty string, the row is excluded from normalized-key
+      generation and does not appear in any matching group
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: When `Description` is whitespace-only, the row is excluded from normalized-key
+      generation and does not appear in any matching group
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: The count of matched groups equals the count of unique non-blank normalized
+      Description values
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: Adding or removing blank-Description rows does not change the count of
+      matched groups
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: Blank-Description rows in prior-month dataset are excluded from matching
+      and do not appear in any matched group
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: Unmatched current-month rows are emitted with error code exactly `NO_PRIOR_MONTH_MATCH`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: Unmatched prior-month rows are emitted with error code exactly `NO_PRIOR_MATCH`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: Both `NO_PRIOR_MONTH_MATCH` and `NO_PRIOR_MATCH` are defined as explicit
+      constants in `src/**/errors*.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: No hard-coded string literals for error codes exist at futures delta emission
+      sites in `src/**/futures_delta*.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: When futures detail section cannot be located, the process aborts before
+      creating any output workbook artifact at the target output path
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: When futures detail section location fails, all temporary files created
+      during that write-back attempt are removed
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: After locate failure, the output directory contains no files with the expected
+      output filename or temp file patterns (e.g., `*.tmp`, `~$*`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: When duplicate normalized Description keys exist in prior-month dataset,
+      `DuplicateDescriptionError` is raised before any cell writes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: '`DuplicateDescriptionError` includes the duplicate key value in its message
+      or attributes'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: '`DuplicateDescriptionError` includes the list or count of affected row
+      indices in its message or attributes'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: When duplicate normalized Description keys are present, no workbook cells
+      are modified
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: When duplicate normalized Description keys are present, no output file
+      is produced
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-67
+    title: '`WarningsCollector` stores warnings as list of dict records, not plain
+      strings'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-68
+    title: Each warning record dict contains a `row_idx` key with integer value
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-69
+    title: Warning records retain extra fields whose values are not `None`, empty
+      string, or whitespace-only
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-70
+    title: Warning records exclude extra fields whose values are `None`, empty string,
+      or whitespace-only
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-71
+    title: All futures delta warning emission sites in `src/**/futures_delta*.py`
+      use structured warning records with `row_idx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-72
+    title: All workbook write-back warning emission sites use structured warning records
+      with `row_idx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-73
+    title: Unit tests in `tests/**/test_futures_delta*.py` assert on `row_idx` field
+      in warning records
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-74
+    title: Unit tests in `tests/**/test_futures_delta*.py` assert on extra fields
+      in warning records, not substring matching
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-75
+    title: '`compute_futures_delta` returns exactly two values: `(result, warnings)`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-76
+    title: '`result` contains the delta computation output structure (DataFrame, dict,
+      or equivalent)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-77
+    title: '`warnings` is the `WarningsCollector` instance or warnings list produced
+      during computation'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-78
+    title: All callers of `compute_futures_delta` in `src/**/*.py` unpack two return
+      values
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-79
+    title: All tests invoking `compute_futures_delta` assert on both return values
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-80
+    title: Two workbooks with identical sheet cell values but different modified timestamps
+      compare as equal
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-81
+    title: Two workbooks with identical sheet cell values but different modified-by
+      fields compare as equal
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-82
+    title: Two workbooks with different cell values compare as different even when
+      metadata is identical
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-83
+    title: Workbook comparison logic in `src/**/workbook_compare*.py` does not include
+      core-properties modified timestamp in diff output
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-84
+    title: Workbook comparison logic in `src/**/workbook_compare*.py` does not include
+      core-properties modified-by field in diff output
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
