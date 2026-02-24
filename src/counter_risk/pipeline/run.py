@@ -17,7 +17,7 @@ from zipfile import BadZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
-from counter_risk.normalize import canonicalize_name, normalize_counterparty
+from counter_risk.normalize import canonicalize_name, normalize_counterparty, resolve_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
@@ -26,6 +26,7 @@ from counter_risk.pipeline.parsing_types import (
     UnmappedCounterpartyError,
 )
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
+from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
 from counter_risk.pipeline.time_utils import utc_now_isoformat
 from counter_risk.ppt.pptx_postprocess import (
     list_external_relationship_targets,
@@ -146,9 +147,10 @@ def reconcile_series_coverage(
                 if value
             }
         )
-        normalized_counterparties_in_data = _normalized_counterparties_from_parsed_data(
-            parsed_sections
-        )
+        (
+            normalized_counterparties_in_data,
+            counterparty_sources_by_raw_name,
+        ) = _counterparty_resolution_maps_from_records(totals_records)
         clearing_houses_in_data = sorted(
             {
                 value
@@ -232,7 +234,16 @@ def reconcile_series_coverage(
                 raw_display = ", ".join(raw_names)
                 warnings.append(
                     "Reconciliation unmapped counterparty in sheet "
-                    f"{sheet_name!r}: raw={raw_display!r}, normalized={normalized_name!r}"
+                    f"{sheet_name!r}: raw={raw_display!r}, normalized={normalized_name!r}, "
+                    "source="
+                    + ",".join(
+                        sorted(
+                            {
+                                counterparty_sources_by_raw_name.get(raw_name, "unmapped")
+                                for raw_name in raw_names
+                            }
+                        )
+                    )
                 )
                 for raw_name in raw_names:
                     error = UnmappedCounterpartyError(
@@ -365,16 +376,25 @@ def _extract_segments_from_records(parsed_sections: Mapping[str, Any]) -> set[st
     return segments
 
 
-def _normalized_counterparties_from_records(
+def _counterparty_resolution_maps_from_records(
     totals_records: list[dict[str, Any]],
-) -> dict[str, set[str]]:
+) -> tuple[dict[str, set[str]], dict[str, str]]:
     normalized_to_raw: dict[str, set[str]] = {}
+    sources_by_raw_name: dict[str, str] = {}
     for record in totals_records:
         raw_name = str(record.get("counterparty", "")).strip()
         if not raw_name:
             continue
-        normalized_name = normalize_counterparty(raw_name)
-        normalized_to_raw.setdefault(normalized_name, set()).add(raw_name)
+        resolution = resolve_counterparty(raw_name)
+        normalized_to_raw.setdefault(resolution.canonical_name, set()).add(raw_name)
+        sources_by_raw_name[raw_name] = resolution.source
+    return normalized_to_raw, sources_by_raw_name
+
+
+def _normalized_counterparties_from_records(
+    totals_records: list[dict[str, Any]],
+) -> dict[str, set[str]]:
+    normalized_to_raw, _ = _counterparty_resolution_maps_from_records(totals_records)
     return normalized_to_raw
 
 
@@ -846,6 +866,10 @@ def _write_outputs(
             shutil.copy2(source_mosers, target_monthly_book)
         output_paths.append(target_monthly_book)
 
+    if not config.ppt_output_enabled:
+        LOGGER.info("write_outputs_skip_ppt run_dir=%s", run_dir)
+        return output_paths, PptProcessingResult(status=PptProcessingStatus.SKIPPED)
+
     source_ppt = config.monthly_pptx
     output_names = resolve_ppt_output_names(as_of_date)
     target_master_ppt = run_dir / output_names.master_filename
@@ -866,7 +890,14 @@ def _write_outputs(
     )
     output_paths.append(target_master_ppt)
 
-    refresh_result = _refresh_ppt_links(target_master_ppt)
+    try:
+        refresh_result = _refresh_ppt_links(target_master_ppt)
+    except Exception as exc:
+        LOGGER.error("Master PPT link refresh failed: %s", exc)
+        refresh_result = PptProcessingResult(
+            status=PptProcessingStatus.FAILED,
+            error_detail=str(exc),
+        )
     if isinstance(refresh_result, bool):
         refresh_result = PptProcessingResult(
             status=PptProcessingStatus.SUCCESS if refresh_result else PptProcessingStatus.SKIPPED
@@ -874,25 +905,48 @@ def _write_outputs(
 
     if refresh_result.status == PptProcessingStatus.SKIPPED:
         warnings.append("PPT links not refreshed; COM refresh skipped")
-    elif refresh_result.status == PptProcessingStatus.FAILED:
+    if refresh_result.status == PptProcessingStatus.FAILED:
         warnings.append(
             "PPT links refresh failed; COM refresh encountered an error"
             if not refresh_result.error_detail
             else f"PPT links refresh failed; {refresh_result.error_detail}"
         )
-
-    _derive_distribution_ppt(
-        master_pptx_path=target_master_ppt,
-        distribution_pptx_path=target_distribution_ppt,
-    )
-    output_paths.append(target_distribution_ppt)
-    distribution_pdf_path = _export_distribution_pdf(
-        source_pptx=target_distribution_ppt,
-        run_dir=run_dir,
-        config=config,
-    )
-    if distribution_pdf_path is not None:
-        output_paths.append(distribution_pdf_path)
+        LOGGER.warning(
+            "Skipping distribution PPT derivation because Master PPT refresh failed: %s",
+            target_master_ppt,
+        )
+    else:
+        _derive_distribution_ppt(
+            master_pptx_path=target_master_ppt,
+            distribution_pptx_path=target_distribution_ppt,
+        )
+        try:
+            distribution_validation = validate_distribution_ppt_standalone(target_distribution_ppt)
+        except RuntimeError as exc:
+            warnings.append(
+                "Distribution PPT standalone validation skipped; unable to parse generated deck"
+            )
+            LOGGER.warning(
+                "Distribution PPT standalone validation skipped for %s: %s",
+                target_distribution_ppt,
+                exc,
+            )
+        else:
+            if not distribution_validation.is_valid:
+                rel_parts = ", ".join(distribution_validation.external_relationship_parts)
+                raise RuntimeError(
+                    "Distribution PPT standalone validation failed; "
+                    f"found {distribution_validation.external_relationship_count} "
+                    f"external relationships in: {rel_parts}"
+                )
+        output_paths.append(target_distribution_ppt)
+        distribution_pdf_path = _export_distribution_pdf(
+            source_pptx=target_distribution_ppt,
+            run_dir=run_dir,
+            config=config,
+        )
+        if distribution_pdf_path is not None:
+            output_paths.append(distribution_pdf_path)
     static_output_paths = _create_static_distribution(
         source_pptx=target_master_ppt,
         run_dir=run_dir,

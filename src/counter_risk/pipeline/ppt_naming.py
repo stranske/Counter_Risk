@@ -17,11 +17,22 @@ class PptOutputNames:
     distribution_filename: str
 
 
+def master_ppt_filename(as_of_date: date) -> str:
+    """Return the canonical Master PPT filename for an as-of date."""
+
+    return f"{_MASTER_BASE_NAME} - {as_of_date.isoformat()}.pptx"
+
+
+def distribution_ppt_filename(as_of_date: date) -> str:
+    """Return the canonical Distribution PPT filename for an as-of date."""
+
+    return f"{_DISTRIBUTION_BASE_NAME} - {as_of_date.isoformat()}.pptx"
+
+
 def resolve_ppt_output_names(as_of_date: date) -> PptOutputNames:
     """Return deterministic PowerPoint output names for a pipeline run date."""
 
-    date_token = as_of_date.isoformat()
     return PptOutputNames(
-        master_filename=f"{_MASTER_BASE_NAME} - {date_token}.pptx",
-        distribution_filename=f"{_DISTRIBUTION_BASE_NAME} - {date_token}.pptx",
+        master_filename=master_ppt_filename(as_of_date),
+        distribution_filename=distribution_ppt_filename(as_of_date),
     )

@@ -202,6 +202,24 @@ def test_workflow_config_defaults_screenshot_replacement_fields() -> None:
     assert config.screenshot_inputs == {}
     assert config.reconciliation.fail_policy == "warn"
     assert config.reconciliation.expected_segments_by_variant == {}
+    assert config.ppt_output_enabled is True
+
+
+def test_workflow_config_ppt_output_enabled_reflects_flag() -> None:
+    enabled_config = WorkflowConfig(
+        mosers_all_programs_xlsx=Path("a.xlsx"),
+        mosers_ex_trend_xlsx=Path("b.xlsx"),
+        mosers_trend_xlsx=Path("c.xlsx"),
+        hist_all_programs_3yr_xlsx=Path("d.xlsx"),
+        hist_ex_llc_3yr_xlsx=Path("e.xlsx"),
+        hist_llc_3yr_xlsx=Path("f.xlsx"),
+        monthly_pptx=Path("report.pptx"),
+        enable_ppt_output=True,
+    )
+    disabled_config = enabled_config.model_copy(update={"enable_ppt_output": False})
+
+    assert enabled_config.ppt_output_enabled is True
+    assert disabled_config.ppt_output_enabled is False
 
 
 def test_load_config_accepts_export_pdf_flag(tmp_path: Path) -> None:
