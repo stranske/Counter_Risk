@@ -1,0 +1,245 @@
+version: 1
+issue: 233
+base: main
+branch: claude/issue-233
+tasks:
+  - id: task-01
+    title: Implement workbook loading in `src/counter_risk/io/mosers_workbook.py`
+      using openpyxl to read the MOSERS template while preserving existing content
+    status: doing
+    started_at: '2026-02-24T15:50:27Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Create `locate_futures_detail_section()` in `src/counter_risk/io/mosers_workbook.py`
+      to identify header markers and table boundaries for the futures detail section
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Implement row-to-workbook mapping in `src/counter_risk/io/mosers_workbook.py`
+      that aligns matched delta computation rows to workbook row positions using the
+      raw `Description` field
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Create `write_prior_month_notional()` in `src/counter_risk/io/mosers_workbook.py`
+      to write prior-month notional values into the designated column for each matched
+      row
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Implement workbook saving in `src/counter_risk/io/mosers_workbook.py` that
+      preserves all non-modified cells and worksheets
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Update sorting in `src/counter_risk/compute/futures_delta.py` to order
+      outputs by raw `Description` exact text (no normalization/cleaning) with stable
+      ordering for duplicate descriptions
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Refactor `_extract_notional()` in `src/counter_risk/compute/futures_delta.py`
+      to emit structured warnings via the project logger/manifest warnings hook when
+      notional is missing, blank, non-numeric, or NaN
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Add a strict-mode parameter to `_extract_notional()` in `src/counter_risk/compute/futures_delta.py`
+      that raises a deterministic exception for missing/invalid notional values and
+      includes a row identifier in the error message
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Implement a per-row required-field validation function in `src/counter_risk/compute/futures_delta.py`
+      to validate `Description` (non-empty after strip) and `Notional` presence, emitting
+      structured warnings/errors via the manifest/logging mechanism and excluding
+      invalid rows from matching
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Update unmatched-row reporting in `src/counter_risk/compute/futures_delta.py`
+      to call the existing manifest warnings/logging system (e.g., `manifest.warn(...)`)
+      instead of returning a list of strings
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Add warning codes to `src/counter_risk/manifest.py` if needed: `INVALID_NOTIONAL`,
+      `MISSING_DESCRIPTION`, `MISSING_NOTIONAL`, `NO_PRIOR_MONTH_MATCH`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Add unit tests in `tests/test_futures_delta.py` to verify workbook write-back
+      populates prior-month notional cells for matched rows using `tests/fixtures/mosers_workbook_fixture.xlsx`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Add unit tests in `tests/test_futures_delta.py` to verify output rows are
+      sorted by raw `Description` with stable ordering for duplicates
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Add unit tests in `tests/test_futures_delta.py` to verify missing/invalid
+      notional values generate warnings and raise exceptions in strict mode
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Add unit tests in `tests/test_futures_delta.py` to verify unmatched rows
+      generate manifest warnings with the correct reason codes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Running the futures delta workflow with a MOSERS workbook template produces
+      an updated XLSX artifact where each matching futures detail row has its "Prior
+      Month Notional" cell populated with the prior-month notional value as a numeric
+      value (not a string)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: The workbook write-back modifies only cells within the futures detail section's
+      prior-month notional column(s). All other cells in all worksheets remain unchanged
+      when compared using openpyxl cell-by-cell value comparison (excluding workbook-level
+      metadata like modified timestamp)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: If the futures detail section cannot be located (missing header marker
+      or expected table shape), the run fails deterministically (exception type/message
+      or manifest error with non-zero exit) and no partial workbook artifact is written
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Output row ordering (workbook output and optional CSV output, if generated)
+      is sorted by the raw input `Description` exact text with stable ordering for
+      duplicate descriptions (ties preserve original input order)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: The sort key used in `src/counter_risk/compute/futures_delta.py` is the
+      raw `row['Description']` value (or equivalent required-field extraction) and
+      does not call any description normalization/cleaning function
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: '`_extract_notional()` emits a structured warning via the project logger/manifest
+      warnings hook when notional is missing, blank, non-numeric, or NaN, and does
+      not silently return `0.0` for these cases'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: With strict mode enabled, `_extract_notional()` raises a deterministic
+      exception on missing/invalid notional values and includes the row identifier
+      (at minimum `Description` or row index) in the error message
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Before matching/delta computation, each input row is validated: `Description`
+      is present and non-empty after stripping; `Notional` is present; rows failing
+      validation emit structured warnings/errors via the manifest/logging mechanism
+      and are excluded from matching'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Rows with missing/blank `Description` do not participate in ordering, matching,
+      or workbook write-back, and are reported via the manifest/logging mechanism
+      with both the row index (0-based from input data) and all available non-empty
+      field values from that row
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Unmatched current-month rows are reported via the existing manifest warnings/logging
+      system (not a returned list), with exactly one warning per unmatched row including
+      raw `Description` and a reason code such as `NO_PRIOR_MONTH_MATCH`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Manifest warning integration uses the existing manifest API used elsewhere
+      (e.g., `manifest.warn(...)`) and does not introduce a new ad-hoc warnings channel
+      in `futures_delta.py`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: '`tests/test_futures_delta.py` contains tests for workbook write-back,
+      raw `Description` sorting, missing/invalid notional handling (warning + strict
+      raise), and unmatched-row manifest warnings, and the test suite passes'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
