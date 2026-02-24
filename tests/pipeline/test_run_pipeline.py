@@ -294,6 +294,39 @@ def test_run_reconciliation_checks_counts_only_rows_tied_to_missing_series(
     assert any("impacted_rows=1" in warning for warning in warnings)
 
 
+def test_write_needs_mapping_updates_ignores_unmapped_counterparty_metadata_for_legacy_output(
+    tmp_path: Path,
+) -> None:
+    output_path = run_module._write_needs_mapping_updates(
+        run_dir=tmp_path,
+        fail_policy="warn",
+        reconciliation_by_variant={
+            "all_programs": {
+                "missing_series": [
+                    {
+                        "sheet": "Total",
+                        "missing_from_historical_headers": ["Counterparty A"],
+                    },
+                    {
+                        "sheet": "Total",
+                        "error_type": "unmapped_counterparty",
+                        "raw_counterparties": [" ACME  LTD "],
+                        "normalized_counterparties": ["ACME LTD"],
+                    },
+                ]
+            }
+        },
+        total_gap_count=2,
+        impacted_series_count=2,
+        impacted_rows_count=1,
+    )
+
+    text = output_path.read_text(encoding="utf-8")
+    assert "missing_from_historical_headers=Counterparty A" in text
+    assert "raw_counterparties" not in text
+    assert "ACME LTD" not in text
+
+
 def test_manifest_impacted_rows_counts_only_matching_normalized_label() -> None:
     parsed_sections = {
         "totals": [
