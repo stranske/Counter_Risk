@@ -120,9 +120,9 @@ def _populate_minimal_nisa_sheet(
     first_data_row = header_row + 2
     worksheet.cell(row=first_data_row, column=1).value = "Swaps"
     if "counterparty" in header_columns:
-        worksheet.cell(
-            row=first_data_row, column=header_columns["counterparty"]
-        ).value = counterparty_name
+        worksheet.cell(row=first_data_row, column=header_columns["counterparty"]).value = (
+            counterparty_name
+        )
     for numeric_header in (
         "cash",
         "tips",
@@ -139,15 +139,15 @@ def _populate_minimal_nisa_sheet(
 
     totals_marker_row = 20
     if "counterparty" in header_columns:
-        worksheet.cell(
-            row=totals_marker_row, column=header_columns["counterparty"]
-        ).value = "Total by Counterparty/Clearing House"
-        worksheet.cell(
-            row=totals_marker_row + 1, column=header_columns["counterparty"]
-        ).value = counterparty_name
-        worksheet.cell(
-            row=totals_marker_row + 2, column=header_columns["counterparty"]
-        ).value = "Total Current Exposure"
+        worksheet.cell(row=totals_marker_row, column=header_columns["counterparty"]).value = (
+            "Total by Counterparty/Clearing House"
+        )
+        worksheet.cell(row=totals_marker_row + 1, column=header_columns["counterparty"]).value = (
+            counterparty_name
+        )
+        worksheet.cell(row=totals_marker_row + 2, column=header_columns["counterparty"]).value = (
+            "Total Current Exposure"
+        )
 
     for numeric_header in (
         "tips",
