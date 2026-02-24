@@ -1,0 +1,199 @@
+"""Unit tests for mapping diff report input scanning."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from counter_risk.reports.mapping_diff import generate_mapping_diff_report
+
+
+def _write_registry(path: Path) -> None:
+    path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: bank_of_america",
+                "    display_name: Bank of America",
+                "    aliases:",
+                "      - Bank of America",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def test_generate_mapping_diff_report_scans_normalization_and_reconciliation_payloads(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {
+            "normalization": [
+                {"counterparty": "Societe Generale", "notional": 1.0},
+                {"counterparty": "Unknown House"},
+            ],
+            "reconciliation": {
+                "by_sheet": {
+                    "Total": {
+                        "counterparties_in_data": [
+                            "Bank of America, NA",
+                            "Unknown House",
+                            "Citigroup",
+                        ],
+                        "normalized_counterparties_in_data": [
+                            "Bank of America",
+                            "Unknown House",
+                            "Citibank",
+                        ],
+                    }
+                }
+            },
+        },
+    )
+
+    assert "UNMAPPED\nUnknown House\n" in report
+    assert "FALLBACK_MAPPED\n" in report
+    assert "Bank of America, NA -> Bank of America\n" in report
+    assert "Citigroup -> Citibank\n" in report
+    assert "Societe Generale -> Soc Gen\n" in report
+    assert "SUGGESTIONS\nUnknown House -> Unknown House\n" in report
+
+
+def test_generate_mapping_diff_report_ignores_non_name_string_fields(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {
+            "normalization": {
+                "metadata": {"run_id": "run-123"},
+                "rows": [{"counterparty": "Societe Generale", "segment": "swaps"}],
+            },
+            "reconciliation": {"warnings": ["raw='Societe Generale'"]},
+        },
+    )
+
+    assert "run-123" not in report
+    assert "raw='Societe Generale'" not in report
+    assert "Societe Generale -> Soc Gen\n" in report
+
+
+def test_generate_mapping_diff_report_preserves_raw_names(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {
+            "normalization": [
+                {"counterparty": "  Unknown House  "},
+                {"counterparty": "   "},
+            ],
+        },
+    )
+
+    assert "UNMAPPED\n  Unknown House  \n" in report
+    assert "Unknown House\n" not in report
+
+
+def test_generate_mapping_diff_report_fallback_section_is_deterministic(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {
+            "normalization": [
+                {"counterparty": "Citigroup"},
+                {"counterparty": "Bank of America, NA"},
+                {"counterparty": "Societe Generale"},
+            ],
+            "reconciliation": {
+                "counterparties_in_data": [
+                    "Societe Generale",
+                    "Citigroup",
+                    "Bank of America, NA",
+                ]
+            },
+        },
+    )
+
+    expected_section = "\n".join(
+        [
+            "FALLBACK_MAPPED",
+            "Bank of America, NA -> Bank of America",
+            "Citigroup -> Citibank",
+            "Societe Generale -> Soc Gen",
+            "",
+        ]
+    )
+    assert expected_section in report
+
+
+def test_generate_mapping_diff_report_suggestions_are_deterministic_title_case(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {
+            "normalization": [
+                {"counterparty": "aaa holdings"},
+                {"counterparty": "zeta llc"},
+                {"counterparty": "aaa holdings"},
+            ],
+            "reconciliation": {
+                "counterparties_in_data": [
+                    "zeta llc",
+                    "aaa holdings",
+                ]
+            },
+        },
+    )
+
+    expected_section = "\n".join(
+        [
+            "SUGGESTIONS",
+            "aaa holdings -> Aaa Holdings",
+            "zeta llc -> Zeta Llc",
+            "",
+        ]
+    )
+    assert expected_section in report
+
+
+def test_generate_mapping_diff_report_sections_use_required_line_formats(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {
+            "normalization": [
+                {"counterparty": "UNKNOWN broker"},
+                {"counterparty": "Citigroup"},
+            ],
+            "reconciliation": {"counterparties_in_data": ["UNKNOWN broker"]},
+        },
+    )
+
+    lines = report.splitlines()
+    unmapped_start = lines.index("UNMAPPED")
+    fallback_start = lines.index("FALLBACK_MAPPED")
+    suggestions_start = lines.index("SUGGESTIONS")
+
+    unmapped_lines = lines[unmapped_start + 1 : fallback_start - 1]
+    fallback_lines = lines[fallback_start + 1 : suggestions_start - 1]
+    suggestion_lines = lines[suggestions_start + 1 :]
+
+    assert unmapped_lines == ["UNKNOWN broker"]
+    assert fallback_lines == ["Citigroup -> Citibank"]
+    assert suggestion_lines == ["UNKNOWN broker -> Unknown Broker"]

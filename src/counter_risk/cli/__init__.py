@@ -61,7 +61,3 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     command_handler = cast(Callable[[argparse.Namespace], int], handler)
     return command_handler(args)
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
