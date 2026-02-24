@@ -857,7 +857,14 @@ def _write_outputs(
     )
     output_paths.append(target_master_ppt)
 
-    refresh_result = _refresh_ppt_links(target_master_ppt)
+    try:
+        refresh_result = _refresh_ppt_links(target_master_ppt)
+    except Exception as exc:
+        LOGGER.error("Master PPT link refresh failed: %s", exc)
+        refresh_result = PptProcessingResult(
+            status=PptProcessingStatus.FAILED,
+            error_detail=str(exc),
+        )
     if isinstance(refresh_result, bool):
         refresh_result = PptProcessingResult(
             status=PptProcessingStatus.SUCCESS if refresh_result else PptProcessingStatus.SKIPPED

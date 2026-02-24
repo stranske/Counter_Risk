@@ -157,3 +157,46 @@ def test_write_outputs_skips_distribution_when_master_refresh_fails(
     assert (run_dir / output_names.master_filename) in output_paths
     assert (run_dir / output_names.distribution_filename) not in output_paths
     assert not (run_dir / output_names.distribution_filename).exists()
+
+
+def test_write_outputs_handles_master_refresh_exception_and_logs_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level("ERROR")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, screenshot_inputs={})
+    config = config.model_copy(update={"enable_screenshot_replacement": False})
+    called: dict[str, int] = {"derive_distribution": 0}
+
+    def _refresh_raises(_path: Path) -> run_module.PptProcessingResult:
+        raise RuntimeError("refresh exploded")
+
+    def _derive_distribution(*args, **kwargs):  # type: ignore[no-untyped-def]
+        _ = (args, kwargs)
+        called["derive_distribution"] += 1
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", _refresh_raises)
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", _derive_distribution)
+
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        warnings=[],
+    )
+
+    assert ppt_result.status == run_module.PptProcessingStatus.FAILED
+    assert "refresh exploded" in (ppt_result.error_detail or "")
+    assert called["derive_distribution"] == 0
+    assert any(
+        "Master" in record.message
+        and "PPT" in record.message
+        and "refresh exploded" in record.message
+        for record in caplog.records
+        if record.levelname == "ERROR"
+    )
+    assert all(
+        path.name != "Monthly Counterparty Exposure Report - 2025-12-31.pptx"
+        for path in output_paths
+    )
