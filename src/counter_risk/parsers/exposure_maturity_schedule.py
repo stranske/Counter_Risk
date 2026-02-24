@@ -134,8 +134,7 @@ def _find_header_row_and_map(
 
     missing_text = ", ".join(best_missing)
     raise ExposureMaturityColumnsMissingError(
-        "Missing required headers in exposure maturity worksheet within scan range: "
-        f"{missing_text}"
+        f"Missing required headers in exposure maturity worksheet within scan range: {missing_text}"
     )
 
 
