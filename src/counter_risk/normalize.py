@@ -74,7 +74,7 @@ def resolve_counterparty(
     """Resolve counterparty name with registry-first semantics."""
 
     normalized = _normalize_whitespace(name)
-    alias_lookup = _load_alias_lookup(str(Path(registry_path)))
+    alias_lookup = _load_alias_lookup(str(Path(registry_path).resolve()))
     registry_match = alias_lookup.get(normalized.casefold())
     if registry_match is not None:
         return NameResolution(raw_name=name, canonical_name=registry_match, source="registry")
