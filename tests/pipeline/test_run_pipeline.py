@@ -394,7 +394,7 @@ def test_run_reconciliation_checks_segment_gaps_do_not_increase_impacted_scope(
     config = _minimal_workflow_config(tmp_path)
     config.reconciliation = ReconciliationConfig(
         fail_policy="warn",
-        expected_segments_by_variant={"all_programs": ("swaps", "repo")},
+        expected_segments_by_variant={"all_programs": ["swaps", "repo"]},
     )
     warnings: list[str] = []
     parsed_by_variant = {
@@ -436,7 +436,7 @@ def test_run_reconciliation_checks_segment_gaps_do_not_change_direct_impacted_co
     config = _minimal_workflow_config(tmp_path)
     config.reconciliation = ReconciliationConfig(
         fail_policy="warn",
-        expected_segments_by_variant={"all_programs": ("swaps", "repo")},
+        expected_segments_by_variant={"all_programs": ["swaps", "repo"]},
     )
     warnings: list[str] = []
     parsed_by_variant = {
