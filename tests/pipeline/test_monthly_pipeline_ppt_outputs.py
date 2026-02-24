@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 from datetime import date
 from pathlib import Path
 
@@ -9,6 +10,8 @@ import pytest
 
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
+from counter_risk.pipeline.manifest import ManifestBuilder
+from counter_risk.pipeline.ppt_validation import PptStandaloneValidationResult
 
 
 def _write_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
@@ -137,3 +140,91 @@ def test_master_refresh_failure_logs_error_and_skips_distribution_derivation(
         path.name != "Monthly Counterparty Exposure Report - 2025-12-31.pptx"
         for path in output_paths
     )
+
+
+def test_ppt_enabled_order_master_generated_before_distribution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    config.enable_screenshot_replacement = True
+
+    call_order: list[str] = []
+
+    def _replace_master(source: Path, target: Path, screenshot_inputs: dict[str, Path]) -> None:
+        _ = screenshot_inputs
+        call_order.append("master_generation")
+        shutil.copy2(source, target)
+
+    def _refresh_links(_path: Path) -> run_module.PptProcessingResult:
+        call_order.append("master_refresh")
+        return run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+
+    def _derive_distribution(*, master_pptx_path: Path, distribution_pptx_path: Path) -> None:
+        call_order.append("distribution_derivation")
+        shutil.copy2(master_pptx_path, distribution_pptx_path)
+
+    monkeypatch.setattr(run_module, "_resolve_screenshot_input_mapping", lambda _config: {})
+    monkeypatch.setattr(run_module, "_get_screenshot_replacer", lambda _impl: _replace_master)
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", _refresh_links)
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", _derive_distribution)
+    monkeypatch.setattr(
+        run_module,
+        "validate_distribution_ppt_standalone",
+        lambda _path: PptStandaloneValidationResult(
+            is_valid=True,
+            external_relationship_count=0,
+            relationship_parts_scanned=(),
+            external_relationship_parts=(),
+        ),
+    )
+
+    run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        warnings=[],
+    )
+
+    assert call_order.index("master_generation") < call_order.index("distribution_derivation")
+    assert call_order.count("distribution_derivation") == 1
+
+
+def test_no_distribution_without_master_when_master_generation_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    as_of_date = date(2025, 12, 31)
+    distribution_name = f"Monthly Counterparty Exposure Report - {as_of_date.isoformat()}.pptx"
+
+    def _refresh_raises(_path: Path) -> run_module.PptProcessingResult:
+        raise RuntimeError("refresh exploded")
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", _refresh_raises)
+
+    output_paths, _ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=as_of_date,
+        warnings=[],
+    )
+
+    assert not (run_dir / distribution_name).exists()
+
+    manifest = ManifestBuilder(
+        config=config,
+        as_of_date=as_of_date,
+        run_date=date(2026, 1, 2),
+    ).build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=run_module.PptProcessingStatus.FAILED.value,
+    )
+    assert all(Path(path).name != distribution_name for path in manifest["output_paths"])

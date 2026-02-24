@@ -130,13 +130,13 @@ def test_write_outputs_calls_zip_backend_once_when_enabled(
     assert list(calls[0].mapping) == ["slide1", "slide2"]
     assert len(calls[0].mapping) == 2
     assert all(path.suffix.lower() == ".png" for path in calls[0].mapping.values())
-    assert (
-        output_paths[-2]
-        == run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx"
-    )
-    assert output_paths[-1] == run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx"
-    assert (run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx").exists()
-    assert (run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx").exists()
+    master = run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx"
+    distribution = run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx"
+    assert master in output_paths
+    assert distribution in output_paths
+    assert output_paths.index(master) < output_paths.index(distribution)
+    assert master.exists()
+    assert distribution.exists()
     assert all("not implemented" not in warning for warning in warnings)
     assert all("disabled; copied source deck unchanged" not in warning for warning in warnings)
 
@@ -218,7 +218,9 @@ def test_write_outputs_derives_distribution_from_refreshed_master(
 
     master = run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx"
     distribution = run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx"
-    assert output_paths[-2:] == [master, distribution]
+    assert master in output_paths
+    assert distribution in output_paths
+    assert output_paths.index(master) < output_paths.index(distribution)
     assert master.read_bytes().endswith(b"-refreshed")
     assert distribution.read_bytes() == master.read_bytes()
 
@@ -292,10 +294,11 @@ def test_write_outputs_keeps_master_external_links_when_backend_preserves_relati
         warnings=[],
     )
 
-    assert output_paths[-2:] == [
-        run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx",
-        run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx",
-    ]
+    master = run_dir / "Monthly Counterparty Exposure Report (Master) - 2026-02-13.pptx"
+    distribution = run_dir / "Monthly Counterparty Exposure Report - 2026-02-13.pptx"
+    assert master in output_paths
+    assert distribution in output_paths
+    assert output_paths.index(master) < output_paths.index(distribution)
 
 
 def test_derive_distribution_ppt_removes_external_link_relationships_from_master(
