@@ -1,5 +1,10 @@
 """Computation helpers for rollups and summaries."""
 
+from counter_risk.compute.futures_delta import (
+    compute_futures_delta,
+    normalize_description,
+    write_annotated_csv,
+)
 from counter_risk.compute.rollups import (
     compute_notional_breakdown,
     compute_totals,
@@ -12,4 +17,7 @@ __all__ = [
     "compute_notional_breakdown",
     "top_exposures",
     "top_changes",
+    "compute_futures_delta",
+    "normalize_description",
+    "write_annotated_csv",
 ]

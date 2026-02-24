@@ -9,6 +9,7 @@ import pytest
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
     ParsedDataMissingKeyError,
+    UnmappedCounterpartyError,
 )
 from counter_risk.pipeline.run import (
     _normalized_counterparties_from_parsed_data,
@@ -48,6 +49,7 @@ def test_reconcile_series_coverage_accepts_historical_headers_parameter() -> Non
                 "missing_from_data": ["B"],
                 "segments_in_data": [],
                 "missing_expected_segments": [],
+                "canonical_key_by_series": {"A": "A"},
             }
         },
         "gap_count": 1,
@@ -92,6 +94,12 @@ def test_reconcile_series_coverage_extracts_counterparties_and_clearing_houses()
         "missing_from_data": [],
         "segments_in_data": [],
         "missing_expected_segments": [],
+        "canonical_key_by_series": {
+            "Citibank": "Citibank",
+            "JPMorgan": "JPMorgan",
+            "CME": "CME",
+            "ICE": "ICE",
+        },
     }
     assert result["gap_count"] == 4
     assert len(result["warnings"]) == 3
@@ -134,6 +142,7 @@ def test_reconcile_series_coverage_extracts_historical_series_headers_per_sheet(
         "missing_from_data": ["CME", "ICE"],
         "segments_in_data": [],
         "missing_expected_segments": [],
+        "canonical_key_by_series": {},
     }
     assert result["gap_count"] == 3
 
@@ -227,7 +236,7 @@ def test_reconcile_series_coverage_warn_mode_includes_raw_and_normalized_counter
 def test_reconcile_series_coverage_strict_mode_raises_for_unmapped_normalized_counterparty() -> (
     None
 ):
-    try:
+    with pytest.raises(UnmappedCounterpartyError) as exc_info:
         reconcile_series_coverage(
             parsed_data_by_sheet={
                 "Total": {"totals": [{"counterparty": "Bank of America, NA"}], "futures": []}
@@ -235,13 +244,28 @@ def test_reconcile_series_coverage_strict_mode_raises_for_unmapped_normalized_co
             historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
             fail_policy="strict",
         )
-    except ValueError as exc:
-        text = str(exc)
-        assert "unmapped normalized counterparties" in text
-        assert "Bank of America, NA" in text
-        assert "Bank of America" in text
-    else:
-        raise AssertionError("expected strict mode reconciliation to raise")
+
+    error = exc_info.value
+    assert error.normalized_counterparty == "Bank of America"
+    assert error.raw_counterparty == "Bank of America, NA"
+    assert error.sheet == "Total"
+
+
+def test_reconcile_series_coverage_warn_mode_records_structured_exception_without_raising() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "Bank of America, NA"}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+        fail_policy="warn",
+    )
+
+    exceptions = result.get("exceptions")
+    assert isinstance(exceptions, list)
+    assert len(exceptions) == 1
+    assert isinstance(exceptions[0], UnmappedCounterpartyError)
+    assert exceptions[0].normalized_counterparty == "Bank of America"
+    assert exceptions[0].raw_counterparty == "Bank of America, NA"
 
 
 def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_header_key() -> None:
@@ -348,3 +372,187 @@ def test_reconcile_series_coverage_accepts_list_of_mapping_sections() -> None:
     )
 
     assert result["gap_count"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Tricky canonicalization cases: spaces, punctuation, special chars
+# ---------------------------------------------------------------------------
+
+
+def test_reconcile_historical_header_extra_spaces_still_matches() -> None:
+    """Historical headers with extra leading/trailing spaces should match after canonicalization."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "JPMorgan"}], "futures": []}},
+        historical_series_headers_by_sheet={"Total": ("  JPMorgan  ",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Total"]["missing_from_data"] == []
+    assert result["by_sheet"]["Total"]["historical_series_headers"] == ["JPMorgan"]
+
+
+def test_reconcile_historical_header_internal_spaces_collapsed() -> None:
+    """Historical headers with repeated internal spaces are collapsed before matching."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "Bank of America"}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Bank  of  America",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Total"]["historical_series_headers"] == ["Bank of America"]
+
+
+def test_reconcile_historical_header_endash_canonicalized() -> None:
+    """En-dash in historical headers is normalized to hyphen-minus before matching."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {
+                "totals": [{"counterparty": "Korea Exchange-Seoul"}],
+                "futures": [],
+            }
+        },
+        # Historical header uses en-dash (U+2013)
+        historical_series_headers_by_sheet={"Total": ("Korea Exchange\u2013Seoul",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Total"]["historical_series_headers"] == ["Korea Exchange-Seoul"]
+    assert result["by_sheet"]["Total"]["missing_from_data"] == []
+
+
+def test_reconcile_historical_header_emdash_canonicalized() -> None:
+    """Em-dash in historical headers is normalized to hyphen-minus before matching."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {
+                "totals": [{"counterparty": "Korea Exchange-Seoul"}],
+                "futures": [],
+            }
+        },
+        # Historical header uses em-dash (U+2014)
+        historical_series_headers_by_sheet={"Total": ("Korea Exchange\u2014Seoul",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Total"]["historical_series_headers"] == ["Korea Exchange-Seoul"]
+
+
+def test_reconcile_counterparty_curly_apostrophe_matches_historical() -> None:
+    """Curly apostrophe in parsed counterparty normalizes to match historical header."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {
+                # Goldman Sachs Int'l with curly right-apostrophe (U+2019)
+                "totals": [{"counterparty": "Goldman Sachs Int\u2019l"}],
+                "futures": [],
+            }
+        },
+        historical_series_headers_by_sheet={"Total": ("Goldman Sachs",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Total"]["missing_normalized_counterparties"] == []
+
+
+def test_reconcile_series_coverage_canonical_key_by_series_maps_raw_to_canonical() -> None:
+    """canonical_key_by_series maps each raw series label to its canonical matching key."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {
+                "totals": [{"counterparty": "Bank of America, NA"}],
+                "futures": [{"clearing_house": "CME"}],
+            }
+        },
+        historical_series_headers_by_sheet={"Total": ("Bank of America", "CME")},
+    )
+
+    assert result["by_sheet"]["Total"]["canonical_key_by_series"] == {
+        "Bank of America, NA": "Bank of America",
+        "CME": "CME",
+    }
+    assert result["gap_count"] == 0
+
+
+def test_reconcile_series_coverage_canonical_key_by_series_multiple_raw_forms() -> None:
+    """canonical_key_by_series captures all raw forms that map to the same canonical key."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {
+                "totals": [
+                    {"counterparty": "Bank of America, NA"},
+                    {"counterparty": "Bank of America NA"},
+                ],
+                "futures": [],
+            }
+        },
+        historical_series_headers_by_sheet={"Total": ("Bank of America",)},
+    )
+
+    assert result["by_sheet"]["Total"]["canonical_key_by_series"] == {
+        "Bank of America, NA": "Bank of America",
+        "Bank of America NA": "Bank of America",
+    }
+    assert result["gap_count"] == 0
+
+
+def test_reconcile_series_coverage_canonical_key_by_series_empty_when_no_data() -> None:
+    """canonical_key_by_series is empty when there are no series in parsed data."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={"Total": {"totals": [], "futures": []}},
+        historical_series_headers_by_sheet={"Total": ("JPMorgan",)},
+    )
+
+    assert result["by_sheet"]["Total"]["canonical_key_by_series"] == {}
+
+
+# ---------------------------------------------------------------------------
+# Clearing house canonicalization in lookup/match operations
+# ---------------------------------------------------------------------------
+
+
+def test_reconcile_clearing_house_extra_spaces_still_matches_historical() -> None:
+    """Clearing house with leading/trailing spaces in parsed data matches canonical historical header."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Futures": {"totals": [], "futures": [{"clearing_house": "  CME  "}]}
+        },
+        historical_series_headers_by_sheet={"Futures": ("CME",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Futures"]["clearing_houses_in_data"] == ["CME"]
+    assert result["by_sheet"]["Futures"]["missing_from_data"] == []
+
+
+def test_reconcile_clearing_house_internal_spaces_collapsed_before_match() -> None:
+    """Clearing house with repeated internal spaces is collapsed before matching historical header."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Futures": {"totals": [], "futures": [{"clearing_house": "ICE  Clear"}]}
+        },
+        historical_series_headers_by_sheet={"Futures": ("ICE Clear",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Futures"]["clearing_houses_in_data"] == ["ICE Clear"]
+    assert result["by_sheet"]["Futures"]["missing_from_data"] == []
+
+
+def test_reconcile_clearing_house_endash_canonicalized_before_match() -> None:
+    """En-dash in clearing house name from parsed data is normalized before matching historical header."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Futures": {
+                "totals": [],
+                # Clearing house name uses en-dash (U+2013)
+                "futures": [{"clearing_house": "ICE\u2013Clear"}],
+            }
+        },
+        historical_series_headers_by_sheet={"Futures": ("ICE-Clear",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Futures"]["clearing_houses_in_data"] == ["ICE-Clear"]
+    assert result["by_sheet"]["Futures"]["missing_from_data"] == []
