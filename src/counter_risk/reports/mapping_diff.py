@@ -55,9 +55,8 @@ def _iter_names_from_payload(
     collect_strings: bool = False,
 ) -> Iterator[str]:
     if isinstance(value, str):
-        if collect_strings:
-            if _is_nonblank(value):
-                yield value
+        if collect_strings and _is_nonblank(value):
+            yield value
         return
 
     if isinstance(value, Mapping):
@@ -81,7 +80,7 @@ def _iter_names_from_payload(
 
 
 def _iter_flat_string_sequence(payload: Any) -> Iterator[str]:
-    if isinstance(payload, str) or isinstance(payload, Mapping):
+    if isinstance(payload, (str, Mapping)):
         return
     if not isinstance(payload, Iterable):
         return

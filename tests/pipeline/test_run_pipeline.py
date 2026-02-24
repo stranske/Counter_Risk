@@ -1253,7 +1253,7 @@ def test_create_static_distribution_warns_on_non_windows(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """On non-Windows platforms a clear warning is emitted and no paths are returned."""
-    monkeypatch.setattr(run_module.platform, "system", lambda: "Linux")
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Linux")
 
     source_pptx = tmp_path / "deck.pptx"
     source_pptx.write_bytes(b"fake-pptx")
@@ -1279,7 +1279,7 @@ def test_create_static_distribution_warns_when_win32com_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """When win32com is absent on a simulated Windows host a warning is emitted."""
-    monkeypatch.setattr(run_module.platform, "system", lambda: "Windows")
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Windows")
     # Ensure win32com.client cannot be imported.
     monkeypatch.setitem(sys.modules, "win32com", None)
     monkeypatch.setitem(sys.modules, "win32com.client", None)
@@ -1332,7 +1332,7 @@ def test_run_pipeline_manifest_includes_distribution_static_warning(
     )
 
     # Force non-Windows so the fallback path is exercised.
-    monkeypatch.setattr(run_module.platform, "system", lambda: "Linux")
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Linux")
 
     run_dir = run_pipeline(config_path)
 
@@ -1395,10 +1395,10 @@ def test_export_chart_shapes_as_images_returns_empty_when_no_ole_shapes(
             self._slides = [_FakeSlide()]
             self.Count = 1
 
-        def __iter__(self):  # type: ignore[no-untyped-def]
+        def __iter__(self) -> Any:
             return iter(self._slides)
 
-        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+        def __getitem__(self, idx: int) -> Any:
             return self._slides[idx - 1]
 
     class _Presentation:
