@@ -27,6 +27,7 @@ from counter_risk.pipeline.parsing_types import (
     UnmappedCounterpartyError,
 )
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
+from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
 from counter_risk.pipeline.time_utils import utc_now_isoformat
 from counter_risk.writers import generate_mosers_workbook
 
@@ -843,6 +844,10 @@ def _write_outputs(
             shutil.copy2(source_mosers, target_monthly_book)
         output_paths.append(target_monthly_book)
 
+    if not config.ppt_output_enabled:
+        LOGGER.info("write_outputs_skip_ppt run_dir=%s", run_dir)
+        return output_paths, PptProcessingResult(status=PptProcessingStatus.SKIPPED)
+
     source_ppt = config.monthly_pptx
     output_names = resolve_ppt_output_names(as_of_date)
     target_master_ppt = run_dir / output_names.master_filename
@@ -863,7 +868,14 @@ def _write_outputs(
     )
     output_paths.append(target_master_ppt)
 
-    refresh_result = _refresh_ppt_links(target_master_ppt)
+    try:
+        refresh_result = _refresh_ppt_links(target_master_ppt)
+    except Exception as exc:
+        LOGGER.error("Master PPT link refresh failed: %s", exc)
+        refresh_result = PptProcessingResult(
+            status=PptProcessingStatus.FAILED,
+            error_detail=str(exc),
+        )
     if isinstance(refresh_result, bool):
         refresh_result = PptProcessingResult(
             status=PptProcessingStatus.SUCCESS if refresh_result else PptProcessingStatus.SKIPPED
@@ -871,18 +883,41 @@ def _write_outputs(
 
     if refresh_result.status == PptProcessingStatus.SKIPPED:
         warnings.append("PPT links not refreshed; COM refresh skipped")
-    elif refresh_result.status == PptProcessingStatus.FAILED:
+    if refresh_result.status == PptProcessingStatus.FAILED:
         warnings.append(
             "PPT links refresh failed; COM refresh encountered an error"
             if not refresh_result.error_detail
             else f"PPT links refresh failed; {refresh_result.error_detail}"
         )
-
-    _derive_distribution_ppt(
-        master_pptx_path=target_master_ppt,
-        distribution_pptx_path=target_distribution_ppt,
-    )
-    output_paths.append(target_distribution_ppt)
+        LOGGER.warning(
+            "Skipping distribution PPT derivation because Master PPT refresh failed: %s",
+            target_master_ppt,
+        )
+    else:
+        _derive_distribution_ppt(
+            master_pptx_path=target_master_ppt,
+            distribution_pptx_path=target_distribution_ppt,
+        )
+        try:
+            distribution_validation = validate_distribution_ppt_standalone(target_distribution_ppt)
+        except RuntimeError as exc:
+            warnings.append(
+                "Distribution PPT standalone validation skipped; unable to parse generated deck"
+            )
+            LOGGER.warning(
+                "Distribution PPT standalone validation skipped for %s: %s",
+                target_distribution_ppt,
+                exc,
+            )
+        else:
+            if not distribution_validation.is_valid:
+                rel_parts = ", ".join(distribution_validation.external_relationship_parts)
+                raise RuntimeError(
+                    "Distribution PPT standalone validation failed; "
+                    f"found {distribution_validation.external_relationship_count} "
+                    f"external relationships in: {rel_parts}"
+                )
+        output_paths.append(target_distribution_ppt)
     static_output_paths = _create_static_distribution(
         source_pptx=target_master_ppt,
         run_dir=run_dir,
