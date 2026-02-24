@@ -1574,10 +1574,10 @@ def test_export_chart_shapes_as_images_returns_empty_when_no_ole_shapes(
             self._slides = [_FakeSlide()]
             self.Count = 1
 
-        def __iter__(self):
+        def __iter__(self) -> Any:
             return iter(self._slides)
 
-        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+        def __getitem__(self, idx: int) -> Any:
             return self._slides[idx - 1]
 
     class _Presentation:

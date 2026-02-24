@@ -24,6 +24,12 @@ A programmatic replacement for the MOSERS spreadsheet workflow used to evaluate 
 - **Keepalive troubleshooting:** [docs/KEEPALIVE_TROUBLESHOOTING.md](docs/KEEPALIVE_TROUBLESHOOTING.md)
 - **Consumer setup checklist:** [docs/SETUP_CHECKLIST.md](docs/SETUP_CHECKLIST.md)
 
+## Name Registry Workflow
+
+1. Edit `config/name_registry.yml`.
+2. Run `mapping_diff_report`.
+3. Interpret `UNMAPPED`, `FALLBACK_MAPPED`, and `SUGGESTIONS` sections.
+
 ## Repository automation (high level)
 
 This repo is integrated with the central [stranske/Workflows](https://github.com/stranske/Workflows) library.

@@ -1,0 +1,367 @@
+version: 1
+issue: 227
+base: main
+branch: codex/issue-227
+tasks:
+  - id: task-01
+    title: Add `mapping_diff_report` console script entrypoint to `pyproject.toml`
+      under `[project.scripts]` pointing to `<package>.cli.mapping_diff_report:main`
+    status: done
+    started_at: '2026-02-23T18:21:21Z'
+    finished_at: '2026-02-23T18:21:38Z'
+    commit: 1257ec8041e7df00837f982b536348187dc3cea7
+    notes: []
+  - id: task-02
+    title: Create `src/<package>/cli/mapping_diff_report.py` with argument parser
+      that supports `--help` flag
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: Implement error handling that exits non-zero and writes single-line stderr
+      message including `config/name_registry.yml` path when registry is missing or
+      unreadable
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: Wire the CLI main function to call the report generator and write output
+      to stdout
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: Add exit code logic to return zero on success and non-zero on fatal errors
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: Create `src/<package>/reports/mapping_diff.py` with a callable report generator
+      function signature that accepts registry path and input sources
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: Implement registry loading logic within the report generator using existing
+      config patterns
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Implement input scanning logic that identifies unmapped names and fallback-mapped
+      names from normalization and reconciliation sources
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Implement deterministic `UNMAPPED` section generation that lists raw input
+      names not present in registry
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Implement deterministic `FALLBACK_MAPPED` section generation that lists
+      input names resolved via fallback with their canonical names
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Implement deterministic `SUGGESTIONS` section generation that provides
+      canonical name suggestions for every unmapped entry using title-case transformation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Identify the specific normalization and reconciliation functions that perform
+      counterparty name resolution
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Modify the name resolution logic to consult the registry for direct canonical
+      and alias lookups before applying hardcoded mappings
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Extend the return type or object from name resolution functions to include
+      a `source` field indicating `registry` or `fallback` origin
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: Update all call sites of the modified resolution functions to handle the
+      new `source` field in the return value
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Add unit test in `tests/test_mapping_diff_report_cli.py` that verifies
+      `mapping_diff_report --help` exits with status zero and prints usage text containing
+      `mapping_diff_report` string
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Add unit test that verifies missing `config/name_registry.yml` causes non-zero
+      exit and single-line stderr message containing the registry path
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Add unit test that verifies unreadable `config/name_registry.yml` causes
+      non-zero exit and appropriate stderr message
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Add unit test that verifies deterministic output against fixed fixtures
+      contains all three required sections with expected content
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Add integration test in `tests/test_normalization_registry_first.py` using
+      `name_registry_before.yml` that verifies at least one fixture input resolves
+      via fallback and appears in `FALLBACK_MAPPED` section
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: Add integration test using `name_registry_after.yml` with same inputs that
+      verifies previously fallback-mapped name now resolves via registry
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Add integration test that captures logs when using `name_registry_after.yml`
+      and asserts no warning messages contain the previously fallback-mapped raw name
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Add integration test that verifies `mapping_diff_report` output changes
+      between before and after registry states for the same input set
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: Create `tests/fixtures/name_registry_before.yml` with at least one missing
+      alias that will trigger fallback resolution
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Create `tests/fixtures/name_registry_after.yml` with the previously missing
+      alias added
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Add normalization/reconciliation input fixtures required for integration
+      tests
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Update fixture loading in tests to use explicit fixture selection via temp
+      working dir or dependency injection (not real `config/name_registry.yml`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Update documentation (README.md or docs page) to include ordered workflow:
+      (1) edit `config/name_registry.yml`, (2) run `mapping_diff_report`, (3) interpret
+      `UNMAPPED`, `FALLBACK_MAPPED`, `SUGGESTIONS` sections'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: Document which files in the current PR branch diff are registry/report/normalization/tests/docs-related
+      and which are unrelated, then create a separate branch containing only the in-scope
+      changes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: '`pyproject.toml` defines a `[project.scripts]` console entrypoint named
+      `mapping_diff_report`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Running `mapping_diff_report --help` exits with status code `0` and prints
+      usage text that includes the string `mapping_diff_report`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: If `config/name_registry.yml` is missing or unreadable, `mapping_diff_report`
+      exits non-zero and writes a single-line error message to stderr that includes
+      `config/name_registry.yml`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: '`src/<package>/reports/mapping_diff.py` exists and can be imported without
+      performing IO at import time'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'With fixed fixture registry + fixed fixture normalization/reconciliation
+      inputs, `mapping_diff_report` output is deterministic and contains three labeled
+      sections: `UNMAPPED`, `FALLBACK_MAPPED`, and `SUGGESTIONS`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: The `UNMAPPED` section lists each input name not present in the registry
+      fixture one per line and prints the raw input name exactly as encountered
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: The `FALLBACK_MAPPED` section lists each input name resolved by fallback
+      logic (not registry alias) and includes both the raw input name and resolved
+      canonical name on each line
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: The `SUGGESTIONS` section includes a non-empty suggested canonical name
+      for every entry in `UNMAPPED`, and each suggestion line follows the format `<raw_input_name>
+      -> <suggested_canonical_name>` where `suggested_canonical_name` is generated
+      using title-case transformation
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: Normalization/reconciliation code consults the name registry before any
+      hardcoded/fallback mappings and records mapping source as `registry` or `fallback`
+      per mapped name
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Integration scenario A: using `tests/fixtures/name_registry_before.yml`,
+      at least one fixture input resolves via fallback and `mapping_diff_report` lists
+      it under `FALLBACK_MAPPED`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'Integration scenario B: using `tests/fixtures/name_registry_after.yml`
+      (same inputs), the previously fallback-mapped name resolves via registry and
+      does not appear in `FALLBACK_MAPPED` or `UNMAPPED` in `mapping_diff_report`
+      output'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: When using `tests/fixtures/name_registry_after.yml`, the normalization/reconciliation
+      run emits no warning log messages containing the previously fallback-mapped
+      raw name
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'A documentation file (README.md or a docs page) contains an explicit ordered
+      workflow with the literal steps: (1) edit `config/name_registry.yml`, (2) run
+      `mapping_diff_report`, (3) interpret `UNMAPPED`, `FALLBACK_MAPPED`, and `SUGGESTIONS`
+      sections'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'The PR branch diff contains only files matching these patterns: `src/<package>/cli/*`,
+      `src/<package>/reports/*`, `src/<package>/name_registry.py`, `tests/test_*registry*.py`,
+      `tests/test_*mapping_diff*.py`, `tests/fixtures/name_registry*.yml`, `config/name_registry.yml`,
+      `pyproject.toml` (scripts section only), `README.md` or `docs/*.md`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

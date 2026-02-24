@@ -2,7 +2,25 @@ from __future__ import annotations
 
 from datetime import date
 
-from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
+from counter_risk.pipeline.ppt_naming import (
+    distribution_ppt_filename,
+    master_ppt_filename,
+    resolve_ppt_output_names,
+)
+
+
+def test_master_ppt_filename_uses_required_format() -> None:
+    assert (
+        master_ppt_filename(date(2026, 1, 31))
+        == "Monthly Counterparty Exposure Report (Master) - 2026-01-31.pptx"
+    )
+
+
+def test_distribution_ppt_filename_uses_required_format() -> None:
+    assert (
+        distribution_ppt_filename(date(2026, 1, 31))
+        == "Monthly Counterparty Exposure Report - 2026-01-31.pptx"
+    )
 
 
 def test_resolve_ppt_output_names_uses_expected_master_and_distribution_patterns() -> None:
