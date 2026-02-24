@@ -134,3 +134,37 @@ def test_generate_mapping_diff_report_fallback_section_is_deterministic(tmp_path
         ]
     )
     assert expected_section in report
+
+
+def test_generate_mapping_diff_report_suggestions_are_deterministic_title_case(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {
+            "normalization": [
+                {"counterparty": "aaa holdings"},
+                {"counterparty": "zeta llc"},
+                {"counterparty": "aaa holdings"},
+            ],
+            "reconciliation": {
+                "counterparties_in_data": [
+                    "zeta llc",
+                    "aaa holdings",
+                ]
+            },
+        },
+    )
+
+    expected_section = "\n".join(
+        [
+            "SUGGESTIONS",
+            "aaa holdings -> Aaa Holdings",
+            "zeta llc -> Zeta Llc",
+            "",
+        ]
+    )
+    assert expected_section in report
