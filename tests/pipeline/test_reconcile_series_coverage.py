@@ -285,7 +285,7 @@ def test_strict_unmapped_counterparty_exception_contains_normalized_value() -> N
         assert error.normalized_counterparty == "ACME LTD"
         assert error.normalized_counterparty != error.raw_counterparty
     elif hasattr(error, "normalized_value"):
-        normalized_value = getattr(error, "normalized_value")
+        normalized_value = error.normalized_value
         assert normalized_value == "ACME LTD"
         assert normalized_value != error.raw_counterparty
     else:
