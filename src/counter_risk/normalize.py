@@ -61,6 +61,8 @@ def _load_alias_lookup(registry_path: str) -> dict[str, str]:
 def _build_alias_lookup(registry: NameRegistryConfig) -> dict[str, str]:
     lookup: dict[str, str] = {}
     for entry in registry.entries:
+        lookup[_normalize_whitespace(entry.canonical_key).casefold()] = entry.display_name
+        lookup[_normalize_whitespace(entry.display_name).casefold()] = entry.display_name
         for alias in entry.aliases:
             lookup[_normalize_whitespace(alias).casefold()] = entry.display_name
     return lookup

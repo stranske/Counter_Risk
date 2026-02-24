@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from counter_risk.normalize import resolve_counterparty
 from counter_risk.pipeline.run import reconcile_series_coverage
 from counter_risk.reports.mapping_diff import generate_mapping_diff_report
 
@@ -54,6 +55,34 @@ def test_mapping_diff_report_changes_between_before_and_after_registry_states() 
     assert before_report != after_report
     assert "Societe Generale -> Soc Gen\n" in before_report
     assert "Societe Generale -> Soc Gen\n" not in after_report
+
+
+def test_resolve_counterparty_uses_registry_direct_canonical_match_before_fallback(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: soc_gen",
+                "    display_name: Soc Gen",
+                "    aliases:",
+                "      - SG",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    display_name_match = resolve_counterparty("Soc Gen", registry_path=registry_path)
+    canonical_key_match = resolve_counterparty("soc_gen", registry_path=registry_path)
+
+    assert display_name_match.canonical_name == "Soc Gen"
+    assert display_name_match.source == "registry"
+    assert canonical_key_match.canonical_name == "Soc Gen"
+    assert canonical_key_match.source == "registry"
 
 
 def test_reconciliation_with_after_registry_has_no_societe_generale_warning(
