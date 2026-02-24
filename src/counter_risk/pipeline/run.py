@@ -18,7 +18,7 @@ from zipfile import BadZipFile, ZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
-from counter_risk.normalize import normalize_counterparty
+from counter_risk.normalize import normalize_counterparty, resolve_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
@@ -144,6 +144,7 @@ def reconcile_series_coverage(
         normalized_counterparties_in_data = _normalized_counterparties_from_parsed_data(
             parsed_sections
         )
+        counterparty_sources_by_raw_name = _counterparty_sources_from_records(totals_records)
         clearing_houses_in_data = sorted(
             {
                 value
@@ -226,13 +227,28 @@ def reconcile_series_coverage(
                 raw_display = ", ".join(raw_names)
                 warnings.append(
                     "Reconciliation unmapped counterparty in sheet "
-                    f"{sheet_name!r}: raw={raw_display!r}, normalized={normalized_name!r}"
+                    f"{sheet_name!r}: raw={raw_display!r}, normalized={normalized_name!r}, "
+                    "source="
+                    + ",".join(
+                        sorted(
+                            {
+                                counterparty_sources_by_raw_name.get(raw_name, "unmapped")
+                                for raw_name in raw_names
+                            }
+                        )
+                    )
                 )
                 unmapped_counterparties.append(
                     {
                         "sheet": sheet_name,
                         "raw_counterparty_labels": raw_names,
                         "normalized_counterparty": normalized_name,
+                        "source": sorted(
+                            {
+                                counterparty_sources_by_raw_name.get(raw_name, "unmapped")
+                                for raw_name in raw_names
+                            }
+                        ),
                     }
                 )
 
@@ -360,9 +376,19 @@ def _normalized_counterparties_from_records(
         raw_name = str(record.get("counterparty", "")).strip()
         if not raw_name:
             continue
-        normalized_name = normalize_counterparty(raw_name)
-        normalized_to_raw.setdefault(normalized_name, set()).add(raw_name)
+        resolution = resolve_counterparty(raw_name)
+        normalized_to_raw.setdefault(resolution.canonical_name, set()).add(raw_name)
     return normalized_to_raw
+
+
+def _counterparty_sources_from_records(totals_records: list[dict[str, Any]]) -> dict[str, str]:
+    sources_by_raw_name: dict[str, str] = {}
+    for record in totals_records:
+        raw_name = str(record.get("counterparty", "")).strip()
+        if not raw_name:
+            continue
+        sources_by_raw_name[raw_name] = resolve_counterparty(raw_name).source
+    return sources_by_raw_name
 
 
 def _normalized_counterparties_from_parsed_data(
