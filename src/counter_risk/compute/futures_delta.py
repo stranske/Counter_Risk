@@ -302,7 +302,7 @@ def _validate_row(
 
     Returns ``True`` when the row is valid.
     """
-    desc_raw = row.get("description", row.get("Description", None))
+    desc_raw = row.get("description", row.get("Description"))
     if desc_raw is None or str(desc_raw).strip() == "":
         non_empty = {k: v for k, v in row.items() if v is not None and str(v).strip() != ""}
         msg = (
@@ -358,10 +358,10 @@ def _extract_notional(
     InvalidNotionalError
         In strict mode only, when the notional value is missing or invalid.
     """
-    _NOTIONAL_KEYS = ("notional", "Notional", "exposure")
+    notional_keys = ("notional", "Notional", "exposure")
 
     # Try each key alias in order.
-    for key in _NOTIONAL_KEYS:
+    for key in notional_keys:
         val = row.get(key)
         if val is None:
             continue
@@ -382,7 +382,7 @@ def _extract_notional(
             if collector is not None:
                 collector.warn(msg, code="INVALID_NOTIONAL")
             if strict:
-                raise InvalidNotionalError(msg)
+                raise InvalidNotionalError(msg) from None
             return 0.0
         # Treat NaN as invalid.
         if math.isnan(result):
