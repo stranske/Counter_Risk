@@ -123,3 +123,36 @@ def test_scrub_external_relationships_from_pptx_accepts_str_paths_and_creates_pa
     assert destination.exists()
     assert list_external_relationship_targets(str(source)) == {"X:\\\\linked\\\\book.xlsx"}
     assert list_external_relationship_targets(str(destination)) == set()
+
+
+def test_scrub_external_relationships_from_pptx_scrubs_external_targets_in_other_ppt_rels(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.pptx"
+    output = tmp_path / "distribution.pptx"
+
+    with ZipFile(source, "w") as archive:
+        archive.writestr(
+            "ppt/notesSlides/_rels/notesSlide1.xml.rels",
+            """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">
+  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink\" Target=\"https://example.com/notes\" TargetMode=\"External\"/>
+</Relationships>
+""",
+        )
+        archive.writestr(
+            "ppt/slideLayouts/_rels/slideLayout1.xml.rels",
+            """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">
+  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme\" Target=\"../theme/theme1.xml\"/>
+</Relationships>
+""",
+        )
+
+    scrubbed = scrub_external_relationships_from_pptx(source, scrubbed_pptx_path=output)
+
+    assert scrubbed == output
+    assert list_external_relationship_targets(source) == {"https://example.com/notes"}
+    assert list_external_relationship_targets(output) == set()
+    assert _relationship_count(output, "ppt/notesSlides/_rels/notesSlide1.xml.rels") == 0
+    assert _relationship_count(output, "ppt/slideLayouts/_rels/slideLayout1.xml.rels") == 1
