@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Implement workbook loading in `src/counter_risk/io/mosers_workbook.py`
       using openpyxl to read the MOSERS template while preserving existing content
-    status: doing
+    status: done
     started_at: '2026-02-24T15:50:27Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-24T15:50:42Z'
+    commit: c35b8d739b7cd645e2dc4764877ed63c9b7459d8
     notes: []
   - id: task-02
     title: Create `locate_futures_detail_section()` in `src/counter_risk/io/mosers_workbook.py`
