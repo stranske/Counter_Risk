@@ -26,6 +26,7 @@ from counter_risk.pipeline.parsing_types import (
     ParsedDataMissingKeyError,
 )
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
+from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
 from counter_risk.pipeline.time_utils import utc_now_isoformat
 from counter_risk.writers import generate_mosers_workbook
 
@@ -887,6 +888,14 @@ def _write_outputs(
             master_pptx_path=target_master_ppt,
             distribution_pptx_path=target_distribution_ppt,
         )
+        distribution_validation = validate_distribution_ppt_standalone(target_distribution_ppt)
+        if not distribution_validation.is_valid:
+            rel_parts = ", ".join(distribution_validation.external_relationship_parts)
+            raise RuntimeError(
+                "Distribution PPT standalone validation failed; "
+                f"found {distribution_validation.external_relationship_count} "
+                f"external relationships in: {rel_parts}"
+            )
         output_paths.append(target_distribution_ppt)
     static_output_paths = _create_static_distribution(
         source_pptx=target_master_ppt,
