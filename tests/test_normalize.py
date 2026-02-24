@@ -48,5 +48,13 @@ def test_normalize_counterparty_unknown_name_is_noop() -> None:
     assert normalize_counterparty("Morgan Stanley") == "Morgan Stanley"
 
 
+def test_normalize_counterparty_returns_identical_output_across_repeated_calls() -> None:
+    raw_name = "Bank of America, NA"
+    first = normalize_counterparty(raw_name)
+    outputs = [normalize_counterparty(raw_name) for _ in range(100)]
+
+    assert all(output == first for output in outputs)
+
+
 def test_normalize_clearing_house_unknown_name_is_noop() -> None:
     assert normalize_clearing_house("LCH") == "LCH"
