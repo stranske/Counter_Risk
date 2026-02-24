@@ -256,7 +256,7 @@ def test_reconcile_series_coverage_strict_mode_raises_for_unmapped_normalized_co
 
 def test_strict_unmapped_counterparty_raises_with_raw_value() -> None:
     raw_value = " ACME  LTD "
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(UnmappedCounterpartyError) as exc_info:
         reconcile_series_coverage(
             parsed_data_by_sheet={
                 "Total": {"totals": [{"counterparty": raw_value}], "futures": []}
@@ -265,13 +265,12 @@ def test_strict_unmapped_counterparty_raises_with_raw_value() -> None:
             fail_policy="strict",
         )
 
-    assert isinstance(exc_info.value, UnmappedCounterpartyError)
     assert exc_info.value.raw_counterparty == raw_value
 
 
 def test_strict_unmapped_counterparty_exception_contains_normalized_value() -> None:
     raw_value = " ACME  LTD "
-    with pytest.raises(Exception) as exc_info:
+    with pytest.raises(UnmappedCounterpartyError) as exc_info:
         reconcile_series_coverage(
             parsed_data_by_sheet={
                 "Total": {"totals": [{"counterparty": raw_value}], "futures": []}
@@ -337,6 +336,24 @@ def test_non_strict_missing_series_contains_mapping_metadata() -> None:
         and raw_value in entry.get("raw_counterparties", [])
         for entry in result["missing_series"]
     )
+
+
+def test_non_strict_missing_series_preserves_existing_consumer_keys() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": " ACME  LTD "}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+        fail_policy="warn",
+    )
+
+    unmapped_entry = next(
+        entry
+        for entry in result["missing_series"]
+        if entry.get("error_type") == "unmapped_counterparty"
+    )
+    assert unmapped_entry["sheet"] == "Total"
+    assert unmapped_entry["normalized_counterparties"] == ["ACME LTD"]
 
 
 def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_header_key() -> None:
