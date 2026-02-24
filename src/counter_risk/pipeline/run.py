@@ -1680,6 +1680,7 @@ def _run_reconciliation_checks(
     total_gap_count = 0
     impacted_series_count = 0
     impacted_rows_count = 0
+    first_unmapped_counterparty_error: UnmappedCounterpartyError | None = None
     reconciliation_by_variant: dict[str, dict[str, Any]] = {}
     for variant, historical_path in variant_historical_paths.items():
         parsed_sections = parsed_by_variant.get(variant, {})
@@ -1699,6 +1700,12 @@ def _run_reconciliation_checks(
         )
         reconciliation_by_variant[variant] = result
         total_gap_count += int(result.get("gap_count", 0))
+        result_exceptions = result.get("exceptions")
+        if first_unmapped_counterparty_error is None and isinstance(result_exceptions, list):
+            for exception in result_exceptions:
+                if isinstance(exception, UnmappedCounterpartyError):
+                    first_unmapped_counterparty_error = exception
+                    break
         by_sheet_result = result.get("by_sheet", {})
         if isinstance(by_sheet_result, Mapping):
             for sheet_name, sheet_result in by_sheet_result.items():
@@ -1730,6 +1737,8 @@ def _run_reconciliation_checks(
         impacted_rows_count=impacted_rows_count,
     )
     if config.reconciliation.fail_policy == "strict":
+        if first_unmapped_counterparty_error is not None:
+            raise first_unmapped_counterparty_error
         raise ValueError(
             "Reconciliation strict mode failed due to missing/unmapped series; "
             f"gap_count={total_gap_count}"
