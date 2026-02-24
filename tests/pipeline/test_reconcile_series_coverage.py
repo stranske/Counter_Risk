@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from inspect import Parameter, signature
+from pathlib import Path
 
 import pytest
 
@@ -375,6 +376,70 @@ def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_he
     assert result["by_sheet"]["Total"]["missing_from_data"] == []
     assert result["by_sheet"]["Total"]["missing_normalized_counterparties"] == []
     assert not any("unmapped counterparty" in warning for warning in result["warnings"])
+
+
+def test_reconcile_series_coverage_includes_fallback_source_in_unmapped_warning(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True)
+    (config_dir / "name_registry.yml").write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: soc_gen_inc",
+                "    display_name: Soc Gen Inc",
+                "    aliases:",
+                "      - Soc Gen Inc",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "Societe Generale"}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+    )
+
+    assert any("source=fallback" in warning for warning in result["warnings"])
+
+
+def test_reconcile_series_coverage_includes_registry_source_in_unmapped_warning(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True)
+    (config_dir / "name_registry.yml").write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: soc_gen_inc",
+                "    display_name: Soc Gen Inc",
+                "    aliases:",
+                "      - Societe Generale",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "Societe Generale"}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+    )
+
+    assert any("source=registry" in warning for warning in result["warnings"])
 
 
 def test_normalized_counterparties_from_records_uses_normalization_mapping() -> None:
