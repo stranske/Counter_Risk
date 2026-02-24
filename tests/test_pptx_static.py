@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import base64
 from pathlib import Path
 
 import pytest
 
 try:
+    from PIL import Image
     from pptx import Presentation
     from pptx.chart.data import CategoryChartData
     from pptx.enum.chart import XL_CHART_TYPE
@@ -19,13 +19,9 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency in some en
 
 from counter_risk.ppt.pptx_static import _rebuild_pptx_from_slide_images
 
-_ONE_PIXEL_PNG = base64.b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO6n8e0AAAAASUVORK5CYII="
-)
-
 
 def _write_png(path: Path) -> None:
-    path.write_bytes(_ONE_PIXEL_PNG)
+    Image.new("RGB", (1, 1), color=(255, 255, 255)).save(path, format="PNG")
 
 
 def _make_source_with_chart(path: Path, image_path: Path) -> None:
