@@ -1304,6 +1304,9 @@ def _rebuild_pptx_replacing_charts(
         for img_path, left, top, width, height in replacements:
             slide.shapes.add_picture(str(img_path), left, top, width, height)
 
+        if fallback_to_full_deck_rebuild:
+            continue
+
         if slide_idx in low_confidence_slides:
             fallback_image = fallback_slide_images.get(slide_idx)
             if fallback_image is None:
