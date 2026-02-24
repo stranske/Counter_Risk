@@ -283,21 +283,10 @@ def test_strict_unmapped_counterparty_exception_contains_normalized_value() -> N
 
     error = exc_info.value
     assert isinstance(error, UnmappedCounterpartyError)
-    has_normalized_counterparty = hasattr(error, "normalized_counterparty")
-    has_normalized_value = hasattr(error, "normalized_value")
-
-    if has_normalized_counterparty:
-        assert error.normalized_counterparty == "ACME LTD"
-        assert error.normalized_counterparty != error.raw_counterparty
-        assert not has_normalized_value
-    elif has_normalized_value:
-        normalized_value = error.normalized_value
-        assert normalized_value == "ACME LTD"
-        assert normalized_value != error.raw_counterparty
-        assert not has_normalized_counterparty
-    else:
-        assert not has_normalized_counterparty
-        assert not has_normalized_value
+    assert hasattr(error, "normalized_counterparty")
+    assert error.normalized_counterparty == "ACME LTD"
+    assert error.normalized_counterparty != error.raw_counterparty
+    assert not hasattr(error, "normalized_value")
 
 
 def test_reconcile_series_coverage_warn_mode_records_structured_exception_without_raising() -> None:
