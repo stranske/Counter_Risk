@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 _PPT_OUTPUT_ENTRY_SCHEMA: dict[str, Any] = {
     "type": "object",
