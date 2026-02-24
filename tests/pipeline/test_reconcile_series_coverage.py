@@ -104,19 +104,22 @@ def test_reconcile_series_coverage_extracts_counterparties_and_clearing_houses()
     }
     assert result["gap_count"] == 4
     assert len(result["warnings"]) == 3
-    assert result["missing_series"] == [
-        {
-            "sheet": "All Programs",
-            "missing_from_historical_headers": ["Citibank", "CME", "ICE", "JPMorgan"],
-            "data_source_context": "counterparties_and_clearing_houses",
-        }
-    ]
+    assert {
+        "sheet": "All Programs",
+        "missing_from_historical_headers": ["Citibank", "CME", "ICE", "JPMorgan"],
+        "data_source_context": "counterparties_and_clearing_houses",
+    } in result["missing_series"]
+    assert any(
+        entry.get("error_type") == "unmapped_counterparty"
+        and set(entry.get("raw_counterparties", [])) == {"Citibank", "  JPMorgan  "}
+        for entry in result["missing_series"]
+    )
     assert any(
         "raw='Citibank'" in warning and "normalized='Citibank'" in warning
         for warning in result["warnings"]
     )
     assert any(
-        "raw='JPMorgan'" in warning and "normalized='JPMorgan'" in warning
+        "normalized='JPMorgan'" in warning and "JPMorgan" in warning
         for warning in result["warnings"]
     )
 
@@ -252,6 +255,47 @@ def test_reconcile_series_coverage_strict_mode_raises_for_unmapped_normalized_co
     assert error.sheet == "Total"
 
 
+def test_strict_unmapped_counterparty_raises_with_raw_value() -> None:
+    raw_value = " ACME  LTD "
+    with pytest.raises(UnmappedCounterpartyError) as exc_info:
+        reconcile_series_coverage(
+            parsed_data_by_sheet={
+                "Total": {"totals": [{"counterparty": raw_value}], "futures": []}
+            },
+            historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+            fail_policy="strict",
+        )
+
+    assert isinstance(exc_info.value, UnmappedCounterpartyError)
+    assert exc_info.value.raw_counterparty == raw_value
+
+
+def test_strict_unmapped_counterparty_exception_contains_normalized_value() -> None:
+    raw_value = " ACME  LTD "
+    with pytest.raises(UnmappedCounterpartyError) as exc_info:
+        reconcile_series_coverage(
+            parsed_data_by_sheet={
+                "Total": {"totals": [{"counterparty": raw_value}], "futures": []}
+            },
+            historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+            fail_policy="strict",
+        )
+
+    error = exc_info.value
+    assert isinstance(error, UnmappedCounterpartyError)
+    if hasattr(error, "normalized_counterparty"):
+        normalized_value = error.normalized_counterparty
+        assert normalized_value == "ACME LTD"
+        assert normalized_value != error.raw_counterparty
+    elif hasattr(error, "normalized_value"):
+        normalized_value = error.normalized_value
+        assert normalized_value == "ACME LTD"
+        assert normalized_value != error.raw_counterparty
+    else:
+        assert not hasattr(error, "normalized_counterparty")
+        assert not hasattr(error, "normalized_value")
+
+
 def test_reconcile_series_coverage_warn_mode_records_structured_exception_without_raising() -> None:
     result = reconcile_series_coverage(
         parsed_data_by_sheet={
@@ -267,6 +311,52 @@ def test_reconcile_series_coverage_warn_mode_records_structured_exception_withou
     assert isinstance(exceptions[0], UnmappedCounterpartyError)
     assert exceptions[0].normalized_counterparty == "Bank of America"
     assert exceptions[0].raw_counterparty == "Bank of America, NA"
+
+
+def test_non_strict_unmapped_counterparty_sets_missing_series() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": " ACME  LTD "}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+        fail_policy="warn",
+    )
+
+    assert "missing_series" in result
+    assert len(result["missing_series"]) >= 1
+
+
+def test_non_strict_missing_series_contains_mapping_metadata() -> None:
+    raw_value = " ACME  LTD "
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": raw_value}], "futures": []}},
+        historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+        fail_policy="warn",
+    )
+
+    assert any(
+        entry.get("error_type") == "unmapped_counterparty"
+        and raw_value in entry.get("raw_counterparties", [])
+        for entry in result["missing_series"]
+    )
+
+
+def test_non_strict_missing_series_preserves_existing_consumer_keys() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": " ACME  LTD "}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+        fail_policy="warn",
+    )
+
+    unmapped_entry = next(
+        entry
+        for entry in result["missing_series"]
+        if entry.get("error_type") == "unmapped_counterparty"
+    )
+    assert unmapped_entry["sheet"] == "Total"
+    assert unmapped_entry["normalized_counterparties"] == ["ACME LTD"]
 
 
 def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_header_key() -> None:
