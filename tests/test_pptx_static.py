@@ -33,9 +33,9 @@ def _make_source_with_chart(path: Path, image_path: Path) -> None:
     blank_layout = prs.slide_layouts[6]
 
     slide1 = prs.slides.add_slide(blank_layout)
-    chart_data = CategoryChartData()
+    chart_data = CategoryChartData()  # type: ignore[no-untyped-call]
     chart_data.categories = ["A", "B"]
-    chart_data.add_series("Series 1", (1, 2))
+    chart_data.add_series("Series 1", (1, 2))  # type: ignore[no-untyped-call]
     slide1.shapes.add_chart(
         XL_CHART_TYPE.COLUMN_CLUSTERED,
         Inches(1),

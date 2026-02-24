@@ -10,7 +10,7 @@ import sys
 import types
 from datetime import date
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import pytest
 
@@ -1464,7 +1464,7 @@ def test_create_static_distribution_rebuilds_from_slide_images(
         DispatchEx=lambda *_args, **_kwargs: _FakePowerPointApplication()
     )
     fake_win32com = types.ModuleType("win32com")
-    fake_win32com.client = fake_client
+    cast(Any, fake_win32com).client = fake_client
     monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
     monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
 

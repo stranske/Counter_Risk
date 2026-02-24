@@ -17,7 +17,7 @@ from counter_risk.compute.futures_delta import (
 
 def _records(result: Any) -> list[dict[str, Any]]:
     if hasattr(result, "to_dict"):
-        return result.to_dict(orient="records")
+        return list(result.to_dict(orient="records"))
     return [dict(row) for row in result]
 
 

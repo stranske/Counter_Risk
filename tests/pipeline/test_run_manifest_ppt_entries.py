@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 from counter_risk.pipeline.manifest_schema import validate_manifest_ppt_outputs
 
@@ -41,5 +42,6 @@ def test_manifest_ppt_enabled_contains_both_outputs_with_existing_paths(tmp_path
 
     assert is_valid is True
     assert error is None
-    assert Path(manifest["ppt_outputs"]["master"]["path"]).exists()
-    assert Path(manifest["ppt_outputs"]["distribution"]["path"]).exists()
+    ppt_outputs = cast(dict[str, dict[str, Any]], manifest["ppt_outputs"])
+    assert Path(str(ppt_outputs["master"]["path"])).exists()
+    assert Path(str(ppt_outputs["distribution"]["path"])).exists()
