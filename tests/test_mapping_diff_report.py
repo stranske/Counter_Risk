@@ -168,3 +168,32 @@ def test_generate_mapping_diff_report_suggestions_are_deterministic_title_case(
         ]
     )
     assert expected_section in report
+
+
+def test_generate_mapping_diff_report_sections_use_required_line_formats(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {
+            "normalization": [
+                {"counterparty": "UNKNOWN broker"},
+                {"counterparty": "Citigroup"},
+            ],
+            "reconciliation": {"counterparties_in_data": ["UNKNOWN broker"]},
+        },
+    )
+
+    lines = report.splitlines()
+    unmapped_start = lines.index("UNMAPPED")
+    fallback_start = lines.index("FALLBACK_MAPPED")
+    suggestions_start = lines.index("SUGGESTIONS")
+
+    unmapped_lines = lines[unmapped_start + 1 : fallback_start - 1]
+    fallback_lines = lines[fallback_start + 1 : suggestions_start - 1]
+    suggestion_lines = lines[suggestions_start + 1 :]
+
+    assert unmapped_lines == ["UNKNOWN broker"]
+    assert fallback_lines == ["Citigroup -> Citibank"]
+    assert suggestion_lines == ["UNKNOWN broker -> Unknown Broker"]

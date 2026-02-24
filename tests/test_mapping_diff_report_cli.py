@@ -48,6 +48,20 @@ def test_mapping_diff_report_missing_registry_exits_nonzero(tmp_path: Path) -> N
     assert len(result.stderr.strip().splitlines()) == 1
 
 
+def test_mapping_diff_report_default_registry_missing_mentions_config_path(tmp_path: Path) -> None:
+    result = subprocess.run(
+        _cli_cmd(),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=_cli_env(),
+        cwd=tmp_path,
+    )
+    assert result.returncode != 0
+    assert "config/name_registry.yml" in result.stderr
+    assert len(result.stderr.strip().splitlines()) == 1
+
+
 def test_mapping_diff_report_unreadable_registry_exits_nonzero(tmp_path: Path) -> None:
     registry_path = tmp_path / "name_registry.yml"
     registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
