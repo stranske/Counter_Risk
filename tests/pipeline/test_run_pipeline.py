@@ -534,6 +534,55 @@ def test_run_reconciliation_checks_segment_gaps_do_not_change_direct_impacted_co
     assert any("impacted_rows=1" in warning for warning in warnings)
 
 
+def test_run_reconciliation_checks_strict_raises_unmapped_counterparty_error_from_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path, fail_policy="strict")
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": " ACME  LTD ", "Notional": 1.0}]),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+    unmapped_error = UnmappedCounterpartyError(
+        normalized_counterparty="ACME LTD",
+        raw_counterparty=" ACME  LTD ",
+        sheet="Total",
+    )
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Total": ("Legacy Counterparty",)},
+    )
+    monkeypatch.setattr(
+        run_module,
+        "reconcile_series_coverage",
+        lambda **_: {
+            "gap_count": 1,
+            "by_sheet": {},
+            "warnings": [],
+            "missing_series": [],
+            "exceptions": [unmapped_error],
+        },
+    )
+
+    with pytest.raises(UnmappedCounterpartyError) as exc_info:
+        run_module._run_reconciliation_checks(
+            run_dir=tmp_path,
+            config=config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+
+    assert exc_info.value is unmapped_error
+    assert exc_info.value.raw_counterparty == " ACME  LTD "
+    assert exc_info.value.normalized_counterparty == "ACME LTD"
+
+
 def test_run_pipeline_writes_expected_outputs_and_manifest(
     tmp_path: Path, fake_pandas: None
 ) -> None:
