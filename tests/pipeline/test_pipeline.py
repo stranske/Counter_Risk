@@ -13,7 +13,7 @@ def test_build_parsed_data_by_sheet_keys_exact_sheet_names() -> None:
             "futures": [],
         },
         historical_series_headers_by_sheet={
-            sheet_name: ("Counterparty A",) if sheet_name == "Sheet A" else tuple()
+            sheet_name: ("Counterparty A",) if sheet_name == "Sheet A" else ()
             for sheet_name in workbook_sheet_names
         },
     )
