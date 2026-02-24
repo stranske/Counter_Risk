@@ -28,6 +28,7 @@ from counter_risk.pipeline.parsing_types import (
 )
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
+from counter_risk.pipeline.run_folder_outputs import build_run_folder_readme_content
 from counter_risk.pipeline.time_utils import utc_now_isoformat
 from counter_risk.writers import generate_mosers_workbook
 
@@ -944,6 +945,10 @@ def _write_outputs(
         warnings=warnings,
     )
     output_paths.extend(static_output_paths)
+    if config.ppt_output_enabled and any(path.suffix.lower() == ".pptx" for path in output_paths):
+        readme_path = run_dir / "README.txt"
+        readme_path.write_text(build_run_folder_readme_content(as_of_date), encoding="utf-8")
+        output_paths.append(readme_path)
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
     return output_paths, refresh_result
