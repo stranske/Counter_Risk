@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import datetime as _dt
 
-UTC = getattr(_dt, "UTC", _dt.timezone.utc)
+UTC = _dt.UTC if hasattr(_dt, "UTC") else _dt.timezone.utc  # noqa: UP017
 
 
 def utc_now_isoformat() -> str:
