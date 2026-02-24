@@ -11,6 +11,7 @@ import pytest
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
+from counter_risk.pipeline.ppt_validation import PptStandaloneValidationResult
 
 
 def _write_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
@@ -200,3 +201,38 @@ def test_write_outputs_handles_master_refresh_exception_and_logs_error(
         path.name != "Monthly Counterparty Exposure Report - 2025-12-31.pptx"
         for path in output_paths
     )
+
+
+def test_write_outputs_raises_when_distribution_standalone_validation_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, screenshot_inputs={})
+    config = config.model_copy(update={"enable_screenshot_replacement": False})
+    called: dict[str, int] = {"validate_distribution": 0}
+
+    def _refresh(_path: Path) -> run_module.PptProcessingResult:
+        return run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+
+    def _validate_distribution(_path: Path) -> PptStandaloneValidationResult:
+        called["validate_distribution"] += 1
+        return PptStandaloneValidationResult(
+            is_valid=False,
+            external_relationship_count=1,
+            relationship_parts_scanned=("ppt/slides/_rels/slide1.xml.rels",),
+            external_relationship_parts=("ppt/slides/_rels/slide1.xml.rels",),
+        )
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", _refresh)
+    monkeypatch.setattr(run_module, "validate_distribution_ppt_standalone", _validate_distribution)
+
+    with pytest.raises(RuntimeError, match="Distribution PPT standalone validation failed"):
+        run_module._write_outputs(
+            run_dir=run_dir,
+            config=config,
+            as_of_date=date(2025, 12, 31),
+            warnings=[],
+        )
+
+    assert called["validate_distribution"] == 1
