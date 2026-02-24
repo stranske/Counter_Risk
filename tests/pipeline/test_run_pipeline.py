@@ -294,6 +294,63 @@ def test_run_reconciliation_checks_counts_only_rows_tied_to_missing_series(
     assert any("impacted_rows=1" in warning for warning in warnings)
 
 
+def test_write_needs_mapping_updates_ignores_unmapped_counterparty_metadata_for_legacy_output(
+    tmp_path: Path,
+) -> None:
+    output_path = run_module._write_needs_mapping_updates(
+        run_dir=tmp_path,
+        fail_policy="warn",
+        reconciliation_by_variant={
+            "all_programs": {
+                "missing_series": [
+                    {
+                        "sheet": "Total",
+                        "missing_from_historical_headers": ["Counterparty A"],
+                    },
+                    {
+                        "sheet": "Total",
+                        "error_type": "unmapped_counterparty",
+                        "raw_counterparties": [" ACME  LTD "],
+                        "normalized_counterparties": ["ACME LTD"],
+                    },
+                ]
+            }
+        },
+        total_gap_count=2,
+        impacted_series_count=2,
+        impacted_rows_count=1,
+    )
+
+    text = output_path.read_text(encoding="utf-8")
+    assert "missing_from_historical_headers=Counterparty A" in text
+    assert "raw_counterparties" not in text
+    assert "ACME LTD" not in text
+
+
+def test_manifest_impacted_rows_counts_only_matching_normalized_label() -> None:
+    parsed_sections = {
+        "totals": [
+            {"counterparty": " ACME  LTD ", "normalized_label": "ACME LTD", "Notional": 1.0},
+            {"counterparty": "ACME LTD", "normalized_label": "ACME LTD", "Notional": 2.0},
+            {"counterparty": "Beta LLC", "normalized_label": "BETA LLC", "Notional": 3.0},
+        ],
+        "futures": [],
+    }
+    reconciliation_sheet_result = {
+        "missing_from_historical_headers": [],
+        "missing_from_data": [],
+        "missing_normalized_counterparties": ["ACME LTD"],
+    }
+
+    impacted_series, impacted_rows = run_module._calculate_impacted_scope_for_sheet(
+        parsed_sections=parsed_sections,
+        reconciliation_sheet_result=reconciliation_sheet_result,
+    )
+
+    assert impacted_series == 1
+    assert impacted_rows == 2
+
+
 def test_run_reconciliation_checks_counts_only_impacted_series_when_other_rows_unaffected(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -475,6 +532,55 @@ def test_run_reconciliation_checks_segment_gaps_do_not_change_direct_impacted_co
     assert "impacted_rows_count: 1" in text
     assert any("impacted_series=1" in warning for warning in warnings)
     assert any("impacted_rows=1" in warning for warning in warnings)
+
+
+def test_run_reconciliation_checks_strict_raises_unmapped_counterparty_error_from_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path, fail_policy="strict")
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": " ACME  LTD ", "Notional": 1.0}]),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+    unmapped_error = UnmappedCounterpartyError(
+        normalized_counterparty="ACME LTD",
+        raw_counterparty=" ACME  LTD ",
+        sheet="Total",
+    )
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Total": ("Legacy Counterparty",)},
+    )
+    monkeypatch.setattr(
+        run_module,
+        "reconcile_series_coverage",
+        lambda **_: {
+            "gap_count": 1,
+            "by_sheet": {},
+            "warnings": [],
+            "missing_series": [],
+            "exceptions": [unmapped_error],
+        },
+    )
+
+    with pytest.raises(UnmappedCounterpartyError) as exc_info:
+        run_module._run_reconciliation_checks(
+            run_dir=tmp_path,
+            config=config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+
+    assert exc_info.value is unmapped_error
+    assert exc_info.value.raw_counterparty == " ACME  LTD "
+    assert exc_info.value.normalized_counterparty == "ACME LTD"
 
 
 def test_run_pipeline_writes_expected_outputs_and_manifest(

@@ -149,6 +149,9 @@ def reconcile_series_coverage(
             normalized_counterparties_in_data,
             counterparty_sources_by_raw_name,
         ) = _counterparty_resolution_maps_from_records(totals_records)
+        raw_counterparties_by_normalized = _raw_counterparties_by_normalized_from_parsed_data(
+            parsed_sections
+        )
         clearing_houses_in_data = sorted(
             {
                 value
@@ -168,9 +171,10 @@ def reconcile_series_coverage(
         )
         missing_counterparty_labels = sorted(
             {
-                raw_name
+                canonicalize_name(raw_name)
                 for normalized_name in missing_normalized_counterparties
                 for raw_name in normalized_counterparties_in_data.get(normalized_name, ())
+                if canonicalize_name(raw_name)
             },
             key=str.casefold,
         )
@@ -224,11 +228,13 @@ def reconcile_series_coverage(
 
         if missing_normalized_counterparties:
             sheet_exceptions: list[UnmappedCounterpartyError] = []
+            raw_counterparties_for_metadata: list[str] = []
             for normalized_name in missing_normalized_counterparties:
                 raw_names = sorted(
-                    set(normalized_counterparties_in_data.get(normalized_name, ())),
+                    set(raw_counterparties_by_normalized.get(normalized_name, ())),
                     key=str.casefold,
                 )
+                raw_counterparties_for_metadata.extend(raw_names)
                 raw_display = ", ".join(raw_names)
                 warnings.append(
                     "Reconciliation unmapped counterparty in sheet "
@@ -251,6 +257,16 @@ def reconcile_series_coverage(
                     )
                     sheet_exceptions.append(error)
                     exceptions.append(error)
+
+            if raw_counterparties_for_metadata:
+                missing_series.append(
+                    {
+                        "sheet": sheet_name,
+                        "error_type": "unmapped_counterparty",
+                        "raw_counterparties": raw_counterparties_for_metadata,
+                        "normalized_counterparties": missing_normalized_counterparties,
+                    }
+                )
 
             if fail_policy == "strict":
                 if sheet_exceptions:
@@ -396,11 +412,34 @@ def _normalized_counterparties_from_records(
     return normalized_to_raw
 
 
+def _raw_counterparties_by_normalized_from_records(
+    totals_records: list[dict[str, Any]],
+) -> dict[str, set[str]]:
+    normalized_to_raw: dict[str, set[str]] = {}
+    for record in totals_records:
+        raw_value = record.get("counterparty", "")
+        if raw_value is None:
+            continue
+        raw_name = str(raw_value)
+        if not raw_name.strip():
+            continue
+        normalized_name = normalize_counterparty(raw_name)
+        normalized_to_raw.setdefault(normalized_name, set()).add(raw_name)
+    return normalized_to_raw
+
+
 def _normalized_counterparties_from_parsed_data(
     parsed_sections: Mapping[str, Any],
 ) -> dict[str, set[str]]:
     totals_records = _records(parsed_sections.get("totals", []))
     return _normalized_counterparties_from_records(totals_records)
+
+
+def _raw_counterparties_by_normalized_from_parsed_data(
+    parsed_sections: Mapping[str, Any],
+) -> dict[str, set[str]]:
+    totals_records = _records(parsed_sections.get("totals", []))
+    return _raw_counterparties_by_normalized_from_records(totals_records)
 
 
 def run_pipeline(config_path: str | Path) -> Path:
@@ -1646,6 +1685,7 @@ def _run_reconciliation_checks(
     total_gap_count = 0
     impacted_series_count = 0
     impacted_rows_count = 0
+    first_unmapped_counterparty_error: UnmappedCounterpartyError | None = None
     reconciliation_by_variant: dict[str, dict[str, Any]] = {}
     for variant, historical_path in variant_historical_paths.items():
         parsed_sections = parsed_by_variant.get(variant, {})
@@ -1665,6 +1705,12 @@ def _run_reconciliation_checks(
         )
         reconciliation_by_variant[variant] = result
         total_gap_count += int(result.get("gap_count", 0))
+        result_exceptions = result.get("exceptions")
+        if first_unmapped_counterparty_error is None and isinstance(result_exceptions, list):
+            for exception in result_exceptions:
+                if isinstance(exception, UnmappedCounterpartyError):
+                    first_unmapped_counterparty_error = exception
+                    break
         by_sheet_result = result.get("by_sheet", {})
         if isinstance(by_sheet_result, Mapping):
             for sheet_name, sheet_result in by_sheet_result.items():
@@ -1696,6 +1742,8 @@ def _run_reconciliation_checks(
         impacted_rows_count=impacted_rows_count,
     )
     if config.reconciliation.fail_policy == "strict":
+        if first_unmapped_counterparty_error is not None:
+            raise first_unmapped_counterparty_error
         raise ValueError(
             "Reconciliation strict mode failed due to missing/unmapped series; "
             f"gap_count={total_gap_count}"
@@ -1707,9 +1755,7 @@ def _build_parsed_data_by_sheet(
     parsed_sections: Mapping[str, Any],
     historical_series_headers_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]],
 ) -> dict[str, dict[str, list[dict[str, Any]]]]:
-    sheet_names = [
-        str(name).strip() for name in historical_series_headers_by_sheet if str(name).strip()
-    ]
+    sheet_names = [str(name) for name in historical_series_headers_by_sheet if str(name)]
     if not sheet_names:
         return {}
 
@@ -1811,19 +1857,45 @@ def _count_rows_for_impacted_entities(
     normalized_impacted_series: set[str],
 ) -> int:
     impacted_rows = 0
+    for impacted_label in normalized_impacted_series:
+        impacted_rows += _count_rows_for_normalized_label(
+            parsed_sections=parsed_sections,
+            normalized_label=impacted_label,
+        )
+    return impacted_rows
+
+
+def _count_rows_for_normalized_label(
+    *,
+    parsed_sections: Mapping[str, Any],
+    normalized_label: str,
+) -> int:
+    impacted_rows = 0
     for record in _records(parsed_sections.get("totals", [])):
-        raw_label = str(record.get("counterparty", "")).strip()
-        normalized_label = normalize_counterparty(raw_label) if raw_label else ""
-        if normalized_label in normalized_impacted_series:
+        if (
+            _record_normalized_label(record=record, raw_label_key="counterparty")
+            == normalized_label
+        ):
             impacted_rows += 1
 
     for record in _records(parsed_sections.get("futures", [])):
-        raw_label = str(record.get("clearing_house", "")).strip()
-        normalized_label = normalize_counterparty(raw_label) if raw_label else ""
-        if normalized_label in normalized_impacted_series:
+        if (
+            _record_normalized_label(record=record, raw_label_key="clearing_house")
+            == normalized_label
+        ):
             impacted_rows += 1
-
     return impacted_rows
+
+
+def _record_normalized_label(*, record: Mapping[str, Any], raw_label_key: str) -> str:
+    normalized_field = str(record.get("normalized_label", "")).strip()
+    if normalized_field:
+        return normalize_counterparty(normalized_field)
+
+    raw_label = str(record.get(raw_label_key, "")).strip()
+    if not raw_label:
+        return ""
+    return normalize_counterparty(raw_label)
 
 
 def _select_fallback_sheet_name(
