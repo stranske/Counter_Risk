@@ -294,6 +294,30 @@ def test_run_reconciliation_checks_counts_only_rows_tied_to_missing_series(
     assert any("impacted_rows=1" in warning for warning in warnings)
 
 
+def test_manifest_impacted_rows_counts_only_matching_normalized_label() -> None:
+    parsed_sections = {
+        "totals": [
+            {"counterparty": " ACME  LTD ", "normalized_label": "ACME LTD", "Notional": 1.0},
+            {"counterparty": "ACME LTD", "normalized_label": "ACME LTD", "Notional": 2.0},
+            {"counterparty": "Beta LLC", "normalized_label": "BETA LLC", "Notional": 3.0},
+        ],
+        "futures": [],
+    }
+    reconciliation_sheet_result = {
+        "missing_from_historical_headers": [],
+        "missing_from_data": [],
+        "missing_normalized_counterparties": ["ACME LTD"],
+    }
+
+    impacted_series, impacted_rows = run_module._calculate_impacted_scope_for_sheet(
+        parsed_sections=parsed_sections,
+        reconciliation_sheet_result=reconciliation_sheet_result,
+    )
+
+    assert impacted_series == 1
+    assert impacted_rows == 2
+
+
 def test_run_reconciliation_checks_counts_only_impacted_series_when_other_rows_unaffected(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

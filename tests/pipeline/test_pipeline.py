@@ -5,6 +5,48 @@ from __future__ import annotations
 import counter_risk.pipeline.run as run_module
 
 
+def test_build_parsed_data_by_sheet_keys_exact_sheet_names() -> None:
+    workbook_sheet_names = ["Sheet A", "Sheet B"]
+    result = run_module._build_parsed_data_by_sheet(
+        parsed_sections={
+            "totals": [{"counterparty": "Counterparty A", "Notional": 10.0}],
+            "futures": [],
+        },
+        historical_series_headers_by_sheet={
+            sheet_name: ("Counterparty A",) if sheet_name == "Sheet A" else tuple()
+            for sheet_name in workbook_sheet_names
+        },
+    )
+
+    assert set(result.keys()) == set(workbook_sheet_names)
+    assert result["Sheet B"]["totals"] == []
+    assert result["Sheet B"]["futures"] == []
+
+
+def test_build_parsed_data_by_sheet_multi_sheet_row_partition() -> None:
+    result = run_module._build_parsed_data_by_sheet(
+        parsed_sections={
+            "totals": [
+                {"counterparty": "Counterparty A", "Notional": 10.0},
+                {"counterparty": "Counterparty B", "Notional": 20.0},
+            ],
+            "futures": [
+                {"clearing_house": "Clearing A", "notional": 3.0},
+                {"clearing_house": "Clearing B", "notional": 4.0},
+            ],
+        },
+        historical_series_headers_by_sheet={
+            "Sheet A": ("Counterparty A", "Clearing A"),
+            "Sheet B": ("Counterparty B", "Clearing B"),
+        },
+    )
+
+    assert [row["counterparty"] for row in result["Sheet A"]["totals"]] == ["Counterparty A"]
+    assert [row["counterparty"] for row in result["Sheet B"]["totals"]] == ["Counterparty B"]
+    assert [row["clearing_house"] for row in result["Sheet A"]["futures"]] == ["Clearing A"]
+    assert [row["clearing_house"] for row in result["Sheet B"]["futures"]] == ["Clearing B"]
+
+
 def test_build_parsed_data_by_sheet_uses_actual_workbook_sheet_names_as_keys() -> None:
     parsed_data_by_sheet = run_module._build_parsed_data_by_sheet(
         parsed_sections={
