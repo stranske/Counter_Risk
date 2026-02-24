@@ -82,3 +82,21 @@ def test_generate_mapping_diff_report_ignores_non_name_string_fields(tmp_path: P
     assert "run-123" not in report
     assert "raw='Societe Generale'" not in report
     assert "Societe Generale -> Soc Gen\n" in report
+
+
+def test_generate_mapping_diff_report_preserves_raw_names(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {
+            "normalization": [
+                {"counterparty": "  Unknown House  "},
+                {"counterparty": "   "},
+            ],
+        },
+    )
+
+    assert "UNMAPPED\n  Unknown House  \n" in report
+    assert "Unknown House\n" not in report

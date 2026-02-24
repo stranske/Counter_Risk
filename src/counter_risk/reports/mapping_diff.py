@@ -26,11 +26,14 @@ def _title_case_suggestion(raw_name: str) -> str:
     return raw_name.title()
 
 
+def _is_nonblank(value: str) -> bool:
+    return bool(value.strip())
+
+
 def _iter_string_values(value: Any) -> Iterator[str]:
     if isinstance(value, str):
-        normalized = value.strip()
-        if normalized:
-            yield normalized
+        if _is_nonblank(value):
+            yield value
         return
     if isinstance(value, Mapping):
         return
@@ -47,9 +50,8 @@ def _iter_names_from_payload(
 ) -> Iterator[str]:
     if isinstance(value, str):
         if collect_strings:
-            normalized = value.strip()
-            if normalized:
-                yield normalized
+            if _is_nonblank(value):
+                yield value
         return
 
     if isinstance(value, Mapping):
@@ -83,9 +85,8 @@ def _iter_flat_string_sequence(payload: Any) -> Iterator[str]:
         return
 
     for value in values:
-        normalized = value.strip()
-        if normalized:
-            yield normalized
+        if _is_nonblank(value):
+            yield value
 
 
 def _iter_input_names(input_sources: Mapping[str, Any]) -> Iterable[str]:
