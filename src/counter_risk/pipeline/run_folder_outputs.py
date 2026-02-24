@@ -22,4 +22,3 @@ def build_run_folder_readme_content(as_of_date: date) -> str:
         "3. Send only the Distribution PPT to recipients and retain the Master PPT in the run folder.",
     ]
     return "\n".join(lines) + "\n"
-

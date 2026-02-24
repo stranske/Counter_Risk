@@ -13,4 +13,3 @@ def test_build_run_folder_readme_content_includes_expected_filenames_and_steps()
     assert "\n1. " in content
     assert "\n2. " in content
     assert "\n3. " in content
-
