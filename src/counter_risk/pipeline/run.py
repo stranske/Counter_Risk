@@ -143,10 +143,10 @@ def reconcile_series_coverage(
                 if value
             }
         )
-        normalized_counterparties_in_data = _normalized_counterparties_from_parsed_data(
-            parsed_sections
-        )
-        counterparty_sources_by_raw_name = _counterparty_sources_from_records(totals_records)
+        (
+            normalized_counterparties_in_data,
+            counterparty_sources_by_raw_name,
+        ) = _counterparty_resolution_maps_from_records(totals_records)
         clearing_houses_in_data = sorted(
             {
                 value
@@ -372,27 +372,26 @@ def _extract_segments_from_records(parsed_sections: Mapping[str, Any]) -> set[st
     return segments
 
 
-def _normalized_counterparties_from_records(
+def _counterparty_resolution_maps_from_records(
     totals_records: list[dict[str, Any]],
-) -> dict[str, set[str]]:
+) -> tuple[dict[str, set[str]], dict[str, str]]:
     normalized_to_raw: dict[str, set[str]] = {}
+    sources_by_raw_name: dict[str, str] = {}
     for record in totals_records:
         raw_name = str(record.get("counterparty", "")).strip()
         if not raw_name:
             continue
         resolution = resolve_counterparty(raw_name)
         normalized_to_raw.setdefault(resolution.canonical_name, set()).add(raw_name)
+        sources_by_raw_name[raw_name] = resolution.source
+    return normalized_to_raw, sources_by_raw_name
+
+
+def _normalized_counterparties_from_records(
+    totals_records: list[dict[str, Any]],
+) -> dict[str, set[str]]:
+    normalized_to_raw, _ = _counterparty_resolution_maps_from_records(totals_records)
     return normalized_to_raw
-
-
-def _counterparty_sources_from_records(totals_records: list[dict[str, Any]]) -> dict[str, str]:
-    sources_by_raw_name: dict[str, str] = {}
-    for record in totals_records:
-        raw_name = str(record.get("counterparty", "")).strip()
-        if not raw_name:
-            continue
-        sources_by_raw_name[raw_name] = resolve_counterparty(raw_name).source
-    return sources_by_raw_name
 
 
 def _normalized_counterparties_from_parsed_data(

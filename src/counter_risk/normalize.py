@@ -111,10 +111,10 @@ def _load_alias_lookup(registry_path: str) -> dict[str, str]:
 def _build_alias_lookup(registry: NameRegistryConfig) -> dict[str, str]:
     lookup: dict[str, str] = {}
     for entry in registry.entries:
-        lookup[_normalize_whitespace(entry.canonical_key).casefold()] = entry.display_name
-        lookup[_normalize_whitespace(entry.display_name).casefold()] = entry.display_name
+        lookup[canonicalize_name(entry.canonical_key).casefold()] = entry.display_name
+        lookup[canonicalize_name(entry.display_name).casefold()] = entry.display_name
         for alias in entry.aliases:
-            lookup[_normalize_whitespace(alias).casefold()] = entry.display_name
+            lookup[canonicalize_name(alias).casefold()] = entry.display_name
     return lookup
 
 
@@ -125,7 +125,7 @@ def resolve_counterparty(
 ) -> NameResolution:
     """Resolve counterparty name with registry-first semantics."""
 
-    normalized = _normalize_whitespace(name)
+    normalized = canonicalize_name(name)
     alias_lookup = _load_alias_lookup(str(Path(registry_path).resolve()))
     registry_match = alias_lookup.get(normalized.casefold())
     if registry_match is not None:
