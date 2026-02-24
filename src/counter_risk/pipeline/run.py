@@ -148,7 +148,8 @@ def reconcile_series_coverage(
             {
                 value
                 for value in (
-                    str(record.get("clearing_house", "")).strip() for record in futures_records
+                    canonicalize_name(str(record.get("clearing_house", "")))
+                    for record in futures_records
                 )
                 if value
             }

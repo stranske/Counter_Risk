@@ -489,3 +489,54 @@ def test_reconcile_series_coverage_canonical_key_by_series_empty_when_no_data() 
     )
 
     assert result["by_sheet"]["Total"]["canonical_key_by_series"] == {}
+
+
+# ---------------------------------------------------------------------------
+# Clearing house canonicalization in lookup/match operations
+# ---------------------------------------------------------------------------
+
+
+def test_reconcile_clearing_house_extra_spaces_still_matches_historical() -> None:
+    """Clearing house with leading/trailing spaces in parsed data matches canonical historical header."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Futures": {"totals": [], "futures": [{"clearing_house": "  CME  "}]}
+        },
+        historical_series_headers_by_sheet={"Futures": ("CME",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Futures"]["clearing_houses_in_data"] == ["CME"]
+    assert result["by_sheet"]["Futures"]["missing_from_data"] == []
+
+
+def test_reconcile_clearing_house_internal_spaces_collapsed_before_match() -> None:
+    """Clearing house with repeated internal spaces is collapsed before matching historical header."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Futures": {"totals": [], "futures": [{"clearing_house": "ICE  Clear"}]}
+        },
+        historical_series_headers_by_sheet={"Futures": ("ICE Clear",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Futures"]["clearing_houses_in_data"] == ["ICE Clear"]
+    assert result["by_sheet"]["Futures"]["missing_from_data"] == []
+
+
+def test_reconcile_clearing_house_endash_canonicalized_before_match() -> None:
+    """En-dash in clearing house name from parsed data is normalized before matching historical header."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Futures": {
+                "totals": [],
+                # Clearing house name uses en-dash (U+2013)
+                "futures": [{"clearing_house": "ICE\u2013Clear"}],
+            }
+        },
+        historical_series_headers_by_sheet={"Futures": ("ICE-Clear",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Futures"]["clearing_houses_in_data"] == ["ICE-Clear"]
+    assert result["by_sheet"]["Futures"]["missing_from_data"] == []
