@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from counter_risk.pipeline.manifest_schema import validate_manifest_ppt_outputs
 
@@ -28,7 +29,7 @@ def test_manifest_ppt_enabled_contains_both_outputs_with_existing_paths(tmp_path
     master.write_bytes(b"master")
     distribution.write_bytes(b"distribution")
 
-    manifest = {
+    manifest: dict[str, Any] = {
         "as_of_date": "2025-12-31",
         "run_date": "2026-01-02",
         "ppt_outputs": {
