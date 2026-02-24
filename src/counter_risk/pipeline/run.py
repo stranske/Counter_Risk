@@ -18,7 +18,7 @@ from zipfile import BadZipFile, ZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
-from counter_risk.normalize import normalize_counterparty
+from counter_risk.normalize import canonicalize_name, normalize_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
@@ -127,7 +127,7 @@ def reconcile_series_coverage(
             {
                 value
                 for value in (
-                    str(header).strip()
+                    canonicalize_name(str(header))
                     for header in historical_series_headers_by_sheet.get(sheet_name, ())
                 )
                 if value
@@ -150,7 +150,8 @@ def reconcile_series_coverage(
             {
                 value
                 for value in (
-                    str(record.get("clearing_house", "")).strip() for record in futures_records
+                    canonicalize_name(str(record.get("clearing_house", "")))
+                    for record in futures_records
                 )
                 if value
             }
@@ -263,6 +264,13 @@ def reconcile_series_coverage(
                 f"results ({', '.join(missing_expected_segments)})"
             )
 
+        canonical_key_by_series: dict[str, str] = {}
+        for canonical_name, raw_name_set in normalized_counterparties_in_data.items():
+            for raw in raw_name_set:
+                canonical_key_by_series[raw] = canonical_name
+        for ch in clearing_houses_in_data:
+            canonical_key_by_series[ch] = normalize_counterparty(ch)
+
         by_sheet[sheet_name] = {
             "counterparties_in_data": counterparties_in_data,
             "normalized_counterparties_in_data": sorted(
@@ -279,6 +287,7 @@ def reconcile_series_coverage(
             "missing_from_data": missing_from_data,
             "segments_in_data": sorted(parsed_segments, key=str.casefold),
             "missing_expected_segments": missing_expected_segments,
+            "canonical_key_by_series": canonical_key_by_series,
         }
     result = {
         "by_sheet": by_sheet,
