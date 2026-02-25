@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import os
 import stat
 import subprocess
@@ -22,6 +23,13 @@ def _cli_env() -> dict[str, str]:
         src_path if "PYTHONPATH" not in env else f"{src_path}{os.pathsep}{env['PYTHONPATH']}"
     )
     return env
+
+
+def _load_fixture_names(filename: str) -> list[str]:
+    fixture_path = Path("tests/fixtures") / filename
+    with fixture_path.open(newline="", encoding="utf-8") as fixture_file:
+        reader = csv.DictReader(fixture_file)
+        return [row["raw_name"] for row in reader]
 
 
 def test_mapping_diff_report_help_exits_zero() -> None:
@@ -121,6 +129,24 @@ def test_mapping_diff_report_deterministic_sections(tmp_path: Path) -> None:
     assert "UNMAPPED\nUnknown House\n" in first.stdout
     assert "FALLBACK_MAPPED\nSociete Generale -> Soc Gen\n" in first.stdout
     assert "SUGGESTIONS\nUnknown House -> Unknown House\n" in first.stdout
+
+
+def test_mapping_diff_report_with_fixture_inputs_contains_required_sections() -> None:
+    fallback_names = _load_fixture_names("fallback_mapped_names.csv")
+    unmapped_names = _load_fixture_names("unmapped_names.csv")
+
+    args: list[str] = [*_cli_cmd(), "--registry", "config/name_registry.yml"]
+    for name in fallback_names + unmapped_names:
+        args.extend(["--normalization-name", name])
+    for name in unmapped_names:
+        args.extend(["--reconciliation-name", name])
+
+    result = subprocess.run(args, check=False, capture_output=True, text=True, env=_cli_env())
+
+    assert result.returncode == 0
+    assert "UNMAPPED" in result.stdout
+    assert "FALLBACK_MAPPED" in result.stdout
+    assert "SUGGESTIONS" in result.stdout
 
 
 def test_mapping_diff_report_forwards_output_format_parameter(
