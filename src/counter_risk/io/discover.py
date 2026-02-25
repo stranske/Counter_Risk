@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -218,3 +218,63 @@ def _meets_minimum_quality(input_name: str, candidate: Path) -> bool:
     if input_name.endswith("_xlsx"):
         return suffix in {".xlsx", ".xlsm"}
     return True
+
+
+# --- Selection helpers for resolving multiple matches ---
+
+# Inputs that are optional in WorkflowConfig (None allowed).
+_OPTIONAL_INPUTS: frozenset[str] = frozenset(
+    {"raw_nisa_all_programs_xlsx", "mosers_all_programs_xlsx", "daily_holdings_pdf"}
+)
+
+
+def _prompt_user_selection_stdin(
+    input_name: str,
+    matches: tuple[DiscoveryMatch, ...],
+) -> DiscoveryMatch:
+    """Prompt the user on stdin to choose one match from several candidates."""
+
+    print(f"\nMultiple matches found for '{input_name}':")
+    for idx, match in enumerate(matches, start=1):
+        print(f"  [{idx}] {match.path}")
+    while True:
+        try:
+            raw = input(f"Select file for '{input_name}' (1-{len(matches)}): ")
+        except (EOFError, KeyboardInterrupt) as exc:
+            raise SystemExit(1) from exc
+        try:
+            choice = int(raw.strip())
+        except ValueError:
+            print(f"  Please enter a number between 1 and {len(matches)}.")
+            continue
+        if 1 <= choice <= len(matches):
+            return matches[choice - 1]
+        print(f"  Please enter a number between 1 and {len(matches)}.")
+
+
+SelectionPromptFn = Callable[[str, tuple[DiscoveryMatch, ...]], DiscoveryMatch]
+
+
+def resolve_discovery_selections(
+    result: DiscoveryResult,
+    *,
+    prompt_fn: SelectionPromptFn | None = None,
+) -> dict[str, Path]:
+    """Resolve discovery results to at most one path per input.
+
+    - 1 match  → auto-selected
+    - N matches → delegated to *prompt_fn* (defaults to stdin prompt)
+    - 0 matches → omitted from output (caller decides if that is an error)
+    """
+
+    if prompt_fn is None:
+        prompt_fn = _prompt_user_selection_stdin
+
+    selected: dict[str, Path] = {}
+    for input_name, matches in result.matches_by_input.items():
+        if len(matches) == 1:
+            selected[input_name] = matches[0].path
+        elif len(matches) > 1:
+            chosen = prompt_fn(input_name, matches)
+            selected[input_name] = chosen.path
+    return selected

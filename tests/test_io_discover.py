@@ -7,11 +7,14 @@ from pathlib import Path
 
 from counter_risk.config import InputDiscoveryConfig
 from counter_risk.io.discover import (
+    DiscoveryMatch,
+    DiscoveryResult,
     discover_daily_holdings_pdf_files,
     discover_exposure_summary_files,
     discover_input_candidates,
     discover_raw_nisa_monthly_files,
     discover_templates_and_historical_files,
+    resolve_discovery_selections,
 )
 
 
@@ -151,3 +154,64 @@ def test_discover_input_candidates_filters_invalid_file_types(tmp_path: Path) ->
     )
 
     assert result.matches_by_input["daily_holdings_pdf"] == ()
+
+
+def test_resolve_discovery_selections_auto_selects_single_match(tmp_path: Path) -> None:
+    file_a = tmp_path / "file_a.xlsx"
+    file_a.write_text("x", encoding="utf-8")
+
+    result = DiscoveryResult(
+        matches_by_input={
+            "mosers_ex_trend_xlsx": (
+                DiscoveryMatch(
+                    input_name="mosers_ex_trend_xlsx",
+                    path=file_a,
+                    root_name="monthly_inputs",
+                    pattern="*.xlsx",
+                ),
+            ),
+        }
+    )
+
+    selected = resolve_discovery_selections(result)
+
+    assert selected == {"mosers_ex_trend_xlsx": file_a}
+
+
+def test_resolve_discovery_selections_prompts_on_multiple_matches(tmp_path: Path) -> None:
+    file_a = tmp_path / "Report.pptx"
+    file_b = tmp_path / "Report - v2.pptx"
+    file_a.write_text("x", encoding="utf-8")
+    file_b.write_text("x", encoding="utf-8")
+
+    matches = (
+        DiscoveryMatch(
+            input_name="monthly_pptx",
+            path=file_a,
+            root_name="template_inputs",
+            pattern="Report*.pptx",
+        ),
+        DiscoveryMatch(
+            input_name="monthly_pptx",
+            path=file_b,
+            root_name="template_inputs",
+            pattern="Report*.pptx",
+        ),
+    )
+    result = DiscoveryResult(matches_by_input={"monthly_pptx": matches})
+
+    # Simulate user picking the second option
+    def fake_prompt(input_name: str, candidates: tuple[DiscoveryMatch, ...]) -> DiscoveryMatch:
+        return candidates[1]
+
+    selected = resolve_discovery_selections(result, prompt_fn=fake_prompt)
+
+    assert selected == {"monthly_pptx": file_b}
+
+
+def test_resolve_discovery_selections_omits_inputs_with_no_matches() -> None:
+    result = DiscoveryResult(matches_by_input={"raw_nisa_all_programs_xlsx": ()})
+
+    selected = resolve_discovery_selections(result)
+
+    assert selected == {}
