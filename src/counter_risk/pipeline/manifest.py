@@ -10,48 +10,9 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from counter_risk.config import WorkflowConfig
+from counter_risk.pipeline.warnings import WarningsCollector
 
-
-class WarningsCollector:
-    """Accumulates structured warnings for manifest and logging integration.
-
-    Pass an instance to computation functions that support a *collector* parameter
-    so that warnings are centralised and can be forwarded to :meth:`ManifestBuilder.build`
-    via the ``warnings`` argument.
-
-    Warning codes
-    -------------
-    INVALID_NOTIONAL
-        The notional field was found but its value is blank, non-numeric, or NaN.
-    MISSING_DESCRIPTION
-        The ``Description`` field is absent or blank after stripping.
-    MISSING_NOTIONAL
-        No notional field was found in the row.
-    NO_PRIOR_MONTH_MATCH
-        A current-month row has no matching prior-month row.
-    """
-
-    INVALID_NOTIONAL: str = "INVALID_NOTIONAL"
-    MISSING_DESCRIPTION: str = "MISSING_DESCRIPTION"
-    MISSING_NOTIONAL: str = "MISSING_NOTIONAL"
-    NO_PRIOR_MONTH_MATCH: str = "NO_PRIOR_MONTH_MATCH"
-
-    def __init__(self) -> None:
-        self._entries: list[str] = []
-
-    def warn(self, message: str, *, code: str | None = None, **_extra: object) -> None:
-        """Record a warning, optionally tagged with a reason *code*.
-
-        The entry stored is ``"[CODE] message"`` when a code is supplied,
-        otherwise just ``"message"``.
-        """
-        entry = f"[{code}] {message}" if code else message
-        self._entries.append(entry)
-
-    @property
-    def warnings(self) -> list[str]:
-        """Return a copy of all accumulated warning strings."""
-        return list(self._entries)
+__all__ = ["ManifestBuilder", "WarningsCollector"]
 
 
 @dataclass(frozen=True)
@@ -70,7 +31,7 @@ class ManifestBuilder:
         output_paths: list[Path],
         top_exposures: dict[str, list[dict[str, Any]]],
         top_changes_per_variant: dict[str, list[dict[str, Any]]],
-        warnings: list[str],
+        warnings: list[Any],
         ppt_status: str = "success",
     ) -> dict[str, Any]:
         valid_ppt_statuses = {"success", "skipped", "failed"}
