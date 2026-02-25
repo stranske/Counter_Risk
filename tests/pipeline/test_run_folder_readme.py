@@ -9,8 +9,7 @@ import pytest
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.manifest import ManifestBuilder
-from counter_risk.pipeline.ppt_naming import PptOutputNames
-from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
+from counter_risk.pipeline.ppt_naming import PptOutputNames, resolve_ppt_output_names
 from counter_risk.pipeline.run_folder_outputs import (
     RunFolderReadmePptOutputs,
     build_run_folder_readme_content,
