@@ -247,6 +247,66 @@ def test_blank_description_rows_are_filtered_before_matching() -> None:
     assert col.warnings == []
 
 
+def test_none_description_rows_are_excluded_from_matching() -> None:
+    current = [
+        {"description": "TY Mar25", "notional": 100.0},
+        {"description": None, "notional": 9999.0},
+    ]
+    prior = [{"description": "TY Mar25", "notional": 80.0}]
+
+    result = compute_futures_delta(current, prior)
+    rows = _records(result)
+
+    assert len(rows) == 1
+    assert rows[0]["description"] == "TY Mar25"
+
+
+def test_empty_description_rows_are_excluded_from_matching() -> None:
+    current = [
+        {"description": "TY Mar25", "notional": 100.0},
+        {"description": "", "notional": 9999.0},
+    ]
+    prior = [{"description": "TY Mar25", "notional": 80.0}]
+
+    result = compute_futures_delta(current, prior)
+    rows = _records(result)
+
+    assert len(rows) == 1
+    assert rows[0]["description"] == "TY Mar25"
+
+
+def test_whitespace_description_rows_are_excluded_from_matching() -> None:
+    current = [
+        {"description": "TY Mar25", "notional": 100.0},
+        {"description": "   \t  ", "notional": 9999.0},
+    ]
+    prior = [{"description": "TY Mar25", "notional": 80.0}]
+
+    result = compute_futures_delta(current, prior)
+    rows = _records(result)
+
+    assert len(rows) == 1
+    assert rows[0]["description"] == "TY Mar25"
+
+
+def test_blank_prior_description_rows_are_excluded_from_matching() -> None:
+    current = [{"description": "TY Mar25", "notional": 100.0}]
+    prior = [
+        {"description": "TY Mar25", "notional": 80.0},
+        {"description": " ", "notional": 7777.0},
+        {"description": None, "notional": 6666.0},
+    ]
+    col = _collector()
+
+    result = compute_futures_delta(current, prior, collector=col)
+    rows = _records(result)
+
+    assert len(rows) == 1
+    assert rows[0]["description"] == "TY Mar25"
+    assert rows[0]["prior_notional"] == pytest.approx(80.0)
+    assert not any("Unmatched prior" in w for w in col.warnings)
+
+
 # ---------------------------------------------------------------------------
 # compute_futures_delta – description matching via normalisation
 # ---------------------------------------------------------------------------

@@ -177,20 +177,27 @@ def compute_futures_delta(
         if not is_blank_description(row.get("description", row.get("Description")))
     ]
 
+    # Group by normalised description (blank descriptions excluded) before aggregation/matching.
+    current_groups = _group_rows_by_normalized_description(current_rows)
+    prior_groups = _group_rows_by_normalized_description(prior_rows)
+
     # Build prior lookup: normalised description -> accumulated notional.
     prior_by_key: dict[str, float] = {}
     prior_desc_by_key: dict[str, str] = {}
-    for row in prior_rows:
-        desc_raw = row.get("description", row.get("Description"))
-        desc = str(desc_raw)
-        key = normalize_description(desc)
-        notional = _extract_notional(row, row_id=desc or "<prior row>", collector=collector)
-        prior_by_key[key] = prior_by_key.get(key, 0.0) + notional
-        if key not in prior_desc_by_key:
-            prior_desc_by_key[key] = desc
+    for key, grouped_rows in prior_groups.items():
+        notional_sum = 0.0
+        for row in grouped_rows:
+            desc_raw = row.get("description", row.get("Description"))
+            desc = str(desc_raw)
+            notional_sum += _extract_notional(
+                row, row_id=desc or "<prior row>", collector=collector
+            )
+            if key not in prior_desc_by_key:
+                prior_desc_by_key[key] = desc
+        prior_by_key[key] = notional_sum
 
     records: list[dict[str, Any]] = []
-    current_keys: set[str] = set()
+    current_keys: set[str] = set(current_groups.keys())
 
     for row_idx, row in enumerate(current_rows):
         # Per-row required-field validation; skip invalid rows.
@@ -201,7 +208,6 @@ def compute_futures_delta(
         desc = str(desc_raw)
         key = normalize_description(desc)
         current_notional = _extract_notional(row, row_id=desc, collector=collector)
-        current_keys.add(key)
 
         if key in prior_by_key:
             prior_notional = prior_by_key[key]
@@ -300,6 +306,20 @@ def _to_row_list(table: Any, *, arg: str) -> list[dict[str, Any]]:
             raise TypeError(f"{arg} row at index {i} must be a mapping, got {type(row)!r}")
         result.append(dict(row))
     return result
+
+
+def _group_rows_by_normalized_description(
+    rows: list[dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    """Group rows by normalized description, excluding blank descriptions."""
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        desc_raw = row.get("description", row.get("Description"))
+        if is_blank_description(desc_raw):
+            continue
+        key = normalize_description(str(desc_raw))
+        grouped.setdefault(key, []).append(row)
+    return grouped
 
 
 def _validate_row(
