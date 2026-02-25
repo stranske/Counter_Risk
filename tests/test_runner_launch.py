@@ -9,6 +9,8 @@ import pytest
 from counter_risk.runner_launch import (
     RunnerMode,
     build_command,
+    build_discovery_dry_run_command,
+    build_discovery_run_command,
     open_output_folder,
     resolve_output_dir,
 )
@@ -126,3 +128,40 @@ def test_open_output_folder_uses_stubbed_explorer_for_existing_directory(
     assert status.success is True
     assert status.message == "Success"
     assert opened_directories == [resolved_path]
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected_config"),
+    [
+        (RunnerMode.ALL, 'config "config\\all_programs.yml"'),
+        (RunnerMode.EX_TREND, 'config "config\\ex_trend.yml"'),
+        (RunnerMode.TREND, 'config "config\\trend.yml"'),
+    ],
+)
+def test_build_discovery_dry_run_command_includes_mode_config_and_as_of_date(
+    mode: RunnerMode, expected_config: str
+) -> None:
+    command = build_discovery_dry_run_command(mode, "2025-02-15")
+
+    assert "run --dry-run-discovery" in command
+    assert expected_config in command
+    assert '--as-of-month "2025-02-28"' in command
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected_config"),
+    [
+        (RunnerMode.ALL, 'config "config\\all_programs.yml"'),
+        (RunnerMode.EX_TREND, 'config "config\\ex_trend.yml"'),
+        (RunnerMode.TREND, 'config "config\\trend.yml"'),
+    ],
+)
+def test_build_discovery_run_command_includes_discover_flag_and_output_dir(
+    mode: RunnerMode, expected_config: str
+) -> None:
+    command = build_discovery_run_command(mode, "2025-02-15", "C:\\repo\\runs\\2025-02-28_000000")
+
+    assert "run --discover" in command
+    assert expected_config in command
+    assert '--as-of-month "2025-02-28"' in command
+    assert '--output-dir "C:\\repo\\runs\\2025-02-28_000000"' in command
