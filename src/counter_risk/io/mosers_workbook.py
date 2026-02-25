@@ -18,6 +18,8 @@ If the futures detail section cannot be located the module raises
 from __future__ import annotations
 
 import logging
+import os
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -261,6 +263,54 @@ def save_mosers_workbook(workbook: Any, path: Path | str) -> Path:
     workbook.save(dest)
     _LOG.info("Saved MOSERS workbook to: %s", dest)
     return dest
+
+
+def atomic_writeback_with_section_locate(
+    *,
+    source_path: Path | str,
+    output_path: Path | str,
+    rows: list[dict[str, Any]],
+) -> Path:
+    """Atomically write prior-month notionals after locating the futures section.
+
+    The function stages output to a temporary file in the destination directory
+    and replaces *output_path* only after all steps succeed:
+
+    1. Load source workbook.
+    2. Locate futures detail section (may raise :class:`FuturesDetailNotFoundError`).
+    3. Apply prior-month notional write-back.
+    4. Save to temporary file.
+    5. Atomically replace destination with the staged file.
+
+    Any temporary file created for the attempt is removed in ``finally`` when
+    an exception occurs, including section-location failures.
+    """
+    src = Path(source_path)
+    dest = Path(output_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=f".{dest.stem}.",
+        suffix=".tmp.xlsx",
+        dir=str(dest.parent),
+    )
+    os.close(fd)
+    temp_path = Path(tmp_name)
+
+    workbook: Any | None = None
+    try:
+        workbook = load_mosers_workbook(src)
+        section = locate_futures_detail_section(workbook)
+        write_prior_month_notional(workbook, section, rows)
+        save_mosers_workbook(workbook, temp_path)
+        temp_path.replace(dest)
+        _LOG.info("Atomic write-back complete: %s", dest)
+        return dest
+    finally:
+        if workbook is not None and hasattr(workbook, "close"):
+            workbook.close()
+        if temp_path.exists():
+            temp_path.unlink()
 
 
 # ---------------------------------------------------------------------------
