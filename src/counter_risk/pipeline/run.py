@@ -7,14 +7,13 @@ import hashlib
 import logging
 import platform
 import shutil
-import xml.etree.ElementTree as ET
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Literal, NoReturn, cast
-from zipfile import BadZipFile, ZipFile
+from typing import Any, Literal, NoReturn
+from zipfile import BadZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
@@ -30,6 +29,11 @@ from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
 from counter_risk.pipeline.run_folder_outputs import build_run_folder_readme_content
 from counter_risk.pipeline.time_utils import utc_now_isoformat
+from counter_risk.ppt.pptx_postprocess import (
+    list_external_relationship_targets,
+    scrub_external_relationships_from_pptx,
+)
+from counter_risk.ppt.pptx_static import _rebuild_pptx_from_slide_images
 from counter_risk.writers import generate_mosers_workbook
 
 LOGGER = logging.getLogger(__name__)
@@ -40,6 +44,7 @@ _EXPECTED_VARIANTS: tuple[str, ...] = ("all_programs", "ex_trend", "trend")
 _COM_SHAPE_TYPE_EMBEDDED_OLE: int = 7  # msoEmbeddedOLEObject
 _COM_SHAPE_TYPE_LINKED_OLE: int = 10  # msoLinkedOLEObject
 _COM_SHAPE_FORMAT_PNG: int = 2  # ppShapeFormatPNG
+_SHAPE_MATCH_CONFIDENCE_THRESHOLD: float = 0.8
 _REQUIRED_TOTAL_COLUMNS: tuple[str, ...] = ("counterparty", "Notional", "NotionalChange")
 _REQUIRED_FUTURES_COLUMNS: tuple[str, ...] = (
     "account",
@@ -60,8 +65,6 @@ _REQUIRED_HISTORICAL_APPEND_HEADERS: tuple[str, ...] = (
     "value series 1",
     "value series 2",
 )
-_PACKAGE_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
-_RELATIONSHIP_QNAME = f"{{{_PACKAGE_REL_NS}}}Relationship"
 
 
 @dataclass(frozen=True)
@@ -977,6 +980,13 @@ def _write_outputs(
                     f"external relationships in: {rel_parts}"
                 )
         output_paths.append(target_distribution_ppt)
+        distribution_pdf_path = _export_distribution_pdf(
+            source_pptx=target_distribution_ppt,
+            run_dir=run_dir,
+            config=config,
+        )
+        if distribution_pdf_path is not None:
+            output_paths.append(distribution_pdf_path)
     static_output_paths = _create_static_distribution(
         source_pptx=target_master_ppt,
         run_dir=run_dir,
@@ -998,17 +1008,10 @@ def _derive_distribution_ppt(*, master_pptx_path: Path, distribution_pptx_path: 
 
     distribution_pptx_path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        with (
-            ZipFile(master_pptx_path) as source_archive,
-            ZipFile(distribution_pptx_path, "w") as output_archive,
-        ):
-            for item in source_archive.infolist():
-                xml_bytes = source_archive.read(item.filename)
-                if not _is_link_relationship_part(item.filename):
-                    output_archive.writestr(item, xml_bytes)
-                    continue
-
-                output_archive.writestr(item, _remove_external_relationship_targets(xml_bytes))
+        scrub_external_relationships_from_pptx(
+            master_pptx_path,
+            scrubbed_pptx_path=distribution_pptx_path,
+        )
     except BadZipFile:
         shutil.copy2(master_pptx_path, distribution_pptx_path)
         LOGGER.debug(
@@ -1024,32 +1027,6 @@ def _derive_distribution_ppt(*, master_pptx_path: Path, distribution_pptx_path: 
             "Distribution PPT derivation did not remove all external link targets. "
             f"Remaining targets: {targets_list}"
         )
-
-
-def _is_link_relationship_part(archive_name: str) -> bool:
-    return archive_name.endswith(".rels") and (
-        archive_name.startswith("ppt/slides/_rels/")
-        or archive_name.startswith("ppt/charts/_rels/")
-        or archive_name == "ppt/_rels/presentation.xml.rels"
-    )
-
-
-def _remove_external_relationship_targets(xml_bytes: bytes) -> bytes:
-    try:
-        root = ET.fromstring(xml_bytes)
-    except ET.ParseError:
-        return xml_bytes
-
-    changed = False
-    for relationship in list(root.findall(f".//{_RELATIONSHIP_QNAME}")):
-        if relationship.attrib.get("TargetMode") != "External":
-            continue
-        root.remove(relationship)
-        changed = True
-
-    if not changed:
-        return xml_bytes
-    return cast(bytes, ET.tostring(root, encoding="utf-8", xml_declaration=True))
 
 
 def _assert_master_preserves_external_link_targets(
@@ -1072,35 +1049,7 @@ def _assert_master_preserves_external_link_targets(
 
 
 def _list_external_link_targets(pptx_path: Path) -> set[str]:
-    if not pptx_path.exists() or not pptx_path.is_file():
-        return set()
-
-    try:
-        with ZipFile(pptx_path) as archive:
-            rel_paths = [
-                name
-                for name in archive.namelist()
-                if name.endswith(".rels")
-                and (
-                    name.startswith("ppt/slides/_rels/")
-                    or name.startswith("ppt/charts/_rels/")
-                    or name == "ppt/_rels/presentation.xml.rels"
-                )
-            ]
-            targets: set[str] = set()
-            for rel_path in rel_paths:
-                xml_bytes = archive.read(rel_path)
-                root = ET.fromstring(xml_bytes)
-                for relationship in root.findall(f".//{_RELATIONSHIP_QNAME}"):
-                    if relationship.attrib.get("TargetMode") != "External":
-                        continue
-                    target = relationship.attrib.get("Target", "").strip()
-                    if target:
-                        targets.add(target)
-            return targets
-    except (BadZipFile, ET.ParseError, KeyError):
-        LOGGER.debug("Skipping external link target scan for non-standard PPTX: %s", pptx_path)
-        return set()
+    return list_external_relationship_targets(pptx_path)
 
 
 def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]:
@@ -1240,8 +1189,7 @@ def _create_static_distribution(
     """Produce a static distribution copy of the presentation.
 
     On Windows with COM available: exports each slide as a PNG image and rebuilds
-    the deck as a flat image-only PPTX (no live Excel links).  When that succeeds,
-    also attempts a PDF export.
+    the deck as a flat image-only PPTX (no live Excel links).
 
     When COM is unavailable (non-Windows or missing pywin32): appends a human-readable
     warning to *warnings* and returns an empty list so the caller's regular
@@ -1272,8 +1220,6 @@ def _create_static_distribution(
     output_paths: list[Path] = []
     slide_images_dir = run_dir / "_distribution_slides"
     static_pptx_path = run_dir / f"{source_pptx.stem}_distribution_static.pptx"
-    pdf_path = run_dir / f"{source_pptx.stem}_distribution.pdf"
-
     app = None
     presentation = None
     try:
@@ -1281,28 +1227,18 @@ def _create_static_distribution(
         app.Visible = False
         presentation = app.Presentations.Open(str(source_pptx), WithWindow=False)
 
-        # Attempt PDF export (simpler fallback deliverable).
-        try:
-            presentation.ExportAsFixedFormat(str(pdf_path), 2)  # 2 = ppFixedFormatTypePDF
-            output_paths.append(pdf_path)
-            LOGGER.info("distribution_static_pdf_complete path=%s", pdf_path)
-        except Exception as pdf_exc:
-            warnings.append(f"distribution_static PDF export failed: {pdf_exc}")
-            LOGGER.warning("distribution_static_pdf_failed exc=%s", pdf_exc)
-
-        # Preferred: export each OLE/chart shape as an individual PNG then
-        # rebuild the PPTX replacing only those shapes.  Titles, text boxes, and
-        # other non-chart shapes remain as live text so the deck stays editable.
+        # Preferred: export each slide as a PNG and rebuild the entire deck as
+        # one picture per slide, removing all live chart/OLE objects.
         slide_images_dir.mkdir(parents=True, exist_ok=True)
-        chart_images = _export_chart_shapes_as_images(
+        slide_images = _export_slides_as_images(
             com_presentation=presentation,
             slide_images_dir=slide_images_dir,
             warnings=warnings,
         )
-        _rebuild_pptx_replacing_charts(
+        _rebuild_pptx_from_slide_images(
             source_pptx=source_pptx,
             output_path=static_pptx_path,
-            chart_images=chart_images,
+            slide_images=slide_images,
         )
         output_paths.append(static_pptx_path)
         LOGGER.info("distribution_static_pptx_complete path=%s", static_pptx_path)
@@ -1321,41 +1257,79 @@ def _create_static_distribution(
     return output_paths
 
 
-def _rebuild_pptx_from_slide_images(
+def _export_distribution_pdf(
     *,
     source_pptx: Path,
-    slide_images: list[Path],
-    output_path: Path,
-) -> None:
-    """Create a new PPTX where every slide is a single full-bleed PNG image.
+    run_dir: Path,
+    config: WorkflowConfig,
+) -> Path | None:
+    if not config.export_pdf:
+        LOGGER.warning("distribution_pdf_skipped reason=export_pdf_disabled")
+        return None
 
-    The new deck preserves the slide dimensions of *source_pptx* so that the
-    layout appears identical to the original when opened in PowerPoint, but
-    contains no live Excel chart links.
-    """
+    pdf_path = run_dir / f"{source_pptx.stem}.pdf"
+    _export_pptx_to_pdf(source_pptx=source_pptx, pdf_path=pdf_path)
+    return pdf_path
 
-    from pptx import Presentation
 
-    source_prs = Presentation(str(source_pptx))
-    assert source_prs.slide_width is not None, "source PPT has no slide width"
-    assert source_prs.slide_height is not None, "source PPT has no slide height"
-    slide_width = source_prs.slide_width
-    slide_height = source_prs.slide_height
+def _export_pptx_to_pdf(*, source_pptx: Path, pdf_path: Path) -> None:
+    if platform.system().lower() != "windows":
+        error = RuntimeError("unsupported platform for COM PDF export")
+        LOGGER.error("PDF export failed: %s", error)
+        raise error
 
-    new_prs = Presentation()
-    new_prs.slide_width = slide_width
-    new_prs.slide_height = slide_height
+    try:
+        import win32com.client
+    except ImportError as exc:
+        error = RuntimeError("win32com is not installed")
+        LOGGER.error("PDF export failed: %s", error)
+        raise error from exc
 
-    # Slide layout index 6 is the universally blank layout in stock python-pptx templates.
-    blank_layout = new_prs.slide_layouts[6]
+    app = None
+    presentation = None
+    try:
+        app = win32com.client.DispatchEx("PowerPoint.Application")
+        app.Visible = False
+        presentation = app.Presentations.Open(str(source_pptx), WithWindow=False)
+        presentation.ExportAsFixedFormat(str(pdf_path), 2)  # 2 = ppFixedFormatTypePDF
+        LOGGER.info("distribution_pdf_complete path=%s", pdf_path)
+    except Exception as exc:
+        LOGGER.error("PDF export failed: %s", exc)
+        raise RuntimeError(f"PDF export failed: {exc}") from exc
+    finally:
+        if presentation is not None:
+            try:
+                presentation.Close()
+            except Exception as exc:
+                LOGGER.warning("distribution_pdf_cleanup_failed action=close exc=%s", exc)
+        if app is not None:
+            try:
+                app.Quit()
+            except Exception as exc:
+                LOGGER.warning("distribution_pdf_cleanup_failed action=quit exc=%s", exc)
 
-    for img_path in slide_images:
-        new_slide = new_prs.slides.add_slide(blank_layout)
-        new_slide.shapes.add_picture(
-            str(img_path), left=0, top=0, width=slide_width, height=slide_height
-        )
 
-    new_prs.save(str(output_path))
+def _export_slides_as_images(
+    *,
+    com_presentation: Any,
+    slide_images_dir: Path,
+    warnings: list[str],
+) -> list[Path]:
+    """Export each slide in the COM presentation as a PNG image."""
+    slide_images: list[Path] = []
+    slide_count = int(com_presentation.Slides.Count)
+    for slide_idx in range(1, slide_count + 1):
+        image_path = slide_images_dir / f"slide_{slide_idx:04d}.png"
+        try:
+            com_presentation.Slides[slide_idx].Export(str(image_path), "PNG")
+            slide_images.append(image_path)
+        except Exception as exc:
+            warnings.append(f"distribution_static slide export failed (slide {slide_idx}): {exc}")
+            LOGGER.warning(
+                "distribution_static_slide_export_failed slide=%d exc=%s", slide_idx, exc
+            )
+            raise
+    return slide_images
 
 
 def _export_chart_shapes_as_images(
@@ -1418,6 +1392,8 @@ def _rebuild_pptx_replacing_charts(
     source_pptx: Path,
     output_path: Path,
     chart_images: dict[tuple[int, str], Path],
+    fallback_slide_images: dict[int, Path] | None = None,
+    fallback_to_full_deck_rebuild: bool = False,
 ) -> None:
     """Create a PPTX replacing OLE/chart shapes with static PNG images.
 
@@ -1432,18 +1408,48 @@ def _rebuild_pptx_replacing_charts(
     """
     from pptx import Presentation
 
+    fallback_slide_images = fallback_slide_images or {}
     prs = Presentation(str(source_pptx))
+    low_confidence_slides: set[int] = set()
+    unresolved_low_confidence_slides: set[int] = set()
+
     for slide_idx, slide in enumerate(prs.slides, start=1):
         replacements: list[tuple[Path, int, int, int, int]] = []
         shapes_to_remove: list[Any] = []
+        replacement_requests = {
+            shape_name: image_path
+            for (shape_slide_idx, shape_name), image_path in chart_images.items()
+            if shape_slide_idx == slide_idx
+        }
 
-        for shape in list(slide.shapes):
-            key = (slide_idx, shape.name)
-            if key not in chart_images:
+        for shape_name, img_path in replacement_requests.items():
+            candidate_shapes = [
+                shape
+                for shape in list(slide.shapes)
+                if str(getattr(shape, "name", "")) == shape_name
+            ]
+            confidence = _shape_match_confidence(
+                target_name=shape_name,
+                candidate_shapes=candidate_shapes,
+            )
+            if confidence < _SHAPE_MATCH_CONFIDENCE_THRESHOLD:
+                low_confidence_slides.add(slide_idx)
+                LOGGER.warning(
+                    "chart_replace_low_confidence slide=%d shape=%s confidence=%.2f",
+                    slide_idx,
+                    shape_name,
+                    confidence,
+                )
                 continue
-            img_path = chart_images[key]
-            left, top, width, height = shape.left, shape.top, shape.width, shape.height
-            shapes_to_remove.append(shape)
+
+            matched_shape = candidate_shapes[0]
+            left, top, width, height = (
+                matched_shape.left,
+                matched_shape.top,
+                matched_shape.width,
+                matched_shape.height,
+            )
+            shapes_to_remove.append(matched_shape)
             replacements.append((img_path, left, top, width, height))
 
         for shape in shapes_to_remove:
@@ -1453,7 +1459,81 @@ def _rebuild_pptx_replacing_charts(
         for img_path, left, top, width, height in replacements:
             slide.shapes.add_picture(str(img_path), left, top, width, height)
 
+        if fallback_to_full_deck_rebuild:
+            continue
+
+        if slide_idx in low_confidence_slides:
+            fallback_image = fallback_slide_images.get(slide_idx)
+            if fallback_image is None:
+                unresolved_low_confidence_slides.add(slide_idx)
+            else:
+                _replace_slide_with_image(slide=slide, slide_image=fallback_image)
+
+    if unresolved_low_confidence_slides:
+        unresolved_list = ", ".join(
+            str(index) for index in sorted(unresolved_low_confidence_slides)
+        )
+        raise RuntimeError(
+            "Chart replacement confidence check failed and no slide-image fallback was provided "
+            f"for slide(s): {unresolved_list}"
+        )
+
+    if low_confidence_slides and fallback_to_full_deck_rebuild:
+        low_confidence_list = ", ".join(str(index) for index in sorted(low_confidence_slides))
+        raise RuntimeError(
+            "Chart replacement confidence check failed; full-deck static rebuild required "
+            f"for slide(s): {low_confidence_list}"
+        )
+
     prs.save(str(output_path))
+
+
+def _shape_match_confidence(*, target_name: str, candidate_shapes: list[Any]) -> float:
+    """Score chart shape matching confidence using name uniqueness and optional geometry.
+
+    Name uniqueness is weighted heavily because duplicate names on a slide make
+    deterministic replacement unreliable. When one candidate is present and no
+    geometry information is available, confidence remains high.
+    """
+
+    if not candidate_shapes:
+        return 0.0
+
+    unique_name_score = 1.0 if len(candidate_shapes) == 1 else 0.2
+    position_scores = [
+        _shape_position_confidence(shape)
+        for shape in candidate_shapes
+        if str(getattr(shape, "name", "")) == target_name
+    ]
+    position_score = max(position_scores, default=0.0)
+    return min(1.0, (0.75 * unique_name_score) + (0.25 * position_score))
+
+
+def _shape_position_confidence(shape: Any) -> float:
+    """Return a bounded confidence based on shape geometry validity."""
+
+    width = int(getattr(shape, "width", 0) or 0)
+    height = int(getattr(shape, "height", 0) or 0)
+    if width <= 0 or height <= 0:
+        return 0.0
+
+    left = int(getattr(shape, "left", 0) or 0)
+    top = int(getattr(shape, "top", 0) or 0)
+    if left < 0 or top < 0:
+        return 0.5
+    return 1.0
+
+
+def _replace_slide_with_image(*, slide: Any, slide_image: Path) -> None:
+    """Fallback for low-confidence matching: flatten the full slide to one image."""
+
+    width = slide.part.slide_layout.part.package.presentation_part.presentation.slide_width
+    height = slide.part.slide_layout.part.package.presentation_part.presentation.slide_height
+
+    for shape in list(slide.shapes):
+        sp_tree = shape.element.getparent()
+        sp_tree.remove(shape.element)
+    slide.shapes.add_picture(str(slide_image), left=0, top=0, width=width, height=height)
 
 
 def _update_historical_outputs(
