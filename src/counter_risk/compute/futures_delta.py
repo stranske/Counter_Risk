@@ -23,6 +23,8 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from counter_risk.compute.errors import NO_PRIOR_MATCH, NO_PRIOR_MONTH_MATCH
+
 if TYPE_CHECKING:
     from counter_risk.pipeline.manifest import WarningsCollector
 
@@ -216,7 +218,7 @@ def compute_futures_delta(
             msg = f"Unmatched current row (no prior match): {desc!r}"
             _LOG.warning(msg)
             if collector is not None:
-                collector.warn(msg, code="NO_PRIOR_MONTH_MATCH", row_idx=row_idx)
+                collector.warn(msg, code=NO_PRIOR_MONTH_MATCH, row_idx=row_idx)
 
         change = current_notional - prior_notional
 
@@ -243,7 +245,7 @@ def compute_futures_delta(
             msg = f"Unmatched prior row (no current match): {original_desc!r}"
             _LOG.warning(msg)
             if collector is not None:
-                collector.warn(msg, code="NO_PRIOR_MONTH_MATCH")
+                collector.warn(msg, code=NO_PRIOR_MATCH)
 
     # Sort output by raw description text for stable, deterministic order.
     # Python's sort is stable: duplicate descriptions preserve input order.
