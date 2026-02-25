@@ -3,6 +3,7 @@
 from counter_risk.io.mosers_workbook import (
     FuturesDetailNotFoundError,
     FuturesDetailSection,
+    atomic_writeback_with_section_locate,
     load_mosers_workbook,
     locate_futures_detail_section,
     save_mosers_workbook,
@@ -12,6 +13,7 @@ from counter_risk.io.mosers_workbook import (
 __all__ = [
     "FuturesDetailNotFoundError",
     "FuturesDetailSection",
+    "atomic_writeback_with_section_locate",
     "load_mosers_workbook",
     "locate_futures_detail_section",
     "save_mosers_workbook",
