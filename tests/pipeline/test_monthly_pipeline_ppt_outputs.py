@@ -213,6 +213,7 @@ def test_no_distribution_without_master_when_master_generation_fails(
     )
 
     assert not (run_dir / distribution_name).exists()
+    assert not (run_dir / "README.txt").exists()
 
     manifest = ManifestBuilder(
         config=config,
@@ -228,3 +229,5 @@ def test_no_distribution_without_master_when_master_generation_fails(
         ppt_status=run_module.PptProcessingStatus.FAILED.value,
     )
     assert all(Path(path).name != distribution_name for path in manifest["output_paths"])
+    assert all(Path(path).name != "README.txt" for path in manifest["output_paths"])
+    assert "distribution" not in manifest.get("ppt_outputs", {})
