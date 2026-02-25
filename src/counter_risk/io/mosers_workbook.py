@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from counter_risk.compute.futures_delta import normalize_description
+from counter_risk.compute.futures_delta import compute_futures_delta, normalize_description
 from counter_risk.io.errors import DuplicateDescriptionError
 from counter_risk.pipeline.warnings import WarningsCollector
 
@@ -313,6 +313,26 @@ def writeback_prior_month_notionals(
     )
 
 
+def compute_and_writeback_prior_month_notionals(
+    *,
+    source_path: Path | str,
+    output_path: Path | str,
+    current_rows: Any,
+    prior_rows: Any,
+    collector: WarningsCollector | None = None,
+) -> tuple[Path, WarningsCollector]:
+    """Compute futures delta rows, then write back prior-month notionals atomically."""
+    result, warnings = compute_futures_delta(current_rows, prior_rows, collector=collector)
+    rows = _result_to_records(result)
+    written_path = atomic_writeback_with_section_locate(
+        source_path=source_path,
+        output_path=output_path,
+        rows=rows,
+        collector=warnings,
+    )
+    return written_path, warnings
+
+
 def atomic_writeback_with_section_locate(
     *,
     source_path: Path | str,
@@ -469,3 +489,12 @@ def _raise_on_duplicate_normalized_descriptions(rows: list[dict[str, Any]]) -> N
     for key, row_indices in normalized_to_indices.items():
         if len(row_indices) > 1:
             raise DuplicateDescriptionError(duplicate_key=key, row_indices=row_indices)
+
+
+def _result_to_records(result: Any) -> list[dict[str, Any]]:
+    """Normalize compute output to list-of-dicts shape accepted by write-back."""
+    if hasattr(result, "to_dict"):
+        records = result.to_dict(orient="records")
+    else:
+        records = result
+    return [dict(row) for row in records]

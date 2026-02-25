@@ -8,6 +8,7 @@ import pytest
 
 from counter_risk.io import DuplicateDescriptionError
 from counter_risk.io.mosers_workbook import (
+    compute_and_writeback_prior_month_notionals,
     load_mosers_workbook,
     locate_futures_detail_section,
     write_prior_month_notional,
@@ -116,3 +117,41 @@ def test_write_prior_month_notional_emits_structured_warning_for_blank_descripti
             "message": "Skipped write-back row with blank Description",
         }
     ]
+
+
+def test_compute_and_writeback_prior_month_notionals_unpacks_result_and_warnings(
+    tmp_path: Path,
+) -> None:
+    source_path = _FIXTURE_PATH
+    output_path = tmp_path / "computed_writeback.xlsx"
+    collector = WarningsCollector()
+    description = "US 2-Year Note (CBT) Mar25"
+
+    written_path, warnings = compute_and_writeback_prior_month_notionals(
+        source_path=source_path,
+        output_path=output_path,
+        current_rows=[{"description": description, "notional": 200.0}],
+        prior_rows=[{"description": description, "notional": 125.0}],
+        collector=collector,
+    )
+
+    assert written_path == output_path
+    assert warnings is collector
+    assert warnings.warnings == []
+
+    workbook = load_mosers_workbook(output_path)
+    try:
+        section = locate_futures_detail_section(workbook)
+        worksheet = workbook[section.sheet_name]
+        for row_index in range(section.data_start_row, section.data_end_row + 1):
+            value = str(
+                worksheet.cell(row=row_index, column=section.description_col).value or ""
+            ).strip()
+            if value == description:
+                prior_value = worksheet.cell(row=row_index, column=section.prior_month_col).value
+                assert prior_value == pytest.approx(125.0)
+                break
+        else:
+            pytest.fail(f"Could not find expected description row: {description!r}")
+    finally:
+        workbook.close()
