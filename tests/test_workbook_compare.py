@@ -143,3 +143,30 @@ def test_compare_workbooks_reports_nonvolatile_core_property_differences(tmp_pat
     assert any(diff.startswith("Core property differs: title") for diff in differences)
     assert not any("modified" in diff for diff in differences)
     assert not any("lastModifiedBy" in diff for diff in differences)
+
+
+def test_compare_workbooks_cell_diff_does_not_report_volatile_core_properties(
+    tmp_path: Path,
+) -> None:
+    reference = tmp_path / "reference.xlsx"
+    generated = tmp_path / "generated.xlsx"
+
+    _build_workbook(
+        reference,
+        cell_value="left",
+        modified=datetime(2026, 1, 1, 10, 0, 0),
+        last_modified_by="user-left",
+    )
+    _build_workbook(
+        generated,
+        cell_value="right",
+        modified=datetime(2026, 2, 1, 10, 0, 0),
+        last_modified_by="user-right",
+    )
+
+    differences = compare_workbooks(reference, generated)
+
+    assert "Member differs: xl/worksheets/sheet1.xml" in differences
+    assert "Member differs: docProps/core.xml" not in differences
+    assert not any(diff.startswith("Core property differs: modified") for diff in differences)
+    assert not any(diff.startswith("Core property differs: lastModifiedBy") for diff in differences)
