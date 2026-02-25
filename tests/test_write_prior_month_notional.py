@@ -13,6 +13,7 @@ from counter_risk.io.mosers_workbook import (
     write_prior_month_notional,
     writeback_prior_month_notionals,
 )
+from counter_risk.pipeline.warnings import WarningsCollector
 
 _FIXTURE_PATH = Path(__file__).parent / "fixtures" / "mosers_workbook_fixture.xlsx"
 
@@ -70,3 +71,48 @@ def test_duplicates_raise_before_any_write_side_effects(tmp_path: Path) -> None:
             rows=_duplicate_rows(),
         )
     assert not output_path.exists()
+
+
+def test_write_prior_month_notional_emits_structured_warning_for_unmatched_row() -> None:
+    wb = load_mosers_workbook(_FIXTURE_PATH)
+    section = locate_futures_detail_section(wb)
+    collector = WarningsCollector()
+
+    updated = write_prior_month_notional(
+        wb,
+        section,
+        [{"description": "NO MATCH CONTRACT", "prior_notional": 10.0}],
+        collector=collector,
+    )
+
+    assert updated == 0
+    assert collector.warnings == [
+        {
+            "row_idx": 0,
+            "code": "WRITEBACK_NO_WORKBOOK_MATCH",
+            "message": "No workbook row matched Description during write-back",
+            "description": "NO MATCH CONTRACT",
+        }
+    ]
+
+
+def test_write_prior_month_notional_emits_structured_warning_for_blank_description() -> None:
+    wb = load_mosers_workbook(_FIXTURE_PATH)
+    section = locate_futures_detail_section(wb)
+    collector = WarningsCollector()
+
+    updated = write_prior_month_notional(
+        wb,
+        section,
+        [{"description": "   ", "prior_notional": 10.0}],
+        collector=collector,
+    )
+
+    assert updated == 0
+    assert collector.warnings == [
+        {
+            "row_idx": 0,
+            "code": "WRITEBACK_MISSING_DESCRIPTION",
+            "message": "Skipped write-back row with blank Description",
+        }
+    ]
