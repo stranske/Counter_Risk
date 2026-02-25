@@ -184,5 +184,4 @@ def resolve_clearing_house(
 def normalize_clearing_house(name: str) -> str:
     """Normalize a clearing house name to the canonical historical workbook label."""
 
-    normalized = _normalize_whitespace(name)
-    return _CLEARING_HOUSE_FALLBACK_MAPPINGS.get(normalized, normalized)
+    return resolve_clearing_house(name).canonical_name
