@@ -2,20 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TypedDict
-
-
-class _WarningRecordRequired(TypedDict):
-    """Required warning fields."""
-
-    row_idx: int
-
-
-class WarningRecord(_WarningRecordRequired, total=False):
-    """Structured warning payload with optional metadata."""
-
-    code: str
-    message: str
+WarningRecord = dict[str, object]
 
 
 def _is_blank_warning_value(value: object) -> bool:
@@ -56,7 +43,13 @@ class WarningsCollector:
 
     def warn(self, message: str, *, code: str | None = None, **extra: object) -> None:
         """Record a warning with a required ``row_idx`` (defaults to -1)."""
-        row_idx = int(extra.pop("row_idx", -1))
+        row_idx_raw = extra.pop("row_idx", -1)
+        if isinstance(row_idx_raw, int):
+            row_idx = row_idx_raw
+        elif isinstance(row_idx_raw, str):
+            row_idx = int(row_idx_raw)
+        else:
+            row_idx = -1
         record: WarningRecord = {"row_idx": row_idx, "message": message}
         if code is not None:
             record["code"] = code

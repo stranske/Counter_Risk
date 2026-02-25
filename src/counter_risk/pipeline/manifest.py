@@ -12,6 +12,8 @@ from typing import Any
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.warnings import WarningsCollector
 
+__all__ = ["ManifestBuilder", "WarningsCollector"]
+
 
 @dataclass(frozen=True)
 class ManifestBuilder:

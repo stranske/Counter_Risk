@@ -62,6 +62,10 @@ def _records(result: Any) -> list[dict[str, Any]]:
     return [dict(row) for row in result]
 
 
+def _warning_messages(col: WarningsCollector) -> list[str]:
+    return [str(w.get("message", "")) for w in col.warnings]
+
+
 def _make_result_rows(
     prior_map: dict[str, float] | None = None,
 ) -> list[dict[str, Any]]:
@@ -95,12 +99,14 @@ class TestWarningsCollector:
     def test_warn_without_code(self) -> None:
         col = WarningsCollector()
         col.warn("something went wrong")
-        assert col.warnings == ["something went wrong"]
+        assert col.warnings == [{"row_idx": -1, "message": "something went wrong"}]
 
     def test_warn_with_code(self) -> None:
         col = WarningsCollector()
         col.warn("bad value", code=WarningsCollector.INVALID_NOTIONAL)
-        assert col.warnings == ["[INVALID_NOTIONAL] bad value"]
+        assert col.warnings == [
+            {"row_idx": -1, "message": "bad value", "code": WarningsCollector.INVALID_NOTIONAL}
+        ]
 
     def test_warn_multiple(self) -> None:
         col = WarningsCollector()
@@ -113,7 +119,7 @@ class TestWarningsCollector:
         col = WarningsCollector()
         col.warn("hello")
         w1 = col.warnings
-        w1.append("mutate me")
+        w1.append({"row_idx": -1, "message": "mutate me"})
         assert len(col.warnings) == 1  # original unchanged
 
     def test_warning_codes_are_strings(self) -> None:
@@ -414,7 +420,7 @@ class TestNotionalValidation:
         result = _extract_notional(row, row_id="ES Mar25", collector=col)
         assert result == pytest.approx(0.0)
         assert len(col.warnings) == 1
-        assert "MISSING_NOTIONAL" in col.warnings[0] or "missing" in col.warnings[0].lower()
+        assert col.warnings[0].get("code") == WarningsCollector.MISSING_NOTIONAL
 
     def test_blank_notional_emits_warning(self) -> None:
         row = {"notional": "   "}
@@ -422,7 +428,7 @@ class TestNotionalValidation:
         result = _extract_notional(row, row_id="Row 0", collector=col)
         assert result == pytest.approx(0.0)
         assert len(col.warnings) == 1
-        assert "INVALID_NOTIONAL" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.INVALID_NOTIONAL
 
     def test_non_numeric_notional_emits_warning(self) -> None:
         row = {"notional": "not-a-number"}
@@ -430,7 +436,7 @@ class TestNotionalValidation:
         result = _extract_notional(row, row_id="Row 1", collector=col)
         assert result == pytest.approx(0.0)
         assert len(col.warnings) == 1
-        assert "INVALID_NOTIONAL" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.INVALID_NOTIONAL
 
     def test_nan_notional_emits_warning(self) -> None:
         row = {"notional": float("nan")}
@@ -438,7 +444,7 @@ class TestNotionalValidation:
         result = _extract_notional(row, row_id="Row 2", collector=col)
         assert result == pytest.approx(0.0)
         assert len(col.warnings) == 1
-        assert "INVALID_NOTIONAL" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.INVALID_NOTIONAL
 
     def test_nan_as_math_nan_emits_warning(self) -> None:
         row = {"notional": math.nan}
@@ -513,33 +519,34 @@ class TestValidateRow:
         col = WarningsCollector()
         assert _validate_row(row, row_idx=0, collector=col) is False
         assert len(col.warnings) == 1
-        assert "MISSING_DESCRIPTION" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.MISSING_DESCRIPTION
 
     def test_blank_description_returns_false(self) -> None:
         row = {"description": "   ", "notional": 100.0}
         col = WarningsCollector()
         assert _validate_row(row, row_idx=0, collector=col) is False
-        assert "MISSING_DESCRIPTION" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.MISSING_DESCRIPTION
 
     def test_missing_notional_returns_false(self) -> None:
         row = {"description": "ES Mar25"}  # no notional key
         col = WarningsCollector()
         assert _validate_row(row, row_idx=0, collector=col) is False
         assert len(col.warnings) == 1
-        assert "MISSING_NOTIONAL" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.MISSING_NOTIONAL
 
     def test_invalid_description_warning_includes_row_idx(self) -> None:
         row = {"description": "", "notional": 100.0}
         col = WarningsCollector()
         _validate_row(row, row_idx=7, collector=col)
-        assert "7" in col.warnings[0]
+        assert col.warnings[0].get("row_idx") == 7
 
     def test_invalid_description_warning_includes_non_empty_fields(self) -> None:
         row = {"description": "", "notional": 42.0, "other": "x"}
         col = WarningsCollector()
         _validate_row(row, row_idx=0, collector=col)
         # Warning should include available non-empty field values
-        assert "notional" in col.warnings[0] or "42" in col.warnings[0]
+        message = str(col.warnings[0].get("message", ""))
+        assert "notional" in message or "42" in message
 
     def test_invalid_row_excluded_from_compute(self) -> None:
         """Rows with missing/blank Description are excluded from delta computation."""
@@ -555,7 +562,7 @@ class TestValidateRow:
         assert len(rows) == 1
         assert rows[0]["description"] == "ES Mar25"
         # Blank-description row is filtered before per-row validation.
-        assert not any("MISSING_DESCRIPTION" in w for w in col.warnings)
+        assert not any(w.get("code") == WarningsCollector.MISSING_DESCRIPTION for w in col.warnings)
 
     def test_row_with_missing_notional_excluded(self) -> None:
         """Rows with no notional key are excluded from delta computation."""
@@ -569,7 +576,7 @@ class TestValidateRow:
         rows = _records(result)
         assert len(rows) == 1
         assert rows[0]["description"] == "ES Mar25"
-        assert any("MISSING_NOTIONAL" in w for w in col.warnings)
+        assert any(w.get("code") == WarningsCollector.MISSING_NOTIONAL for w in col.warnings)
 
     def test_description_key_case_insensitive(self) -> None:
         """Both 'description' and 'Description' keys are accepted."""
@@ -593,25 +600,25 @@ class TestUnmatchedRowManifestWarnings:
         col = WarningsCollector()
         compute_futures_delta(current, prior, collector=col)
         # Exactly one warning for the unmatched current row
-        unmatched = [w for w in col.warnings if "Unmatched current" in w]
+        unmatched = [w for w in col.warnings if "Unmatched current" in str(w.get("message", ""))]
         assert len(unmatched) == 1
-        assert "NO_PRIOR_MONTH_MATCH" in unmatched[0]
+        assert unmatched[0].get("code") == WarningsCollector.NO_PRIOR_MONTH_MATCH
 
     def test_unmatched_current_warning_includes_description(self) -> None:
         current = _make_rows(("MY UNIQUE TICKER Mar25", 1.0))
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
         compute_futures_delta(current, prior, collector=col)
-        assert any("MY UNIQUE TICKER" in w for w in col.warnings)
+        assert any("MY UNIQUE TICKER" in message for message in _warning_messages(col))
 
     def test_unmatched_prior_emits_no_prior_match_code(self) -> None:
         current: list[dict[str, Any]] = []
         prior = _make_rows(("Old Contract Dec25", 50.0))
         col = WarningsCollector()
         compute_futures_delta(current, prior, collector=col)
-        unmatched = [w for w in col.warnings if "Unmatched prior" in w]
+        unmatched = [w for w in col.warnings if "Unmatched prior" in str(w.get("message", ""))]
         assert len(unmatched) == 1
-        assert "NO_PRIOR_MATCH" in unmatched[0]
+        assert unmatched[0].get("code") == "NO_PRIOR_MATCH"
 
     def test_one_warning_per_unmatched_row(self) -> None:
         current = _make_rows(
@@ -622,7 +629,7 @@ class TestUnmatchedRowManifestWarnings:
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
         compute_futures_delta(current, prior, collector=col)
-        unmatched = [w for w in col.warnings if "Unmatched current" in w]
+        unmatched = [w for w in col.warnings if "Unmatched current" in str(w.get("message", ""))]
         assert len(unmatched) == 3
 
     def test_matched_rows_produce_no_unmatched_warning(self) -> None:
