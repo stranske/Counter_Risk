@@ -76,6 +76,17 @@ def build_discovery_dry_run_command(run_mode: RunnerMode, selected_date: str) ->
     )
 
 
+def build_discovery_run_command(run_mode: RunnerMode, selected_date: str, output_dir: str) -> str:
+    parsed_date = parse_as_of_month(selected_date)
+    config_path = resolve_config_path(run_mode)
+    return (
+        "run --discover "
+        f'--config "{config_path}" '
+        f'--as-of-month "{parsed_date.isoformat()}" '
+        f'--output-dir "{output_dir}"'
+    )
+
+
 def open_output_folder(
     *,
     repo_root: str,
