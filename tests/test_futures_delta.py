@@ -611,7 +611,7 @@ class TestUnmatchedRowManifestWarnings:
         compute_futures_delta(current, prior, collector=col)
         unmatched = [w for w in col.warnings if "Unmatched prior" in w]
         assert len(unmatched) == 1
-        assert "NO_PRIOR_MONTH_MATCH" in unmatched[0]
+        assert "NO_PRIOR_MATCH" in unmatched[0]
 
     def test_one_warning_per_unmatched_row(self) -> None:
         current = _make_rows(
