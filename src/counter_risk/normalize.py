@@ -144,6 +144,23 @@ def normalize_counterparty(name: str) -> str:
     return resolve_counterparty(name).canonical_name
 
 
+def normalize_counterparty_with_source(
+    name: str,
+    *,
+    registry_path: str | Path = Path("config/name_registry.yml"),
+) -> NameResolution:
+    """Normalize a counterparty name and return full mapping metadata.
+
+    The returned :class:`NameResolution` includes ``source`` indicating where
+    the mapping came from:
+    - ``"registry"`` when matched via configured name registry entries/aliases.
+    - ``"fallback"`` when matched via built-in fallback mappings.
+    - ``"unmapped"`` when no mapping is found and canonicalized input is used.
+    """
+
+    return resolve_counterparty(name, registry_path=registry_path)
+
+
 def resolve_clearing_house(
     name: str,
     *,
