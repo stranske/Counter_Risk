@@ -52,3 +52,26 @@ def test_warn_uses_structured_storage_with_default_row_idx() -> None:
             "message": "Unmatched current row",
         }
     ]
+
+
+def test_warn_filters_blank_extras_and_preserves_non_empty_extras() -> None:
+    collector = WarningsCollector()
+
+    collector.warn(
+        "invalid row",
+        code="MISSING_DESCRIPTION",
+        row_idx="12",
+        description="TY Mar25",
+        missing_none=None,
+        missing_empty="",
+        missing_whitespace="   ",
+    )
+
+    assert collector.warnings == [
+        {
+            "row_idx": 12,
+            "code": "MISSING_DESCRIPTION",
+            "message": "invalid row",
+            "description": "TY Mar25",
+        }
+    ]

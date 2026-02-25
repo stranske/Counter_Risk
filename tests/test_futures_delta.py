@@ -12,6 +12,7 @@ from typing import Any, cast
 
 import pytest
 
+from counter_risk.compute.errors import NO_PRIOR_MATCH, NO_PRIOR_MONTH_MATCH
 from counter_risk.compute.futures_delta import (
     InvalidNotionalError,
     _extract_notional,
@@ -60,10 +61,6 @@ def _records(result: Any) -> list[dict[str, Any]]:
     if hasattr(result, "to_dict"):
         return cast(list[dict[str, Any]], result.to_dict(orient="records"))
     return [dict(row) for row in result]
-
-
-def _warning_messages(col: WarningsCollector) -> list[str]:
-    return [str(w.get("message", "")) for w in col.warnings]
 
 
 def _make_result_rows(
@@ -544,9 +541,8 @@ class TestValidateRow:
         row = {"description": "", "notional": 42.0, "other": "x"}
         col = WarningsCollector()
         _validate_row(row, row_idx=0, collector=col)
-        # Warning should include available non-empty field values
-        message = str(col.warnings[0].get("message", ""))
-        assert "notional" in message or "42" in message
+        extras = col.warnings[0].get("available_non_empty_fields")
+        assert extras == {"notional": 42.0, "other": "x"}
 
     def test_invalid_row_excluded_from_compute(self) -> None:
         """Rows with missing/blank Description are excluded from delta computation."""
@@ -600,25 +596,30 @@ class TestUnmatchedRowManifestWarnings:
         col = WarningsCollector()
         compute_futures_delta(current, prior, collector=col)
         # Exactly one warning for the unmatched current row
-        unmatched = [w for w in col.warnings if "Unmatched current" in str(w.get("message", ""))]
+        unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MONTH_MATCH]
         assert len(unmatched) == 1
-        assert unmatched[0].get("code") == WarningsCollector.NO_PRIOR_MONTH_MATCH
+        assert unmatched[0].get("row_idx") == 0
+        assert unmatched[0].get("description") == "NEW Contract Dec25"
 
     def test_unmatched_current_warning_includes_description(self) -> None:
         current = _make_rows(("MY UNIQUE TICKER Mar25", 1.0))
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
         compute_futures_delta(current, prior, collector=col)
-        assert any("MY UNIQUE TICKER" in message for message in _warning_messages(col))
+        assert any(
+            w.get("code") == NO_PRIOR_MONTH_MATCH
+            and w.get("description") == "MY UNIQUE TICKER Mar25"
+            for w in col.warnings
+        )
 
     def test_unmatched_prior_emits_no_prior_match_code(self) -> None:
         current: list[dict[str, Any]] = []
         prior = _make_rows(("Old Contract Dec25", 50.0))
         col = WarningsCollector()
         compute_futures_delta(current, prior, collector=col)
-        unmatched = [w for w in col.warnings if "Unmatched prior" in str(w.get("message", ""))]
+        unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MATCH]
         assert len(unmatched) == 1
-        assert unmatched[0].get("code") == "NO_PRIOR_MATCH"
+        assert unmatched[0].get("description") == "Old Contract Dec25"
 
     def test_one_warning_per_unmatched_row(self) -> None:
         current = _make_rows(
@@ -629,7 +630,7 @@ class TestUnmatchedRowManifestWarnings:
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
         compute_futures_delta(current, prior, collector=col)
-        unmatched = [w for w in col.warnings if "Unmatched current" in str(w.get("message", ""))]
+        unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MONTH_MATCH]
         assert len(unmatched) == 3
 
     def test_matched_rows_produce_no_unmatched_warning(self) -> None:
