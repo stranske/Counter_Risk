@@ -328,6 +328,62 @@ def test_blank_prior_description_rows_are_excluded_from_matching() -> None:
     assert not any("Unmatched prior" in w for w in col.warnings)
 
 
+def test_matched_group_count_equals_unique_non_blank_normalized_descriptions() -> None:
+    current = [
+        {"description": "TY Mar25", "notional": 100.0},
+        {"description": "TY March 2025", "notional": 200.0},
+        {"description": "ES Jun25", "notional": 300.0},
+        {"description": " ", "notional": 9999.0},
+    ]
+    prior = [
+        {"description": "TY Mar 25", "notional": 80.0},
+        {"description": "ES June 2025", "notional": 250.0},
+        {"description": None, "notional": 7777.0},
+    ]
+
+    result = compute_futures_delta(current, prior)
+    rows = _records(result)
+
+    matched_groups = {normalize_description(r["description"]) for r in rows if r["prior_notional"] != 0.0}
+    assert matched_groups == {"TY MAR25", "ES JUN25"}
+    assert len(matched_groups) == 2
+
+
+def test_adding_blank_description_rows_does_not_change_matched_group_count() -> None:
+    base_current = [
+        {"description": "TY Mar25", "notional": 100.0},
+        {"description": "ES Jun25", "notional": 300.0},
+    ]
+    base_prior = [
+        {"description": "TY Mar 25", "notional": 80.0},
+        {"description": "ES June 2025", "notional": 250.0},
+    ]
+
+    with_blanks_current = base_current + [
+        {"description": "", "notional": 1.0},
+        {"description": "   ", "notional": 2.0},
+        {"description": None, "notional": 3.0},
+    ]
+    with_blanks_prior = base_prior + [
+        {"description": "", "notional": 4.0},
+        {"description": "\t", "notional": 5.0},
+        {"description": None, "notional": 6.0},
+    ]
+
+    base_rows = _records(compute_futures_delta(base_current, base_prior))
+    blank_rows = _records(compute_futures_delta(with_blanks_current, with_blanks_prior))
+
+    base_matched_groups = {
+        normalize_description(r["description"]) for r in base_rows if r["prior_notional"] != 0.0
+    }
+    blank_matched_groups = {
+        normalize_description(r["description"]) for r in blank_rows if r["prior_notional"] != 0.0
+    }
+
+    assert base_matched_groups == {"TY MAR25", "ES JUN25"}
+    assert blank_matched_groups == base_matched_groups
+
+
 # ---------------------------------------------------------------------------
 # compute_futures_delta – description matching via normalisation
 # ---------------------------------------------------------------------------
