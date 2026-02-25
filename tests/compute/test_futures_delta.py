@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import csv
 from pathlib import Path
 from typing import Any, cast
@@ -140,6 +141,23 @@ def test_compute_returns_result_and_warnings() -> None:
     rows = _records(result)
     assert len(rows) == 1
     assert warnings.warnings == col.warnings
+
+
+def test_compute_result_has_expected_delta_output_structure() -> None:
+    current = _make_rows(("TY Dec25", 50.0))
+    prior = _make_rows(("TY Dec25", 75.0))
+
+    result, _warnings = _compute_checked(current, prior)
+    rows = _records(result)
+
+    assert len(rows) == 1
+    assert set(rows[0].keys()) == {
+        "description",
+        "notional",
+        "prior_notional",
+        "notional_change",
+        "sign_flip",
+    }
 
 
 def test_basic_change_negative() -> None:
@@ -689,4 +707,48 @@ def test_reference_subset_change_and_sign_flip() -> None:
     assert any(
         w.get("code") == NO_PRIOR_MONTH_MATCH and w.get("description") == "Euro Dollar (CME) Jun25"
         for w in col.warnings
+    )
+
+
+def test_src_callers_unpack_compute_futures_delta_return_values() -> None:
+    """Any src call site must unpack (result, warnings) from compute_futures_delta."""
+    src_root = Path("src")
+    invalid_call_sites: list[str] = []
+
+    def _is_compute_call(node: ast.AST) -> bool:
+        if not isinstance(node, ast.Call):
+            return False
+        if isinstance(node.func, ast.Name):
+            return node.func.id == "compute_futures_delta"
+        if isinstance(node.func, ast.Attribute):
+            return node.func.attr == "compute_futures_delta"
+        return False
+
+    for path in src_root.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        parents: dict[ast.AST, ast.AST] = {}
+        for node in ast.walk(tree):
+            for child in ast.iter_child_nodes(node):
+                parents[child] = node
+
+        for node in ast.walk(tree):
+            if not _is_compute_call(node):
+                continue
+
+            parent = parents.get(node)
+            valid_unpack = False
+            if isinstance(parent, ast.Assign) and parent.value is node:
+                valid_unpack = any(
+                    isinstance(target, ast.Tuple) and len(target.elts) == 2
+                    for target in parent.targets
+                )
+            elif isinstance(parent, ast.AnnAssign) and parent.value is node:
+                valid_unpack = isinstance(parent.target, ast.Tuple) and len(parent.target.elts) == 2
+
+            if not valid_unpack:
+                invalid_call_sites.append(f"{path}:{node.lineno}")
+
+    assert not invalid_call_sites, (
+        "compute_futures_delta callers must unpack two values "
+        f"(result, warnings): {invalid_call_sites}"
     )
