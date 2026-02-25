@@ -47,7 +47,11 @@ def test_compare_workbooks_ignores_modified_timestamp_when_cells_match(tmp_path:
         last_modified_by="qa-user",
     )
 
-    assert compare_workbooks(reference, generated) == []
+    differences = compare_workbooks(reference, generated)
+
+    assert differences == []
+    assert "Member differs: docProps/core.xml" not in differences
+    assert not any(diff.startswith("Core property differs: modified") for diff in differences)
 
 
 def test_compare_workbooks_ignores_last_modified_by_when_cells_match(tmp_path: Path) -> None:
@@ -67,7 +71,11 @@ def test_compare_workbooks_ignores_last_modified_by_when_cells_match(tmp_path: P
         last_modified_by="user-b",
     )
 
-    assert compare_workbooks(reference, generated) == []
+    differences = compare_workbooks(reference, generated)
+
+    assert differences == []
+    assert "Member differs: docProps/core.xml" not in differences
+    assert not any(diff.startswith("Core property differs: lastModifiedBy") for diff in differences)
 
 
 def test_compare_workbooks_reports_cell_differences_even_with_identical_metadata(
@@ -116,7 +124,12 @@ def test_compare_workbooks_metadata_only_differences_do_not_produce_diffs(tmp_pa
         last_modified_by="second-user",
     )
 
-    assert compare_workbooks(reference, generated) == []
+    differences = compare_workbooks(reference, generated)
+
+    assert differences == []
+    assert "Member differs: docProps/core.xml" not in differences
+    assert not any(diff.startswith("Core property differs: modified") for diff in differences)
+    assert not any(diff.startswith("Core property differs: lastModifiedBy") for diff in differences)
 
 
 def test_compare_workbooks_reports_nonvolatile_core_property_differences(tmp_path: Path) -> None:
