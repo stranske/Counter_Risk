@@ -17,11 +17,7 @@ from zipfile import BadZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
-from counter_risk.normalize import (
-    canonicalize_name,
-    normalize_counterparty,
-    normalize_counterparty_with_source,
-)
+from counter_risk.normalize import canonicalize_name, normalize_counterparty, resolve_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
@@ -409,7 +405,7 @@ def _counterparty_resolution_maps_from_records(
         raw_name = str(record.get("counterparty", "")).strip()
         if not raw_name:
             continue
-        resolution = normalize_counterparty_with_source(raw_name)
+        resolution = resolve_counterparty(raw_name)
         normalized_to_raw.setdefault(resolution.canonical_name, set()).add(raw_name)
         sources_by_raw_name[raw_name] = resolution.source
     return normalized_to_raw, sources_by_raw_name
@@ -617,7 +613,7 @@ def _extract_header_text_lines(
     workbook_path: Path, *, max_rows: int = 15, max_cols: int = 6
 ) -> list[str]:
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ModuleNotFoundError:
         return []
     except Exception:
@@ -967,8 +963,17 @@ def _write_outputs(
             target_master_ppt,
         )
     else:
-        _derive_distribution_ppt(
+        chart_replaced_ppt = run_dir / f"{target_master_ppt.stem}_chart_replaced.pptx"
+        chart_replacement_applied = _apply_chart_replacement(
             master_pptx_path=target_master_ppt,
+            output_path=chart_replaced_ppt,
+            run_dir=run_dir,
+            static_mode=config.distribution_static,
+            warnings=warnings,
+        )
+        distribution_source = chart_replaced_ppt if chart_replacement_applied else target_master_ppt
+        _derive_distribution_ppt(
+            master_pptx_path=distribution_source,
             distribution_pptx_path=target_distribution_ppt,
         )
         try:
@@ -1015,6 +1020,92 @@ def _write_outputs(
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
     return output_paths, refresh_result
+
+
+def _apply_chart_replacement(
+    *,
+    master_pptx_path: Path,
+    output_path: Path,
+    run_dir: Path,
+    static_mode: bool,
+    warnings: list[str],
+) -> bool:
+    """Replace chart/OLE shapes with static images using confidence-based matching.
+
+    Opens a COM session to export chart shapes and fallback slide images, then
+    runs ``_rebuild_pptx_replacing_charts`` with confidence checks.  Returns
+    ``True`` when chart replacement was applied, ``False`` when skipped.
+    """
+
+    if platform.system().lower() != "windows":
+        return False
+
+    try:
+        import win32com.client
+    except ImportError:
+        return False
+
+    chart_images_dir = run_dir / "_chart_images"
+    chart_images_dir.mkdir(parents=True, exist_ok=True)
+
+    app = None
+    presentation = None
+    chart_images: dict[tuple[int, str], Path] = {}
+    fallback_slide_images: dict[int, Path] = {}
+    try:
+        app = win32com.client.DispatchEx("PowerPoint.Application")
+        app.Visible = False
+        presentation = app.Presentations.Open(str(master_pptx_path), WithWindow=False)
+
+        chart_images = _export_chart_shapes_as_images(
+            com_presentation=presentation,
+            slide_images_dir=chart_images_dir,
+            warnings=warnings,
+        )
+
+        if chart_images:
+            slide_count = int(presentation.Slides.Count)
+            for slide_idx in range(1, slide_count + 1):
+                img_path = chart_images_dir / f"fallback_slide_{slide_idx:04d}.png"
+                try:
+                    presentation.Slides[slide_idx].Export(str(img_path), "PNG")
+                    fallback_slide_images[slide_idx] = img_path
+                except Exception as exc:
+                    warnings.append(
+                        f"chart_replacement fallback slide export failed (slide {slide_idx}): {exc}"
+                    )
+    except Exception as exc:
+        warnings.append(f"chart_replacement COM session failed: {exc}")
+        LOGGER.warning("chart_replacement_com_failed exc=%s", exc)
+        return False
+    finally:
+        if presentation is not None:
+            with contextlib.suppress(Exception):
+                presentation.Close()
+        if app is not None:
+            with contextlib.suppress(Exception):
+                app.Quit()
+
+    if not chart_images:
+        return False
+
+    try:
+        _rebuild_pptx_replacing_charts(
+            source_pptx=master_pptx_path,
+            output_path=output_path,
+            chart_images=chart_images,
+            fallback_slide_images=fallback_slide_images,
+            fallback_to_full_deck_rebuild=static_mode,
+        )
+        LOGGER.info("chart_replacement_complete output=%s", output_path)
+        return True
+    except RuntimeError as exc:
+        if static_mode and "full-deck static rebuild" in str(exc):
+            LOGGER.info("chart_replacement_deferred_to_static_rebuild: %s", exc)
+        else:
+            LOGGER.warning("chart_replacement_failed exc=%s", exc)
+            warnings.append(f"chart_replacement failed: {exc}")
+        return False
 
 
 def _derive_distribution_ppt(*, master_pptx_path: Path, distribution_pptx_path: Path) -> None:
@@ -1165,7 +1256,7 @@ def _refresh_ppt_links(pptx_path: Path) -> PptProcessingResult:
         )
 
     try:
-        import win32com.client  # type: ignore[import-untyped]
+        import win32com.client
     except ImportError:
         LOGGER.info("ppt_link_refresh_skipped file=%s reason=win32com_unavailable", pptx_path)
         return PptProcessingResult(
