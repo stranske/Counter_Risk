@@ -746,7 +746,7 @@ def test_src_callers_unpack_compute_futures_delta_return_values() -> None:
                 valid_unpack = isinstance(parent.target, ast.Tuple) and len(parent.target.elts) == 2
 
             if not valid_unpack:
-                invalid_call_sites.append(f"{path}:{node.lineno}")
+                invalid_call_sites.append(f"{path}:{getattr(node, 'lineno', '?')}")
 
     assert not invalid_call_sites, (
         "compute_futures_delta callers must unpack two values "
