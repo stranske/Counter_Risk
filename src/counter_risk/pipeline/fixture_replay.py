@@ -40,6 +40,55 @@ def _resolve_output_dir(
     return (config_path.parent / config.output_root).resolve()
 
 
+def run_pipeline_with_config(
+    config: WorkflowConfig,
+    *,
+    config_dir: Path,
+    output_dir: Path | None = None,
+) -> Path:
+    """Run the pipeline using an already-resolved WorkflowConfig object.
+
+    This entry point is used by the discovery-driven execution path where input
+    paths have been resolved via auto-discovery and user selection rather than
+    from a static YAML file.
+    """
+
+    run_dir = (
+        output_dir.resolve()
+        if output_dir is not None
+        else (config_dir / config.output_root).resolve()
+    )
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    sources = {
+        "mosers_all_programs_xlsx": config.mosers_all_programs_xlsx,
+        "mosers_ex_trend_xlsx": config.mosers_ex_trend_xlsx,
+        "mosers_trend_xlsx": config.mosers_trend_xlsx,
+        "hist_all_programs_3yr_xlsx": config.hist_all_programs_3yr_xlsx,
+        "hist_ex_llc_3yr_xlsx": config.hist_ex_llc_3yr_xlsx,
+        "hist_llc_3yr_xlsx": config.hist_llc_3yr_xlsx,
+        "monthly_pptx": config.monthly_pptx,
+    }
+
+    copied_outputs: dict[str, str] = {}
+    for key, source_path in sources.items():
+        if source_path is None:
+            continue
+        resolved = _resolve_config_path(source_path, config_dir=config_dir)
+        copied_path = _copy_output_file(src_path=resolved, output_dir=run_dir)
+        copied_outputs[key] = str(copied_path)
+
+    manifest = {
+        "mode": "discovery",
+        "run_date_utc": datetime.now(UTC).isoformat(),
+        "as_of_date": None if config.as_of_date is None else config.as_of_date.isoformat(),
+        "outputs": copied_outputs,
+    }
+    manifest_path = run_dir / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    return run_dir
+
+
 def run_fixture_replay(*, config_path: Path, output_dir: Path | None = None) -> Path:
     """Replay fixture artifacts into a deterministic run-output folder."""
 
