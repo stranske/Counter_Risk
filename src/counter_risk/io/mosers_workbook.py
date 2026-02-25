@@ -265,6 +265,25 @@ def save_mosers_workbook(workbook: Any, path: Path | str) -> Path:
     return dest
 
 
+def writeback_prior_month_notionals(
+    *,
+    source_path: Path | str,
+    output_path: Path | str,
+    rows: list[dict[str, Any]],
+) -> Path:
+    """Write prior-month notionals to a workbook using the atomic write-back flow.
+
+    This function is the public orchestration entrypoint for workbook write-back.
+    It always routes through :func:`atomic_writeback_with_section_locate` so section
+    discovery happens before any output artifact is finalized.
+    """
+    return atomic_writeback_with_section_locate(
+        source_path=source_path,
+        output_path=output_path,
+        rows=rows,
+    )
+
+
 def atomic_writeback_with_section_locate(
     *,
     source_path: Path | str,

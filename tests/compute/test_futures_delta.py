@@ -344,7 +344,9 @@ def test_matched_group_count_equals_unique_non_blank_normalized_descriptions() -
     result = compute_futures_delta(current, prior)
     rows = _records(result)
 
-    matched_groups = {normalize_description(r["description"]) for r in rows if r["prior_notional"] != 0.0}
+    matched_groups = {
+        normalize_description(r["description"]) for r in rows if r["prior_notional"] != 0.0
+    }
     assert matched_groups == {"TY MAR25", "ES JUN25"}
     assert len(matched_groups) == 2
 
