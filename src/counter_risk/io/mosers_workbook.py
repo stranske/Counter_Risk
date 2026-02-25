@@ -26,6 +26,7 @@ from typing import Any
 
 from counter_risk.compute.futures_delta import normalize_description
 from counter_risk.io.errors import DuplicateDescriptionError
+from counter_risk.pipeline.warnings import WarningsCollector
 
 _LOG = logging.getLogger(__name__)
 
@@ -187,6 +188,8 @@ def write_prior_month_notional(
     workbook: Any,
     section: FuturesDetailSection,
     rows: list[dict[str, Any]],
+    *,
+    collector: WarningsCollector | None = None,
 ) -> int:
     """Write prior-month notional values into the workbook for matched rows.
 
@@ -220,26 +223,45 @@ def write_prior_month_notional(
     # Build a lookup from raw description text → prior_notional numeric value,
     # failing fast when duplicate normalized keys are present.
     _raise_on_duplicate_normalized_descriptions(rows)
-    desc_to_notional: dict[str, float] = {}
-    for row in rows:
+    desc_to_notional: dict[str, tuple[float, int]] = {}
+    for row_idx, row in enumerate(rows):
         desc = str(row.get("description", "") or "").strip()
         if desc:
-            desc_to_notional[desc] = float(row.get("prior_notional", 0.0) or 0.0)
+            desc_to_notional[desc] = (float(row.get("prior_notional", 0.0) or 0.0), row_idx)
+        elif collector is not None:
+            collector.add_structured(
+                row_idx,
+                code="WRITEBACK_MISSING_DESCRIPTION",
+                message="Skipped write-back row with blank Description",
+            )
 
     updated = 0
+    matched_row_indices: set[int] = set()
     for data_row in range(section.data_start_row, section.data_end_row + 1):
         desc_cell = ws.cell(row=data_row, column=section.description_col)
         wb_desc = str(desc_cell.value or "").strip()
         if wb_desc in desc_to_notional:
             prior_cell = ws.cell(row=data_row, column=section.prior_month_col)
-            prior_cell.value = desc_to_notional[wb_desc]
+            prior_notional, source_row_idx = desc_to_notional[wb_desc]
+            prior_cell.value = prior_notional
+            matched_row_indices.add(source_row_idx)
             updated += 1
             _LOG.debug(
                 "Wrote prior_notional=%.2f for %r at row %d",
-                desc_to_notional[wb_desc],
+                prior_notional,
                 wb_desc,
                 data_row,
             )
+
+    if collector is not None:
+        for desc, (_prior_notional, row_idx) in desc_to_notional.items():
+            if row_idx not in matched_row_indices:
+                collector.add_structured(
+                    row_idx,
+                    code="WRITEBACK_NO_WORKBOOK_MATCH",
+                    message="No workbook row matched Description during write-back",
+                    description=desc,
+                )
 
     _LOG.info("write_prior_month_notional: updated %d/%d workbook rows", updated, len(rows))
     return updated
@@ -275,6 +297,7 @@ def writeback_prior_month_notionals(
     source_path: Path | str,
     output_path: Path | str,
     rows: list[dict[str, Any]],
+    collector: WarningsCollector | None = None,
 ) -> Path:
     """Write prior-month notionals to a workbook using the atomic write-back flow.
 
@@ -286,6 +309,7 @@ def writeback_prior_month_notionals(
         source_path=source_path,
         output_path=output_path,
         rows=rows,
+        collector=collector,
     )
 
 
@@ -294,6 +318,7 @@ def atomic_writeback_with_section_locate(
     source_path: Path | str,
     output_path: Path | str,
     rows: list[dict[str, Any]],
+    collector: WarningsCollector | None = None,
 ) -> Path:
     """Atomically write prior-month notionals after locating the futures section.
 
@@ -325,7 +350,7 @@ def atomic_writeback_with_section_locate(
     try:
         workbook = load_mosers_workbook(src)
         section = locate_futures_detail_section(workbook)
-        write_prior_month_notional(workbook, section, rows)
+        write_prior_month_notional(workbook, section, rows, collector=collector)
         save_mosers_workbook(workbook, temp_path)
         temp_path.replace(dest)
         _LOG.info("Atomic write-back complete: %s", dest)
