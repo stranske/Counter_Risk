@@ -10,6 +10,7 @@ import pytest
 
 from counter_risk.compute.futures_delta import (
     compute_futures_delta,
+    is_blank_description,
     normalize_description,
     write_annotated_csv,
 )
@@ -84,6 +85,15 @@ def test_normalize_all_months_recognised() -> None:
 def test_normalize_no_month_unchanged_aside_from_case_and_whitespace() -> None:
     result = normalize_description("  US  TREASURY  ")
     assert result == "US TREASURY"
+
+
+@pytest.mark.parametrize("desc", [None, "", "   ", "\t\n"])
+def test_is_blank_description_true_for_none_empty_or_whitespace(desc: Any) -> None:
+    assert is_blank_description(desc) is True
+
+
+def test_is_blank_description_false_for_non_blank_text() -> None:
+    assert is_blank_description("ES Mar25") is False
 
 
 # ---------------------------------------------------------------------------
