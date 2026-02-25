@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import logging
+import os
 import shutil
 import sys
 from contextlib import suppress
@@ -23,6 +25,7 @@ class PowerPointComInitializationError(PowerPointComError):
 
 
 MANUAL_LINK_REFRESH_FILENAME = "NEEDS_LINK_REFRESH.txt"
+LOGGER = logging.getLogger(__name__)
 
 
 def _as_path(path: str | Path, *, field_name: str) -> Path:
@@ -116,6 +119,29 @@ def _write_manual_refresh_instructions(
     return instructions_path
 
 
+def _is_truthy_env(name: str) -> bool:
+    value = os.environ.get(name, "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
+def _should_reraise_cleanup_exceptions() -> bool:
+    return _is_truthy_env("COUNTER_RISK_RERAISE_COM_CLEANUP_ERRORS")
+
+
+def _run_com_cleanup(*, action: str, callback: Any) -> None:
+    try:
+        callback()
+    except Exception as exc:
+        LOGGER.error(
+            "PowerPoint COM cleanup failed action=%s exc_type=%s exc=%s",
+            action,
+            type(exc).__name__,
+            exc,
+        )
+        if _should_reraise_cleanup_exceptions():
+            raise
+
+
 def _load_dispatch_ex() -> Any:
     """Load and return the ``DispatchEx`` COM constructor for PowerPoint automation."""
 
@@ -187,10 +213,8 @@ def list_external_link_targets(pptx_path: str | Path) -> list[str]:
                     targets.append(link_target)
     finally:
         if presentation is not None:
-            with suppress(Exception):
-                presentation.Close()
-        with suppress(Exception):
-            app.Quit()
+            _run_com_cleanup(action="presentation.Close", callback=presentation.Close)
+        _run_com_cleanup(action="app.Quit", callback=app.Quit)
 
     return list(dict.fromkeys(targets))
 
@@ -247,10 +271,8 @@ def refresh_links_and_save(
         presentation.SaveCopyAs(str(output_path))
     finally:
         if presentation is not None:
-            with suppress(Exception):
-                presentation.Close()
-        with suppress(Exception):
-            app.Quit()
+            _run_com_cleanup(action="presentation.Close", callback=presentation.Close)
+        _run_com_cleanup(action="app.Quit", callback=app.Quit)
 
     return output_path
 
@@ -264,8 +286,7 @@ def is_powerpoint_com_available() -> bool:
         return False
 
     # COM servers can already be in the process of teardown; availability check still passed.
-    with suppress(Exception):
-        app.Quit()
+    _run_com_cleanup(action="app.Quit", callback=app.Quit)
 
     return True
 

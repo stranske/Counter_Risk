@@ -26,6 +26,16 @@ def test_main_run_command_returns_zero(capsys: pytest.CaptureFixture[str]) -> No
     assert "not implemented yet" in captured.out.lower()
 
 
+def test_run_parser_accepts_export_pdf_flags() -> None:
+    parser = cli.build_parser()
+
+    args_true = parser.parse_args(["run", "--export-pdf"])
+    assert args_true.export_pdf is True
+
+    args_false = parser.parse_args(["run", "--no-export-pdf"])
+    assert args_false.export_pdf is False
+
+
 def test_main_run_fixture_replay_mode(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     fixtures_dir = tmp_path / "fixtures"
     fixtures_dir.mkdir()

@@ -44,6 +44,7 @@ class WorkflowConfig(BaseModel):
     screenshot_inputs: dict[str, Path] = Field(default_factory=dict)
     reconciliation: ReconciliationConfig = Field(default_factory=ReconciliationConfig)
     distribution_static: bool = False
+    export_pdf: bool = False
     enable_ppt_output: bool = True
     output_root: Path = Path("runs")
 
