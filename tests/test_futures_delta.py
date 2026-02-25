@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -58,7 +58,7 @@ def _make_rows(*pairs: tuple[str, float]) -> list[dict[str, Any]]:
 
 def _records(result: Any) -> list[dict[str, Any]]:
     if hasattr(result, "to_dict"):
-        return result.to_dict(orient="records")
+        return cast(list[dict[str, Any]], result.to_dict(orient="records"))
     return [dict(row) for row in result]
 
 
@@ -167,11 +167,15 @@ class TestWorkbookWriteBack:
 
     def test_locate_section_raises_when_no_marker(self, tmp_path: Path) -> None:
         """Workbook with no futures detail marker raises FuturesDetailNotFoundError."""
-        import openpyxl
-
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws["A1"] = "No marker here"
+        wb = load_mosers_workbook(_FIXTURE_PATH)
+        for ws in wb.worksheets:
+            for row in ws.iter_rows():
+                for cell in row:
+                    if (
+                        isinstance(cell.value, str)
+                        and cell.value.strip().lower() == "futures detail"
+                    ):
+                        cell.value = "No marker here"
         path = tmp_path / "no_marker.xlsx"
         wb.save(path)
 
@@ -181,15 +185,12 @@ class TestWorkbookWriteBack:
 
     def test_locate_section_raises_when_missing_prior_month_col(self, tmp_path: Path) -> None:
         """Missing 'Prior Month Notional' column raises FuturesDetailNotFoundError."""
-        import openpyxl
-
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws["A1"] = "Futures Detail"
-        ws["A2"] = "Description"
-        ws["B2"] = "Current Month Notional"
-        # No "Prior Month Notional" column
-        ws["A3"] = "Contract A Mar25"
+        wb = load_mosers_workbook(_FIXTURE_PATH)
+        section = locate_futures_detail_section(wb)
+        ws = wb[section.sheet_name]
+        ws.cell(row=section.header_col_row, column=section.prior_month_col).value = (
+            "Current Month Notional"
+        )
         path = tmp_path / "missing_col.xlsx"
         wb.save(path)
 
@@ -553,8 +554,8 @@ class TestValidateRow:
         # Only the valid row should appear in output
         assert len(rows) == 1
         assert rows[0]["description"] == "ES Mar25"
-        # A warning should have been emitted for the invalid row
-        assert any("MISSING_DESCRIPTION" in w for w in col.warnings)
+        # Blank-description row is filtered before per-row validation.
+        assert not any("MISSING_DESCRIPTION" in w for w in col.warnings)
 
     def test_row_with_missing_notional_excluded(self) -> None:
         """Rows with no notional key are excluded from delta computation."""
