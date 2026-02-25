@@ -149,6 +149,39 @@ def test_mapping_diff_report_with_fixture_inputs_contains_required_sections() ->
     assert "SUGGESTIONS" in result.stdout
 
 
+def test_mapping_diff_report_forwards_registry_path_parameter(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    captured_call: dict[str, object] = {}
+
+    def _fake_generate_mapping_diff_report(
+        registry_path: Path,
+        input_sources: dict[str, list[str]],
+        *,
+        output_format: str = "text",
+    ) -> str:
+        captured_call["registry_path"] = registry_path
+        captured_call["input_sources"] = input_sources
+        captured_call["output_format"] = output_format
+        return "UNMAPPED\n\nFALLBACK_MAPPED\n\nSUGGESTIONS\n"
+
+    monkeypatch.setattr(
+        mapping_diff_report,
+        "generate_mapping_diff_report",
+        _fake_generate_mapping_diff_report,
+    )
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
+
+    exit_code = mapping_diff_report.main(["--registry", str(registry_path)])
+
+    assert exit_code == 0
+    assert captured_call["registry_path"] == registry_path
+    assert captured_call["input_sources"] == {"normalization": [], "reconciliation": []}
+    assert captured_call["output_format"] == "text"
+
+
 def test_mapping_diff_report_forwards_output_format_parameter(
     tmp_path: Path,
     monkeypatch,

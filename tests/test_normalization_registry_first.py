@@ -9,7 +9,11 @@ from pathlib import Path
 import pytest
 
 import counter_risk.pipeline.run as pipeline_run
-from counter_risk.normalize import resolve_clearing_house, resolve_counterparty
+from counter_risk.normalize import (
+    normalize_counterparty_with_source,
+    resolve_clearing_house,
+    resolve_counterparty,
+)
 from counter_risk.pipeline.run import reconcile_series_coverage
 from counter_risk.reports.mapping_diff import generate_mapping_diff_report
 
@@ -108,6 +112,40 @@ def test_resolve_clearing_house_returns_registry_source_when_name_is_in_registry
     resolution = resolve_clearing_house("Custom CH", registry_path=registry_path)
 
     assert resolution.canonical_name == "Custom Clearing House"
+    assert resolution.source == "registry"
+
+
+def test_resolve_clearing_house_returns_fallback_source_when_registry_has_no_match(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
+
+    resolution = resolve_clearing_house("ICE Clear US", registry_path=registry_path)
+
+    assert resolution.canonical_name == "ICE"
+    assert resolution.source == "fallback"
+
+
+def test_normalize_counterparty_with_source_exposes_source_attribute(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: soc_gen",
+                "    display_name: Soc Gen",
+                "    aliases:",
+                "      - SG",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    resolution = normalize_counterparty_with_source("SG", registry_path=registry_path)
+
     assert resolution.source == "registry"
 
 
