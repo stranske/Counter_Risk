@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -58,7 +58,7 @@ def _make_rows(*pairs: tuple[str, float]) -> list[dict[str, Any]]:
 
 def _records(result: Any) -> list[dict[str, Any]]:
     if hasattr(result, "to_dict"):
-        return result.to_dict(orient="records")
+        return cast(list[dict[str, Any]], result.to_dict(orient="records"))
     return [dict(row) for row in result]
 
 
@@ -167,7 +167,7 @@ class TestWorkbookWriteBack:
 
     def test_locate_section_raises_when_no_marker(self, tmp_path: Path) -> None:
         """Workbook with no futures detail marker raises FuturesDetailNotFoundError."""
-        import openpyxl
+        import openpyxl  # type: ignore[import-untyped]
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -211,9 +211,9 @@ class TestWorkbookWriteBack:
             desc = str(ws.cell(row=data_row, column=section.description_col).value or "").strip()
             prior_val = ws.cell(row=data_row, column=section.prior_month_col).value
             expected = _PRIOR_NOTIONALS.get(desc)
-            assert prior_val == pytest.approx(expected), (
-                f"Row {data_row} ({desc!r}): expected {expected}, got {prior_val}"
-            )
+            assert prior_val == pytest.approx(
+                expected
+            ), f"Row {data_row} ({desc!r}): expected {expected}, got {prior_val}"
 
     def test_write_prior_month_notional_values_are_numeric(self, tmp_path: Path) -> None:
         """Written prior-month values must be numeric (not strings)."""
@@ -224,9 +224,9 @@ class TestWorkbookWriteBack:
         ws = wb[section.sheet_name]
         for data_row in range(section.data_start_row, section.data_end_row + 1):
             prior_val = ws.cell(row=data_row, column=section.prior_month_col).value
-            assert isinstance(prior_val, (int, float)), (
-                f"Row {data_row}: expected numeric, got {type(prior_val)}"
-            )
+            assert isinstance(
+                prior_val, (int, float)
+            ), f"Row {data_row}: expected numeric, got {type(prior_val)}"
 
     def test_write_only_modifies_prior_month_column(self, tmp_path: Path) -> None:
         """Only the prior-month notional column is modified; all other cells unchanged."""
