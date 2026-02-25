@@ -65,6 +65,13 @@ _OUTPUT_COLUMNS: tuple[str, ...] = (
 )
 
 
+def is_blank_description(desc: Any) -> bool:
+    """Return True when a description is None, empty, or whitespace-only."""
+    if desc is None:
+        return True
+    return str(desc).strip() == ""
+
+
 def normalize_description(description: str) -> str:
     """Normalise a futures description string for cross-month matching.
 
