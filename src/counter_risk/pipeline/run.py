@@ -613,7 +613,7 @@ def _extract_header_text_lines(
     workbook_path: Path, *, max_rows: int = 15, max_cols: int = 6
 ) -> list[str]:
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ModuleNotFoundError:
         return []
     except Exception:
@@ -1256,7 +1256,7 @@ def _refresh_ppt_links(pptx_path: Path) -> PptProcessingResult:
         )
 
     try:
-        import win32com.client  # type: ignore[import-untyped]
+        import win32com.client
     except ImportError:
         LOGGER.info("ppt_link_refresh_skipped file=%s reason=win32com_unavailable", pptx_path)
         return PptProcessingResult(
