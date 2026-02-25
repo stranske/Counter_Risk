@@ -23,7 +23,13 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from counter_risk.compute.errors import NO_PRIOR_MATCH, NO_PRIOR_MONTH_MATCH
+from counter_risk.compute.errors import (
+    INVALID_NOTIONAL,
+    MISSING_DESCRIPTION,
+    MISSING_NOTIONAL,
+    NO_PRIOR_MATCH,
+    NO_PRIOR_MONTH_MATCH,
+)
 
 if TYPE_CHECKING:
     from counter_risk.pipeline.warnings import WarningsCollector
@@ -391,7 +397,7 @@ def _validate_row(
         if collector is not None:
             collector.add_structured(
                 row_idx,
-                code="MISSING_DESCRIPTION",
+                code=MISSING_DESCRIPTION,
                 message=msg,
                 available_non_empty_fields=non_empty,
             )
@@ -405,7 +411,7 @@ def _validate_row(
         if collector is not None:
             collector.add_structured(
                 row_idx,
-                code="MISSING_NOTIONAL",
+                code=MISSING_NOTIONAL,
                 message=msg,
                 description=desc,
             )
@@ -462,7 +468,7 @@ def _extract_notional(
             if collector is not None:
                 collector.add_structured(
                     row_idx,
-                    code="INVALID_NOTIONAL",
+                    code=INVALID_NOTIONAL,
                     message=msg,
                     row_id=row_id,
                     field=key,
@@ -479,7 +485,7 @@ def _extract_notional(
             if collector is not None:
                 collector.add_structured(
                     row_idx,
-                    code="INVALID_NOTIONAL",
+                    code=INVALID_NOTIONAL,
                     message=msg,
                     row_id=row_id,
                     field=key,
@@ -495,7 +501,7 @@ def _extract_notional(
             if collector is not None:
                 collector.add_structured(
                     row_idx,
-                    code="INVALID_NOTIONAL",
+                    code=INVALID_NOTIONAL,
                     message=msg,
                     row_id=row_id,
                     field=key,
@@ -512,7 +518,7 @@ def _extract_notional(
     if collector is not None:
         collector.add_structured(
             row_idx,
-            code="MISSING_NOTIONAL",
+            code=MISSING_NOTIONAL,
             message=msg,
             row_id=row_id,
         )
