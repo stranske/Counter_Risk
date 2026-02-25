@@ -18,9 +18,15 @@ If the futures detail section cannot be located the module raises
 from __future__ import annotations
 
 import logging
+import os
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from counter_risk.compute.futures_delta import compute_futures_delta, normalize_description
+from counter_risk.io.errors import DuplicateDescriptionError
+from counter_risk.pipeline.warnings import WarningsCollector
 
 _LOG = logging.getLogger(__name__)
 
@@ -182,6 +188,8 @@ def write_prior_month_notional(
     workbook: Any,
     section: FuturesDetailSection,
     rows: list[dict[str, Any]],
+    *,
+    collector: WarningsCollector | None = None,
 ) -> int:
     """Write prior-month notional values into the workbook for matched rows.
 
@@ -212,27 +220,48 @@ def write_prior_month_notional(
     """
     ws = workbook[section.sheet_name]
 
-    # Build a lookup from raw description text → prior_notional numeric value.
-    desc_to_notional: dict[str, float] = {}
-    for row in rows:
+    # Build a lookup from raw description text → prior_notional numeric value,
+    # failing fast when duplicate normalized keys are present.
+    _raise_on_duplicate_normalized_descriptions(rows)
+    desc_to_notional: dict[str, tuple[float, int]] = {}
+    for row_idx, row in enumerate(rows):
         desc = str(row.get("description", "") or "").strip()
         if desc:
-            desc_to_notional[desc] = float(row.get("prior_notional", 0.0) or 0.0)
+            desc_to_notional[desc] = (float(row.get("prior_notional", 0.0) or 0.0), row_idx)
+        elif collector is not None:
+            collector.add_structured(
+                row_idx=row_idx,
+                code="WRITEBACK_MISSING_DESCRIPTION",
+                message="Skipped write-back row with blank Description",
+            )
 
     updated = 0
+    matched_row_indices: set[int] = set()
     for data_row in range(section.data_start_row, section.data_end_row + 1):
         desc_cell = ws.cell(row=data_row, column=section.description_col)
         wb_desc = str(desc_cell.value or "").strip()
         if wb_desc in desc_to_notional:
             prior_cell = ws.cell(row=data_row, column=section.prior_month_col)
-            prior_cell.value = desc_to_notional[wb_desc]
+            prior_notional, source_row_idx = desc_to_notional[wb_desc]
+            prior_cell.value = prior_notional
+            matched_row_indices.add(source_row_idx)
             updated += 1
             _LOG.debug(
                 "Wrote prior_notional=%.2f for %r at row %d",
-                desc_to_notional[wb_desc],
+                prior_notional,
                 wb_desc,
                 data_row,
             )
+
+    if collector is not None:
+        for desc, (_prior_notional, row_idx) in desc_to_notional.items():
+            if row_idx not in matched_row_indices:
+                collector.add_structured(
+                    row_idx=row_idx,
+                    code="WRITEBACK_NO_WORKBOOK_MATCH",
+                    message="No workbook row matched Description during write-back",
+                    description=desc,
+                )
 
     _LOG.info("write_prior_month_notional: updated %d/%d workbook rows", updated, len(rows))
     return updated
@@ -261,6 +290,96 @@ def save_mosers_workbook(workbook: Any, path: Path | str) -> Path:
     workbook.save(dest)
     _LOG.info("Saved MOSERS workbook to: %s", dest)
     return dest
+
+
+def writeback_prior_month_notionals(
+    *,
+    source_path: Path | str,
+    output_path: Path | str,
+    rows: list[dict[str, Any]],
+    collector: WarningsCollector | None = None,
+) -> Path:
+    """Write prior-month notionals to a workbook using the atomic write-back flow.
+
+    This function is the public orchestration entrypoint for workbook write-back.
+    It always routes through :func:`atomic_writeback_with_section_locate` so section
+    discovery happens before any output artifact is finalized.
+    """
+    return atomic_writeback_with_section_locate(
+        source_path=source_path,
+        output_path=output_path,
+        rows=rows,
+        collector=collector,
+    )
+
+
+def compute_and_writeback_prior_month_notionals(
+    *,
+    source_path: Path | str,
+    output_path: Path | str,
+    current_rows: Any,
+    prior_rows: Any,
+    collector: WarningsCollector | None = None,
+) -> tuple[Path, WarningsCollector]:
+    """Compute futures delta rows, then write back prior-month notionals atomically."""
+    result, warnings = compute_futures_delta(current_rows, prior_rows, collector=collector)
+    rows = _result_to_records(result)
+    written_path = atomic_writeback_with_section_locate(
+        source_path=source_path,
+        output_path=output_path,
+        rows=rows,
+        collector=warnings,
+    )
+    return written_path, warnings
+
+
+def atomic_writeback_with_section_locate(
+    *,
+    source_path: Path | str,
+    output_path: Path | str,
+    rows: list[dict[str, Any]],
+    collector: WarningsCollector | None = None,
+) -> Path:
+    """Atomically write prior-month notionals after locating the futures section.
+
+    The function stages output to a temporary file in the destination directory
+    and replaces *output_path* only after all steps succeed:
+
+    1. Load source workbook.
+    2. Locate futures detail section (may raise :class:`FuturesDetailNotFoundError`).
+    3. Apply prior-month notional write-back.
+    4. Save to temporary file.
+    5. Atomically replace destination with the staged file.
+
+    Any temporary file created for the attempt is removed in ``finally`` when
+    an exception occurs, including section-location failures.
+    """
+    src = Path(source_path)
+    dest = Path(output_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=f".{dest.stem}.",
+        suffix=".tmp.xlsx",
+        dir=str(dest.parent),
+    )
+    os.close(fd)
+    temp_path = Path(tmp_name)
+
+    workbook: Any | None = None
+    try:
+        workbook = load_mosers_workbook(src)
+        section = locate_futures_detail_section(workbook)
+        write_prior_month_notional(workbook, section, rows, collector=collector)
+        save_mosers_workbook(workbook, temp_path)
+        temp_path.replace(dest)
+        _LOG.info("Atomic write-back complete: %s", dest)
+        return dest
+    finally:
+        if workbook is not None and hasattr(workbook, "close"):
+            workbook.close()
+        if temp_path.exists():
+            temp_path.unlink()
 
 
 # ---------------------------------------------------------------------------
@@ -355,3 +474,24 @@ def _find_section_in_sheet(ws: Any, sheet_name: str) -> FuturesDetailSection | N
         description_col=description_col,
         prior_month_col=prior_month_col,
     )
+
+
+def _raise_on_duplicate_normalized_descriptions(rows: list[dict[str, Any]]) -> None:
+    """Raise DuplicateDescriptionError when rows share a normalized Description."""
+    normalized_to_indices: dict[str, list[int]] = {}
+    for row_idx, row in enumerate(rows):
+        desc = str(row.get("description", "") or "").strip()
+        if not desc:
+            continue
+        key = normalize_description(desc)
+        normalized_to_indices.setdefault(key, []).append(row_idx)
+
+    for key, row_indices in normalized_to_indices.items():
+        if len(row_indices) > 1:
+            raise DuplicateDescriptionError(duplicate_key=key, row_indices=row_indices)
+
+
+def _result_to_records(result: Any) -> list[dict[str, Any]]:
+    """Normalize compute output to list-of-dicts shape accepted by write-back."""
+    records = result.to_dict(orient="records") if hasattr(result, "to_dict") else result
+    return [dict(row) for row in records]
