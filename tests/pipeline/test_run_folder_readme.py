@@ -8,14 +8,26 @@ import pytest
 
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
-from counter_risk.pipeline.run_folder_outputs import build_run_folder_readme_content
+from counter_risk.pipeline.manifest import ManifestBuilder
+from counter_risk.pipeline.ppt_naming import PptOutputNames, resolve_ppt_output_names
+from counter_risk.pipeline.run_folder_outputs import (
+    RunFolderReadmePptOutputs,
+    build_run_folder_readme_content,
+)
 
 
 def test_readme_content_includes_filenames_and_three_numbered_steps_in_order() -> None:
-    content = build_run_folder_readme_content(date(2026, 1, 31))
+    output_names = resolve_ppt_output_names(date(2026, 1, 31))
+    content = build_run_folder_readme_content(
+        date(2026, 1, 31),
+        RunFolderReadmePptOutputs(
+            master=Path(output_names.master_filename),
+            distribution=Path(output_names.distribution_filename),
+        ),
+    )
 
-    assert "Monthly Counterparty Exposure Report (Master) - 2026-01-31.pptx" in content
-    assert "Monthly Counterparty Exposure Report - 2026-01-31.pptx" in content
+    assert output_names.master_filename in content
+    assert output_names.distribution_filename in content
 
     step_1 = re.search(r"^1\.", content, flags=re.MULTILINE)
     step_2 = re.search(r"^2\.", content, flags=re.MULTILINE)
@@ -59,7 +71,7 @@ def _build_config(tmp_path: Path, *, enable_ppt_output: bool) -> WorkflowConfig:
     )
 
 
-def test_run_folder_readme_created_when_ppt_enabled(
+def test_run_folder_readme_created_when_ppt_enabled_and_registered_in_manifest(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     run_dir = tmp_path / "run"
@@ -72,7 +84,7 @@ def test_run_folder_readme_created_when_ppt_enabled(
         lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
     )
 
-    run_module._write_outputs(
+    output_paths, _ = run_module._write_outputs(
         run_dir=run_dir,
         config=config,
         as_of_date=date(2026, 1, 31),
@@ -82,11 +94,63 @@ def test_run_folder_readme_created_when_ppt_enabled(
     readme_path = run_dir / "README.txt"
     assert readme_path.exists()
     content = readme_path.read_text(encoding="utf-8")
-    assert "Monthly Counterparty Exposure Report (Master) - 2026-01-31.pptx" in content
-    assert "Monthly Counterparty Exposure Report - 2026-01-31.pptx" in content
+    output_names = resolve_ppt_output_names(date(2026, 1, 31))
+    assert output_names.master_filename in content
+    assert output_names.distribution_filename in content
     assert "\n1." in content
     assert "\n2." in content
     assert "\n3." in content
+
+    manifest = ManifestBuilder(
+        config=config,
+        as_of_date=date(2026, 1, 31),
+        run_date=date(2026, 2, 1),
+    ).build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=run_module.PptProcessingStatus.SUCCESS.value,
+    )
+    readme_manifest_paths = [
+        path for path in manifest["output_paths"] if path.endswith("README.txt")
+    ]
+    assert readme_manifest_paths == ["README.txt"]
+
+
+def test_run_folder_readme_content_uses_custom_resolved_output_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    resolved_names = PptOutputNames(
+        master_filename="Custom Master Deck - 2026-01-31.pptx",
+        distribution_filename="Custom Distribution Deck - 2026-01-31.pptx",
+    )
+
+    monkeypatch.setattr(run_module, "resolve_ppt_output_names", lambda _as_of_date: resolved_names)
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+    )
+
+    output_paths, _ = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2026, 1, 31),
+        warnings=[],
+    )
+
+    readme_path = run_dir / "README.txt"
+    content = readme_path.read_text(encoding="utf-8")
+    assert resolved_names.master_filename in content
+    assert resolved_names.distribution_filename in content
+    assert (run_dir / resolved_names.master_filename) in output_paths
+    assert (run_dir / resolved_names.distribution_filename) in output_paths
 
 
 def test_run_folder_readme_not_created_when_ppt_disabled(tmp_path: Path) -> None:
@@ -102,3 +166,35 @@ def test_run_folder_readme_not_created_when_ppt_disabled(tmp_path: Path) -> None
     )
 
     assert not (run_dir / "README.txt").exists()
+
+
+@pytest.mark.parametrize(
+    ("status", "expect_readme"),
+    [
+        (run_module.PptProcessingStatus.SUCCESS, True),
+        (run_module.PptProcessingStatus.FAILED, False),
+    ],
+)
+def test_run_folder_readme_creation_differs_for_master_success_and_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    status: run_module.PptProcessingStatus,
+    expect_readme: bool,
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, enable_ppt_output=True)
+
+    def _refresh(_path: Path) -> run_module.PptProcessingResult:
+        return run_module.PptProcessingResult(status=status, error_detail="refresh failed")
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", _refresh)
+
+    run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2026, 1, 31),
+        warnings=[],
+    )
+
+    assert (run_dir / "README.txt").exists() is expect_readme
