@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -58,7 +58,7 @@ def _make_rows(*pairs: tuple[str, float]) -> list[dict[str, Any]]:
 
 def _records(result: Any) -> list[dict[str, Any]]:
     if hasattr(result, "to_dict"):
-        return result.to_dict(orient="records")
+        return cast(list[dict[str, Any]], result.to_dict(orient="records"))
     return [dict(row) for row in result]
 
 
@@ -167,7 +167,7 @@ class TestWorkbookWriteBack:
 
     def test_locate_section_raises_when_no_marker(self, tmp_path: Path) -> None:
         """Workbook with no futures detail marker raises FuturesDetailNotFoundError."""
-        import openpyxl
+        import openpyxl  # type: ignore[import-untyped]
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -181,7 +181,7 @@ class TestWorkbookWriteBack:
 
     def test_locate_section_raises_when_missing_prior_month_col(self, tmp_path: Path) -> None:
         """Missing 'Prior Month Notional' column raises FuturesDetailNotFoundError."""
-        import openpyxl
+        import openpyxl  # type: ignore[import-untyped]
 
         wb = openpyxl.Workbook()
         ws = wb.active
