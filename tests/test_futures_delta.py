@@ -70,12 +70,12 @@ def _compute_checked(
     prior: Any,
     *,
     collector: WarningsCollector | None = None,
-) -> tuple[Any, list[dict[str, Any]]]:
+) -> tuple[Any, WarningsCollector]:
     """Call compute_futures_delta and assert the 2-value return contract."""
     result, warnings = compute_futures_delta(current, prior, collector=collector)
-    assert isinstance(warnings, list)
+    assert isinstance(warnings, WarningsCollector)
     if collector is not None:
-        assert warnings == collector.warnings
+        assert warnings is collector
     return result, warnings
 
 
@@ -662,8 +662,8 @@ class TestUnmatchedRowManifestWarnings:
         prior: list[dict[str, Any]] = []
         result, warnings = _compute_checked(current, prior)
         assert _records(result)
-        assert isinstance(warnings, list)
-        assert any(w.get("code") == NO_PRIOR_MONTH_MATCH for w in warnings)
+        assert isinstance(warnings, WarningsCollector)
+        assert any(w.get("code") == NO_PRIOR_MONTH_MATCH for w in warnings.warnings)
 
     def test_no_collector_still_works(self) -> None:
         """Calling without a collector should not raise and still return warnings."""
@@ -672,4 +672,4 @@ class TestUnmatchedRowManifestWarnings:
         result, warnings = _compute_checked(current, prior)
         rows = _records(result)
         assert len(rows) == 1
-        assert any(w.get("code") == NO_PRIOR_MONTH_MATCH for w in warnings)
+        assert any(w.get("code") == NO_PRIOR_MONTH_MATCH for w in warnings.warnings)
