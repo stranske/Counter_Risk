@@ -127,6 +127,18 @@ def test_resolve_clearing_house_returns_fallback_source_when_registry_has_no_mat
     assert resolution.source == "fallback"
 
 
+def test_resolve_clearing_house_unknown_name_uses_identity_with_fallback_source(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
+
+    resolution = resolve_clearing_house("LCH", registry_path=registry_path)
+
+    assert resolution.canonical_name == "LCH"
+    assert resolution.source == "fallback"
+
+
 def test_normalize_counterparty_with_source_exposes_source_attribute(tmp_path: Path) -> None:
     registry_path = tmp_path / "name_registry.yml"
     registry_path.write_text(

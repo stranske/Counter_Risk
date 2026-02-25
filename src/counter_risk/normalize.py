@@ -166,7 +166,12 @@ def resolve_clearing_house(
     *,
     registry_path: str | Path = Path("config/name_registry.yml"),
 ) -> NameResolution:
-    """Resolve clearing house name with registry-first semantics."""
+    """Resolve clearing house name with registry-first semantics.
+
+    Clearing-house source attribution is binary for reconciliation reporting:
+    registry hits are labeled ``"registry"``, and all non-registry paths are
+    labeled ``"fallback"`` (including identity/no-op normalization).
+    """
 
     normalized = canonicalize_name(name)
     alias_lookup = _load_alias_lookup(str(Path(registry_path).resolve()))
@@ -178,7 +183,7 @@ def resolve_clearing_house(
     if fallback_match is not None:
         return NameResolution(raw_name=name, canonical_name=fallback_match, source="fallback")
 
-    return NameResolution(raw_name=name, canonical_name=normalized, source="unmapped")
+    return NameResolution(raw_name=name, canonical_name=normalized, source="fallback")
 
 
 def normalize_clearing_house(name: str) -> str:
