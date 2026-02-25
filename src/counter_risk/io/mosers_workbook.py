@@ -24,6 +24,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from counter_risk.compute.futures_delta import normalize_description
+from counter_risk.io.errors import DuplicateDescriptionError
+
 _LOG = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -214,7 +217,9 @@ def write_prior_month_notional(
     """
     ws = workbook[section.sheet_name]
 
-    # Build a lookup from raw description text → prior_notional numeric value.
+    # Build a lookup from raw description text → prior_notional numeric value,
+    # failing fast when duplicate normalized keys are present.
+    _raise_on_duplicate_normalized_descriptions(rows)
     desc_to_notional: dict[str, float] = {}
     for row in rows:
         desc = str(row.get("description", "") or "").strip()
@@ -424,3 +429,18 @@ def _find_section_in_sheet(ws: Any, sheet_name: str) -> FuturesDetailSection | N
         description_col=description_col,
         prior_month_col=prior_month_col,
     )
+
+
+def _raise_on_duplicate_normalized_descriptions(rows: list[dict[str, Any]]) -> None:
+    """Raise DuplicateDescriptionError when rows share a normalized Description."""
+    normalized_to_indices: dict[str, list[int]] = {}
+    for row_idx, row in enumerate(rows):
+        desc = str(row.get("description", "") or "").strip()
+        if not desc:
+            continue
+        key = normalize_description(desc)
+        normalized_to_indices.setdefault(key, []).append(row_idx)
+
+    for key, row_indices in normalized_to_indices.items():
+        if len(row_indices) > 1:
+            raise DuplicateDescriptionError(duplicate_key=key, row_indices=row_indices)
