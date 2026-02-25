@@ -27,7 +27,10 @@ from counter_risk.pipeline.parsing_types import (
 )
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
-from counter_risk.pipeline.run_folder_outputs import build_run_folder_readme_content
+from counter_risk.pipeline.run_folder_outputs import (
+    RunFolderReadmePptOutputs,
+    build_run_folder_readme_content,
+)
 from counter_risk.pipeline.time_utils import utc_now_isoformat
 from counter_risk.ppt.pptx_postprocess import (
     list_external_relationship_targets,
@@ -914,6 +917,10 @@ def _write_outputs(
     output_names = resolve_ppt_output_names(as_of_date)
     target_master_ppt = run_dir / output_names.master_filename
     target_distribution_ppt = run_dir / output_names.distribution_filename
+    readme_ppt_outputs = RunFolderReadmePptOutputs(
+        master=target_master_ppt.relative_to(run_dir),
+        distribution=target_distribution_ppt.relative_to(run_dir),
+    )
     screenshot_inputs = _resolve_screenshot_input_mapping(config)
     if config.enable_screenshot_replacement:
         replacer = _get_screenshot_replacer(config.screenshot_replacement_implementation)
@@ -1003,9 +1010,12 @@ def _write_outputs(
         warnings=warnings,
     )
     output_paths.extend(static_output_paths)
-    if config.ppt_output_enabled and any(path.suffix.lower() == ".pptx" for path in output_paths):
+    if refresh_result.status == PptProcessingStatus.SUCCESS:
         readme_path = run_dir / "README.txt"
-        readme_path.write_text(build_run_folder_readme_content(as_of_date), encoding="utf-8")
+        readme_path.write_text(
+            build_run_folder_readme_content(as_of_date, readme_ppt_outputs),
+            encoding="utf-8",
+        )
         output_paths.append(readme_path)
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))

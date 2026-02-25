@@ -1,0 +1,602 @@
+version: 1
+issue: 241
+base: main
+branch: codex/issue-241
+tasks:
+  - id: task-01
+    title: 'Update `build_run_folder_readme_content` in `src/**/run_folder_readme.py`
+      to accept resolved PPT output paths (e.g., a `{master: Path, distribution: Path}`-like
+      structure) and render links/paths from those values instead of any hardcoded/default
+      `.pptx` filename strings.'
+    status: done
+    started_at: '2026-02-24T19:11:28Z'
+    finished_at: '2026-02-24T19:11:44Z'
+    commit: eaa723de04a50488439c397dfbf9d4e1cde7418e
+    notes: []
+  - id: task-02
+    title: 'Define scope for: Update the function signature of build_run_folder_readme_content
+      to accept a resolved PPT outputs parameter containing master (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Implement focused slice for: Update the function signature of build_run_folder_readme_content
+      to accept a resolved PPT outputs parameter containing master (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Validate focused slice for: Update the function signature of build_run_folder_readme_content
+      to accept a resolved PPT outputs parameter containing master (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'distribution paths (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Define scope for: Refactor the link rendering logic to use the resolved
+      PPT output paths parameter instead of hardcoded filename strings (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Implement focused slice for: Refactor the link rendering logic to use
+      the resolved PPT output paths parameter instead of hardcoded filename strings
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Validate focused slice for: Refactor the link rendering logic to use the
+      resolved PPT output paths parameter instead of hardcoded filename strings (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Define scope for: Remove all hardcoded PPT filename literals from the
+      README content template or generation logic (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Implement focused slice for: Remove all hardcoded PPT filename literals
+      from the README content template or generation logic (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Validate focused slice for: Remove all hardcoded PPT filename literals
+      from the README content template or generation logic (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Implement passing the resolved PPT outputs from the PPT naming/config resolution
+      logic at the call site in `src/**/ppt_generation/*.py` into `build_run_folder_readme_content`
+      (use the same values used to write PPT files and/or recorded in `manifest.ppt_outputs`).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Fix the orchestration logic in `src/**/pipeline_runner.py` (and any related
+      manifest logic in `src/**/manifest.py`) so README write + manifest registration
+      only runs when Master PPT generation succeeds (e.g., `master_result.status ==
+      SUCCESS`) and not based on presence of any `.pptx` in `output_paths`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Update tests to assert README content includes the exact resolved PPT filenames/paths
+      for at least two naming scenarios, deriving expected values from the resolved
+      outputs returned/recorded by the PPT generation code (not from hardcoded strings).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Define scope for: Create a test that validates README content includes
+      resolved PPT filenames for the default naming scenario (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Implement focused slice for: Create a test that validates README content
+      includes resolved PPT filenames for the default naming scenario (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Validate focused slice for: Create a test that validates README content
+      includes resolved PPT filenames for the default naming scenario (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Define scope for: Create a test that validates README content includes
+      resolved PPT filenames for a custom configuration naming scenario (verify: config
+      validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Implement focused slice for: Create a test that validates README content
+      includes resolved PPT filenames for a custom configuration naming scenario (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Validate focused slice for: Create a test that validates README content
+      includes resolved PPT filenames for a custom configuration naming scenario (verify:
+      config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Define scope for: Update test assertions to derive expected filenames
+      from the resolved outputs object returned by PPT generation code (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Implement focused slice for: Update test assertions to derive expected
+      filenames from the resolved outputs object returned by PPT generation code (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Validate focused slice for: Update test assertions to derive expected
+      filenames from the resolved outputs object returned by PPT generation code (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Fix/strengthen the `no_distribution_without_master` test to assert when
+      Master fails: no Distribution `.pptx` exists on disk, no Distribution entry
+      exists in `manifest.output_paths`, and `manifest.ppt_outputs` (or equivalent)
+      has no `distribution` key.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Define scope for: Add assertion to no_distribution_without_master test
+      that no Distribution pptx file exists on disk when Master fails (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Implement focused slice for: Add assertion to no_distribution_without_master
+      test that no Distribution pptx file exists on disk when Master fails (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Validate focused slice for: Add assertion to no_distribution_without_master
+      test that no Distribution pptx file exists on disk when Master fails (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Define scope for: Add assertion to no_distribution_without_master test
+      that manifest.output_paths contains no Distribution entry when Master fails
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Implement focused slice for: Add assertion to no_distribution_without_master
+      test that manifest.output_paths contains no Distribution entry when Master fails
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Validate focused slice for: Add assertion to no_distribution_without_master
+      test that manifest.output_paths contains no Distribution entry when Master fails
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Define scope for: Add assertion to no_distribution_without_master test
+      that manifest.ppt_outputs has no distribution key when Master fails (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Implement focused slice for: Add assertion to no_distribution_without_master
+      test that manifest.ppt_outputs has no distribution key when Master fails (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Validate focused slice for: Add assertion to no_distribution_without_master
+      test that manifest.ppt_outputs has no distribution key when Master fails (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Add a test that on a successful PPT-enabled run, the run-folder README
+      is written to disk and the same README path is present in `manifest.output_paths`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: Revise tests that monkeypatch `_refresh_ppt_links` (or similar) to simulate
+      Master success and Master failure outcomes without forcing a `SUCCESS` return
+      that bypasses the real README gating condition, and assert README creation differs
+      accordingly.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Define scope for: Remove forced SUCCESS return values from tests that
+      monkeypatch _refresh_ppt_links or similar functions (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Implement focused slice for: Remove forced SUCCESS return values from
+      tests that monkeypatch _refresh_ppt_links or similar functions (verify: tests
+      pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Validate focused slice for: Remove forced SUCCESS return values from tests
+      that monkeypatch _refresh_ppt_links or similar functions (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Update monkeypatched tests to simulate Master PPT generation success outcome
+      (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: verify README is created
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Update monkeypatched tests to simulate Master PPT generation failure outcome
+      (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: verify README is not created
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: '`build_run_folder_readme_content` accepts resolved PPT output paths (or
+      a structure containing them) as input and contains no hardcoded/default PPT
+      filename literals used for link/path rendering (e.g., no `Master.pptx` / `Distribution.pptx`
+      string literals for those links/paths).'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: The run-folder README write step is gated solely on the Master PPT generation
+      result/status (e.g., `master_result.status == SUCCESS`) and does not use the
+      presence/absence of any `.pptx` in `output_paths` as the condition.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: When Master PPT generation fails, the run-folder README file is not created
+      on disk and there is no README entry in `manifest.output_paths` (or equivalent).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: A test asserts the README includes the exact resolved PPT output filenames/paths
+      for at least two naming scenarios, and the assertion compares against resolved
+      values produced/returned/recorded by the PPT generation code (not hardcoded
+      expected strings).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: On a successful PPT-enabled run, the README content contains at least three
+      numbered steps (matches `^\s*1\.` / `^\s*2\.` / `^\s*3\.` in multiline mode)
+      and includes the resolved Master PPT filename/path string at least once.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'The `no_distribution_without_master` test asserts when Master generation
+      fails: (a) no Distribution `.pptx` exists on disk in the output/run directory,
+      (b) no Distribution path appears in `manifest.output_paths`, and (c) `manifest.ppt_outputs`
+      (or equivalent nested structure) has no `distribution` key.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: On a successful PPT-enabled run, the README file exists on disk in the
+      run folder and the exact same README path string is present in `manifest.output_paths`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: Tests that previously monkeypatched `_refresh_ppt_links` (or similar) no
+      longer force a `SUCCESS` return; they simulate Master success and Master failure
+      and verify README write behavior differs (created on success, not created on
+      failure).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: The PPT generation call site passes the resolved output paths/filenames
+      produced by the PPT naming/config logic into the README builder, matching the
+      values used to write PPT files and/or recorded in `manifest.ppt_outputs`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: Update the README content builder to accept resolved PPT output paths and
+      render the exact produced filenames/paths (from the same naming/config logic
+      used to generate the PPTs) instead of hardcoded/default names.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: Refactor README write + manifest-registration logic so it runs only when
+      PPT Master generation succeeds (gate on Master result/status), not on the presence
+      of any `.pptx` in `output_paths`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: Add/modify tests to assert README includes the resolved PPT filenames/paths
+      produced under different configuration/naming scenarios (assert against resolved
+      names returned/used by PPT generation, not hardcoded strings).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: 'Strengthen the `no_distribution_without_master` test: when Master fails,
+      assert (a) no Distribution `.pptx` exists, (b) no Distribution entry exists
+      in `manifest.output_paths`, and (c) manifest has no `ppt_outputs.distribution`
+      key.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: Add a test verifying that on a successful PPT-enabled run, the generated
+      README file is both written to disk and included in `manifest.output_paths`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: Revise tests that monkeypatch `_refresh_ppt_links` (or similar) so they
+      simulate Master success/failure outcomes and exercise the real README gating
+      condition (no forced `SUCCESS` return that bypasses production logic).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: The README content builder function (e.g., `build_run_folder_readme_content`)
+      accepts resolved PPT output paths (or a structure containing them) as an input
+      and does not contain any hardcoded/default PPT filenames (e.g., literal strings
+      like `Master.pptx`, `Distribution.pptx`) used to render links/paths.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: The orchestration step that writes the run-folder README is gated solely
+      on the Master PPT generation result/status (e.g., `master_result.status == SUCCESS`)
+      and does not use the presence/absence of any `.pptx` in `output_paths` as the
+      condition to write the README.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: When Master PPT generation fails, the run-folder README file is not created
+      on disk and there is no README entry in `manifest.output_paths` (or equivalent
+      manifest outputs list).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: A new/updated test asserts that the README includes the exact resolved
+      PPT output filenames/paths produced by the current naming/config logic for at
+      least two distinct naming scenarios (e.g., default naming vs. config-altered
+      naming), and the assertion compares against the resolved names returned/used
+      by the PPT generation code (not against hardcoded expected strings).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: The README produced on a successful PPT-enabled run contains at least three
+      numbered steps (matching a regex like `^\s*1\.` / `^\s*2\.` / `^\s*3\.` in multiline
+      mode) and includes the resolved Master PPT filename/path string at least once
+      (or exactly once if duplicates are not intended).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: 'The strengthened `no_distribution_without_master` test asserts all of
+      the following when Master generation fails: (a) no Distribution `.pptx` exists
+      on disk in the output/run directory, (b) no Distribution path appears in `manifest.output_paths`,
+      and (c) `manifest.ppt_outputs` (or equivalent nested structure) has no `distribution`
+      key.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: On a successful PPT-enabled run, the README file is written to disk in
+      the run folder and the exact same README path is present in `manifest.output_paths`
+      (string match using the same relative/absolute form used by the system).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: Tests that previously monkeypatched `_refresh_ppt_links` (or similar) no
+      longer force a `SUCCESS` return to bypass production gating; instead, they simulate
+      Master success and Master failure and assert the README write behavior differs
+      accordingly (created on success, not created on failure).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: The PPT generation call site that assembles README inputs passes the resolved
+      output paths/filenames produced by the PPT naming/config logic into the README
+      builder (i.e., the same values used to write the PPT files and/or recorded in
+      `manifest.ppt_outputs`).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
