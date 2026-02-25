@@ -202,14 +202,14 @@ def test_reconciliation_sources_differ_between_before_and_after_registry(
         monkeypatch.chdir(run_dir)
 
         captured_sources: list[str] = []
-        original = pipeline_run.normalize_counterparty_with_source
+        original = pipeline_run.resolve_counterparty
 
         def _capture_source(raw_name: str):
             resolution = original(raw_name)
             captured_sources.append(resolution.source)
             return resolution
 
-        monkeypatch.setattr(pipeline_run, "normalize_counterparty_with_source", _capture_source)
+        monkeypatch.setattr(pipeline_run, "resolve_counterparty", _capture_source)
         reconcile_series_coverage(
             parsed_data_by_sheet={
                 "Total": {
