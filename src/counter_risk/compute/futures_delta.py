@@ -165,6 +165,12 @@ def compute_futures_delta(
         string, no normalisation applied to the sort key).  Ties (duplicate
         descriptions) preserve the original input order (stable sort).
     """
+    active_collector = collector
+    if active_collector is None:
+        from counter_risk.pipeline.warnings import WarningsCollector as _WarningsCollector
+
+        active_collector = _WarningsCollector()
+
     current_rows = _to_row_list(current, arg="current")
     prior_rows = _to_row_list(prior, arg="prior")
 
@@ -195,7 +201,7 @@ def compute_futures_delta(
                 row,
                 row_id=desc or "<prior row>",
                 row_idx=prior_first_row_idx_by_key.get(key, -1),
-                collector=collector,
+                collector=active_collector,
             )
             if key not in prior_desc_by_key:
                 prior_desc_by_key[key] = desc
@@ -206,13 +212,18 @@ def compute_futures_delta(
 
     for row_idx, row in enumerate(current_rows):
         # Per-row required-field validation; skip invalid rows.
-        if not _validate_row(row, row_idx=row_idx, collector=collector):
+        if not _validate_row(row, row_idx=row_idx, collector=active_collector):
             continue
 
         desc_raw = row.get("description", row.get("Description"))
         desc = str(desc_raw)
         key = normalize_description(desc)
-        current_notional = _extract_notional(row, row_id=desc, row_idx=row_idx, collector=collector)
+        current_notional = _extract_notional(
+            row,
+            row_id=desc,
+            row_idx=row_idx,
+            collector=active_collector,
+        )
 
         if key in prior_by_key:
             prior_notional = prior_by_key[key]
@@ -220,13 +231,12 @@ def compute_futures_delta(
             prior_notional = 0.0
             msg = f"Unmatched current row (no prior match): {desc!r}"
             _LOG.warning(msg)
-            if collector is not None:
-                collector.add_structured(
-                    row_idx,
-                    code=NO_PRIOR_MONTH_MATCH,
-                    message=msg,
-                    description=desc,
-                )
+            active_collector.add_structured(
+                row_idx,
+                code=NO_PRIOR_MONTH_MATCH,
+                message=msg,
+                description=desc,
+            )
 
         change = current_notional - prior_notional
 
@@ -252,22 +262,19 @@ def compute_futures_delta(
             original_desc = prior_desc_by_key.get(key, key)
             msg = f"Unmatched prior row (no current match): {original_desc!r}"
             _LOG.warning(msg)
-            if collector is not None:
-                collector.add_structured(
-                    prior_first_row_idx_by_key.get(key, -1),
-                    code=NO_PRIOR_MATCH,
-                    message=msg,
-                    description=original_desc,
-                )
+            active_collector.add_structured(
+                prior_first_row_idx_by_key.get(key, -1),
+                code=NO_PRIOR_MATCH,
+                message=msg,
+                description=original_desc,
+            )
 
     # Sort output by raw description text for stable, deterministic order.
     # Python's sort is stable: duplicate descriptions preserve input order.
     records.sort(key=lambda r: str(r.get("description", "")))
 
     result = _to_output(records=records)
-    if collector is None:
-        return result, []
-    return result, collector.warnings
+    return result, active_collector.warnings
 
 
 # ---------------------------------------------------------------------------
