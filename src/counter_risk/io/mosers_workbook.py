@@ -230,7 +230,7 @@ def write_prior_month_notional(
             desc_to_notional[desc] = (float(row.get("prior_notional", 0.0) or 0.0), row_idx)
         elif collector is not None:
             collector.add_structured(
-                row_idx,
+                row_idx=row_idx,
                 code="WRITEBACK_MISSING_DESCRIPTION",
                 message="Skipped write-back row with blank Description",
             )
@@ -257,7 +257,7 @@ def write_prior_month_notional(
         for desc, (_prior_notional, row_idx) in desc_to_notional.items():
             if row_idx not in matched_row_indices:
                 collector.add_structured(
-                    row_idx,
+                    row_idx=row_idx,
                     code="WRITEBACK_NO_WORKBOOK_MATCH",
                     message="No workbook row matched Description during write-back",
                     description=desc,

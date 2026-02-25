@@ -119,6 +119,28 @@ def test_write_prior_month_notional_emits_structured_warning_for_blank_descripti
     ]
 
 
+def test_write_prior_month_notional_warning_records_always_include_int_row_idx() -> None:
+    wb = load_mosers_workbook(_FIXTURE_PATH)
+    section = locate_futures_detail_section(wb)
+    collector = WarningsCollector()
+
+    updated = write_prior_month_notional(
+        wb,
+        section,
+        [
+            {"description": "  ", "prior_notional": 1.0},
+            {"description": "NO MATCH CONTRACT A", "prior_notional": 2.0},
+            {"description": "NO MATCH CONTRACT B", "prior_notional": 3.0},
+        ],
+        collector=collector,
+    )
+
+    assert updated == 0
+    assert len(collector.warnings) == 3
+    assert [warning["row_idx"] for warning in collector.warnings] == [0, 1, 2]
+    assert all(isinstance(warning["row_idx"], int) for warning in collector.warnings)
+
+
 def test_compute_and_writeback_prior_month_notionals_unpacks_result_and_warnings(
     tmp_path: Path,
 ) -> None:
