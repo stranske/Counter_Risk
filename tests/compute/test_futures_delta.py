@@ -19,6 +19,8 @@ from counter_risk.pipeline.manifest import WarningsCollector
 
 
 def _records(result: Any) -> list[dict[str, Any]]:
+    if isinstance(result, tuple) and len(result) == 2:
+        result = result[0]
     if hasattr(result, "to_dict"):
         return cast(list[dict[str, Any]], result.to_dict(orient="records"))
     return [dict(row) for row in result]
@@ -114,6 +116,16 @@ def test_basic_change_positive() -> None:
     assert rows[0]["notional_change"] == pytest.approx(20.0)
     assert rows[0]["sign_flip"] == ""
     assert col.warnings == []
+
+
+def test_compute_returns_result_and_warnings() -> None:
+    current = _make_rows(("TY Dec25", 50.0))
+    prior = _make_rows(("TY Dec25", 75.0))
+    col = _collector()
+    result, warnings = compute_futures_delta(current, prior, collector=col)
+    rows = _records(result)
+    assert len(rows) == 1
+    assert warnings == col.warnings
 
 
 def test_basic_change_negative() -> None:

@@ -58,6 +58,8 @@ def _make_rows(*pairs: tuple[str, float]) -> list[dict[str, Any]]:
 
 
 def _records(result: Any) -> list[dict[str, Any]]:
+    if isinstance(result, tuple) and len(result) == 2:
+        result = result[0]
     if hasattr(result, "to_dict"):
         return cast(list[dict[str, Any]], result.to_dict(orient="records"))
     return [dict(row) for row in result]
@@ -640,13 +642,14 @@ class TestUnmatchedRowManifestWarnings:
         compute_futures_delta(current, prior, collector=col)
         assert col.warnings == []
 
-    def test_unmatched_warning_not_returned_in_function_result(self) -> None:
-        """compute_futures_delta returns only the result table, not a warnings tuple."""
+    def test_compute_returns_result_and_warnings_tuple(self) -> None:
+        """compute_futures_delta returns exactly two values: (result, warnings)."""
         current = _make_rows(("Unmatched Mar25", 1.0))
         prior: list[dict[str, Any]] = []
-        result = compute_futures_delta(current, prior)
-        # Result must NOT be a tuple (no longer (result, warnings) pattern).
-        assert not isinstance(result, tuple)
+        result, warnings = compute_futures_delta(current, prior)
+        assert _records(result)
+        assert isinstance(warnings, list)
+        assert len(warnings) == 0
 
     def test_no_collector_still_works(self) -> None:
         """Calling without a collector should not raise; warnings go to logger only."""
