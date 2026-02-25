@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 from xml.etree import ElementTree
 from zipfile import ZipFile
 
@@ -65,4 +66,4 @@ def _normalize_core_properties(raw_xml: bytes) -> bytes:
     for child in list(root):
         if child.tag in _CORE_TAGS_TO_IGNORE:
             root.remove(child)
-    return ElementTree.tostring(root, encoding="utf-8")
+    return cast(bytes, ElementTree.tostring(root, encoding="utf-8"))
