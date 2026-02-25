@@ -169,7 +169,10 @@ def compute_futures_delta(
     prior_by_key: dict[str, float] = {}
     prior_desc_by_key: dict[str, str] = {}
     for row in prior_rows:
-        desc = str(row.get("description", row.get("Description", "")) or "")
+        desc_raw = row.get("description", row.get("Description"))
+        if is_blank_description(desc_raw):
+            continue
+        desc = str(desc_raw)
         key = normalize_description(desc)
         notional = _extract_notional(row, row_id=desc or "<prior row>", collector=collector)
         prior_by_key[key] = prior_by_key.get(key, 0.0) + notional
@@ -184,7 +187,10 @@ def compute_futures_delta(
         if not _validate_row(row, row_idx=row_idx, collector=collector):
             continue
 
-        desc = str(row.get("description", row.get("Description", "")) or "")
+        desc_raw = row.get("description", row.get("Description"))
+        if is_blank_description(desc_raw):
+            continue
+        desc = str(desc_raw)
         key = normalize_description(desc)
         current_notional = _extract_notional(row, row_id=desc, collector=collector)
         current_keys.add(key)
