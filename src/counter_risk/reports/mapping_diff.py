@@ -114,8 +114,13 @@ def _iter_input_names(input_sources: Mapping[str, Any]) -> Iterable[str]:
 def generate_mapping_diff_report(
     registry_path: str | Path,
     input_sources: Mapping[str, Any],
+    *,
+    output_format: str = "text",
 ) -> str:
     """Generate a deterministic mapping diff report."""
+
+    if output_format != "text":
+        raise ValueError(f"Unsupported output format: {output_format}")
 
     # Load once so missing/unreadable/invalid registry is treated as fatal for report generation.
     load_name_registry(registry_path)
