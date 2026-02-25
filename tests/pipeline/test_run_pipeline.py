@@ -1034,6 +1034,9 @@ def test_run_pipeline_wraps_compute_errors(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
 
     def _boom(
         _: dict[str, dict[str, Any]],
@@ -1053,6 +1056,9 @@ def test_run_pipeline_wraps_historical_update_errors(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
 
     def _boom(
         *,
@@ -1114,6 +1120,9 @@ def test_run_pipeline_passes_as_of_date_and_parsed_inputs_to_historical_update(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
     calls: list[dict[str, Any]] = []
 
     def _capture(
