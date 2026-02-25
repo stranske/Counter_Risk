@@ -8,13 +8,18 @@ from pathlib import Path
 
 import pytest
 
-from counter_risk.normalize import resolve_counterparty
+import counter_risk.pipeline.run as pipeline_run
+from counter_risk.normalize import (
+    normalize_counterparty_with_source,
+    resolve_clearing_house,
+    resolve_counterparty,
+)
 from counter_risk.pipeline.run import reconcile_series_coverage
 from counter_risk.reports.mapping_diff import generate_mapping_diff_report
 
 
 def _fixture_path(name: str) -> Path:
-    return Path("tests/fixtures") / name
+    return Path(__file__).resolve().parent / "fixtures" / name
 
 
 def _input_sources() -> dict[str, object]:
@@ -85,6 +90,77 @@ def test_resolve_counterparty_uses_registry_direct_canonical_match_before_fallba
     assert canonical_key_match.source == "registry"
 
 
+def test_resolve_clearing_house_returns_registry_source_when_name_is_in_registry(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: custom_ch",
+                "    display_name: Custom Clearing House",
+                "    aliases:",
+                "      - Custom CH",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    resolution = resolve_clearing_house("Custom CH", registry_path=registry_path)
+
+    assert resolution.canonical_name == "Custom Clearing House"
+    assert resolution.source == "registry"
+
+
+def test_resolve_clearing_house_returns_fallback_source_when_registry_has_no_match(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
+
+    resolution = resolve_clearing_house("ICE Clear US", registry_path=registry_path)
+
+    assert resolution.canonical_name == "ICE"
+    assert resolution.source == "fallback"
+
+
+def test_resolve_clearing_house_unknown_name_uses_identity_with_fallback_source(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
+
+    resolution = resolve_clearing_house("LCH", registry_path=registry_path)
+
+    assert resolution.canonical_name == "LCH"
+    assert resolution.source == "fallback"
+
+
+def test_normalize_counterparty_with_source_exposes_source_attribute(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: soc_gen",
+                "    display_name: Soc Gen",
+                "    aliases:",
+                "      - SG",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    resolution = normalize_counterparty_with_source("SG", registry_path=registry_path)
+
+    assert resolution.source == "registry"
+
+
 def test_reconciliation_with_after_registry_has_no_societe_generale_warning(
     caplog: pytest.LogCaptureFixture,
     tmp_path: Path,
@@ -109,3 +185,45 @@ def test_reconciliation_with_after_registry_has_no_societe_generale_warning(
     assert result["warnings"]
     assert not any("Societe Generale" in warning for warning in result["warnings"])
     assert all("Societe Generale" not in record.getMessage() for record in caplog.records)
+
+
+def test_reconciliation_sources_differ_between_before_and_after_registry(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _run_with_fixture(fixture_name: str, run_dir: Path) -> list[str]:
+        fixture_path = _fixture_path(fixture_name).resolve()
+        config_dir = run_dir / "config"
+        config_dir.mkdir(parents=True)
+        shutil.copyfile(
+            fixture_path,
+            config_dir / "name_registry.yml",
+        )
+        monkeypatch.chdir(run_dir)
+
+        captured_sources: list[str] = []
+        original = pipeline_run.resolve_counterparty
+
+        def _capture_source(raw_name: str):
+            resolution = original(raw_name)
+            captured_sources.append(resolution.source)
+            return resolution
+
+        monkeypatch.setattr(pipeline_run, "resolve_counterparty", _capture_source)
+        reconcile_series_coverage(
+            parsed_data_by_sheet={
+                "Total": {
+                    "totals": [{"counterparty": "Societe Generale"}],
+                    "futures": [],
+                }
+            },
+            historical_series_headers_by_sheet={"Total": ("Soc Gen Inc",)},
+        )
+        return captured_sources
+
+    before_sources = _run_with_fixture("name_registry_before.yml", tmp_path / "before")
+    after_sources = _run_with_fixture("name_registry_after.yml", tmp_path / "after")
+
+    assert "fallback" in before_sources
+    assert "registry" in after_sources
+    assert before_sources != after_sources
