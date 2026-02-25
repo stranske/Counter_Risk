@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Any
 from counter_risk.compute.errors import NO_PRIOR_MATCH, NO_PRIOR_MONTH_MATCH
 
 if TYPE_CHECKING:
-    from counter_risk.pipeline.manifest import WarningsCollector
+    from counter_risk.pipeline.warnings import WarningsCollector
 
 _LOG = logging.getLogger(__name__)
 
