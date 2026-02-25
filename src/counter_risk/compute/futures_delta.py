@@ -131,7 +131,7 @@ def compute_futures_delta(
     prior: Any,
     *,
     collector: WarningsCollector | None = None,
-) -> tuple[Any, list[dict[str, Any]]]:
+) -> tuple[Any, WarningsCollector]:
     """Join current and prior month futures detail, compute change and sign-flip flags.
 
     Warnings (unmatched rows, invalid notional, missing fields) are emitted via the
@@ -164,8 +164,8 @@ def compute_futures_delta(
         * ``sign_flip`` – ``"*"`` when the sign changed between months
           (both values non-zero and of opposite sign), ``""`` otherwise.
 
-        ``warnings`` is the structured warning list collected during computation
-        (same objects as ``collector.warnings`` when a collector is supplied).
+        ``warnings`` is the :class:`WarningsCollector` used during computation.
+        When *collector* is supplied, the same instance is returned.
 
         Rows are sorted ascending by the raw ``description`` text (exact input
         string, no normalisation applied to the sort key).  Ties (duplicate
@@ -280,7 +280,7 @@ def compute_futures_delta(
     records.sort(key=lambda r: str(r.get("description", "")))
 
     result = _to_output(records=records)
-    return result, active_collector.warnings
+    return result, active_collector
 
 
 # ---------------------------------------------------------------------------
