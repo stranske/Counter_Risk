@@ -14,6 +14,7 @@ def _build_workbook(
     cell_value: str,
     modified: datetime,
     last_modified_by: str,
+    title: str | None = None,
 ) -> None:
     openpyxl = pytest.importorskip("openpyxl")
 
@@ -23,6 +24,8 @@ def _build_workbook(
     sheet["A1"] = cell_value
     workbook.properties.modified = modified
     workbook.properties.lastModifiedBy = last_modified_by
+    if title is not None:
+        workbook.properties.title = title
     workbook.save(path)
     workbook.close()
 
@@ -114,3 +117,29 @@ def test_compare_workbooks_metadata_only_differences_do_not_produce_diffs(tmp_pa
     )
 
     assert compare_workbooks(reference, generated) == []
+
+
+def test_compare_workbooks_reports_nonvolatile_core_property_differences(tmp_path: Path) -> None:
+    reference = tmp_path / "reference.xlsx"
+    generated = tmp_path / "generated.xlsx"
+
+    _build_workbook(
+        reference,
+        cell_value="stable-cell",
+        modified=datetime(2026, 1, 15, 8, 0, 0),
+        last_modified_by="first-user",
+        title="Reference Title",
+    )
+    _build_workbook(
+        generated,
+        cell_value="stable-cell",
+        modified=datetime(2026, 2, 20, 18, 45, 0),
+        last_modified_by="second-user",
+        title="Generated Title",
+    )
+
+    differences = compare_workbooks(reference, generated)
+
+    assert any(diff.startswith("Core property differs: title") for diff in differences)
+    assert not any("modified" in diff for diff in differences)
+    assert not any("lastModifiedBy" in diff for diff in differences)

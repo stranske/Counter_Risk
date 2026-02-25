@@ -44,8 +44,10 @@ def compare_workbooks(reference_workbook: Path | str, generated_workbook: Path |
             generated_bytes = generated_zip.read(member)
 
             if member == CORE_PROPERTIES_PART:
-                reference_bytes = _normalize_core_properties(reference_bytes)
-                generated_bytes = _normalize_core_properties(generated_bytes)
+                differences.extend(
+                    _compare_core_properties(reference_bytes, generated_bytes),
+                )
+                continue
 
             if reference_bytes != generated_bytes:
                 differences.append(f"Member differs: {member}")
@@ -67,3 +69,34 @@ def _normalize_core_properties(raw_xml: bytes) -> bytes:
         if child.tag in _CORE_TAGS_TO_IGNORE:
             root.remove(child)
     return cast(bytes, ElementTree.tostring(root, encoding="utf-8"))
+
+
+def _compare_core_properties(reference_xml: bytes, generated_xml: bytes) -> list[str]:
+    """Compare core properties while excluding volatile metadata fields."""
+    normalized_reference = _normalize_core_properties(reference_xml)
+    normalized_generated = _normalize_core_properties(generated_xml)
+    if normalized_reference == normalized_generated:
+        return []
+
+    reference_props = _extract_core_properties(normalized_reference)
+    generated_props = _extract_core_properties(normalized_generated)
+    keys = sorted(set(reference_props) | set(generated_props))
+
+    differences: list[str] = []
+    for key in keys:
+        if reference_props.get(key) != generated_props.get(key):
+            differences.append(
+                "Core property differs: "
+                f"{key} (reference={reference_props.get(key)!r}, generated={generated_props.get(key)!r})"
+            )
+    return differences
+
+
+def _extract_core_properties(raw_xml: bytes) -> dict[str, str]:
+    """Return core-properties text values keyed by namespace-local tag name."""
+    root = ElementTree.fromstring(raw_xml)  # noqa: S314
+    properties: dict[str, str] = {}
+    for child in root:
+        local_name = child.tag.rsplit("}", 1)[-1]
+        properties[local_name] = (child.text or "").strip()
+    return properties
