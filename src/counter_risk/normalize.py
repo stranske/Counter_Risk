@@ -144,6 +144,26 @@ def normalize_counterparty(name: str) -> str:
     return resolve_counterparty(name).canonical_name
 
 
+def resolve_clearing_house(
+    name: str,
+    *,
+    registry_path: str | Path = Path("config/name_registry.yml"),
+) -> NameResolution:
+    """Resolve clearing house name with registry-first semantics."""
+
+    normalized = canonicalize_name(name)
+    alias_lookup = _load_alias_lookup(str(Path(registry_path).resolve()))
+    registry_match = alias_lookup.get(normalized.casefold())
+    if registry_match is not None:
+        return NameResolution(raw_name=name, canonical_name=registry_match, source="registry")
+
+    fallback_match = _CLEARING_HOUSE_FALLBACK_MAPPINGS.get(normalized)
+    if fallback_match is not None:
+        return NameResolution(raw_name=name, canonical_name=fallback_match, source="fallback")
+
+    return NameResolution(raw_name=name, canonical_name=normalized, source="unmapped")
+
+
 def normalize_clearing_house(name: str) -> str:
     """Normalize a clearing house name to the canonical historical workbook label."""
 
