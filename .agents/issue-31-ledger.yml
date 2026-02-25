@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Create `src/counter_risk/outputs/base.py` defining an `OutputGenerator`
       interface for output plugins.
-    status: doing
+    status: done
     started_at: '2026-02-25T23:05:22Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-25T23:05:35Z'
+    commit: ddb4281d14cbddad5333686624dd9db7adcb299f
     notes: []
   - id: task-02
     title: Update the historical workbook updater to implement `OutputGenerator`.
