@@ -19,6 +19,15 @@ class ReconciliationConfig(BaseModel):
     expected_segments_by_variant: dict[str, list[str]] = Field(default_factory=dict)
 
 
+class InputDiscoveryConfig(BaseModel):
+    """Configuration for discovering monthly input files from known roots."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    directory_roots: dict[str, Path] = Field(default_factory=dict)
+    naming_patterns: dict[str, list[str]] = Field(default_factory=dict)
+
+
 class WorkflowConfig(BaseModel):
     """Configuration for a single Counter Risk workflow execution.
 
@@ -42,6 +51,7 @@ class WorkflowConfig(BaseModel):
     enable_screenshot_replacement: bool = False
     screenshot_replacement_implementation: Literal["zip", "python-pptx"] = "zip"
     screenshot_inputs: dict[str, Path] = Field(default_factory=dict)
+    input_discovery: InputDiscoveryConfig = Field(default_factory=InputDiscoveryConfig)
     reconciliation: ReconciliationConfig = Field(default_factory=ReconciliationConfig)
     distribution_static: bool = False
     export_pdf: bool = False

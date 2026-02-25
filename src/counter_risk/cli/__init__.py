@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
+from datetime import date
 from pathlib import Path
 from typing import cast
 
+from counter_risk.config import WorkflowConfig, load_config
+from counter_risk.io.discover import discover_workflow_inputs
 from counter_risk.pipeline import run_fixture_replay
 from counter_risk.runtime_paths import resolve_runtime_path
 
@@ -36,6 +39,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory override for --fixture-replay mode.",
     )
     run_parser.add_argument(
+        "--as-of-month",
+        type=str,
+        default=None,
+        help="As-of reporting date in YYYY-MM-DD format for discovery preview.",
+    )
+    run_parser.add_argument(
+        "--dry-run-discovery",
+        action="store_true",
+        help="List discovered workflow input candidates without executing the workflow.",
+    )
+    run_parser.add_argument(
         "--export-pdf",
         dest="export_pdf",
         action="store_true",
@@ -54,6 +68,22 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _run_command(args: argparse.Namespace) -> int:
+    if bool(getattr(args, "dry_run_discovery", False)):
+        config = load_config(args.config)
+        as_of_date = _resolve_discovery_as_of_date(
+            config=config,
+            as_of_month=getattr(args, "as_of_month", None),
+        )
+        if as_of_date is None:
+            print(
+                "Discovery dry-run requires an as-of date. "
+                "Set config.as_of_date or pass --as-of-month YYYY-MM-DD."
+            )
+            return 2
+
+        print(_format_discovery_dry_run(config=config, as_of_date=as_of_date))
+        return 0
+
     if bool(getattr(args, "fixture_replay", False)):
         run_dir = run_fixture_replay(config_path=args.config, output_dir=args.output_dir)
         print(f"Counter Risk fixture replay completed: {run_dir}")
@@ -61,6 +91,25 @@ def _run_command(args: argparse.Namespace) -> int:
 
     print("Counter Risk run command is not implemented yet.")
     return 0
+
+
+def _resolve_discovery_as_of_date(
+    *, config: WorkflowConfig, as_of_month: str | None
+) -> date | None:
+    if as_of_month:
+        return date.fromisoformat(as_of_month.strip())
+    return config.as_of_date
+
+
+def _format_discovery_dry_run(*, config: WorkflowConfig, as_of_date: date) -> str:
+    result = discover_workflow_inputs(config, as_of_date=as_of_date)
+    lines = [f"Discovery dry-run for as-of date {as_of_date.isoformat()}"]
+    for input_name in sorted(result.matches_by_input):
+        matches = result.matches_by_input[input_name]
+        lines.append(f"- {input_name}: {len(matches)} match(es)")
+        for match in matches:
+            lines.append(f"  {match.path}")
+    return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:
