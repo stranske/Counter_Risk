@@ -165,13 +165,23 @@ def compute_futures_delta(
     current_rows = _to_row_list(current, arg="current")
     prior_rows = _to_row_list(prior, arg="prior")
 
+    # Exclude blank-description rows from both datasets before matching.
+    current_rows = [
+        row
+        for row in current_rows
+        if not is_blank_description(row.get("description", row.get("Description")))
+    ]
+    prior_rows = [
+        row
+        for row in prior_rows
+        if not is_blank_description(row.get("description", row.get("Description")))
+    ]
+
     # Build prior lookup: normalised description -> accumulated notional.
     prior_by_key: dict[str, float] = {}
     prior_desc_by_key: dict[str, str] = {}
     for row in prior_rows:
         desc_raw = row.get("description", row.get("Description"))
-        if is_blank_description(desc_raw):
-            continue
         desc = str(desc_raw)
         key = normalize_description(desc)
         notional = _extract_notional(row, row_id=desc or "<prior row>", collector=collector)
@@ -188,8 +198,6 @@ def compute_futures_delta(
             continue
 
         desc_raw = row.get("description", row.get("Description"))
-        if is_blank_description(desc_raw):
-            continue
         desc = str(desc_raw)
         key = normalize_description(desc)
         current_notional = _extract_notional(row, row_id=desc, collector=collector)
