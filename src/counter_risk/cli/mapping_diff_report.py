@@ -34,6 +34,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Raw input name observed during reconciliation. Can be provided multiple times.",
     )
+    parser.add_argument(
+        "--output-format",
+        choices=("text",),
+        default="text",
+        help="Report output format.",
+    )
     return parser
 
 
@@ -48,7 +54,11 @@ def main(argv: list[str] | None = None) -> int:
         "reconciliation": list(args.reconciliation_name),
     }
     try:
-        report = generate_mapping_diff_report(args.registry, input_sources)
+        report = generate_mapping_diff_report(
+            args.registry,
+            input_sources,
+            output_format=args.output_format,
+        )
     except ValueError as exc:
         error_line = " ".join(str(exc).splitlines())
         print(error_line, file=sys.stderr)

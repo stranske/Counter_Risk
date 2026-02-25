@@ -144,8 +144,49 @@ def normalize_counterparty(name: str) -> str:
     return resolve_counterparty(name).canonical_name
 
 
+def normalize_counterparty_with_source(
+    name: str,
+    *,
+    registry_path: str | Path = Path("config/name_registry.yml"),
+) -> NameResolution:
+    """Normalize a counterparty name and return full mapping metadata.
+
+    The returned :class:`NameResolution` includes ``source`` indicating where
+    the mapping came from:
+    - ``"registry"`` when matched via configured name registry entries/aliases.
+    - ``"fallback"`` when matched via built-in fallback mappings.
+    - ``"unmapped"`` when no mapping is found and canonicalized input is used.
+    """
+
+    return resolve_counterparty(name, registry_path=registry_path)
+
+
+def resolve_clearing_house(
+    name: str,
+    *,
+    registry_path: str | Path = Path("config/name_registry.yml"),
+) -> NameResolution:
+    """Resolve clearing house name with registry-first semantics.
+
+    Clearing-house source attribution is binary for reconciliation reporting:
+    registry hits are labeled ``"registry"``, and all non-registry paths are
+    labeled ``"fallback"`` (including identity/no-op normalization).
+    """
+
+    normalized = canonicalize_name(name)
+    alias_lookup = _load_alias_lookup(str(Path(registry_path).resolve()))
+    registry_match = alias_lookup.get(normalized.casefold())
+    if registry_match is not None:
+        return NameResolution(raw_name=name, canonical_name=registry_match, source="registry")
+
+    fallback_match = _CLEARING_HOUSE_FALLBACK_MAPPINGS.get(normalized)
+    if fallback_match is not None:
+        return NameResolution(raw_name=name, canonical_name=fallback_match, source="fallback")
+
+    return NameResolution(raw_name=name, canonical_name=normalized, source="fallback")
+
+
 def normalize_clearing_house(name: str) -> str:
     """Normalize a clearing house name to the canonical historical workbook label."""
 
-    normalized = _normalize_whitespace(name)
-    return _CLEARING_HOUSE_FALLBACK_MAPPINGS.get(normalized, normalized)
+    return resolve_clearing_house(name).canonical_name
