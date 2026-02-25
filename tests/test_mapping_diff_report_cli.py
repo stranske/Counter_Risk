@@ -44,6 +44,20 @@ def test_mapping_diff_report_help_exits_zero() -> None:
     assert "mapping_diff_report" in result.stdout
 
 
+def test_mapping_diff_report_with_repo_registry_exits_zero() -> None:
+    result = subprocess.run(
+        [*_cli_cmd(), "--registry", "config/name_registry.yml"],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=_cli_env(),
+    )
+    assert result.returncode == 0
+    assert "UNMAPPED" in result.stdout
+    assert "FALLBACK_MAPPED" in result.stdout
+    assert "SUGGESTIONS" in result.stdout
+
+
 def test_mapping_diff_report_missing_registry_exits_nonzero(tmp_path: Path) -> None:
     missing_registry = tmp_path / "missing_registry.yml"
     result = subprocess.run(
