@@ -196,12 +196,16 @@ def test_unmatched_current_row_gets_zero_prior_and_warning() -> None:
     col = _collector()
     result = compute_futures_delta(current, prior, collector=col)
     rows = _records(result)
-    warning_messages = [w.get("message", "") for w in col.warnings]
+    current_unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MONTH_MATCH]
+    prior_unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MATCH]
     # Current row has no prior match.
     assert rows[0]["prior_notional"] == pytest.approx(0.0)
-    assert any("Unmatched current" in m for m in warning_messages)
+    assert len(current_unmatched) == 1
+    assert current_unmatched[0].get("row_idx") == 0
+    assert current_unmatched[0].get("description") == "New Contract Dec25"
     # Prior row also unmatched.
-    assert any("Unmatched prior" in m for m in warning_messages)
+    assert len(prior_unmatched) == 1
+    assert prior_unmatched[0].get("description") == "Old Contract Dec25"
 
 
 def test_unmatched_current_row_emits_no_prior_month_match_code() -> None:
@@ -222,8 +226,9 @@ def test_unmatched_prior_only_produces_warning() -> None:
     )
     col = _collector()
     compute_futures_delta(current, prior, collector=col)
-    warning_messages = [w.get("message", "") for w in col.warnings]
-    assert any("Unmatched prior" in m and "Contract B" in m for m in warning_messages)
+    unmatched_prior = [w for w in col.warnings if w.get("code") == NO_PRIOR_MATCH]
+    assert len(unmatched_prior) == 1
+    assert unmatched_prior[0].get("description") == "Contract B Mar25"
 
 
 def test_unmatched_prior_row_emits_no_prior_match_code() -> None:
@@ -234,7 +239,7 @@ def test_unmatched_prior_row_emits_no_prior_match_code() -> None:
     compute_futures_delta(current, prior, collector=col)
 
     assert any(
-        w.get("code") == NO_PRIOR_MATCH and "Contract B" in w.get("message", "")
+        w.get("code") == NO_PRIOR_MATCH and w.get("description") == "Contract B Mar25"
         for w in col.warnings
     )
 
@@ -330,7 +335,7 @@ def test_blank_prior_description_rows_are_excluded_from_matching() -> None:
     assert len(rows) == 1
     assert rows[0]["description"] == "TY Mar25"
     assert rows[0]["prior_notional"] == pytest.approx(80.0)
-    assert not any("Unmatched prior" in w.get("message", "") for w in col.warnings)
+    assert not any(w.get("code") == NO_PRIOR_MATCH for w in col.warnings)
 
 
 def test_matched_group_count_equals_unique_non_blank_normalized_descriptions() -> None:
@@ -494,7 +499,9 @@ def test_empty_current() -> None:
     result = compute_futures_delta(current, prior, collector=col)
     rows = _records(result)
     assert rows == []
-    assert any("Unmatched prior" in w.get("message", "") for w in col.warnings)
+    assert any(
+        w.get("code") == NO_PRIOR_MATCH and w.get("description") == "TY Mar25" for w in col.warnings
+    )
 
 
 def test_empty_prior() -> None:
@@ -506,7 +513,10 @@ def test_empty_prior() -> None:
     assert len(rows) == 1
     assert rows[0]["prior_notional"] == pytest.approx(0.0)
     assert rows[0]["notional_change"] == pytest.approx(100.0)
-    assert any("Unmatched current" in w.get("message", "") for w in col.warnings)
+    assert any(
+        w.get("code") == NO_PRIOR_MONTH_MATCH and w.get("description") == "TY Mar25"
+        for w in col.warnings
+    )
 
 
 def test_both_empty() -> None:
@@ -638,6 +648,9 @@ def test_reference_subset_change_and_sign_flip() -> None:
     assert euro["sign_flip"] == ""
 
     # Unmatched prior row surfaced in warnings (none in this case as all prior matched)
-    assert not any("Unmatched prior" in w.get("message", "") for w in col.warnings)
+    assert not any(w.get("code") == NO_PRIOR_MATCH for w in col.warnings)
     # Unmatched current: Euro Dollar had no prior
-    assert any("Euro Dollar" in w.get("message", "") for w in col.warnings)
+    assert any(
+        w.get("code") == NO_PRIOR_MONTH_MATCH and w.get("description") == "Euro Dollar (CME) Jun25"
+        for w in col.warnings
+    )

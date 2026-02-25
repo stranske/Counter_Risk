@@ -174,6 +174,13 @@ def compute_futures_delta(
     # Group by normalised description (blank descriptions excluded) before aggregation/matching.
     current_groups = _group_rows_by_normalized_description(current_rows)
     prior_groups = _group_rows_by_normalized_description(prior_rows)
+    prior_first_row_idx_by_key: dict[str, int] = {}
+    for prior_row_idx, row in enumerate(prior_rows):
+        desc_raw = row.get("description", row.get("Description"))
+        if is_blank_description(desc_raw):
+            continue
+        key = normalize_description(str(desc_raw))
+        prior_first_row_idx_by_key.setdefault(key, prior_row_idx)
 
     # Build prior lookup: normalised description -> accumulated notional.
     prior_by_key: dict[str, float] = {}
@@ -184,7 +191,10 @@ def compute_futures_delta(
             desc_raw = row.get("description", row.get("Description"))
             desc = str(desc_raw)
             notional_sum += _extract_notional(
-                row, row_id=desc or "<prior row>", collector=collector
+                row,
+                row_id=desc or "<prior row>",
+                row_idx=prior_first_row_idx_by_key.get(key, -1),
+                collector=collector,
             )
             if key not in prior_desc_by_key:
                 prior_desc_by_key[key] = desc
@@ -201,7 +211,7 @@ def compute_futures_delta(
         desc_raw = row.get("description", row.get("Description"))
         desc = str(desc_raw)
         key = normalize_description(desc)
-        current_notional = _extract_notional(row, row_id=desc, collector=collector)
+        current_notional = _extract_notional(row, row_id=desc, row_idx=row_idx, collector=collector)
 
         if key in prior_by_key:
             prior_notional = prior_by_key[key]
@@ -210,7 +220,12 @@ def compute_futures_delta(
             msg = f"Unmatched current row (no prior match): {desc!r}"
             _LOG.warning(msg)
             if collector is not None:
-                collector.warn(msg, code=NO_PRIOR_MONTH_MATCH, row_idx=row_idx)
+                collector.add_structured(
+                    row_idx,
+                    code=NO_PRIOR_MONTH_MATCH,
+                    message=msg,
+                    description=desc,
+                )
 
         change = current_notional - prior_notional
 
@@ -237,7 +252,12 @@ def compute_futures_delta(
             msg = f"Unmatched prior row (no current match): {original_desc!r}"
             _LOG.warning(msg)
             if collector is not None:
-                collector.warn(msg, code=NO_PRIOR_MATCH)
+                collector.add_structured(
+                    prior_first_row_idx_by_key.get(key, -1),
+                    code=NO_PRIOR_MATCH,
+                    message=msg,
+                    description=original_desc,
+                )
 
     # Sort output by raw description text for stable, deterministic order.
     # Python's sort is stable: duplicate descriptions preserve input order.
@@ -356,7 +376,12 @@ def _validate_row(
         )
         _LOG.warning(msg)
         if collector is not None:
-            collector.warn(msg, code="MISSING_DESCRIPTION", row_idx=row_idx)
+            collector.add_structured(
+                row_idx,
+                code="MISSING_DESCRIPTION",
+                message=msg,
+                available_non_empty_fields=non_empty,
+            )
         return False
 
     notional_present = any(k in row for k in ("notional", "Notional", "exposure"))
@@ -365,7 +390,12 @@ def _validate_row(
         msg = f"Row {row_idx}: Notional field missing for {desc!r}"
         _LOG.warning(msg)
         if collector is not None:
-            collector.warn(msg, code="MISSING_NOTIONAL", row_idx=row_idx)
+            collector.add_structured(
+                row_idx,
+                code="MISSING_NOTIONAL",
+                message=msg,
+                description=desc,
+            )
         return False
 
     return True
@@ -375,6 +405,7 @@ def _extract_notional(
     row: dict[str, Any],
     *,
     row_id: str = "",
+    row_idx: int = -1,
     strict: bool = False,
     collector: WarningsCollector | None = None,
 ) -> float:
@@ -416,7 +447,14 @@ def _extract_notional(
             msg = f"Blank notional for row {row_id!r} (key={key!r})"
             _LOG.warning(msg)
             if collector is not None:
-                collector.warn(msg, code="INVALID_NOTIONAL")
+                collector.add_structured(
+                    row_idx,
+                    code="INVALID_NOTIONAL",
+                    message=msg,
+                    row_id=row_id,
+                    field=key,
+                    value=val,
+                )
             if strict:
                 raise InvalidNotionalError(msg)
             return 0.0
@@ -426,7 +464,14 @@ def _extract_notional(
             msg = f"Non-numeric notional {val!r} for row {row_id!r} (key={key!r})"
             _LOG.warning(msg)
             if collector is not None:
-                collector.warn(msg, code="INVALID_NOTIONAL")
+                collector.add_structured(
+                    row_idx,
+                    code="INVALID_NOTIONAL",
+                    message=msg,
+                    row_id=row_id,
+                    field=key,
+                    value=val,
+                )
             if strict:
                 raise InvalidNotionalError(msg) from None
             return 0.0
@@ -435,7 +480,14 @@ def _extract_notional(
             msg = f"NaN notional for row {row_id!r} (key={key!r})"
             _LOG.warning(msg)
             if collector is not None:
-                collector.warn(msg, code="INVALID_NOTIONAL")
+                collector.add_structured(
+                    row_idx,
+                    code="INVALID_NOTIONAL",
+                    message=msg,
+                    row_id=row_id,
+                    field=key,
+                    value=val,
+                )
             if strict:
                 raise InvalidNotionalError(msg)
             return 0.0
@@ -445,7 +497,12 @@ def _extract_notional(
     msg = f"Missing notional field for row {row_id!r}"
     _LOG.warning(msg)
     if collector is not None:
-        collector.warn(msg, code="MISSING_NOTIONAL")
+        collector.add_structured(
+            row_idx,
+            code="MISSING_NOTIONAL",
+            message=msg,
+            row_id=row_id,
+        )
     if strict:
         raise InvalidNotionalError(msg)
     return 0.0
