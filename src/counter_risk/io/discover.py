@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-import re
 
 from counter_risk.config import InputDiscoveryConfig, WorkflowConfig
 

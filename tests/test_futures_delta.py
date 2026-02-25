@@ -181,7 +181,7 @@ class TestWorkbookWriteBack:
 
     def test_locate_section_raises_when_missing_prior_month_col(self, tmp_path: Path) -> None:
         """Missing 'Prior Month Notional' column raises FuturesDetailNotFoundError."""
-        import openpyxl  # type: ignore[import-untyped]
+        import openpyxl
 
         wb = openpyxl.Workbook()
         ws = wb.active
