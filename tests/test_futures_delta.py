@@ -65,6 +65,22 @@ def _records(result: Any) -> list[dict[str, Any]]:
     return [dict(row) for row in result]
 
 
+def _compute_checked(
+    current: Any,
+    prior: Any,
+    *,
+    collector: WarningsCollector | None = None,
+) -> tuple[Any, list[dict[str, Any]]]:
+    """Call compute_futures_delta and assert the 2-value return contract."""
+    result, warnings = compute_futures_delta(current, prior, collector=collector)
+    assert isinstance(warnings, list)
+    if collector is None:
+        assert warnings == []
+    else:
+        assert warnings == collector.warnings
+    return result, warnings
+
+
 def _make_result_rows(
     prior_map: dict[str, float] | None = None,
 ) -> list[dict[str, Any]]:
@@ -333,7 +349,7 @@ class TestRawDescriptionSorting:
             ("ES Mar25", 15.0),
             ("CL Mar25", 25.0),
         )
-        result = compute_futures_delta(current, prior)
+        result = _compute_checked(current, prior)
         rows = _records(result)
         raw_descs = [r["description"] for r in rows]
         assert raw_descs == sorted(raw_descs)
@@ -354,7 +370,7 @@ class TestRawDescriptionSorting:
             ("Z-Bond Mar25", 2.0),
         )
         prior: list[dict[str, Any]] = []
-        result = compute_futures_delta(current, prior)
+        result = _compute_checked(current, prior)
         rows = _records(result)
         raw_descs = [r["description"] for r in rows]
         # Raw sort: "Z-Bond Mar25" (Z=90) < "a-Note Mar25" (a=97)
@@ -377,7 +393,7 @@ class TestRawDescriptionSorting:
             {"description": "ES Mar25", "notional": 30.0},
         ]
         prior: list[dict[str, Any]] = []
-        result = compute_futures_delta(current, prior)
+        result = _compute_checked(current, prior)
         rows = _records(result)
         assert [r["notional"] for r in rows] == pytest.approx([10.0, 20.0, 30.0])
 
@@ -389,7 +405,7 @@ class TestRawDescriptionSorting:
             ("Euro Dollar Jun25", 100.0),
         )
         prior: list[dict[str, Any]] = []
-        result = compute_futures_delta(current, prior)
+        result = _compute_checked(current, prior)
         rows = _records(result)
         raw_descs = [r["description"] for r in rows]
         assert raw_descs == sorted(raw_descs)
@@ -554,7 +570,7 @@ class TestValidateRow:
         ]
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
-        result = compute_futures_delta(current, prior, collector=col)
+        result = _compute_checked(current, prior, collector=col)
         rows = _records(result)
         # Only the valid row should appear in output
         assert len(rows) == 1
@@ -570,7 +586,7 @@ class TestValidateRow:
         ]
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
-        result = compute_futures_delta(current, prior, collector=col)
+        result = _compute_checked(current, prior, collector=col)
         rows = _records(result)
         assert len(rows) == 1
         assert rows[0]["description"] == "ES Mar25"
@@ -596,7 +612,7 @@ class TestUnmatchedRowManifestWarnings:
         current = _make_rows(("NEW Contract Dec25", 100.0))
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
-        compute_futures_delta(current, prior, collector=col)
+        _compute_checked(current, prior, collector=col)
         # Exactly one warning for the unmatched current row
         unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MONTH_MATCH]
         assert len(unmatched) == 1
@@ -607,7 +623,7 @@ class TestUnmatchedRowManifestWarnings:
         current = _make_rows(("MY UNIQUE TICKER Mar25", 1.0))
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
-        compute_futures_delta(current, prior, collector=col)
+        _compute_checked(current, prior, collector=col)
         assert any(
             w.get("code") == NO_PRIOR_MONTH_MATCH
             and w.get("description") == "MY UNIQUE TICKER Mar25"
@@ -618,7 +634,7 @@ class TestUnmatchedRowManifestWarnings:
         current: list[dict[str, Any]] = []
         prior = _make_rows(("Old Contract Dec25", 50.0))
         col = WarningsCollector()
-        compute_futures_delta(current, prior, collector=col)
+        _compute_checked(current, prior, collector=col)
         unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MATCH]
         assert len(unmatched) == 1
         assert unmatched[0].get("description") == "Old Contract Dec25"
@@ -631,7 +647,7 @@ class TestUnmatchedRowManifestWarnings:
         )
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
-        compute_futures_delta(current, prior, collector=col)
+        _compute_checked(current, prior, collector=col)
         unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MONTH_MATCH]
         assert len(unmatched) == 3
 
@@ -639,14 +655,14 @@ class TestUnmatchedRowManifestWarnings:
         current = _make_rows(("ES Mar25", 100.0))
         prior = _make_rows(("ES Mar25", 80.0))
         col = WarningsCollector()
-        compute_futures_delta(current, prior, collector=col)
+        _compute_checked(current, prior, collector=col)
         assert col.warnings == []
 
     def test_compute_returns_result_and_warnings_tuple(self) -> None:
         """compute_futures_delta returns exactly two values: (result, warnings)."""
         current = _make_rows(("Unmatched Mar25", 1.0))
         prior: list[dict[str, Any]] = []
-        result, warnings = compute_futures_delta(current, prior)
+        result, warnings = _compute_checked(current, prior)
         assert _records(result)
         assert isinstance(warnings, list)
         assert len(warnings) == 0
@@ -655,6 +671,6 @@ class TestUnmatchedRowManifestWarnings:
         """Calling without a collector should not raise; warnings go to logger only."""
         current = _make_rows(("ES Mar25", 100.0))
         prior: list[dict[str, Any]] = []
-        result = compute_futures_delta(current, prior)
+        result = _compute_checked(current, prior)
         rows = _records(result)
         assert len(rows) == 1

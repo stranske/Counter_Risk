@@ -35,6 +35,22 @@ def _collector() -> WarningsCollector:
     return WarningsCollector()
 
 
+def _compute_checked(
+    current: Any,
+    prior: Any,
+    *,
+    collector: WarningsCollector | None = None,
+) -> tuple[Any, list[dict[str, Any]]]:
+    """Call compute_futures_delta and assert the 2-value return contract."""
+    result, warnings = compute_futures_delta(current, prior, collector=collector)
+    assert isinstance(warnings, list)
+    if collector is None:
+        assert warnings == []
+    else:
+        assert warnings == collector.warnings
+    return result, warnings
+
+
 # ---------------------------------------------------------------------------
 # normalize_description
 # ---------------------------------------------------------------------------
@@ -108,7 +124,7 @@ def test_basic_change_positive() -> None:
     current = _make_rows(("US 2-Year Note Mar25", 100.0))
     prior = _make_rows(("US 2-Year Note Mar25", 80.0))
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert len(rows) == 1
     assert rows[0]["notional"] == pytest.approx(100.0)
@@ -122,7 +138,7 @@ def test_compute_returns_result_and_warnings() -> None:
     current = _make_rows(("TY Dec25", 50.0))
     prior = _make_rows(("TY Dec25", 75.0))
     col = _collector()
-    result, warnings = compute_futures_delta(current, prior, collector=col)
+    result, warnings = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert len(rows) == 1
     assert warnings == col.warnings
@@ -132,7 +148,7 @@ def test_basic_change_negative() -> None:
     current = _make_rows(("TY Dec25", 50.0))
     prior = _make_rows(("TY Dec25", 75.0))
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert rows[0]["notional_change"] == pytest.approx(-25.0)
     assert col.warnings == []
@@ -147,7 +163,7 @@ def test_sign_flip_positive_to_negative() -> None:
     current = _make_rows(("ES Jun25", -50.0))
     prior = _make_rows(("ES Jun25", 50.0))
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert rows[0]["sign_flip"] == "*"
     assert col.warnings == []
@@ -157,7 +173,7 @@ def test_sign_flip_negative_to_positive() -> None:
     current = _make_rows(("ES Jun25", 50.0))
     prior = _make_rows(("ES Jun25", -50.0))
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert rows[0]["sign_flip"] == "*"
     assert col.warnings == []
@@ -166,7 +182,7 @@ def test_sign_flip_negative_to_positive() -> None:
 def test_no_sign_flip_same_positive_sign() -> None:
     current = _make_rows(("ES Jun25", 50.0))
     prior = _make_rows(("ES Jun25", 80.0))
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
     assert rows[0]["sign_flip"] == ""
 
@@ -174,7 +190,7 @@ def test_no_sign_flip_same_positive_sign() -> None:
 def test_no_sign_flip_same_negative_sign() -> None:
     current = _make_rows(("ES Jun25", -50.0))
     prior = _make_rows(("ES Jun25", -80.0))
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
     assert rows[0]["sign_flip"] == ""
 
@@ -183,7 +199,7 @@ def test_no_sign_flip_when_prior_zero() -> None:
     """No sign-flip annotation when prior is zero (new position)."""
     current = _make_rows(("ES Jun25", 50.0))
     prior: list[dict[str, Any]] = []
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
     assert rows[0]["sign_flip"] == ""
 
@@ -192,7 +208,7 @@ def test_no_sign_flip_when_current_zero() -> None:
     """No sign-flip annotation when current is zero (closed position)."""
     current = _make_rows(("ES Jun25", 0.0))
     prior = _make_rows(("ES Jun25", 50.0))
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
     assert rows[0]["sign_flip"] == ""
 
@@ -206,7 +222,7 @@ def test_unmatched_current_row_gets_zero_prior_and_warning() -> None:
     current = _make_rows(("New Contract Dec25", 200.0))
     prior = _make_rows(("Old Contract Dec25", 100.0))
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     current_unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MONTH_MATCH]
     prior_unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MATCH]
@@ -225,7 +241,7 @@ def test_unmatched_current_row_emits_no_prior_month_match_code() -> None:
     prior: list[dict[str, Any]] = []
     col = _collector()
 
-    compute_futures_delta(current, prior, collector=col)
+    _compute_checked(current, prior, collector=col)
 
     assert any(w.get("code") == NO_PRIOR_MONTH_MATCH for w in col.warnings)
 
@@ -237,7 +253,7 @@ def test_unmatched_prior_only_produces_warning() -> None:
         ("Contract B Mar25", 50.0),
     )
     col = _collector()
-    compute_futures_delta(current, prior, collector=col)
+    _compute_checked(current, prior, collector=col)
     unmatched_prior = [w for w in col.warnings if w.get("code") == NO_PRIOR_MATCH]
     assert len(unmatched_prior) == 1
     assert unmatched_prior[0].get("description") == "Contract B Mar25"
@@ -248,7 +264,7 @@ def test_unmatched_prior_row_emits_no_prior_match_code() -> None:
     prior = _make_rows(("Contract A Mar25", 80.0), ("Contract B Mar25", 50.0))
     col = _collector()
 
-    compute_futures_delta(current, prior, collector=col)
+    _compute_checked(current, prior, collector=col)
 
     assert any(
         w.get("code") == NO_PRIOR_MATCH and w.get("description") == "Contract B Mar25"
@@ -263,7 +279,7 @@ def test_unmatched_prior_not_in_result_rows() -> None:
         ("Contract A Mar25", 80.0),
         ("Contract B Mar25", 50.0),
     )
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
     descriptions = [r["description"] for r in rows]
     assert all("Contract B" not in d for d in descriptions)
@@ -281,7 +297,7 @@ def test_blank_description_rows_are_filtered_before_matching() -> None:
         {"description": "\t", "notional": 6666.0},
     ]
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
 
     assert len(rows) == 1
@@ -297,7 +313,7 @@ def test_none_description_rows_are_excluded_from_matching() -> None:
     ]
     prior = [{"description": "TY Mar25", "notional": 80.0}]
 
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
 
     assert len(rows) == 1
@@ -311,7 +327,7 @@ def test_empty_description_rows_are_excluded_from_matching() -> None:
     ]
     prior = [{"description": "TY Mar25", "notional": 80.0}]
 
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
 
     assert len(rows) == 1
@@ -325,7 +341,7 @@ def test_whitespace_description_rows_are_excluded_from_matching() -> None:
     ]
     prior = [{"description": "TY Mar25", "notional": 80.0}]
 
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
 
     assert len(rows) == 1
@@ -341,7 +357,7 @@ def test_blank_prior_description_rows_are_excluded_from_matching() -> None:
     ]
     col = _collector()
 
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
 
     assert len(rows) == 1
@@ -363,7 +379,7 @@ def test_matched_group_count_equals_unique_non_blank_normalized_descriptions() -
         {"description": None, "notional": 7777.0},
     ]
 
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
 
     matched_groups = {
@@ -394,8 +410,8 @@ def test_adding_blank_description_rows_does_not_change_matched_group_count() -> 
         {"description": None, "notional": 6.0},
     ]
 
-    base_rows = _records(compute_futures_delta(base_current, base_prior))
-    blank_rows = _records(compute_futures_delta(with_blanks_current, with_blanks_prior))
+    base_rows = _records(_compute_checked(base_current, base_prior))
+    blank_rows = _records(_compute_checked(with_blanks_current, with_blanks_prior))
 
     base_matched_groups = {
         normalize_description(r["description"]) for r in base_rows if r["prior_notional"] != 0.0
@@ -418,7 +434,7 @@ def test_month_with_space_matches_without_space() -> None:
     current = _make_rows(("TY Mar 25", 100.0))
     prior = _make_rows(("TY Mar25", 80.0))
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert rows[0]["prior_notional"] == pytest.approx(80.0)
     assert col.warnings == []
@@ -429,7 +445,7 @@ def test_full_month_name_matches_abbreviated() -> None:
     current = _make_rows(("TY March 2025", 100.0))
     prior = _make_rows(("TY Mar25", 80.0))
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert rows[0]["prior_notional"] == pytest.approx(80.0)
     assert col.warnings == []
@@ -439,7 +455,7 @@ def test_case_insensitive_matching() -> None:
     current = _make_rows(("ES MAR25", 100.0))
     prior = _make_rows(("ES mar25", 80.0))
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert rows[0]["prior_notional"] == pytest.approx(80.0)
     assert col.warnings == []
@@ -462,7 +478,7 @@ def test_output_sorted_by_raw_description() -> None:
         ("ES Mar25", 15.0),
         ("CL Mar25", 25.0),
     )
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
     raw_descs = [r["description"] for r in rows]
     assert raw_descs == sorted(raw_descs)
@@ -478,7 +494,7 @@ def test_sort_uses_raw_not_normalised() -> None:
         ("Alpha Mar25", 2.0),
     )
     prior: list[dict[str, Any]] = []
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
     raw_descs = [r["description"] for r in rows]
     # Python stable sort on raw strings: 'A' (65) < 'b' (98)
@@ -493,7 +509,7 @@ def test_duplicate_descriptions_preserve_input_order() -> None:
         {"description": "ES Mar25", "notional": 30.0},
     ]
     prior: list[dict[str, Any]] = []
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     rows = _records(result)
     # All three rows have the same description; original order is preserved.
     assert [r["notional"] for r in rows] == pytest.approx([10.0, 20.0, 30.0])
@@ -508,7 +524,7 @@ def test_empty_current() -> None:
     current: list[dict[str, Any]] = []
     prior = _make_rows(("TY Mar25", 100.0))
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert rows == []
     assert any(
@@ -520,7 +536,7 @@ def test_empty_prior() -> None:
     current = _make_rows(("TY Mar25", 100.0))
     prior: list[dict[str, Any]] = []
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert len(rows) == 1
     assert rows[0]["prior_notional"] == pytest.approx(0.0)
@@ -533,7 +549,7 @@ def test_empty_prior() -> None:
 
 def test_both_empty() -> None:
     col = _collector()
-    result = compute_futures_delta([], [], collector=col)
+    result = _compute_checked([], [], collector=col)
     assert _records(result) == []
     assert col.warnings == []
 
@@ -542,7 +558,7 @@ def test_multiple_current_rows() -> None:
     current = _make_rows(("A Mar25", 10.0), ("B Mar25", 20.0), ("C Mar25", 30.0))
     prior = _make_rows(("A Mar25", 5.0), ("B Mar25", 15.0), ("C Mar25", 25.0))
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     assert len(rows) == 3
     assert all(r["notional_change"] == pytest.approx(5.0) for r in rows)
@@ -557,7 +573,7 @@ def test_multiple_current_rows() -> None:
 def test_write_annotated_csv_creates_file(tmp_path: Path) -> None:
     current = _make_rows(("ES Dec25", 100.0), ("TY Dec25", -50.0))
     prior = _make_rows(("ES Dec25", 120.0), ("TY Dec25", 50.0))
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     out_path = tmp_path / "output" / "futures_delta.csv"
     write_annotated_csv(result, out_path)
     assert out_path.exists()
@@ -566,7 +582,7 @@ def test_write_annotated_csv_creates_file(tmp_path: Path) -> None:
 def test_write_annotated_csv_correct_columns(tmp_path: Path) -> None:
     current = _make_rows(("ES Dec25", 100.0))
     prior = _make_rows(("ES Dec25", 80.0))
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     out_path = tmp_path / "futures_delta.csv"
     write_annotated_csv(result, out_path)
     with out_path.open(encoding="utf-8") as fh:
@@ -585,7 +601,7 @@ def test_write_annotated_csv_sign_flip_value(tmp_path: Path) -> None:
     """TY Dec25 flips sign → sign_flip column should be '*'."""
     current = _make_rows(("ES Dec25", 100.0), ("TY Dec25", -50.0))
     prior = _make_rows(("ES Dec25", 120.0), ("TY Dec25", 50.0))
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     out_path = tmp_path / "futures_delta.csv"
     write_annotated_csv(result, out_path)
     with out_path.open(encoding="utf-8") as fh:
@@ -598,7 +614,7 @@ def test_write_annotated_csv_sign_flip_value(tmp_path: Path) -> None:
 def test_write_annotated_csv_creates_parent_dirs(tmp_path: Path) -> None:
     current = _make_rows(("ES Dec25", 100.0))
     prior = _make_rows(("ES Dec25", 80.0))
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     deep_path = tmp_path / "a" / "b" / "c" / "delta.csv"
     write_annotated_csv(result, deep_path)
     assert deep_path.exists()
@@ -607,7 +623,7 @@ def test_write_annotated_csv_creates_parent_dirs(tmp_path: Path) -> None:
 def test_write_annotated_csv_row_count(tmp_path: Path) -> None:
     current = _make_rows(("A Mar25", 10.0), ("B Mar25", 20.0))
     prior = _make_rows(("A Mar25", 5.0), ("B Mar25", 15.0))
-    result = compute_futures_delta(current, prior)
+    result = _compute_checked(current, prior)
     out_path = tmp_path / "delta.csv"
     write_annotated_csv(result, out_path)
     with out_path.open(encoding="utf-8") as fh:
@@ -635,7 +651,7 @@ def test_reference_subset_change_and_sign_flip() -> None:
         # Euro Dollar absent in prior – new position
     )
     col = _collector()
-    result = compute_futures_delta(current, prior, collector=col)
+    result = _compute_checked(current, prior, collector=col)
     rows = _records(result)
     by_desc = {r["description"]: r for r in rows}
 
