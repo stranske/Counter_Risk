@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 from counter_risk.config import WorkflowConfig
-from counter_risk.outputs import HistoricalWalWorkbookOutputGenerator, OutputContext
+from counter_risk.outputs import (
+    HistoricalWalWorkbookOutputGenerator,
+    HistoricalWorkbookOutputGenerator,
+    OutputContext,
+)
 
 
 def _minimal_config(tmp_path: Path) -> WorkflowConfig:
@@ -108,3 +113,68 @@ def test_historical_wal_generator_uses_explicit_workbook_path_when_provided(tmp_
 
     assert generated == (workbook_path,)
     assert locate_calls == []
+
+
+def test_historical_workbook_generator_wraps_pipeline_historical_update_flow(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    output_context = _output_context(tmp_path)
+    warnings: list[str] = []
+    copied: list[tuple[Path, Path]] = []
+    merged: list[tuple[Path, str, float, int]] = []
+    expected_outputs = (
+        run_dir / "hist_all.xlsx",
+        run_dir / "hist_ex.xlsx",
+        run_dir / "hist_llc.xlsx",
+    )
+
+    parsed_by_variant: dict[str, dict[str, object]] = {
+        "all_programs": {"totals": [{"Notional": 100.0}]},
+        "ex_trend": {"totals": [{"Notional": 200.0}]},
+        "trend": {"totals": [{"Notional": 300.0}]},
+    }
+
+    def _fake_copy(src: str | Path, dst: str | Path, *, follow_symlinks: bool = True) -> str:
+        del follow_symlinks
+        source = Path(src)
+        target = Path(dst)
+        copied.append((source, target))
+        target.write_bytes(source.read_bytes())
+        return str(target)
+
+    def _fake_records(table: Any) -> list[dict[str, object]]:
+        return [dict(record) for record in table]
+
+    def _fake_merge(
+        *,
+        workbook_path: Path,
+        variant: str,
+        as_of_date: date,
+        totals_records: list[dict[str, object]],
+        warnings: list[str],
+    ) -> None:
+        del warnings
+        merged.append(
+            (workbook_path, variant, float(totals_records[0]["Notional"]), as_of_date.month)
+        )
+
+    generator = HistoricalWorkbookOutputGenerator(
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+        workbook_copier=_fake_copy,
+        records_extractor=_fake_records,
+        workbook_merger=_fake_merge,
+    )
+
+    generated = generator.generate(context=output_context)
+
+    assert generator.name == "historical_workbook"
+    assert generated == expected_outputs
+    assert [target for _, target in copied] == list(expected_outputs)
+    assert merged == [
+        (expected_outputs[0], "all_programs", 100.0, 1),
+        (expected_outputs[1], "ex_trend", 200.0, 1),
+        (expected_outputs[2], "trend", 300.0, 1),
+    ]
