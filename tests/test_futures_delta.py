@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
+from counter_risk.compute.errors import NO_PRIOR_MATCH, NO_PRIOR_MONTH_MATCH
 from counter_risk.compute.futures_delta import (
     InvalidNotionalError,
     _extract_notional,
@@ -57,9 +58,25 @@ def _make_rows(*pairs: tuple[str, float]) -> list[dict[str, Any]]:
 
 
 def _records(result: Any) -> list[dict[str, Any]]:
+    if isinstance(result, tuple) and len(result) == 2:
+        result = result[0]
     if hasattr(result, "to_dict"):
-        return result.to_dict(orient="records")
+        return cast(list[dict[str, Any]], result.to_dict(orient="records"))
     return [dict(row) for row in result]
+
+
+def _compute_checked(
+    current: Any,
+    prior: Any,
+    *,
+    collector: WarningsCollector | None = None,
+) -> tuple[Any, WarningsCollector]:
+    """Call compute_futures_delta and assert the 2-value return contract."""
+    result, warnings = compute_futures_delta(current, prior, collector=collector)
+    assert isinstance(warnings, WarningsCollector)
+    if collector is not None:
+        assert warnings is collector
+    return result, warnings
 
 
 def _make_result_rows(
@@ -95,12 +112,14 @@ class TestWarningsCollector:
     def test_warn_without_code(self) -> None:
         col = WarningsCollector()
         col.warn("something went wrong")
-        assert col.warnings == ["something went wrong"]
+        assert col.warnings == [{"row_idx": -1, "message": "something went wrong"}]
 
     def test_warn_with_code(self) -> None:
         col = WarningsCollector()
         col.warn("bad value", code=WarningsCollector.INVALID_NOTIONAL)
-        assert col.warnings == ["[INVALID_NOTIONAL] bad value"]
+        assert col.warnings == [
+            {"row_idx": -1, "message": "bad value", "code": WarningsCollector.INVALID_NOTIONAL}
+        ]
 
     def test_warn_multiple(self) -> None:
         col = WarningsCollector()
@@ -113,7 +132,7 @@ class TestWarningsCollector:
         col = WarningsCollector()
         col.warn("hello")
         w1 = col.warnings
-        w1.append("mutate me")
+        w1.append({"row_idx": -1, "message": "mutate me"})
         assert len(col.warnings) == 1  # original unchanged
 
     def test_warning_codes_are_strings(self) -> None:
@@ -167,11 +186,15 @@ class TestWorkbookWriteBack:
 
     def test_locate_section_raises_when_no_marker(self, tmp_path: Path) -> None:
         """Workbook with no futures detail marker raises FuturesDetailNotFoundError."""
-        import openpyxl
-
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws["A1"] = "No marker here"
+        wb = load_mosers_workbook(_FIXTURE_PATH)
+        for ws in wb.worksheets:
+            for row in ws.iter_rows():
+                for cell in row:
+                    if (
+                        isinstance(cell.value, str)
+                        and cell.value.strip().lower() == "futures detail"
+                    ):
+                        cell.value = "No marker here"
         path = tmp_path / "no_marker.xlsx"
         wb.save(path)
 
@@ -181,15 +204,12 @@ class TestWorkbookWriteBack:
 
     def test_locate_section_raises_when_missing_prior_month_col(self, tmp_path: Path) -> None:
         """Missing 'Prior Month Notional' column raises FuturesDetailNotFoundError."""
-        import openpyxl
-
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws["A1"] = "Futures Detail"
-        ws["A2"] = "Description"
-        ws["B2"] = "Current Month Notional"
-        # No "Prior Month Notional" column
-        ws["A3"] = "Contract A Mar25"
+        wb = load_mosers_workbook(_FIXTURE_PATH)
+        section = locate_futures_detail_section(wb)
+        ws = wb[section.sheet_name]
+        ws.cell(row=section.header_col_row, column=section.prior_month_col).value = (
+            "Current Month Notional"
+        )
         path = tmp_path / "missing_col.xlsx"
         wb.save(path)
 
@@ -211,9 +231,9 @@ class TestWorkbookWriteBack:
             desc = str(ws.cell(row=data_row, column=section.description_col).value or "").strip()
             prior_val = ws.cell(row=data_row, column=section.prior_month_col).value
             expected = _PRIOR_NOTIONALS.get(desc)
-            assert prior_val == pytest.approx(expected), (
-                f"Row {data_row} ({desc!r}): expected {expected}, got {prior_val}"
-            )
+            assert prior_val == pytest.approx(
+                expected
+            ), f"Row {data_row} ({desc!r}): expected {expected}, got {prior_val}"
 
     def test_write_prior_month_notional_values_are_numeric(self, tmp_path: Path) -> None:
         """Written prior-month values must be numeric (not strings)."""
@@ -224,9 +244,9 @@ class TestWorkbookWriteBack:
         ws = wb[section.sheet_name]
         for data_row in range(section.data_start_row, section.data_end_row + 1):
             prior_val = ws.cell(row=data_row, column=section.prior_month_col).value
-            assert isinstance(prior_val, (int, float)), (
-                f"Row {data_row}: expected numeric, got {type(prior_val)}"
-            )
+            assert isinstance(
+                prior_val, (int, float)
+            ), f"Row {data_row}: expected numeric, got {type(prior_val)}"
 
     def test_write_only_modifies_prior_month_column(self, tmp_path: Path) -> None:
         """Only the prior-month notional column is modified; all other cells unchanged."""
@@ -327,7 +347,7 @@ class TestRawDescriptionSorting:
             ("ES Mar25", 15.0),
             ("CL Mar25", 25.0),
         )
-        result = compute_futures_delta(current, prior)
+        result = _compute_checked(current, prior)
         rows = _records(result)
         raw_descs = [r["description"] for r in rows]
         assert raw_descs == sorted(raw_descs)
@@ -348,7 +368,7 @@ class TestRawDescriptionSorting:
             ("Z-Bond Mar25", 2.0),
         )
         prior: list[dict[str, Any]] = []
-        result = compute_futures_delta(current, prior)
+        result = _compute_checked(current, prior)
         rows = _records(result)
         raw_descs = [r["description"] for r in rows]
         # Raw sort: "Z-Bond Mar25" (Z=90) < "a-Note Mar25" (a=97)
@@ -371,7 +391,7 @@ class TestRawDescriptionSorting:
             {"description": "ES Mar25", "notional": 30.0},
         ]
         prior: list[dict[str, Any]] = []
-        result = compute_futures_delta(current, prior)
+        result = _compute_checked(current, prior)
         rows = _records(result)
         assert [r["notional"] for r in rows] == pytest.approx([10.0, 20.0, 30.0])
 
@@ -383,7 +403,7 @@ class TestRawDescriptionSorting:
             ("Euro Dollar Jun25", 100.0),
         )
         prior: list[dict[str, Any]] = []
-        result = compute_futures_delta(current, prior)
+        result = _compute_checked(current, prior)
         rows = _records(result)
         raw_descs = [r["description"] for r in rows]
         assert raw_descs == sorted(raw_descs)
@@ -413,7 +433,7 @@ class TestNotionalValidation:
         result = _extract_notional(row, row_id="ES Mar25", collector=col)
         assert result == pytest.approx(0.0)
         assert len(col.warnings) == 1
-        assert "MISSING_NOTIONAL" in col.warnings[0] or "missing" in col.warnings[0].lower()
+        assert col.warnings[0].get("code") == WarningsCollector.MISSING_NOTIONAL
 
     def test_blank_notional_emits_warning(self) -> None:
         row = {"notional": "   "}
@@ -421,7 +441,7 @@ class TestNotionalValidation:
         result = _extract_notional(row, row_id="Row 0", collector=col)
         assert result == pytest.approx(0.0)
         assert len(col.warnings) == 1
-        assert "INVALID_NOTIONAL" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.INVALID_NOTIONAL
 
     def test_non_numeric_notional_emits_warning(self) -> None:
         row = {"notional": "not-a-number"}
@@ -429,7 +449,7 @@ class TestNotionalValidation:
         result = _extract_notional(row, row_id="Row 1", collector=col)
         assert result == pytest.approx(0.0)
         assert len(col.warnings) == 1
-        assert "INVALID_NOTIONAL" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.INVALID_NOTIONAL
 
     def test_nan_notional_emits_warning(self) -> None:
         row = {"notional": float("nan")}
@@ -437,7 +457,7 @@ class TestNotionalValidation:
         result = _extract_notional(row, row_id="Row 2", collector=col)
         assert result == pytest.approx(0.0)
         assert len(col.warnings) == 1
-        assert "INVALID_NOTIONAL" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.INVALID_NOTIONAL
 
     def test_nan_as_math_nan_emits_warning(self) -> None:
         row = {"notional": math.nan}
@@ -512,33 +532,33 @@ class TestValidateRow:
         col = WarningsCollector()
         assert _validate_row(row, row_idx=0, collector=col) is False
         assert len(col.warnings) == 1
-        assert "MISSING_DESCRIPTION" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.MISSING_DESCRIPTION
 
     def test_blank_description_returns_false(self) -> None:
         row = {"description": "   ", "notional": 100.0}
         col = WarningsCollector()
         assert _validate_row(row, row_idx=0, collector=col) is False
-        assert "MISSING_DESCRIPTION" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.MISSING_DESCRIPTION
 
     def test_missing_notional_returns_false(self) -> None:
         row = {"description": "ES Mar25"}  # no notional key
         col = WarningsCollector()
         assert _validate_row(row, row_idx=0, collector=col) is False
         assert len(col.warnings) == 1
-        assert "MISSING_NOTIONAL" in col.warnings[0]
+        assert col.warnings[0].get("code") == WarningsCollector.MISSING_NOTIONAL
 
     def test_invalid_description_warning_includes_row_idx(self) -> None:
         row = {"description": "", "notional": 100.0}
         col = WarningsCollector()
         _validate_row(row, row_idx=7, collector=col)
-        assert "7" in col.warnings[0]
+        assert col.warnings[0].get("row_idx") == 7
 
     def test_invalid_description_warning_includes_non_empty_fields(self) -> None:
         row = {"description": "", "notional": 42.0, "other": "x"}
         col = WarningsCollector()
         _validate_row(row, row_idx=0, collector=col)
-        # Warning should include available non-empty field values
-        assert "notional" in col.warnings[0] or "42" in col.warnings[0]
+        extras = col.warnings[0].get("available_non_empty_fields")
+        assert extras == {"notional": 42.0, "other": "x"}
 
     def test_invalid_row_excluded_from_compute(self) -> None:
         """Rows with missing/blank Description are excluded from delta computation."""
@@ -548,13 +568,13 @@ class TestValidateRow:
         ]
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
-        result = compute_futures_delta(current, prior, collector=col)
+        result = _compute_checked(current, prior, collector=col)
         rows = _records(result)
         # Only the valid row should appear in output
         assert len(rows) == 1
         assert rows[0]["description"] == "ES Mar25"
-        # A warning should have been emitted for the invalid row
-        assert any("MISSING_DESCRIPTION" in w for w in col.warnings)
+        # Blank-description row is filtered before per-row validation.
+        assert not any(w.get("code") == WarningsCollector.MISSING_DESCRIPTION for w in col.warnings)
 
     def test_row_with_missing_notional_excluded(self) -> None:
         """Rows with no notional key are excluded from delta computation."""
@@ -564,11 +584,11 @@ class TestValidateRow:
         ]
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
-        result = compute_futures_delta(current, prior, collector=col)
+        result = _compute_checked(current, prior, collector=col)
         rows = _records(result)
         assert len(rows) == 1
         assert rows[0]["description"] == "ES Mar25"
-        assert any("MISSING_NOTIONAL" in w for w in col.warnings)
+        assert any(w.get("code") == WarningsCollector.MISSING_NOTIONAL for w in col.warnings)
 
     def test_description_key_case_insensitive(self) -> None:
         """Both 'description' and 'Description' keys are accepted."""
@@ -590,27 +610,32 @@ class TestUnmatchedRowManifestWarnings:
         current = _make_rows(("NEW Contract Dec25", 100.0))
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
-        compute_futures_delta(current, prior, collector=col)
+        _compute_checked(current, prior, collector=col)
         # Exactly one warning for the unmatched current row
-        unmatched = [w for w in col.warnings if "Unmatched current" in w]
+        unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MONTH_MATCH]
         assert len(unmatched) == 1
-        assert "NO_PRIOR_MONTH_MATCH" in unmatched[0]
+        assert unmatched[0].get("row_idx") == 0
+        assert unmatched[0].get("description") == "NEW Contract Dec25"
 
     def test_unmatched_current_warning_includes_description(self) -> None:
         current = _make_rows(("MY UNIQUE TICKER Mar25", 1.0))
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
-        compute_futures_delta(current, prior, collector=col)
-        assert any("MY UNIQUE TICKER" in w for w in col.warnings)
+        _compute_checked(current, prior, collector=col)
+        assert any(
+            w.get("code") == NO_PRIOR_MONTH_MATCH
+            and w.get("description") == "MY UNIQUE TICKER Mar25"
+            for w in col.warnings
+        )
 
     def test_unmatched_prior_emits_no_prior_match_code(self) -> None:
         current: list[dict[str, Any]] = []
         prior = _make_rows(("Old Contract Dec25", 50.0))
         col = WarningsCollector()
-        compute_futures_delta(current, prior, collector=col)
-        unmatched = [w for w in col.warnings if "Unmatched prior" in w]
+        _compute_checked(current, prior, collector=col)
+        unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MATCH]
         assert len(unmatched) == 1
-        assert "NO_PRIOR_MONTH_MATCH" in unmatched[0]
+        assert unmatched[0].get("description") == "Old Contract Dec25"
 
     def test_one_warning_per_unmatched_row(self) -> None:
         current = _make_rows(
@@ -620,29 +645,31 @@ class TestUnmatchedRowManifestWarnings:
         )
         prior: list[dict[str, Any]] = []
         col = WarningsCollector()
-        compute_futures_delta(current, prior, collector=col)
-        unmatched = [w for w in col.warnings if "Unmatched current" in w]
+        _compute_checked(current, prior, collector=col)
+        unmatched = [w for w in col.warnings if w.get("code") == NO_PRIOR_MONTH_MATCH]
         assert len(unmatched) == 3
 
     def test_matched_rows_produce_no_unmatched_warning(self) -> None:
         current = _make_rows(("ES Mar25", 100.0))
         prior = _make_rows(("ES Mar25", 80.0))
         col = WarningsCollector()
-        compute_futures_delta(current, prior, collector=col)
+        _compute_checked(current, prior, collector=col)
         assert col.warnings == []
 
-    def test_unmatched_warning_not_returned_in_function_result(self) -> None:
-        """compute_futures_delta returns only the result table, not a warnings tuple."""
+    def test_compute_returns_result_and_warnings_tuple(self) -> None:
+        """compute_futures_delta returns exactly two values: (result, warnings)."""
         current = _make_rows(("Unmatched Mar25", 1.0))
         prior: list[dict[str, Any]] = []
-        result = compute_futures_delta(current, prior)
-        # Result must NOT be a tuple (no longer (result, warnings) pattern).
-        assert not isinstance(result, tuple)
+        result, warnings = _compute_checked(current, prior)
+        assert _records(result)
+        assert isinstance(warnings, WarningsCollector)
+        assert any(w.get("code") == NO_PRIOR_MONTH_MATCH for w in warnings.warnings)
 
     def test_no_collector_still_works(self) -> None:
-        """Calling without a collector should not raise; warnings go to logger only."""
+        """Calling without a collector should not raise and still return warnings."""
         current = _make_rows(("ES Mar25", 100.0))
         prior: list[dict[str, Any]] = []
-        result = compute_futures_delta(current, prior)
+        result, warnings = _compute_checked(current, prior)
         rows = _records(result)
         assert len(rows) == 1
+        assert any(w.get("code") == NO_PRIOR_MONTH_MATCH for w in warnings.warnings)

@@ -1034,6 +1034,9 @@ def test_run_pipeline_wraps_compute_errors(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
 
     def _boom(
         _: dict[str, dict[str, Any]],
@@ -1053,6 +1056,9 @@ def test_run_pipeline_wraps_historical_update_errors(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
 
     def _boom(
         *,
@@ -1114,6 +1120,9 @@ def test_run_pipeline_passes_as_of_date_and_parsed_inputs_to_historical_update(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
     calls: list[dict[str, Any]] = []
 
     def _capture(
@@ -2067,3 +2076,114 @@ def test_rebuild_pptx_replacing_charts_raises_for_full_deck_rebuild_on_low_confi
         )
 
     assert not output.exists()
+
+
+# ---------------------------------------------------------------------------
+# _apply_chart_replacement tests
+# ---------------------------------------------------------------------------
+
+
+def test_apply_chart_replacement_skips_on_non_windows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """On non-Windows, chart replacement is silently skipped."""
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Linux")
+    result = run_module._apply_chart_replacement(
+        master_pptx_path=tmp_path / "master.pptx",
+        output_path=tmp_path / "out.pptx",
+        run_dir=tmp_path,
+        static_mode=False,
+        warnings=[],
+    )
+    assert result is False
+
+
+def test_apply_chart_replacement_skips_when_no_chart_shapes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When COM finds no chart shapes, replacement is skipped."""
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Windows")
+
+    class _FakeShape:
+        Type = 1
+        HasChart = False
+        Id = 1
+        Name = "TextBox"
+
+        def Export(self, path: str, fmt: str) -> None:  # noqa: N802
+            raise AssertionError("should not be called")
+
+    class _SlideList:
+        Count = 1
+
+        def __getitem__(self, idx: int) -> Any:
+            class _Slide:
+                Shapes = [_FakeShape()]
+
+            return _Slide()
+
+    class _FakePres:
+        Slides = _SlideList()
+
+        def Close(self) -> None:  # noqa: N802
+            pass
+
+    class _FakeApp:
+        Visible = False
+        Presentations = types.SimpleNamespace(Open=lambda *a, **kw: _FakePres())
+
+        def Quit(self) -> None:  # noqa: N802
+            pass
+
+    fake_client = types.SimpleNamespace(DispatchEx=lambda *a, **kw: _FakeApp())
+    fake_win32com = types.ModuleType("win32com")
+    cast(Any, fake_win32com).client = fake_client
+    monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+
+    source = tmp_path / "master.pptx"
+    source.write_bytes(b"fake")
+    warnings: list[str] = []
+    result = run_module._apply_chart_replacement(
+        master_pptx_path=source,
+        output_path=tmp_path / "out.pptx",
+        run_dir=tmp_path,
+        static_mode=False,
+        warnings=warnings,
+    )
+    assert result is False
+
+
+def test_apply_chart_replacement_returns_false_on_com_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When COM session raises, replacement returns False and records a warning."""
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Windows")
+
+    class _FailApp:
+        Visible = False
+        Presentations = types.SimpleNamespace(
+            Open=lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("COM init failed"))
+        )
+
+        def Quit(self) -> None:  # noqa: N802
+            pass
+
+    fake_client = types.SimpleNamespace(DispatchEx=lambda *a, **kw: _FailApp())
+    fake_win32com = types.ModuleType("win32com")
+    cast(Any, fake_win32com).client = fake_client
+    monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+
+    source = tmp_path / "master.pptx"
+    source.write_bytes(b"fake")
+    warnings: list[str] = []
+    result = run_module._apply_chart_replacement(
+        master_pptx_path=source,
+        output_path=tmp_path / "out.pptx",
+        run_dir=tmp_path,
+        static_mode=False,
+        warnings=warnings,
+    )
+    assert result is False
+    assert any("chart_replacement COM session failed" in w for w in warnings)
