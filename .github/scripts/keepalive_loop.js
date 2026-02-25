@@ -860,7 +860,6 @@ function countCheckboxes(markdown) {
 // must be independently verified, not auto-checked by parent cascade.
 const ACCEPTANCE_HEADING_PATTERNS = [
   /acceptance\s*criteria/i,
-  /acceptance/i,
   /definition\s*of\s*done/i,
   /done\s*criteria/i,
 ];
@@ -3134,14 +3133,15 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
         3,
       ),
     );
-    // Only count agent-execution rounds (fix/run/conflict) toward the
-    // complete-gate-failure budget.  Transient wait/skip/stop/defer rounds
-    // should not consume the budget — they represent infrastructure noise
-    // (e.g., gate cancelled, rate limits) rather than failed fix attempts.
+    // Increment the complete-gate-failure counter whenever the gate has
+    // *actually* failed (conclusion === 'failure'), regardless of the chosen
+    // action.  Transient non-failure states (cancelled, pending) preserve the
+    // counter without incrementing, so infrastructure noise doesn't reset
+    // progress toward the stop threshold but also doesn't advance it.
     const isAgentExecution = AGENT_EXECUTION_ACTIONS.has(action);
     const gateActuallyFailed = gateConclusion === 'failure';
     const completeGateFailureRounds =
-      allTasksComplete && gateActuallyFailed && isAgentExecution
+      allTasksComplete && gateActuallyFailed
         ? previousCompleteGateFailureRounds + 1
         : allTasksComplete && gateConclusion && gateConclusion !== 'success'
           ? previousCompleteGateFailureRounds // preserve count for non-success, don't increment
@@ -3583,12 +3583,34 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
     if (tasksUnchecked > 0) {
       verification = {};
     } else if (reason === 'verify-acceptance') {
+      const previousAttemptCount = toNumber(verification?.attempt_count, 0);
       verification = {
         status: runResult === 'success' ? 'done' : 'failed',
         iteration: nextIteration,
+        attempt_count: previousAttemptCount + 1,
         last_result: runResult || '',
         updated_at: new Date().toISOString(),
       };
+    } else if (reason === 'fix-verification-gaps') {
+      const previousAttemptCount = toNumber(verification?.attempt_count, 0);
+      if (runResult === 'success') {
+        // A successful fix run doesn't prove acceptance criteria are met.
+        // Clear verification state (except attempt_count) so that
+        // needsVerification triggers a fresh verifier pass next iteration.
+        verification = {
+          attempt_count: previousAttemptCount + 1,
+        };
+      } else {
+        // Fix failed — keep as failed so needsVerificationRetry can
+        // decide whether to retry or exhaust.
+        verification = {
+          status: 'failed',
+          iteration: nextIteration,
+          attempt_count: previousAttemptCount + 1,
+          last_result: runResult || '',
+          updated_at: new Date().toISOString(),
+        };
+      }
     }
 
     const newState = {
