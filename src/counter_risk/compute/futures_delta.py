@@ -125,13 +125,11 @@ def compute_futures_delta(
     prior: Any,
     *,
     collector: WarningsCollector | None = None,
-) -> Any:
+) -> tuple[Any, list[dict[str, Any]]]:
     """Join current and prior month futures detail, compute change and sign-flip flags.
 
     Warnings (unmatched rows, invalid notional, missing fields) are emitted via the
-    module-level logger **and** pushed to *collector* when one is supplied.  The
-    function does **not** return a warnings list; callers should inspect
-    ``collector.warnings`` after the call.
+    module-level logger **and** pushed to *collector* when one is supplied.
 
     Parameters
     ----------
@@ -148,9 +146,9 @@ def compute_futures_delta(
 
     Returns
     -------
-    result:
-        Annotated table (a :class:`pandas.DataFrame` when pandas is available,
-        otherwise a list of dicts) with columns:
+    tuple[result, warnings]:
+        ``result`` is the annotated table (a :class:`pandas.DataFrame` when pandas
+        is available, otherwise a list of dicts) with columns:
 
         * ``description`` – original description from the current-month row.
         * ``notional`` – current-month notional.
@@ -159,6 +157,9 @@ def compute_futures_delta(
         * ``notional_change`` – ``notional - prior_notional``.
         * ``sign_flip`` – ``"*"`` when the sign changed between months
           (both values non-zero and of opposite sign), ``""`` otherwise.
+
+        ``warnings`` is the structured warning list collected during computation
+        (same objects as ``collector.warnings`` when a collector is supplied).
 
         Rows are sorted ascending by the raw ``description`` text (exact input
         string, no normalisation applied to the sort key).  Ties (duplicate
@@ -263,7 +264,10 @@ def compute_futures_delta(
     # Python's sort is stable: duplicate descriptions preserve input order.
     records.sort(key=lambda r: str(r.get("description", "")))
 
-    return _to_output(records=records)
+    result = _to_output(records=records)
+    if collector is None:
+        return result, []
+    return result, collector.warnings
 
 
 # ---------------------------------------------------------------------------
@@ -282,6 +286,8 @@ def write_annotated_csv(result: Any, path: Path | str) -> None:
     path:
         Destination file path.  Parent directories are created automatically.
     """
+    if isinstance(result, tuple) and len(result) == 2:
+        result = result[0]
     rows = _to_row_list(result, arg="result")
     out_path = Path(path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
