@@ -1001,7 +1001,7 @@ def _write_outputs(
         warnings=warnings,
     )
     output_paths.extend(static_output_paths)
-    if config.ppt_output_enabled and any(path.suffix.lower() == ".pptx" for path in output_paths):
+    if refresh_result.status == PptProcessingStatus.SUCCESS:
         readme_path = run_dir / "README.txt"
         readme_path.write_text(
             build_run_folder_readme_content(as_of_date, readme_ppt_outputs),
