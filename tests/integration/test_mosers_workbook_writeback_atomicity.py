@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from openpyxl import Workbook
 
 from counter_risk.io.mosers_workbook import (
     FuturesDetailNotFoundError,
@@ -12,6 +11,8 @@ from counter_risk.io.mosers_workbook import (
 
 
 def _build_source_without_futures_detail(path: Path) -> Path:
+    from openpyxl import Workbook  # type: ignore[import-untyped]
+
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = "Inputs"
