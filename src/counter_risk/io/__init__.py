@@ -1,5 +1,6 @@
 """I/O helpers for reading and writing external workbook formats."""
 
+from counter_risk.io.errors import DuplicateDescriptionError
 from counter_risk.io.mosers_workbook import (
     FuturesDetailNotFoundError,
     FuturesDetailSection,
@@ -12,6 +13,7 @@ from counter_risk.io.mosers_workbook import (
 )
 
 __all__ = [
+    "DuplicateDescriptionError",
     "FuturesDetailNotFoundError",
     "FuturesDetailSection",
     "atomic_writeback_with_section_locate",
