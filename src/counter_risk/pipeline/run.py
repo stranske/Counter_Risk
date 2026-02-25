@@ -17,7 +17,12 @@ from zipfile import BadZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
-from counter_risk.normalize import canonicalize_name, normalize_counterparty, resolve_counterparty
+from counter_risk.normalize import (
+    canonicalize_name,
+    normalize_counterparty,
+    normalize_counterparty_with_source,
+    resolve_counterparty,
+)
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
@@ -405,7 +410,7 @@ def _counterparty_resolution_maps_from_records(
         raw_name = str(record.get("counterparty", "")).strip()
         if not raw_name:
             continue
-        resolution = resolve_counterparty(raw_name)
+        resolution = normalize_counterparty_with_source(raw_name)
         normalized_to_raw.setdefault(resolution.canonical_name, set()).add(raw_name)
         sources_by_raw_name[raw_name] = resolution.source
     return normalized_to_raw, sources_by_raw_name
