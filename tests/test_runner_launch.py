@@ -8,8 +8,8 @@ import pytest
 
 from counter_risk.runner_launch import (
     RunnerMode,
-    build_discovery_dry_run_command,
     build_command,
+    build_discovery_dry_run_command,
     open_output_folder,
     resolve_output_dir,
 )
