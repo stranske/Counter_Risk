@@ -5,3 +5,8 @@ entries:
     aliases:
       - Soc Gen Inc
       - Societe Generale
+  - canonical_key: jp_morgan_chase
+    display_name: JPMorgan Chase
+    aliases:
+      - J.P. Morgan
+      - JP Morgan Chase
