@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from counter_risk.normalize import resolve_counterparty
+from counter_risk.normalize import resolve_clearing_house, resolve_counterparty
 from counter_risk.pipeline.run import reconcile_series_coverage
 from counter_risk.reports.mapping_diff import generate_mapping_diff_report
 
@@ -83,6 +83,31 @@ def test_resolve_counterparty_uses_registry_direct_canonical_match_before_fallba
     assert display_name_match.source == "registry"
     assert canonical_key_match.canonical_name == "Soc Gen"
     assert canonical_key_match.source == "registry"
+
+
+def test_resolve_clearing_house_returns_registry_source_when_name_is_in_registry(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: custom_ch",
+                "    display_name: Custom Clearing House",
+                "    aliases:",
+                "      - Custom CH",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    resolution = resolve_clearing_house("Custom CH", registry_path=registry_path)
+
+    assert resolution.canonical_name == "Custom Clearing House"
+    assert resolution.source == "registry"
 
 
 def test_reconciliation_with_after_registry_has_no_societe_generale_warning(
