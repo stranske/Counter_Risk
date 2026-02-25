@@ -8,6 +8,7 @@ from typing import Any, cast
 
 import pytest
 
+from counter_risk.compute.errors import NO_PRIOR_MATCH, NO_PRIOR_MONTH_MATCH
 from counter_risk.compute.futures_delta import (
     compute_futures_delta,
     is_blank_description,
@@ -202,6 +203,16 @@ def test_unmatched_current_row_gets_zero_prior_and_warning() -> None:
     assert any("Unmatched prior" in w for w in col.warnings)
 
 
+def test_unmatched_current_row_emits_no_prior_month_match_code() -> None:
+    current = _make_rows(("New Contract Dec25", 200.0))
+    prior: list[dict[str, Any]] = []
+    col = _collector()
+
+    compute_futures_delta(current, prior, collector=col)
+
+    assert any(w.startswith(f"[{NO_PRIOR_MONTH_MATCH}] ") for w in col.warnings)
+
+
 def test_unmatched_prior_only_produces_warning() -> None:
     current = _make_rows(("Contract A Mar25", 100.0))
     prior = _make_rows(
@@ -211,6 +222,16 @@ def test_unmatched_prior_only_produces_warning() -> None:
     col = _collector()
     compute_futures_delta(current, prior, collector=col)
     assert any("Unmatched prior" in w and "Contract B" in w for w in col.warnings)
+
+
+def test_unmatched_prior_row_emits_no_prior_match_code() -> None:
+    current = _make_rows(("Contract A Mar25", 100.0))
+    prior = _make_rows(("Contract A Mar25", 80.0), ("Contract B Mar25", 50.0))
+    col = _collector()
+
+    compute_futures_delta(current, prior, collector=col)
+
+    assert any(w.startswith(f"[{NO_PRIOR_MATCH}] ") and "Contract B" in w for w in col.warnings)
 
 
 def test_unmatched_prior_not_in_result_rows() -> None:
