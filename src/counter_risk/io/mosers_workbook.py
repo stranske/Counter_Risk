@@ -493,8 +493,5 @@ def _raise_on_duplicate_normalized_descriptions(rows: list[dict[str, Any]]) -> N
 
 def _result_to_records(result: Any) -> list[dict[str, Any]]:
     """Normalize compute output to list-of-dicts shape accepted by write-back."""
-    if hasattr(result, "to_dict"):
-        records = result.to_dict(orient="records")
-    else:
-        records = result
+    records = result.to_dict(orient="records") if hasattr(result, "to_dict") else result
     return [dict(row) for row in records]
