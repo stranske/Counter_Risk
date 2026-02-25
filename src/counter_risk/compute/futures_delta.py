@@ -167,17 +167,9 @@ def compute_futures_delta(
     current_rows = _to_row_list(current, arg="current")
     prior_rows = _to_row_list(prior, arg="prior")
 
-    # Exclude blank-description rows from both datasets before matching.
-    current_rows = [
-        row
-        for row in current_rows
-        if not is_blank_description(row.get("description", row.get("Description")))
-    ]
-    prior_rows = [
-        row
-        for row in prior_rows
-        if not is_blank_description(row.get("description", row.get("Description")))
-    ]
+    # Exclude blank-description rows from both datasets before any matching work.
+    current_rows = _filter_rows_with_nonblank_description(current_rows)
+    prior_rows = _filter_rows_with_nonblank_description(prior_rows)
 
     # Group by normalised description (blank descriptions excluded) before aggregation/matching.
     current_groups = _group_rows_by_normalized_description(current_rows)
@@ -322,6 +314,17 @@ def _group_rows_by_normalized_description(
         key = normalize_description(str(desc_raw))
         grouped.setdefault(key, []).append(row)
     return grouped
+
+
+def _filter_rows_with_nonblank_description(
+    rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Return rows whose Description/description value is non-blank."""
+    return [
+        row
+        for row in rows
+        if not is_blank_description(row.get("description", row.get("Description")))
+    ]
 
 
 def _validate_row(
