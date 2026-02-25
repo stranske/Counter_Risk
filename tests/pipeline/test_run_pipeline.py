@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import platform
 import re
 import sys
 import types
 from datetime import date
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import pytest
 
@@ -1500,6 +1501,94 @@ def test_create_static_distribution_warns_when_win32com_missing(
     assert "win32com" in warnings[0]
 
 
+def test_create_static_distribution_rebuilds_from_slide_images(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """On Windows with COM, static output is rebuilt from one exported image per slide."""
+    from pptx import Presentation
+
+    monkeypatch.setattr(platform, "system", lambda: "Windows")
+
+    source_pptx = tmp_path / "source.pptx"
+    source_prs = Presentation()
+    blank_layout = source_prs.slide_layouts[6]
+    source_prs.slides.add_slide(blank_layout)
+    source_prs.slides.add_slide(blank_layout)
+    source_prs.save(str(source_pptx))
+
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    config = _make_minimal_config(tmp_path / "cfg", distribution_static=True)
+    warnings: list[str] = []
+
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+        b"\x00\x00\x00\rIDATx\x9cc\xf8\xcf\xc0\xf0\x1f\x00\x05\x00\x01\xff\x89\x99=\x1d"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+
+    class _FakeSlide:
+        def __init__(self, slide_idx: int) -> None:
+            self._slide_idx = slide_idx
+
+        def Export(self, path: str, fmt: str) -> None:  # noqa: N802
+            assert fmt == "PNG"
+            Path(path).write_bytes(png_bytes)
+
+    class _FakeSlides:
+        def __init__(self, count: int) -> None:
+            self.Count = count
+            self._slides = {idx: _FakeSlide(idx) for idx in range(1, count + 1)}
+
+        def __getitem__(self, idx: int) -> _FakeSlide:
+            return self._slides[idx]
+
+    class _FakePresentation:
+        def __init__(self) -> None:
+            self.Slides = _FakeSlides(2)
+
+        def ExportAsFixedFormat(self, path: str, fmt: int) -> None:  # noqa: N802
+            assert fmt == 2
+            Path(path).write_bytes(b"%PDF-1.4\n")
+
+        def Close(self) -> None:  # noqa: N802
+            return None
+
+    class _FakePowerPointApplication:
+        def __init__(self) -> None:
+            self.Visible = False
+            self.Presentations = types.SimpleNamespace(
+                Open=lambda *_args, **_kwargs: _FakePresentation()
+            )
+
+        def Quit(self) -> None:  # noqa: N802
+            return None
+
+    fake_client = types.SimpleNamespace(
+        DispatchEx=lambda *_args, **_kwargs: _FakePowerPointApplication()
+    )
+    fake_win32com = types.ModuleType("win32com")
+    cast(Any, fake_win32com).client = fake_client
+    monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+
+    output = run_module._create_static_distribution(
+        source_pptx=source_pptx,
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+    )
+
+    static_paths = [path for path in output if path.suffix == ".pptx"]
+    assert len(static_paths) == 1
+    assert warnings == []
+
+    output_prs = Presentation(str(static_paths[0]))
+    assert len(output_prs.slides) == 2
+
+
 def test_run_pipeline_manifest_includes_distribution_static_warning(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1830,3 +1919,151 @@ def test_rebuild_pptx_replacing_charts_preserves_position(
     assert new_shape.top == orig_top
     assert new_shape.width == orig_width
     assert new_shape.height == orig_height
+
+
+def test_shape_match_confidence_high_when_name_is_unique() -> None:
+    class _Shape:
+        def __init__(self) -> None:
+            self.name = "Chart 1"
+            self.left = 10
+            self.top = 10
+            self.width = 100
+            self.height = 100
+
+    confidence = run_module._shape_match_confidence(
+        target_name="Chart 1",
+        candidate_shapes=[_Shape()],
+    )
+
+    assert confidence >= 0.95
+
+
+def test_shape_match_confidence_low_when_name_is_duplicated() -> None:
+    class _Shape:
+        def __init__(self) -> None:
+            self.name = "Chart 1"
+            self.left = 10
+            self.top = 10
+            self.width = 100
+            self.height = 100
+
+    confidence = run_module._shape_match_confidence(
+        target_name="Chart 1",
+        candidate_shapes=[_Shape(), _Shape()],
+    )
+
+    assert confidence < 0.8
+
+
+def test_rebuild_pptx_replacing_charts_replaces_whole_slide_on_low_confidence(
+    tmp_path: Path,
+) -> None:
+    from pptx import Presentation
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+    from pptx.util import Inches
+
+    # Build a slide with duplicate names to force low-confidence per-shape matching.
+    source = _make_test_pptx_with_picture(tmp_path, "Chart OLE")
+    prs = Presentation(str(source))
+    slide = prs.slides[0]
+    second_shape_image = tmp_path / "shape2.png"
+    second_shape_image.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    duplicate = slide.shapes.add_picture(str(second_shape_image), Inches(2), Inches(2))
+    duplicate.name = "Chart OLE"
+    prs.save(str(source))
+
+    replacement = tmp_path / "replacement.png"
+    replacement.write_bytes(second_shape_image.read_bytes())
+    slide_fallback = tmp_path / "slide_fallback.png"
+    slide_fallback.write_bytes(second_shape_image.read_bytes())
+
+    output = tmp_path / "out.pptx"
+    run_module._rebuild_pptx_replacing_charts(
+        source_pptx=source,
+        output_path=output,
+        chart_images={(1, "Chart OLE"): replacement},
+        fallback_slide_images={1: slide_fallback},
+    )
+
+    rebuilt = Presentation(str(output))
+    shapes = list(rebuilt.slides[0].shapes)
+    assert len(shapes) == 1
+    assert shapes[0].shape_type == MSO_SHAPE_TYPE.PICTURE
+
+
+def test_rebuild_pptx_replacing_charts_raises_when_low_confidence_has_no_slide_fallback(
+    tmp_path: Path,
+) -> None:
+    from pptx import Presentation
+    from pptx.util import Inches
+
+    source = _make_test_pptx_with_picture(tmp_path, "Chart OLE")
+    prs = Presentation(str(source))
+    slide = prs.slides[0]
+    second_shape_image = tmp_path / "shape2.png"
+    second_shape_image.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    duplicate = slide.shapes.add_picture(str(second_shape_image), Inches(2), Inches(2))
+    duplicate.name = "Chart OLE"
+    prs.save(str(source))
+
+    replacement = tmp_path / "replacement.png"
+    replacement.write_bytes(second_shape_image.read_bytes())
+    output = tmp_path / "out.pptx"
+
+    with pytest.raises(RuntimeError, match="no slide-image fallback"):
+        run_module._rebuild_pptx_replacing_charts(
+            source_pptx=source,
+            output_path=output,
+            chart_images={(1, "Chart OLE"): replacement},
+        )
+
+
+def test_rebuild_pptx_replacing_charts_raises_for_full_deck_rebuild_on_low_confidence(
+    tmp_path: Path,
+) -> None:
+    from pptx import Presentation
+    from pptx.util import Inches
+
+    source = _make_test_pptx_with_picture(tmp_path, "Chart OLE")
+    prs = Presentation(str(source))
+    slide = prs.slides[0]
+    second_shape_image = tmp_path / "shape2.png"
+    second_shape_image.write_bytes(
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x02\x00\x00\x00\x90wS\xde"
+        b"\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+    duplicate = slide.shapes.add_picture(str(second_shape_image), Inches(2), Inches(2))
+    duplicate.name = "Chart OLE"
+    prs.save(str(source))
+
+    replacement = tmp_path / "replacement.png"
+    replacement.write_bytes(second_shape_image.read_bytes())
+    slide_fallback = tmp_path / "slide_fallback.png"
+    slide_fallback.write_bytes(second_shape_image.read_bytes())
+    output = tmp_path / "out.pptx"
+
+    with pytest.raises(RuntimeError, match="full-deck static rebuild required"):
+        run_module._rebuild_pptx_replacing_charts(
+            source_pptx=source,
+            output_path=output,
+            chart_images={(1, "Chart OLE"): replacement},
+            fallback_slide_images={1: slide_fallback},
+            fallback_to_full_deck_rebuild=True,
+        )
+
+    assert not output.exists()
