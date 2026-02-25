@@ -390,9 +390,7 @@ def _validate_row(
     desc_raw = row.get("description", row.get("Description"))
     if desc_raw is None or str(desc_raw).strip() == "":
         non_empty = {k: v for k, v in row.items() if v is not None and str(v).strip() != ""}
-        msg = (
-            f"Row {row_idx}: missing/blank Description; " f"available non-empty fields: {non_empty}"
-        )
+        msg = f"Row {row_idx}: missing/blank Description; available non-empty fields: {non_empty}"
         _LOG.warning(msg)
         if collector is not None:
             collector.add_structured(
