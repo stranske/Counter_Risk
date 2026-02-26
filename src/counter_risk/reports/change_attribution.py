@@ -62,6 +62,8 @@ def _first_string(record: Mapping[str, Any], candidates: tuple[str, ...]) -> str
 def _first_float(record: Mapping[str, Any], candidates: tuple[str, ...]) -> float:
     for key in candidates:
         value = record.get(key)
+        if value is None:
+            continue
         try:
             return float(value)
         except (TypeError, ValueError):
@@ -74,6 +76,8 @@ def _optional_float(record: Mapping[str, Any], candidates: tuple[str, ...]) -> f
         if key not in record:
             continue
         value = record.get(key)
+        if value is None:
+            return None
         try:
             return float(value)
         except (TypeError, ValueError):
