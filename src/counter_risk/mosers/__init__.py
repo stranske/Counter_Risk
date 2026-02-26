@@ -11,6 +11,7 @@ from .workbook_generation import (
     generate_mosers_workbook_ex_trend,
     generate_mosers_workbook_trend,
     get_mosers_all_programs_output_structure,
+    get_mosers_ex_trend_output_structure,
 )
 
 __all__ = [
@@ -20,6 +21,7 @@ __all__ = [
     "generate_mosers_workbook_trend",
     "get_mosers_template_bytes",
     "get_mosers_all_programs_output_structure",
+    "get_mosers_ex_trend_output_structure",
     "get_mosers_template_path",
     "load_mosers_template_workbook",
 ]
