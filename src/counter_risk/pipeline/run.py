@@ -81,6 +81,7 @@ _REQUIRED_HISTORICAL_APPEND_HEADERS: tuple[str, ...] = (
     "value series 1",
     "value series 2",
 )
+_CPRS_CH_TOTAL_TOLERANCE = 1e-6
 _REQUIRED_INPUT_FIELDS: tuple[str, ...] = (
     "mosers_ex_trend_xlsx",
     "mosers_trend_xlsx",
@@ -2118,6 +2119,11 @@ def _run_reconciliation_checks(
         "ex_trend": config.hist_ex_llc_3yr_xlsx,
         "trend": config.hist_llc_3yr_xlsx,
     }
+    variant_mosers_paths: dict[str, Path | None] = {
+        "all_programs": config.mosers_all_programs_xlsx,
+        "ex_trend": config.mosers_ex_trend_xlsx,
+        "trend": config.mosers_trend_xlsx,
+    }
 
     total_gap_count = 0
     impacted_series_count = 0
@@ -2140,6 +2146,17 @@ def _run_reconciliation_checks(
             expected_segments_by_variant=config.reconciliation.expected_segments_by_variant,
             fail_policy=config.reconciliation.fail_policy,
         )
+        cprs_ch_totals_check = _evaluate_cprs_ch_totals_reconciliation(
+            parsed_sections=parsed_sections,
+            variant=variant,
+            mosers_workbook_path=variant_mosers_paths.get(variant),
+        )
+        result["cprs_ch_totals_check"] = cprs_ch_totals_check
+        if cprs_ch_totals_check.get("status") == "failed":
+            total_gap_count += 1
+            warning_message = str(cprs_ch_totals_check.get("message", "")).strip()
+            if warning_message:
+                warnings.append(f"Reconciliation ({variant}): {warning_message}")
         reconciliation_by_variant[variant] = result
         total_gap_count += int(result.get("gap_count", 0))
         result_exceptions = result.get("exceptions")
@@ -2211,11 +2228,128 @@ def _run_reconciliation_checks(
 
 def _serializable_reconciliation_result(result: Mapping[str, Any]) -> dict[str, Any]:
     serializable: dict[str, Any] = {}
-    for key in ("gap_count", "warnings", "missing_series", "missing_segments", "by_sheet"):
+    for key in (
+        "gap_count",
+        "warnings",
+        "missing_series",
+        "missing_segments",
+        "by_sheet",
+        "cprs_ch_totals_check",
+    ):
         value = result.get(key)
         if value is not None:
             serializable[key] = value
     return serializable
+
+
+def _evaluate_cprs_ch_totals_reconciliation(
+    *, parsed_sections: Mapping[str, Any], variant: str, mosers_workbook_path: Path | None
+) -> dict[str, Any]:
+    cprs_ch_records = _records(parsed_sections.get("cprs_ch", []))
+    totals_records = _records(parsed_sections.get("totals", []))
+
+    expected_total: float | None = None
+    expected_total_source = "parsed_cprs_ch_rows"
+    if cprs_ch_records:
+        expected_total = sum(
+            float(record.get("Notional", 0.0) or 0.0) for record in cprs_ch_records
+        )
+    else:
+        if mosers_workbook_path is None:
+            return {
+                "status": "skipped",
+                "message": (
+                    f"CPRS-CH totals check skipped for variant {variant!r}: no mosers workbook path"
+                ),
+            }
+        expected_total_source = "cprs_ch_mosers_program_row"
+        try:
+            expected_total = _extract_mosers_program_notional_from_cprs_ch(
+                workbook_path=mosers_workbook_path
+            )
+        except Exception as exc:
+            return {
+                "status": "failed",
+                "message": (
+                    f"CPRS-CH totals check failed for variant {variant!r}: "
+                    f"unable to read CPRS - CH total from {mosers_workbook_path} ({exc})"
+                ),
+            }
+        if expected_total is None:
+            return {
+                "status": "skipped",
+                "message": (
+                    f"CPRS-CH totals check skipped for variant {variant!r}: "
+                    "CPRS - CH did not contain a MOSERS Program notional row"
+                ),
+            }
+
+    computed_total = sum(float(record.get("Notional", 0.0) or 0.0) for record in totals_records)
+    absolute_difference = abs(expected_total - computed_total)
+
+    result: dict[str, Any] = {
+        "status": "passed" if absolute_difference <= _CPRS_CH_TOTAL_TOLERANCE else "failed",
+        "mosers_cprs_ch_total_notional": expected_total,
+        "computed_total_notional": computed_total,
+        "absolute_difference": absolute_difference,
+        "tolerance": _CPRS_CH_TOTAL_TOLERANCE,
+        "expected_total_source": expected_total_source,
+    }
+    if result["status"] == "failed":
+        result["message"] = (
+            "CPRS-CH totals mismatch: "
+            f"mosers_total={expected_total:.6f}, computed_total={computed_total:.6f}, "
+            f"absolute_difference={absolute_difference:.6f}"
+        )
+    return result
+
+
+def _extract_mosers_program_notional_from_cprs_ch(*, workbook_path: Path) -> float | None:
+    try:
+        from openpyxl import load_workbook
+    except ImportError as exc:  # pragma: no cover - environment-dependent
+        raise RuntimeError("CPRS-CH totals check requires openpyxl") from exc
+
+    workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+    workbook_obj: Any = workbook
+    try:
+        sheet_name = _locate_cprs_ch_sheet_name(
+            sheet_names=list(getattr(workbook_obj, "sheetnames", []))
+        )
+        if sheet_name is None:
+            return None
+        worksheet = workbook_obj[sheet_name]
+
+        max_row = int(getattr(worksheet, "max_row", 0))
+        for row in range(1, max_row + 1):
+            label = str(worksheet.cell(row=row, column=3).value or "").strip()
+            if not label:
+                continue
+            if "mosers program" not in label.casefold():
+                continue
+            raw_notional = worksheet.cell(row=row, column=11).value
+            if raw_notional in (None, ""):
+                return None
+            try:
+                return float(raw_notional)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "MOSERS Program row has non-numeric Notional value in CPRS - CH sheet"
+                ) from exc
+        return None
+    finally:
+        workbook_obj.close()
+
+
+def _locate_cprs_ch_sheet_name(*, sheet_names: list[str]) -> str | None:
+    for sheet_name in sheet_names:
+        if sheet_name.strip().casefold() == "cprs - ch":
+            return sheet_name
+    for sheet_name in sheet_names:
+        normalized = sheet_name.strip().casefold()
+        if "cprs" in normalized and "ch" in normalized:
+            return sheet_name
+    return None
 
 
 def _extract_unmatched_mappings(

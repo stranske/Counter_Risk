@@ -615,6 +615,133 @@ def test_run_reconciliation_checks_strict_raises_unmapped_counterparty_error_fro
     assert exc_info.value.normalized_counterparty == "ACME LTD"
 
 
+def test_evaluate_cprs_ch_totals_reconciliation_passes_when_totals_match() -> None:
+    result = run_module._evaluate_cprs_ch_totals_reconciliation(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Counterparty A", "Notional": 60.0},
+                    {"counterparty": "Counterparty B", "Notional": 40.0},
+                ]
+            ),
+            "cprs_ch": _FakeDataFrame(
+                records=[
+                    {"Counterparty": "Counterparty A", "Notional": 70.0},
+                    {"Counterparty": "Counterparty B", "Notional": 30.0},
+                ]
+            ),
+        },
+        variant="all_programs",
+        mosers_workbook_path=None,
+    )
+
+    assert result["status"] == "passed"
+    assert result["mosers_cprs_ch_total_notional"] == 100.0
+    assert result["computed_total_notional"] == 100.0
+    assert result["absolute_difference"] == 0.0
+    assert "message" not in result
+
+
+def test_run_reconciliation_checks_records_cprs_ch_totals_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[{"counterparty": "Counterparty A", "Notional": 75.0}]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 100.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    outcome = run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert outcome["reconciliation_results"]["status"] == "failed"
+    assert outcome["reconciliation_results"]["total_gap_count"] == 1
+    all_programs_result = outcome["reconciliation_results"]["by_variant"]["all_programs"]
+    assert all_programs_result["cprs_ch_totals_check"]["status"] == "failed"
+    assert all_programs_result["cprs_ch_totals_check"]["absolute_difference"] == 25.0
+    assert any("CPRS-CH totals mismatch" in warning for warning in warnings)
+
+
+def test_run_reconciliation_checks_strict_raises_on_cprs_ch_totals_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path, fail_policy="strict")
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[{"counterparty": "Counterparty A", "Notional": 10.0}]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 12.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    with pytest.raises(ValueError, match="Reconciliation strict mode failed"):
+        run_module._run_reconciliation_checks(
+            run_dir=tmp_path,
+            config=config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+
+
+def test_evaluate_cprs_ch_totals_reconciliation_uses_mosers_program_row_when_cprs_rows_absent() -> (
+    None
+):
+    fixture_path = (
+        Path("tests/fixtures") / "MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx"
+    )
+    result = run_module._evaluate_cprs_ch_totals_reconciliation(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "synthetic",
+                        "Notional": 7811999634.2546015,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        variant="all_programs",
+        mosers_workbook_path=fixture_path,
+    )
+
+    assert result["status"] == "passed"
+    assert result["expected_total_source"] == "cprs_ch_mosers_program_row"
+
+
 def test_run_pipeline_writes_expected_outputs_and_manifest(
     tmp_path: Path, fake_pandas: None
 ) -> None:
