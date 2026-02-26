@@ -83,6 +83,18 @@ def test_run_folder_readme_created_when_ppt_enabled_and_registered_in_manifest(
         "_refresh_ppt_links",
         lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
     )
+    (run_dir / "limit_breaches.csv").write_text(
+        "\n".join(
+            [
+                "entity_type,entity_name,limit_kind,actual_value,limit_value,breach_amount",
+                "counterparty,a,absolute_notional,10,5,5",
+                "counterparty,b,absolute_notional,11,5,6",
+                "counterparty,c,absolute_notional,12,5,7",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     output_paths, _ = run_module._write_outputs(
         run_dir=run_dir,
@@ -100,6 +112,8 @@ def test_run_folder_readme_created_when_ppt_enabled_and_registered_in_manifest(
     assert "\n1." in content
     assert "\n2." in content
     assert "\n3." in content
+    assert "WARNING: Limit Breaches Detected (3)" in content
+    assert "Review breach details: limit_breaches.csv" in content
 
     manifest = ManifestBuilder(
         config=config,

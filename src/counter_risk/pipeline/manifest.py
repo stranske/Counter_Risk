@@ -38,6 +38,7 @@ class ManifestBuilder:
         reconciliation_results: dict[str, Any] | None = None,
         ppt_status: str = "success",
         concentration_metrics: list[dict[str, Any]] | None = None,
+        limit_breach_summary: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         valid_ppt_statuses = {"success", "skipped", "failed"}
         if ppt_status not in valid_ppt_statuses:
@@ -92,6 +93,8 @@ class ManifestBuilder:
         }
         if concentration_metrics is not None:
             manifest["concentration_metrics"] = concentration_metrics
+        if limit_breach_summary is not None:
+            manifest["limit_breach_summary"] = limit_breach_summary
         return manifest
 
     def write(self, *, run_dir: Path, manifest: dict[str, Any]) -> Path:

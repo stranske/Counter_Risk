@@ -18,12 +18,18 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn
 from zipfile import BadZipFile
 
 from counter_risk.compute import compute_risk_proxies
+from counter_risk.compute.limits import (
+    check_limits,
+    find_missing_limit_entities,
+    write_limit_breaches_csv,
+)
 from counter_risk.compute.rollups import (
     compute_concentration_metrics,
     write_concentration_metrics_csv,
 )
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
+from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
     canonicalize_name,
     normalize_counterparty,
@@ -42,6 +48,7 @@ from counter_risk.pipeline.ppt_naming import PptOutputNames, resolve_ppt_output_
 from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
 from counter_risk.pipeline.run_folder_outputs import (
     RunFolderReadmePptOutputs,
+    RunFolderWarningBanner,
     build_run_folder_readme_content,
 )
 from counter_risk.pipeline.time_utils import utc_now_isoformat
@@ -134,6 +141,14 @@ class PptProcessingResult:
 
     status: PptProcessingStatus
     error_detail: str | None = None
+
+
+@dataclass(frozen=True)
+class LimitBreachEvaluation:
+    """Limit-breach evaluation outcome for manifest/UI surfaces."""
+
+    csv_path: Path | None
+    breach_count: int
 
 
 ScreenshotReplacer = Callable[[Path, Path, dict[str, Path]], None]
@@ -603,6 +618,25 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during concentration metrics stage") from exc
 
     try:
+        limit_breaches = _compute_and_write_limit_breaches(
+            parsed_by_variant=parsed_by_variant,
+            run_dir=run_dir,
+            warnings=warnings,
+        )
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=limit_breaches run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during limit breach stage") from exc
+
+    limit_breach_summary = _build_limit_breach_summary(
+        run_dir=run_dir,
+        limit_breaches=limit_breaches,
+    )
+    _append_limit_breach_warning_to_manifest_warnings(
+        warnings=warnings,
+        limit_breach_summary=limit_breach_summary,
+    )
+
+    try:
         historical_output_paths = _update_historical_outputs(
             run_dir=run_dir,
             config=runtime_config,
@@ -635,6 +669,8 @@ def run_pipeline(config_path: str | Path) -> Path:
         + concentration_metrics_output_paths
         + output_paths
     )
+    if limit_breaches.csv_path is not None:
+        output_paths.append(limit_breaches.csv_path)
 
     if runtime_config.include_concentration_table_in_ppt and concentration_metrics_records:
         dist_ppt_path = run_dir / resolve_ppt_output_names(as_of_date).distribution_filename
@@ -670,6 +706,7 @@ def run_pipeline(config_path: str | Path) -> Path:
             concentration_metrics=(
                 concentration_metrics_records if concentration_metrics_records else None
             ),
+            limit_breach_summary=limit_breach_summary,
         )
         manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)
     except Exception as exc:
@@ -1450,8 +1487,171 @@ def _compute_and_write_concentration_metrics(
     return metrics_records
 
 
+def _build_limit_exposure_rows(
+    parsed_by_variant: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for variant, parsed in parsed_by_variant.items():
+        totals_records = _records(parsed["totals"])
+        for record in totals_records:
+            counterparty = str(record.get("counterparty", "")).strip()
+            if not counterparty:
+                continue
+            try:
+                notional = float(record.get("Notional", 0.0) or 0.0)
+            except (TypeError, ValueError):
+                notional = 0.0
+            rows.append(
+                {
+                    "variant": variant,
+                    "counterparty": counterparty,
+                    "notional": notional,
+                }
+            )
+
+        futures_records = _records(parsed["futures"])
+        for record in futures_records:
+            try:
+                notional = float(record.get("notional", 0.0) or 0.0)
+            except (TypeError, ValueError):
+                notional = 0.0
+
+            exposure_row: dict[str, Any] = {
+                "variant": variant,
+                "notional": notional,
+            }
+            for source_key, target_key in (
+                ("fcm", "fcm"),
+                ("clearing_house", "clearing_house"),
+                ("class", "segment"),
+                ("segment", "segment"),
+                ("custom_group", "custom_group"),
+                ("group", "custom_group"),
+            ):
+                value = str(record.get(source_key, "")).strip()
+                if value:
+                    exposure_row[target_key] = value
+
+            if {"fcm", "clearing_house", "segment", "custom_group"} & set(exposure_row):
+                rows.append(exposure_row)
+
+    return rows
+
+
+def _compute_and_write_limit_breaches(
+    *,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    run_dir: Path,
+    warnings: list[str],
+) -> LimitBreachEvaluation:
+    """Compute limit breaches and write limit_breaches.csv when breaches exist."""
+
+    limits_path = _resolve_repo_root() / "config" / "limits.yml"
+    if not limits_path.exists():
+        LOGGER.info("limit_breaches_skipped missing_limits_config path=%s", limits_path)
+        return LimitBreachEvaluation(csv_path=None, breach_count=0)
+
+    limits_cfg = load_limits_config(limits_path)
+    exposure_rows = _build_limit_exposure_rows(parsed_by_variant)
+    missing_limit_entities = find_missing_limit_entities(exposure_rows, limits_cfg)
+    if missing_limit_entities:
+        warning = _format_missing_limit_entities_warning(missing_limit_entities)
+        if limits_cfg.strict_missing_entities:
+            raise RuntimeError(
+                "Configured limit entities are missing from exposures and strict_missing_entities "
+                f"is enabled: {warning}"
+            )
+        warnings.append(warning)
+        LOGGER.warning("limit_breaches_missing_entities %s", warning)
+
+    if not exposure_rows:
+        return LimitBreachEvaluation(csv_path=None, breach_count=0)
+
+    breaches_result = check_limits(exposure_rows, limits_cfg)
+    if hasattr(breaches_result, "to_dict"):
+        breaches_records = breaches_result.to_dict(orient="records")
+    else:
+        breaches_records = [dict(row) for row in breaches_result]
+
+    if not breaches_records:
+        return LimitBreachEvaluation(csv_path=None, breach_count=0)
+
+    csv_path = run_dir / "limit_breaches.csv"
+    write_limit_breaches_csv(breaches_result, csv_path)
+    LOGGER.info("limit_breaches_written path=%s", csv_path)
+    return LimitBreachEvaluation(csv_path=csv_path, breach_count=len(breaches_records))
+
+
+def _format_missing_limit_entities_warning(missing_entities: list[dict[str, str]]) -> str:
+    entities = ", ".join(
+        f"{entry['entity_type']}:{entry['entity_name']}" for entry in missing_entities
+    )
+    return (
+        "Limit check warning: configured limit entities missing from exposure data; " f"{entities}"
+    )
+
+
+def _build_limit_breach_summary(
+    *, run_dir: Path, limit_breaches: LimitBreachEvaluation
+) -> dict[str, Any]:
+    has_breaches = limit_breaches.csv_path is not None and limit_breaches.breach_count > 0
+    report_path = (
+        str(limit_breaches.csv_path.relative_to(run_dir))
+        if limit_breaches.csv_path is not None
+        else None
+    )
+    warning_banner = None
+    if has_breaches and report_path is not None:
+        plurality = "breach" if limit_breaches.breach_count == 1 else "breaches"
+        warning_banner = (
+            f"{limit_breaches.breach_count} limit {plurality} detected. " f"Review {report_path}."
+        )
+    return {
+        "has_breaches": has_breaches,
+        "breach_count": limit_breaches.breach_count,
+        "report_path": report_path,
+        "warning_banner": warning_banner,
+    }
+
+
+def _append_limit_breach_warning_to_manifest_warnings(
+    *,
+    warnings: list[str],
+    limit_breach_summary: Mapping[str, Any],
+) -> None:
+    has_breaches = bool(limit_breach_summary.get("has_breaches"))
+    warning_banner = limit_breach_summary.get("warning_banner")
+    if not has_breaches or not isinstance(warning_banner, str) or not warning_banner.strip():
+        return
+    warnings.append(f"Limit breach summary: {warning_banner.strip()}")
+
+
+def _build_limit_warning_banner_for_run_dir(run_dir: Path) -> RunFolderWarningBanner | None:
+    csv_path = run_dir / "limit_breaches.csv"
+    if not csv_path.exists():
+        return None
+
+    with csv_path.open("r", encoding="utf-8", newline="") as stream:
+        row_count = sum(1 for _ in csv.DictReader(stream))
+    if row_count <= 0:
+        return None
+
+    plurality = "breach" if row_count == 1 else "breaches"
+    title = f"Limit {plurality.capitalize()} Detected ({row_count})"
+    message = f"Warning banner: {row_count} configured limit {plurality} were detected."
+    return RunFolderWarningBanner(
+        title=title,
+        message=message,
+        report_path=Path("limit_breaches.csv"),
+    )
+
+
 def _write_outputs(
-    *, run_dir: Path, config: WorkflowConfig, as_of_date: date, warnings: list[str]
+    *,
+    run_dir: Path,
+    config: WorkflowConfig,
+    as_of_date: date,
+    warnings: list[str],
 ) -> tuple[list[Path], PptProcessingResult]:
     LOGGER.info("write_outputs_start run_dir=%s", run_dir)
 
@@ -1597,9 +1797,14 @@ def _write_outputs(
     )
     output_paths.extend(static_output_paths)
     if refresh_result.status == PptProcessingStatus.SUCCESS:
+        warning_banner = _build_limit_warning_banner_for_run_dir(run_dir)
         readme_path = run_dir / "README.txt"
         readme_path.write_text(
-            build_run_folder_readme_content(as_of_date, readme_ppt_outputs),
+            build_run_folder_readme_content(
+                as_of_date,
+                readme_ppt_outputs,
+                warning_banner=warning_banner,
+            ),
             encoding="utf-8",
         )
         output_paths.append(readme_path)

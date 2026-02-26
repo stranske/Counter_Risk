@@ -33,3 +33,14 @@ def test_manifest_schema_requires_audit_sections() -> None:
         "optional_missing",
         "is_complete",
     ]
+
+
+def test_manifest_schema_defines_limit_breach_summary_shape() -> None:
+    schema = manifest_schema()
+
+    summary = schema["properties"]["limit_breach_summary"]
+    assert summary["required"] == ["has_breaches", "breach_count", "report_path", "warning_banner"]
+    assert summary["properties"]["has_breaches"]["type"] == "boolean"
+    assert summary["properties"]["breach_count"]["type"] == "integer"
+    assert summary["properties"]["report_path"]["type"] == ["string", "null"]
+    assert summary["properties"]["warning_banner"]["type"] == ["string", "null"]
