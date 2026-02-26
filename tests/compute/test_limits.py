@@ -7,7 +7,11 @@ from typing import Any, cast
 
 import pytest
 
-from counter_risk.compute.limits import check_limits, write_limit_breaches_csv
+from counter_risk.compute.limits import (
+    check_limits,
+    find_missing_limit_entities,
+    write_limit_breaches_csv,
+)
 from counter_risk.limits_config import LimitsConfig
 
 
@@ -238,3 +242,40 @@ def test_write_limit_breaches_csv_writes_expected_rows(tmp_path: Path) -> None:
     lines = out.read_text(encoding="utf-8").strip().splitlines()
     assert lines[0] == "entity_type,entity_name,limit_kind,actual_value,limit_value,breach_amount"
     assert "counterparty,a,absolute_notional,11.0,10.0,1.0" in lines[1:]
+
+
+def test_find_missing_limit_entities_returns_sorted_missing_targets() -> None:
+    exposures = [
+        {"counterparty": "A", "fcm": "FCM1", "notional": 11.0},
+        {"counterparty": "B", "fcm": "FCM2", "notional": 1.0},
+    ]
+    limits_cfg = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "counterparty",
+                "entity_name": "A",
+                "limit_value": 10.0,
+                "limit_kind": "absolute_notional",
+            },
+            {
+                "entity_type": "counterparty",
+                "entity_name": "Missing Name",
+                "limit_value": 10.0,
+                "limit_kind": "absolute_notional",
+            },
+            {
+                "entity_type": "fcm",
+                "entity_name": "FCM Missing",
+                "limit_value": 0.5,
+                "limit_kind": "percent_of_total",
+            },
+        ],
+    }
+
+    missing = find_missing_limit_entities(exposures, limits_cfg)
+
+    assert missing == [
+        {"entity_type": "counterparty", "entity_name": "missing_name"},
+        {"entity_type": "fcm", "entity_name": "fcm_missing"},
+    ]

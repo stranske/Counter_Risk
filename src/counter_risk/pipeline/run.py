@@ -17,7 +17,11 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn
 from zipfile import BadZipFile
 
 from counter_risk.compute import compute_risk_proxies
-from counter_risk.compute.limits import check_limits, write_limit_breaches_csv
+from counter_risk.compute.limits import (
+    check_limits,
+    find_missing_limit_entities,
+    write_limit_breaches_csv,
+)
 from counter_risk.compute.rollups import (
     compute_concentration_metrics,
     write_concentration_metrics_csv,
@@ -579,6 +583,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         limit_breaches = _compute_and_write_limit_breaches(
             parsed_by_variant=parsed_by_variant,
             run_dir=run_dir,
+            warnings=warnings,
         )
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=limit_breaches run_dir=%s", run_dir)
@@ -1348,6 +1353,7 @@ def _compute_and_write_limit_breaches(
     *,
     parsed_by_variant: dict[str, dict[str, Any]],
     run_dir: Path,
+    warnings: list[str],
 ) -> LimitBreachEvaluation:
     """Compute limit breaches and write limit_breaches.csv when breaches exist."""
 
@@ -1358,6 +1364,17 @@ def _compute_and_write_limit_breaches(
 
     limits_cfg = load_limits_config(limits_path)
     exposure_rows = _build_limit_exposure_rows(parsed_by_variant)
+    missing_limit_entities = find_missing_limit_entities(exposure_rows, limits_cfg)
+    if missing_limit_entities:
+        warning = _format_missing_limit_entities_warning(missing_limit_entities)
+        if limits_cfg.strict_missing_entities:
+            raise RuntimeError(
+                "Configured limit entities are missing from exposures and strict_missing_entities "
+                f"is enabled: {warning}"
+            )
+        warnings.append(warning)
+        LOGGER.warning("limit_breaches_missing_entities %s", warning)
+
     if not exposure_rows:
         return LimitBreachEvaluation(csv_path=None, breach_count=0)
 
@@ -1374,6 +1391,15 @@ def _compute_and_write_limit_breaches(
     write_limit_breaches_csv(breaches_result, csv_path)
     LOGGER.info("limit_breaches_written path=%s", csv_path)
     return LimitBreachEvaluation(csv_path=csv_path, breach_count=len(breaches_records))
+
+
+def _format_missing_limit_entities_warning(missing_entities: list[dict[str, str]]) -> str:
+    entities = ", ".join(
+        f"{entry['entity_type']}:{entry['entity_name']}" for entry in missing_entities
+    )
+    return (
+        "Limit check warning: configured limit entities missing from exposure data; " f"{entities}"
+    )
 
 
 def _build_limit_breach_summary(

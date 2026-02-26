@@ -133,6 +133,44 @@ def _coerce_limits(limits_cfg: Any) -> LimitsConfig:
     raise TypeError("limits_cfg must be a LimitsConfig, mapping, or sequence of limit entries")
 
 
+def find_missing_limit_entities(exposures_df: Any, limits_cfg: Any) -> list[dict[str, str]]:
+    """Return configured limit entities that are not present in exposures."""
+
+    rows = _iter_rows(exposures_df, arg_name="exposures_df")
+    limits = _coerce_limits(limits_cfg)
+    if not limits.limits:
+        return []
+
+    entity_values_by_type: dict[str, set[str]] = {
+        entity_type: set() for entity_type in _ENTITY_COLUMN_ALIASES
+    }
+    for row in rows:
+        for entity_type, aliases in _ENTITY_COLUMN_ALIASES.items():
+            entity_name = _find_entity_name(row, aliases)
+            if entity_name is None:
+                continue
+            entity_values_by_type[entity_type].add(_normalize_entity_key(entity_name))
+
+    missing: list[dict[str, str]] = []
+    for limit in limits.limits:
+        if limit.entity_name in entity_values_by_type[limit.entity_type]:
+            continue
+        missing.append(
+            {
+                "entity_type": limit.entity_type,
+                "entity_name": limit.entity_name,
+            }
+        )
+
+    missing.sort(
+        key=lambda row: (
+            row["entity_type"].casefold(),
+            row["entity_name"].casefold(),
+        )
+    )
+    return missing
+
+
 def check_limits(exposures_df: Any, limits_cfg: Any) -> Any:
     """Evaluate absolute-notional and percentage-of-total limit breaches.
 
