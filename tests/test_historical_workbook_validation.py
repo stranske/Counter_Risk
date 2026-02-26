@@ -399,3 +399,90 @@ def test_historical_update_delegates_to_output_generator(
     assert context.as_of_date == date(2026, 2, 13)
     assert context.run_date == date(2026, 2, 13)
     assert context.warnings == tuple(warnings)
+
+
+def test_historical_output_generator_builder_preserves_variant_merge_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    all_programs_input = tmp_path / "all_programs.xlsx"
+    ex_trend_input = tmp_path / "ex_trend.xlsx"
+    trend_input = tmp_path / "trend.xlsx"
+    monthly_pptx = tmp_path / "monthly.pptx"
+    hist_all = tmp_path / "hist_all.xlsx"
+    hist_ex = tmp_path / "hist_ex.xlsx"
+    hist_trend = tmp_path / "hist_trend.xlsx"
+    for file_path in (
+        all_programs_input,
+        ex_trend_input,
+        trend_input,
+        monthly_pptx,
+        hist_all,
+        hist_ex,
+        hist_trend,
+    ):
+        file_path.write_bytes(b"placeholder")
+
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    config = WorkflowConfig(
+        mosers_all_programs_xlsx=all_programs_input,
+        mosers_ex_trend_xlsx=ex_trend_input,
+        mosers_trend_xlsx=trend_input,
+        hist_all_programs_3yr_xlsx=hist_all,
+        hist_ex_llc_3yr_xlsx=hist_ex,
+        hist_llc_3yr_xlsx=hist_trend,
+        monthly_pptx=monthly_pptx,
+    )
+
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {"totals": [{"counterparty": "A", "Notional": 10.0}, "skip-me"]},
+        "ex_trend": {"totals": [{"counterparty": "B", "Notional": 4.0}]},
+        "trend": {"totals": [{"counterparty": "C", "Notional": 7.0}]},
+    }
+
+    merge_calls: list[tuple[Path, str, list[dict[str, Any]], list[str]]] = []
+
+    def _fake_merge(
+        *,
+        workbook_path: Path,
+        variant: str,
+        as_of_date: date,
+        totals_records: list[dict[str, Any]],
+        warnings: list[str],
+    ) -> None:
+        assert as_of_date == date(2026, 2, 13)
+        merge_calls.append((workbook_path, variant, totals_records, warnings))
+
+    monkeypatch.setattr(run_module, "_merge_historical_workbook", _fake_merge)
+    generator = run_module._build_historical_workbook_output_generator(
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    output_paths = generator.generate(
+        context=run_module.OutputContext(
+            config=config,
+            run_dir=run_dir,
+            as_of_date=date(2026, 2, 13),
+            run_date=date(2026, 2, 13),
+            warnings=tuple(warnings),
+        )
+    )
+
+    assert output_paths == (
+        run_dir / hist_all.name,
+        run_dir / hist_ex.name,
+        run_dir / hist_trend.name,
+    )
+    assert merge_calls == [
+        (
+            run_dir / hist_all.name,
+            "all_programs",
+            [{"counterparty": "A", "Notional": 10.0}],
+            warnings,
+        ),
+        (run_dir / hist_ex.name, "ex_trend", [{"counterparty": "B", "Notional": 4.0}], warnings),
+        (run_dir / hist_trend.name, "trend", [{"counterparty": "C", "Notional": 7.0}], warnings),
+    ]
