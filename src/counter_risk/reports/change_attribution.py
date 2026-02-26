@@ -16,6 +16,7 @@ _DELTA_COLUMNS: tuple[str, ...] = (
     "notional_change",
 )
 _FUZZY_MATCH_THRESHOLD = 0.82
+_MEDIUM_RAW_LENGTH_DRIFT = 3
 _DELTA_TOLERANCE = 1e-6
 
 
@@ -124,6 +125,21 @@ def _best_fuzzy_match(
     return best[1] if best is not None else None
 
 
+def _is_minor_normalized_difference(*, current_name: str, prior_name: str) -> bool:
+    current = current_name.strip()
+    prior = prior_name.strip()
+    if not current or not prior:
+        return False
+    if current == prior:
+        return False
+    current_normalized = _normalize_name(current)
+    prior_normalized = _normalize_name(prior)
+    if current_normalized != prior_normalized:
+        return False
+    raw_length_drift = abs(len(current) - len(prior))
+    return raw_length_drift <= _MEDIUM_RAW_LENGTH_DRIFT
+
+
 def _unmatched_reason(*, has_any_prior_rows: bool) -> str:
     if has_any_prior_rows:
         return "new_or_unmatched_current_row"
@@ -164,8 +180,15 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
         elif current.normalized_counterparty in prior_by_normalized:
             prior_match = prior_by_normalized[current.normalized_counterparty]
             match_type = "normalized"
-            reason = "normalized_name_match_minor_differences"
-            confidence = "Medium"
+            if _is_minor_normalized_difference(
+                current_name=current.counterparty,
+                prior_name=prior_match.counterparty,
+            ):
+                reason = "normalized_name_match_minor_differences"
+                confidence = "Medium"
+            else:
+                reason = "normalized_name_match_requires_review"
+                confidence = "Low"
         else:
             prior_match = _best_fuzzy_match(
                 current_normalized=current.normalized_counterparty,

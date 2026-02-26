@@ -76,6 +76,19 @@ def test_attribute_changes_assigns_medium_confidence_for_normalized_match() -> N
     assert row["is_low_confidence"] is False
 
 
+def test_attribute_changes_downgrades_normalized_match_when_difference_is_not_minor() -> None:
+    current = [{"counterparty": "a----b----c----d", "Notional": 125.0}]
+    prior = [{"counterparty": "abcd", "Notional": 120.0}]
+
+    report = attribute_changes(current, prior)
+    row = report["rows"][0]
+
+    assert row["match_type"] == "normalized"
+    assert row["confidence"] == "Low"
+    assert row["attribution_reason"] == "normalized_name_match_requires_review"
+    assert row["is_low_confidence"] is True
+
+
 def test_attribute_changes_handles_missing_prior_data_gracefully() -> None:
     current = [{"counterparty": "Desk A", "Notional": 10.0}]
 
