@@ -1,0 +1,525 @@
+version: 1
+issue: 45
+base: main
+branch: codex/issue-45
+tasks:
+  - id: task-01
+    title: 'Create `config/limits.yml` schema documenting keys: `entity_type`, `entity_name`
+      (canonical key), `limit_value`, `limit_kind`, `notes`'
+    status: doing
+    started_at: '2026-02-26T06:50:44Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: 'Define the YAML schema structure with required (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Define the YAML schema structure with optional fields for limits configuration
+      (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Document each field''s purpose, data type, (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'valid values in the schema file (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Add example entries demonstrating absolute notional (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'percentage-of-total limit configurations (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement schema validation to ensure all required fields are present
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'correctly typed (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Implement `check_limits(exposures_df, limits_cfg) -> breaches_df` to evaluate
+      absolute notional and percentage-of-total limits across targets (counterparty,
+      FCM, clearing house, segment, custom groups)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Implement the core function signature (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'input validation for exposures_df (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'limits_cfg parameters (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Define scope for: Add logic to calculate absolute notional breaches by
+      comparing entity exposures against configured limits (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Implement focused slice for: Add logic to calculate absolute notional
+      breaches by comparing entity exposures against configured limits (verify: config
+      validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Validate focused slice for: Add logic to calculate absolute notional breaches
+      by comparing entity exposures against configured limits (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Define scope for: Add logic to calculate percentage-of-total breaches
+      by computing entity ratios against total exposure (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Implement focused slice for: Add logic to calculate percentage-of-total
+      breaches by computing entity ratios against total exposure (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Validate focused slice for: Add logic to calculate percentage-of-total
+      breaches by computing entity ratios against total exposure (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Implement entity grouping logic to support counterparty, FCM, clearing
+      house, segment, (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'custom group targets (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Create the breaches_df output dataframe with columns for entity (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Create the breaches_df output dataframe with limit type (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Create the breaches_df output dataframe with actual value (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Create the breaches_df output dataframe with limit value (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Create the breaches_df output dataframe with and breach amount (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Add generation of `limit_breaches.csv` from `breaches_df`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: Update manifest summary and Runner UI to display a warning banner when
+      breaches exist
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Define scope for: Add breach detection logic to the manifest summary generation
+      to include warning text when breaches are present (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Implement focused slice for: Add breach detection logic to the manifest
+      summary generation to include warning text when breaches are present (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Validate focused slice for: Add breach detection logic to the manifest
+      summary generation to include warning text when breaches are present (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Define scope for: Update the Runner UI template to conditionally display
+      a warning banner based on breach detection results (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Implement focused slice for: Update the Runner UI template to conditionally
+      display a warning banner based on breach detection results (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Validate focused slice for: Update the Runner UI template to conditionally
+      display a warning banner based on breach detection results (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Ensure the warning banner includes breach count (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'links to the limit_breaches.csv file (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: Write tests using a small synthetic dataset to verify deterministic breach
+      detection and output contents
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Define scope for: Create a synthetic dataset fixture with known exposures
+      across multiple entity types for testing (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Implement focused slice for: Create a synthetic dataset fixture with known
+      exposures across multiple entity types for testing (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'Validate focused slice for: Create a synthetic dataset fixture with known
+      exposures across multiple entity types for testing (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Define scope for: Write test cases verifying absolute notional limit breach
+      detection with expected breach values (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Implement focused slice for: Write test cases verifying absolute notional
+      limit breach detection with expected breach values (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'Validate focused slice for: Write test cases verifying absolute notional
+      limit breach detection with expected breach values (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Define scope for: Write test cases verifying percentage-of-total limit
+      breach detection with expected breach values (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Implement focused slice for: Write test cases verifying percentage-of-total
+      limit breach detection with expected breach values (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Validate focused slice for: Write test cases verifying percentage-of-total
+      limit breach detection with expected breach values (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Define scope for: Write test cases verifying that non-breach scenarios
+      return empty breaches_df correctly (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'Implement focused slice for: Write test cases verifying that non-breach
+      scenarios return empty breaches_df correctly (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: 'Validate focused slice for: Write test cases verifying that non-breach
+      scenarios return empty breaches_df correctly (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: 'Write test cases verifying the structure (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: 'contents of the generated limit_breaches.csv file (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: Running the limit check produces `limit_breaches.csv` when breaches exist
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: '`check_limits(exposures_df, limits_cfg) -> breaches_df` returns deterministic
+      results for a fixed synthetic dataset (tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: Manifest summary and Runner UI show a warning banner when breaches exist
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: Missing limit entities emit a warning and do not fail by default
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: When strict policy is enabled, missing limit entities cause the check to
+      fail (tests pass)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: 'Add `config/limits.yml` schema:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: entity_type, entity_name (canonical key), limit_value, limit_kind, notes
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: Implement `check_limits(exposures_df, limits_cfg) -> breaches_df`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: 'Output:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: '`limit_breaches.csv`'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: manifest summary + Runner UI warning banner
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: Add tests with a small synthetic dataset to verify breach detection
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: Breaches are detected deterministically and surfaced to operators
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: Missing limit entities are handled gracefully (warn, not fail) unless strict
+      policy enabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
