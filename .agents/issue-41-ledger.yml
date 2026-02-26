@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Update repository to store VBA modules as source files in `assets/vba/*.bas`
       (if not already present).
-    status: doing
+    status: done
     started_at: '2026-02-26T06:52:38Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-26T06:52:48Z'
+    commit: cf1de16d5dfd1aa02b2ff92a789b35d98a067bd9
     notes: []
   - id: task-02
     title: 'Create the assets/vba directory structure if it does not already exist
