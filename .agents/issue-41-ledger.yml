@@ -1,0 +1,254 @@
+version: 1
+issue: 41
+base: main
+branch: codex/issue-41
+tasks:
+  - id: task-01
+    title: Update repository to store VBA modules as source files in `assets/vba/*.bas`
+      (if not already present).
+    status: doing
+    started_at: '2026-02-26T06:52:38Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: 'Create the assets/vba directory structure if it does not already exist
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Extract VBA modules from the Excel workbook (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'save them as .bas files (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define scope for: Verify that all VBA modules are present in assets/vba
+      with correct file extensions'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement focused slice for: Verify that all VBA modules are present in
+      assets/vba with correct file extensions'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Validate focused slice for: Verify that all VBA modules are present in
+      assets/vba with correct file extensions'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: "Write `docs/macro_spec.md` describing each macro\u2019s intent in plain\
+      \ language."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Add per-macro specification entries to `docs/macro_spec.md` listing required
+      inputs (sheet names, columns).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Add per-macro specification entries to `docs/macro_spec.md` listing output
+      expectations (ranges affected, invariants).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Create pytest spec tests using fixtures that perform range-level checks
+      in generated MOSERS-format outputs.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Create pytest fixtures that load sample input data for macro testing (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Implement pytest tests that verify range-level outputs match expected MOSERS
+      format
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Add pytest tests that validate cell-by-cell transformations for each macro
+      (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: "Add pytest spec tests that assert invariants like \u201Cno blank numeric\
+      \ cells\u201D and \u201Cheaders match expected\u201D."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: "Update `docs/macro_spec.md` with a \u201Cknown-acceptable drift\u201D\
+      \ section documenting tolerances and rounding rules."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: "`docs/macro_spec.md` exists and documents each macro\u2019s intent, required\
+      \ inputs (sheet names/columns), and output expectations (ranges/invariants)."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Running the pytest suite (e.g., `pytest`) executes spec tests that cover
+      the documented macro behaviors.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Spec tests fail with an assertion message identifying the deviating transformation
+      when output differs from expected.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: "Spec tests include checks for MOSERS-format range-level outputs and invariants\
+      \ including \u201Cno blank numeric cells\u201D and \u201Cheaders match expected\u201D\
+      ."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: "`docs/macro_spec.md` includes a \u201Cknown-acceptable drift\u201D section\
+      \ with explicit tolerances/rounding rules."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Store VBA modules as source files in `assets/vba/*.bas` (if not already)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: "Write `docs/macro_spec.md` describing each macro\u2019s intent in plain\
+      \ language"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'For each macro, define:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: required inputs (sheet names, columns)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: output expectations (ranges affected, invariants)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: "Create pytest \u201Cspec tests\u201D using fixtures:"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: range-level checks in generated MOSERS-format outputs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: "invariants like \u201Cno blank numeric cells\u201D and \u201Cheaders match\
+      \ expected\u201D"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: "Add a \u201Cknown-acceptable drift\u201D section (tolerances, rounding\
+      \ rules)"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: A maintainer can run spec tests locally and see which macro behaviors are
+      covered
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Spec tests fail clearly when a transformation deviates from expected behavior
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
