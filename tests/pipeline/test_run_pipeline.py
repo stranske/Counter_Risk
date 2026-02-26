@@ -1501,6 +1501,10 @@ def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
 
     assert isinstance(exc_info.value.__cause__, UnmappedCounterpartyError)
     assert "Unmapped normalized counterparty" in str(exc_info.value.__cause__)
+    assert "Operator action: update counterparty mappings for this month and rerun." in str(
+        exc_info.value
+    )
+    assert "Unmatched counterparty 'Counterparty A'" in str(exc_info.value)
 
 
 def test_run_pipeline_wraps_output_write_errors(
@@ -1604,6 +1608,39 @@ def test_build_missing_input_operator_message_without_missing_required_paths() -
     )
 
     assert message == "Operator action: verify configured input file paths are accessible."
+
+
+def test_build_unmatched_mappings_operator_message_with_sheet_context() -> None:
+    message = run_module._build_unmatched_mappings_operator_message(
+        UnmappedCounterpartyError(
+            normalized_counterparty="ACME LTD",
+            raw_counterparty="Acme Ltd.",
+            sheet="Total",
+        )
+    )
+
+    assert "Operator action: update counterparty mappings for this month and rerun." in message
+    assert "Unmatched counterparty 'Acme Ltd.'" in message
+    assert "normalized to 'ACME LTD'" in message
+    assert "worksheet 'Total'" in message
+
+
+def test_build_parse_stage_operator_message_returns_empty_for_non_unmapped_errors() -> None:
+    assert run_module._build_parse_stage_operator_message(ValueError("bad parse")) == ""
+
+
+def test_build_parse_stage_operator_message_uses_nested_unmapped_counterparty_error() -> None:
+    nested = RuntimeError("outer")
+    nested.__cause__ = UnmappedCounterpartyError(
+        normalized_counterparty="ACME LTD",
+        raw_counterparty="Acme Ltd.",
+        sheet=None,
+    )
+
+    message = run_module._build_parse_stage_operator_message(nested)
+
+    assert "Operator action: update counterparty mappings for this month and rerun." in message
+    assert "Unmatched counterparty 'Acme Ltd.'" in message
 
 
 def test_run_pipeline_wraps_compute_errors(

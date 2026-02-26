@@ -14,14 +14,14 @@ tasks:
   - id: task-02
     title: 'Add warnings array to manifest.json schema (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-03
     title: 'populate with validation warnings (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -29,7 +29,7 @@ tasks:
   - id: task-04
     title: 'Add unmatched_mappings section to manifest.json to record mapping failures
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -37,7 +37,7 @@ tasks:
   - id: task-05
     title: 'Define scope for: Add missing_inputs section to manifest.json to track
       required but absent data (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -45,7 +45,7 @@ tasks:
   - id: task-06
     title: 'Implement focused slice for: Add missing_inputs section to manifest.json
       to track required but absent data (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -53,7 +53,7 @@ tasks:
   - id: task-07
     title: 'Validate focused slice for: Add missing_inputs section to manifest.json
       to track required but absent data (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -61,7 +61,7 @@ tasks:
   - id: task-08
     title: 'Add reconciliation_results section to manifest.json with check outcomes
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -69,7 +69,7 @@ tasks:
   - id: task-09
     title: Implement reconciliation checks comparing totals in MOSERS CPRS-CH vs computed
       totals and record results in `manifest.json`.
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -77,7 +77,7 @@ tasks:
   - id: task-10
     title: 'Define scope for: Create reconciliation check function that compares MOSERS
       CPRS-CH totals against computed totals (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -86,7 +86,7 @@ tasks:
     title: 'Implement focused slice for: Create reconciliation check function that
       compares MOSERS CPRS-CH totals against computed totals (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -95,7 +95,7 @@ tasks:
     title: 'Validate focused slice for: Create reconciliation check function that
       compares MOSERS CPRS-CH totals against computed totals (verify: confirm completion
       in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -103,7 +103,7 @@ tasks:
   - id: task-13
     title: 'Define the data structure for reconciliation results in manifest.json
       schema (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -111,7 +111,7 @@ tasks:
   - id: task-14
     title: 'Integrate reconciliation check execution into the processing pipeline
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -119,7 +119,7 @@ tasks:
   - id: task-15
     title: 'Write reconciliation check results to the manifest.json file (verify:
       confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -142,7 +142,7 @@ tasks:
   - id: task-18
     title: 'Define user-friendly error messages for missing input files scenario (verify:
       confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -150,7 +150,7 @@ tasks:
   - id: task-19
     title: 'Define user-friendly error messages for unmatched mappings scenario (verify:
       confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''

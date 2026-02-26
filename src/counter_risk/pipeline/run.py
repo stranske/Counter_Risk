@@ -568,6 +568,9 @@ def run_pipeline(config_path: str | Path) -> Path:
             reconciliation_outcome = {}
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=parse_inputs run_dir=%s", run_dir)
+        operator_message = _build_parse_stage_operator_message(exc)
+        if operator_message:
+            raise RuntimeError(f"Pipeline failed during parse stage. {operator_message}") from exc
         raise RuntimeError("Pipeline failed during parse stage") from exc
 
     try:
@@ -921,6 +924,40 @@ def _build_missing_input_operator_message(
     return (
         "Operator action: verify required input files are present and paths are correct. "
         f"Missing required inputs: {', '.join(details)}."
+    )
+
+
+def _build_parse_stage_operator_message(exc: BaseException) -> str:
+    unmapped_error = _find_unmapped_counterparty_error(exc)
+    if unmapped_error is None:
+        return ""
+    return _build_unmatched_mappings_operator_message(unmapped_error)
+
+
+def _find_unmapped_counterparty_error(exc: BaseException) -> UnmappedCounterpartyError | None:
+    current: BaseException | None = exc
+    visited: set[int] = set()
+    while current is not None:
+        current_id = id(current)
+        if current_id in visited:
+            return None
+        visited.add(current_id)
+        if isinstance(current, UnmappedCounterpartyError):
+            return current
+        next_exc = current.__cause__ if current.__cause__ is not None else current.__context__
+        if next_exc is current:
+            return None
+        current = next_exc
+    return None
+
+
+def _build_unmatched_mappings_operator_message(exc: UnmappedCounterpartyError) -> str:
+    sheet = str(exc.sheet).strip() if exc.sheet is not None else ""
+    sheet_detail = f" on worksheet '{sheet}'" if sheet else ""
+    return (
+        "Operator action: update counterparty mappings for this month and rerun. "
+        f"Unmatched counterparty '{exc.raw_counterparty}' normalized to "
+        f"'{exc.normalized_counterparty}'{sheet_detail}."
     )
 
 
