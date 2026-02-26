@@ -3059,42 +3059,6 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
         } else if (runResult === 'cancelled') {
           failure = {};
           summaryReason = 'agent-run-cancelled';
-
-          // When a run is cancelled (typically timeout), agent outputs are
-          // lost.  Check the PR branch for recent commits to detect whether
-          // the pre-timeout watchdog or the agent itself saved any work.
-          if (!agentCommitSha && !agentChangesMade && prNumber) {
-            try {
-              const pr = await fetchPullRequestCached({ github, context, prNumber, core });
-              if (pr?.head?.ref) {
-                // Use the persisted updated_at from the previous save, NOT
-                // current_iteration_at (which applyIterationTracking resets
-                // to "now" on load, making it useless as a range bound).
-                const since = previousState?.updated_at;
-                const commitsResp = await github.rest.repos.listCommits({
-                  ...context.repo,
-                  sha: pr.head.ref,
-                  ...(since ? { since } : {}),
-                  per_page: 5,
-                });
-                const recentCommits = (commitsResp?.data || []).filter(c => {
-                  const msg = c?.commit?.message || '';
-                  return msg.includes('pre-timeout checkpoint') ||
-                    msg.includes('codex-keepalive') ||
-                    msg.includes('apply updates');
-                });
-                if (recentCommits.length > 0) {
-                  summaryReason = 'agent-run-cancelled-with-saved-work';
-                  core?.info?.(
-                    `Cancelled run had ${recentCommits.length} commit(s) saved ` +
-                    `(latest: ${recentCommits[0]?.sha?.slice(0, 7)})`
-                  );
-                }
-              }
-            } catch (e) {
-              core?.info?.(`Branch commit detection failed: ${e.message}`);
-            }
-          }
         } else if (isTransientFailure) {
           failure = {};
           summaryReason = 'agent-run-transient';
@@ -3376,28 +3340,19 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
           '- Wait for conditions to resolve (e.g., Gate success, labels present)',
         );
       } else if (runResult === 'cancelled') {
-        const savedWork = summaryReason === 'agent-run-cancelled-with-saved-work';
         summaryLines.push(
           `| Result | Value |`,
           `|--------|-------|`,
-          `| Status | ${savedWork ? '⏱️ Timed out (work saved)' : '🚫 Cancelled'} |`,
+          `| Status | 🚫 Cancelled |`,
           `| Reason | ${summaryReason || 'agent-run-cancelled'} |`,
         );
-
+        
         // Add restart instructions for cancelled runs
-        if (savedWork) {
-          summaryLines.push(
-            '',
-            '**Note:** The pre-timeout watchdog committed work before the job was cancelled.',
-            'The next keepalive iteration will continue from where the agent left off.',
-          );
-        } else {
-          summaryLines.push(
-            '',
-            '**To retry:**',
-            '- Add the `agent:retry` label to this PR',
-          );
-        }
+        summaryLines.push(
+          '',
+          '**To retry:**',
+          '- Add the `agent:retry` label to this PR',
+        );
       } else {
         summaryLines.push(
           `| Result | Value |`,
