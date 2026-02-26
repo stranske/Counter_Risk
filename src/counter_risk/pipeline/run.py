@@ -593,6 +593,10 @@ def run_pipeline(config_path: str | Path) -> Path:
         run_dir=run_dir,
         limit_breaches=limit_breaches,
     )
+    _append_limit_breach_warning_to_manifest_warnings(
+        warnings=warnings,
+        limit_breach_summary=limit_breach_summary,
+    )
 
     try:
         historical_output_paths = _update_historical_outputs(
@@ -1423,6 +1427,18 @@ def _build_limit_breach_summary(
         "report_path": report_path,
         "warning_banner": warning_banner,
     }
+
+
+def _append_limit_breach_warning_to_manifest_warnings(
+    *,
+    warnings: list[str],
+    limit_breach_summary: Mapping[str, Any],
+) -> None:
+    has_breaches = bool(limit_breach_summary.get("has_breaches"))
+    warning_banner = limit_breach_summary.get("warning_banner")
+    if not has_breaches or not isinstance(warning_banner, str) or not warning_banner.strip():
+        return
+    warnings.append(f"Limit breach summary: {warning_banner.strip()}")
 
 
 def _build_limit_warning_banner_for_run_dir(run_dir: Path) -> RunFolderWarningBanner | None:

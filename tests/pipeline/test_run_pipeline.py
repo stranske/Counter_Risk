@@ -976,6 +976,10 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
     assert manifest["limit_breach_summary"]["breach_count"] >= 1
     assert manifest["limit_breach_summary"]["report_path"] == "limit_breaches.csv"
     assert "limit_breaches.csv" in manifest["limit_breach_summary"]["warning_banner"]
+    assert any(
+        "Limit breach summary:" in warning and "limit_breaches.csv" in warning
+        for warning in manifest["warnings"]
+    )
 
 
 def test_run_pipeline_warns_on_missing_limit_entities_by_default(
@@ -1067,6 +1071,7 @@ def test_run_pipeline_warns_on_missing_limit_entities_by_default(
     assert any(
         "counterparty:not_present_counterparty" in warning for warning in manifest["warnings"]
     )
+    assert all("Limit breach summary:" not in warning for warning in manifest["warnings"])
 
 
 def test_run_pipeline_strict_missing_limit_entities_fails(
