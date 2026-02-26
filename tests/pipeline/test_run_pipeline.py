@@ -749,6 +749,7 @@ def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
     monthly_pptx.write_text("ppt", encoding="utf-8")
 
     generated_calls: list[dict[str, Any]] = []
+    parser_contract_validation_calls: list[dict[str, Any]] = []
 
     def _fake_generate_mosers_workbook(
         *, raw_nisa_path: Path, output_path: Path, as_of_date: date
@@ -765,6 +766,16 @@ def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
         return output_path
 
     monkeypatch.setattr(run_module, "generate_mosers_workbook", _fake_generate_mosers_workbook)
+    monkeypatch.setattr(
+        run_module,
+        "_validate_milestone_one_parser_contract",
+        lambda *, workbook_path, variant: parser_contract_validation_calls.append(
+            {
+                "workbook_path": workbook_path,
+                "variant": variant,
+            }
+        ),
+    )
 
     config = WorkflowConfig(
         as_of_date=date(2025, 12, 31),
@@ -800,8 +811,38 @@ def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
     assert generated_path.exists()
     assert canonical_path.exists()
     assert generated_path.read_bytes() == canonical_path.read_bytes()
+    assert parser_contract_validation_calls == [
+        {
+            "workbook_path": canonical_path,
+            "variant": "all_programs",
+        }
+    ]
     assert runtime_config.mosers_all_programs_xlsx == canonical_path
     assert "Generated All Programs MOSERS workbook from raw NISA input" in warnings
+
+
+def test_validate_milestone_one_parser_contract_raises_when_generated_totals_columns_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workbook_path = tmp_path / "generated.xlsx"
+    workbook_path.write_bytes(b"placeholder")
+
+    monkeypatch.setattr(
+        run_module,
+        "parse_fcm_totals",
+        lambda _: _FakeDataFrame(columns=["counterparty", "Notional"]),
+    )
+    monkeypatch.setattr(
+        run_module,
+        "parse_futures_detail",
+        lambda _: _FakeDataFrame(columns=list(run_module._EXPECTED_FUTURES_COLUMN_ORDER)),
+    )
+
+    with pytest.raises(ValueError, match="totals parser contract"):
+        run_module._validate_milestone_one_parser_contract(
+            workbook_path=workbook_path,
+            variant="all_programs",
+        )
 
 
 def _write_valid_config(tmp_path: Path, output_root: Path) -> Path:

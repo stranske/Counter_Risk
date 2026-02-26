@@ -70,6 +70,24 @@ _REQUIRED_FUTURES_COLUMNS: tuple[str, ...] = (
     "clearing_house",
     "notional",
 )
+_EXPECTED_TOTAL_COLUMN_ORDER: tuple[str, ...] = (
+    "counterparty",
+    "TIPS",
+    "Treasury",
+    "Equity",
+    "Commodity",
+    "Currency",
+    "Notional",
+    "NotionalChange",
+)
+_EXPECTED_FUTURES_COLUMN_ORDER: tuple[str, ...] = (
+    "account",
+    "description",
+    "class",
+    "fcm",
+    "clearing_house",
+    "notional",
+)
 _PREFERRED_HISTORICAL_SHEET_BY_VARIANT: dict[str, str] = {
     "all_programs": "Total",
     "ex_trend": "Total",
@@ -787,8 +805,31 @@ def _prepare_runtime_config(
         as_of_date=as_of_date,
     )
     shutil.copy2(generated_mosers_path, canonical_mosers_path)
+    _validate_milestone_one_parser_contract(
+        workbook_path=canonical_mosers_path,
+        variant="all_programs",
+    )
     warnings.append("Generated All Programs MOSERS workbook from raw NISA input")
     return config.model_copy(update={"mosers_all_programs_xlsx": canonical_mosers_path})
+
+
+def _validate_milestone_one_parser_contract(*, workbook_path: Path, variant: str) -> None:
+    totals_df = parse_fcm_totals(workbook_path)
+    futures_df = parse_futures_detail(workbook_path)
+    totals_columns = _ordered_column_names(totals_df)
+    futures_columns = _ordered_column_names(futures_df)
+    if totals_columns != _EXPECTED_TOTAL_COLUMN_ORDER:
+        raise ValueError(
+            "Generated MOSERS workbook does not match Milestone 1 totals parser contract "
+            f"for variant {variant!r}. Expected columns {_EXPECTED_TOTAL_COLUMN_ORDER!r}, "
+            f"got {totals_columns!r}"
+        )
+    if futures_columns != _EXPECTED_FUTURES_COLUMN_ORDER:
+        raise ValueError(
+            "Generated MOSERS workbook does not match Milestone 1 futures parser contract "
+            f"for variant {variant!r}. Expected columns {_EXPECTED_FUTURES_COLUMN_ORDER!r}, "
+            f"got {futures_columns!r}"
+        )
 
 
 def _parse_inputs(input_paths: dict[str, Path]) -> dict[str, dict[str, Any]]:
@@ -2054,6 +2095,16 @@ def _column_names(table: Any) -> set[str]:
     if not records:
         return set()
     return {str(column) for column in records[0]}
+
+
+def _ordered_column_names(table: Any) -> tuple[str, ...]:
+    if hasattr(table, "columns"):
+        raw_columns = table.columns
+        try:
+            return tuple(str(column) for column in raw_columns)
+        except TypeError:
+            return ()
+    return tuple(_column_names(table))
 
 
 def _row_count(table: Any) -> int:
