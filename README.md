@@ -14,6 +14,39 @@ A programmatic replacement for the MOSERS spreadsheet workflow used to evaluate 
 - A run folder with a manifest (inputs, hashes, warnings, summaries)
 - Optional “distribution” deliverables (static PPT/PDF) that do not prompt for link refresh
 
+## Output Generator Configuration
+
+Outputs are registered per run via `output_generators` in YAML config files. Each entry has:
+
+- `name`: unique identifier for the generator
+- `registration`: either `builtin:<id>` or `<python_module>:<symbol>`
+- `stage`: one of `historical`, `ppt_master`, `ppt_refresh`, `ppt_post_distribution`
+- `enabled`: `true`/`false`
+
+Example:
+
+```yaml
+output_generators:
+  - name: historical_workbook
+    registration: builtin:historical_workbook
+    stage: historical
+    enabled: true
+  - name: ppt_screenshot
+    registration: builtin:ppt_screenshot
+    stage: ppt_master
+    enabled: true
+  - name: ppt_link_refresh
+    registration: builtin:ppt_link_refresh
+    stage: ppt_refresh
+    enabled: false
+  - name: custom_exhibit
+    registration: my_package.outputs:CustomExhibitGenerator
+    stage: ppt_post_distribution
+    enabled: true
+```
+
+Setting `enabled: false` cleanly skips that generator for the run.
+
 ## Start here
 
 - **Project agent guide:** [AGENTS.md](AGENTS.md)

@@ -28,6 +28,50 @@ class InputDiscoveryConfig(BaseModel):
     naming_patterns: dict[str, list[str]] = Field(default_factory=dict)
 
 
+class OutputGeneratorConfig(BaseModel):
+    """Registration record for one output generator."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    registration: str
+    stage: Literal["historical", "ppt_master", "ppt_refresh", "ppt_post_distribution"]
+    enabled: bool = True
+
+    @field_validator("name", "registration")
+    @classmethod
+    def _validate_non_blank(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Value must be non-empty")
+        return normalized
+
+
+def _default_output_generators() -> tuple[OutputGeneratorConfig, ...]:
+    return (
+        OutputGeneratorConfig(
+            name="historical_workbook",
+            registration="builtin:historical_workbook",
+            stage="historical",
+        ),
+        OutputGeneratorConfig(
+            name="ppt_screenshot",
+            registration="builtin:ppt_screenshot",
+            stage="ppt_master",
+        ),
+        OutputGeneratorConfig(
+            name="ppt_link_refresh",
+            registration="builtin:ppt_link_refresh",
+            stage="ppt_refresh",
+        ),
+        OutputGeneratorConfig(
+            name="pdf_export",
+            registration="builtin:pdf_export",
+            stage="ppt_post_distribution",
+        ),
+    )
+
+
 class WorkflowConfig(BaseModel):
     """Configuration for a single Counter Risk workflow execution.
 
@@ -56,6 +100,9 @@ class WorkflowConfig(BaseModel):
     distribution_static: bool = False
     export_pdf: bool = False
     enable_ppt_output: bool = True
+    output_generators: tuple[OutputGeneratorConfig, ...] = Field(
+        default_factory=_default_output_generators
+    )
     output_root: Path = Path("runs")
 
     @property
@@ -82,6 +129,19 @@ class WorkflowConfig(BaseModel):
             except ValueError as exc:
                 raise ValueError("Value must be a valid ISO date (YYYY-MM-DD)") from exc
         raise ValueError("Value must be a valid ISO date (YYYY-MM-DD)")
+
+    @field_validator("output_generators")
+    @classmethod
+    def _validate_unique_output_generator_names(
+        cls, value: tuple[OutputGeneratorConfig, ...]
+    ) -> tuple[OutputGeneratorConfig, ...]:
+        seen: set[str] = set()
+        for entry in value:
+            normalized_name = entry.name.casefold()
+            if normalized_name in seen:
+                raise ValueError(f"output_generators contains duplicate name: {entry.name!r}")
+            seen.add(normalized_name)
+        return value
 
 
 def _format_validation_error(error: ValidationError) -> str:

@@ -9,9 +9,19 @@ from zipfile import ZipFile
 import pytest
 
 import counter_risk.pipeline.run as run_module
-from counter_risk.config import WorkflowConfig
+from counter_risk.config import OutputGeneratorConfig, WorkflowConfig
+from counter_risk.outputs.base import OutputContext
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import PptStandaloneValidationResult
+
+
+class _ConfigRegisteredOutputGenerator:
+    name = "config_registered_output"
+
+    def generate(self, *, context: OutputContext) -> tuple[Path, ...]:
+        output_path = context.run_dir / "config-registered-output.txt"
+        output_path.write_text("ok", encoding="utf-8")
+        return (output_path,)
 
 
 def _write_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
@@ -238,3 +248,75 @@ def test_write_outputs_raises_when_distribution_standalone_validation_fails(
         )
 
     assert called["validate_distribution"] == 1
+
+
+def test_write_outputs_skips_disabled_refresh_generator(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, screenshot_inputs={})
+    config = config.model_copy(
+        update={
+            "enable_screenshot_replacement": False,
+            "output_generators": tuple(
+                entry
+                for entry in config.output_generators
+                if entry.name in {"ppt_screenshot", "pdf_export"}
+            ),
+        }
+    )
+    called: dict[str, int] = {"refresh": 0}
+
+    def _unexpected_refresh(_path: Path) -> run_module.PptProcessingResult:
+        called["refresh"] += 1
+        return run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", _unexpected_refresh)
+
+    output_paths, _ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        warnings=[],
+    )
+
+    output_names = resolve_ppt_output_names(date(2025, 12, 31))
+    assert called["refresh"] == 0
+    assert (run_dir / output_names.master_filename) in output_paths
+    assert (run_dir / output_names.distribution_filename) in output_paths
+
+
+def test_write_outputs_runs_config_registered_generator_without_pipeline_changes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, screenshot_inputs={})
+    config = config.model_copy(
+        update={
+            "enable_screenshot_replacement": False,
+            "output_generators": (
+                *config.output_generators,
+                OutputGeneratorConfig(
+                    name="config_registered_output",
+                    registration="tests.test_pipeline_run_outputs:_ConfigRegisteredOutputGenerator",
+                    stage="ppt_post_distribution",
+                    enabled=True,
+                ),
+            ),
+        }
+    )
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", lambda _path: True)
+
+    output_paths, _ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        warnings=[],
+    )
+
+    custom_output = run_dir / "config-registered-output.txt"
+    assert custom_output in output_paths
+    assert custom_output.read_text(encoding="utf-8") == "ok"
