@@ -247,6 +247,88 @@ def test_apply_daily_holdings_repo_cash_noop_when_daily_holdings_not_configured(
     assert warnings == []
 
 
+def test_daily_holdings_repo_cash_flows_into_all_programs_dropin_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={
+            "daily_holdings_pdf": tmp_path / "daily-holdings.pdf",
+            "dropin_all_programs_template_xlsx": tmp_path / "dropin-template.xlsx",
+            "enable_ppt_output": False,
+        }
+    )
+    config.daily_holdings_pdf.write_bytes(b"%PDF-1.4\n%fixture")
+    config.dropin_all_programs_template_xlsx.write_bytes(b"placeholder")
+    for source_path in (
+        config.mosers_all_programs_xlsx,
+        config.mosers_ex_trend_xlsx,
+        config.mosers_trend_xlsx,
+    ):
+        source_path.write_text("fixture", encoding="utf-8")
+
+    parsed_by_variant: dict[str, dict[str, Any]] = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "CIBC",
+                        "TIPS": 0.0,
+                        "Treasury": 0.0,
+                        "Equity": 10.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 10.0,
+                        "NotionalChange": 1.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        }
+    }
+    observed: dict[str, Any] = {}
+    warnings: list[str] = []
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0, "ASL": 3.0})
+
+    def _fake_fill_dropin_template(
+        template_path: Path,
+        exposures_df: Any,
+        breakdown: Any,
+        *,
+        output_path: Path,
+        repo_cash_by_counterparty: Any | None = None,
+    ) -> Path:
+        _ = (template_path, breakdown, repo_cash_by_counterparty)
+        observed["exposures"] = exposures_df
+        output_path.write_bytes(b"filled-dropin")
+        return output_path
+
+    monkeypatch.setattr(run_module, "fill_dropin_template", _fake_fill_dropin_template)
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=config.as_of_date,
+        warnings=warnings,
+        parsed_by_variant=parsed_by_variant,
+    )
+
+    dropin_rows = cast(list[dict[str, Any]], observed["exposures"])
+    by_counterparty = {row["counterparty"]: row for row in dropin_rows}
+    assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(2.0)
+    assert float(by_counterparty["CIBC"]["Notional"]) == pytest.approx(12.0)
+    assert float(by_counterparty["ASL"]["Cash"]) == pytest.approx(3.0)
+    assert float(by_counterparty["ASL"]["Notional"]) == pytest.approx(3.0)
+
+
 def test_build_missing_inputs_summary_complete_with_single_optional_gap(tmp_path: Path) -> None:
     config = _minimal_workflow_config(tmp_path)
     input_paths = run_module._resolve_input_paths(config)
