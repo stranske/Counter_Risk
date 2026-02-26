@@ -23,6 +23,7 @@ def test_attribute_changes_labels_unmatched_current_rows() -> None:
     assert row["is_unmatched"] is True
     assert row["confidence"] == "Low"
     assert row["match_type"] == "unmatched"
+    assert row["attribution_reason"] == "new_or_unmatched_current_row"
     assert report["summary"]["unmatched_rows"] == 1
 
 
@@ -62,15 +63,30 @@ def test_attribute_changes_assigns_low_confidence_for_fuzzy_match() -> None:
     assert row["is_low_confidence"] is True
 
 
+def test_attribute_changes_assigns_medium_confidence_for_normalized_match() -> None:
+    current = [{"counterparty": "Desk-A", "Notional": 125.0}]
+    prior = [{"counterparty": "desk a", "Notional": 120.0}]
+
+    report = attribute_changes(current, prior)
+    row = report["rows"][0]
+
+    assert row["match_type"] == "normalized"
+    assert row["confidence"] == "Medium"
+    assert row["attribution_reason"] == "normalized_name_match_minor_differences"
+    assert row["is_low_confidence"] is False
+
+
 def test_attribute_changes_handles_missing_prior_data_gracefully() -> None:
     current = [{"counterparty": "Desk A", "Notional": 10.0}]
 
     report = attribute_changes(current, prior_df=[])
+    row = report["rows"][0]
 
     assert report["summary"]["total_prior_rows"] == 0
     assert report["summary"]["unmatched_rows"] == 1
     assert report["summary"]["low_confidence_rows"] == 1
     assert report["summary"]["unattributed_remainder"] == 10.0
+    assert row["attribution_reason"] == "missing_prior_data"
 
 
 def test_change_attribution_outputs_write_csv_and_markdown(tmp_path: Path) -> None:

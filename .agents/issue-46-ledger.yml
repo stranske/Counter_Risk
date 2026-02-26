@@ -12,7 +12,7 @@ tasks:
     notes: []
   - id: task-02
     title: Add confidence level logic (High/Medium/Low) to `attribute_changes(...)`
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -20,7 +20,7 @@ tasks:
   - id: task-03
     title: 'Define High confidence level criteria for exact match keys with clean
       deltas (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -28,7 +28,7 @@ tasks:
   - id: task-04
     title: 'Define Medium confidence level criteria for normalized matches with minor
       differences (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -36,14 +36,14 @@ tasks:
   - id: task-05
     title: 'Define Low confidence level criteria for fuzzy or partial matches (verify:
       confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-06
     title: 'missing prior data (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -51,28 +51,28 @@ tasks:
   - id: task-07
     title: 'Implement confidence level assignment logic in the attribute_changes function
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-08
     title: Create `change_attribution.md`
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-09
     title: Create `change_attribution.csv`
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-10
     title: Write tests covering synthetic prior/current pairs for `attribute_changes(...)`
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -80,7 +80,7 @@ tasks:
   - id: task-11
     title: 'Write test case for new unmatched rows appearing in current data (verify:
       confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -88,7 +88,7 @@ tasks:
   - id: task-12
     title: 'Write test case for matched rows with notional changes between periods
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -96,7 +96,7 @@ tasks:
   - id: task-13
     title: 'Write test case for exact match scenarios with High confidence attribution
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -104,7 +104,7 @@ tasks:
   - id: task-14
     title: 'Write test case for fuzzy match scenarios with Low confidence attribution
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -112,7 +112,7 @@ tasks:
   - id: task-15
     title: 'Define scope for: Write test case for handling missing prior data gracefully
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -120,7 +120,7 @@ tasks:
   - id: task-16
     title: 'Implement focused slice for: Write test case for handling missing prior
       data gracefully (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -128,7 +128,7 @@ tasks:
   - id: task-17
     title: 'Validate focused slice for: Write test case for handling missing prior
       data gracefully (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -136,7 +136,7 @@ tasks:
   - id: task-18
     title: When prior month data is available, running the attribution produces both
       `change_attribution.md` and `change_attribution.csv`
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -144,7 +144,7 @@ tasks:
   - id: task-19
     title: Output explicitly labels unmatched items and low-confidence matches (no
       silent assumptions)
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''

@@ -120,6 +120,12 @@ def _best_fuzzy_match(
     return best[1] if best is not None else None
 
 
+def _unmatched_reason(*, has_any_prior_rows: bool) -> str:
+    if has_any_prior_rows:
+        return "new_or_unmatched_current_row"
+    return "missing_prior_data"
+
+
 def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
     """Attribute period-over-period notional moves with explicit confidence labels."""
 
@@ -129,6 +135,7 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
     prior_by_exact = {row.counterparty: row for row in prior_rows}
     prior_by_normalized = {row.normalized_counterparty: row for row in prior_rows}
     used_prior_normalized: set[str] = set()
+    has_any_prior_rows = bool(prior_rows)
 
     report_rows: list[dict[str, Any]] = []
     unmatched_count = 0
@@ -136,7 +143,7 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
 
     for current in sorted(current_rows, key=lambda row: row.counterparty.casefold()):
         prior_match: _ExposureRow | None = None
-        reason = "new_or_unmatched"
+        reason = _unmatched_reason(has_any_prior_rows=has_any_prior_rows)
         match_type = "unmatched"
         confidence = "Low"
 
