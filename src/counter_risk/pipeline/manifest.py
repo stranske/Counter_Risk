@@ -72,7 +72,12 @@ class ManifestBuilder:
             "missing_inputs": (
                 missing_inputs
                 if missing_inputs is not None
-                else {"required": [], "missing_required": [], "is_complete": True}
+                else {
+                    "required": [],
+                    "missing_required": [],
+                    "optional_missing": [],
+                    "is_complete": True,
+                }
             ),
             "reconciliation_results": (
                 reconciliation_results

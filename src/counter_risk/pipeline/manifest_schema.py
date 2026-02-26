@@ -63,10 +63,11 @@ def manifest_schema() -> dict[str, Any]:
             },
             "missing_inputs": {
                 "type": "object",
-                "required": ["required", "missing_required", "is_complete"],
+                "required": ["required", "missing_required", "optional_missing", "is_complete"],
                 "properties": {
                     "required": {"type": "array", "items": {"type": "string"}},
                     "missing_required": {"type": "array", "items": {"type": "string"}},
+                    "optional_missing": {"type": "array", "items": {"type": "string"}},
                     "is_complete": {"type": "boolean"},
                 },
                 "additionalProperties": True,

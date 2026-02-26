@@ -27,3 +27,9 @@ def test_manifest_schema_requires_audit_sections() -> None:
     assert schema["properties"]["unmatched_mappings"]["type"] == "object"
     assert schema["properties"]["missing_inputs"]["type"] == "object"
     assert schema["properties"]["reconciliation_results"]["type"] == "object"
+    assert schema["properties"]["missing_inputs"]["required"] == [
+        "required",
+        "missing_required",
+        "optional_missing",
+        "is_complete",
+    ]

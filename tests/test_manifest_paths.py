@@ -52,7 +52,12 @@ def test_manifest_paths_are_relative_and_resolve_to_existing_files(tmp_path: Pat
     assert parsed["run_dir"] == "."
     assert parsed["ppt_status"] in {"success", "skipped", "failed"}
     assert parsed["unmatched_mappings"] == {"count": 0, "by_variant": {}}
-    assert parsed["missing_inputs"] == {"required": [], "missing_required": [], "is_complete": True}
+    assert parsed["missing_inputs"] == {
+        "required": [],
+        "missing_required": [],
+        "optional_missing": [],
+        "is_complete": True,
+    }
     assert parsed["reconciliation_results"] == {
         "status": "not_run",
         "fail_policy": "warn",

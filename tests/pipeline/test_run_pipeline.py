@@ -179,6 +179,37 @@ def _minimal_workflow_config(
     )
 
 
+def test_build_missing_inputs_summary_complete_with_single_optional_gap(tmp_path: Path) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    input_paths = run_module._resolve_input_paths(config)
+    for path in input_paths.values():
+        path.write_text("fixture", encoding="utf-8")
+
+    summary = run_module._build_missing_inputs_summary(config=config, input_paths=input_paths)
+
+    assert summary["required"] == list(run_module._REQUIRED_INPUT_FIELDS)
+    assert summary["missing_required"] == []
+    assert summary["optional_missing"] == ["raw_nisa_all_programs_xlsx"]
+    assert summary["is_complete"] is True
+
+
+def test_build_missing_inputs_summary_tracks_missing_required_fields(tmp_path: Path) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    input_paths = run_module._resolve_input_paths(config)
+
+    summary = run_module._build_missing_inputs_summary(config=config, input_paths=input_paths)
+
+    assert summary["required"] == list(run_module._REQUIRED_INPUT_FIELDS)
+    assert summary["missing_required"] == sorted(
+        run_module._REQUIRED_INPUT_FIELDS, key=str.casefold
+    )
+    assert summary["optional_missing"] == [
+        "mosers_all_programs_xlsx",
+        "raw_nisa_all_programs_xlsx",
+    ]
+    assert summary["is_complete"] is False
+
+
 def test_build_parsed_data_by_sheet_uses_historical_sheet_names_without_total_key() -> None:
     parsed_sections = {
         "totals": _FakeDataFrame(
