@@ -7,10 +7,10 @@ tasks:
     title: Implement `compute_risk_proxies(exposures_df)` to calculate `Notional *
       AnnualizedVolatility` (when both columns exist) and `PositionUSD * Vol` (when
       both columns exist)
-    status: doing
+    status: done
     started_at: '2026-02-26T06:19:09Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-26T06:19:20Z'
+    commit: 23e6b8d83cf94c697c54114ae35c33516aa46659
     notes: []
   - id: task-02
     title: 'Implement the compute_risk_proxies function signature (verify: confirm
