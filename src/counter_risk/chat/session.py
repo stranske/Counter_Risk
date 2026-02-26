@@ -47,6 +47,33 @@ _ESCAPE_SEQUENCE_PATTERN: Final[re.Pattern[str]] = re.compile(
 )
 _HEAVY_ESCAPING_RATIO_THRESHOLD: Final[float] = 0.30
 _NON_ALNUM_RATIO_THRESHOLD: Final[float] = 0.60
+_ZERO_WIDTH_OR_BIDI_PATTERN: Final[re.Pattern[str]] = re.compile(
+    "[\u200b\u200c\u200d\u200e\u200f\ufeff\u202a-\u202e\u2066-\u2069]"
+)
+_SPREADSHEET_VECTOR_PATTERNS: Final[tuple[tuple[str, re.Pattern[str]], ...]] = (
+    (
+        "formula_instruction",
+        re.compile(
+            r"(?m)^[ \t]*(?:=|\+|@|-)(?=[A-Za-z_(]).*(?:ignore|disregard|system|developer|prompt)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "dde_formula",
+        re.compile(r"(?m)^[ \t]*=[ \t]*[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*\|", re.IGNORECASE),
+    ),
+    (
+        "char_obfuscation",
+        re.compile(r"(?i)(?:unichar|char)\s*\(\s*\d+\s*\)"),
+    ),
+    (
+        "hidden_html_comment",
+        re.compile(r"<!--.*?-->", re.DOTALL),
+    ),
+)
+_FORMULA_PREFIX_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"(?m)^([ \t]*)(=|\+|@|-)(?=[A-Za-z_(])"
+)
 
 _INTENT_PATTERNS: Final[tuple[tuple[str, tuple[re.Pattern[str], ...]], ...]] = (
     (
@@ -289,9 +316,18 @@ def sanitize_untrusted_text(raw_text: str) -> str:
     """Sanitize untrusted workbook/manifest text before prompt insertion."""
 
     normalized = normalize_untrusted_text(raw_text)
+    vector_hits = detect_spreadsheet_injection_vectors(normalized)
+    if vector_hits:
+        _LOGGER.warning(
+            "Detected suspicious spreadsheet prompt-injection vectors in untrusted text: %s",
+            ", ".join(vector_hits),
+        )
+
     sanitized = "".join(
         char if (char.isprintable() or char in {"\n", "\t"}) else " " for char in normalized
     )
+    sanitized = _FORMULA_PREFIX_PATTERN.sub(r"\1[FORMULA_PREFIX:\2]", sanitized)
+    sanitized = _ZERO_WIDTH_OR_BIDI_PATTERN.sub("", sanitized)
     sanitized = sanitized.replace("```", "` ` `")
     sanitized = sanitized.replace("SYSTEM_INSTRUCTIONS_START", "SYSTEM_INSTRUCTIONS_START_REDACTED")
     sanitized = sanitized.replace("SYSTEM_INSTRUCTIONS_END", "SYSTEM_INSTRUCTIONS_END_REDACTED")
@@ -316,6 +352,20 @@ def normalize_untrusted_text(raw_text: str) -> str:
     """Return canonical untrusted text used as the sanitization baseline."""
 
     return raw_text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def detect_spreadsheet_injection_vectors(raw_text: str) -> tuple[str, ...]:
+    """Detect known prompt-injection patterns common in spreadsheet text."""
+
+    hits: list[str] = []
+    if _ZERO_WIDTH_OR_BIDI_PATTERN.search(raw_text):
+        hits.append("zero_width_or_bidi_controls")
+
+    for name, pattern in _SPREADSHEET_VECTOR_PATTERNS:
+        if pattern.search(raw_text):
+            hits.append(name)
+
+    return tuple(sorted(set(hits)))
 
 
 def _warn_on_heavy_encoding_or_escaping(text: str) -> None:
