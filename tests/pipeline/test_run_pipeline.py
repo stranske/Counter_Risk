@@ -972,6 +972,10 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
 
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert "limit_breaches.csv" in manifest["output_paths"]
+    assert manifest["limit_breach_summary"]["has_breaches"] is True
+    assert manifest["limit_breach_summary"]["breach_count"] >= 1
+    assert manifest["limit_breach_summary"]["report_path"] == "limit_breaches.csv"
+    assert "limit_breaches.csv" in manifest["limit_breach_summary"]["warning_banner"]
 
 
 def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
