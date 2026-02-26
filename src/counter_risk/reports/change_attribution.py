@@ -25,6 +25,9 @@ _REASON_NORMALIZED_LOW = "normalized_name_match_requires_review"
 _REASON_FUZZY_LOW = "fuzzy_name_match_partial_similarity"
 _REASON_UNMATCHED_NEW = "new_or_unmatched_current_row"
 _REASON_UNMATCHED_MISSING_PRIOR = "missing_prior_data"
+_CONFIDENCE_HIGH = "High"
+_CONFIDENCE_MEDIUM = "Medium"
+_CONFIDENCE_LOW = "Low"
 _LOW_CONFIDENCE_REASONS: frozenset[str] = frozenset(
     {
         _REASON_NORMALIZED_LOW,
@@ -161,6 +164,22 @@ def _unmatched_reason(*, has_any_prior_rows: bool) -> str:
     return _REASON_UNMATCHED_MISSING_PRIOR
 
 
+def _is_low_confidence_reason(reason: str) -> bool:
+    return reason in _LOW_CONFIDENCE_REASONS
+
+
+def _confidence_for_reason(*, reason: str, has_clean_delta: bool | None = None) -> str:
+    if reason == _REASON_EXACT_KEY_MATCH:
+        if has_clean_delta is False:
+            return _CONFIDENCE_MEDIUM
+        return _CONFIDENCE_HIGH
+    if reason == _REASON_NORMALIZED_MEDIUM:
+        return _CONFIDENCE_MEDIUM
+    if _is_low_confidence_reason(reason):
+        return _CONFIDENCE_LOW
+    return _CONFIDENCE_LOW
+
+
 def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
     """Attribute period-over-period notional moves with explicit confidence labels."""
 
@@ -180,7 +199,7 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
         prior_match: _ExposureRow | None = None
         reason = _unmatched_reason(has_any_prior_rows=has_any_prior_rows)
         match_type = "unmatched"
-        confidence = "Low"
+        has_clean_delta: bool | None = None
 
         if current.counterparty in prior_by_exact:
             prior_match = prior_by_exact[current.counterparty]
@@ -191,7 +210,6 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
             has_clean_delta = (
                 supplied_delta is None or abs(delta - supplied_delta) <= _DELTA_TOLERANCE
             )
-            confidence = "High" if has_clean_delta else "Medium"
         elif current.normalized_counterparty in prior_by_normalized:
             prior_match = prior_by_normalized[current.normalized_counterparty]
             match_type = "normalized"
@@ -200,10 +218,8 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
                 prior_name=prior_match.counterparty,
             ):
                 reason = _REASON_NORMALIZED_MEDIUM
-                confidence = "Medium"
             else:
                 reason = _REASON_NORMALIZED_LOW
-                confidence = "Low"
         else:
             prior_match = _best_fuzzy_match(
                 current_normalized=current.normalized_counterparty,
@@ -213,7 +229,8 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
             if prior_match is not None:
                 match_type = "fuzzy"
                 reason = _REASON_FUZZY_LOW
-                confidence = "Low"
+
+        confidence = _confidence_for_reason(reason=reason, has_clean_delta=has_clean_delta)
 
         if prior_match is None:
             prior_notional = 0.0
@@ -223,7 +240,7 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
             used_prior_normalized.add(prior_match.normalized_counterparty)
 
         notional_change = current.notional - prior_notional
-        is_low_confidence = reason in _LOW_CONFIDENCE_REASONS
+        is_low_confidence = confidence == _CONFIDENCE_LOW
         if is_low_confidence:
             low_confidence_count += 1
 

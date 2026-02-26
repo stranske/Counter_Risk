@@ -53,6 +53,19 @@ def test_attribute_changes_assigns_high_confidence_for_exact_match_and_clean_del
     assert row["is_low_confidence"] is False
 
 
+def test_attribute_changes_assigns_medium_confidence_for_exact_match_with_non_clean_delta() -> None:
+    current = [{"counterparty": "Desk A", "Notional": 125.0, "NotionalChange": 24.0}]
+    prior = [{"counterparty": "Desk A", "Notional": 100.0}]
+
+    report = attribute_changes(current, prior)
+    row = report["rows"][0]
+
+    assert row["match_type"] == "exact"
+    assert row["attribution_reason"] == "exact_key_match"
+    assert row["confidence"] == "Medium"
+    assert row["is_low_confidence"] is False
+
+
 def test_attribute_changes_assigns_low_confidence_for_fuzzy_match() -> None:
     current = [{"counterparty": "Morgan Stanley Prime", "Notional": 125.0}]
     prior = [{"counterparty": "Morgan Stanley", "Notional": 120.0}]
