@@ -31,7 +31,7 @@ _SAMPLE_METRICS: list[dict[str, Any]] = [
 
 def _make_minimal_pptx(path: Path) -> None:
     """Create a minimal valid PPTX file at *path* using python-pptx."""
-    from pptx import Presentation  # type: ignore[import-untyped]
+    from pptx import Presentation
 
     prs = Presentation()
     prs.save(str(path))
@@ -39,14 +39,14 @@ def _make_minimal_pptx(path: Path) -> None:
 
 def _slide_count(path: Path) -> int:
     """Return the number of slides in the PPTX at *path*."""
-    from pptx import Presentation  # type: ignore[import-untyped]
+    from pptx import Presentation
 
     return len(Presentation(str(path)).slides)
 
 
 def _last_slide_table_cell_texts(path: Path) -> list[list[str]]:
     """Return cell texts from the table on the last slide as a 2-D list."""
-    from pptx import Presentation  # type: ignore[import-untyped]
+    from pptx import Presentation
 
     prs = Presentation(str(path))
     slide = prs.slides[-1]

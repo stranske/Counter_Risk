@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from counter_risk.mosers import workbook_generation as workbook_generation_module
+from counter_risk.mosers.template import load_mosers_template_workbook
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook,
     generate_mosers_workbook_ex_trend,
@@ -234,7 +235,7 @@ def test_generate_mosers_workbook_detects_shifted_metric_section_rows(
         ),
         totals_rows=totals_rows,
     )
-    template = workbook_generation_module.load_mosers_template_workbook()
+    template = load_mosers_template_workbook()
     worksheet = template["CPRS - CH"]
     original_start_row, _ = _find_metric_section_bounds(worksheet)
     header_row = workbook_generation_module._find_row_containing_text(
