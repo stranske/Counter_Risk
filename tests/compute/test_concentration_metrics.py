@@ -321,6 +321,60 @@ def test_determinism_reversed_input_order() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Total-exposure denominator consistency tests
+# ---------------------------------------------------------------------------
+
+
+def test_top5_share_denominator_is_total_exposure_not_partial_sum() -> None:
+    """Top-5 share divides by total group exposure, not just the top-5 partial sum."""
+    # notionals: 1, 2, ..., 10 → total=55, top-5 sum=40
+    # If denominator were top-5 only (40), top5_share would equal 1.0
+    # If denominator is total (55), top5_share = 40/55 < 1.0
+    rows = _as_records(compute_concentration_metrics(_TEN_COUNTERPARTY_EXPOSURES))
+    top5_share = rows[0]["top5_share"]
+    expected_using_total = (10 + 9 + 8 + 7 + 6) / 55.0
+    # Verify it equals the total-denominator result (not 1.0)
+    assert top5_share == pytest.approx(expected_using_total, abs=_TOL)
+    assert top5_share < 1.0 - _TOL
+
+
+def test_top10_share_denominator_is_total_exposure_not_partial_sum() -> None:
+    """Top-10 share divides by total group exposure, not just the top-10 partial sum."""
+    # 12 entities with notionals 1..12, total=78, top-10 sum=75
+    # If denominator were top-10 only (75), top10_share would equal 1.0
+    # If denominator is total (78), top10_share = 75/78 < 1.0
+    data = [
+        {"variant": "v", "segment": "s", "counterparty": str(i), "notional": float(i + 1)}
+        for i in range(12)
+    ]
+    rows = _as_records(compute_concentration_metrics(data))
+    top10_share = rows[0]["top10_share"]
+    expected_using_total = (12 + 11 + 10 + 9 + 8 + 7 + 6 + 5 + 4 + 3) / 78.0
+    # Verify it equals the total-denominator result (not 1.0)
+    assert top10_share == pytest.approx(expected_using_total, abs=_TOL)
+    assert top10_share < 1.0 - _TOL
+
+
+def test_top5_and_top10_share_same_denominator() -> None:
+    """Top-5 and Top-10 shares use the same denominator (total group exposure)."""
+    # 12 entities, notionals 1..12, total=78
+    # top-5 sum = 12+11+10+9+8 = 50, top-10 sum = 12+..+3 = 75
+    # Both divided by 78
+    data = [
+        {"variant": "v", "segment": "s", "counterparty": str(i), "notional": float(i + 1)}
+        for i in range(12)
+    ]
+    rows = _as_records(compute_concentration_metrics(data))
+    top5_share = rows[0]["top5_share"]
+    top10_share = rows[0]["top10_share"]
+    total = sum(range(1, 13))  # 78
+    top5_sum = sum(range(8, 13))  # 8+9+10+11+12 = 50
+    top10_sum = sum(range(3, 13))  # 3+4+...+12 = 75
+    assert top5_share == pytest.approx(top5_sum / total, abs=_TOL)
+    assert top10_share == pytest.approx(top10_sum / total, abs=_TOL)
+
+
+# ---------------------------------------------------------------------------
 # write_concentration_metrics_csv tests
 # ---------------------------------------------------------------------------
 

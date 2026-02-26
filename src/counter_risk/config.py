@@ -100,6 +100,7 @@ class WorkflowConfig(BaseModel):
     distribution_static: bool = False
     export_pdf: bool = False
     enable_ppt_output: bool = True
+    include_concentration_table_in_ppt: bool = False
     output_generators: tuple[OutputGeneratorConfig, ...] = Field(
         default_factory=_default_output_generators
     )

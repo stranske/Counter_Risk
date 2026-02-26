@@ -567,6 +567,20 @@ def run_pipeline(config_path: str | Path) -> Path:
         ppt_result = PptProcessingResult(status=PptProcessingStatus.SUCCESS)
     output_paths = historical_output_paths + output_paths
 
+    if runtime_config.include_concentration_table_in_ppt and concentration_metrics_records:
+        dist_ppt_path = run_dir / resolve_ppt_output_names(as_of_date).distribution_filename
+        if dist_ppt_path.exists():
+            try:
+                from counter_risk.ppt.concentration_table import append_concentration_table_slide
+
+                append_concentration_table_slide(dist_ppt_path, concentration_metrics_records)
+                LOGGER.info("concentration_table_appended path=%s", dist_ppt_path)
+            except Exception as exc:
+                LOGGER.exception("pipeline_failed stage=concentration_table run_dir=%s", run_dir)
+                raise RuntimeError(
+                    "Pipeline failed during concentration table append stage"
+                ) from exc
+
     try:
         input_hashes = {
             name: _sha256_file(path) for name, path in _resolve_input_paths(runtime_config).items()
