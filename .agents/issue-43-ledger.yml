@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Implement `compute_concentration_metrics(exposures_df, group_by=[variant,
       segment])` to calculate Top 5 share, Top 10 share, and HHI per group
-    status: doing
+    status: done
     started_at: '2026-02-26T05:50:57Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-26T05:51:09Z'
+    commit: 1804ae7abbb0878adfe9d34a146e8dc1dac293b0
     notes: []
   - id: task-02
     title: 'Create the compute_concentration_metrics function signature with exposures_df
