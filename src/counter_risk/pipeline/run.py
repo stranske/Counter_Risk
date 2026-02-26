@@ -10,7 +10,7 @@ import logging
 import math
 import platform
 import shutil
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
@@ -1761,8 +1761,8 @@ def _derive_dropin_output_filename(template_path: Path) -> str:
     return f"{stem}-filled.xlsx"
 
 
-def _build_dropin_notional_breakdown(totals_records: list[Mapping[str, Any]]) -> dict[str, float]:
-    class_totals = {asset_class: 0.0 for asset_class in _CLASS_BREAKDOWN_COLUMNS}
+def _build_dropin_notional_breakdown(totals_records: Sequence[Mapping[str, Any]]) -> dict[str, float]:
+    class_totals = dict.fromkeys(_CLASS_BREAKDOWN_COLUMNS, 0.0)
     total_notional = 0.0
 
     for row in totals_records:

@@ -116,7 +116,9 @@ def test_write_outputs_generates_all_programs_dropin_when_template_is_configured
             "dropin_all_programs_template_xlsx": tmp_path / "inputs" / "dropin-template.xlsx",
         }
     )
-    config.dropin_all_programs_template_xlsx.write_bytes(b"fixture")
+    template_path = config.dropin_all_programs_template_xlsx
+    assert template_path is not None
+    template_path.write_bytes(b"fixture")
     warnings: list[str] = []
     observed: dict[str, object] = {}
 

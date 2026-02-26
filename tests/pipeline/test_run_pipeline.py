@@ -257,13 +257,18 @@ def test_daily_holdings_repo_cash_flows_into_all_programs_dropin_output(
             "enable_ppt_output": False,
         }
     )
-    config.daily_holdings_pdf.write_bytes(b"%PDF-1.4\n%fixture")
-    config.dropin_all_programs_template_xlsx.write_bytes(b"placeholder")
+    daily_holdings_pdf = config.daily_holdings_pdf
+    dropin_template = config.dropin_all_programs_template_xlsx
+    assert daily_holdings_pdf is not None
+    assert dropin_template is not None
+    daily_holdings_pdf.write_bytes(b"%PDF-1.4\n%fixture")
+    dropin_template.write_bytes(b"placeholder")
     for source_path in (
         config.mosers_all_programs_xlsx,
         config.mosers_ex_trend_xlsx,
         config.mosers_trend_xlsx,
     ):
+        assert source_path is not None
         source_path.write_text("fixture", encoding="utf-8")
 
     parsed_by_variant: dict[str, dict[str, Any]] = {
@@ -316,7 +321,7 @@ def test_daily_holdings_repo_cash_flows_into_all_programs_dropin_output(
     run_module._write_outputs(
         run_dir=run_dir,
         config=config,
-        as_of_date=config.as_of_date,
+        as_of_date=date(2025, 12, 31),
         warnings=warnings,
         parsed_by_variant=parsed_by_variant,
     )
