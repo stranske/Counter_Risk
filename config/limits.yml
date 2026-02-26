@@ -1,0 +1,33 @@
+# Top-level schema:
+# - schema_version: required integer, currently must be 1.
+# - strict_missing_entities: optional boolean; false warns on unmatched limit entities, true raises.
+# - limits: required non-empty list of limit entries.
+schema_version: 1
+
+# When true, missing entities in the exposure set should fail the run.
+# Data type: boolean
+# Valid values: true | false
+strict_missing_entities: false
+
+# Limit entry schema:
+# - entity_type (required string): grouping dimension to evaluate.
+#   Valid values: counterparty | fcm | clearing_house | segment | custom_group
+# - entity_name (required string): canonical key for the grouped target.
+#   Example canonical keys: citibank, cme, trend_energy
+# - limit_value (required number): numeric threshold value for limit evaluation.
+#   Must be > 0.
+# - limit_kind (required string): interpretation of limit_value.
+#   Valid values: absolute_notional | percent_of_total
+# - notes (optional string): operator-facing context for the configured policy.
+limits:
+  - entity_type: counterparty
+    entity_name: citibank
+    limit_value: 250000000
+    limit_kind: absolute_notional
+    notes: Committee approved gross notional cap for single counterparty.
+
+  - entity_type: clearing_house
+    entity_name: cme
+    limit_value: 0.35
+    limit_kind: percent_of_total
+    notes: Max 35 percent of total exposure at a single clearing house.
