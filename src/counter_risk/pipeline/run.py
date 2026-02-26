@@ -81,6 +81,14 @@ _REQUIRED_HISTORICAL_APPEND_HEADERS: tuple[str, ...] = (
     "value series 1",
     "value series 2",
 )
+_REQUIRED_INPUT_FIELDS: tuple[str, ...] = (
+    "mosers_ex_trend_xlsx",
+    "mosers_trend_xlsx",
+    "hist_all_programs_3yr_xlsx",
+    "hist_ex_llc_3yr_xlsx",
+    "hist_llc_3yr_xlsx",
+    "monthly_pptx",
+)
 
 
 @dataclass(frozen=True)
@@ -479,6 +487,7 @@ def run_pipeline(config_path: str | Path) -> Path:
 
     try:
         input_paths = _resolve_input_paths(config)
+        missing_inputs = _build_missing_inputs_summary(config=config, input_paths=input_paths)
         _validate_input_files(input_paths)
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=input_validation config_path=%s", config_path)
@@ -513,7 +522,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         )
         parsed_by_variant = _parse_inputs(_resolve_input_paths(runtime_config))
         _validate_parsed_inputs(parsed_by_variant)
-        _run_reconciliation_checks(
+        reconciliation_outcome = _run_reconciliation_checks(
             run_dir=run_dir,
             config=runtime_config,
             parsed_by_variant=parsed_by_variant,
@@ -594,6 +603,9 @@ def run_pipeline(config_path: str | Path) -> Path:
             top_exposures=top_exposures,
             top_changes_per_variant=top_changes_per_variant,
             warnings=warnings,
+            unmatched_mappings=reconciliation_outcome["unmatched_mappings"],
+            missing_inputs=missing_inputs,
+            reconciliation_results=reconciliation_outcome["reconciliation_results"],
             ppt_status=ppt_result.status.value,
             concentration_metrics=(
                 concentration_metrics_records if concentration_metrics_records else None
@@ -764,6 +776,34 @@ def _validate_input_files(input_paths: dict[str, Path]) -> None:
     if missing:
         details = "; ".join(missing)
         raise FileNotFoundError(f"Missing pipeline input files: {details}")
+
+
+def _build_missing_inputs_summary(
+    *, config: WorkflowConfig, input_paths: Mapping[str, Path]
+) -> dict[str, Any]:
+    missing_required = sorted(
+        [name for name in _REQUIRED_INPUT_FIELDS if not input_paths.get(name, Path()).exists()],
+        key=str.casefold,
+    )
+    optional_candidates = (
+        "mosers_all_programs_xlsx",
+        "raw_nisa_all_programs_xlsx",
+    )
+    optional_missing = sorted(
+        [
+            name
+            for name in optional_candidates
+            if getattr(config, name, None) is None
+            or not Path(getattr(config, name, Path())).exists()
+        ],
+        key=str.casefold,
+    )
+    return {
+        "required": list(_REQUIRED_INPUT_FIELDS),
+        "missing_required": missing_required,
+        "optional_missing": optional_missing,
+        "is_complete": len(missing_required) == 0,
+    }
 
 
 def _prepare_runtime_config(
@@ -2072,7 +2112,7 @@ def _run_reconciliation_checks(
     config: WorkflowConfig,
     parsed_by_variant: dict[str, dict[str, Any]],
     warnings: list[str],
-) -> None:
+) -> dict[str, Any]:
     variant_historical_paths: dict[str, Path] = {
         "all_programs": config.hist_all_programs_3yr_xlsx,
         "ex_trend": config.hist_ex_llc_3yr_xlsx,
@@ -2122,8 +2162,26 @@ def _run_reconciliation_checks(
         for warning in result.get("warnings", []):
             warnings.append(f"Reconciliation ({variant}): {warning}")
 
+    unmatched_mappings = _extract_unmatched_mappings(reconciliation_by_variant)
+    reconciliation_results = {
+        "status": "passed" if total_gap_count == 0 else "failed",
+        "fail_policy": config.reconciliation.fail_policy,
+        "total_gap_count": total_gap_count,
+        "impacted_series_count": impacted_series_count,
+        "impacted_rows_count": impacted_rows_count,
+        "by_variant": {
+            variant: _serializable_reconciliation_result(result)
+            for variant, result in sorted(
+                reconciliation_by_variant.items(), key=lambda item: item[0]
+            )
+        },
+    }
+
     if total_gap_count == 0:
-        return
+        return {
+            "unmatched_mappings": unmatched_mappings,
+            "reconciliation_results": reconciliation_results,
+        }
 
     warnings.append(
         "Reconciliation summary: "
@@ -2145,6 +2203,69 @@ def _run_reconciliation_checks(
             "Reconciliation strict mode failed due to missing/unmapped series; "
             f"gap_count={total_gap_count}"
         )
+    return {
+        "unmatched_mappings": unmatched_mappings,
+        "reconciliation_results": reconciliation_results,
+    }
+
+
+def _serializable_reconciliation_result(result: Mapping[str, Any]) -> dict[str, Any]:
+    serializable: dict[str, Any] = {}
+    for key in ("gap_count", "warnings", "missing_series", "missing_segments", "by_sheet"):
+        value = result.get(key)
+        if value is not None:
+            serializable[key] = value
+    return serializable
+
+
+def _extract_unmatched_mappings(
+    reconciliation_by_variant: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    by_variant: dict[str, list[dict[str, Any]]] = {}
+    total_count = 0
+
+    for variant, payload in reconciliation_by_variant.items():
+        entries: list[dict[str, Any]] = []
+        missing_series = payload.get("missing_series", [])
+        if isinstance(missing_series, list):
+            for item in missing_series:
+                if not isinstance(item, Mapping):
+                    continue
+                if str(item.get("error_type", "")).strip() != "unmapped_counterparty":
+                    continue
+                sheet = str(item.get("sheet", "")).strip()
+                raw_counterparties = sorted(
+                    {
+                        str(value).strip()
+                        for value in item.get("raw_counterparties", [])
+                        if str(value).strip()
+                    },
+                    key=str.casefold,
+                )
+                normalized_counterparties = sorted(
+                    {
+                        str(value).strip()
+                        for value in item.get("normalized_counterparties", [])
+                        if str(value).strip()
+                    },
+                    key=str.casefold,
+                )
+                entries.append(
+                    {
+                        "sheet": sheet,
+                        "raw_counterparties": raw_counterparties,
+                        "normalized_counterparties": normalized_counterparties,
+                    }
+                )
+
+        if entries:
+            by_variant[variant] = entries
+            total_count += sum(len(entry["normalized_counterparties"]) for entry in entries)
+
+    return {
+        "count": total_count,
+        "by_variant": by_variant,
+    }
 
 
 def _build_parsed_data_by_sheet(

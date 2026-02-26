@@ -32,6 +32,9 @@ class ManifestBuilder:
         top_exposures: dict[str, list[dict[str, Any]]],
         top_changes_per_variant: dict[str, list[dict[str, Any]]],
         warnings: list[Any],
+        unmatched_mappings: dict[str, Any] | None = None,
+        missing_inputs: dict[str, Any] | None = None,
+        reconciliation_results: dict[str, Any] | None = None,
         ppt_status: str = "success",
         concentration_metrics: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
@@ -59,6 +62,26 @@ class ManifestBuilder:
             "top_exposures": top_exposures,
             "top_changes_per_variant": top_changes_per_variant,
             "warnings": warnings,
+            "unmatched_mappings": (
+                unmatched_mappings
+                if unmatched_mappings is not None
+                else {"count": 0, "by_variant": {}}
+            ),
+            "missing_inputs": (
+                missing_inputs
+                if missing_inputs is not None
+                else {"required": [], "missing_required": [], "is_complete": True}
+            ),
+            "reconciliation_results": (
+                reconciliation_results
+                if reconciliation_results is not None
+                else {
+                    "status": "not_run",
+                    "fail_policy": "warn",
+                    "total_gap_count": 0,
+                    "by_variant": {},
+                }
+            ),
         }
         if concentration_metrics is not None:
             manifest["concentration_metrics"] = concentration_metrics

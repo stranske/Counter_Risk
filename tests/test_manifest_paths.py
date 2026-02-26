@@ -51,6 +51,14 @@ def test_manifest_paths_are_relative_and_resolve_to_existing_files(tmp_path: Pat
     parsed = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert parsed["run_dir"] == "."
     assert parsed["ppt_status"] in {"success", "skipped", "failed"}
+    assert parsed["unmatched_mappings"] == {"count": 0, "by_variant": {}}
+    assert parsed["missing_inputs"] == {"required": [], "missing_required": [], "is_complete": True}
+    assert parsed["reconciliation_results"] == {
+        "status": "not_run",
+        "fail_policy": "warn",
+        "total_gap_count": 0,
+        "by_variant": {},
+    }
 
     for artifact_path in parsed["output_paths"]:
         assert not artifact_path.startswith("/")

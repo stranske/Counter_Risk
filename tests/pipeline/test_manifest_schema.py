@@ -13,3 +13,17 @@ def test_manifest_schema_defines_master_and_distribution_ppt_outputs() -> None:
 
     assert ppt_outputs["properties"]["master"]["properties"]["path"]["type"] == "string"
     assert ppt_outputs["properties"]["distribution"]["properties"]["path"]["type"] == "string"
+
+
+def test_manifest_schema_requires_audit_sections() -> None:
+    schema = manifest_schema()
+
+    assert "warnings" in schema["required"]
+    assert "unmatched_mappings" in schema["required"]
+    assert "missing_inputs" in schema["required"]
+    assert "reconciliation_results" in schema["required"]
+
+    assert schema["properties"]["warnings"]["type"] == "array"
+    assert schema["properties"]["unmatched_mappings"]["type"] == "object"
+    assert schema["properties"]["missing_inputs"]["type"] == "object"
+    assert schema["properties"]["reconciliation_results"]["type"] == "object"

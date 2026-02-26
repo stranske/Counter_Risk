@@ -640,6 +640,13 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
         assert (run_dir / output_path).exists(), f"Manifest references missing path: {output_path}"
 
     assert "PPT links not refreshed; COM refresh skipped" in manifest["warnings"]
+    assert manifest["unmatched_mappings"]["count"] >= 0
+    assert isinstance(manifest["unmatched_mappings"]["by_variant"], dict)
+    assert manifest["missing_inputs"]["is_complete"] is True
+    assert manifest["missing_inputs"]["missing_required"] == []
+    assert manifest["reconciliation_results"]["status"] in {"passed", "failed"}
+    assert manifest["reconciliation_results"]["fail_policy"] in {"warn", "strict"}
+    assert isinstance(manifest["reconciliation_results"]["by_variant"], dict)
 
     expected_hashes = {
         "mosers_all_programs_xlsx": _sha256(
@@ -954,6 +961,10 @@ def test_run_pipeline_warn_mode_writes_mapping_updates_and_completes(
     assert "fail_policy: warn" in text
     assert "missing_from_historical_headers" in text
     assert any("Reconciliation summary:" in warning for warning in manifest["warnings"])
+    assert manifest["reconciliation_results"]["status"] == "failed"
+    assert manifest["reconciliation_results"]["total_gap_count"] > 0
+    assert manifest["unmatched_mappings"]["count"] > 0
+    assert "all_programs" in manifest["unmatched_mappings"]["by_variant"]
 
 
 def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
