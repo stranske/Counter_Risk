@@ -107,6 +107,9 @@ def manifest_schema() -> dict[str, Any]:
             "top_changes_per_variant",
             "warnings",
             "data_quality",
+            "unmatched_mappings",
+            "missing_inputs",
+            "reconciliation_results",
         ],
         "properties": {
             "as_of_date": {"type": "string"},
@@ -120,6 +123,43 @@ def manifest_schema() -> dict[str, Any]:
             "top_changes_per_variant": {"type": "object"},
             "warnings": {"type": "array", "items": {"type": "string"}},
             "data_quality": _DATA_QUALITY_SCHEMA,
+            "unmatched_mappings": {
+                "type": "object",
+                "required": ["count", "by_variant"],
+                "properties": {
+                    "count": {"type": "integer", "minimum": 0},
+                    "by_variant": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {"type": "object"},
+                        },
+                    },
+                },
+                "additionalProperties": True,
+            },
+            "missing_inputs": {
+                "type": "object",
+                "required": ["required", "missing_required", "optional_missing", "is_complete"],
+                "properties": {
+                    "required": {"type": "array", "items": {"type": "string"}},
+                    "missing_required": {"type": "array", "items": {"type": "string"}},
+                    "optional_missing": {"type": "array", "items": {"type": "string"}},
+                    "is_complete": {"type": "boolean"},
+                },
+                "additionalProperties": True,
+            },
+            "reconciliation_results": {
+                "type": "object",
+                "required": ["status", "fail_policy", "total_gap_count", "by_variant"],
+                "properties": {
+                    "status": {"type": "string"},
+                    "fail_policy": {"type": "string"},
+                    "total_gap_count": {"type": "integer", "minimum": 0},
+                    "by_variant": {"type": "object"},
+                },
+                "additionalProperties": True,
+            },
             "ppt_outputs": {
                 "type": "object",
                 "required": ["master", "distribution"],
