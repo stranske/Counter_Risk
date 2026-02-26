@@ -33,6 +33,7 @@ class ManifestBuilder:
         top_changes_per_variant: dict[str, list[dict[str, Any]]],
         warnings: list[Any],
         ppt_status: str = "success",
+        concentration_metrics: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         valid_ppt_statuses = {"success", "skipped", "failed"}
         if ppt_status not in valid_ppt_statuses:
@@ -47,7 +48,7 @@ class ManifestBuilder:
         )
         self._validate_artifact_paths_exist(run_dir=run_dir, relative_paths=normalized_output_paths)
         config_snapshot = self._serialize_config_snapshot(self.config)
-        return {
+        manifest: dict[str, Any] = {
             "as_of_date": self.as_of_date.isoformat(),
             "run_date": self.run_date.isoformat(),
             "run_dir": ".",
@@ -59,6 +60,9 @@ class ManifestBuilder:
             "top_changes_per_variant": top_changes_per_variant,
             "warnings": warnings,
         }
+        if concentration_metrics is not None:
+            manifest["concentration_metrics"] = concentration_metrics
+        return manifest
 
     def write(self, *, run_dir: Path, manifest: dict[str, Any]) -> Path:
         path = run_dir / "manifest.json"
