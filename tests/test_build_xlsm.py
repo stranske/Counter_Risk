@@ -6,6 +6,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from zipfile import ZipFile
 
+from openpyxl import load_workbook
 import pytest
 
 from counter_risk.build import xlsm
@@ -220,3 +221,26 @@ def test_runner_xlsm_manual_macro_verification_doc_is_present_and_actionable() -
     assert "OpenOutputFolder_Click" in content
     assert "Version Bump Regression Check" in content
     assert "--version 1.2.4" in content
+
+
+def test_build_xlsm_artifact_opens_with_openpyxl_and_preserves_vba_project(tmp_path: Path) -> None:
+    output_path = tmp_path / "Runner.generated.xlsm"
+
+    xlsm.build_xlsm_artifact(
+        template_path=Path("assets/templates/counter_risk_template.xlsm"),
+        output_path=output_path,
+        as_of_date=date(2026, 1, 31),
+        run_date=datetime(2026, 2, 26, 12, 0, tzinfo=UTC),
+        version="1.2.4",
+    )
+
+    workbook = load_workbook(filename=output_path, keep_vba=True)
+    assert workbook.sheetnames == ["Runner", "ControlData"]
+    assert workbook["Runner"]["A1"].value == "Counter Risk Runner"
+    assert workbook["Runner"]["A5"].value == "Run All"
+    assert workbook["Runner"]["B5"].value == "Run Ex Trend"
+    assert workbook["Runner"]["C5"].value == "Run Trend"
+    assert workbook["Runner"]["D5"].value == "Open Output Folder"
+    assert workbook.vba_archive is not None
+    assert "xl/vbaProject.bin" in workbook.vba_archive.namelist()
+    workbook.close()
