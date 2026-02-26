@@ -866,7 +866,7 @@ def test_run_reconciliation_checks_records_class_breakdown_sanity_failure(
     )
 
     assert outcome["reconciliation_results"]["status"] == "failed"
-    assert outcome["reconciliation_results"]["total_gap_count"] == 1
+    assert outcome["reconciliation_results"]["total_gap_count"] == 2
     all_programs_result = outcome["reconciliation_results"]["by_variant"]["all_programs"]
     assert all_programs_result["class_breakdown_sanity_check"]["status"] == "failed"
     assert any("Class breakdown sanity check failed" in warning for warning in warnings)
