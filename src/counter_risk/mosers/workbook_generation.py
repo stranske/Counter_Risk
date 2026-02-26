@@ -21,9 +21,15 @@ Worksheet: TypeAlias = Any
 
 _REQUIRED_SHEETS = ("CPRS - CH", "CPRS - FCM")
 _TARGET_SHEET = "CPRS - CH"
+_FCM_SHEET = "CPRS - FCM"
 _PROGRAM_NAME_CELL = "B5"
 _START_ROW = 10
 _END_ROW = 20
+_SECTION_LABEL_COLUMN = "C"
+_CH_TOTALS_MARKER = "Total by Counterparty/Clearing House"
+_CH_TOTALS_STOP_MARKERS = ("Total Current Exposure", "MOSERS Program", "Notional Breakdown")
+_FCM_TOTALS_MARKER = "Total by Counterparty/ FCM"
+_FCM_TOTALS_STOP_MARKERS = ("FUTURES DETAIL",)
 
 
 @dataclass(frozen=True)
@@ -134,6 +140,19 @@ def _generate_mosers_workbook_from_parser(
             values=_build_totals_metric_values(parsed.totals_rows, transform.source_metric),
         )
 
+    _write_totals_rows_by_marker(
+        worksheet=workbook[_TARGET_SHEET],
+        totals_rows=parsed.totals_rows,
+        section_marker=_CH_TOTALS_MARKER,
+        stop_markers=_CH_TOTALS_STOP_MARKERS,
+    )
+    _write_totals_rows_by_marker(
+        worksheet=workbook[_FCM_SHEET],
+        totals_rows=parsed.totals_rows,
+        section_marker=_FCM_TOTALS_MARKER,
+        stop_markers=_FCM_TOTALS_STOP_MARKERS,
+    )
+
     return workbook
 
 
@@ -169,3 +188,71 @@ def _write_vertical_values(
         row_number = start_row + index
         cell = f"{column_letter}{row_number}"
         worksheet[cell] = values[index] if index < len(values) else None
+
+
+def _write_totals_rows_by_marker(
+    *,
+    worksheet: Worksheet,
+    totals_rows: tuple[NisaTotalsRow, ...],
+    section_marker: str,
+    stop_markers: tuple[str, ...],
+) -> None:
+    marker_row = _find_marker_row(worksheet=worksheet, marker_text=section_marker)
+    if marker_row is None:
+        return
+
+    start_row = marker_row + 1
+    stop_row = _find_stop_row(worksheet=worksheet, start_row=start_row, stop_markers=stop_markers)
+    end_row = (stop_row - 1) if stop_row is not None else int(worksheet.max_row)
+    if end_row < start_row:
+        return
+
+    total_slots = (end_row - start_row) + 1
+    for index in range(total_slots):
+        row_number = start_row + index
+        if index < len(totals_rows):
+            _write_totals_row_values(
+                worksheet=worksheet, row_number=row_number, row=totals_rows[index]
+            )
+            continue
+        _clear_totals_row_values(worksheet=worksheet, row_number=row_number)
+
+
+def _write_totals_row_values(*, worksheet: Worksheet, row_number: int, row: NisaTotalsRow) -> None:
+    worksheet[f"C{row_number}"] = row.counterparty
+    worksheet[f"E{row_number}"] = row.tips
+    worksheet[f"F{row_number}"] = row.treasury
+    worksheet[f"G{row_number}"] = row.equity
+    worksheet[f"H{row_number}"] = row.commodity
+    worksheet[f"I{row_number}"] = row.currency
+    worksheet[f"K{row_number}"] = row.notional
+    worksheet[f"L{row_number}"] = row.notional_change
+
+
+def _clear_totals_row_values(*, worksheet: Worksheet, row_number: int) -> None:
+    for column_letter in ("C", "E", "F", "G", "H", "I", "K", "L"):
+        worksheet[f"{column_letter}{row_number}"] = None
+
+
+def _find_marker_row(*, worksheet: Worksheet, marker_text: str) -> int | None:
+    marker = _normalize_marker_text(marker_text)
+    for row_number in range(1, int(worksheet.max_row) + 1):
+        cell_text = worksheet[f"{_SECTION_LABEL_COLUMN}{row_number}"].value
+        if marker in _normalize_marker_text(cell_text):
+            return row_number
+    return None
+
+
+def _find_stop_row(
+    *, worksheet: Worksheet, start_row: int, stop_markers: tuple[str, ...]
+) -> int | None:
+    normalized_markers = tuple(_normalize_marker_text(marker) for marker in stop_markers)
+    for row_number in range(start_row, int(worksheet.max_row) + 1):
+        cell_text = _normalize_marker_text(worksheet[f"{_SECTION_LABEL_COLUMN}{row_number}"].value)
+        if any(marker in cell_text for marker in normalized_markers):
+            return row_number
+    return None
+
+
+def _normalize_marker_text(value: object) -> str:
+    return " ".join(str(value or "").split()).strip().casefold()

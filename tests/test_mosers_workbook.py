@@ -34,6 +34,32 @@ def test_generate_mosers_workbook_populates_program_name_from_parsed_nisa_data(
         expected_allocations = _pad_to_slot_count(_expected_allocations(parsed), 11)
         assert _read_column_values(worksheet, "D", 10, 20) == expected_vols
         assert _read_column_values(worksheet, "E", 10, 20) == expected_allocations
+
+        first_total = parsed.totals_rows[0]
+        ch_totals_start = _find_marker_row(worksheet, "Total by Counterparty/Clearing House") + 1
+        assert _read_totals_row(worksheet, ch_totals_start) == (
+            first_total.counterparty,
+            first_total.tips,
+            first_total.treasury,
+            first_total.equity,
+            first_total.commodity,
+            first_total.currency,
+            first_total.notional,
+            first_total.notional_change,
+        )
+
+        fcm_sheet = workbook["CPRS - FCM"]
+        fcm_totals_start = _find_marker_row(fcm_sheet, "Total by Counterparty/ FCM") + 1
+        assert _read_totals_row(fcm_sheet, fcm_totals_start) == (
+            first_total.counterparty,
+            first_total.tips,
+            first_total.treasury,
+            first_total.equity,
+            first_total.commodity,
+            first_total.currency,
+            first_total.notional,
+            first_total.notional_change,
+        )
     finally:
         workbook.close()
 
@@ -158,3 +184,26 @@ def _pad_to_slot_count(values: list[float], slots: int) -> list[float | None]:
         trimmed: list[float | None] = [*values[:slots]]
         return trimmed
     return [*values, *([None] * (slots - len(values)))]
+
+
+def _find_marker_row(worksheet: Any, marker: str) -> int:
+    marker_text = " ".join(marker.split()).strip().casefold()
+    for row_number in range(1, int(worksheet.max_row) + 1):
+        value = worksheet[f"C{row_number}"].value
+        normalized = " ".join(str(value or "").split()).strip().casefold()
+        if marker_text in normalized:
+            return row_number
+    raise AssertionError(f"Unable to locate marker row containing {marker!r}")
+
+
+def _read_totals_row(worksheet: Any, row_number: int) -> tuple[Any, ...]:
+    return (
+        worksheet[f"C{row_number}"].value,
+        worksheet[f"E{row_number}"].value,
+        worksheet[f"F{row_number}"].value,
+        worksheet[f"G{row_number}"].value,
+        worksheet[f"H{row_number}"].value,
+        worksheet[f"I{row_number}"].value,
+        worksheet[f"K{row_number}"].value,
+        worksheet[f"L{row_number}"].value,
+    )
