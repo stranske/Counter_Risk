@@ -534,6 +534,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during run directory setup stage") from exc
 
     warnings: list[str] = []
+    _append_missing_inputs_warnings(missing_inputs=missing_inputs, warnings=warnings)
     runtime_config = config
     try:
         runtime_config = _prepare_runtime_config(
@@ -845,6 +846,39 @@ def _build_missing_inputs_summary(
         "optional_missing": optional_missing,
         "is_complete": len(missing_required) == 0,
     }
+
+
+def _append_missing_inputs_warnings(
+    *, missing_inputs: Mapping[str, Any], warnings: list[str]
+) -> None:
+    missing_required_raw = missing_inputs.get("missing_required", [])
+    optional_missing_raw = missing_inputs.get("optional_missing", [])
+
+    missing_required = sorted(
+        {
+            str(field).strip()
+            for field in missing_required_raw
+            if isinstance(field, str) and str(field).strip()
+        },
+        key=str.casefold,
+    )
+    optional_missing = sorted(
+        {
+            str(field).strip()
+            for field in optional_missing_raw
+            if isinstance(field, str) and str(field).strip()
+        },
+        key=str.casefold,
+    )
+
+    if missing_required:
+        warnings.append(
+            "Input validation: missing required inputs " f"({', '.join(missing_required)})."
+        )
+    if optional_missing:
+        warnings.append(
+            "Input validation: optional inputs unavailable " f"({', '.join(optional_missing)})."
+        )
 
 
 def _prepare_runtime_config(

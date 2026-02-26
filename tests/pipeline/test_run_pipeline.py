@@ -211,6 +211,37 @@ def test_build_missing_inputs_summary_tracks_missing_required_fields(tmp_path: P
     assert summary["is_complete"] is False
 
 
+def test_append_missing_inputs_warnings_adds_required_and_optional_messages() -> None:
+    warnings: list[str] = []
+
+    run_module._append_missing_inputs_warnings(
+        missing_inputs={
+            "missing_required": ["monthly_pptx", "hist_llc_3yr_xlsx"],
+            "optional_missing": ["raw_nisa_all_programs_xlsx"],
+        },
+        warnings=warnings,
+    )
+
+    assert warnings == [
+        "Input validation: missing required inputs (hist_llc_3yr_xlsx, monthly_pptx).",
+        "Input validation: optional inputs unavailable (raw_nisa_all_programs_xlsx).",
+    ]
+
+
+def test_append_missing_inputs_warnings_ignores_blank_and_non_string_entries() -> None:
+    warnings: list[str] = []
+
+    run_module._append_missing_inputs_warnings(
+        missing_inputs={
+            "missing_required": ["", "   ", None, 123],
+            "optional_missing": [None, "", "mosers_all_programs_xlsx", "  "],
+        },
+        warnings=warnings,
+    )
+
+    assert warnings == ["Input validation: optional inputs unavailable (mosers_all_programs_xlsx)."]
+
+
 def test_build_parsed_data_by_sheet_uses_historical_sheet_names_without_total_key() -> None:
     parsed_sections = {
         "totals": _FakeDataFrame(
@@ -897,6 +928,10 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
         assert (run_dir / output_path).exists(), f"Manifest references missing path: {output_path}"
 
     assert "PPT links not refreshed; COM refresh skipped" in manifest["warnings"]
+    assert (
+        "Input validation: optional inputs unavailable (raw_nisa_all_programs_xlsx)."
+        in manifest["warnings"]
+    )
     assert manifest["unmatched_mappings"]["count"] >= 0
     assert isinstance(manifest["unmatched_mappings"]["by_variant"], dict)
     assert manifest["missing_inputs"]["is_complete"] is True
