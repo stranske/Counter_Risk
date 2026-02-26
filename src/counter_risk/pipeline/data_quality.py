@@ -68,7 +68,7 @@ def _build_findings(warnings: list[Any]) -> list[dict[str, Any]]:
 
 
 def _build_counts(findings: list[dict[str, Any]]) -> dict[str, Any]:
-    severity_counts = {severity: 0 for severity in _SEVERITIES}
+    severity_counts = dict.fromkeys(_SEVERITIES, 0)
     by_category: dict[str, dict[str, int]] = defaultdict(
         lambda: {"info": 0, "warn": 0, "fail": 0, "total": 0}
     )
