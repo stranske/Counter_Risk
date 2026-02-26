@@ -32,12 +32,12 @@ def test_vba_inventory_scope_is_explicit() -> None:
     assert WORKBOOKS_WITH_VBA, "Scope must name at least one workbook with embedded VBA."
     for workbook_path in WORKBOOKS_WITH_VBA:
         assert workbook_path.suffix.lower() == ".xlsm", (
-            "VBA inventory scope only includes macro-enabled workbook sources: " f"{workbook_path}"
+            f"VBA inventory scope only includes macro-enabled workbook sources: {workbook_path}"
         )
     assert MODULE_SOURCE_EXTENSION == ".bas", "VBA module sources must be stored as .bas files."
     for file_name in ALLOWED_NON_MODULE_FILES:
         assert (VBA_SOURCE_DIR / file_name).is_file(), (
-            "Allowed non-module VBA artifact missing from scope: " f"{VBA_SOURCE_DIR / file_name}"
+            f"Allowed non-module VBA artifact missing from scope: {VBA_SOURCE_DIR / file_name}"
         )
 
 
@@ -74,15 +74,14 @@ def test_all_embedded_vba_modules_have_bas_sources() -> None:
         and path.stem not in discovered_modules
         and path.name not in ALLOWED_NON_MODULE_FILES
     )
-    assert (
-        not unexpected_non_module_files
-    ), "assets/vba contains files outside module inventory scope: " + ", ".join(
-        unexpected_non_module_files
+    assert not unexpected_non_module_files, (
+        "assets/vba contains files outside module inventory scope: "
+        + ", ".join(unexpected_non_module_files)
     )
 
     for module_name in sorted(discovered_modules):
         module_path = VBA_SOURCE_DIR / f"{module_name}{MODULE_SOURCE_EXTENSION}"
         source = module_path.read_text(encoding="utf-8")
-        assert (
-            f'Attribute VB_Name = "{module_name}"' in source
-        ), f"{module_path} does not declare the expected VB module name {module_name}."
+        assert f'Attribute VB_Name = "{module_name}"' in source, (
+            f"{module_path} does not declare the expected VB module name {module_name}."
+        )
