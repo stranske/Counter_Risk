@@ -221,3 +221,60 @@ def validate_manifest_ppt_outputs(
     if has_distribution:
         return False, "Manifest ppt_outputs is missing required Master PPT entry."
     return False, "Manifest ppt_outputs must include both Master and Distribution entries."
+
+
+def validate_manifest_data_quality(manifest: Mapping[str, Any]) -> tuple[bool, str | None]:
+    """Validate data_quality shape for focused acceptance checks."""
+
+    data_quality = manifest.get("data_quality")
+    if not isinstance(data_quality, Mapping):
+        return False, "Manifest must include data_quality object."
+
+    required_fields = [
+        "overall_status",
+        "severity_levels",
+        "findings",
+        "counts",
+        "recommended_actions",
+    ]
+    for field in required_fields:
+        if field not in data_quality:
+            if field == "recommended_actions":
+                return False, "Manifest data_quality is missing required recommended_actions field."
+            return False, f"Manifest data_quality is missing required {field} field."
+
+    recommended_actions = data_quality.get("recommended_actions")
+    if not isinstance(recommended_actions, list):
+        return False, "Manifest data_quality recommended_actions must be an array."
+
+    valid_severities = {"info", "warn", "fail"}
+    for index, action in enumerate(recommended_actions):
+        if not isinstance(action, Mapping):
+            return (
+                False,
+                f"Manifest data_quality recommended_actions[{index}] must be an object.",
+            )
+
+        category = action.get("category")
+        if not isinstance(category, str) or not category.strip():
+            return (
+                False,
+                f"Manifest data_quality recommended_actions[{index}] must include non-empty category.",
+            )
+
+        severity = action.get("severity")
+        if not isinstance(severity, str) or severity not in valid_severities:
+            return (
+                False,
+                "Manifest data_quality recommended_actions"
+                f"[{index}].severity must be one of: info, warn, fail.",
+            )
+
+        description = action.get("action")
+        if not isinstance(description, str) or not description.strip():
+            return (
+                False,
+                f"Manifest data_quality recommended_actions[{index}] must include non-empty action.",
+            )
+
+    return True, None
