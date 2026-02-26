@@ -9,6 +9,7 @@ import pytest
 
 from counter_risk.compute.rollups import (
     compute_notional_breakdown,
+    compute_risk_proxies,
     compute_totals,
     top_changes,
     top_exposures,
@@ -161,3 +162,48 @@ def test_top_changes_sorts_by_absolute_change() -> None:
     top = _as_records(top_changes(totals, n=2))
 
     assert [row["group_name"] for row in top] == ["B", "Cash"]
+
+
+def test_compute_risk_proxies_calculates_notional_times_annualized_volatility() -> None:
+    exposures = [
+        {
+            "counterparty": "A",
+            "Notional": 100.0,
+            "AnnualizedVolatility": 0.2,
+        },
+        {
+            "counterparty": "B",
+            "Notional": 80.0,
+            "AnnualizedVolatility": 0.5,
+        },
+    ]
+
+    records = _as_records(compute_risk_proxies(exposures))
+
+    assert [row["risk_proxy_notional_annualized_volatility"] for row in records] == [20.0, 40.0]
+    assert all("risk_proxy_position_usd_vol" not in row for row in records)
+
+
+def test_compute_risk_proxies_calculates_position_usd_times_vol() -> None:
+    exposures = [
+        {
+            "counterparty": "A",
+            "PositionUSD": 5_000_000.0,
+            "Vol": 0.1,
+        },
+        {
+            "counterparty": "B",
+            "PositionUSD": 7_500_000.0,
+            "Vol": 0.2,
+        },
+    ]
+
+    records = _as_records(compute_risk_proxies(exposures))
+
+    assert [row["risk_proxy_position_usd_vol"] for row in records] == [500000.0, 1500000.0]
+    assert all("risk_proxy_notional_annualized_volatility" not in row for row in records)
+
+
+def test_compute_risk_proxies_requires_dataframe_like_or_iterable_of_mappings() -> None:
+    with pytest.raises(TypeError, match="exposures_df must be a pandas-like DataFrame"):
+        compute_risk_proxies(1.23)
