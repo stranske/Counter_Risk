@@ -74,7 +74,7 @@ class OutputGeneratorRegistry:
         module_name, separator, attribute_name = registration.partition(":")
         if not separator or not module_name or not attribute_name:
             raise ValueError(
-                "Output generator registration must be '<module>:<symbol>' or " "'builtin:<name>'"
+                "Output generator registration must be '<module>:<symbol>' or 'builtin:<name>'"
             )
         module = import_module(module_name)
         candidate = getattr(module, attribute_name)

@@ -1836,9 +1836,13 @@ def _build_output_generator_registry(
 ) -> OutputGeneratorRegistry:
     return OutputGeneratorRegistry(
         builtin_factories={
-            "historical_workbook": lambda registry_context: _build_historical_workbook_output_generator(
-                parsed_by_variant=_require_parsed_by_variant(registry_context.parsed_by_variant),
-                warnings=registry_context.warnings,
+            "historical_workbook": lambda registry_context: (
+                _build_historical_workbook_output_generator(
+                    parsed_by_variant=_require_parsed_by_variant(
+                        registry_context.parsed_by_variant
+                    ),
+                    warnings=registry_context.warnings,
+                )
             ),
             "ppt_screenshot": lambda registry_context: _build_ppt_screenshot_output_generator(
                 warnings=registry_context.warnings,
