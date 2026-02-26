@@ -82,3 +82,60 @@ def test_manifest_build_data_quality_defaults_to_info_when_no_warnings(tmp_path:
     assert data_quality["counts"]["by_severity"] == {"info": 1, "warn": 0, "fail": 0}
     assert data_quality["findings"][0]["code"] == "NO_FINDINGS"
     assert data_quality["recommended_actions"][0]["severity"] == "info"
+
+
+def test_manifest_build_collects_data_quality_from_validation_context(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    artifact = run_dir / "output.csv"
+    artifact.write_text("ok\n", encoding="utf-8")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(artifact.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[],
+        missing_inputs={
+            "required": ["monthly_pptx", "hist_llc_3yr_xlsx"],
+            "missing_required": ["monthly_pptx"],
+            "optional_missing": ["raw_nisa_all_programs_xlsx"],
+            "is_complete": False,
+        },
+        unmatched_mappings={"count": 2, "by_variant": {"all_programs": [{"series": "X"}]}},
+        reconciliation_results={
+            "status": "failed",
+            "fail_policy": "strict",
+            "total_gap_count": 2,
+            "by_variant": {"all_programs": {"gap_count": 2}},
+        },
+        ppt_status="skipped",
+        limit_breach_summary={
+            "has_breaches": True,
+            "breach_count": 1,
+            "report_path": "limit_breaches.csv",
+            "warning_banner": "1 limit breach detected. Review limit_breaches.csv.",
+        },
+    )
+
+    data_quality = manifest["data_quality"]
+    finding_codes = {finding["code"] for finding in data_quality["findings"]}
+
+    assert data_quality["overall_status"] == "fail"
+    assert {
+        "MISSING_REQUIRED_INPUTS",
+        "MISSING_OPTIONAL_INPUTS",
+        "UNMATCHED_MAPPINGS",
+        "RECONCILIATION_GAPS",
+        "PPT_GENERATION_SKIPPED",
+        "LIMIT_BREACHES",
+    }.issubset(finding_codes)
+    assert data_quality["counts"]["by_category"]["reconciliation"]["fail"] >= 1
+    assert data_quality["counts"]["by_category"]["mapping"]["fail"] >= 1
+    assert data_quality["counts"]["by_category"]["limits"]["warn"] >= 1

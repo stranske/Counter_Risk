@@ -3,16 +3,32 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 Severity = str
 _SEVERITIES: tuple[Severity, ...] = ("info", "warn", "fail")
 
 
-def build_data_quality(warnings: list[Any]) -> dict[str, Any]:
+def build_data_quality(
+    warnings: list[Any],
+    *,
+    unmatched_mappings: Mapping[str, Any] | None = None,
+    missing_inputs: Mapping[str, Any] | None = None,
+    reconciliation_results: Mapping[str, Any] | None = None,
+    ppt_status: str = "success",
+    limit_breach_summary: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     """Build the manifest data_quality object from warning entries."""
 
-    findings = _build_findings(warnings)
+    findings = _build_findings(
+        warnings,
+        unmatched_mappings=unmatched_mappings,
+        missing_inputs=missing_inputs,
+        reconciliation_results=reconciliation_results,
+        ppt_status=ppt_status,
+        limit_breach_summary=limit_breach_summary,
+    )
     counts = _build_counts(findings)
     actions = _build_recommended_actions(findings)
     overall_status = _derive_overall_status(counts)
@@ -26,11 +42,47 @@ def build_data_quality(warnings: list[Any]) -> dict[str, Any]:
     }
 
 
-def _build_findings(warnings: list[Any]) -> list[dict[str, Any]]:
+def _build_findings(
+    warnings: list[Any],
+    *,
+    unmatched_mappings: Mapping[str, Any] | None,
+    missing_inputs: Mapping[str, Any] | None,
+    reconciliation_results: Mapping[str, Any] | None,
+    ppt_status: str,
+    limit_breach_summary: Mapping[str, Any] | None,
+) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = _build_warning_findings(warnings)
+    findings.extend(
+        _collect_validation_findings(
+            unmatched_mappings=unmatched_mappings,
+            missing_inputs=missing_inputs,
+            reconciliation_results=reconciliation_results,
+            ppt_status=ppt_status,
+            limit_breach_summary=limit_breach_summary,
+        )
+    )
+    findings = _dedupe_findings(findings)
+
+    if findings:
+        return findings
+
+    return [
+        {
+            "category": "pipeline",
+            "severity": "info",
+            "code": "NO_FINDINGS",
+            "message": "No data quality findings detected for this run.",
+        }
+    ]
+
+
+def _build_warning_findings(warnings: list[Any]) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = []
     for warning in warnings:
         if isinstance(warning, dict):
             message = str(warning.get("message", "")).strip()
+            if not message:
+                continue
             code = str(warning.get("code", "UNKNOWN")).strip() or "UNKNOWN"
             finding = {
                 "category": _categorize(message=message, code=code),
@@ -53,18 +105,145 @@ def _build_findings(warnings: list[Any]) -> list[dict[str, Any]]:
                 "message": message,
             }
         )
+    return findings
 
-    if findings:
-        return findings
 
-    return [
+def _collect_validation_findings(
+    *,
+    unmatched_mappings: Mapping[str, Any] | None,
+    missing_inputs: Mapping[str, Any] | None,
+    reconciliation_results: Mapping[str, Any] | None,
+    ppt_status: str,
+    limit_breach_summary: Mapping[str, Any] | None,
+) -> list[dict[str, str]]:
+    findings: list[dict[str, str]] = []
+    missing_inputs = missing_inputs or {}
+    unmatched_mappings = unmatched_mappings or {}
+    reconciliation_results = reconciliation_results or {}
+    limit_breach_summary = limit_breach_summary or {}
+
+    missing_required = _string_list(missing_inputs.get("missing_required", []), max_items=8)
+    if missing_required:
+        findings.append(
+            {
+                "category": "input",
+                "severity": "fail",
+                "code": "MISSING_REQUIRED_INPUTS",
+                "message": f"Missing required inputs: {', '.join(missing_required)}.",
+            }
+        )
+
+    optional_missing = _string_list(missing_inputs.get("optional_missing", []), max_items=8)
+    if optional_missing:
+        findings.append(
+            {
+                "category": "input",
+                "severity": "warn",
+                "code": "MISSING_OPTIONAL_INPUTS",
+                "message": f"Optional inputs unavailable: {', '.join(optional_missing)}.",
+            }
+        )
+
+    unmatched_count = _safe_int(unmatched_mappings.get("count", 0))
+    if unmatched_count > 0:
+        findings.append(
+            {
+                "category": "mapping",
+                "severity": "fail",
+                "code": "UNMATCHED_MAPPINGS",
+                "message": f"Found {unmatched_count} unmatched mapping entr{'y' if unmatched_count == 1 else 'ies'}.",
+            }
+        )
+
+    gap_count = _safe_int(reconciliation_results.get("total_gap_count", 0))
+    reconciliation_status = str(reconciliation_results.get("status", "")).strip().lower()
+    if reconciliation_status == "failed" or gap_count > 0:
+        findings.append(
+            {
+                "category": "reconciliation",
+                "severity": "fail",
+                "code": "RECONCILIATION_GAPS",
+                "message": f"Reconciliation reported {gap_count} gap{'s' if gap_count != 1 else ''}.",
+            }
+        )
+
+    normalized_ppt_status = str(ppt_status).strip().lower()
+    if normalized_ppt_status == "failed":
+        findings.append(
+            {
+                "category": "ppt",
+                "severity": "fail",
+                "code": "PPT_GENERATION_FAILED",
+                "message": "PowerPoint generation failed.",
+            }
+        )
+    elif normalized_ppt_status == "skipped":
+        findings.append(
+            {
+                "category": "ppt",
+                "severity": "warn",
+                "code": "PPT_GENERATION_SKIPPED",
+                "message": "PowerPoint generation was skipped.",
+            }
+        )
+
+    has_breaches = bool(limit_breach_summary.get("has_breaches"))
+    breach_count = _safe_int(limit_breach_summary.get("breach_count", 0))
+    if has_breaches and breach_count > 0:
+        findings.append(
+            {
+                "category": "limits",
+                "severity": "warn",
+                "code": "LIMIT_BREACHES",
+                "message": f"Detected {breach_count} limit breach{'es' if breach_count != 1 else ''}.",
+            }
+        )
+
+    return findings
+
+
+def _dedupe_findings(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[tuple[str, str, str, str]] = set()
+    deduped: list[dict[str, Any]] = []
+    for finding in findings:
+        category = str(finding.get("category", "pipeline"))
+        severity = str(finding.get("severity", "warn"))
+        code = str(finding.get("code", "UNKNOWN"))
+        message = str(finding.get("message", ""))
+        key = (category, severity, code, message)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(
+            {
+                "category": category,
+                "severity": severity,
+                "code": code,
+                "message": message,
+            }
+        )
+    return deduped
+
+
+def _string_list(raw_values: Any, *, max_items: int) -> list[str]:
+    if not isinstance(raw_values, Sequence) or isinstance(raw_values, (str, bytes)):
+        return []
+    cleaned = sorted(
         {
-            "category": "pipeline",
-            "severity": "info",
-            "code": "NO_FINDINGS",
-            "message": "No data quality findings detected for this run.",
-        }
-    ]
+            str(value).strip()
+            for value in raw_values
+            if isinstance(value, str) and str(value).strip()
+        },
+        key=str.casefold,
+    )
+    return cleaned[:max_items]
+
+
+def _safe_int(raw_value: Any) -> int:
+    try:
+        return int(raw_value)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _build_counts(findings: list[dict[str, Any]]) -> dict[str, Any]:

@@ -55,6 +55,29 @@ class ManifestBuilder:
         self._validate_artifact_paths_exist(run_dir=run_dir, relative_paths=normalized_output_paths)
         config_snapshot = self._serialize_config_snapshot(self.config)
         normalized_warnings = self._normalize_warnings(warnings)
+        resolved_unmatched_mappings = (
+            unmatched_mappings if unmatched_mappings is not None else {"count": 0, "by_variant": {}}
+        )
+        resolved_missing_inputs = (
+            missing_inputs
+            if missing_inputs is not None
+            else {
+                "required": [],
+                "missing_required": [],
+                "optional_missing": [],
+                "is_complete": True,
+            }
+        )
+        resolved_reconciliation_results = (
+            reconciliation_results
+            if reconciliation_results is not None
+            else {
+                "status": "not_run",
+                "fail_policy": "warn",
+                "total_gap_count": 0,
+                "by_variant": {},
+            }
+        )
         manifest: dict[str, Any] = {
             "as_of_date": self.as_of_date.isoformat(),
             "run_date": self.run_date.isoformat(),
@@ -66,32 +89,17 @@ class ManifestBuilder:
             "top_exposures": top_exposures,
             "top_changes_per_variant": top_changes_per_variant,
             "warnings": normalized_warnings,
-            "data_quality": build_data_quality(warnings),
-            "unmatched_mappings": (
-                unmatched_mappings
-                if unmatched_mappings is not None
-                else {"count": 0, "by_variant": {}}
+            "data_quality": build_data_quality(
+                warnings,
+                unmatched_mappings=resolved_unmatched_mappings,
+                missing_inputs=resolved_missing_inputs,
+                reconciliation_results=resolved_reconciliation_results,
+                ppt_status=ppt_status,
+                limit_breach_summary=limit_breach_summary,
             ),
-            "missing_inputs": (
-                missing_inputs
-                if missing_inputs is not None
-                else {
-                    "required": [],
-                    "missing_required": [],
-                    "optional_missing": [],
-                    "is_complete": True,
-                }
-            ),
-            "reconciliation_results": (
-                reconciliation_results
-                if reconciliation_results is not None
-                else {
-                    "status": "not_run",
-                    "fail_policy": "warn",
-                    "total_gap_count": 0,
-                    "by_variant": {},
-                }
-            ),
+            "unmatched_mappings": resolved_unmatched_mappings,
+            "missing_inputs": resolved_missing_inputs,
+            "reconciliation_results": resolved_reconciliation_results,
         }
         if concentration_metrics is not None:
             manifest["concentration_metrics"] = concentration_metrics
