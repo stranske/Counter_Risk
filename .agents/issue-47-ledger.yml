@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Add a `data_quality` object to `manifest.json` including severity levels
       `{info, warn, fail}`, categorized findings and counts, and recommended actions.
-    status: doing
+    status: done
     started_at: '2026-02-26T20:48:49Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-26T20:49:05Z'
+    commit: 93e97005c76f444e43773f9e55d5a2094be297bf
     notes: []
   - id: task-02
     title: 'Define the JSON schema for the data_quality object with severity levels
