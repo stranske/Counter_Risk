@@ -338,9 +338,11 @@ def compute_risk_proxies(exposures_df: Any) -> Any:
 
     output_columns = list(columns)
     if has_notional_proxy_inputs:
-        output_columns.append(_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN)
+        if _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN not in output_columns:
+            output_columns.append(_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN)
     if has_position_proxy_inputs:
-        output_columns.append(_RISK_PROXY_POSITION_VOL_COLUMN)
+        if _RISK_PROXY_POSITION_VOL_COLUMN not in output_columns:
+            output_columns.append(_RISK_PROXY_POSITION_VOL_COLUMN)
 
     return _to_dataframe_or_records(records=proxy_records, columns=tuple(output_columns))
 
