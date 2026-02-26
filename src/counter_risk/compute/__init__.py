@@ -5,6 +5,7 @@ from counter_risk.compute.futures_delta import (
     normalize_description,
     write_annotated_csv,
 )
+from counter_risk.compute.limits import check_limits
 from counter_risk.compute.rollups import (
     compute_notional_breakdown,
     compute_totals,
@@ -17,6 +18,7 @@ __all__ = [
     "compute_notional_breakdown",
     "top_exposures",
     "top_changes",
+    "check_limits",
     "compute_futures_delta",
     "normalize_description",
     "write_annotated_csv",
