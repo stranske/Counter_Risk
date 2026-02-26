@@ -5,7 +5,11 @@ from pathlib import Path
 import pytest
 
 from counter_risk.io.excel_range_compare import WorkbookRangeComparison, compare_workbook_ranges
-from counter_risk.mosers.workbook_generation import generate_mosers_workbook
+from counter_risk.mosers.workbook_generation import (
+    generate_mosers_workbook,
+    generate_mosers_workbook_ex_trend,
+    generate_mosers_workbook_trend,
+)
 from tests.mosers_reference_outputs import get_mosers_reference_output_paths
 
 
@@ -54,6 +58,103 @@ def test_all_programs_generated_output_matches_reference_for_scoped_label_ranges
                 reference_sheet="CPRS - CH",
                 generated_sheet="CPRS - CH",
                 cell_range="C48:C52",
+            ),
+        ),
+    )
+
+    assert differences == []
+
+
+def test_ex_trend_generated_output_matches_reference_for_scoped_label_ranges(
+    tmp_path: Path,
+) -> None:
+    generated_path = tmp_path / "ex-trend-generated.xlsx"
+    generated_workbook = generate_mosers_workbook_ex_trend(
+        Path("tests/fixtures/NISA Monthly Ex Trend - Raw.xlsx")
+    )
+    try:
+        generated_workbook.save(generated_path)
+    finally:
+        generated_workbook.close()
+
+    reference_path = get_mosers_reference_output_paths()["ex_trend"]
+    differences = compare_workbook_ranges(
+        reference_path,
+        generated_path,
+        comparisons=(
+            WorkbookRangeComparison(
+                reference_sheet="CPRS - CH",
+                generated_sheet="CPRS - CH",
+                cell_range="C8:C9",
+            ),
+            WorkbookRangeComparison(
+                reference_sheet="CPRS - CH",
+                generated_sheet="CPRS - CH",
+                cell_range="G8:G9",
+            ),
+            WorkbookRangeComparison(
+                reference_sheet="CPRS - CH",
+                generated_sheet="CPRS - CH",
+                cell_range="K8:L9",
+            ),
+            WorkbookRangeComparison(
+                reference_sheet="CPRS - FCM",
+                generated_sheet="CPRS - FCM",
+                cell_range="C5:C6",
+            ),
+        ),
+        numeric_tolerance=1e-6,
+    )
+
+    assert differences == []
+
+
+def test_trend_generated_output_matches_reference_for_scoped_label_ranges(
+    tmp_path: Path,
+) -> None:
+    generated_path = tmp_path / "trend-generated.xlsx"
+    generated_workbook = generate_mosers_workbook_trend(
+        Path("tests/fixtures/NISA Monthly Trend - Raw.xlsx")
+    )
+    try:
+        generated_workbook.save(generated_path)
+    finally:
+        generated_workbook.close()
+
+    reference_path = get_mosers_reference_output_paths()["trend"]
+    differences = compare_workbook_ranges(
+        reference_path,
+        generated_path,
+        comparisons=(
+            WorkbookRangeComparison(
+                reference_sheet="CPRS - FCM",
+                generated_sheet="CPRS - FCM",
+                cell_range="C8:C8",
+            ),
+            WorkbookRangeComparison(
+                reference_sheet="CPRS - FCM",
+                generated_sheet="CPRS - FCM",
+                cell_range="G8:G8",
+            ),
+            WorkbookRangeComparison(
+                reference_sheet="CPRS - FCM",
+                generated_sheet="CPRS - FCM",
+                cell_range="I8:I8",
+            ),
+            WorkbookRangeComparison(
+                reference_sheet="CPRS - FCM",
+                generated_sheet="CPRS - FCM",
+                cell_range="K8:L8",
+            ),
+            WorkbookRangeComparison(
+                reference_sheet="CPRS - FCM",
+                generated_sheet="CPRS - FCM",
+                cell_range="C25:C26",
+            ),
+            WorkbookRangeComparison(
+                reference_sheet="CPRS - FCM",
+                generated_sheet="CPRS - FCM",
+                cell_range="H25:H26",
             ),
         ),
     )
