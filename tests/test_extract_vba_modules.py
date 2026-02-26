@@ -37,6 +37,23 @@ def test_check_mode_flags_outdated_module(tmp_path: Path) -> None:
     assert rc == 1
 
 
+def test_check_mode_flags_unexpected_module_file(tmp_path: Path) -> None:
+    output_dir = tmp_path / "vba"
+    output_dir.mkdir()
+    (output_dir / "RunnerLaunch.bas").write_text(
+        Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (output_dir / "UnexpectedModule.bas").write_text(
+        'Attribute VB_Name = "UnexpectedModule"\n',
+        encoding="utf-8",
+    )
+
+    rc = extract_vba_modules.main(["--check", "--output-dir", str(output_dir), "Runner.xlsm"])
+
+    assert rc == 1
+
+
 def test_check_mode_passes_for_committed_vba_sources() -> None:
     rc = extract_vba_modules.main(["--check"])
     assert rc == 0

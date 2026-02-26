@@ -84,13 +84,21 @@ def write_modules(modules: dict[str, str], output_dir: Path) -> None:
 
 
 def check_modules(modules: dict[str, str], output_dir: Path) -> tuple[Path, ...]:
-    """Return module paths whose contents differ from extracted source."""
+    """Return module paths that do not match the extracted inventory."""
     mismatches: list[Path] = []
+    expected_module_paths: set[Path] = set()
     for module_name, expected_source in sorted(modules.items()):
         module_path = output_dir / f"{module_name}.bas"
+        expected_module_paths.add(module_path)
         actual_source = module_path.read_text(encoding="utf-8") if module_path.exists() else ""
         if actual_source != expected_source:
             mismatches.append(module_path)
+
+    # Keep the committed module set strict: stale .bas files mean the inventory drifted.
+    if output_dir.is_dir():
+        for module_path in sorted(output_dir.glob("*.bas")):
+            if module_path not in expected_module_paths:
+                mismatches.append(module_path)
     return tuple(mismatches)
 
 
