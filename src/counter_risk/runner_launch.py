@@ -11,6 +11,7 @@ from datetime import date
 from enum import StrEnum
 
 SHELL_ERROR_BASE = 7100
+_OPERATOR_ACTION_PREFIX = "Operator action:"
 
 
 class RunnerMode(StrEnum):
@@ -26,6 +27,54 @@ class LaunchStatus:
     message: str
     command: str
     exit_code: int
+
+
+def _extract_operator_action(raw_message: str) -> str | None:
+    marker_index = raw_message.find(_OPERATOR_ACTION_PREFIX)
+    if marker_index < 0:
+        return None
+    action = raw_message[marker_index:].strip()
+    return action or None
+
+
+def map_runner_error_to_operator_message(raw_message: str) -> str:
+    """Translate technical pipeline text into operator-facing guidance."""
+
+    message = raw_message.strip()
+    if not message:
+        return "Operator action: review run inputs, then rerun the process."
+
+    explicit_operator_action = _extract_operator_action(message)
+    if explicit_operator_action is not None:
+        return explicit_operator_action
+
+    lowered = message.casefold()
+    if "input validation" in lowered or "missing required input" in lowered:
+        return (
+            "Operator action: verify required input files are present and configured paths are "
+            "correct, then rerun."
+        )
+    if (
+        "reconciliation strict mode failed" in lowered
+        or "cprs-ch totals mismatch" in lowered
+        or "class breakdown sanity check failed" in lowered
+    ):
+        return (
+            "Operator action: reconcile source totals/class breakdown values, apply mapping "
+            "updates if needed, and rerun."
+        )
+    if "unmatched counterparty" in lowered or "unmapped" in lowered:
+        return "Operator action: update counterparty mappings for this month and rerun."
+    return "Operator action: review the run log details and rerun. Contact support if it repeats."
+
+
+def format_launch_error_for_runner(status: LaunchStatus) -> str:
+    """Build a concise Runner UI error string with operator guidance."""
+
+    if status.success:
+        return status.message
+    guidance = map_runner_error_to_operator_message(status.message)
+    return f"Error {status.error_code}: {guidance}"
 
 
 def parse_as_of_month(selected_date: str) -> date:

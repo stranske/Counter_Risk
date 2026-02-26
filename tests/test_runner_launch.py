@@ -11,6 +11,8 @@ from counter_risk.runner_launch import (
     build_command,
     build_discovery_dry_run_command,
     build_discovery_run_command,
+    format_launch_error_for_runner,
+    map_runner_error_to_operator_message,
     open_output_folder,
     resolve_output_dir,
 )
@@ -165,3 +167,48 @@ def test_build_discovery_run_command_includes_discover_flag_and_output_dir(
     assert expected_config in command
     assert '--as-of-month "2025-02-28"' in command
     assert '--output-dir "C:\\repo\\runs\\2025-02-28_000000"' in command
+
+
+def test_map_runner_error_to_operator_message_prefers_explicit_operator_action() -> None:
+    message = (
+        "Pipeline failed during parse stage. "
+        "Operator action: update counterparty mappings for this month and rerun. "
+        "Unmatched counterparty 'Acme'."
+    )
+
+    guidance = map_runner_error_to_operator_message(message)
+
+    assert guidance.startswith("Operator action:")
+    assert "counterparty mappings" in guidance
+
+
+def test_map_runner_error_to_operator_message_maps_missing_input_technical_failure() -> None:
+    guidance = map_runner_error_to_operator_message(
+        "Pipeline failed during input validation stage: missing required input files."
+    )
+
+    assert guidance.startswith("Operator action:")
+    assert "required input files" in guidance
+
+
+def test_map_runner_error_to_operator_message_maps_reconciliation_failure() -> None:
+    guidance = map_runner_error_to_operator_message(
+        "Reconciliation strict mode failed due to missing/unmapped series; gap_count=3"
+    )
+
+    assert guidance.startswith("Operator action:")
+    assert "reconcile source totals/class breakdown values" in guidance
+
+
+def test_format_launch_error_for_runner_includes_error_code_and_guidance() -> None:
+    status = open_output_folder(
+        repo_root="C:/repo",
+        selected_date="2025-05-31",
+        directory_exists=lambda _: False,
+        open_directory=lambda _: 0,
+    )
+
+    rendered = format_launch_error_for_runner(status)
+
+    assert rendered.startswith(f"Error {status.error_code}: Operator action:")
+    assert "review the run log details and rerun" in rendered
