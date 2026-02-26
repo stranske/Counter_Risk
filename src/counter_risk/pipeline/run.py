@@ -551,6 +551,8 @@ def run_pipeline(config_path: str | Path) -> Path:
             parsed_by_variant=parsed_by_variant,
             warnings=warnings,
         )
+        if reconciliation_outcome is None:
+            reconciliation_outcome = {}
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=parse_inputs run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during parse stage") from exc
@@ -645,9 +647,9 @@ def run_pipeline(config_path: str | Path) -> Path:
             top_exposures=top_exposures,
             top_changes_per_variant=top_changes_per_variant,
             warnings=warnings,
-            unmatched_mappings=reconciliation_outcome["unmatched_mappings"],
+            unmatched_mappings=reconciliation_outcome.get("unmatched_mappings"),
             missing_inputs=missing_inputs,
-            reconciliation_results=reconciliation_outcome["reconciliation_results"],
+            reconciliation_results=reconciliation_outcome.get("reconciliation_results"),
             ppt_status=ppt_result.status.value,
             concentration_metrics=(
                 concentration_metrics_records if concentration_metrics_records else None
