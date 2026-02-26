@@ -180,6 +180,68 @@ def _minimal_workflow_config(
     )
 
 
+def test_build_missing_inputs_summary_complete_with_single_optional_gap(tmp_path: Path) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    input_paths = run_module._resolve_input_paths(config)
+    for path in input_paths.values():
+        path.write_text("fixture", encoding="utf-8")
+
+    summary = run_module._build_missing_inputs_summary(config=config, input_paths=input_paths)
+
+    assert summary["required"] == list(run_module._REQUIRED_INPUT_FIELDS)
+    assert summary["missing_required"] == []
+    assert summary["optional_missing"] == ["raw_nisa_all_programs_xlsx"]
+    assert summary["is_complete"] is True
+
+
+def test_build_missing_inputs_summary_tracks_missing_required_fields(tmp_path: Path) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    input_paths = run_module._resolve_input_paths(config)
+
+    summary = run_module._build_missing_inputs_summary(config=config, input_paths=input_paths)
+
+    assert summary["required"] == list(run_module._REQUIRED_INPUT_FIELDS)
+    assert summary["missing_required"] == sorted(
+        run_module._REQUIRED_INPUT_FIELDS, key=str.casefold
+    )
+    assert summary["optional_missing"] == [
+        "mosers_all_programs_xlsx",
+        "raw_nisa_all_programs_xlsx",
+    ]
+    assert summary["is_complete"] is False
+
+
+def test_append_missing_inputs_warnings_adds_required_and_optional_messages() -> None:
+    warnings: list[str] = []
+
+    run_module._append_missing_inputs_warnings(
+        missing_inputs={
+            "missing_required": ["monthly_pptx", "hist_llc_3yr_xlsx"],
+            "optional_missing": ["raw_nisa_all_programs_xlsx"],
+        },
+        warnings=warnings,
+    )
+
+    assert warnings == [
+        "Input validation: missing required inputs (hist_llc_3yr_xlsx, monthly_pptx).",
+        "Input validation: optional inputs unavailable (raw_nisa_all_programs_xlsx).",
+    ]
+
+
+def test_append_missing_inputs_warnings_ignores_blank_and_non_string_entries() -> None:
+    warnings: list[str] = []
+
+    run_module._append_missing_inputs_warnings(
+        missing_inputs={
+            "missing_required": ["", "   ", None, 123],
+            "optional_missing": [None, "", "mosers_all_programs_xlsx", "  "],
+        },
+        warnings=warnings,
+    )
+
+    assert warnings == ["Input validation: optional inputs unavailable (mosers_all_programs_xlsx)."]
+
+
 def test_build_parsed_data_by_sheet_uses_historical_sheet_names_without_total_key() -> None:
     parsed_sections = {
         "totals": _FakeDataFrame(
@@ -585,6 +647,231 @@ def test_run_reconciliation_checks_strict_raises_unmapped_counterparty_error_fro
     assert exc_info.value.normalized_counterparty == "ACME LTD"
 
 
+def test_evaluate_cprs_ch_totals_reconciliation_passes_when_totals_match() -> None:
+    result = run_module._evaluate_cprs_ch_totals_reconciliation(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Counterparty A", "Notional": 60.0},
+                    {"counterparty": "Counterparty B", "Notional": 40.0},
+                ]
+            ),
+            "cprs_ch": _FakeDataFrame(
+                records=[
+                    {"Counterparty": "Counterparty A", "Notional": 70.0},
+                    {"Counterparty": "Counterparty B", "Notional": 30.0},
+                ]
+            ),
+        },
+        variant="all_programs",
+        mosers_workbook_path=None,
+    )
+
+    assert result["status"] == "passed"
+    assert result["mosers_cprs_ch_total_notional"] == 100.0
+    assert result["computed_total_notional"] == 100.0
+    assert result["absolute_difference"] == 0.0
+    assert "message" not in result
+
+
+def test_run_reconciliation_checks_records_cprs_ch_totals_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[{"counterparty": "Counterparty A", "Notional": 75.0}]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 100.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    outcome = run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert outcome["reconciliation_results"]["status"] == "failed"
+    assert outcome["reconciliation_results"]["total_gap_count"] == 1
+    all_programs_result = outcome["reconciliation_results"]["by_variant"]["all_programs"]
+    assert all_programs_result["cprs_ch_totals_check"]["status"] == "failed"
+    assert all_programs_result["cprs_ch_totals_check"]["absolute_difference"] == 25.0
+    assert any("CPRS-CH totals mismatch" in warning for warning in warnings)
+
+
+def test_run_reconciliation_checks_strict_raises_on_cprs_ch_totals_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path, fail_policy="strict")
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[{"counterparty": "Counterparty A", "Notional": 10.0}]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 12.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    with pytest.raises(ValueError, match="Reconciliation strict mode failed"):
+        run_module._run_reconciliation_checks(
+            run_dir=tmp_path,
+            config=config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+
+
+def test_evaluate_cprs_ch_totals_reconciliation_uses_mosers_program_row_when_cprs_rows_absent() -> (
+    None
+):
+    fixture_path = (
+        Path("tests/fixtures") / "MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx"
+    )
+    result = run_module._evaluate_cprs_ch_totals_reconciliation(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "synthetic",
+                        "Notional": 7811999634.2546015,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        variant="all_programs",
+        mosers_workbook_path=fixture_path,
+    )
+
+    assert result["status"] == "passed"
+    assert result["expected_total_source"] == "cprs_ch_mosers_program_row"
+
+
+def test_evaluate_class_breakdown_sanity_passes_for_consistent_rows() -> None:
+    result = run_module._evaluate_class_breakdown_sanity(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Counterparty A",
+                        "TIPS": 10.0,
+                        "Treasury": 20.0,
+                        "Equity": 30.0,
+                        "Commodity": 5.0,
+                        "Currency": -5.0,
+                        "Notional": 60.0,
+                    }
+                ]
+            )
+        },
+        variant="all_programs",
+    )
+
+    assert result["status"] == "passed"
+    assert result["checked_row_count"] == 1
+    assert result["inconsistent_row_count"] == 0
+    assert result["out_of_bounds_row_count"] == 0
+
+
+def test_evaluate_class_breakdown_sanity_fails_for_inconsistent_and_out_of_bounds_rows() -> None:
+    result = run_module._evaluate_class_breakdown_sanity(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Counterparty A",
+                        "TIPS": 70.0,
+                        "Treasury": 10.0,
+                        "Equity": 0.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 50.0,
+                    }
+                ]
+            )
+        },
+        variant="all_programs",
+    )
+
+    assert result["status"] == "failed"
+    assert result["inconsistent_row_count"] == 1
+    assert result["out_of_bounds_row_count"] == 1
+    assert "Class breakdown sanity check failed" in result["message"]
+
+
+def test_run_reconciliation_checks_records_class_breakdown_sanity_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Counterparty A",
+                        "TIPS": 1.0,
+                        "Treasury": 1.0,
+                        "Equity": 1.0,
+                        "Commodity": 1.0,
+                        "Currency": 1.0,
+                        "Notional": 3.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    outcome = run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert outcome["reconciliation_results"]["status"] == "failed"
+    assert outcome["reconciliation_results"]["total_gap_count"] == 2
+    all_programs_result = outcome["reconciliation_results"]["by_variant"]["all_programs"]
+    assert all_programs_result["class_breakdown_sanity_check"]["status"] == "failed"
+    assert any("Class breakdown sanity check failed" in warning for warning in warnings)
+
+
 def test_run_pipeline_writes_expected_outputs_and_manifest(
     tmp_path: Path, fake_pandas: None
 ) -> None:
@@ -641,6 +928,17 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
         assert (run_dir / output_path).exists(), f"Manifest references missing path: {output_path}"
 
     assert "PPT links not refreshed; COM refresh skipped" in manifest["warnings"]
+    assert (
+        "Input validation: optional inputs unavailable (raw_nisa_all_programs_xlsx)."
+        in manifest["warnings"]
+    )
+    assert manifest["unmatched_mappings"]["count"] >= 0
+    assert isinstance(manifest["unmatched_mappings"]["by_variant"], dict)
+    assert manifest["missing_inputs"]["is_complete"] is True
+    assert manifest["missing_inputs"]["missing_required"] == []
+    assert manifest["reconciliation_results"]["status"] in {"passed", "failed"}
+    assert manifest["reconciliation_results"]["fail_policy"] in {"warn", "strict"}
+    assert isinstance(manifest["reconciliation_results"]["by_variant"], dict)
 
     expected_hashes = {
         "mosers_all_programs_xlsx": _sha256(
@@ -1449,6 +1747,10 @@ def test_run_pipeline_warn_mode_writes_mapping_updates_and_completes(
     assert "fail_policy: warn" in text
     assert "missing_from_historical_headers" in text
     assert any("Reconciliation summary:" in warning for warning in manifest["warnings"])
+    assert manifest["reconciliation_results"]["status"] == "failed"
+    assert manifest["reconciliation_results"]["total_gap_count"] > 0
+    assert manifest["unmatched_mappings"]["count"] > 0
+    assert "all_programs" in manifest["unmatched_mappings"]["by_variant"]
 
 
 def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
@@ -1479,6 +1781,51 @@ def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
 
     assert isinstance(exc_info.value.__cause__, UnmappedCounterpartyError)
     assert "Unmapped normalized counterparty" in str(exc_info.value.__cause__)
+    assert "Operator action: update counterparty mappings for this month and rerun." in str(
+        exc_info.value
+    )
+    assert "Unmatched counterparty 'Counterparty A'" in str(exc_info.value)
+
+
+def test_run_pipeline_strict_mode_reconciliation_failure_uses_operator_message(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8")
+        + "\n".join(
+            [
+                "reconciliation:",
+                "  fail_policy: strict",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+
+    def _boom(
+        *,
+        run_dir: Path,
+        config: Any,
+        parsed_by_variant: dict[str, dict[str, Any]],
+        warnings: list[str],
+    ) -> dict[str, Any]:
+        _ = (run_dir, config, parsed_by_variant, warnings)
+        raise ValueError(
+            "Reconciliation strict mode failed due to missing/unmapped series; gap_count=2"
+        )
+
+    monkeypatch.setattr("counter_risk.pipeline.run._run_reconciliation_checks", _boom)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "reconcile source totals/class breakdown values" in str(exc_info.value)
+    assert "gap_count=2" in str(exc_info.value)
 
 
 def test_run_pipeline_wraps_output_write_errors(
@@ -1523,6 +1870,107 @@ def test_run_pipeline_wraps_input_validation_errors(
 
     assert isinstance(exc_info.value.__cause__, FileNotFoundError)
     assert "missing source workbook" in str(exc_info.value.__cause__)
+    assert "Operator action: verify configured input file paths are accessible." in str(
+        exc_info.value
+    )
+
+
+def test_run_pipeline_input_validation_uses_missing_required_operator_message(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._build_missing_inputs_summary",
+        lambda *, config, input_paths: {
+            "required": list(run_module._REQUIRED_INPUT_FIELDS),
+            "missing_required": ["monthly_pptx", "hist_llc_3yr_xlsx"],
+            "optional_missing": [],
+            "is_complete": False,
+        },
+    )
+
+    def _boom(_: dict[str, Path]) -> None:
+        raise FileNotFoundError("missing source workbook")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._validate_input_files", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during input validation stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert "Operator action: verify required input files are present and paths are correct." in str(
+        exc_info.value
+    )
+    assert "monthly_pptx -> " in str(exc_info.value)
+
+
+def test_build_missing_input_operator_message_with_missing_required_paths(tmp_path: Path) -> None:
+    message = run_module._build_missing_input_operator_message(
+        missing_inputs={"missing_required": ["monthly_pptx", "hist_llc_3yr_xlsx"]},
+        input_paths={
+            "monthly_pptx": tmp_path / "monthly.pptx",
+            "hist_llc_3yr_xlsx": tmp_path / "hist_trend.xlsx",
+        },
+    )
+
+    assert (
+        "Operator action: verify required input files are present and paths are correct." in message
+    )
+    assert f"monthly_pptx -> {tmp_path / 'monthly.pptx'}" in message
+    assert f"hist_llc_3yr_xlsx -> {tmp_path / 'hist_trend.xlsx'}" in message
+
+
+def test_build_missing_input_operator_message_without_missing_required_paths() -> None:
+    message = run_module._build_missing_input_operator_message(
+        missing_inputs={"missing_required": []},
+        input_paths={},
+    )
+
+    assert message == "Operator action: verify configured input file paths are accessible."
+
+
+def test_build_unmatched_mappings_operator_message_with_sheet_context() -> None:
+    message = run_module._build_unmatched_mappings_operator_message(
+        UnmappedCounterpartyError(
+            normalized_counterparty="ACME LTD",
+            raw_counterparty="Acme Ltd.",
+            sheet="Total",
+        )
+    )
+
+    assert "Operator action: update counterparty mappings for this month and rerun." in message
+    assert "Unmatched counterparty 'Acme Ltd.'" in message
+    assert "normalized to 'ACME LTD'" in message
+    assert "worksheet 'Total'" in message
+
+
+def test_build_parse_stage_operator_message_returns_empty_for_non_unmapped_errors() -> None:
+    assert run_module._build_parse_stage_operator_message(ValueError("bad parse")) == ""
+
+
+def test_build_parse_stage_operator_message_uses_nested_unmapped_counterparty_error() -> None:
+    nested = RuntimeError("outer")
+    nested.__cause__ = UnmappedCounterpartyError(
+        normalized_counterparty="ACME LTD",
+        raw_counterparty="Acme Ltd.",
+        sheet=None,
+    )
+
+    message = run_module._build_parse_stage_operator_message(nested)
+
+    assert "Operator action: update counterparty mappings for this month and rerun." in message
+    assert "Unmatched counterparty 'Acme Ltd.'" in message
+
+
+def test_build_parse_stage_operator_message_uses_reconciliation_failure_error() -> None:
+    message = run_module._build_parse_stage_operator_message(
+        ValueError("Reconciliation strict mode failed due to missing/unmapped series; gap_count=3")
+    )
+
+    assert "Operator action: reconcile source totals/class breakdown values" in message
+    assert "gap_count=3" in message
 
 
 def test_run_pipeline_wraps_compute_errors(

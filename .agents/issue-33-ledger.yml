@@ -1,0 +1,431 @@
+version: 1
+issue: 33
+base: main
+branch: codex/issue-33
+tasks:
+  - id: task-01
+    title: Update `manifest.json` generation to include warnings, unmatched mappings,
+      missing inputs, and reconciliation check results.
+    status: done
+    started_at: '2026-02-26T06:52:17Z'
+    finished_at: '2026-02-26T06:52:32Z'
+    commit: 22254ce8bb1e4363a22d6bdf92f21d437a1510c7
+    notes: []
+  - id: task-02
+    title: 'Add warnings array to manifest.json schema (verify: confirm completion
+      in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'populate with validation warnings (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Add unmatched_mappings section to manifest.json to record mapping failures
+      (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define scope for: Add missing_inputs section to manifest.json to track
+      required but absent data (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement focused slice for: Add missing_inputs section to manifest.json
+      to track required but absent data (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Validate focused slice for: Add missing_inputs section to manifest.json
+      to track required but absent data (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Add reconciliation_results section to manifest.json with check outcomes
+      (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Implement reconciliation checks comparing totals in MOSERS CPRS-CH vs computed
+      totals and record results in `manifest.json`.
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Define scope for: Create reconciliation check function that compares MOSERS
+      CPRS-CH totals against computed totals (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Implement focused slice for: Create reconciliation check function that
+      compares MOSERS CPRS-CH totals against computed totals (verify: confirm completion
+      in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Validate focused slice for: Create reconciliation check function that
+      compares MOSERS CPRS-CH totals against computed totals (verify: confirm completion
+      in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Define the data structure for reconciliation results in manifest.json
+      schema (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Integrate reconciliation check execution into the processing pipeline
+      (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Write reconciliation check results to the manifest.json file (verify:
+      confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Implement class breakdown sanity checks and record results in `manifest.json`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Add operator-friendly error messages surfaced in Runner UI for common failure
+      modes (e.g., missing inputs, unmatched mappings, reconciliation failures).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Define user-friendly error messages for missing input files scenario (verify:
+      confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Define user-friendly error messages for unmatched mappings scenario (verify:
+      confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Define user-friendly error messages for reconciliation failures scenario
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Implement error message display mechanism in Runner UI (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Map technical errors to operator-friendly messages in error handling code
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: Update LLM system prompt to enforce strict system prompt boundaries.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Research (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'document prompt injection attack vectors relevant to spreadsheet data
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Design delimiter strategy to separate system instructions from user data
+      in prompts (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Implement prompt template with clear boundary markers between system (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Implement prompt template with data sections (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Add validation to detect (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'reject prompts that violate boundary rules (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Test boundary enforcement with adversarial spreadsheet content examples
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Fix LLM input handling to treat workbook cell text as untrusted data (e.g.,
+      sanitize/escape before inclusion in prompts).
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Define sanitization rules for workbook cell text before LLM processing
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Implement cell text escaping function to neutralize prompt injection attempts
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Add validation to detect potentially malicious patterns in cell content
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Update all LLM prompt construction code to use sanitized cell data (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: Create test suite with malicious cell content examples to verify sanitization
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: Add optional, configurable logging of LLM prompts/responses to the run
+      folder.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: '`manifest.json` includes warnings, unmatched mappings, missing inputs,
+      and reconciliation check results for a run.'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: Reconciliation checks run and fail with a clear recorded result when MOSERS
+      CPRS-CH totals do not match computed totals.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: Class breakdown sanity checks run and fail with a clear recorded result
+      when breakdowns are inconsistent/out of bounds.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: Runner UI displays actionable, non-technical error messages for common
+      failure modes.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: When LLM prompt/response logging is enabled, prompt/response artifacts
+      are written to the run folder; when disabled, no such artifacts are written.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: Each run produces an auditable record of inputs, outputs, and key checks
+      in the run folder.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Improve manifest.json: include warnings, unmatched mappings, missing inputs,
+      and reconciliation checks'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Add reconciliation checks:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: totals in MOSERS CPRS-CH vs computed totals
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: class breakdown sanity
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: "Add \u201Coperator-friendly\u201D error messages surfaced in Runner UI"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: 'Add LLM safeguards:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: strict system prompt boundaries
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: treat workbook cell text as untrusted data
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: log prompts/responses to run folder (optional, configurable)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: Common failure modes produce actionable, non-technical messages
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: Each run produces an auditable record of inputs, outputs, and key checks
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
