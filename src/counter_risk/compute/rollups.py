@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import csv
+import math
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any, cast
+
+from counter_risk.normalize import normalize_counterparty
 
 _COUNTERPARTY_KEYS = ("counterparty", "counterparty_name", "name")
 _ASSET_CLASS_KEYS = ("asset_class", "class", "segment")
@@ -43,6 +46,18 @@ _RISK_PROXY_POSITION_VOL_COLUMN = "risk_proxy_position_usd_vol"
 
 _CONCENTRATION_GROUP_COLUMNS = ("variant", "segment")
 _CONCENTRATION_METRIC_COLUMNS = ("top5_share", "top10_share", "hhi")
+
+_REPO_CASH_OUTPUT_COLUMNS = (
+    "counterparty",
+    "TIPS",
+    "Treasury",
+    "Equity",
+    "Commodity",
+    "Currency",
+    "Cash",
+    "Notional",
+    "NotionalChange",
+)
 
 
 def _is_dataframe_like(value: Any) -> bool:
@@ -202,6 +217,74 @@ def compute_totals(exposures_df: Any) -> Any:
         )
 
     return _to_dataframe_or_records(records=records, columns=_TOTAL_COLUMNS)
+
+
+def apply_repo_cash_to_totals(
+    totals_df: Any,
+    repo_cash_by_counterparty: Mapping[str, float],
+) -> Any:
+    """Overlay parsed daily-holdings Repo Cash onto All Programs totals rows.
+
+    For matched counterparties, this increments both ``Cash`` and ``Notional``.
+    For unmatched counterparties, a new totals row is appended with zeroes for
+    non-cash asset classes and ``NotionalChange`` defaulted to ``0.0``.
+    """
+
+    rows = _iter_rows(totals_df, arg_name="totals_df")
+    records = [dict(row) for row in rows]
+    output_columns = list(_column_names_from_rows(totals_df, rows))
+    for column in _REPO_CASH_OUTPUT_COLUMNS:
+        if column not in output_columns:
+            output_columns.append(column)
+
+    if not repo_cash_by_counterparty:
+        return _to_dataframe_or_records(records=records, columns=tuple(output_columns))
+
+    normalized_index: dict[str, int] = {}
+    for index, row in enumerate(records):
+        counterparty_raw = row.get("counterparty")
+        if not isinstance(counterparty_raw, str) or not counterparty_raw.strip():
+            continue
+        normalized_index[normalize_counterparty(counterparty_raw)] = index
+
+    for raw_counterparty, raw_amount in repo_cash_by_counterparty.items():
+        counterparty = str(raw_counterparty).strip()
+        if not counterparty:
+            raise ValueError("repo_cash_by_counterparty contains an empty counterparty key")
+
+        try:
+            amount = float(raw_amount)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"repo_cash_by_counterparty value for {counterparty!r} must be numeric"
+            ) from exc
+        if not math.isfinite(amount):
+            raise ValueError(f"repo_cash_by_counterparty value for {counterparty!r} must be finite")
+
+        normalized = normalize_counterparty(counterparty)
+        matched_index = normalized_index.get(normalized)
+        if matched_index is None:
+            records.append(
+                {
+                    "counterparty": counterparty,
+                    "TIPS": 0.0,
+                    "Treasury": 0.0,
+                    "Equity": 0.0,
+                    "Commodity": 0.0,
+                    "Currency": 0.0,
+                    "Cash": amount,
+                    "Notional": amount,
+                    "NotionalChange": 0.0,
+                }
+            )
+            normalized_index[normalized] = len(records) - 1
+            continue
+
+        row = records[matched_index]
+        row["Cash"] = float(row.get("Cash", 0.0) or 0.0) + amount
+        row["Notional"] = float(row.get("Notional", 0.0) or 0.0) + amount
+
+    return _to_dataframe_or_records(records=records, columns=tuple(output_columns))
 
 
 def compute_notional_breakdown(exposures_df: Any) -> dict[str, float]:

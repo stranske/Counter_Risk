@@ -24,6 +24,7 @@ from counter_risk.compute.limits import (
     write_limit_breaches_csv,
 )
 from counter_risk.compute.rollups import (
+    apply_repo_cash_to_totals,
     compute_concentration_metrics,
     write_concentration_metrics_csv,
 )
@@ -38,6 +39,7 @@ from counter_risk.normalize import (
 from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
+from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
@@ -572,6 +574,11 @@ def run_pipeline(config_path: str | Path) -> Path:
             warnings=warnings,
         )
         parsed_by_variant = _parse_inputs(_resolve_input_paths(runtime_config))
+        _apply_daily_holdings_repo_cash(
+            config=runtime_config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
         _validate_parsed_inputs(parsed_by_variant)
         reconciliation_outcome = _run_reconciliation_checks(
             run_dir=run_dir,
@@ -806,6 +813,8 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
         paths["mosers_all_programs_xlsx"] = config.mosers_all_programs_xlsx
     if config.raw_nisa_all_programs_xlsx is not None:
         paths["raw_nisa_all_programs_xlsx"] = config.raw_nisa_all_programs_xlsx
+    if config.daily_holdings_pdf is not None:
+        paths["daily_holdings_pdf"] = config.daily_holdings_pdf
     return paths
 
 
@@ -828,6 +837,12 @@ def _validate_pipeline_config(config: WorkflowConfig) -> None:
             field_name="raw_nisa_all_programs_xlsx",
             path=config.raw_nisa_all_programs_xlsx,
             expected_suffix=".xlsx",
+        )
+    if config.daily_holdings_pdf is not None:
+        _validate_extension(
+            field_name="daily_holdings_pdf",
+            path=config.daily_holdings_pdf,
+            expected_suffix=".pdf",
         )
     _validate_extension(
         field_name="mosers_ex_trend_xlsx",
@@ -866,6 +881,33 @@ def _validate_extension(*, field_name: str, path: Path, expected_suffix: str) ->
         raise ValueError(
             f"Invalid file type for {field_name}: expected {expected_suffix}, got '{path.suffix}'"
         )
+
+
+def _apply_daily_holdings_repo_cash(
+    *,
+    config: WorkflowConfig,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    warnings: list[str],
+) -> None:
+    if config.daily_holdings_pdf is None:
+        return
+
+    repo_cash_by_counterparty = parse_daily_holdings_pdf(config.daily_holdings_pdf)
+    all_programs_sections = parsed_by_variant.get("all_programs")
+    if not isinstance(all_programs_sections, dict) or "totals" not in all_programs_sections:
+        raise ValueError(
+            "Parsed payload for variant 'all_programs' is missing the totals section required "
+            "for daily holdings Repo Cash integration"
+        )
+
+    all_programs_sections["totals"] = apply_repo_cash_to_totals(
+        all_programs_sections["totals"],
+        repo_cash_by_counterparty,
+    )
+    warnings.append(
+        "Applied Daily Holdings Repo Cash values to all_programs totals "
+        f"for {len(repo_cash_by_counterparty)} counterparties"
+    )
 
 
 def _validate_input_files(input_paths: dict[str, Path]) -> None:
