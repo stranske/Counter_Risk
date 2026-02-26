@@ -929,9 +929,13 @@ def _build_missing_input_operator_message(
 
 def _build_parse_stage_operator_message(exc: BaseException) -> str:
     unmapped_error = _find_unmapped_counterparty_error(exc)
-    if unmapped_error is None:
-        return ""
-    return _build_unmatched_mappings_operator_message(unmapped_error)
+    if unmapped_error is not None:
+        return _build_unmatched_mappings_operator_message(unmapped_error)
+
+    reconciliation_message = _build_reconciliation_failure_operator_message(exc)
+    if reconciliation_message:
+        return reconciliation_message
+    return ""
 
 
 def _find_unmapped_counterparty_error(exc: BaseException) -> UnmappedCounterpartyError | None:
@@ -959,6 +963,30 @@ def _build_unmatched_mappings_operator_message(exc: UnmappedCounterpartyError) -
         f"Unmatched counterparty '{exc.raw_counterparty}' normalized to "
         f"'{exc.normalized_counterparty}'{sheet_detail}."
     )
+
+
+def _build_reconciliation_failure_operator_message(exc: BaseException) -> str:
+    current: BaseException | None = exc
+    visited: set[int] = set()
+    while current is not None:
+        current_id = id(current)
+        if current_id in visited:
+            break
+        visited.add(current_id)
+
+        detail = str(current).strip()
+        if detail and "reconciliation strict mode failed" in detail.casefold():
+            return (
+                "Operator action: reconcile source totals/class breakdown values, "
+                "apply required mapping updates, and rerun. "
+                f"Details: {detail}."
+            )
+
+        next_exc = current.__cause__ if current.__cause__ is not None else current.__context__
+        if next_exc is current:
+            break
+        current = next_exc
+    return ""
 
 
 def _prepare_runtime_config(

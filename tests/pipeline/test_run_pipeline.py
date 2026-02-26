@@ -1507,6 +1507,47 @@ def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
     assert "Unmatched counterparty 'Counterparty A'" in str(exc_info.value)
 
 
+def test_run_pipeline_strict_mode_reconciliation_failure_uses_operator_message(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8")
+        + "\n".join(
+            [
+                "reconciliation:",
+                "  fail_policy: strict",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+
+    def _boom(
+        *,
+        run_dir: Path,
+        config: Any,
+        parsed_by_variant: dict[str, dict[str, Any]],
+        warnings: list[str],
+    ) -> dict[str, Any]:
+        _ = (run_dir, config, parsed_by_variant, warnings)
+        raise ValueError(
+            "Reconciliation strict mode failed due to missing/unmapped series; gap_count=2"
+        )
+
+    monkeypatch.setattr("counter_risk.pipeline.run._run_reconciliation_checks", _boom)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "reconcile source totals/class breakdown values" in str(exc_info.value)
+    assert "gap_count=2" in str(exc_info.value)
+
+
 def test_run_pipeline_wraps_output_write_errors(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1641,6 +1682,15 @@ def test_build_parse_stage_operator_message_uses_nested_unmapped_counterparty_er
 
     assert "Operator action: update counterparty mappings for this month and rerun." in message
     assert "Unmatched counterparty 'Acme Ltd.'" in message
+
+
+def test_build_parse_stage_operator_message_uses_reconciliation_failure_error() -> None:
+    message = run_module._build_parse_stage_operator_message(
+        ValueError("Reconciliation strict mode failed due to missing/unmapped series; gap_count=3")
+    )
+
+    assert "Operator action: reconcile source totals/class breakdown values" in message
+    assert "gap_count=3" in message
 
 
 def test_run_pipeline_wraps_compute_errors(
