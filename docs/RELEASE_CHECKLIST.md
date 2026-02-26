@@ -33,6 +33,23 @@ test -f "${BUNDLE_DIR}/README_HOW_TO_RUN.md"
 test -f "${BUNDLE_DIR}/bin/counter-risk" || test -f "${BUNDLE_DIR}/bin/counter-risk.exe"
 ```
 
+## Validate Runner XLSM macros manually (Windows Excel)
+
+Use the manual checklist in [runner_xlsm_macro_manual_verification.md](runner_xlsm_macro_manual_verification.md).
+
+Minimum required release validation:
+
+1. Build the runner workbook with the release version from `VERSION`.
+   ```bash
+   python -m counter_risk.build.xlsm --template-path assets/templates/counter_risk_template.xlsm --output-path dist/counter_risk_runner.xlsm --version "$(cat VERSION | tr -d '\n\r')"
+   ```
+2. Follow the **Manual Macro/Button Check** section and record results.
+3. Rebuild with a bumped version value (for example, `--version 1.2.4`).
+   ```bash
+   python -m counter_risk.build.xlsm --template-path assets/templates/counter_risk_template.xlsm --output-path dist/counter_risk_runner.vnext.xlsm --version 1.2.4
+   ```
+4. Follow the **Version Bump Regression Check** section and record results.
+
 ## Run the release workflow in CI
 
 Trigger from GitHub CLI:

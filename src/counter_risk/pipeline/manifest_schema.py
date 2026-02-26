@@ -52,6 +52,19 @@ def manifest_schema() -> dict[str, Any]:
                 },
                 "additionalProperties": False,
             },
+            "concentration_metrics": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "variant": {"type": "string"},
+                        "segment": {"type": "string"},
+                        "top5_share": {"type": "number"},
+                        "top10_share": {"type": "number"},
+                        "hhi": {"type": "number"},
+                    },
+                },
+            },
         },
         "additionalProperties": False,
     }

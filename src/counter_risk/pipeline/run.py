@@ -16,6 +16,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 from zipfile import BadZipFile
 
+from counter_risk.compute.rollups import (
+    compute_concentration_metrics,
+    write_concentration_metrics_csv,
+)
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.compute import compute_risk_proxies
 from counter_risk.dates import derive_as_of_date, derive_run_date
@@ -537,6 +541,8 @@ def run_pipeline(config_path: str | Path) -> Path:
         LOGGER.exception("pipeline_failed stage=compute_metrics run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during compute stage") from exc
 
+    concentration_metrics_records: list[dict[str, Any]] = []
+    concentration_metrics_output_paths: list[Path] = []
     try:
         risk_output_paths = _write_risk_outputs(
             run_dir=run_dir,
@@ -546,6 +552,17 @@ def run_pipeline(config_path: str | Path) -> Path:
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=write_risk_outputs run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during risk output stage") from exc
+
+    try:
+        concentration_metrics_records = _compute_and_write_concentration_metrics(
+            parsed_by_variant=parsed_by_variant,
+            run_dir=run_dir,
+        )
+        if concentration_metrics_records:
+            concentration_metrics_output_paths = [run_dir / "concentration_metrics.csv"]
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=concentration_metrics run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during concentration metrics stage") from exc
 
     try:
         historical_output_paths = _update_historical_outputs(
@@ -574,7 +591,26 @@ def run_pipeline(config_path: str | Path) -> Path:
     else:
         output_paths = output_result
         ppt_result = PptProcessingResult(status=PptProcessingStatus.SUCCESS)
-    output_paths = historical_output_paths + risk_output_paths + output_paths
+    output_paths = (
+        historical_output_paths
+        + risk_output_paths
+        + concentration_metrics_output_paths
+        + output_paths
+    )
+
+    if runtime_config.include_concentration_table_in_ppt and concentration_metrics_records:
+        dist_ppt_path = run_dir / resolve_ppt_output_names(as_of_date).distribution_filename
+        if dist_ppt_path.exists():
+            try:
+                from counter_risk.ppt.concentration_table import append_concentration_table_slide
+
+                append_concentration_table_slide(dist_ppt_path, concentration_metrics_records)
+                LOGGER.info("concentration_table_appended path=%s", dist_ppt_path)
+            except Exception as exc:
+                LOGGER.exception("pipeline_failed stage=concentration_table run_dir=%s", run_dir)
+                raise RuntimeError(
+                    "Pipeline failed during concentration table append stage"
+                ) from exc
 
     try:
         input_hashes = {
@@ -590,6 +626,9 @@ def run_pipeline(config_path: str | Path) -> Path:
             top_changes_per_variant=top_changes_per_variant,
             warnings=warnings,
             ppt_status=ppt_result.status.value,
+            concentration_metrics=(
+                concentration_metrics_records if concentration_metrics_records else None
+            ),
         )
         manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)
     except Exception as exc:
@@ -1143,6 +1182,87 @@ def _write_csv_rows(*, path: Path, fieldnames: tuple[str, ...], rows: list[dict[
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+
+
+_CONCENTRATION_ASSET_CLASSES: tuple[str, ...] = (
+    "TIPS",
+    "Treasury",
+    "Equity",
+    "Commodity",
+    "Currency",
+)
+
+
+def _build_concentration_exposure_rows(
+    parsed_by_variant: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Reshape parsed variant totals into long-format rows for concentration metrics.
+
+    Each output row has: variant, segment, counterparty, notional.
+    Segments are the individual asset classes (TIPS, Treasury, …) plus "total"
+    for the overall Notional column.
+    """
+    rows: list[dict[str, Any]] = []
+    for variant, parsed in parsed_by_variant.items():
+        totals_records = _records(parsed["totals"])
+        for record in totals_records:
+            counterparty = str(record.get("counterparty", "")).strip()
+            if not counterparty:
+                continue
+            # Individual asset class segments
+            for asset_class in _CONCENTRATION_ASSET_CLASSES:
+                if asset_class in record:
+                    try:
+                        notional = float(record[asset_class] or 0.0)
+                    except (TypeError, ValueError):
+                        notional = 0.0
+                    rows.append(
+                        {
+                            "variant": variant,
+                            "segment": asset_class,
+                            "counterparty": counterparty,
+                            "notional": notional,
+                        }
+                    )
+            # Overall total segment
+            try:
+                total_notional = float(record.get("Notional", 0.0) or 0.0)
+            except (TypeError, ValueError):
+                total_notional = 0.0
+            rows.append(
+                {
+                    "variant": variant,
+                    "segment": "total",
+                    "counterparty": counterparty,
+                    "notional": total_notional,
+                }
+            )
+    return rows
+
+
+def _compute_and_write_concentration_metrics(
+    *,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    run_dir: Path,
+) -> list[dict[str, Any]]:
+    """Compute concentration metrics, write CSV, and return records for manifest."""
+    exposure_rows = _build_concentration_exposure_rows(parsed_by_variant)
+    if not exposure_rows:
+        return []
+
+    metrics_result = compute_concentration_metrics(exposure_rows, group_by=["variant", "segment"])
+
+    # Convert to plain list of dicts
+    if hasattr(metrics_result, "to_dict"):
+        metrics_records: list[dict[str, Any]] = metrics_result.to_dict(orient="records")
+    else:
+        metrics_records = [dict(row) for row in metrics_result]
+
+    csv_path = run_dir / "concentration_metrics.csv"
+    write_concentration_metrics_csv(metrics_result, csv_path)
+    LOGGER.info("concentration_metrics_written path=%s", csv_path)
+
+    return metrics_records
 
 
 def _write_outputs(

@@ -1,0 +1,388 @@
+version: 1
+issue: 43
+base: main
+branch: claude/issue-43
+tasks:
+  - id: task-01
+    title: Implement `compute_concentration_metrics(exposures_df, group_by=[variant,
+      segment])` to calculate Top 5 share, Top 10 share, and HHI per group
+    status: done
+    started_at: '2026-02-26T05:50:57Z'
+    finished_at: '2026-02-26T05:51:09Z'
+    commit: 1804ae7abbb0878adfe9d34a146e8dc1dac293b0
+    notes: []
+  - id: task-02
+    title: 'Create the compute_concentration_metrics function signature with exposures_df
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Create the compute_concentration_metrics function signature with group_by
+      parameters (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Implement the grouping logic to partition data by variant (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'segment combinations (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Define scope for: Implement Top 5 share calculation by summing the five
+      largest exposures divided by total exposure per group (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Implement focused slice for: Implement Top 5 share calculation by summing
+      the five largest exposures divided by total exposure per group (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Validate focused slice for: Implement Top 5 share calculation by summing
+      the five largest exposures divided by total exposure per group (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Define scope for: Implement Top 10 share calculation by summing the ten
+      largest exposures divided by total exposure per group (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Implement focused slice for: Implement Top 10 share calculation by summing
+      the ten largest exposures divided by total exposure per group (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Validate focused slice for: Implement Top 10 share calculation by summing
+      the ten largest exposures divided by total exposure per group (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Define scope for: Implement HHI calculation by summing squared market
+      shares for all entities in each group (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Implement focused slice for: Implement HHI calculation by summing squared
+      market shares for all entities in each group (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Validate focused slice for: Implement HHI calculation by summing squared
+      market shares for all entities in each group (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Add input validation to ensure exposures_df contains required columns
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'handle edge cases (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Add writing of concentration metrics summary into `manifest.json`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Create `concentration_metrics.csv` in the run folder containing concentration
+      metrics per (variant, segment) group
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Add an optional small table render output for inclusion in the Distribution
+      PPT behind a toggle
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Write tests that validate Top N share sum logic and deterministic HHI/TopN
+      outputs using fixtures
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Create fixture data with known exposure distributions for testing concentration
+      metrics (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Define scope for: Write unit tests that verify Top 5 share calculation
+      matches expected values from fixtures'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Implement focused slice for: Write unit tests that verify Top 5 share
+      calculation matches expected values from fixtures'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Validate focused slice for: Write unit tests that verify Top 5 share calculation
+      matches expected values from fixtures'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Define scope for: Write unit tests that verify Top 10 share calculation
+      matches expected values from fixtures'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Implement focused slice for: Write unit tests that verify Top 10 share
+      calculation matches expected values from fixtures'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Validate focused slice for: Write unit tests that verify Top 10 share
+      calculation matches expected values from fixtures'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Define scope for: Write unit tests that verify HHI calculation produces
+      mathematically correct results from fixtures'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Implement focused slice for: Write unit tests that verify HHI calculation
+      produces mathematically correct results from fixtures'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Validate focused slice for: Write unit tests that verify HHI calculation
+      produces mathematically correct results from fixtures'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Define scope for: Write determinism tests that verify identical inputs
+      produce identical outputs across multiple runs'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Implement focused slice for: Write determinism tests that verify identical
+      inputs produce identical outputs across multiple runs'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Validate focused slice for: Write determinism tests that verify identical
+      inputs produce identical outputs across multiple runs'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Define scope for: Write edge case tests for groups with fewer than 5 or
+      10 entities (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Implement focused slice for: Write edge case tests for groups with fewer
+      than 5 or 10 entities (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Validate focused slice for: Write edge case tests for groups with fewer
+      than 5 or 10 entities (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: '`manifest.json` includes Top 5 share, Top 10 share, and HHI values for
+      each (variant, segment) group'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: '`concentration_metrics.csv` exists in the run folder and contains rows
+      for each (variant, segment) group with Top 5 share, Top 10 share, and HHI columns'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: Test suite passes and includes assertions that Top 5/Top 10 shares are
+      computed from total exposure consistently on fixtures
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: Test suite verifies deterministic outputs (Top N shares and HHI) for the
+      same fixture inputs across repeated runs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: Implement `compute_concentration_metrics(exposures_df, group_by=[variant,segment])`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Output results to:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: manifest.json (summary)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: '`concentration_metrics.csv` in run folder'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: Add optional small table render for inclusion in Distribution PPT (later
+      toggle)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: Add tests verifying metrics sum logic and determinism on fixtures
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: Run folder includes concentration metrics outputs with stable results on
+      fixtures
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: Manifest includes Top N shares and HHI values per group
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
