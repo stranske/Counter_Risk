@@ -5,6 +5,7 @@ from .historical_workbook import (
     HistoricalWalWorkbookOutputGenerator,
     HistoricalWorkbookOutputGenerator,
 )
+from .pdf_export import PDFExportGenerator
 from .ppt_link_refresh import (
     PptLinkRefreshOutputGenerator,
     PptLinkRefreshResult,
@@ -17,6 +18,7 @@ __all__ = [
     "HistoricalWorkbookOutputGenerator",
     "OutputContext",
     "OutputGenerator",
+    "PDFExportGenerator",
     "PptLinkRefreshOutputGenerator",
     "PptLinkRefreshResult",
     "PptLinkRefreshStatus",

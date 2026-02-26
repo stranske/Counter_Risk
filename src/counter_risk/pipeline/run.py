@@ -993,6 +993,8 @@ def _write_outputs(
             source_pptx=target_distribution_ppt,
             run_dir=run_dir,
             config=config,
+            as_of_date=as_of_date,
+            warnings=warnings,
         )
         if distribution_pdf_path is not None:
             output_paths.append(distribution_pdf_path)
@@ -1360,51 +1362,34 @@ def _export_distribution_pdf(
     source_pptx: Path,
     run_dir: Path,
     config: WorkflowConfig,
+    as_of_date: date,
+    warnings: list[str],
 ) -> Path | None:
-    if not config.export_pdf:
-        LOGGER.warning("distribution_pdf_skipped reason=export_pdf_disabled")
+    output_context = OutputContext(
+        config=config,
+        run_dir=run_dir,
+        as_of_date=as_of_date,
+        run_date=config.run_date or as_of_date,
+        warnings=tuple(warnings),
+    )
+    pdf_output_generator = _build_pdf_export_output_generator(
+        source_pptx=source_pptx,
+        warnings=warnings,
+    )
+    generated_paths = pdf_output_generator.generate(context=output_context)
+    if not generated_paths:
         return None
 
-    pdf_path = run_dir / f"{source_pptx.stem}.pdf"
-    _export_pptx_to_pdf(source_pptx=source_pptx, pdf_path=pdf_path)
-    return pdf_path
+    if len(generated_paths) != 1:
+        raise RuntimeError("PDF export output generator must produce at most one PDF output")
+
+    return generated_paths[0]
 
 
 def _export_pptx_to_pdf(*, source_pptx: Path, pdf_path: Path) -> None:
-    if platform.system().lower() != "windows":
-        error = RuntimeError("unsupported platform for COM PDF export")
-        LOGGER.error("PDF export failed: %s", error)
-        raise error
+    from counter_risk.outputs.pdf_export import export_pptx_to_pdf_via_com
 
-    try:
-        import win32com.client
-    except ImportError as exc:
-        error = RuntimeError("win32com is not installed")
-        LOGGER.error("PDF export failed: %s", error)
-        raise error from exc
-
-    app = None
-    presentation = None
-    try:
-        app = win32com.client.DispatchEx("PowerPoint.Application")
-        app.Visible = False
-        presentation = app.Presentations.Open(str(source_pptx), WithWindow=False)
-        presentation.ExportAsFixedFormat(str(pdf_path), 2)  # 2 = ppFixedFormatTypePDF
-        LOGGER.info("distribution_pdf_complete path=%s", pdf_path)
-    except Exception as exc:
-        LOGGER.error("PDF export failed: %s", exc)
-        raise RuntimeError(f"PDF export failed: {exc}") from exc
-    finally:
-        if presentation is not None:
-            try:
-                presentation.Close()
-            except Exception as exc:
-                LOGGER.warning("distribution_pdf_cleanup_failed action=close exc=%s", exc)
-        if app is not None:
-            try:
-                app.Quit()
-            except Exception as exc:
-                LOGGER.warning("distribution_pdf_cleanup_failed action=quit exc=%s", exc)
+    export_pptx_to_pdf_via_com(source_pptx=source_pptx, pdf_path=pdf_path)
 
 
 def _export_slides_as_images(
@@ -1699,6 +1684,18 @@ def _build_ppt_link_refresh_output_generator(
     return PptLinkRefreshOutputGenerator(
         warnings=warnings,
         ppt_link_refresher=_refresh_ppt_links,
+    )
+
+
+def _build_pdf_export_output_generator(
+    *, source_pptx: Path, warnings: list[str]
+) -> OutputGenerator:
+    from counter_risk.outputs.pdf_export import PDFExportGenerator
+
+    return PDFExportGenerator(
+        source_pptx=source_pptx,
+        warnings=warnings,
+        pptx_to_pdf_exporter=lambda src, dst: _export_pptx_to_pdf(source_pptx=src, pdf_path=dst),
     )
 
 
