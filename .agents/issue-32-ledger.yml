@@ -1,0 +1,344 @@
+version: 1
+issue: 32
+base: main
+branch: codex/issue-32
+tasks:
+  - id: task-01
+    title: Create `assets/vba/` and add VBA module source files in `assets/vba/*.bas`
+    status: doing
+    started_at: '2026-02-26T05:03:17Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: Implement a base-template `.xlsm` approach by adding a template workbook
+      file (e.g., `assets/templates/counter_risk_template.xlsm`) that is preserved
+      and copied forward during builds
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Create the directory structure `assets/templates/` for storing Excel template
+      files (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Define scope for: Design and create the base template workbook file `counter_risk_template.xlsm`
+      with placeholder sheets (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Implement focused slice for: Design and create the base template workbook
+      file `counter_risk_template.xlsm` with placeholder sheets (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Validate focused slice for: Design and create the base template workbook
+      file `counter_risk_template.xlsm` with placeholder sheets (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Define scope for: Design and create the base template workbook file `counter_risk_template.xlsm`
+      with structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement focused slice for: Design and create the base template workbook
+      file `counter_risk_template.xlsm` with structure (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Validate focused slice for: Design and create the base template workbook
+      file `counter_risk_template.xlsm` with structure (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Implement the file copy mechanism in the build process to preserve (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'copy the template forward during builds (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: Add `src/counter_risk/build/xlsm.py` to generate the `.xlsm` artifact by
+      copying the base-template `.xlsm` and writing any required placeholders/metadata
+      needed by the pipeline
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Define scope for: Create the module file `src/counter_risk/build/xlsm.py`
+      with basic structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Implement focused slice for: Create the module file `src/counter_risk/build/xlsm.py`
+      with basic structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Validate focused slice for: Create the module file `src/counter_risk/build/xlsm.py`
+      with basic structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Create the module file `src/counter_risk/build/xlsm.py` with imports (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Define scope for: Implement the template copying function to duplicate
+      the base xlsm file to the output location (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Implement focused slice for: Implement the template copying function to
+      duplicate the base xlsm file to the output location (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Validate focused slice for: Implement the template copying function to
+      duplicate the base xlsm file to the output location (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Implement the placeholder (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'metadata injection logic to populate dynamic content in the copied workbook
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: Write CI-safe tests to validate the generated `.xlsm` is a valid Excel
+      file and contains expected components (e.g., expected VBA modules and/or macro
+      names), and document any required manual verification steps for buttons/macros
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Define scope for: Write automated tests to validate the generated xlsm
+      file is a valid ZIP container with expected Excel workbook structure (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Implement focused slice for: Write automated tests to validate the generated
+      xlsm file is a valid ZIP container with expected Excel workbook structure (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Validate focused slice for: Write automated tests to validate the generated
+      xlsm file is a valid ZIP container with expected Excel workbook structure (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: Write automated tests to verify expected VBA modules
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'macro names are present in the generated file (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Document the manual verification steps required to test buttons (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'macro execution in Excel (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: '`src/counter_risk/build/xlsm.py` exists and running its build entrypoint
+      produces an `.xlsm` artifact'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Automated tests pass in CI and verify the generated `.xlsm` file is valid
+      (e.g., can be inspected as a ZIP container and contains expected `xl/` workbook
+      parts)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Automated tests verify expected macro/VBA components are present (e.g.,
+      expected VBA project streams and/or module names corresponding to `assets/vba/*.bas`)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: Manual verification steps are documented and, when followed, the generated
+      `.xlsm` opens in Excel and exposes the expected buttons/macros
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Updating the pipeline version does not break macro execution (i.e., generating
+      a new `.xlsm` with the updated version still passes the automated validation
+      tests and the documented manual macro check)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: Store VBA modules in `assets/vba/*.bas`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Choose build approach:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: Base-template `.xlsm` preserved and copied forward (recommended)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: OR Excel COM import of `.bas` modules (Windows-only)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: Add `src/counter_risk/build/xlsm.py` to produce the `.xlsm` artifact
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: Add CI-safe tests that validate the `.xlsm` is a valid file and contains
+      expected components (manual verification steps documented)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: Generated `.xlsm` opens cleanly in Excel and exposes the expected buttons/macros
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: Macros do not break when the pipeline version updates
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
