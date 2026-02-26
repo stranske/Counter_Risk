@@ -1,0 +1,472 @@
+version: 1
+issue: 42
+base: main
+branch: codex/issue-42
+tasks:
+  - id: task-01
+    title: Implement Python layout transformations to produce MOSERS-format CPRS sheets
+      from raw NISA inputs for the All Programs case
+    status: doing
+    started_at: '2026-02-26T06:52:36Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: 'Document the expected structure (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'fields of raw NISA inputs for the All Programs case (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Define scope for: Document the expected MOSERS-format CPRS sheet structure
+      for the All Programs case (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Implement focused slice for: Document the expected MOSERS-format CPRS
+      sheet structure for the All Programs case (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Validate focused slice for: Document the expected MOSERS-format CPRS sheet
+      structure for the All Programs case (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Define scope for: Implement the core transformation logic to convert All
+      Programs NISA data to MOSERS-format CPRS sheets (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement focused slice for: Implement the core transformation logic to
+      convert All Programs NISA data to MOSERS-format CPRS sheets (verify: formatter
+      passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Validate focused slice for: Implement the core transformation logic to
+      convert All Programs NISA data to MOSERS-format CPRS sheets (verify: formatter
+      passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Add unit tests for the All Programs NISA to MOSERS-format transformation
+      (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: Implement Python layout transformations to produce MOSERS-format CPRS sheets
+      from raw NISA inputs for the Ex Trend case
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'fields of raw NISA inputs for the Ex Trend case (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Define scope for: Document the expected MOSERS-format CPRS sheet structure
+      for the Ex Trend case (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Implement focused slice for: Document the expected MOSERS-format CPRS
+      sheet structure for the Ex Trend case (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Validate focused slice for: Document the expected MOSERS-format CPRS sheet
+      structure for the Ex Trend case (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Define scope for: Implement the core transformation logic to convert Ex
+      Trend NISA data to MOSERS-format CPRS sheets (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Implement focused slice for: Implement the core transformation logic to
+      convert Ex Trend NISA data to MOSERS-format CPRS sheets (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Validate focused slice for: Implement the core transformation logic to
+      convert Ex Trend NISA data to MOSERS-format CPRS sheets (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Add unit tests for the Ex Trend NISA to MOSERS-format transformation (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: Implement Python layout transformations to produce MOSERS-format CPRS sheets
+      from raw NISA inputs for the Trend case
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'fields of raw NISA inputs for the Trend case (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Document the expected MOSERS-format CPRS sheet structure for the Trend
+      case (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Define scope for: Implement the core transformation logic to convert Trend
+      NISA data to MOSERS-format CPRS sheets (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Implement focused slice for: Implement the core transformation logic to
+      convert Trend NISA data to MOSERS-format CPRS sheets (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Validate focused slice for: Implement the core transformation logic to
+      convert Trend NISA data to MOSERS-format CPRS sheets (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Add unit tests for the Trend NISA to MOSERS-format transformation (verify:
+      tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: Implement Python plug-values transformations to map values into the correct
+      MOSERS-format structures where applicable
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Document the plug-values mapping requirements (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'identify all applicable MOSERS-format structures (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Implement the plug-values transformation logic for each identified structure
+      type (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Add unit tests to verify plug-values mappings produce correct outputs
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Validate that plug-values transformations integrate correctly with layout
+      transformations (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: Update the transformation pipeline to ensure outputs match the MOSERS-format
+      structure expected by the Milestone 1 parsers
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Fix transformation logic to be data-driven via header detection (no row-number
+      hardcoding)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: Add tests that compare Python-generated MOSERS-format outputs to approved
+      reference outputs at the range-level
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: 'Define scope for: Create or identify approved reference MOSERS-format
+      output files for each case type (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Implement focused slice for: Create or identify approved reference MOSERS-format
+      output files for each case type (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Validate focused slice for: Create or identify approved reference MOSERS-format
+      output files for each case type (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Define scope for: Implement a range-level comparison utility function
+      that can compare Excel ranges between files (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'Implement focused slice for: Implement a range-level comparison utility
+      function that can compare Excel ranges between files (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Validate focused slice for: Implement a range-level comparison utility
+      function that can compare Excel ranges between files (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Define scope for: Add integration tests that compare Python-generated
+      All Programs outputs to reference files (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'Implement focused slice for: Add integration tests that compare Python-generated
+      All Programs outputs to reference files (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Validate focused slice for: Add integration tests that compare Python-generated
+      All Programs outputs to reference files (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'Define scope for: Add integration tests that compare Python-generated
+      Ex Trend outputs to reference files (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: 'Implement focused slice for: Add integration tests that compare Python-generated
+      Ex Trend outputs to reference files (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Validate focused slice for: Add integration tests that compare Python-generated
+      Ex Trend outputs to reference files (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'Add integration tests that compare Python-generated Trend outputs to reference
+      files (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: Given raw NISA inputs, the pipeline produces valid MOSERS-format workbooks
+      without running VBA
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: Macro-spec tests for covered behaviors pass
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: Range-level comparison tests between Python-generated MOSERS-format outputs
+      and approved reference outputs pass
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: 'Implement Python transformations for each macro-covered behavior:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: NISA layout transforms (All Programs / Ex Trend / Trend)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: plug-values transforms where applicable
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: Ensure outputs match the MOSERS-format structure expected by Milestone
+      1 parsers
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: Make transformations data-driven (header detection, not row-number hardcoding)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: Add tests that compare Python-generated MOSERS-format outputs to approved
+      reference outputs (range-level)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: Given raw NISA inputs, the pipeline produces valid MOSERS-format workbooks
+      without running VBA
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: Macro spec tests pass for covered behaviors
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
