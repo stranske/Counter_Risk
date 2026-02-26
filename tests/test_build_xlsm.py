@@ -101,6 +101,7 @@ def test_build_xlsm_artifact_retains_runnerlaunch_vba_markers(tmp_path: Path) ->
     assert "Public Sub RunAll_Click()" in vba_text
     assert "Public Sub RunExTrend_Click()" in vba_text
     assert "Public Sub RunTrend_Click()" in vba_text
+    assert "Public Sub OpenOutputFolder_Click()" in vba_text
 
 
 def test_build_xlsm_artifact_raises_for_missing_template(tmp_path: Path) -> None:
@@ -161,13 +162,49 @@ def test_build_xlsm_artifact_preserves_vba_project_across_version_updates(tmp_pa
         workbook_v1.open("xl/vbaProject.bin") as vba_v1,
         workbook_v2.open("xl/vbaProject.bin") as vba_v2,
     ):
-        assert vba_v1.read() == vba_v2.read()
+        vba_v1_bytes = vba_v1.read()
+        vba_v2_bytes = vba_v2.read()
+        assert vba_v1_bytes == vba_v2_bytes
+
+    vba_v2_text = vba_v2_bytes.decode("latin-1", errors="ignore")
+    assert "Public Sub RunAll_Click()" in vba_v2_text
+    assert "Public Sub RunExTrend_Click()" in vba_v2_text
+    assert "Public Sub RunTrend_Click()" in vba_v2_text
+    assert "Public Sub OpenOutputFolder_Click()" in vba_v2_text
 
     runner_sheet_v2_xml = _read_zip_text(output_v2, "xl/worksheets/sheet1.xml")
     assert "Run All" in runner_sheet_v2_xml
     assert "Run Ex Trend" in runner_sheet_v2_xml
     assert "Run Trend" in runner_sheet_v2_xml
     assert "Open Output Folder" in runner_sheet_v2_xml
+
+
+def test_validate_runner_macros_raises_when_required_macro_missing(tmp_path: Path) -> None:
+    output_path = tmp_path / "Runner.generated.xlsm"
+
+    xlsm.build_xlsm_artifact(
+        template_path=Path("assets/templates/counter_risk_template.xlsm"),
+        output_path=output_path,
+        as_of_date=date(2026, 1, 31),
+        run_date=datetime(2026, 2, 26, 12, 0, tzinfo=UTC),
+        version="1.2.3",
+    )
+
+    synthetic_vba = "\n".join(
+        [
+            'Attribute VB_Name = "RunnerLaunch"',
+            "Public Sub RunAll_Click()",
+            "End Sub",
+            "Public Sub RunExTrend_Click()",
+            "End Sub",
+            "Public Sub RunTrend_Click()",
+            "End Sub",
+        ]
+    ).encode("latin-1")
+    xlsm._replace_zip_member(output_path, "xl/vbaProject.bin", synthetic_vba)
+
+    with pytest.raises(ValueError, match="missing required runner macros"):
+        xlsm._validate_runner_macros(output_path)
 
 
 def test_runner_xlsm_manual_macro_verification_doc_is_present_and_actionable() -> None:

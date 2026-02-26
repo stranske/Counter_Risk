@@ -11,6 +11,13 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 CORE_PROPERTIES_MEMBER = "docProps/core.xml"
+VBA_PROJECT_MEMBER = "xl/vbaProject.bin"
+REQUIRED_RUNNER_MACROS: tuple[str, ...] = (
+    "RunAll_Click",
+    "RunExTrend_Click",
+    "RunTrend_Click",
+    "OpenOutputFolder_Click",
+)
 
 
 def repository_root() -> Path:
@@ -118,6 +125,22 @@ def _replace_zip_member(zip_path: Path, member_name: str, member_bytes: bytes) -
         temp_path.unlink(missing_ok=True)
 
 
+def _validate_runner_macros(xlsm_path: Path) -> None:
+    """Ensure expected Runner macros exist in generated workbook VBA project."""
+
+    with ZipFile(xlsm_path, mode="r") as workbook:
+        if VBA_PROJECT_MEMBER not in workbook.namelist():
+            raise ValueError(f"Generated XLSM is missing required member: {VBA_PROJECT_MEMBER}")
+        with workbook.open(VBA_PROJECT_MEMBER) as vba_project:
+            vba_text = vba_project.read().decode("latin-1", errors="ignore")
+
+    missing = [macro for macro in REQUIRED_RUNNER_MACROS if f"Sub {macro}(" not in vba_text]
+    if missing:
+        raise ValueError(
+            "Generated XLSM is missing required runner macros: " + ", ".join(sorted(missing))
+        )
+
+
 def build_xlsm_artifact(
     *,
     template_path: Path,
@@ -136,6 +159,7 @@ def build_xlsm_artifact(
 
     core_xml = _core_properties_xml(as_of_date=as_of_date, run_date=run_date, version=version)
     _replace_zip_member(output_path, CORE_PROPERTIES_MEMBER, core_xml.encode("utf-8"))
+    _validate_runner_macros(output_path)
     return output_path
 
 
