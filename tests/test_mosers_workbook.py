@@ -247,6 +247,54 @@ def test_generate_mosers_workbook_applies_documented_plug_values_mappings() -> N
         workbook.close()
 
 
+@pytest.mark.parametrize(
+    ("fixture_path", "parser", "generator"),
+    [
+        (
+            Path("tests/fixtures/raw_nisa_all_programs.xlsx"),
+            parse_nisa_all_programs,
+            generate_mosers_workbook,
+        ),
+        (
+            Path("tests/fixtures/NISA Monthly Ex Trend - Raw.xlsx"),
+            parse_nisa_ex_trend,
+            generate_mosers_workbook_ex_trend,
+        ),
+        (
+            Path("tests/fixtures/NISA Monthly Trend - Raw.xlsx"),
+            parse_nisa_trend,
+            generate_mosers_workbook_trend,
+        ),
+    ],
+)
+def test_generate_mosers_workbook_variants_apply_plug_values_consistently(
+    fixture_path: Path,
+    parser: Any,
+    generator: Any,
+) -> None:
+    parsed = parser(fixture_path)
+    workbook = generator(fixture_path)
+    requirements = get_mosers_plug_values_mapping_requirements()
+    first_total = parsed.totals_rows[0]
+    try:
+        for structure in requirements.structure_mappings:
+            worksheet = workbook[structure.target_sheet]
+            marker_row = _find_marker_row(worksheet, structure.section_marker)
+            first_data_row = marker_row + 1
+            assert _read_totals_row(worksheet, first_data_row) == (
+                first_total.counterparty,
+                first_total.tips,
+                first_total.treasury,
+                first_total.equity,
+                first_total.commodity,
+                first_total.currency,
+                first_total.notional,
+                first_total.notional_change,
+            )
+    finally:
+        workbook.close()
+
+
 def test_generate_mosers_workbook_ex_trend_populates_values_from_ex_trend_fixture() -> None:
     fixture_path = Path("tests/fixtures/NISA Monthly Ex Trend - Raw.xlsx")
     parsed = parse_nisa_ex_trend(fixture_path)
