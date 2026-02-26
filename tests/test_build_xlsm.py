@@ -106,3 +106,46 @@ def test_main_builds_xlsm_artifact_from_cli(tmp_path: Path) -> None:
 
     assert result == 0
     assert output_path.is_file()
+
+
+def test_build_xlsm_artifact_preserves_vba_project_across_version_updates(tmp_path: Path) -> None:
+    output_v1 = tmp_path / "Runner.v1.xlsm"
+    output_v2 = tmp_path / "Runner.v2.xlsm"
+
+    xlsm.build_xlsm_artifact(
+        template_path=Path("assets/templates/counter_risk_template.xlsm"),
+        output_path=output_v1,
+        as_of_date=date(2026, 1, 31),
+        run_date=datetime(2026, 2, 26, 12, 0, tzinfo=UTC),
+        version="1.2.3",
+    )
+    xlsm.build_xlsm_artifact(
+        template_path=Path("assets/templates/counter_risk_template.xlsm"),
+        output_path=output_v2,
+        as_of_date=date(2026, 1, 31),
+        run_date=datetime(2026, 2, 26, 12, 0, tzinfo=UTC),
+        version="1.2.4",
+    )
+
+    with (
+        ZipFile(output_v1) as workbook_v1,
+        ZipFile(output_v2) as workbook_v2,
+        workbook_v1.open("xl/vbaProject.bin") as vba_v1,
+        workbook_v2.open("xl/vbaProject.bin") as vba_v2,
+    ):
+        assert vba_v1.read() == vba_v2.read()
+
+
+def test_runner_xlsm_manual_macro_verification_doc_is_present_and_actionable() -> None:
+    doc_path = Path("docs/runner_xlsm_macro_manual_verification.md")
+    content = doc_path.read_text(encoding="utf-8")
+
+    assert doc_path.is_file()
+    assert "Manual Macro/Button Check" in content
+    assert "Enable Content" in content
+    assert "RunAll_Click" in content
+    assert "RunExTrend_Click" in content
+    assert "RunTrend_Click" in content
+    assert "OpenOutputFolder_Click" in content
+    assert "Version Bump Regression Check" in content
+    assert "--version 1.2.4" in content
