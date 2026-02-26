@@ -181,29 +181,33 @@ def _generate_mosers_workbook_from_parser(
     raw_nisa_path: str | Path,
     *,
     parser: Callable[[str | Path], NisaAllProgramsData],
-    structure: MosersAllProgramsOutputStructure,
-    transformation_scope: MosersAllProgramsTransformationScope,
+    structure: MosersAllProgramsOutputStructure | None = None,
+    transformation_scope: MosersAllProgramsTransformationScope | None = None,
 ) -> Workbook:
+    resolved_structure = structure or get_mosers_all_programs_output_structure()
+    resolved_transformation_scope = (
+        transformation_scope or get_mosers_all_programs_transformation_scope()
+    )
     parsed = parser(raw_nisa_path)
     workbook = load_mosers_template_workbook()
 
     missing_sheets = [
-        sheet for sheet in structure.required_sheets if sheet not in workbook.sheetnames
+        sheet for sheet in resolved_structure.required_sheets if sheet not in workbook.sheetnames
     ]
     if missing_sheets:
         missing = ", ".join(missing_sheets)
         raise ValueError(f"MOSERS template workbook missing required sheet(s): {missing}")
 
-    worksheet = workbook[structure.cprs_ch_sheet]
+    worksheet = workbook[resolved_structure.cprs_ch_sheet]
     first_program = parsed.ch_rows[0].counterparty if parsed.ch_rows else ""
-    worksheet[structure.program_name_cell] = first_program
+    worksheet[resolved_structure.program_name_cell] = first_program
 
-    for transform in transformation_scope.cprs_ch_transforms:
+    for transform in resolved_transformation_scope.cprs_ch_transforms:
         _write_vertical_values(
             worksheet=worksheet,
             column_letter=transform.target_column,
-            start_row=structure.start_row,
-            end_row=structure.end_row,
+            start_row=resolved_structure.start_row,
+            end_row=resolved_structure.end_row,
             values=_build_totals_metric_values(parsed.totals_rows, transform.source_metric),
         )
 
