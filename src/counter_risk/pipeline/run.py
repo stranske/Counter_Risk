@@ -1719,7 +1719,7 @@ def _require_source_pptx(source_pptx: Path | None) -> Path:
 
 def _build_historical_workbook_output_generator(
     *,
-    parsed_by_variant: dict[str, dict[str, Any]],
+    parsed_by_variant: Mapping[str, Mapping[str, Any]],
     warnings: list[str],
 ) -> OutputGenerator:
     from counter_risk.outputs.historical_workbook import HistoricalWorkbookOutputGenerator
