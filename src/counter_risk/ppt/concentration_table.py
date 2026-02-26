@@ -29,8 +29,8 @@ def append_concentration_table_slide(
     title:
         Text label placed at the top of the new slide.
     """
-    from pptx import Presentation  # type: ignore[import-untyped]
-    from pptx.util import Inches, Pt  # type: ignore[import-untyped]
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
 
     pptx_path = Path(pptx_path)
     prs = Presentation(str(pptx_path))
@@ -40,6 +40,7 @@ def append_concentration_table_slide(
 
     slide_width = prs.slide_width
     slide_height = prs.slide_height
+    assert slide_height is not None
 
     title_left = Inches(0.5)
     title_top = Inches(0.25)
@@ -56,11 +57,11 @@ def append_concentration_table_slide(
         prs.save(str(pptx_path))
         return
 
-    _HEADERS = ("Variant", "Segment", "Top 5 Share", "Top 10 Share", "HHI")
-    _KEYS = ("variant", "segment", "top5_share", "top10_share", "hhi")
+    _headers = ("Variant", "Segment", "Top 5 Share", "Top 10 Share", "HHI")
+    _keys = ("variant", "segment", "top5_share", "top10_share", "hhi")
 
     rows_count = len(metrics_records) + 1  # header row + data rows
-    cols_count = len(_HEADERS)
+    cols_count = len(_headers)
 
     table_left = Inches(0.5)
     table_top = Inches(0.85)
@@ -71,7 +72,7 @@ def append_concentration_table_slide(
         rows_count, cols_count, table_left, table_top, table_width, table_height
     ).table
 
-    for col_idx, header in enumerate(_HEADERS):
+    for col_idx, header in enumerate(_headers):
         cell = tbl.cell(0, col_idx)
         cell.text = header
         para = cell.text_frame.paragraphs[0]
@@ -80,7 +81,7 @@ def append_concentration_table_slide(
             para.runs[0].font.size = Pt(10)
 
     for row_idx, record in enumerate(metrics_records):
-        for col_idx, key in enumerate(_KEYS):
+        for col_idx, key in enumerate(_keys):
             cell = tbl.cell(row_idx + 1, col_idx)
             value = record.get(key, "")
             if key in ("top5_share", "top10_share"):

@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-from io import BytesIO
 from pathlib import Path
 from typing import Any
-
-import pytest
 
 from counter_risk.ppt.concentration_table import append_concentration_table_slide
 
@@ -78,7 +75,6 @@ def test_append_concentration_table_slide_modifies_file_in_place(tmp_path: Path)
     """The PPTX is modified in-place at the same path."""
     pptx = tmp_path / "deck.pptx"
     _make_minimal_pptx(pptx)
-    mtime_before = pptx.stat().st_mtime
     append_concentration_table_slide(pptx, _SAMPLE_METRICS)
     assert pptx.exists()
     assert pptx.stat().st_size > 0
@@ -170,7 +166,6 @@ def test_append_concentration_table_slide_hhi_formatted_as_decimal(tmp_path: Pat
 
 def test_config_include_concentration_table_in_ppt_defaults_to_false() -> None:
     """WorkflowConfig.include_concentration_table_in_ppt defaults to False."""
-    from datetime import date
     from pathlib import Path
 
     from counter_risk.config import WorkflowConfig
