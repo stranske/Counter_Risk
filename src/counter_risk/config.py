@@ -87,6 +87,7 @@ class WorkflowConfig(BaseModel):
     mosers_all_programs_xlsx: Path | None = None
     raw_nisa_all_programs_xlsx: Path | None = None
     daily_holdings_pdf: Path | None = None
+    dropin_all_programs_template_xlsx: Path | None = None
     mosers_ex_trend_xlsx: Path
     mosers_trend_xlsx: Path
     hist_all_programs_3yr_xlsx: Path
