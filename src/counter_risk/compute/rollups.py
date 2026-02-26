@@ -36,6 +36,10 @@ _TOP_CHANGE_COLUMNS = (
     "notional_change",
     "absolute_change",
 )
+_NOTIONAL_PROXY_COLUMNS = ("Notional", "AnnualizedVolatility")
+_POSITION_PROXY_COLUMNS = ("PositionUSD", "Vol")
+_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN = "risk_proxy_notional_annualized_volatility"
+_RISK_PROXY_POSITION_VOL_COLUMN = "risk_proxy_position_usd_vol"
 
 _CONCENTRATION_GROUP_COLUMNS = ("variant", "segment")
 _CONCENTRATION_METRIC_COLUMNS = ("top5_share", "top10_share", "hhi")
@@ -117,6 +121,24 @@ def _to_dataframe_or_records(*, records: list[dict[str, Any]], columns: tuple[st
 def _records_from_table(table: Any, *, arg_name: str) -> list[dict[str, Any]]:
     rows = _iter_rows(table, arg_name=arg_name)
     return [dict(row) for row in rows]
+
+
+def _column_names_from_rows(table: Any, rows: list[Mapping[str, Any]]) -> tuple[str, ...]:
+    if _is_dataframe_like(table):
+        columns = getattr(table, "columns", ())
+        normalized = [str(column) for column in columns]
+        return tuple(normalized)
+
+    ordered_columns: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        for key in row:
+            normalized_key = str(key)
+            if normalized_key in seen:
+                continue
+            seen.add(normalized_key)
+            ordered_columns.append(normalized_key)
+    return tuple(ordered_columns)
 
 
 def compute_totals(exposures_df: Any) -> Any:
@@ -282,6 +304,45 @@ def top_changes(totals_df: Any, n: int = 10) -> Any:
     )
 
     return _to_dataframe_or_records(records=change_rows[:n], columns=_TOP_CHANGE_COLUMNS)
+
+
+def compute_risk_proxies(exposures_df: Any) -> Any:
+    """Return exposure rows annotated with available risk proxy calculations."""
+
+    rows = _iter_rows(exposures_df, arg_name="exposures_df")
+    columns = _column_names_from_rows(exposures_df, rows)
+    has_notional_proxy_inputs = all(column in columns for column in _NOTIONAL_PROXY_COLUMNS)
+    has_position_proxy_inputs = all(column in columns for column in _POSITION_PROXY_COLUMNS)
+
+    proxy_records: list[dict[str, Any]] = []
+    for row in rows:
+        normalized_row = dict(row)
+        if has_notional_proxy_inputs:
+            notional = _find_numeric(row, ("Notional",), field="Notional", default=0.0)
+            annualized_volatility = _find_numeric(
+                row,
+                ("AnnualizedVolatility",),
+                field="AnnualizedVolatility",
+                default=0.0,
+            )
+            normalized_row[_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN] = (
+                notional * annualized_volatility
+            )
+
+        if has_position_proxy_inputs:
+            position_usd = _find_numeric(row, ("PositionUSD",), field="PositionUSD", default=0.0)
+            volatility = _find_numeric(row, ("Vol",), field="Vol", default=0.0)
+            normalized_row[_RISK_PROXY_POSITION_VOL_COLUMN] = position_usd * volatility
+
+        proxy_records.append(normalized_row)
+
+    output_columns = list(columns)
+    if has_notional_proxy_inputs and _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN not in output_columns:
+        output_columns.append(_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN)
+    if has_position_proxy_inputs and _RISK_PROXY_POSITION_VOL_COLUMN not in output_columns:
+        output_columns.append(_RISK_PROXY_POSITION_VOL_COLUMN)
+
+    return _to_dataframe_or_records(records=proxy_records, columns=tuple(output_columns))
 
 
 def compute_concentration_metrics(
