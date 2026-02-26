@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import csv
 import hashlib
 import logging
 import math
@@ -16,6 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 from zipfile import BadZipFile
 
+from counter_risk.compute import compute_risk_proxies
 from counter_risk.compute.rollups import (
     compute_concentration_metrics,
     write_concentration_metrics_csv,
@@ -98,6 +100,16 @@ _REQUIRED_INPUT_FIELDS: tuple[str, ...] = (
     "hist_ex_llc_3yr_xlsx",
     "hist_llc_3yr_xlsx",
     "monthly_pptx",
+)
+_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN = "risk_proxy_notional_annualized_volatility"
+_RISK_PROXY_POSITION_VOL_COLUMN = "risk_proxy_position_usd_vol"
+_NOTIONAL_CHANGE_FIELDS_FOR_MOVER_DELTA: tuple[str, ...] = (
+    "NotionalChange",
+    "NotionalChangeFromPriorMonth",
+)
+_POSITION_CHANGE_FIELDS_FOR_MOVER_DELTA: tuple[str, ...] = (
+    "PositionUSDChange",
+    "PositionChangeFromPriorMonth",
 )
 
 
@@ -548,11 +560,25 @@ def run_pipeline(config_path: str | Path) -> Path:
         LOGGER.exception("pipeline_failed stage=compute_metrics run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during compute stage") from exc
 
+    concentration_metrics_records: list[dict[str, Any]] = []
+    concentration_metrics_output_paths: list[Path] = []
+    try:
+        risk_output_paths = _write_risk_outputs(
+            run_dir=run_dir,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=write_risk_outputs run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during risk output stage") from exc
+
     try:
         concentration_metrics_records = _compute_and_write_concentration_metrics(
             parsed_by_variant=parsed_by_variant,
             run_dir=run_dir,
         )
+        if concentration_metrics_records:
+            concentration_metrics_output_paths = [run_dir / "concentration_metrics.csv"]
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=concentration_metrics run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during concentration metrics stage") from exc
@@ -584,7 +610,12 @@ def run_pipeline(config_path: str | Path) -> Path:
     else:
         output_paths = output_result
         ppt_result = PptProcessingResult(status=PptProcessingStatus.SUCCESS)
-    output_paths = historical_output_paths + output_paths
+    output_paths = (
+        historical_output_paths
+        + risk_output_paths
+        + concentration_metrics_output_paths
+        + output_paths
+    )
 
     if runtime_config.include_concentration_table_in_ppt and concentration_metrics_records:
         dist_ppt_path = run_dir / resolve_ppt_output_names(as_of_date).distribution_filename
@@ -963,6 +994,244 @@ def _compute_metrics(
 
     LOGGER.info("compute_complete")
     return top_exposures, top_changes_per_variant
+
+
+def _write_risk_outputs(
+    *, run_dir: Path, parsed_by_variant: dict[str, dict[str, Any]], warnings: list[str]
+) -> list[Path]:
+    ranking_rows: list[dict[str, Any]] = []
+    mover_rows: list[dict[str, Any]] = []
+    ranking_inputs_available = False
+    mover_inputs_available = False
+
+    for variant, parsed_sections in parsed_by_variant.items():
+        totals_table = parsed_sections.get("totals", [])
+        totals_records = _records(totals_table)
+        if not totals_records:
+            continue
+
+        columns = _column_names(totals_table)
+        has_notional_vol = "Notional" in columns and "AnnualizedVolatility" in columns
+        has_position_vol = "PositionUSD" in columns and "Vol" in columns
+        if not has_notional_vol:
+            warnings.append(
+                "risk proxy notional-volatility skipped for "
+                f"{variant}: requires Notional and AnnualizedVolatility columns"
+            )
+        if not has_position_vol:
+            warnings.append(
+                "risk proxy position-volatility skipped for "
+                f"{variant}: requires PositionUSD and Vol columns"
+            )
+        if not has_notional_vol and not has_position_vol:
+            continue
+
+        ranking_inputs_available = True
+        proxy_records = _records(compute_risk_proxies(totals_records))
+
+        if has_notional_vol:
+            ranking_rows.extend(
+                _rank_proxy_rows(
+                    variant=variant,
+                    records=proxy_records,
+                    proxy_column=_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN,
+                )
+            )
+            change_field = _first_available_field(
+                columns=columns, candidates=_NOTIONAL_CHANGE_FIELDS_FOR_MOVER_DELTA
+            )
+            if change_field is None:
+                warnings.append(
+                    "risk top movers skipped for "
+                    f"{variant} {_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN}: "
+                    "requires a notional prior-month delta column"
+                )
+            else:
+                mover_inputs_available = True
+                mover_rows.extend(
+                    _mover_rows_for_notional_proxy(
+                        variant=variant,
+                        records=totals_records,
+                        change_field=change_field,
+                    )
+                )
+
+        if has_position_vol:
+            ranking_rows.extend(
+                _rank_proxy_rows(
+                    variant=variant,
+                    records=proxy_records,
+                    proxy_column=_RISK_PROXY_POSITION_VOL_COLUMN,
+                )
+            )
+            change_field = _first_available_field(
+                columns=columns, candidates=_POSITION_CHANGE_FIELDS_FOR_MOVER_DELTA
+            )
+            if change_field is None:
+                warnings.append(
+                    "risk top movers skipped for "
+                    f"{variant} {_RISK_PROXY_POSITION_VOL_COLUMN}: "
+                    "requires a position prior-month delta column"
+                )
+            else:
+                mover_inputs_available = True
+                mover_rows.extend(
+                    _mover_rows_for_position_proxy(
+                        variant=variant,
+                        records=totals_records,
+                        change_field=change_field,
+                    )
+                )
+
+    output_paths: list[Path] = []
+    if ranking_rows:
+        risk_rankings_path = run_dir / "risk_rankings.csv"
+        _write_csv_rows(
+            path=risk_rankings_path,
+            fieldnames=(
+                "variant",
+                "counterparty",
+                "proxy_name",
+                "proxy_value",
+                "rank",
+            ),
+            rows=ranking_rows,
+        )
+        output_paths.append(risk_rankings_path)
+    elif not ranking_inputs_available:
+        warnings.append(
+            "risk_rankings.csv skipped: missing required proxy inputs "
+            "(Notional+AnnualizedVolatility and/or PositionUSD+Vol)"
+        )
+
+    if mover_rows:
+        risk_movers_path = run_dir / "risk_top_movers.csv"
+        _write_csv_rows(
+            path=risk_movers_path,
+            fieldnames=(
+                "variant",
+                "counterparty",
+                "proxy_name",
+                "current_proxy_value",
+                "prior_proxy_value",
+                "delta",
+                "absolute_delta",
+                "rank",
+                "delta_source_column",
+            ),
+            rows=mover_rows,
+        )
+        output_paths.append(risk_movers_path)
+    elif ranking_inputs_available and not mover_inputs_available:
+        warnings.append(
+            "risk_top_movers.csv skipped: prior-month delta inputs unavailable for computed proxies"
+        )
+
+    return output_paths
+
+
+def _rank_proxy_rows(
+    *, variant: str, records: list[dict[str, Any]], proxy_column: str
+) -> list[dict[str, Any]]:
+    ranked = sorted(
+        records,
+        key=lambda record: (
+            -abs(_to_float(record.get(proxy_column))),
+            str(record.get("counterparty", "")).casefold(),
+        ),
+    )
+    rows: list[dict[str, Any]] = []
+    for index, record in enumerate(ranked, start=1):
+        rows.append(
+            {
+                "variant": variant,
+                "counterparty": str(record.get("counterparty", "")),
+                "proxy_name": proxy_column,
+                "proxy_value": _to_float(record.get(proxy_column)),
+                "rank": index,
+            }
+        )
+    return rows
+
+
+def _mover_rows_for_notional_proxy(
+    *, variant: str, records: list[dict[str, Any]], change_field: str
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for record in records:
+        notional = _to_float(record.get("Notional"))
+        volatility = _to_float(record.get("AnnualizedVolatility"))
+        notional_delta = _to_float(record.get(change_field))
+        current_proxy = notional * volatility
+        delta_proxy = notional_delta * volatility
+        prior_proxy = current_proxy - delta_proxy
+        rows.append(
+            {
+                "variant": variant,
+                "counterparty": str(record.get("counterparty", "")),
+                "proxy_name": _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN,
+                "current_proxy_value": current_proxy,
+                "prior_proxy_value": prior_proxy,
+                "delta": delta_proxy,
+                "absolute_delta": abs(delta_proxy),
+                "delta_source_column": change_field,
+            }
+        )
+    rows.sort(key=lambda row: (-abs(_to_float(row["delta"])), str(row["counterparty"]).casefold()))
+    for index, row in enumerate(rows, start=1):
+        row["rank"] = index
+    return rows
+
+
+def _mover_rows_for_position_proxy(
+    *, variant: str, records: list[dict[str, Any]], change_field: str
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for record in records:
+        position = _to_float(record.get("PositionUSD"))
+        volatility = _to_float(record.get("Vol"))
+        position_delta = _to_float(record.get(change_field))
+        current_proxy = position * volatility
+        delta_proxy = position_delta * volatility
+        prior_proxy = current_proxy - delta_proxy
+        rows.append(
+            {
+                "variant": variant,
+                "counterparty": str(record.get("counterparty", "")),
+                "proxy_name": _RISK_PROXY_POSITION_VOL_COLUMN,
+                "current_proxy_value": current_proxy,
+                "prior_proxy_value": prior_proxy,
+                "delta": delta_proxy,
+                "absolute_delta": abs(delta_proxy),
+                "delta_source_column": change_field,
+            }
+        )
+    rows.sort(key=lambda row: (-abs(_to_float(row["delta"])), str(row["counterparty"]).casefold()))
+    for index, row in enumerate(rows, start=1):
+        row["rank"] = index
+    return rows
+
+
+def _first_available_field(*, columns: set[str], candidates: tuple[str, ...]) -> str | None:
+    for candidate in candidates:
+        if candidate in columns:
+            return candidate
+    return None
+
+
+def _to_float(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _write_csv_rows(*, path: Path, fieldnames: tuple[str, ...], rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as output:
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 _CONCENTRATION_ASSET_CLASSES: tuple[str, ...] = (
