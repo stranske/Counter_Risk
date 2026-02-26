@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: Implement Python layout transformations to produce MOSERS-format CPRS sheets
       from raw NISA inputs for the All Programs case
-    status: doing
+    status: done
     started_at: '2026-02-26T06:52:36Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-26T06:52:47Z'
+    commit: 00bc8f7d15bc08515795bfc502453fbf60dfc308
     notes: []
   - id: task-02
     title: 'Document the expected structure (verify: confirm completion in repo)'
