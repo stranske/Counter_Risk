@@ -185,7 +185,7 @@ def test_apply_repo_cash_to_totals_rejects_non_numeric_repo_cash() -> None:
     with pytest.raises(ValueError, match="must be numeric"):
         apply_repo_cash_to_totals(
             [{"counterparty": "A", "Notional": 1.0}],
-            {"A": "not-numeric"},  # type: ignore[arg-type]
+            cast(dict[str, float], {"A": "not-numeric"}),
         )
 
 

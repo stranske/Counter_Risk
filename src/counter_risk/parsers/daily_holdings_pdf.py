@@ -5,7 +5,6 @@ from __future__ import annotations
 import math
 import re
 from collections import defaultdict
-from collections.abc import Mapping
 from pathlib import Path
 
 from counter_risk.normalize import canonicalize_name
@@ -95,7 +94,7 @@ def _extract_text(path: Path) -> str:
 
 def _extract_text_with_pdfplumber(path: Path) -> str:
     try:
-        import pdfplumber  # type: ignore[import-untyped]
+        import pdfplumber  # type: ignore[import-not-found]
     except Exception:
         return ""
 
@@ -121,7 +120,7 @@ def _extract_text_with_pdfplumber(path: Path) -> str:
 
 def _extract_text_with_pypdf(path: Path) -> str:
     try:
-        from pypdf import PdfReader  # type: ignore[import-untyped]
+        from pypdf import PdfReader  # type: ignore[import-not-found]
     except Exception:
         return ""
 
@@ -140,8 +139,8 @@ def _extract_text_with_pypdf(path: Path) -> str:
 
 def _extract_text_with_ocr(path: Path) -> str:
     try:
-        import pytesseract  # type: ignore[import-untyped]
-        from pdf2image import convert_from_path  # type: ignore[import-untyped]
+        import pytesseract  # type: ignore[import-not-found]
+        from pdf2image import convert_from_path  # type: ignore[import-not-found]
     except Exception:
         return ""
 
