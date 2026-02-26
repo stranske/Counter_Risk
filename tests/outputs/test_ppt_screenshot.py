@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
-from typing import Callable
 
 from counter_risk.config import WorkflowConfig
 from counter_risk.outputs import OutputContext, PptScreenshotOutputGenerator

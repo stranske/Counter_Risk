@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Literal, NoReturn
+from typing import TYPE_CHECKING, Any, Literal, NoReturn
 from zipfile import BadZipFile
 
 from counter_risk.config import WorkflowConfig, load_config
@@ -30,7 +30,7 @@ from counter_risk.pipeline.parsing_types import (
     ParsedDataMissingKeyError,
     UnmappedCounterpartyError,
 )
-from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
+from counter_risk.pipeline.ppt_naming import PptOutputNames, resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
 from counter_risk.pipeline.run_folder_outputs import (
     RunFolderReadmePptOutputs,
@@ -45,6 +45,9 @@ from counter_risk.ppt.pptx_static import _rebuild_pptx_from_slide_images
 from counter_risk.writers import generate_mosers_workbook
 
 LOGGER = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from counter_risk.outputs.ppt_link_refresh import PptLinkRefreshOutputGenerator
 
 _EXPECTED_VARIANTS: tuple[str, ...] = ("all_programs", "ex_trend", "trend")
 
@@ -927,7 +930,10 @@ def _write_outputs(
         run_date=config.run_date or as_of_date,
         warnings=tuple(warnings),
     )
-    screenshot_generator = _build_ppt_screenshot_output_generator(warnings=warnings)
+    screenshot_generator = _build_ppt_screenshot_output_generator(
+        warnings=warnings,
+        ppt_output_names_resolver=resolve_ppt_output_names,
+    )
     master_output_paths = list(screenshot_generator.generate(context=output_context))
     if len(master_output_paths) != 1:
         raise RuntimeError(
@@ -1669,7 +1675,11 @@ def _build_historical_workbook_output_generator(
     )
 
 
-def _build_ppt_screenshot_output_generator(*, warnings: list[str]) -> OutputGenerator:
+def _build_ppt_screenshot_output_generator(
+    *,
+    warnings: list[str],
+    ppt_output_names_resolver: Callable[[date], PptOutputNames],
+) -> OutputGenerator:
     from counter_risk.outputs.ppt_screenshot import PptScreenshotOutputGenerator
 
     return PptScreenshotOutputGenerator(
@@ -1677,10 +1687,13 @@ def _build_ppt_screenshot_output_generator(*, warnings: list[str]) -> OutputGene
         screenshot_input_mapping_resolver=_resolve_screenshot_input_mapping,
         screenshot_replacer_resolver=_get_screenshot_replacer,
         master_link_target_validator=_assert_master_preserves_external_link_targets,
+        ppt_output_names_resolver=ppt_output_names_resolver,
     )
 
 
-def _build_ppt_link_refresh_output_generator(*, warnings: list[str]):
+def _build_ppt_link_refresh_output_generator(
+    *, warnings: list[str]
+) -> PptLinkRefreshOutputGenerator:
     from counter_risk.outputs.ppt_link_refresh import PptLinkRefreshOutputGenerator
 
     return PptLinkRefreshOutputGenerator(

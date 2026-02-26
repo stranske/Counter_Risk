@@ -20,6 +20,10 @@ _PptOutputNamesResolver = Callable[[date], PptOutputNames]
 _PptCopier = Callable[[str | Path, str | Path], str]
 
 
+def _copy_ppt(source: str | Path, destination: str | Path) -> str:
+    return shutil.copy2(str(source), str(destination))
+
+
 @dataclass(frozen=True)
 class PptScreenshotOutputGenerator(OutputGenerator):
     """Generate the Master PPT output with optional screenshot replacement."""
@@ -30,7 +34,7 @@ class PptScreenshotOutputGenerator(OutputGenerator):
     master_link_target_validator: _MasterLinkTargetValidator
     name: str = "ppt_screenshot"
     ppt_output_names_resolver: _PptOutputNamesResolver = resolve_ppt_output_names
-    ppt_copier: _PptCopier = shutil.copy2
+    ppt_copier: _PptCopier = _copy_ppt
 
     def generate(self, *, context: OutputContext) -> tuple[Path, ...]:
         config = context.config

@@ -65,7 +65,10 @@ class PptLinkRefreshOutputGenerator(OutputGenerator):
                 error_detail=str(exc),
             )
         else:
-            result = self.refresh_result_resolver(raw_result)
+            resolver = self.refresh_result_resolver
+            if resolver is None:
+                raise RuntimeError("PPT link refresh result resolver was not initialized")
+            result = resolver(raw_result)
 
         object.__setattr__(self, "last_result", result)
 
