@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 import math
+from pathlib import Path
 from typing import Any
 
 import pytest
+from openpyxl import load_workbook
 
 _MACRO_BY_VARIANT = {
     "all_programs": "RunAll_Click",
     "ex_trend": "RunExTrend_Click",
     "trend": "RunTrend_Click",
 }
+_TEMPLATE_WORKBOOK_PATH = Path(
+    "tests/fixtures/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx"
+)
 
 
 def test_macro_spec_fixture_inputs_exist(macro_spec_cases: tuple[Any, ...]) -> None:
@@ -110,6 +115,51 @@ def test_macro_spec_cell_by_cell_transformations_match_expected_values(
             workbook.close()
 
 
+def test_macro_spec_invariant_no_blank_numeric_cells_in_core_ranges(
+    macro_spec_cases: tuple[Any, ...],
+) -> None:
+    for case in macro_spec_cases:
+        workbook = case.generator(case.raw_input_path)
+        try:
+            worksheet = workbook["CPRS - CH"]
+            macro_name = _MACRO_BY_VARIANT[case.variant]
+
+            for column_letter in ("D", "E"):
+                for row_number in range(10, 21):
+                    cell_ref = f"{column_letter}{row_number}"
+                    value = worksheet[cell_ref].value
+                    assert value not in (None, ""), (
+                        f"{macro_name}: invariant violated; expected numeric value in "
+                        f"CPRS - CH!{cell_ref}, found blank cell"
+                    )
+        finally:
+            workbook.close()
+
+
+def test_macro_spec_invariant_headers_match_expected_template(
+    macro_spec_cases: tuple[Any, ...],
+) -> None:
+    template_workbook = load_workbook(_TEMPLATE_WORKBOOK_PATH, data_only=True)
+    try:
+        template_headers = _read_column_values(template_workbook["CPRS - CH"], "C", 10, 20)
+    finally:
+        template_workbook.close()
+
+    for case in macro_spec_cases:
+        workbook = case.generator(case.raw_input_path)
+        try:
+            worksheet = workbook["CPRS - CH"]
+            macro_name = _MACRO_BY_VARIANT[case.variant]
+            output_headers = _read_column_values(worksheet, "C", 10, 20)
+
+            assert output_headers == template_headers, (
+                f"{macro_name}: invariant violated; CPRS - CH!C10:C20 headers no longer match "
+                "expected MOSERS template headers"
+            )
+        finally:
+            workbook.close()
+
+
 def _expected_allocations(parsed_data: Any) -> list[float]:
     total_notional = sum(row.notional for row in parsed_data.totals_rows)
     if total_notional == 0:
@@ -121,6 +171,14 @@ def _pad_to_slot_count(values: list[float], slots: int) -> list[float | None]:
     if len(values) >= slots:
         return [*values[:slots]]
     return [*values, *([None] * (slots - len(values)))]
+
+
+def _read_column_values(
+    worksheet: Any, column: str, start_row: int, end_row: int
+) -> list[float | str | None]:
+    return [
+        worksheet[f"{column}{row_number}"].value for row_number in range(start_row, end_row + 1)
+    ]
 
 
 def _values_match(*, actual: Any, expected: Any) -> bool:
