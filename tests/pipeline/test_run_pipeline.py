@@ -1064,6 +1064,13 @@ def test_run_pipeline_warns_on_missing_limit_entities_by_default(
     run_dir = run_pipeline(config_path)
 
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert "limit_breaches.csv" not in manifest["output_paths"]
+    assert manifest["limit_breach_summary"] == {
+        "has_breaches": False,
+        "breach_count": 0,
+        "report_path": None,
+        "warning_banner": None,
+    }
     assert any(
         "Limit check warning: configured limit entities missing from exposure data" in warning
         for warning in manifest["warnings"]
