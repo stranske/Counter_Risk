@@ -30,6 +30,8 @@ _CH_TOTALS_MARKER = "Total by Counterparty/Clearing House"
 _CH_TOTALS_STOP_MARKERS = ("Total Current Exposure", "MOSERS Program", "Notional Breakdown")
 _FCM_TOTALS_MARKER = "Total by Counterparty/ FCM"
 _FCM_TOTALS_STOP_MARKERS = ("FUTURES DETAIL",)
+_PLUG_VALUES_SOURCE_NAME = "totals_rows"
+_PLUG_VALUES_APPLICABLE_VARIANTS = ("all_programs", "ex_trend", "trend")
 
 
 @dataclass(frozen=True)
@@ -75,6 +77,7 @@ class MosersPlugValueStructureMapping:
 
     structure_name: str
     target_sheet: str
+    source_rows_name: str
     section_marker: str
     stop_markers: tuple[str, ...]
     field_mappings: tuple[MosersPlugValueFieldMapping, ...]
@@ -84,6 +87,7 @@ class MosersPlugValueStructureMapping:
 class MosersPlugValuesMappingRequirements:
     """All applicable plug-values mappings for MOSERS workbook generation."""
 
+    applicable_variants: tuple[str, ...]
     structure_mappings: tuple[MosersPlugValueStructureMapping, ...]
 
 
@@ -179,10 +183,12 @@ def get_mosers_plug_values_mapping_requirements() -> MosersPlugValuesMappingRequ
         MosersPlugValueFieldMapping(source_field="notional_change", target_column="L"),
     )
     return MosersPlugValuesMappingRequirements(
+        applicable_variants=_PLUG_VALUES_APPLICABLE_VARIANTS,
         structure_mappings=(
             MosersPlugValueStructureMapping(
                 structure_name="cprs_ch_totals",
                 target_sheet=_TARGET_SHEET,
+                source_rows_name=_PLUG_VALUES_SOURCE_NAME,
                 section_marker=_CH_TOTALS_MARKER,
                 stop_markers=_CH_TOTALS_STOP_MARKERS,
                 field_mappings=totals_field_mappings,
@@ -190,11 +196,12 @@ def get_mosers_plug_values_mapping_requirements() -> MosersPlugValuesMappingRequ
             MosersPlugValueStructureMapping(
                 structure_name="cprs_fcm_totals",
                 target_sheet=_FCM_SHEET,
+                source_rows_name=_PLUG_VALUES_SOURCE_NAME,
                 section_marker=_FCM_TOTALS_MARKER,
                 stop_markers=_FCM_TOTALS_STOP_MARKERS,
                 field_mappings=totals_field_mappings,
             ),
-        )
+        ),
     )
 
 

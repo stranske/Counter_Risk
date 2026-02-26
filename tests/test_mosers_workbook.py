@@ -27,12 +27,31 @@ from counter_risk.parsers.nisa_trend import parse_nisa_trend
 def test_plug_values_mapping_requirements_define_supported_mosers_structures() -> None:
     requirements = get_mosers_plug_values_mapping_requirements()
 
+    assert requirements.applicable_variants == ("all_programs", "ex_trend", "trend")
     assert tuple(
-        (mapping.structure_name, mapping.target_sheet, mapping.section_marker)
+        (
+            mapping.structure_name,
+            mapping.target_sheet,
+            mapping.source_rows_name,
+            mapping.section_marker,
+            mapping.stop_markers,
+        )
         for mapping in requirements.structure_mappings
     ) == (
-        ("cprs_ch_totals", "CPRS - CH", "Total by Counterparty/Clearing House"),
-        ("cprs_fcm_totals", "CPRS - FCM", "Total by Counterparty/ FCM"),
+        (
+            "cprs_ch_totals",
+            "CPRS - CH",
+            "totals_rows",
+            "Total by Counterparty/Clearing House",
+            ("Total Current Exposure", "MOSERS Program", "Notional Breakdown"),
+        ),
+        (
+            "cprs_fcm_totals",
+            "CPRS - FCM",
+            "totals_rows",
+            "Total by Counterparty/ FCM",
+            ("FUTURES DETAIL",),
+        ),
     )
     assert tuple(
         (field.source_field, field.target_column)
