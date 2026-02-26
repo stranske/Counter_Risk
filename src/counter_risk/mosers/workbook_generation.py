@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeAlias
 
@@ -18,12 +19,40 @@ from counter_risk.parsers.nisa_trend import parse_nisa_trend
 Workbook: TypeAlias = Any
 Worksheet: TypeAlias = Any
 
+_REQUIRED_SHEETS = ("CPRS - CH", "CPRS - FCM")
 _TARGET_SHEET = "CPRS - CH"
 _PROGRAM_NAME_CELL = "B5"
 _VOL_COLUMN = "D"
 _ALLOCATION_COLUMN = "E"
 _START_ROW = 10
 _END_ROW = 20
+
+
+@dataclass(frozen=True)
+class MosersAllProgramsOutputStructure:
+    """Expected MOSERS workbook layout for All Programs generation."""
+
+    required_sheets: tuple[str, ...]
+    cprs_ch_sheet: str
+    program_name_cell: str
+    annualized_volatility_column: str
+    allocation_column: str
+    start_row: int
+    end_row: int
+
+
+def get_mosers_all_programs_output_structure() -> MosersAllProgramsOutputStructure:
+    """Return the output-structure contract used for All Programs workbook generation."""
+
+    return MosersAllProgramsOutputStructure(
+        required_sheets=_REQUIRED_SHEETS,
+        cprs_ch_sheet=_TARGET_SHEET,
+        program_name_cell=_PROGRAM_NAME_CELL,
+        annualized_volatility_column=_VOL_COLUMN,
+        allocation_column=_ALLOCATION_COLUMN,
+        start_row=_START_ROW,
+        end_row=_END_ROW,
+    )
 
 
 def generate_mosers_workbook(raw_nisa_path: str | Path) -> Workbook:
@@ -56,29 +85,34 @@ def _generate_mosers_workbook_from_parser(
 ) -> Workbook:
     parsed = parser(raw_nisa_path)
     workbook = load_mosers_template_workbook()
+    structure = get_mosers_all_programs_output_structure()
 
-    if _TARGET_SHEET not in workbook.sheetnames:
-        raise ValueError(f"MOSERS template workbook missing required sheet: {_TARGET_SHEET}")
+    missing_sheets = [
+        sheet for sheet in structure.required_sheets if sheet not in workbook.sheetnames
+    ]
+    if missing_sheets:
+        missing = ", ".join(missing_sheets)
+        raise ValueError(f"MOSERS template workbook missing required sheet(s): {missing}")
 
-    worksheet = workbook[_TARGET_SHEET]
+    worksheet = workbook[structure.cprs_ch_sheet]
     first_program = parsed.ch_rows[0].counterparty if parsed.ch_rows else ""
-    worksheet[_PROGRAM_NAME_CELL] = first_program
+    worksheet[structure.program_name_cell] = first_program
 
     annualized_vols = [row.annualized_volatility for row in parsed.totals_rows]
     allocation_percentages = _build_allocation_percentages(parsed.totals_rows)
 
     _write_vertical_values(
         worksheet=worksheet,
-        column_letter=_VOL_COLUMN,
-        start_row=_START_ROW,
-        end_row=_END_ROW,
+        column_letter=structure.annualized_volatility_column,
+        start_row=structure.start_row,
+        end_row=structure.end_row,
         values=annualized_vols,
     )
     _write_vertical_values(
         worksheet=worksheet,
-        column_letter=_ALLOCATION_COLUMN,
-        start_row=_START_ROW,
-        end_row=_END_ROW,
+        column_letter=structure.allocation_column,
+        start_row=structure.start_row,
+        end_row=structure.end_row,
         values=allocation_percentages,
     )
 
