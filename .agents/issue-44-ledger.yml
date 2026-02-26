@@ -1,0 +1,327 @@
+version: 1
+issue: 44
+base: main
+branch: codex/issue-44
+tasks:
+  - id: task-01
+    title: Implement `compute_risk_proxies(exposures_df)` to calculate `Notional *
+      AnnualizedVolatility` (when both columns exist) and `PositionUSD * Vol` (when
+      both columns exist)
+    status: done
+    started_at: '2026-02-26T06:19:09Z'
+    finished_at: '2026-02-26T06:19:20Z'
+    commit: 23e6b8d83cf94c697c54114ae35c33516aa46659
+    notes: []
+  - id: task-02
+    title: 'Implement the compute_risk_proxies function signature (verify: confirm
+      completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'input validation logic (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Add calculation logic for Notional times AnnualizedVolatility when both
+      columns exist (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Add calculation logic for PositionUSD times Vol when both columns exist
+      (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement column existence checking (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'conditional execution for each risk proxy calculation (verify: confirm
+      completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: Create `risk_rankings.csv` output ranked by each available risk proxy
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: Create `risk_top_movers.csv` output computing month-over-month deltas when
+      a prior month is available
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: Write tests with fixtures to verify proxies are computed when required
+      columns exist
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Write test fixture with sample data containing Notional (verify: confirm
+      completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Write test fixture with AnnualizedVolatility columns (verify: confirm
+      completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: Write test to verify Notional times AnnualizedVolatility proxy is computed
+      correctly
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Write test fixture with sample data containing PositionUSD (verify: confirm
+      completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Write test fixture with Vol columns (verify: confirm completion in repo)'
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: Write test to verify PositionUSD times Vol proxy is computed correctly
+    status: done
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: Write tests to verify graceful behavior when required columns are missing
+      (emit warning and skip outputs)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Define scope for: Write test to verify warning is emitted when Notional
+      or AnnualizedVolatility columns are missing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Implement focused slice for: Write test to verify warning is emitted when
+      Notional or AnnualizedVolatility columns are missing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Validate focused slice for: Write test to verify warning is emitted when
+      Notional or AnnualizedVolatility columns are missing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Define scope for: Write test to verify warning is emitted when PositionUSD
+      or Vol columns are missing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Implement focused slice for: Write test to verify warning is emitted when
+      PositionUSD or Vol columns are missing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Validate focused slice for: Write test to verify warning is emitted when
+      PositionUSD or Vol columns are missing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Define scope for: Write test to verify risk_rankings.csv is not created
+      when all required columns are missing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Implement focused slice for: Write test to verify risk_rankings.csv is
+      not created when all required columns are missing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Validate focused slice for: Write test to verify risk_rankings.csv is
+      not created when all required columns are missing'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Define scope for: Write test to verify partial outputs are created when
+      only some required columns exist'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Implement focused slice for: Write test to verify partial outputs are
+      created when only some required columns exist'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Validate focused slice for: Write test to verify partial outputs are created
+      when only some required columns exist'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: When volatility/position inputs exist, running the job produces `risk_rankings.csv`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: When a prior month is available, running the job produces `risk_top_movers.csv`
+      with month-over-month deltas
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: When required inputs are missing, the run skips the corresponding outputs
+      and emits an explicit manifest warning (not silent)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: All added tests pass
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Implement `compute_risk_proxies(exposures_df)`
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Add ranking outputs:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: '`risk_rankings.csv` (by proxy)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: '`risk_top_movers.csv` (month-over-month when prior month available)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Add tests using fixtures to verify:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: proxies computed when columns exist
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: graceful behavior when missing (warn, skip)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: If vol/position data exists, rankings are produced
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: If data is missing, outputs are skipped with an explicit manifest warning
+      (not silent)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
