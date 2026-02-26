@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from openpyxl import load_workbook
 
 _MACRO_BY_VARIANT = {
     "all_programs": "RunAll_Click",
@@ -139,6 +138,8 @@ def test_macro_spec_invariant_no_blank_numeric_cells_in_core_ranges(
 def test_macro_spec_invariant_headers_match_expected_template(
     macro_spec_cases: tuple[Any, ...],
 ) -> None:
+    from openpyxl import load_workbook  # type: ignore[import-untyped]
+
     template_workbook = load_workbook(_TEMPLATE_WORKBOOK_PATH, data_only=True)
     try:
         template_headers = _read_column_values(template_workbook["CPRS - CH"], "C", 10, 20)
@@ -183,9 +184,9 @@ def _read_column_values(
 
 def _values_match(*, actual: Any, expected: Any) -> bool:
     if expected is None:
-        return actual in (None, "")
+        return bool(actual in (None, ""))
     if isinstance(expected, float):
         if actual in (None, ""):
             return False
         return math.isclose(float(actual), expected, rel_tol=1e-12, abs_tol=1e-12)
-    return actual == expected
+    return bool(actual == expected)
