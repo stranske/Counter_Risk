@@ -189,6 +189,37 @@ def test_apply_repo_cash_to_totals_rejects_non_numeric_repo_cash() -> None:
         )
 
 
+def test_apply_repo_cash_to_totals_updates_counterparty_group_rows_from_rollups_schema() -> None:
+    totals_rows = [
+        {
+            "group_type": "counterparty",
+            "group_name": "CIBC",
+            "notional": 10.0,
+            "prior_notional": 8.0,
+            "notional_change": 2.0,
+        },
+        {
+            "group_type": "asset_class",
+            "group_name": "Cash",
+            "notional": 15.0,
+            "prior_notional": 14.0,
+            "notional_change": 1.0,
+        },
+    ]
+
+    updated = _as_records(apply_repo_cash_to_totals(totals_rows, {"CIBC": 3.5, "ASL": 1.0}))
+    by_key = {(row.get("group_type"), row.get("group_name")): row for row in updated}
+
+    cibc = by_key[("counterparty", "CIBC")]
+    assert float(cibc["notional"]) == pytest.approx(13.5)
+    assert float(cibc["notional_change"]) == pytest.approx(5.5)
+
+    asl = by_key[("counterparty", "ASL")]
+    assert float(asl["notional"]) == pytest.approx(1.0)
+    assert float(asl["notional_change"]) == pytest.approx(1.0)
+    assert float(asl["Cash"]) == pytest.approx(1.0)
+
+
 def test_top_exposures_is_deterministic_for_ties() -> None:
     exposures = [
         {"counterparty": "Bravo", "asset_class": "Equity", "notional": 100.0},
