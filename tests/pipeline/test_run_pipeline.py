@@ -669,6 +669,96 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
         assert variant in manifest["top_changes_per_variant"]
 
 
+def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir(parents=True, exist_ok=True)
+    limits_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "limits:",
+                "  - entity_type: counterparty",
+                "    entity_name: citibank",
+                "    limit_value: 250000000",
+                "    limit_kind: absolute_notional",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    totals = _FakeDataFrame(
+        records=[
+            {
+                "counterparty": "Citibank",
+                "Notional": 300_000_000.0,
+                "NotionalChange": 10_000_000.0,
+            }
+        ]
+    )
+    futures = _FakeDataFrame(
+        records=[
+            {
+                "account": "acct-1",
+                "description": "desc",
+                "class": "Treasury",
+                "fcm": "fcm-a",
+                "clearing_house": "ch-a",
+                "notional": 50_000_000.0,
+            }
+        ]
+    )
+    parsed = {
+        "all_programs": {"totals": totals, "futures": futures},
+        "ex_trend": {"totals": totals, "futures": futures},
+        "trend": {"totals": totals, "futures": futures},
+    }
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, as_of_date, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SKIPPED),
+        ),
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    limit_breaches_path = run_dir / "limit_breaches.csv"
+    assert limit_breaches_path.exists()
+    content = limit_breaches_path.read_text(encoding="utf-8")
+    assert "entity_type,entity_name,limit_kind,actual_value,limit_value,breach_amount" in content
+    assert "counterparty,citibank,absolute_notional" in content
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert "limit_breaches.csv" in manifest["output_paths"]
+
+
 def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:

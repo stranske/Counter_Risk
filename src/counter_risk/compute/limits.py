@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import csv
 from collections.abc import Iterable, Mapping, Sequence
+from pathlib import Path
 from typing import Any, cast
 
 from pydantic import ValidationError
@@ -61,6 +63,11 @@ def _to_dataframe_or_records(*, records: list[dict[str, Any]], columns: tuple[st
         if column not in frame.columns:
             frame[column] = 0.0
     return frame.loc[:, list(columns)]
+
+
+def _records_from_table(table: Any, *, arg_name: str) -> list[dict[str, Any]]:
+    rows = _iter_rows(table, arg_name=arg_name)
+    return [dict(row) for row in rows]
 
 
 def _normalize_entity_key(value: object) -> str:
@@ -190,3 +197,20 @@ def check_limits(exposures_df: Any, limits_cfg: Any) -> Any:
         )
     )
     return _to_dataframe_or_records(records=records, columns=_BREACH_COLUMNS)
+
+
+def write_limit_breaches_csv(breaches: Any, path: Path | str) -> None:
+    """Write limit breach rows to CSV."""
+
+    rows = _records_from_table(breaches, arg_name="breaches")
+    out_path = Path(path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not rows:
+        out_path.write_text("", encoding="utf-8")
+        return
+
+    with out_path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=list(_BREACH_COLUMNS), extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)

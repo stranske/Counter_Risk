@@ -15,12 +15,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 from zipfile import BadZipFile
 
+from counter_risk.compute.limits import check_limits, write_limit_breaches_csv
 from counter_risk.compute.rollups import (
     compute_concentration_metrics,
     write_concentration_metrics_csv,
 )
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
+from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
     canonicalize_name,
     normalize_counterparty,
@@ -539,6 +541,15 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during concentration metrics stage") from exc
 
     try:
+        limit_breaches_path = _compute_and_write_limit_breaches(
+            parsed_by_variant=parsed_by_variant,
+            run_dir=run_dir,
+        )
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=limit_breaches run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during limit breach stage") from exc
+
+    try:
         historical_output_paths = _update_historical_outputs(
             run_dir=run_dir,
             config=runtime_config,
@@ -566,6 +577,8 @@ def run_pipeline(config_path: str | Path) -> Path:
         output_paths = output_result
         ppt_result = PptProcessingResult(status=PptProcessingStatus.SUCCESS)
     output_paths = historical_output_paths + output_paths
+    if limit_breaches_path is not None:
+        output_paths.append(limit_breaches_path)
 
     if runtime_config.include_concentration_table_in_ppt and concentration_metrics_records:
         dist_ppt_path = run_dir / resolve_ppt_output_names(as_of_date).distribution_filename
@@ -994,6 +1007,89 @@ def _compute_and_write_concentration_metrics(
     LOGGER.info("concentration_metrics_written path=%s", csv_path)
 
     return metrics_records
+
+
+def _build_limit_exposure_rows(
+    parsed_by_variant: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for variant, parsed in parsed_by_variant.items():
+        totals_records = _records(parsed["totals"])
+        for record in totals_records:
+            counterparty = str(record.get("counterparty", "")).strip()
+            if not counterparty:
+                continue
+            try:
+                notional = float(record.get("Notional", 0.0) or 0.0)
+            except (TypeError, ValueError):
+                notional = 0.0
+            rows.append(
+                {
+                    "variant": variant,
+                    "counterparty": counterparty,
+                    "notional": notional,
+                }
+            )
+
+        futures_records = _records(parsed["futures"])
+        for record in futures_records:
+            try:
+                notional = float(record.get("notional", 0.0) or 0.0)
+            except (TypeError, ValueError):
+                notional = 0.0
+
+            exposure_row: dict[str, Any] = {
+                "variant": variant,
+                "notional": notional,
+            }
+            for source_key, target_key in (
+                ("fcm", "fcm"),
+                ("clearing_house", "clearing_house"),
+                ("class", "segment"),
+                ("segment", "segment"),
+                ("custom_group", "custom_group"),
+                ("group", "custom_group"),
+            ):
+                value = str(record.get(source_key, "")).strip()
+                if value:
+                    exposure_row[target_key] = value
+
+            if {"fcm", "clearing_house", "segment", "custom_group"} & set(exposure_row):
+                rows.append(exposure_row)
+
+    return rows
+
+
+def _compute_and_write_limit_breaches(
+    *,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    run_dir: Path,
+) -> Path | None:
+    """Compute limit breaches and write limit_breaches.csv when breaches exist."""
+
+    limits_path = _resolve_repo_root() / "config" / "limits.yml"
+    if not limits_path.exists():
+        LOGGER.info("limit_breaches_skipped missing_limits_config path=%s", limits_path)
+        return None
+
+    limits_cfg = load_limits_config(limits_path)
+    exposure_rows = _build_limit_exposure_rows(parsed_by_variant)
+    if not exposure_rows:
+        return None
+
+    breaches_result = check_limits(exposure_rows, limits_cfg)
+    if hasattr(breaches_result, "to_dict"):
+        breaches_records = breaches_result.to_dict(orient="records")
+    else:
+        breaches_records = [dict(row) for row in breaches_result]
+
+    if not breaches_records:
+        return None
+
+    csv_path = run_dir / "limit_breaches.csv"
+    write_limit_breaches_csv(breaches_result, csv_path)
+    LOGGER.info("limit_breaches_written path=%s", csv_path)
+    return csv_path
 
 
 def _write_outputs(
