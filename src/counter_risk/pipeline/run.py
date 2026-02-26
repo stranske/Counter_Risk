@@ -21,7 +21,6 @@ from counter_risk.normalize import (
     canonicalize_name,
     normalize_counterparty,
     normalize_counterparty_with_source,
-    resolve_counterparty,
 )
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
