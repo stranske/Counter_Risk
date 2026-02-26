@@ -369,7 +369,7 @@ def compute_concentration_metrics(
             hhi = sum((n / total) ** 2 for n in notionals)
 
         record: dict[str, Any] = {}
-        for col, val in zip(group_by, key):
+        for col, val in zip(group_by, key, strict=False):
             record[col] = val
         record["top5_share"] = top5_share
         record["top10_share"] = top10_share
