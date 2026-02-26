@@ -5,10 +5,10 @@ branch: codex/issue-46
 tasks:
   - id: task-01
     title: Implement `attribute_changes(current_df, prior_df) -> attribution_report`
-    status: doing
+    status: done
     started_at: '2026-02-26T20:47:58Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-26T20:48:08Z'
+    commit: ce5e16a2f04ad633b0287921a15af142a9faa619
     notes: []
   - id: task-02
     title: Add confidence level logic (High/Medium/Low) to `attribute_changes(...)`
