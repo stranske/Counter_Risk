@@ -19,6 +19,21 @@ _FUZZY_MATCH_THRESHOLD = 0.82
 _MEDIUM_RAW_LENGTH_DRIFT = 3
 _DELTA_TOLERANCE = 1e-6
 
+_REASON_EXACT_KEY_MATCH = "exact_key_match"
+_REASON_NORMALIZED_MEDIUM = "normalized_name_match_minor_differences"
+_REASON_NORMALIZED_LOW = "normalized_name_match_requires_review"
+_REASON_FUZZY_LOW = "fuzzy_name_match_partial_similarity"
+_REASON_UNMATCHED_NEW = "new_or_unmatched_current_row"
+_REASON_UNMATCHED_MISSING_PRIOR = "missing_prior_data"
+_LOW_CONFIDENCE_REASONS: frozenset[str] = frozenset(
+    {
+        _REASON_NORMALIZED_LOW,
+        _REASON_FUZZY_LOW,
+        _REASON_UNMATCHED_NEW,
+        _REASON_UNMATCHED_MISSING_PRIOR,
+    }
+)
+
 
 @dataclass(frozen=True)
 class _ExposureRow:
@@ -142,8 +157,8 @@ def _is_minor_normalized_difference(*, current_name: str, prior_name: str) -> bo
 
 def _unmatched_reason(*, has_any_prior_rows: bool) -> str:
     if has_any_prior_rows:
-        return "new_or_unmatched_current_row"
-    return "missing_prior_data"
+        return _REASON_UNMATCHED_NEW
+    return _REASON_UNMATCHED_MISSING_PRIOR
 
 
 def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
@@ -170,7 +185,7 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
         if current.counterparty in prior_by_exact:
             prior_match = prior_by_exact[current.counterparty]
             match_type = "exact"
-            reason = "exact_key_match"
+            reason = _REASON_EXACT_KEY_MATCH
             delta = current.notional - prior_match.notional
             supplied_delta = current.supplied_delta
             has_clean_delta = (
@@ -184,10 +199,10 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
                 current_name=current.counterparty,
                 prior_name=prior_match.counterparty,
             ):
-                reason = "normalized_name_match_minor_differences"
+                reason = _REASON_NORMALIZED_MEDIUM
                 confidence = "Medium"
             else:
-                reason = "normalized_name_match_requires_review"
+                reason = _REASON_NORMALIZED_LOW
                 confidence = "Low"
         else:
             prior_match = _best_fuzzy_match(
@@ -197,7 +212,7 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
             )
             if prior_match is not None:
                 match_type = "fuzzy"
-                reason = "fuzzy_name_match_partial_similarity"
+                reason = _REASON_FUZZY_LOW
                 confidence = "Low"
 
         if prior_match is None:
@@ -208,7 +223,8 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
             used_prior_normalized.add(prior_match.normalized_counterparty)
 
         notional_change = current.notional - prior_notional
-        if confidence == "Low":
+        is_low_confidence = reason in _LOW_CONFIDENCE_REASONS
+        if is_low_confidence:
             low_confidence_count += 1
 
         report_rows.append(
@@ -224,7 +240,7 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
                 "confidence": confidence,
                 "attribution_reason": reason,
                 "is_unmatched": prior_match is None,
-                "is_low_confidence": confidence == "Low",
+                "is_low_confidence": is_low_confidence,
             }
         )
 

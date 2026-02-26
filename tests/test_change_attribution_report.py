@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from counter_risk.reports.change_attribution import (
     attribute_changes,
     write_change_attribution_csv,
@@ -100,6 +102,44 @@ def test_attribute_changes_handles_missing_prior_data_gracefully() -> None:
     assert report["summary"]["low_confidence_rows"] == 1
     assert report["summary"]["unattributed_remainder"] == 10.0
     assert row["attribution_reason"] == "missing_prior_data"
+
+
+@pytest.mark.parametrize(
+    ("current", "prior", "expected_reason", "expected_match_type"),
+    [
+        (
+            [{"counterparty": "Morgan Stanley Prime", "Notional": 125.0}],
+            [{"counterparty": "Morgan Stanley", "Notional": 120.0}],
+            "fuzzy_name_match_partial_similarity",
+            "fuzzy",
+        ),
+        (
+            [{"counterparty": "a----b----c----d", "Notional": 125.0}],
+            [{"counterparty": "abcd", "Notional": 120.0}],
+            "normalized_name_match_requires_review",
+            "normalized",
+        ),
+        (
+            [{"counterparty": "Desk A", "Notional": 10.0}],
+            [],
+            "missing_prior_data",
+            "unmatched",
+        ),
+    ],
+)
+def test_attribute_changes_low_confidence_criteria(
+    current: list[dict[str, float | str]],
+    prior: list[dict[str, float | str]],
+    expected_reason: str,
+    expected_match_type: str,
+) -> None:
+    report = attribute_changes(current, prior)
+    row = report["rows"][0]
+
+    assert row["match_type"] == expected_match_type
+    assert row["attribution_reason"] == expected_reason
+    assert row["confidence"] == "Low"
+    assert row["is_low_confidence"] is True
 
 
 def test_change_attribution_outputs_write_csv_and_markdown(tmp_path: Path) -> None:

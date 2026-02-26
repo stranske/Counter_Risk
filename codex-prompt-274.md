@@ -148,7 +148,7 @@ A coverage task is NOT complete just because you added tests. It is complete ONL
 ---
 ## PR Tasks and Acceptance Criteria
 
-**Progress:** 1/18 tasks complete, 17 remaining
+**Progress:** 3/18 tasks complete, 15 remaining
 
 ### Scope
 Stakeholders ask “what caused the move?” Even a simple attribution (with honesty about uncertainty) improves trust.
@@ -160,7 +160,7 @@ Complete these in order. Mark checkbox done ONLY after implementation is verifie
 - [ ] Add confidence level logic (High/Medium/Low) to `attribute_changes(...)`
   - [ ] Define High confidence level criteria for exact match keys with clean deltas (verify: confirm completion in repo)
   - [x] Define Medium confidence level criteria for normalized matches with minor differences (verify: confirm completion in repo)
-  - [ ] Define Low confidence level criteria for fuzzy or partial matches (verify: confirm completion in repo) missing prior data (verify: confirm completion in repo)
+  - [x] Define Low confidence level criteria for fuzzy or partial matches (verify: confirm completion in repo) missing prior data (verify: confirm completion in repo)
   - [ ] Implement confidence level assignment logic in the attribute_changes function (verify: confirm completion in repo)
 - [ ] Create `change_attribution.md`
 - [ ] Create `change_attribution.csv`
@@ -182,11 +182,11 @@ The PR is complete when ALL of these are satisfied:
 ### Recently Attempted Tasks
 Avoid repeating these unless a task needs explicit follow-up:
 
-- Implement `attribute_changes(current_df, prior_df) -> attribution_report`
 - Add confidence level logic (High/Medium/Low) to `attribute_changes(...)`
 - Define High confidence level criteria for exact match keys with clean deltas (verify: confirm completion in repo)
+- Define Medium confidence level criteria for normalized matches with minor differences (verify: confirm completion in repo)
 
 ### Suggested Next Task
-- Define Medium confidence level criteria for normalized matches with minor differences (verify: confirm completion in repo)
+- Define Low confidence level criteria for fuzzy or partial matches (verify: confirm completion in repo) missing prior data (verify: confirm completion in repo)
 
 ---
