@@ -22,8 +22,6 @@ Worksheet: TypeAlias = Any
 _REQUIRED_SHEETS = ("CPRS - CH", "CPRS - FCM")
 _TARGET_SHEET = "CPRS - CH"
 _PROGRAM_NAME_CELL = "B5"
-_VOL_COLUMN = "D"
-_ALLOCATION_COLUMN = "E"
 _START_ROW = 10
 _END_ROW = 20
 
@@ -35,10 +33,26 @@ class MosersAllProgramsOutputStructure:
     required_sheets: tuple[str, ...]
     cprs_ch_sheet: str
     program_name_cell: str
-    annualized_volatility_column: str
-    allocation_column: str
     start_row: int
     end_row: int
+
+
+@dataclass(frozen=True)
+class MosersColumnTransform:
+    """Single source-to-target mapping used by MOSERS workbook generation."""
+
+    source_metric: str
+    target_column: str
+
+
+@dataclass(frozen=True)
+class MosersAllProgramsTransformationScope:
+    """Core transformation contract for All Programs MOSERS workbook generation."""
+
+    totals_source_name: str
+    cprs_ch_transforms: tuple[MosersColumnTransform, ...]
+    overflow_policy: str
+    underflow_policy: str
 
 
 def get_mosers_all_programs_output_structure() -> MosersAllProgramsOutputStructure:
@@ -48,10 +62,22 @@ def get_mosers_all_programs_output_structure() -> MosersAllProgramsOutputStructu
         required_sheets=_REQUIRED_SHEETS,
         cprs_ch_sheet=_TARGET_SHEET,
         program_name_cell=_PROGRAM_NAME_CELL,
-        annualized_volatility_column=_VOL_COLUMN,
-        allocation_column=_ALLOCATION_COLUMN,
         start_row=_START_ROW,
         end_row=_END_ROW,
+    )
+
+
+def get_mosers_all_programs_transformation_scope() -> MosersAllProgramsTransformationScope:
+    """Return the scoped source-to-target mappings for core All Programs transforms."""
+
+    return MosersAllProgramsTransformationScope(
+        totals_source_name="totals_rows",
+        cprs_ch_transforms=(
+            MosersColumnTransform(source_metric="annualized_volatility", target_column="D"),
+            MosersColumnTransform(source_metric="allocation_percentage", target_column="E"),
+        ),
+        overflow_policy="truncate_to_layout",
+        underflow_policy="clear_remaining_cells",
     )
 
 
@@ -86,6 +112,7 @@ def _generate_mosers_workbook_from_parser(
     parsed = parser(raw_nisa_path)
     workbook = load_mosers_template_workbook()
     structure = get_mosers_all_programs_output_structure()
+    transformation_scope = get_mosers_all_programs_transformation_scope()
 
     missing_sheets = [
         sheet for sheet in structure.required_sheets if sheet not in workbook.sheetnames
@@ -98,23 +125,14 @@ def _generate_mosers_workbook_from_parser(
     first_program = parsed.ch_rows[0].counterparty if parsed.ch_rows else ""
     worksheet[structure.program_name_cell] = first_program
 
-    annualized_vols = [row.annualized_volatility for row in parsed.totals_rows]
-    allocation_percentages = _build_allocation_percentages(parsed.totals_rows)
-
-    _write_vertical_values(
-        worksheet=worksheet,
-        column_letter=structure.annualized_volatility_column,
-        start_row=structure.start_row,
-        end_row=structure.end_row,
-        values=annualized_vols,
-    )
-    _write_vertical_values(
-        worksheet=worksheet,
-        column_letter=structure.allocation_column,
-        start_row=structure.start_row,
-        end_row=structure.end_row,
-        values=allocation_percentages,
-    )
+    for transform in transformation_scope.cprs_ch_transforms:
+        _write_vertical_values(
+            worksheet=worksheet,
+            column_letter=transform.target_column,
+            start_row=structure.start_row,
+            end_row=structure.end_row,
+            values=_build_totals_metric_values(parsed.totals_rows, transform.source_metric),
+        )
 
     return workbook
 
@@ -124,6 +142,16 @@ def _build_allocation_percentages(totals_rows: tuple[NisaTotalsRow, ...]) -> lis
     if total_notional == 0:
         return [0.0 for _ in totals_rows]
     return [row.notional / total_notional for row in totals_rows]
+
+
+def _build_totals_metric_values(
+    totals_rows: tuple[NisaTotalsRow, ...], source_metric: str
+) -> list[float]:
+    if source_metric == "annualized_volatility":
+        return [row.annualized_volatility for row in totals_rows]
+    if source_metric == "allocation_percentage":
+        return _build_allocation_percentages(totals_rows)
+    raise ValueError(f"Unsupported totals source metric: {source_metric}")
 
 
 def _write_vertical_values(
