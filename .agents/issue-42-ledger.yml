@@ -74,7 +74,7 @@ tasks:
     status: done
     started_at: '2026-02-26T07:57:00Z'
     finished_at: '2026-02-26T08:10:00Z'
-    commit: e3d8e5f41322e2eb9fadd0e65f99deeb95df1a3f
+    commit: e3d8e5f3ac511c1ca3abba91eb796b0f8796867a
     notes: []
   - id: task-10
     title: 'Add unit tests for the All Programs NISA to MOSERS-format transformation
