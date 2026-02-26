@@ -5,10 +5,10 @@ branch: codex/issue-32
 tasks:
   - id: task-01
     title: Create `assets/vba/` and add VBA module source files in `assets/vba/*.bas`
-    status: doing
+    status: done
     started_at: '2026-02-26T05:03:17Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-26T05:03:27Z'
+    commit: 76f284c903596dde8a4e0426ba44ce10408da5fb
     notes: []
   - id: task-02
     title: Implement a base-template `.xlsm` approach by adding a template workbook
