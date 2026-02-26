@@ -13,76 +13,76 @@ tasks:
     notes: []
   - id: task-02
     title: 'Document the expected structure (verify: confirm completion in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-26T06:55:00Z'
+    finished_at: '2026-02-26T06:55:10Z'
+    commit: 7225b085c698f8bb8fb55255dc46a6da4694450d
     notes: []
   - id: task-03
     title: 'fields of raw NISA inputs for the All Programs case (verify: confirm completion
       in repo)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-26T06:55:10Z'
+    finished_at: '2026-02-26T06:55:20Z'
+    commit: 7225b085c698f8bb8fb55255dc46a6da4694450d
     notes: []
   - id: task-04
     title: 'Define scope for: Document the expected MOSERS-format CPRS sheet structure
       for the All Programs case (verify: formatter passes)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-26T07:20:00Z'
+    finished_at: '2026-02-26T07:34:31Z'
+    commit: 9f9add570ef55d887a912bc8b8aad139f06aa32b
     notes: []
   - id: task-05
     title: 'Implement focused slice for: Document the expected MOSERS-format CPRS
       sheet structure for the All Programs case (verify: formatter passes)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-26T07:34:31Z'
+    finished_at: '2026-02-26T07:40:00Z'
+    commit: c1c7632b9f82452f3137854989d1d3c2ce82abff
     notes: []
   - id: task-06
     title: 'Validate focused slice for: Document the expected MOSERS-format CPRS sheet
       structure for the All Programs case (verify: formatter passes)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-26T07:40:00Z'
+    finished_at: '2026-02-26T07:45:00Z'
+    commit: c1c7632b9f82452f3137854989d1d3c2ce82abff
     notes: []
   - id: task-07
     title: 'Define scope for: Implement the core transformation logic to convert All
       Programs NISA data to MOSERS-format CPRS sheets (verify: formatter passes)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-26T07:20:00Z'
+    finished_at: '2026-02-26T07:34:31Z'
+    commit: 9f9add570ef55d887a912bc8b8aad139f06aa32b
     notes: []
   - id: task-08
     title: 'Implement focused slice for: Implement the core transformation logic to
       convert All Programs NISA data to MOSERS-format CPRS sheets (verify: formatter
       passes)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-26T07:34:31Z'
+    finished_at: '2026-02-26T07:45:43Z'
+    commit: 3ab1ca6504f0052498431fa1635ac4cdb24fca33
     notes: []
   - id: task-09
     title: 'Validate focused slice for: Implement the core transformation logic to
       convert All Programs NISA data to MOSERS-format CPRS sheets (verify: formatter
       passes)'
-    status: todo
-    started_at: null
-    finished_at: null
+    status: done
+    started_at: '2026-02-26T07:57:00Z'
+    finished_at: '2026-02-26T08:10:00Z'
     commit: ''
     notes: []
   - id: task-10
     title: 'Add unit tests for the All Programs NISA to MOSERS-format transformation
       (verify: tests pass)'
-    status: todo
-    started_at: null
-    finished_at: null
-    commit: ''
+    status: done
+    started_at: '2026-02-26T07:45:43Z'
+    finished_at: '2026-02-26T07:46:00Z'
+    commit: 3ab1ca6504f0052498431fa1635ac4cdb24fca33
     notes: []
   - id: task-11
     title: Implement Python layout transformations to produce MOSERS-format CPRS sheets

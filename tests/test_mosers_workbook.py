@@ -13,7 +13,12 @@ from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook_ex_trend,
     generate_mosers_workbook_trend,
 )
-from counter_risk.parsers.nisa import parse_nisa_all_programs
+from counter_risk.parsers.nisa import (
+    NisaAllProgramsData,
+    NisaChRow,
+    NisaTotalsRow,
+    parse_nisa_all_programs,
+)
 from counter_risk.parsers.nisa_ex_trend import parse_nisa_ex_trend
 from counter_risk.parsers.nisa_trend import parse_nisa_trend
 
@@ -90,6 +95,89 @@ def test_generate_mosers_workbook_reflects_input_annualized_volatility_changes(
     finally:
         base_workbook.close()
         variant_workbook.close()
+
+
+def test_generate_mosers_workbook_truncates_values_to_documented_layout_slots() -> None:
+    from counter_risk.mosers import workbook_generation as workbook_generation_module
+
+    totals_rows = tuple(
+        NisaTotalsRow(
+            counterparty=f"Counterparty {index + 1}",
+            tips=1.0,
+            treasury=2.0,
+            equity=3.0,
+            commodity=4.0,
+            currency=5.0,
+            notional=float(index + 1),
+            notional_change=0.0,
+            annualized_volatility=100.0 + float(index),
+        )
+        for index in range(14)
+    )
+    parsed = NisaAllProgramsData(
+        ch_rows=(
+            NisaChRow(
+                segment="swaps",
+                counterparty="Counterparty 1",
+                cash=0.0,
+                tips=1.0,
+                treasury=2.0,
+                equity=3.0,
+                commodity=4.0,
+                currency=5.0,
+                notional=1.0,
+                notional_change=0.0,
+                annualized_volatility=100.0,
+            ),
+        ),
+        totals_rows=totals_rows,
+    )
+
+    workbook = workbook_generation_module._generate_mosers_workbook_from_parser(
+        "ignored.xlsx", parser=lambda _path: parsed
+    )
+    try:
+        worksheet = workbook["CPRS - CH"]
+        assert _read_column_values(worksheet, "D", 10, 20) == [
+            row.annualized_volatility for row in totals_rows[:11]
+        ]
+    finally:
+        workbook.close()
+
+
+def test_generate_mosers_workbook_clears_unused_totals_slots_in_ch_and_fcm_sections() -> None:
+    parsed = parse_nisa_all_programs(Path("tests/fixtures/raw_nisa_all_programs.xlsx"))
+    workbook = generate_mosers_workbook(Path("tests/fixtures/raw_nisa_all_programs.xlsx"))
+    try:
+        for sheet_name, marker, stop_markers in (
+            (
+                "CPRS - CH",
+                "Total by Counterparty/Clearing House",
+                ("Total Current Exposure", "MOSERS Program", "Notional Breakdown"),
+            ),
+            ("CPRS - FCM", "Total by Counterparty/ FCM", ("FUTURES DETAIL",)),
+        ):
+            worksheet = workbook[sheet_name]
+            marker_row = _find_marker_row(worksheet, marker)
+            stop_row = _find_stop_row(worksheet, marker_row + 1, stop_markers)
+            assert stop_row is not None
+
+            first_unused_row = marker_row + 1 + len(parsed.totals_rows)
+            if first_unused_row >= stop_row:
+                continue
+
+            assert _read_totals_row(worksheet, first_unused_row) == (
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
+    finally:
+        workbook.close()
 
 
 def test_generate_mosers_workbook_ex_trend_populates_values_from_ex_trend_fixture() -> None:
@@ -207,3 +295,15 @@ def _read_totals_row(worksheet: Any, row_number: int) -> tuple[Any, ...]:
         worksheet[f"K{row_number}"].value,
         worksheet[f"L{row_number}"].value,
     )
+
+
+def _find_stop_row(worksheet: Any, start_row: int, stop_markers: tuple[str, ...]) -> int | None:
+    normalized_markers = tuple(
+        " ".join(marker.split()).strip().casefold() for marker in stop_markers
+    )
+    for row_number in range(start_row, int(worksheet.max_row) + 1):
+        value = worksheet[f"C{row_number}"].value
+        normalized = " ".join(str(value or "").split()).strip().casefold()
+        if any(marker in normalized for marker in normalized_markers):
+            return row_number
+    return None
