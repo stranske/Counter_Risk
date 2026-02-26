@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import logging
+import math
 import platform
 import shutil
 from collections.abc import Callable, Mapping
@@ -82,6 +83,14 @@ _REQUIRED_HISTORICAL_APPEND_HEADERS: tuple[str, ...] = (
     "value series 2",
 )
 _CPRS_CH_TOTAL_TOLERANCE = 1e-6
+_CLASS_BREAKDOWN_TOTAL_TOLERANCE = 1e-6
+_CLASS_BREAKDOWN_COLUMNS: tuple[str, ...] = (
+    "TIPS",
+    "Treasury",
+    "Equity",
+    "Commodity",
+    "Currency",
+)
 _REQUIRED_INPUT_FIELDS: tuple[str, ...] = (
     "mosers_ex_trend_xlsx",
     "mosers_trend_xlsx",
@@ -2157,6 +2166,16 @@ def _run_reconciliation_checks(
             warning_message = str(cprs_ch_totals_check.get("message", "")).strip()
             if warning_message:
                 warnings.append(f"Reconciliation ({variant}): {warning_message}")
+        class_breakdown_sanity_check = _evaluate_class_breakdown_sanity(
+            parsed_sections=parsed_sections,
+            variant=variant,
+        )
+        result["class_breakdown_sanity_check"] = class_breakdown_sanity_check
+        if class_breakdown_sanity_check.get("status") == "failed":
+            total_gap_count += 1
+            warning_message = str(class_breakdown_sanity_check.get("message", "")).strip()
+            if warning_message:
+                warnings.append(f"Reconciliation ({variant}): {warning_message}")
         reconciliation_by_variant[variant] = result
         total_gap_count += int(result.get("gap_count", 0))
         result_exceptions = result.get("exceptions")
@@ -2235,11 +2254,101 @@ def _serializable_reconciliation_result(result: Mapping[str, Any]) -> dict[str, 
         "missing_segments",
         "by_sheet",
         "cprs_ch_totals_check",
+        "class_breakdown_sanity_check",
     ):
         value = result.get(key)
         if value is not None:
             serializable[key] = value
     return serializable
+
+
+def _evaluate_class_breakdown_sanity(
+    *, parsed_sections: Mapping[str, Any], variant: str
+) -> dict[str, Any]:
+    totals_records = _records(parsed_sections.get("totals", []))
+    if not totals_records:
+        return {
+            "status": "skipped",
+            "message": f"Class breakdown sanity check skipped for variant {variant!r}: no totals rows",
+        }
+
+    checked_rows = 0
+    inconsistent_total_rows: list[dict[str, Any]] = []
+    out_of_bounds_rows: list[dict[str, Any]] = []
+
+    for row_index, record in enumerate(totals_records, start=1):
+        if not any(column in record for column in _CLASS_BREAKDOWN_COLUMNS):
+            continue
+
+        checked_rows += 1
+        counterparty = str(record.get("counterparty", "")).strip() or f"row_{row_index}"
+        notional = _to_float(record.get("Notional", 0.0))
+        class_values = {
+            column: _to_float(record.get(column, 0.0)) for column in _CLASS_BREAKDOWN_COLUMNS
+        }
+        class_total = sum(class_values.values())
+        absolute_difference = abs(class_total - notional)
+        if absolute_difference > _CLASS_BREAKDOWN_TOTAL_TOLERANCE:
+            inconsistent_total_rows.append(
+                {
+                    "counterparty": counterparty,
+                    "row_index": row_index,
+                    "class_total": class_total,
+                    "notional": notional,
+                    "absolute_difference": absolute_difference,
+                }
+            )
+
+        max_component_magnitude = max((abs(value) for value in class_values.values()), default=0.0)
+        if max_component_magnitude > abs(notional) + _CLASS_BREAKDOWN_TOTAL_TOLERANCE:
+            out_of_bounds_rows.append(
+                {
+                    "counterparty": counterparty,
+                    "row_index": row_index,
+                    "max_component_magnitude": max_component_magnitude,
+                    "notional": notional,
+                }
+            )
+
+    if checked_rows == 0:
+        return {
+            "status": "skipped",
+            "message": (
+                "Class breakdown sanity check skipped for variant "
+                f"{variant!r}: totals rows do not include class columns"
+            ),
+        }
+
+    result: dict[str, Any] = {
+        "status": (
+            "passed" if not inconsistent_total_rows and not out_of_bounds_rows else "failed"
+        ),
+        "checked_row_count": checked_rows,
+        "inconsistent_row_count": len(inconsistent_total_rows),
+        "out_of_bounds_row_count": len(out_of_bounds_rows),
+        "tolerance": _CLASS_BREAKDOWN_TOTAL_TOLERANCE,
+        "sample_issues": {
+            "inconsistent_totals": inconsistent_total_rows[:5],
+            "out_of_bounds": out_of_bounds_rows[:5],
+        },
+    }
+    if result["status"] == "failed":
+        result["message"] = (
+            "Class breakdown sanity check failed: "
+            f"inconsistent_rows={len(inconsistent_total_rows)}, "
+            f"out_of_bounds_rows={len(out_of_bounds_rows)}"
+        )
+    return result
+
+
+def _to_float(value: Any) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(number):
+        return 0.0
+    return number
 
 
 def _evaluate_cprs_ch_totals_reconciliation(

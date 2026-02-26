@@ -742,6 +742,104 @@ def test_evaluate_cprs_ch_totals_reconciliation_uses_mosers_program_row_when_cpr
     assert result["expected_total_source"] == "cprs_ch_mosers_program_row"
 
 
+def test_evaluate_class_breakdown_sanity_passes_for_consistent_rows() -> None:
+    result = run_module._evaluate_class_breakdown_sanity(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Counterparty A",
+                        "TIPS": 10.0,
+                        "Treasury": 20.0,
+                        "Equity": 30.0,
+                        "Commodity": 5.0,
+                        "Currency": -5.0,
+                        "Notional": 60.0,
+                    }
+                ]
+            )
+        },
+        variant="all_programs",
+    )
+
+    assert result["status"] == "passed"
+    assert result["checked_row_count"] == 1
+    assert result["inconsistent_row_count"] == 0
+    assert result["out_of_bounds_row_count"] == 0
+
+
+def test_evaluate_class_breakdown_sanity_fails_for_inconsistent_and_out_of_bounds_rows() -> None:
+    result = run_module._evaluate_class_breakdown_sanity(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Counterparty A",
+                        "TIPS": 70.0,
+                        "Treasury": 10.0,
+                        "Equity": 0.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 50.0,
+                    }
+                ]
+            )
+        },
+        variant="all_programs",
+    )
+
+    assert result["status"] == "failed"
+    assert result["inconsistent_row_count"] == 1
+    assert result["out_of_bounds_row_count"] == 1
+    assert "Class breakdown sanity check failed" in result["message"]
+
+
+def test_run_reconciliation_checks_records_class_breakdown_sanity_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Counterparty A",
+                        "TIPS": 1.0,
+                        "Treasury": 1.0,
+                        "Equity": 1.0,
+                        "Commodity": 1.0,
+                        "Currency": 1.0,
+                        "Notional": 3.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    outcome = run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert outcome["reconciliation_results"]["status"] == "failed"
+    assert outcome["reconciliation_results"]["total_gap_count"] == 1
+    all_programs_result = outcome["reconciliation_results"]["by_variant"]["all_programs"]
+    assert all_programs_result["class_breakdown_sanity_check"]["status"] == "failed"
+    assert any("Class breakdown sanity check failed" in warning for warning in warnings)
+
+
 def test_run_pipeline_writes_expected_outputs_and_manifest(
     tmp_path: Path, fake_pandas: None
 ) -> None:
