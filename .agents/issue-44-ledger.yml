@@ -15,14 +15,14 @@ tasks:
   - id: task-02
     title: 'Implement the compute_risk_proxies function signature (verify: confirm
       completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-03
     title: 'input validation logic (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -30,7 +30,7 @@ tasks:
   - id: task-04
     title: 'Add calculation logic for Notional times AnnualizedVolatility when both
       columns exist (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -38,14 +38,14 @@ tasks:
   - id: task-05
     title: 'Add calculation logic for PositionUSD times Vol when both columns exist
       (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-06
     title: 'Implement column existence checking (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -53,14 +53,14 @@ tasks:
   - id: task-07
     title: 'conditional execution for each risk proxy calculation (verify: confirm
       completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-08
     title: Create `risk_rankings.csv` output ranked by each available risk proxy
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -68,7 +68,7 @@ tasks:
   - id: task-09
     title: Create `risk_top_movers.csv` output computing month-over-month deltas when
       a prior month is available
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -76,7 +76,7 @@ tasks:
   - id: task-10
     title: Write tests with fixtures to verify proxies are computed when required
       columns exist
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -84,7 +84,7 @@ tasks:
   - id: task-11
     title: 'Write test fixture with sample data containing Notional (verify: confirm
       completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -92,7 +92,7 @@ tasks:
   - id: task-12
     title: 'Write test fixture with AnnualizedVolatility columns (verify: confirm
       completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -100,7 +100,7 @@ tasks:
   - id: task-13
     title: Write test to verify Notional times AnnualizedVolatility proxy is computed
       correctly
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
@@ -108,21 +108,21 @@ tasks:
   - id: task-14
     title: 'Write test fixture with sample data containing PositionUSD (verify: confirm
       completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-15
     title: 'Write test fixture with Vol columns (verify: confirm completion in repo)'
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
     notes: []
   - id: task-16
     title: Write test to verify PositionUSD times Vol proxy is computed correctly
-    status: todo
+    status: done
     started_at: null
     finished_at: null
     commit: ''
