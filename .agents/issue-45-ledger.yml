@@ -6,10 +6,10 @@ tasks:
   - id: task-01
     title: 'Create `config/limits.yml` schema documenting keys: `entity_type`, `entity_name`
       (canonical key), `limit_value`, `limit_kind`, `notes`'
-    status: doing
+    status: done
     started_at: '2026-02-26T06:50:44Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-02-26T06:50:58Z'
+    commit: 9c0ea8cdf95d5c23c4cc4880b1cb423f61a2090d
     notes: []
   - id: task-02
     title: 'Define the YAML schema structure with required (verify: confirm completion
