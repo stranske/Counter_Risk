@@ -29,6 +29,38 @@ def _fixture(name: str) -> Path:
     return Path("tests/fixtures") / name
 
 
+@pytest.fixture
+def notional_annualized_volatility_exposures() -> list[dict[str, float | str]]:
+    return [
+        {
+            "counterparty": "A",
+            "Notional": 100.0,
+            "AnnualizedVolatility": 0.2,
+        },
+        {
+            "counterparty": "B",
+            "Notional": 80.0,
+            "AnnualizedVolatility": 0.5,
+        },
+    ]
+
+
+@pytest.fixture
+def position_usd_vol_exposures() -> list[dict[str, float | str]]:
+    return [
+        {
+            "counterparty": "A",
+            "PositionUSD": 5_000_000.0,
+            "Vol": 0.1,
+        },
+        {
+            "counterparty": "B",
+            "PositionUSD": 7_500_000.0,
+            "Vol": 0.2,
+        },
+    ]
+
+
 def test_compute_notional_breakdown_sums_to_one_multi_asset() -> None:
     exposures = [
         {"counterparty": "A", "asset_class": "Cash", "notional": 100.0},
@@ -164,41 +196,19 @@ def test_top_changes_sorts_by_absolute_change() -> None:
     assert [row["group_name"] for row in top] == ["B", "Cash"]
 
 
-def test_compute_risk_proxies_calculates_notional_times_annualized_volatility() -> None:
-    exposures = [
-        {
-            "counterparty": "A",
-            "Notional": 100.0,
-            "AnnualizedVolatility": 0.2,
-        },
-        {
-            "counterparty": "B",
-            "Notional": 80.0,
-            "AnnualizedVolatility": 0.5,
-        },
-    ]
-
-    records = _as_records(compute_risk_proxies(exposures))
+def test_compute_risk_proxies_calculates_notional_times_annualized_volatility(
+    notional_annualized_volatility_exposures: list[dict[str, float | str]],
+) -> None:
+    records = _as_records(compute_risk_proxies(notional_annualized_volatility_exposures))
 
     assert [row["risk_proxy_notional_annualized_volatility"] for row in records] == [20.0, 40.0]
     assert all("risk_proxy_position_usd_vol" not in row for row in records)
 
 
-def test_compute_risk_proxies_calculates_position_usd_times_vol() -> None:
-    exposures = [
-        {
-            "counterparty": "A",
-            "PositionUSD": 5_000_000.0,
-            "Vol": 0.1,
-        },
-        {
-            "counterparty": "B",
-            "PositionUSD": 7_500_000.0,
-            "Vol": 0.2,
-        },
-    ]
-
-    records = _as_records(compute_risk_proxies(exposures))
+def test_compute_risk_proxies_calculates_position_usd_times_vol(
+    position_usd_vol_exposures: list[dict[str, float | str]],
+) -> None:
+    records = _as_records(compute_risk_proxies(position_usd_vol_exposures))
 
     assert [row["risk_proxy_position_usd_vol"] for row in records] == [500000.0, 1500000.0]
     assert all("risk_proxy_notional_annualized_volatility" not in row for row in records)
