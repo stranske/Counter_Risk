@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import shutil
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -202,9 +203,9 @@ def test_reconciliation_sources_differ_between_before_and_after_registry(
         monkeypatch.chdir(run_dir)
 
         captured_sources: list[str] = []
-        original = pipeline_run.resolve_counterparty
+        original = getattr(pipeline_run, "resolve_counterparty")
 
-        def _capture_source(raw_name: str):
+        def _capture_source(raw_name: str) -> Any:
             resolution = original(raw_name)
             captured_sources.append(resolution.source)
             return resolution

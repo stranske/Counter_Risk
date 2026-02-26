@@ -9,6 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from counter_risk.cli import mapping_diff_report
 
 
@@ -165,7 +167,7 @@ def test_mapping_diff_report_with_fixture_inputs_contains_required_sections() ->
 
 def test_mapping_diff_report_forwards_registry_path_parameter(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     captured_call: dict[str, object] = {}
 
@@ -198,7 +200,7 @@ def test_mapping_diff_report_forwards_registry_path_parameter(
 
 def test_mapping_diff_report_forwards_output_format_parameter(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     captured_call: dict[str, object] = {}
 

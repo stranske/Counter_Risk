@@ -18,8 +18,8 @@ from zipfile import BadZipFile
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
 from counter_risk.normalize import canonicalize_name, normalize_counterparty, resolve_counterparty
-from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.outputs.base import OutputContext
+from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,

@@ -3,49 +3,46 @@
 from __future__ import annotations
 
 import shutil
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import Any, Mapping, Protocol
+from typing import Any, cast
 
 from counter_risk.calculations.wal import calculate_wal
 from counter_risk.outputs.base import OutputContext, OutputGenerator
-from counter_risk.pipeline.run import _merge_historical_workbook, _records
 from counter_risk.writers.historical_update import append_wal_row, locate_ex_llc_3_year_workbook
 
+_WorkbookLocator = Callable[[], Path]
+_WalCalculator = Callable[[Path, date], float]
+_WalAppender = Callable[..., Path]
+_WorkbookCopier = Callable[[str | Path, str | Path], str]
+_HistoricalWorkbookMerger = Callable[..., None]
+_RecordsExtractor = Callable[[Any], list[dict[str, Any]]]
 
-class _WorkbookLocator(Protocol):
-    def __call__(self) -> Path: ...
+def _default_workbook_merger(
+    *,
+    workbook_path: Path,
+    variant: str,
+    as_of_date: date,
+    totals_records: list[dict[str, Any]],
+    warnings: list[str],
+) -> None:
+    from counter_risk.pipeline.run import _merge_historical_workbook
 
-
-class _WalCalculator(Protocol):
-    def __call__(self, exposure_summary_path: Path, px_date: date) -> float: ...
-
-
-class _WalAppender(Protocol):
-    def __call__(self, workbook_path: str | Path, *, px_date: date, wal_value: float) -> Path: ...
-
-
-class _WorkbookCopier(Protocol):
-    def __call__(
-        self, src: str | Path, dst: str | Path, *, follow_symlinks: bool = True
-    ) -> str: ...
-
-
-class _HistoricalWorkbookMerger(Protocol):
-    def __call__(
-        self,
-        *,
-        workbook_path: Path,
-        variant: str,
-        as_of_date: date,
-        totals_records: list[dict[str, Any]],
-        warnings: list[str],
-    ) -> None: ...
+    _merge_historical_workbook(
+        workbook_path=workbook_path,
+        variant=variant,
+        as_of_date=as_of_date,
+        totals_records=totals_records,
+        warnings=warnings,
+    )
 
 
-class _RecordsExtractor(Protocol):
-    def __call__(self, table: Any) -> list[dict[str, Any]]: ...
+def _default_records_extractor(table: Any) -> list[dict[str, Any]]:
+    from counter_risk.pipeline.run import _records
+
+    return _records(table)
 
 
 @dataclass(frozen=True)
@@ -55,9 +52,9 @@ class HistoricalWorkbookOutputGenerator(OutputGenerator):
     parsed_by_variant: Mapping[str, Mapping[str, Any]]
     warnings: list[str]
     name: str = "historical_workbook"
-    workbook_copier: _WorkbookCopier = shutil.copy2
-    workbook_merger: _HistoricalWorkbookMerger = _merge_historical_workbook
-    records_extractor: _RecordsExtractor = _records
+    workbook_copier: _WorkbookCopier = cast(_WorkbookCopier, shutil.copy2)
+    workbook_merger: _HistoricalWorkbookMerger = _default_workbook_merger
+    records_extractor: _RecordsExtractor = _default_records_extractor
 
     def generate(self, *, context: OutputContext) -> tuple[Path, ...]:
         mosers_all_programs = context.config.mosers_all_programs_xlsx

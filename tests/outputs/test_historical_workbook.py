@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from counter_risk.config import WorkflowConfig
 from counter_risk.outputs import (
@@ -156,8 +156,9 @@ def test_historical_workbook_generator_wraps_pipeline_historical_update_flow(
         warnings: list[str],
     ) -> None:
         del warnings
+        notional = cast(float, totals_records[0]["Notional"])
         merged.append(
-            (workbook_path, variant, float(totals_records[0]["Notional"]), as_of_date.month)
+            (workbook_path, variant, float(notional), as_of_date.month)
         )
 
     generator = HistoricalWorkbookOutputGenerator(
