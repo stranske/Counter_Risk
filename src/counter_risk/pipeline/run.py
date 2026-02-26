@@ -19,6 +19,7 @@ from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
 from counter_risk.normalize import canonicalize_name, normalize_counterparty, resolve_counterparty
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
+from counter_risk.outputs.base import OutputContext
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
@@ -1650,43 +1651,31 @@ def _update_historical_outputs(
     warnings: list[str],
 ) -> list[Path]:
     LOGGER.info("historical_update_start run_dir=%s as_of_date=%s", run_dir, as_of_date.isoformat())
-    variant_inputs = [
-        _VariantInputs(
-            name="all_programs",
-            workbook_path=_require_path(
-                config.mosers_all_programs_xlsx, field_name="mosers_all_programs_xlsx"
-            ),
-            historical_path=config.hist_all_programs_3yr_xlsx,
-        ),
-        _VariantInputs(
-            name="ex_trend",
-            workbook_path=config.mosers_ex_trend_xlsx,
-            historical_path=config.hist_ex_llc_3yr_xlsx,
-        ),
-        _VariantInputs(
-            name="trend",
-            workbook_path=config.mosers_trend_xlsx,
-            historical_path=config.hist_llc_3yr_xlsx,
-        ),
-    ]
-
-    output_paths: list[Path] = []
-    for variant_input in variant_inputs:
-        source_hist = variant_input.historical_path
-        target_hist = run_dir / source_hist.name
-        shutil.copy2(source_hist, target_hist)
-        totals_records = _records(parsed_by_variant[variant_input.name]["totals"])
-        _merge_historical_workbook(
-            workbook_path=target_hist,
-            variant=variant_input.name,
-            as_of_date=as_of_date,
-            totals_records=totals_records,
-            warnings=warnings,
-        )
-        output_paths.append(target_hist)
+    output_generator = _build_historical_workbook_output_generator(
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+    output_context = OutputContext(
+        config=config,
+        run_dir=run_dir,
+        as_of_date=as_of_date,
+        run_date=config.run_date or as_of_date,
+        warnings=tuple(warnings),
+    )
+    output_paths = list(output_generator.generate(context=output_context))
 
     LOGGER.info("historical_update_complete workbook_count=%s", len(output_paths))
     return output_paths
+
+
+def _build_historical_workbook_output_generator(
+    *,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    warnings: list[str],
+) -> Any:
+    from counter_risk.outputs.historical_workbook import HistoricalWorkbookOutputGenerator
+
+    return HistoricalWorkbookOutputGenerator(parsed_by_variant=parsed_by_variant, warnings=warnings)
 
 
 def _merge_historical_workbook(

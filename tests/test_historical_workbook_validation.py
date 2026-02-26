@@ -319,3 +319,83 @@ def test_historical_update_appends_as_of_date_not_run_date(
     appended_date = sheet_by_path[all_programs_copy].cell(row=3, column=1).value
     assert appended_date == date(2026, 2, 13)
     assert appended_date != config.run_date
+
+
+def test_historical_update_delegates_to_output_generator(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    all_programs_input = tmp_path / "all_programs.xlsx"
+    ex_trend_input = tmp_path / "ex_trend.xlsx"
+    trend_input = tmp_path / "trend.xlsx"
+    monthly_pptx = tmp_path / "monthly.pptx"
+    hist_all = tmp_path / "hist_all.xlsx"
+    hist_ex = tmp_path / "hist_ex.xlsx"
+    hist_trend = tmp_path / "hist_trend.xlsx"
+    for file_path in (
+        all_programs_input,
+        ex_trend_input,
+        trend_input,
+        monthly_pptx,
+        hist_all,
+        hist_ex,
+        hist_trend,
+    ):
+        file_path.write_bytes(b"placeholder")
+
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    config = WorkflowConfig(
+        mosers_all_programs_xlsx=all_programs_input,
+        mosers_ex_trend_xlsx=ex_trend_input,
+        mosers_trend_xlsx=trend_input,
+        hist_all_programs_3yr_xlsx=hist_all,
+        hist_ex_llc_3yr_xlsx=hist_ex,
+        hist_llc_3yr_xlsx=hist_trend,
+        monthly_pptx=monthly_pptx,
+    )
+    warnings = ["warning 1"]
+    parsed_by_variant = {
+        "all_programs": {"totals": [{"counterparty": "A", "Notional": 10.0}], "futures": []},
+        "ex_trend": {"totals": [{"counterparty": "B", "Notional": 4.0}], "futures": []},
+        "trend": {"totals": [{"counterparty": "C", "Notional": 7.0}], "futures": []},
+    }
+    generated_outputs = (run_dir / "hist_all.xlsx", run_dir / "hist_ex.xlsx")
+    captured: dict[str, Any] = {}
+
+    class _FakeGenerator:
+        def __init__(
+            self, *, parsed_by_variant: dict[str, dict[str, Any]], warnings: list[str]
+        ) -> None:
+            captured["parsed_by_variant"] = parsed_by_variant
+            captured["warnings"] = warnings
+
+        def generate(self, *, context: Any) -> tuple[Path, ...]:
+            captured["context"] = context
+            return generated_outputs
+
+    monkeypatch.setattr(
+        run_module,
+        "_build_historical_workbook_output_generator",
+        lambda *, parsed_by_variant, warnings: _FakeGenerator(
+            parsed_by_variant=parsed_by_variant, warnings=warnings
+        ),
+    )
+
+    output_paths = run_module._update_historical_outputs(
+        run_dir=run_dir,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        as_of_date=date(2026, 2, 13),
+        warnings=warnings,
+    )
+
+    assert output_paths == list(generated_outputs)
+    assert captured["parsed_by_variant"] is parsed_by_variant
+    assert captured["warnings"] is warnings
+    context = captured["context"]
+    assert context.config is config
+    assert context.run_dir == run_dir
+    assert context.as_of_date == date(2026, 2, 13)
+    assert context.run_date == date(2026, 2, 13)
+    assert context.warnings == tuple(warnings)
