@@ -57,3 +57,12 @@ def test_check_mode_flags_unexpected_module_file(tmp_path: Path) -> None:
 def test_check_mode_passes_for_committed_vba_sources() -> None:
     rc = extract_vba_modules.main(["--check"])
     assert rc == 0
+
+
+def test_default_workbook_extract_inventory_matches_committed_vba_sources() -> None:
+    modules = extract_vba_modules.extract_modules_from_workbooks(
+        extract_vba_modules.DEFAULT_WORKBOOK_PATHS
+    )
+
+    mismatches = extract_vba_modules.check_modules(modules, Path("assets/vba"))
+    assert mismatches == ()
