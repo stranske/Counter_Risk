@@ -1,0 +1,399 @@
+version: 1
+issue: 47
+base: main
+branch: codex/issue-47
+tasks:
+  - id: task-01
+    title: Add a `data_quality` object to `manifest.json` including severity levels
+      `{info, warn, fail}`, categorized findings and counts, and recommended actions.
+    status: doing
+    started_at: '2026-02-26T20:48:49Z'
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-02
+    title: 'Define the JSON schema for the data_quality object with severity levels
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Define the JSON schema for the data_quality object with findings structure
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'Define scope for: Define the JSON schema for the data_quality object with
+      and recommended actions fields (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Implement focused slice for: Define the JSON schema for the data_quality
+      object with and recommended actions fields (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Validate focused slice for: Define the JSON schema for the data_quality
+      object with and recommended actions fields (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Define scope for: Implement the data collection logic to populate categorized
+      findings from existing validation systems (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Implement focused slice for: Implement the data collection logic to populate
+      categorized findings from existing validation systems (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Validate focused slice for: Implement the data collection logic to populate
+      categorized findings from existing validation systems (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Add the severity classification logic to assign info (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'warn (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'or fail levels to each finding type (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Implement the counts aggregation mechanism for each finding category (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: 'Create the recommended actions generator based on finding types (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'severity levels (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Write unit tests for the data_quality object structure (verify: tests
+      pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'population logic (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: Create a `DATA_QUALITY_SUMMARY.txt` artifact in the run folder with a plain-English
+      summary of findings, counts, recommended actions, and overall status.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: Update Runner UI to display a green/yellow/red overall data quality status
+      derived from `manifest.json:data_quality`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Define scope for: Implement the status derivation logic that maps severity
+      levels to green/yellow/red indicators (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Implement focused slice for: Implement the status derivation logic that
+      maps severity levels to green/yellow/red indicators (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Validate focused slice for: Implement the status derivation logic that
+      maps severity levels to green/yellow/red indicators (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Create the UI component to display the data quality status indicator (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Define scope for: Add the manifest.json parsing logic to extract data_quality
+      information in the Runner UI (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: 'Implement focused slice for: Add the manifest.json parsing logic to extract
+      data_quality information in the Runner UI (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Validate focused slice for: Add the manifest.json parsing logic to extract
+      data_quality information in the Runner UI (verify: formatter passes)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Style the status indicator with appropriate colors (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Style the status indicator with visual hierarchy (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Write integration tests for the status display component (verify: tests
+      pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: "Add an \u201COpen summary\u201D button in the Runner UI that opens/displays\
+      \ the `DATA_QUALITY_SUMMARY.txt` artifact for the selected run."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: Write tests that validate findings propagate into `manifest.json` under
+      `data_quality`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: Write tests that validate strict mode fails the run when `data_quality`
+      contains `fail` severity findings.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: Every run produces a `DATA_QUALITY_SUMMARY.txt` artifact in the run folder.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: Every run produces a `manifest.json` containing a `data_quality` object
+      with severity levels `{info, warn, fail}`, categorized findings and counts,
+      and recommended actions.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: Runner UI displays an overall green/yellow/red data quality status derived
+      from `manifest.json:data_quality`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: "Runner UI provides an \u201COpen summary\u201D button that opens/displays\
+      \ the `DATA_QUALITY_SUMMARY.txt` for the run."
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: Automated tests pass and verify findings propagate to `manifest.json:data_quality`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: Automated tests pass and verify strict mode fails the run when `data_quality`
+      includes `fail` findings.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Add a `data_quality` object to manifest.json with:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: severity levels {info, warn, fail}
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: categorized findings and counts
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: recommended actions
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: Add a `DATA_QUALITY_SUMMARY.txt` in run folder (plain English)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Update Runner UI to display:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: green/yellow/red status
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: "\u201COpen summary\u201D button"
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Add tests that ensure:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: findings propagate to manifest
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: strict mode fails the run appropriately
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: Every run produces a data quality summary artifact
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: Operators can see at-a-glance whether the run is safe to distribute
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
