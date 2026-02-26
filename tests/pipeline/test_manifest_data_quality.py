@@ -139,3 +139,35 @@ def test_manifest_build_collects_data_quality_from_validation_context(tmp_path: 
     assert data_quality["counts"]["by_category"]["reconciliation"]["fail"] >= 1
     assert data_quality["counts"]["by_category"]["mapping"]["fail"] >= 1
     assert data_quality["counts"]["by_category"]["limits"]["warn"] >= 1
+
+
+def test_manifest_build_classifies_known_finding_types_by_code(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    artifact = run_dir / "output.csv"
+    artifact.write_text("ok\n", encoding="utf-8")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(artifact.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[
+            {"message": "Required file missing for this run.", "code": "MISSING_REQUIRED_INPUTS"},
+            {"message": "Generated summary row was appended.", "code": "NO_FINDINGS"},
+            {"message": "Possible threshold near breach.", "code": "LIMIT_BREACHES"},
+        ],
+    )
+
+    severities_by_code = {
+        finding["code"]: finding["severity"] for finding in manifest["data_quality"]["findings"]
+    }
+    assert severities_by_code["MISSING_REQUIRED_INPUTS"] == "fail"
+    assert severities_by_code["NO_FINDINGS"] == "info"
+    assert severities_by_code["LIMIT_BREACHES"] == "warn"

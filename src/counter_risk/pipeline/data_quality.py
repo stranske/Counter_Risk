@@ -8,6 +8,19 @@ from typing import Any
 
 Severity = str
 _SEVERITIES: tuple[Severity, ...] = ("info", "warn", "fail")
+_SEVERITY_BY_CODE: dict[str, Severity] = {
+    "NO_FINDINGS": "info",
+    "MISSING_REQUIRED_INPUTS": "fail",
+    "MISSING_OPTIONAL_INPUTS": "warn",
+    "UNMATCHED_MAPPINGS": "fail",
+    "RECONCILIATION_GAPS": "fail",
+    "PPT_GENERATION_FAILED": "fail",
+    "PPT_GENERATION_SKIPPED": "warn",
+    "LIMIT_BREACHES": "warn",
+    "MISSING_NOTIONAL": "warn",
+    "INVALID_NOTIONAL": "warn",
+    "MISSING_DESCRIPTION": "warn",
+}
 
 
 def build_data_quality(
@@ -84,12 +97,8 @@ def _build_warning_findings(warnings: list[Any]) -> list[dict[str, Any]]:
             if not message:
                 continue
             code = str(warning.get("code", "UNKNOWN")).strip() or "UNKNOWN"
-            finding = {
-                "category": _categorize(message=message, code=code),
-                "severity": _classify_severity(message=message, code=code),
-                "code": code,
-                "message": message,
-            }
+            category = _categorize(message=message, code=code)
+            finding = _make_finding(category=category, code=code, message=message)
             findings.append(finding)
             continue
 
@@ -97,14 +106,8 @@ def _build_warning_findings(warnings: list[Any]) -> list[dict[str, Any]]:
         if not message:
             continue
         code = _code_from_message(message)
-        findings.append(
-            {
-                "category": _categorize(message=message, code=code),
-                "severity": _classify_severity(message=message, code=code),
-                "code": code,
-                "message": message,
-            }
-        )
+        category = _categorize(message=message, code=code)
+        findings.append(_make_finding(category=category, code=code, message=message))
     return findings
 
 
@@ -125,78 +128,71 @@ def _collect_validation_findings(
     missing_required = _string_list(missing_inputs.get("missing_required", []), max_items=8)
     if missing_required:
         findings.append(
-            {
-                "category": "input",
-                "severity": "fail",
-                "code": "MISSING_REQUIRED_INPUTS",
-                "message": f"Missing required inputs: {', '.join(missing_required)}.",
-            }
+            _make_finding(
+                category="input",
+                code="MISSING_REQUIRED_INPUTS",
+                message=f"Missing required inputs: {', '.join(missing_required)}.",
+            )
         )
 
     optional_missing = _string_list(missing_inputs.get("optional_missing", []), max_items=8)
     if optional_missing:
         findings.append(
-            {
-                "category": "input",
-                "severity": "warn",
-                "code": "MISSING_OPTIONAL_INPUTS",
-                "message": f"Optional inputs unavailable: {', '.join(optional_missing)}.",
-            }
+            _make_finding(
+                category="input",
+                code="MISSING_OPTIONAL_INPUTS",
+                message=f"Optional inputs unavailable: {', '.join(optional_missing)}.",
+            )
         )
 
     unmatched_count = _safe_int(unmatched_mappings.get("count", 0))
     if unmatched_count > 0:
         findings.append(
-            {
-                "category": "mapping",
-                "severity": "fail",
-                "code": "UNMATCHED_MAPPINGS",
-                "message": f"Found {unmatched_count} unmatched mapping entr{'y' if unmatched_count == 1 else 'ies'}.",
-            }
+            _make_finding(
+                category="mapping",
+                code="UNMATCHED_MAPPINGS",
+                message=f"Found {unmatched_count} unmatched mapping entr{'y' if unmatched_count == 1 else 'ies'}.",
+            )
         )
 
     gap_count = _safe_int(reconciliation_results.get("total_gap_count", 0))
     reconciliation_status = str(reconciliation_results.get("status", "")).strip().lower()
     if reconciliation_status == "failed" or gap_count > 0:
         findings.append(
-            {
-                "category": "reconciliation",
-                "severity": "fail",
-                "code": "RECONCILIATION_GAPS",
-                "message": f"Reconciliation reported {gap_count} gap{'s' if gap_count != 1 else ''}.",
-            }
+            _make_finding(
+                category="reconciliation",
+                code="RECONCILIATION_GAPS",
+                message=f"Reconciliation reported {gap_count} gap{'s' if gap_count != 1 else ''}.",
+            )
         )
 
     normalized_ppt_status = str(ppt_status).strip().lower()
     if normalized_ppt_status == "failed":
         findings.append(
-            {
-                "category": "ppt",
-                "severity": "fail",
-                "code": "PPT_GENERATION_FAILED",
-                "message": "PowerPoint generation failed.",
-            }
+            _make_finding(
+                category="ppt",
+                code="PPT_GENERATION_FAILED",
+                message="PowerPoint generation failed.",
+            )
         )
     elif normalized_ppt_status == "skipped":
         findings.append(
-            {
-                "category": "ppt",
-                "severity": "warn",
-                "code": "PPT_GENERATION_SKIPPED",
-                "message": "PowerPoint generation was skipped.",
-            }
+            _make_finding(
+                category="ppt",
+                code="PPT_GENERATION_SKIPPED",
+                message="PowerPoint generation was skipped.",
+            )
         )
 
     has_breaches = bool(limit_breach_summary.get("has_breaches"))
     breach_count = _safe_int(limit_breach_summary.get("breach_count", 0))
     if has_breaches and breach_count > 0:
         findings.append(
-            {
-                "category": "limits",
-                "severity": "warn",
-                "code": "LIMIT_BREACHES",
-                "message": f"Detected {breach_count} limit breach{'es' if breach_count != 1 else ''}.",
-            }
+            _make_finding(
+                category="limits",
+                code="LIMIT_BREACHES",
+                message=f"Detected {breach_count} limit breach{'es' if breach_count != 1 else ''}.",
+            )
         )
 
     return findings
@@ -297,12 +293,24 @@ def _derive_overall_status(counts: dict[str, Any]) -> str:
     return "info"
 
 
+def _make_finding(*, category: str, code: str, message: str) -> dict[str, str]:
+    return {
+        "category": category,
+        "severity": _classify_severity(message=message, code=code),
+        "code": code,
+        "message": message,
+    }
+
+
 def _classify_severity(*, message: str, code: str) -> str:
     message_lower = message.lower()
     code_upper = code.upper()
     fail_tokens = ("failed", "strict mode", "unmapped", "missing entities")
     info_tokens = ("generated", "summary", "appended")
 
+    mapped_severity = _SEVERITY_BY_CODE.get(code_upper)
+    if mapped_severity in _SEVERITIES:
+        return mapped_severity
     if any(token in message_lower for token in fail_tokens):
         return "fail"
     if "FAILED" in code_upper or "ERROR" in code_upper:
