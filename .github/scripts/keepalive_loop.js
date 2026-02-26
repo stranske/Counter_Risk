@@ -3065,9 +3065,12 @@ async function updateKeepaliveLoopSummary({ github: rawGithub, context, core, in
           // the pre-timeout watchdog or the agent itself saved any work.
           if (!agentCommitSha && !agentChangesMade && prNumber) {
             try {
-              const pr = await fetchPullRequestCached(github, context, prNumber, cache);
+              const pr = await fetchPullRequestCached({ github, context, prNumber, core });
               if (pr?.head?.ref) {
-                const since = previousState?.current_iteration_at || previousState?.first_iteration_at;
+                // Use the persisted updated_at from the previous save, NOT
+                // current_iteration_at (which applyIterationTracking resets
+                // to "now" on load, making it useless as a range bound).
+                const since = previousState?.updated_at;
                 const commitsResp = await github.rest.repos.listCommits({
                   ...context.repo,
                   sha: pr.head.ref,
