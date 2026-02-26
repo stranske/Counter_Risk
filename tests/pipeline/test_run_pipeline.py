@@ -180,6 +180,73 @@ def _minimal_workflow_config(
     )
 
 
+def test_apply_daily_holdings_repo_cash_updates_all_programs_totals(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={"daily_holdings_pdf": tmp_path / "daily-holdings.pdf"}
+    )
+    parsed_by_variant: dict[str, dict[str, Any]] = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "CIBC",
+                        "TIPS": 0.0,
+                        "Treasury": 0.0,
+                        "Equity": 10.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 10.0,
+                        "NotionalChange": 1.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        }
+    }
+    warnings: list[str] = []
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0, "ASL": 3.0})
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    totals_records = cast(
+        list[dict[str, Any]], parsed_by_variant["all_programs"]["totals"].to_dict(orient="records")
+    )
+    by_counterparty = {row["counterparty"]: row for row in totals_records}
+    assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(2.0)
+    assert float(by_counterparty["CIBC"]["Notional"]) == pytest.approx(12.0)
+    assert float(by_counterparty["ASL"]["Cash"]) == pytest.approx(3.0)
+    assert float(by_counterparty["ASL"]["Notional"]) == pytest.approx(3.0)
+    assert any("Applied Daily Holdings Repo Cash values" in warning for warning in warnings)
+
+
+def test_apply_daily_holdings_repo_cash_noop_when_daily_holdings_not_configured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(update={"daily_holdings_pdf": None})
+    parsed_by_variant = _minimal_parsed_by_variant()
+    warnings: list[str] = []
+
+    def _unexpected_call(_: Path) -> dict[str, float]:
+        raise AssertionError("parse_daily_holdings_pdf should not be called")
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", _unexpected_call)
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert warnings == []
+
+
 def test_build_parsed_data_by_sheet_uses_historical_sheet_names_without_total_key() -> None:
     parsed_sections = {
         "totals": _FakeDataFrame(
