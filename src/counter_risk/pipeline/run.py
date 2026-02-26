@@ -940,27 +940,11 @@ def _write_outputs(
         distribution=target_distribution_ppt.relative_to(run_dir),
     )
 
-    try:
-        refresh_result = _refresh_ppt_links(target_master_ppt)
-    except Exception as exc:
-        LOGGER.error("Master PPT link refresh failed: %s", exc)
-        refresh_result = PptProcessingResult(
-            status=PptProcessingStatus.FAILED,
-            error_detail=str(exc),
-        )
-    if isinstance(refresh_result, bool):
-        refresh_result = PptProcessingResult(
-            status=PptProcessingStatus.SUCCESS if refresh_result else PptProcessingStatus.SKIPPED
-        )
+    link_refresh_generator = _build_ppt_link_refresh_output_generator(warnings=warnings)
+    link_refresh_generator.generate(context=output_context)
+    refresh_result = _to_ppt_processing_result(link_refresh_generator.last_result)
 
-    if refresh_result.status == PptProcessingStatus.SKIPPED:
-        warnings.append("PPT links not refreshed; COM refresh skipped")
     if refresh_result.status == PptProcessingStatus.FAILED:
-        warnings.append(
-            "PPT links refresh failed; COM refresh encountered an error"
-            if not refresh_result.error_detail
-            else f"PPT links refresh failed; {refresh_result.error_detail}"
-        )
         LOGGER.warning(
             "Skipping distribution PPT derivation because Master PPT refresh failed: %s",
             target_master_ppt,
@@ -1694,6 +1678,34 @@ def _build_ppt_screenshot_output_generator(*, warnings: list[str]) -> OutputGene
         screenshot_replacer_resolver=_get_screenshot_replacer,
         master_link_target_validator=_assert_master_preserves_external_link_targets,
     )
+
+
+def _build_ppt_link_refresh_output_generator(*, warnings: list[str]):
+    from counter_risk.outputs.ppt_link_refresh import PptLinkRefreshOutputGenerator
+
+    return PptLinkRefreshOutputGenerator(
+        warnings=warnings,
+        ppt_link_refresher=_refresh_ppt_links,
+    )
+
+
+def _to_ppt_processing_result(refresh_result: object | None) -> PptProcessingResult:
+    if refresh_result is None:
+        raise RuntimeError("PPT link refresh output generator did not record a refresh result")
+
+    status_value = getattr(refresh_result, "status", None)
+    if status_value is None:
+        raise TypeError("PPT link refresh result is missing a status")
+
+    status_text = str(getattr(status_value, "value", status_value)).strip().lower()
+    try:
+        status = PptProcessingStatus(status_text)
+    except ValueError as exc:
+        raise ValueError(f"Unsupported PPT processing status: {status_text!r}") from exc
+
+    error_detail = getattr(refresh_result, "error_detail", None)
+    normalized_error = None if error_detail is None else str(error_detail)
+    return PptProcessingResult(status=status, error_detail=normalized_error)
 
 
 def _merge_historical_workbook(
