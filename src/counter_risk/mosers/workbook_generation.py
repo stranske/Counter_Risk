@@ -113,6 +113,32 @@ def get_mosers_ex_trend_transformation_scope() -> MosersAllProgramsTransformatio
     )
 
 
+def get_mosers_trend_output_structure() -> MosersAllProgramsOutputStructure:
+    """Return the output-structure contract used for Trend workbook generation."""
+
+    return MosersAllProgramsOutputStructure(
+        required_sheets=_REQUIRED_SHEETS,
+        cprs_ch_sheet=_TARGET_SHEET,
+        program_name_cell=_PROGRAM_NAME_CELL,
+        start_row=_START_ROW,
+        end_row=_END_ROW,
+    )
+
+
+def get_mosers_trend_transformation_scope() -> MosersAllProgramsTransformationScope:
+    """Return the scoped source-to-target mappings for Trend transforms."""
+
+    return MosersAllProgramsTransformationScope(
+        totals_source_name="totals_rows",
+        cprs_ch_transforms=(
+            MosersColumnTransform(source_metric="annualized_volatility", target_column="D"),
+            MosersColumnTransform(source_metric="allocation_percentage", target_column="E"),
+        ),
+        overflow_policy="truncate_to_layout",
+        underflow_policy="clear_remaining_cells",
+    )
+
+
 def generate_mosers_workbook(raw_nisa_path: str | Path) -> Workbook:
     """Generate a populated MOSERS workbook from raw NISA input.
 
@@ -146,8 +172,8 @@ def generate_mosers_workbook_trend(raw_nisa_path: str | Path) -> Workbook:
     return _generate_mosers_workbook_from_parser(
         raw_nisa_path,
         parser=parse_nisa_trend,
-        structure=get_mosers_all_programs_output_structure(),
-        transformation_scope=get_mosers_all_programs_transformation_scope(),
+        structure=get_mosers_trend_output_structure(),
+        transformation_scope=get_mosers_trend_transformation_scope(),
     )
 
 
