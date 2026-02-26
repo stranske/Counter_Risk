@@ -21,3 +21,7 @@ def test_release_checklist_exists_with_required_commands_and_bundle_contents() -
     assert "VERSION" in contents
     assert "manifest.json" in contents
     assert "bin/counter-risk" in contents
+    assert "runner_xlsm_macro_manual_verification.md" in contents
+    assert "Manual Macro/Button Check" in contents
+    assert "Version Bump Regression Check" in contents
+    assert "--version 1.2.4" in contents

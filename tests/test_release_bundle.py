@@ -23,10 +23,12 @@ _FORBIDDEN_RUNNER_ENTRYPOINT_PATTERN = re.compile(
 def _write_fake_repo(root: Path) -> None:
     (root / "config").mkdir(parents=True, exist_ok=True)
     (root / "templates").mkdir(parents=True, exist_ok=True)
+    (root / "assets" / "templates").mkdir(parents=True, exist_ok=True)
     (root / "tests" / "fixtures").mkdir(parents=True, exist_ok=True)
     (root / "release.spec").write_text("# fake\n", encoding="utf-8")
     (root / "config" / "fixture_replay.yml").write_text("name: fixture\n", encoding="utf-8")
     (root / "templates" / "Monthly Counterparty Exposure Report.pptx").write_bytes(b"ppt-template")
+    (root / "assets" / "templates" / "counter_risk_template.xlsm").write_bytes(b"xlsm-template")
     (root / "tests" / "fixtures" / "fixture.xlsx").write_bytes(b"xlsx")
     (root / "tests" / "fixtures" / "fixture.pptx").write_bytes(b"fixture-ppt")
 
@@ -85,6 +87,7 @@ def test_assemble_release_creates_versioned_bundle_with_executable(
     assert (bundle_dir / "VERSION").read_text(encoding="utf-8").strip() == "9.9.9"
     assert (bundle_dir / "config" / "fixture_replay.yml").is_file()
     assert list((bundle_dir / "templates").glob("*.pptx"))
+    assert list((bundle_dir / "templates").glob("*.xlsm"))
     assert list((bundle_dir / "fixtures").glob("*.xlsx"))
     assert (bundle_dir / "bin" / "counter-risk").is_file()
     runner_text = (bundle_dir / "run_counter_risk.cmd").read_text(encoding="utf-8")

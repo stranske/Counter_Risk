@@ -119,13 +119,20 @@ def _create_runner_file(bundle_dir: Path) -> Path:
 
 
 def _copy_templates(root: Path, bundle_dir: Path) -> list[Path]:
-    template_sources = [root / "templates", root / "tests" / "fixtures"]
+    template_sources = [
+        root / "templates",
+        root / "assets" / "templates",
+        root / "tests" / "fixtures",
+    ]
+    allowed_suffixes = {".pptx", ".xlsm"}
     template_candidates: dict[str, list[Path]] = {}
 
     for src_dir in template_sources:
         if not src_dir.exists():
             continue
-        for src_path in sorted(path for path in src_dir.rglob("*.pptx") if path.is_file()):
+        for src_path in sorted(path for path in src_dir.rglob("*") if path.is_file()):
+            if src_path.suffix.lower() not in allowed_suffixes:
+                continue
             template_candidates.setdefault(src_path.name, []).append(src_path)
 
     duplicate_templates = {
