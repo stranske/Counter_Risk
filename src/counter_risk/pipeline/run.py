@@ -56,6 +56,11 @@ from counter_risk.ppt.pptx_postprocess import (
     scrub_external_relationships_from_pptx,
 )
 from counter_risk.ppt.pptx_static import _rebuild_pptx_from_slide_images
+from counter_risk.reports import (
+    attribute_changes,
+    write_change_attribution_csv,
+    write_change_attribution_markdown,
+)
 from counter_risk.writers import generate_mosers_workbook
 
 LOGGER = logging.getLogger(__name__)
@@ -558,6 +563,7 @@ def run_pipeline(config_path: str | Path) -> Path:
 
     concentration_metrics_records: list[dict[str, Any]] = []
     concentration_metrics_output_paths: list[Path] = []
+    change_attribution_output_paths: list[Path] = []
     try:
         risk_output_paths = _write_risk_outputs(
             run_dir=run_dir,
@@ -578,6 +584,16 @@ def run_pipeline(config_path: str | Path) -> Path:
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=concentration_metrics run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during concentration metrics stage") from exc
+
+    try:
+        change_attribution_output_paths = _write_change_attribution_outputs(
+            run_dir=run_dir,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=change_attribution run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during change attribution stage") from exc
 
     try:
         limit_breaches = _compute_and_write_limit_breaches(
@@ -629,6 +645,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         historical_output_paths
         + risk_output_paths
         + concentration_metrics_output_paths
+        + change_attribution_output_paths
         + output_paths
     )
     if limit_breaches.csv_path is not None:
@@ -1117,6 +1134,59 @@ def _write_risk_outputs(
     return output_paths
 
 
+def _write_change_attribution_outputs(
+    *, run_dir: Path, parsed_by_variant: dict[str, dict[str, Any]], warnings: list[str]
+) -> list[Path]:
+    preferred_variant = "all_programs"
+    variant = preferred_variant if preferred_variant in parsed_by_variant else ""
+    if not variant and parsed_by_variant:
+        variant = sorted(parsed_by_variant, key=str.casefold)[0]
+    if not variant:
+        warnings.append("change_attribution skipped: no parsed variant data available")
+        return []
+
+    totals_table = parsed_by_variant.get(variant, {}).get("totals")
+    current_rows = _records(totals_table) if totals_table is not None else []
+    if not current_rows:
+        warnings.append(f"change_attribution skipped: no totals rows for variant '{variant}'")
+        return []
+
+    prior_rows = _infer_prior_rows_from_notional_change(current_rows=current_rows)
+    if not prior_rows:
+        warnings.append(
+            "change_attribution skipped: prior-month notional deltas unavailable in current totals"
+        )
+        return []
+
+    report = attribute_changes(current_rows, prior_rows)
+    csv_path = run_dir / "change_attribution.csv"
+    markdown_path = run_dir / "change_attribution.md"
+    write_change_attribution_csv(report=report, path=csv_path)
+    write_change_attribution_markdown(report=report, path=markdown_path)
+    return [csv_path, markdown_path]
+
+
+def _infer_prior_rows_from_notional_change(
+    *, current_rows: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    prior_rows: list[dict[str, Any]] = []
+    for record in current_rows:
+        counterparty = str(record.get("counterparty", "")).strip()
+        if not counterparty:
+            continue
+        notional = _coerce_float_or_none(record.get("Notional"))
+        notional_change = _coerce_float_or_none(record.get("NotionalChange"))
+        if notional is None or notional_change is None:
+            continue
+        prior_rows.append(
+            {
+                "counterparty": counterparty,
+                "Notional": notional - notional_change,
+            }
+        )
+    return prior_rows
+
+
 def _rank_proxy_rows(
     *, variant: str, records: list[dict[str, Any]], proxy_column: str
 ) -> list[dict[str, Any]]:
@@ -1211,6 +1281,13 @@ def _to_float(value: Any) -> float:
         return float(value)
     except (TypeError, ValueError):
         return 0.0
+
+
+def _coerce_float_or_none(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _write_csv_rows(*, path: Path, fieldnames: tuple[str, ...], rows: list[dict[str, Any]]) -> None:
