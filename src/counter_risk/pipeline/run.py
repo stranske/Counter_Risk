@@ -507,13 +507,26 @@ def run_pipeline(config_path: str | Path) -> Path:
         LOGGER.exception("pipeline_failed stage=config_validate config_path=%s", config_path)
         raise RuntimeError(f"Pipeline failed during config validation: {config_path}") from exc
 
+    input_paths: dict[str, Path] = {}
+    missing_inputs: dict[str, Any] = {
+        "required": list(_REQUIRED_INPUT_FIELDS),
+        "missing_required": [],
+        "optional_missing": [],
+        "is_complete": True,
+    }
     try:
         input_paths = _resolve_input_paths(config)
         missing_inputs = _build_missing_inputs_summary(config=config, input_paths=input_paths)
         _validate_input_files(input_paths)
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=input_validation config_path=%s", config_path)
-        raise RuntimeError("Pipeline failed during input validation stage") from exc
+        operator_message = _build_missing_input_operator_message(
+            missing_inputs=missing_inputs,
+            input_paths=input_paths,
+        )
+        raise RuntimeError(
+            "Pipeline failed during input validation stage. " f"{operator_message}"
+        ) from exc
 
     try:
         cprs_headers = _collect_cprs_header_candidates(config=config)
@@ -881,6 +894,34 @@ def _append_missing_inputs_warnings(
         warnings.append(
             "Input validation: optional inputs unavailable " f"({', '.join(optional_missing)})."
         )
+
+
+def _build_missing_input_operator_message(
+    *, missing_inputs: Mapping[str, Any], input_paths: Mapping[str, Path]
+) -> str:
+    missing_required_raw = missing_inputs.get("missing_required", [])
+    missing_required = sorted(
+        {
+            str(field).strip()
+            for field in missing_required_raw
+            if isinstance(field, str) and str(field).strip()
+        },
+        key=str.casefold,
+    )
+    if not missing_required:
+        return "Operator action: verify configured input file paths are accessible."
+
+    details: list[str] = []
+    for field in missing_required:
+        resolved_path = input_paths.get(field)
+        if resolved_path is None:
+            details.append(field)
+        else:
+            details.append(f"{field} -> {resolved_path}")
+    return (
+        "Operator action: verify required input files are present and paths are correct. "
+        f"Missing required inputs: {', '.join(details)}."
+    )
 
 
 def _prepare_runtime_config(

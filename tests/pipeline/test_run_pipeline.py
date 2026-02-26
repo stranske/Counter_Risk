@@ -1545,6 +1545,65 @@ def test_run_pipeline_wraps_input_validation_errors(
 
     assert isinstance(exc_info.value.__cause__, FileNotFoundError)
     assert "missing source workbook" in str(exc_info.value.__cause__)
+    assert "Operator action: verify configured input file paths are accessible." in str(
+        exc_info.value
+    )
+
+
+def test_run_pipeline_input_validation_uses_missing_required_operator_message(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._build_missing_inputs_summary",
+        lambda *, config, input_paths: {
+            "required": list(run_module._REQUIRED_INPUT_FIELDS),
+            "missing_required": ["monthly_pptx", "hist_llc_3yr_xlsx"],
+            "optional_missing": [],
+            "is_complete": False,
+        },
+    )
+
+    def _boom(_: dict[str, Path]) -> None:
+        raise FileNotFoundError("missing source workbook")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._validate_input_files", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during input validation stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert "Operator action: verify required input files are present and paths are correct." in str(
+        exc_info.value
+    )
+    assert "monthly_pptx -> " in str(exc_info.value)
+
+
+def test_build_missing_input_operator_message_with_missing_required_paths(tmp_path: Path) -> None:
+    message = run_module._build_missing_input_operator_message(
+        missing_inputs={"missing_required": ["monthly_pptx", "hist_llc_3yr_xlsx"]},
+        input_paths={
+            "monthly_pptx": tmp_path / "monthly.pptx",
+            "hist_llc_3yr_xlsx": tmp_path / "hist_trend.xlsx",
+        },
+    )
+
+    assert (
+        "Operator action: verify required input files are present and paths are correct." in message
+    )
+    assert f"monthly_pptx -> {tmp_path / 'monthly.pptx'}" in message
+    assert f"hist_llc_3yr_xlsx -> {tmp_path / 'hist_trend.xlsx'}" in message
+
+
+def test_build_missing_input_operator_message_without_missing_required_paths() -> None:
+    message = run_module._build_missing_input_operator_message(
+        missing_inputs={"missing_required": []},
+        input_paths={},
+    )
+
+    assert message == "Operator action: verify configured input file paths are accessible."
 
 
 def test_run_pipeline_wraps_compute_errors(
