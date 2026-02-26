@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import platform
@@ -667,6 +668,220 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
     for variant in ("all_programs", "ex_trend", "trend"):
         assert variant in manifest["top_exposures"]
         assert variant in manifest["top_changes_per_variant"]
+
+
+def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 100.0,
+                        "AnnualizedVolatility": 0.3,
+                        "NotionalChange": 10.0,
+                        "PositionUSD": 200.0,
+                        "Vol": 0.2,
+                        "PositionUSDChange": 20.0,
+                    },
+                    {
+                        "counterparty": "B",
+                        "Notional": 50.0,
+                        "AnnualizedVolatility": 0.1,
+                        "NotionalChange": 5.0,
+                        "PositionUSD": 300.0,
+                        "Vol": 0.1,
+                        "PositionUSDChange": -10.0,
+                    },
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert tmp_path / "risk_rankings.csv" in output_paths
+    assert tmp_path / "risk_top_movers.csv" in output_paths
+
+    with (tmp_path / "risk_rankings.csv").open("r", encoding="utf-8", newline="") as stream:
+        ranking_rows = list(csv.DictReader(stream))
+    assert any(
+        row["proxy_name"] == "risk_proxy_notional_annualized_volatility" and row["rank"] == "1"
+        for row in ranking_rows
+    )
+    assert any(
+        row["proxy_name"] == "risk_proxy_position_usd_vol" and row["rank"] == "1"
+        for row in ranking_rows
+    )
+
+    with (tmp_path / "risk_top_movers.csv").open("r", encoding="utf-8", newline="") as stream:
+        mover_rows = list(csv.DictReader(stream))
+    assert {row["proxy_name"] for row in mover_rows} == {
+        "risk_proxy_notional_annualized_volatility",
+        "risk_proxy_position_usd_vol",
+    }
+    assert "risk_rankings.csv skipped" not in "\n".join(warnings)
+
+
+def test_write_risk_outputs_warns_and_skips_rankings_when_proxy_columns_missing(
+    tmp_path: Path,
+) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "A", "Notional": 100.0}])
+        }
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert output_paths == []
+    assert not (tmp_path / "risk_rankings.csv").exists()
+    assert any(
+        "requires Notional and AnnualizedVolatility columns" in warning for warning in warnings
+    )
+    assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+    assert any("risk_rankings.csv skipped" in warning for warning in warnings)
+
+
+def test_write_risk_outputs_creates_partial_outputs_when_only_notional_proxy_exists(
+    tmp_path: Path,
+) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 120.0,
+                        "AnnualizedVolatility": 0.25,
+                        "NotionalChange": 12.0,
+                    }
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert tmp_path / "risk_rankings.csv" in output_paths
+    assert tmp_path / "risk_top_movers.csv" in output_paths
+    with (tmp_path / "risk_rankings.csv").open("r", encoding="utf-8", newline="") as stream:
+        ranking_rows = list(csv.DictReader(stream))
+    assert {row["proxy_name"] for row in ranking_rows} == {
+        "risk_proxy_notional_annualized_volatility"
+    }
+    assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+
+
+def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "config.yml"
+    for required_file in (
+        "all.xlsx",
+        "ex.xlsx",
+        "trend.xlsx",
+        "hist-all.xlsx",
+        "hist-ex.xlsx",
+        "hist-trend.xlsx",
+        "monthly.pptx",
+    ):
+        (tmp_path / required_file).write_text("fixture", encoding="utf-8")
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {tmp_path / 'all.xlsx'}",
+                f"mosers_ex_trend_xlsx: {tmp_path / 'ex.xlsx'}",
+                f"mosers_trend_xlsx: {tmp_path / 'trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {tmp_path / 'hist-all.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {tmp_path / 'hist-ex.xlsx'}",
+                f"hist_llc_3yr_xlsx: {tmp_path / 'hist-trend.xlsx'}",
+                f"monthly_pptx: {tmp_path / 'monthly.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 100.0,
+                        "AnnualizedVolatility": 0.2,
+                        "NotionalChange": 20.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(
+                records=[
+                    {
+                        "account": "account-a",
+                        "description": "desc",
+                        "class": "class-a",
+                        "fcm": "fcm-a",
+                        "clearing_house": "ch-a",
+                        "notional": 1.0,
+                    }
+                ]
+            ),
+        },
+        "ex_trend": {
+            "totals": _FakeDataFrame(
+                records=[],
+                columns=["counterparty", "Notional", "NotionalChange"],
+            ),
+            "futures": _FakeDataFrame(
+                records=[],
+                columns=["account", "description", "class", "fcm", "clearing_house", "notional"],
+            ),
+        },
+        "trend": {
+            "totals": _FakeDataFrame(
+                records=[],
+                columns=["counterparty", "Notional", "NotionalChange"],
+            ),
+            "futures": _FakeDataFrame(
+                records=[],
+                columns=["account", "description", "class", "fcm", "clearing_house", "notional"],
+            ),
+        },
+    }
+
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed_by_variant)
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._run_reconciliation_checks",
+        lambda *, run_dir, config, parsed_by_variant, warnings: None,
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, as_of_date, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    assert (run_dir / "risk_rankings.csv").exists()
+    assert (run_dir / "risk_top_movers.csv").exists()
 
 
 def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
