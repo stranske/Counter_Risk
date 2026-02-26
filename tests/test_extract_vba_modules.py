@@ -35,3 +35,8 @@ def test_check_mode_flags_outdated_module(tmp_path: Path) -> None:
     rc = extract_vba_modules.main(["--check", "--output-dir", str(output_dir), "Runner.xlsm"])
 
     assert rc == 1
+
+
+def test_check_mode_passes_for_committed_vba_sources() -> None:
+    rc = extract_vba_modules.main(["--check"])
+    assert rc == 0
