@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
+import pytest
+
+import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
-from counter_risk.pipeline import run as run_module
 
 
 def _make_minimal_config(
@@ -46,7 +49,9 @@ class _FakeGenerator:
         return self._generated
 
 
-def test_export_distribution_pdf_returns_generated_path(tmp_path: Path, monkeypatch) -> None:
+def test_export_distribution_pdf_returns_generated_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     source_pptx = tmp_path / "distribution.pptx"
     source_pptx.write_bytes(b"fake-pptx")
     run_dir = tmp_path / "run"
@@ -64,7 +69,7 @@ def test_export_distribution_pdf_returns_generated_path(tmp_path: Path, monkeypa
         source_pptx=source_pptx,
         run_dir=run_dir,
         config=config,
-        as_of_date=config.as_of_date or run_module.date(2026, 2, 26),
+        as_of_date=config.as_of_date or date(2026, 2, 26),
         warnings=[],
     )
 
@@ -72,7 +77,7 @@ def test_export_distribution_pdf_returns_generated_path(tmp_path: Path, monkeypa
 
 
 def test_export_distribution_pdf_returns_none_when_generator_skips(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     source_pptx = tmp_path / "distribution.pptx"
     source_pptx.write_bytes(b"fake-pptx")
@@ -90,7 +95,7 @@ def test_export_distribution_pdf_returns_none_when_generator_skips(
         source_pptx=source_pptx,
         run_dir=run_dir,
         config=config,
-        as_of_date=run_module.date(2026, 2, 26),
+        as_of_date=date(2026, 2, 26),
         warnings=[],
     )
 

@@ -10,8 +10,9 @@ from typing import Any
 
 import pytest
 
+import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
-from counter_risk.pipeline import run as run_module
+from counter_risk.outputs.base import OutputContext
 
 
 class _FakeCell:
@@ -436,7 +437,7 @@ def test_historical_output_generator_builder_preserves_variant_merge_contract(
     )
 
     warnings: list[str] = []
-    parsed_by_variant = {
+    parsed_by_variant: dict[str, dict[str, Any]] = {
         "all_programs": {"totals": [{"counterparty": "A", "Notional": 10.0}, "skip-me"]},
         "ex_trend": {"totals": [{"counterparty": "B", "Notional": 4.0}]},
         "trend": {"totals": [{"counterparty": "C", "Notional": 7.0}]},
@@ -462,7 +463,7 @@ def test_historical_output_generator_builder_preserves_variant_merge_contract(
     )
 
     output_paths = generator.generate(
-        context=run_module.OutputContext(
+        context=OutputContext(
             config=config,
             run_dir=run_dir,
             as_of_date=date(2026, 2, 13),

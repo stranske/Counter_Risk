@@ -19,7 +19,7 @@ _ComAvailabilityChecker = Callable[[], bool]
 _PptxToPdfExporter = Callable[[Path, Path], None]
 
 
-def export_pptx_to_pdf_via_com(*, source_pptx: Path, pdf_path: Path) -> None:
+def export_pptx_to_pdf_via_com(source_pptx: Path, pdf_path: Path) -> None:
     """Export a PowerPoint deck to PDF using PowerPoint COM automation."""
     from counter_risk.integrations.powerpoint_com import initialize_powerpoint_application
 
