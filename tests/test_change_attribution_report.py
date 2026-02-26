@@ -26,6 +26,7 @@ def test_attribute_changes_labels_unmatched_current_rows() -> None:
     assert row["confidence"] == "Low"
     assert row["match_type"] == "unmatched"
     assert row["attribution_reason"] == "new_or_unmatched_current_row"
+    assert row["review_label"] == "UNMATCHED|LOW_CONFIDENCE"
     assert report["summary"]["unmatched_rows"] == 1
 
 
@@ -51,6 +52,7 @@ def test_attribute_changes_assigns_high_confidence_for_exact_match_and_clean_del
     assert row["match_type"] == "exact"
     assert row["confidence"] == "High"
     assert row["is_low_confidence"] is False
+    assert row["review_label"] == "NONE"
 
 
 def test_attribute_changes_assigns_medium_confidence_for_exact_match_with_non_clean_delta() -> None:
@@ -169,5 +171,25 @@ def test_change_attribution_outputs_write_csv_and_markdown(tmp_path: Path) -> No
 
     assert csv_path.exists()
     assert "counterparty,matched_prior_counterparty" in csv_path.read_text(encoding="utf-8")
+    assert "review_label" in csv_path.read_text(encoding="utf-8")
     assert md_path.exists()
     assert "# Change Attribution" in md_path.read_text(encoding="utf-8")
+
+
+def test_change_attribution_outputs_explicitly_label_unmatched_and_low_confidence(
+    tmp_path: Path,
+) -> None:
+    report = attribute_changes(
+        [{"counterparty": "New Desk", "Notional": 50.0}],
+        [{"counterparty": "Legacy Desk", "Notional": 25.0}],
+    )
+    csv_path = tmp_path / "change_attribution.csv"
+    md_path = tmp_path / "change_attribution.md"
+
+    write_change_attribution_csv(report=report, path=csv_path)
+    write_change_attribution_markdown(report=report, path=md_path)
+
+    csv_text = csv_path.read_text(encoding="utf-8")
+    md_text = md_path.read_text(encoding="utf-8")
+    assert "UNMATCHED|LOW_CONFIDENCE" in csv_text
+    assert "UNMATCHED|LOW_CONFIDENCE" in md_text

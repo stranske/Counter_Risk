@@ -180,6 +180,15 @@ def _confidence_for_reason(*, reason: str, has_clean_delta: bool | None = None) 
     return _CONFIDENCE_LOW
 
 
+def _row_review_label(*, is_unmatched: bool, is_low_confidence: bool) -> str:
+    labels: list[str] = []
+    if is_unmatched:
+        labels.append("UNMATCHED")
+    if is_low_confidence:
+        labels.append("LOW_CONFIDENCE")
+    return "|".join(labels) if labels else "NONE"
+
+
 def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
     """Attribute period-over-period notional moves with explicit confidence labels."""
 
@@ -258,6 +267,10 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
                 "attribution_reason": reason,
                 "is_unmatched": prior_match is None,
                 "is_low_confidence": is_low_confidence,
+                "review_label": _row_review_label(
+                    is_unmatched=prior_match is None,
+                    is_low_confidence=is_low_confidence,
+                ),
             }
         )
 
@@ -293,8 +306,8 @@ def render_change_attribution_markdown(report: Mapping[str, Any]) -> str:
         f"- Low-confidence rows: {summary.get('low_confidence_rows', 0)}",
         f"- Unattributed remainder: {summary.get('unattributed_remainder', 0.0):.6f}",
         "",
-        "| Counterparty | Prior Match | Current | Prior | Change | Match | Confidence | Reason |",
-        "| --- | --- | ---: | ---: | ---: | --- | --- | --- |",
+        "| Counterparty | Prior Match | Current | Prior | Change | Match | Confidence | Reason | Label |",
+        "| --- | --- | ---: | ---: | ---: | --- | --- | --- | --- |",
     ]
     for row in rows:
         lines.append(
@@ -306,7 +319,8 @@ def render_change_attribution_markdown(report: Mapping[str, Any]) -> str:
             f"{float(row.get('notional_change', 0.0)):.6f} | "
             f"{row.get('match_type', '')} | "
             f"{row.get('confidence', '')} | "
-            f"{row.get('attribution_reason', '')} |"
+            f"{row.get('attribution_reason', '')} | "
+            f"{row.get('review_label', 'NONE')} |"
         )
     return "\n".join(lines) + "\n"
 
@@ -331,6 +345,7 @@ def write_change_attribution_csv(*, report: Mapping[str, Any], path: Path) -> No
                 "attribution_reason",
                 "is_unmatched",
                 "is_low_confidence",
+                "review_label",
             ),
         )
         writer.writeheader()

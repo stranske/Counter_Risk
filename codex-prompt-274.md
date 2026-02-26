@@ -148,7 +148,19 @@ A coverage task is NOT complete just because you added tests. It is complete ONL
 ---
 ## PR Tasks and Acceptance Criteria
 
-**Progress:** 3/18 tasks complete, 15 remaining
+**Progress:** 18/18 tasks complete, 0 remaining
+
+### ⚠️ IMPORTANT: Task Reconciliation Required
+
+The previous iteration changed **5 file(s)** but did not update task checkboxes.
+
+**Before continuing, you MUST:**
+1. Review the recent commits to understand what was changed
+2. Determine which task checkboxes should be marked complete
+3. Update the PR body to check off completed tasks
+4. Then continue with remaining tasks
+
+_Failure to update checkboxes means progress is not being tracked properly._
 
 ### Scope
 Stakeholders ask “what caused the move?” Even a simple attribution (with honesty about uncertainty) improves trust.
@@ -156,37 +168,37 @@ Stakeholders ask “what caused the move?” Even a simple attribution (with hon
 ### Tasks
 Complete these in order. Mark checkbox done ONLY after implementation is verified:
 
-- [ ] Implement `attribute_changes(current_df, prior_df) -> attribution_report`
-- [ ] Add confidence level logic (High/Medium/Low) to `attribute_changes(...)`
-  - [ ] Define High confidence level criteria for exact match keys with clean deltas (verify: confirm completion in repo)
+- [x] Implement `attribute_changes(current_df, prior_df) -> attribution_report`
+- [x] Add confidence level logic (High/Medium/Low) to `attribute_changes(...)`
+  - [x] Define High confidence level criteria for exact match keys with clean deltas (verify: confirm completion in repo)
   - [x] Define Medium confidence level criteria for normalized matches with minor differences (verify: confirm completion in repo)
   - [x] Define Low confidence level criteria for fuzzy or partial matches (verify: confirm completion in repo) missing prior data (verify: confirm completion in repo)
-  - [ ] Implement confidence level assignment logic in the attribute_changes function (verify: confirm completion in repo)
-- [ ] Create `change_attribution.md`
-- [ ] Create `change_attribution.csv`
-- [ ] Write tests covering synthetic prior/current pairs for `attribute_changes(...)`
-  - [ ] Write test case for new unmatched rows appearing in current data (verify: confirm completion in repo)
-  - [ ] Write test case for matched rows with notional changes between periods (verify: confirm completion in repo)
-  - [ ] Write test case for exact match scenarios with High confidence attribution (verify: confirm completion in repo)
-  - [ ] Write test case for fuzzy match scenarios with Low confidence attribution (verify: confirm completion in repo)
+  - [x] Implement confidence level assignment logic in the attribute_changes function (verify: confirm completion in repo)
+- [x] Create `change_attribution.md`
+- [x] Create `change_attribution.csv`
+- [x] Write tests covering synthetic prior/current pairs for `attribute_changes(...)`
+  - [x] Write test case for new unmatched rows appearing in current data (verify: confirm completion in repo)
+  - [x] Write test case for matched rows with notional changes between periods (verify: confirm completion in repo)
+  - [x] Write test case for exact match scenarios with High confidence attribution (verify: confirm completion in repo)
+  - [x] Write test case for fuzzy match scenarios with Low confidence attribution (verify: confirm completion in repo)
   - [x] Define scope for: Write test case for handling missing prior data gracefully (verify: confirm completion in repo)
-  - [ ] Implement focused slice for: Write test case for handling missing prior data gracefully (verify: confirm completion in repo)
-  - [ ] Validate focused slice for: Write test case for handling missing prior data gracefully (verify: confirm completion in repo)
+  - [x] Implement focused slice for: Write test case for handling missing prior data gracefully (verify: confirm completion in repo)
+  - [x] Validate focused slice for: Write test case for handling missing prior data gracefully (verify: confirm completion in repo)
 
 ### Acceptance Criteria
 The PR is complete when ALL of these are satisfied:
 
-- [ ] When prior month data is available, running the attribution produces both `change_attribution.md` and `change_attribution.csv`
-- [ ] Output explicitly labels unmatched items and low-confidence matches (no silent assumptions)
+- [x] When prior month data is available, running the attribution produces both `change_attribution.md` and `change_attribution.csv`
+- [x] Output explicitly labels unmatched items and low-confidence matches (no silent assumptions)
 
 ### Recently Attempted Tasks
 Avoid repeating these unless a task needs explicit follow-up:
 
-- Add confidence level logic (High/Medium/Low) to `attribute_changes(...)`
-- Define High confidence level criteria for exact match keys with clean deltas (verify: confirm completion in repo)
 - Define Medium confidence level criteria for normalized matches with minor differences (verify: confirm completion in repo)
+- Define Low confidence level criteria for fuzzy or partial matches (verify: confirm completion in repo) missing prior data (verify: confirm completion in repo)
+- Implement confidence level assignment logic in the attribute_changes function (verify: confirm completion in repo)
 
 ### Suggested Next Task
-- Define Low confidence level criteria for fuzzy or partial matches (verify: confirm completion in repo) missing prior data (verify: confirm completion in repo)
+- Create `change_attribution.md`
 
 ---
