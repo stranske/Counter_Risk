@@ -14,6 +14,81 @@ _PPT_OUTPUT_ENTRY_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+_DATA_QUALITY_SEVERITY_SCHEMA: dict[str, Any] = {"type": "string", "enum": ["info", "warn", "fail"]}
+
+_DATA_QUALITY_FINDING_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["category", "severity", "code", "message"],
+    "properties": {
+        "category": {"type": "string", "minLength": 1},
+        "severity": _DATA_QUALITY_SEVERITY_SCHEMA,
+        "code": {"type": "string", "minLength": 1},
+        "message": {"type": "string"},
+    },
+    "additionalProperties": False,
+}
+
+_DATA_QUALITY_ACTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["category", "severity", "action"],
+    "properties": {
+        "category": {"type": "string", "minLength": 1},
+        "severity": _DATA_QUALITY_SEVERITY_SCHEMA,
+        "action": {"type": "string", "minLength": 1},
+    },
+    "additionalProperties": False,
+}
+
+_DATA_QUALITY_COUNTS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["total_findings", "by_severity", "by_category"],
+    "properties": {
+        "total_findings": {"type": "integer", "minimum": 0},
+        "by_severity": {
+            "type": "object",
+            "required": ["info", "warn", "fail"],
+            "properties": {
+                "info": {"type": "integer", "minimum": 0},
+                "warn": {"type": "integer", "minimum": 0},
+                "fail": {"type": "integer", "minimum": 0},
+            },
+            "additionalProperties": False,
+        },
+        "by_category": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "required": ["info", "warn", "fail", "total"],
+                "properties": {
+                    "info": {"type": "integer", "minimum": 0},
+                    "warn": {"type": "integer", "minimum": 0},
+                    "fail": {"type": "integer", "minimum": 0},
+                    "total": {"type": "integer", "minimum": 0},
+                },
+                "additionalProperties": False,
+            },
+        },
+    },
+    "additionalProperties": False,
+}
+
+_DATA_QUALITY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["overall_status", "severity_levels", "findings", "counts", "recommended_actions"],
+    "properties": {
+        "overall_status": _DATA_QUALITY_SEVERITY_SCHEMA,
+        "severity_levels": {
+            "type": "array",
+            "items": _DATA_QUALITY_SEVERITY_SCHEMA,
+            "minItems": 3,
+        },
+        "findings": {"type": "array", "items": _DATA_QUALITY_FINDING_SCHEMA},
+        "counts": _DATA_QUALITY_COUNTS_SCHEMA,
+        "recommended_actions": {"type": "array", "items": _DATA_QUALITY_ACTION_SCHEMA},
+    },
+    "additionalProperties": False,
+}
+
 
 def manifest_schema() -> dict[str, Any]:
     """Return the run manifest schema used by pipeline validation."""
@@ -31,6 +106,7 @@ def manifest_schema() -> dict[str, Any]:
             "top_exposures",
             "top_changes_per_variant",
             "warnings",
+            "data_quality",
         ],
         "properties": {
             "as_of_date": {"type": "string"},
@@ -43,6 +119,7 @@ def manifest_schema() -> dict[str, Any]:
             "top_exposures": {"type": "object"},
             "top_changes_per_variant": {"type": "object"},
             "warnings": {"type": "array", "items": {"type": "string"}},
+            "data_quality": _DATA_QUALITY_SCHEMA,
             "ppt_outputs": {
                 "type": "object",
                 "required": ["master", "distribution"],

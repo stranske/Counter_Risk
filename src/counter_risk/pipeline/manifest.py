@@ -10,6 +10,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from counter_risk.config import WorkflowConfig
+from counter_risk.pipeline.data_quality import build_data_quality
 from counter_risk.pipeline.warnings import WarningsCollector
 
 __all__ = ["ManifestBuilder", "WarningsCollector"]
@@ -60,6 +61,7 @@ class ManifestBuilder:
             "top_exposures": top_exposures,
             "top_changes_per_variant": top_changes_per_variant,
             "warnings": warnings,
+            "data_quality": build_data_quality(warnings),
         }
         if concentration_metrics is not None:
             manifest["concentration_metrics"] = concentration_metrics
