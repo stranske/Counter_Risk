@@ -49,11 +49,16 @@ _CONCENTRATION_METRIC_COLUMNS = ("top5_share", "top10_share", "hhi")
 
 _REPO_CASH_OUTPUT_COLUMNS = (
     "counterparty",
+    "group_type",
+    "group_name",
     "TIPS",
     "Treasury",
     "Equity",
     "Commodity",
     "Currency",
+    "notional",
+    "prior_notional",
+    "notional_change",
     "Cash",
     "Notional",
     "NotionalChange",
@@ -242,8 +247,8 @@ def apply_repo_cash_to_totals(
 
     normalized_index: dict[str, int] = {}
     for index, row in enumerate(records):
-        counterparty_raw = row.get("counterparty")
-        if not isinstance(counterparty_raw, str) or not counterparty_raw.strip():
+        counterparty_raw = _counterparty_label_from_totals_row(row)
+        if counterparty_raw is None:
             continue
         normalized_index[normalize_counterparty(counterparty_raw)] = index
 
@@ -267,12 +272,17 @@ def apply_repo_cash_to_totals(
             records.append(
                 {
                     "counterparty": counterparty,
+                    "group_type": "counterparty",
+                    "group_name": counterparty,
                     "TIPS": 0.0,
                     "Treasury": 0.0,
                     "Equity": 0.0,
                     "Commodity": 0.0,
                     "Currency": 0.0,
                     "Cash": amount,
+                    "notional": amount,
+                    "prior_notional": 0.0,
+                    "notional_change": amount,
                     "Notional": amount,
                     "NotionalChange": 0.0,
                 }
@@ -281,10 +291,43 @@ def apply_repo_cash_to_totals(
             continue
 
         row = records[matched_index]
-        row["Cash"] = float(row.get("Cash", 0.0) or 0.0) + amount
-        row["Notional"] = float(row.get("Notional", 0.0) or 0.0) + amount
+        _add_amount_to_aliases(row=row, aliases=("cash", "Cash"), amount=amount)
+        _add_amount_to_aliases(row=row, aliases=("notional", "Notional"), amount=amount)
+        if row.get("group_type") == "counterparty":
+            row["group_name"] = _counterparty_label_from_totals_row(row) or counterparty
+            row["notional_change"] = float(row.get("notional_change", 0.0) or 0.0) + amount
 
     return _to_dataframe_or_records(records=records, columns=tuple(output_columns))
+
+
+def _counterparty_label_from_totals_row(row: Mapping[str, Any]) -> str | None:
+    counterparty_raw = row.get("counterparty")
+    if isinstance(counterparty_raw, str) and counterparty_raw.strip():
+        return counterparty_raw.strip()
+
+    group_type = str(row.get("group_type", "")).strip().casefold()
+    if group_type != "counterparty":
+        return None
+
+    group_name = row.get("group_name")
+    if isinstance(group_name, str) and group_name.strip():
+        return group_name.strip()
+
+    return None
+
+
+def _add_amount_to_aliases(*, row: dict[str, Any], aliases: tuple[str, ...], amount: float) -> None:
+    current = 0.0
+    for alias in aliases:
+        raw = row.get(alias)
+        if raw is None or (isinstance(raw, str) and not raw.strip()):
+            continue
+        current = float(raw)
+        break
+
+    updated = current + amount
+    for alias in aliases:
+        row[alias] = updated
 
 
 def compute_notional_breakdown(exposures_df: Any) -> dict[str, float]:
