@@ -16,12 +16,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 from zipfile import BadZipFile
 
+from counter_risk.compute import compute_risk_proxies
 from counter_risk.compute.rollups import (
     compute_concentration_metrics,
     write_concentration_metrics_csv,
 )
 from counter_risk.config import WorkflowConfig, load_config
-from counter_risk.compute import compute_risk_proxies
 from counter_risk.dates import derive_as_of_date, derive_run_date
 from counter_risk.normalize import (
     canonicalize_name,
