@@ -140,6 +140,29 @@ def test_resolve_clearing_house_unknown_name_uses_identity_with_fallback_source(
     assert resolution.source == "fallback"
 
 
+def test_resolve_clearing_house_handles_missing_registry_without_raising(
+    tmp_path: Path,
+) -> None:
+    missing_path = tmp_path / "nonexistent_registry.yml"
+
+    resolution = resolve_clearing_house("ICE Clear US", registry_path=missing_path)
+
+    assert resolution.canonical_name == "ICE"
+    assert resolution.source == "fallback"
+
+
+def test_resolve_clearing_house_handles_empty_registry_without_raising(
+    tmp_path: Path,
+) -> None:
+    empty_path = tmp_path / "empty_registry.yml"
+    empty_path.write_text("", encoding="utf-8")
+
+    resolution = resolve_clearing_house("ICE Clear US", registry_path=empty_path)
+
+    assert resolution.canonical_name == "ICE"
+    assert resolution.source == "fallback"
+
+
 def test_normalize_counterparty_with_source_exposes_source_attribute(tmp_path: Path) -> None:
     registry_path = tmp_path / "name_registry.yml"
     registry_path.write_text(
@@ -203,14 +226,14 @@ def test_reconciliation_sources_differ_between_before_and_after_registry(
         monkeypatch.chdir(run_dir)
 
         captured_sources: list[str] = []
-        original = getattr(pipeline_run, "resolve_counterparty")
+        original = pipeline_run.normalize_counterparty_with_source
 
-        def _capture_source(raw_name: str) -> Any:
-            resolution = original(raw_name)
+        def _capture_source(raw_name: str, **kwargs):
+            resolution = original(raw_name, **kwargs)
             captured_sources.append(resolution.source)
             return resolution
 
-        monkeypatch.setattr(pipeline_run, "resolve_counterparty", _capture_source)
+        monkeypatch.setattr(pipeline_run, "normalize_counterparty_with_source", _capture_source)
         reconcile_series_coverage(
             parsed_data_by_sheet={
                 "Total": {
