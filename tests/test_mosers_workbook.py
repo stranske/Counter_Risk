@@ -8,13 +8,13 @@ from typing import Any
 
 import pytest
 
+from counter_risk.mosers import workbook_generation as workbook_generation_module
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook,
     generate_mosers_workbook_ex_trend,
     generate_mosers_workbook_trend,
     get_mosers_plug_values_mapping_requirements,
 )
-from counter_risk.mosers import workbook_generation as workbook_generation_module
 from counter_risk.parsers.nisa import (
     NisaAllProgramsData,
     NisaChRow,

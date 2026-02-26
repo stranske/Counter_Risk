@@ -27,8 +27,11 @@ def compare_workbook_ranges(
     """Return range-level differences between reference and generated workbooks."""
 
     try:
-        from openpyxl import load_workbook
-        from openpyxl.utils.cell import get_column_letter, range_boundaries
+        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl.utils.cell import (  # type: ignore[import-untyped]
+            get_column_letter,
+            range_boundaries,
+        )
     except Exception as exc:  # pragma: no cover - import guard
         raise RuntimeError("openpyxl is required for range-level workbook comparison") from exc
 
@@ -100,4 +103,4 @@ def assert_workbook_ranges_equal(
 def _values_equal(reference_value: Any, generated_value: Any, *, numeric_tolerance: float) -> bool:
     if isinstance(reference_value, Real) and isinstance(generated_value, Real):
         return abs(float(reference_value) - float(generated_value)) <= numeric_tolerance
-    return reference_value == generated_value
+    return bool(reference_value == generated_value)
