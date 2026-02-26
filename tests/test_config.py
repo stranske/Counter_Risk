@@ -205,6 +205,76 @@ def test_workflow_config_defaults_screenshot_replacement_fields() -> None:
     assert config.reconciliation.fail_policy == "warn"
     assert config.reconciliation.expected_segments_by_variant == {}
     assert config.ppt_output_enabled is True
+    assert [entry.name for entry in config.output_generators] == [
+        "historical_workbook",
+        "ppt_screenshot",
+        "ppt_link_refresh",
+        "pdf_export",
+    ]
+
+
+def test_load_config_accepts_output_generator_registration(tmp_path: Path) -> None:
+    config_path = tmp_path / "output_generators.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                "mosers_all_programs_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
+                "mosers_ex_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+                "mosers_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+                "hist_all_programs_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+                "hist_ex_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+                "hist_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+                "monthly_pptx: docs/Ratings Instructiosns/Monthly Counterparty Exposure Report.pptx",
+                "output_root: runs/test",
+                "output_generators:",
+                "  - name: ppt_screenshot",
+                "    registration: builtin:ppt_screenshot",
+                "    stage: ppt_master",
+                "    enabled: true",
+                "  - name: custom_manifest_stub",
+                "    registration: tests.test_pipeline_run_outputs:_ConfigRegisteredOutputGenerator",
+                "    stage: ppt_post_distribution",
+                "    enabled: false",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+    assert len(config.output_generators) == 2
+    assert config.output_generators[1].registration.endswith(":_ConfigRegisteredOutputGenerator")
+
+
+def test_load_config_rejects_duplicate_output_generator_names(tmp_path: Path) -> None:
+    config_path = tmp_path / "duplicate_output_generators.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                "mosers_all_programs_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
+                "mosers_ex_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+                "mosers_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+                "hist_all_programs_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+                "hist_ex_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+                "hist_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+                "monthly_pptx: docs/Ratings Instructiosns/Monthly Counterparty Exposure Report.pptx",
+                "output_generators:",
+                "  - name: ppt_screenshot",
+                "    registration: builtin:ppt_screenshot",
+                "    stage: ppt_master",
+                "  - name: PPT_SCREENSHOT",
+                "    registration: builtin:ppt_screenshot",
+                "    stage: ppt_master",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="duplicate name"):
+        load_config(config_path)
 
 
 def test_workflow_config_ppt_output_enabled_reflects_flag() -> None:

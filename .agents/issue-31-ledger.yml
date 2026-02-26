@@ -1,0 +1,523 @@
+version: 1
+issue: 31
+base: main
+branch: codex/issue-31
+tasks:
+  - id: task-01
+    title: Create `src/counter_risk/outputs/base.py` defining an `OutputGenerator`
+      interface for output plugins.
+    status: done
+    started_at: '2026-02-25T23:05:22Z'
+    finished_at: '2026-02-25T23:05:35Z'
+    commit: ddb4281d14cbddad5333686624dd9db7adcb299f
+    notes: []
+  - id: task-02
+    title: Update the historical workbook updater to implement `OutputGenerator`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-03
+    title: 'Create a new class that wraps the historical workbook updater logic (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-04
+    title: 'implements the OutputGenerator interface (verify: confirm completion in
+      repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-05
+    title: 'Define scope for: Refactor the existing historical workbook update code
+      to use the new OutputGenerator-based class (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-06
+    title: 'Implement focused slice for: Refactor the existing historical workbook
+      update code to use the new OutputGenerator-based class (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-07
+    title: 'Validate focused slice for: Refactor the existing historical workbook
+      update code to use the new OutputGenerator-based class (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-08
+    title: 'Define scope for: Add unit tests to verify the historical workbook OutputGenerator
+      produces the same output as before'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-09
+    title: 'Implement focused slice for: Add unit tests to verify the historical workbook
+      OutputGenerator produces the same output as before'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-10
+    title: 'Validate focused slice for: Add unit tests to verify the historical workbook
+      OutputGenerator produces the same output as before'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-11
+    title: 'Define scope for: Update any calling code to use the new OutputGenerator
+      interface for the historical workbook (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-12
+    title: 'Implement focused slice for: Update any calling code to use the new OutputGenerator
+      interface for the historical workbook (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-13
+    title: 'Validate focused slice for: Update any calling code to use the new OutputGenerator
+      interface for the historical workbook (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-14
+    title: Update the PPT screenshot updater to implement `OutputGenerator`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-15
+    title: 'Create a new class that wraps the PPT screenshot updater logic (verify:
+      confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-16
+    title: 'Define scope for: Refactor the existing PPT screenshot update code to
+      use the new OutputGenerator-based class (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-17
+    title: 'Implement focused slice for: Refactor the existing PPT screenshot update
+      code to use the new OutputGenerator-based class (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-18
+    title: 'Validate focused slice for: Refactor the existing PPT screenshot update
+      code to use the new OutputGenerator-based class (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-19
+    title: 'Define scope for: Add unit tests to verify the PPT screenshot OutputGenerator
+      produces the same output as before'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-20
+    title: 'Implement focused slice for: Add unit tests to verify the PPT screenshot
+      OutputGenerator produces the same output as before'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-21
+    title: 'Validate focused slice for: Add unit tests to verify the PPT screenshot
+      OutputGenerator produces the same output as before'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-22
+    title: 'Define scope for: Update any calling code to use the new OutputGenerator
+      interface for the PPT screenshot updater (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-23
+    title: 'Implement focused slice for: Update any calling code to use the new OutputGenerator
+      interface for the PPT screenshot updater (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-24
+    title: 'Validate focused slice for: Update any calling code to use the new OutputGenerator
+      interface for the PPT screenshot updater (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-25
+    title: Update the PPT link refresher to implement `OutputGenerator`.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-26
+    title: 'Create a new class that wraps the PPT link refresher logic (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-27
+    title: 'Define scope for: Refactor the existing PPT link refresh code to use the
+      new OutputGenerator-based class (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-28
+    title: 'Implement focused slice for: Refactor the existing PPT link refresh code
+      to use the new OutputGenerator-based class (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-29
+    title: 'Validate focused slice for: Refactor the existing PPT link refresh code
+      to use the new OutputGenerator-based class (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-30
+    title: 'Define scope for: Add unit tests to verify the PPT link refresher OutputGenerator
+      produces the same output as before'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-31
+    title: 'Implement focused slice for: Add unit tests to verify the PPT link refresher
+      OutputGenerator produces the same output as before'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-32
+    title: 'Validate focused slice for: Add unit tests to verify the PPT link refresher
+      OutputGenerator produces the same output as before'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-33
+    title: 'Define scope for: Update any calling code to use the new OutputGenerator
+      interface for the PPT link refresher (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-34
+    title: 'Implement focused slice for: Update any calling code to use the new OutputGenerator
+      interface for the PPT link refresher (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-35
+    title: 'Validate focused slice for: Update any calling code to use the new OutputGenerator
+      interface for the PPT link refresher (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-36
+    title: Add a PDF export generator that uses PowerPoint export via COM if available;
+      otherwise skips with a warning.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-37
+    title: 'Create a PDFExportGenerator class that implements the OutputGenerator
+      interface with method stubs (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-38
+    title: 'Define scope for: Implement COM availability detection logic to check
+      if PowerPoint COM interface is accessible (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-39
+    title: 'Implement focused slice for: Implement COM availability detection logic
+      to check if PowerPoint COM interface is accessible (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-40
+    title: 'Validate focused slice for: Implement COM availability detection logic
+      to check if PowerPoint COM interface is accessible (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-41
+    title: 'Add PowerPoint to PDF export functionality using COM automation when available
+      (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-42
+    title: 'Implement graceful fallback behavior that logs a warning (verify: confirm
+      completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-43
+    title: 'skips PDF generation when COM is unavailable (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-44
+    title: 'Add unit tests for the PDF export generator covering both COM available
+      (verify: tests pass)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-45
+    title: 'unavailable scenarios (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-46
+    title: Add configuration to enable/disable specific outputs per run and register
+      output generators via config.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-47
+    title: 'Define configuration schema for output generators including enable/disable
+      flags (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-48
+    title: 'Define configuration schema for output generators including registration
+      details (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-49
+    title: 'Implement a registry mechanism that loads (verify: confirm completion
+      in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-50
+    title: 'stores OutputGenerator instances from configuration (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-51
+    title: 'Add runtime logic to filter enabled output generators based on configuration
+      settings (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-52
+    title: 'Update configuration documentation to explain how to register (verify:
+      docs updated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-53
+    title: 'enable/disable output generators (verify: confirm completion in repo)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-54
+    title: Add integration tests that verify outputs can be selectively enabled
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-55
+    title: 'disabled via configuration (verify: config validated)'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-56
+    title: Implementing a single `OutputGenerator` class and registering it in config
+      adds a new output without requiring changes to other outputs.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-57
+    title: Disabling an output via config does not break the pipeline run.
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-58
+    title: Add `src/counter_risk/outputs/base.py` with an `OutputGenerator` interface
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-59
+    title: 'Implement existing outputs as generators:'
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-60
+    title: Historical workbook updater
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-61
+    title: PPT screenshot updater
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-62
+    title: PPT link refresher
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-63
+    title: Add a PDF export generator (PowerPoint export via COM if available; otherwise
+      skip with warning)
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-64
+    title: Add config to enable/disable outputs per run
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-65
+    title: New outputs can be added by implementing one class and registering it in
+      config
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []
+  - id: task-66
+    title: Disabling an output does not break the pipeline
+    status: todo
+    started_at: null
+    finished_at: null
+    commit: ''
+    notes: []

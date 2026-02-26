@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 import shutil
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-import counter_risk.pipeline.run as pipeline_run
 from counter_risk.normalize import (
     normalize_counterparty_with_source,
     resolve_clearing_house,
@@ -225,14 +225,17 @@ def test_reconciliation_sources_differ_between_before_and_after_registry(
         monkeypatch.chdir(run_dir)
 
         captured_sources: list[str] = []
-        original = pipeline_run.normalize_counterparty_with_source
+        original = normalize_counterparty_with_source
 
-        def _capture_source(raw_name: str, **kwargs):
+        def _capture_source(raw_name: str, **kwargs: Any) -> Any:
             resolution = original(raw_name, **kwargs)
             captured_sources.append(resolution.source)
             return resolution
 
-        monkeypatch.setattr(pipeline_run, "normalize_counterparty_with_source", _capture_source)
+        monkeypatch.setattr(
+            "counter_risk.pipeline.run.normalize_counterparty_with_source",
+            _capture_source,
+        )
         reconcile_series_coverage(
             parsed_data_by_sheet={
                 "Total": {
