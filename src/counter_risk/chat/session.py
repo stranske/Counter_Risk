@@ -30,6 +30,14 @@ _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
     re.compile(r"role\s*:\s*(system|developer)", re.IGNORECASE),
     re.compile(r"<\s*system\s*>", re.IGNORECASE),
 )
+_BOUNDARY_TOKENS: Final[tuple[str, ...]] = (
+    "SYSTEM_INSTRUCTIONS_START",
+    "SYSTEM_INSTRUCTIONS_END",
+    "UNTRUSTED_RUN_DATA_START",
+    "UNTRUSTED_RUN_DATA_END",
+    "USER_QUESTION_START",
+    "USER_QUESTION_END",
+)
 
 _HTML_ENTITY_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"&(?:#\d+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]{1,31});"
@@ -208,7 +216,7 @@ def build_guarded_prompt(context: RunContext, question: str) -> str:
     warnings = sanitize_untrusted_text("\n".join(context.warnings) or "none")
     top_exposures = sanitize_untrusted_text(_format_top_exposures(context.manifest))
 
-    return "\n".join(
+    prompt = "\n".join(
         [
             "SYSTEM_INSTRUCTIONS_START",
             "You are Counter Risk run QA assistant.",
@@ -225,6 +233,8 @@ def build_guarded_prompt(context: RunContext, question: str) -> str:
             "USER_QUESTION_END",
         ]
     )
+    validate_prompt_boundaries(prompt)
+    return prompt
 
 
 def validate_user_query(question: str) -> str:
@@ -244,7 +254,35 @@ def validate_user_query(question: str) -> str:
                 "Question rejected due to suspected prompt-injection content"
             )
 
+    for token in _BOUNDARY_TOKENS:
+        if token in normalized:
+            raise PromptInjectionError("Question rejected due to reserved prompt boundary token")
+
     return normalized
+
+
+def validate_prompt_boundaries(prompt: str) -> None:
+    """Ensure guarded prompt contains exactly one well-ordered boundary block."""
+
+    marker_positions = {
+        token: prompt.find(token)
+        for token in (
+            "SYSTEM_INSTRUCTIONS_START",
+            "SYSTEM_INSTRUCTIONS_END",
+            "UNTRUSTED_RUN_DATA_START",
+            "UNTRUSTED_RUN_DATA_END",
+            "USER_QUESTION_START",
+            "USER_QUESTION_END",
+        )
+    }
+    if any(position < 0 for position in marker_positions.values()):
+        raise PromptInjectionError("Guarded prompt missing required boundary marker")
+    if any(prompt.count(token) != 1 for token in marker_positions):
+        raise PromptInjectionError("Guarded prompt contains duplicate boundary markers")
+
+    ordered_positions = [marker_positions[token] for token in marker_positions]
+    if ordered_positions != sorted(ordered_positions):
+        raise PromptInjectionError("Guarded prompt boundary markers are out of order")
 
 
 def sanitize_untrusted_text(raw_text: str) -> str:
@@ -259,6 +297,8 @@ def sanitize_untrusted_text(raw_text: str) -> str:
     sanitized = sanitized.replace("SYSTEM_INSTRUCTIONS_END", "SYSTEM_INSTRUCTIONS_END_REDACTED")
     sanitized = sanitized.replace("UNTRUSTED_RUN_DATA_START", "UNTRUSTED_RUN_DATA_START_REDACTED")
     sanitized = sanitized.replace("UNTRUSTED_RUN_DATA_END", "UNTRUSTED_RUN_DATA_END_REDACTED")
+    sanitized = sanitized.replace("USER_QUESTION_START", "USER_QUESTION_START_REDACTED")
+    sanitized = sanitized.replace("USER_QUESTION_END", "USER_QUESTION_END_REDACTED")
 
     redacted = sanitized
     for pattern in _INJECTION_PATTERNS:
