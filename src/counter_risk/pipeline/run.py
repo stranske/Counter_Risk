@@ -918,29 +918,27 @@ def _write_outputs(
         LOGGER.info("write_outputs_skip_ppt run_dir=%s", run_dir)
         return output_paths, PptProcessingResult(status=PptProcessingStatus.SKIPPED)
 
-    source_ppt = config.monthly_pptx
     output_names = resolve_ppt_output_names(as_of_date)
-    target_master_ppt = run_dir / output_names.master_filename
     target_distribution_ppt = run_dir / output_names.distribution_filename
+    output_context = OutputContext(
+        config=config,
+        run_dir=run_dir,
+        as_of_date=as_of_date,
+        run_date=config.run_date or as_of_date,
+        warnings=tuple(warnings),
+    )
+    screenshot_generator = _build_ppt_screenshot_output_generator(warnings=warnings)
+    master_output_paths = list(screenshot_generator.generate(context=output_context))
+    if len(master_output_paths) != 1:
+        raise RuntimeError(
+            "PPT screenshot output generator must produce exactly one Master PPT output"
+        )
+    target_master_ppt = master_output_paths[0]
+    output_paths.extend(master_output_paths)
     readme_ppt_outputs = RunFolderReadmePptOutputs(
         master=target_master_ppt.relative_to(run_dir),
         distribution=target_distribution_ppt.relative_to(run_dir),
     )
-    screenshot_inputs = _resolve_screenshot_input_mapping(config)
-    if config.enable_screenshot_replacement:
-        replacer = _get_screenshot_replacer(config.screenshot_replacement_implementation)
-        replacer(source_ppt, target_master_ppt, screenshot_inputs)
-    else:
-        shutil.copy2(source_ppt, target_master_ppt)
-        if screenshot_inputs:
-            warnings.append(
-                "PPT screenshots replacement disabled; copied source deck to Master unchanged"
-            )
-    _assert_master_preserves_external_link_targets(
-        source_pptx_path=source_ppt,
-        master_pptx_path=target_master_ppt,
-    )
-    output_paths.append(target_master_ppt)
 
     try:
         refresh_result = _refresh_ppt_links(target_master_ppt)
@@ -1684,6 +1682,17 @@ def _build_historical_workbook_output_generator(
         warnings=warnings,
         workbook_merger=_merge_historical_workbook,
         records_extractor=_records,
+    )
+
+
+def _build_ppt_screenshot_output_generator(*, warnings: list[str]) -> OutputGenerator:
+    from counter_risk.outputs.ppt_screenshot import PptScreenshotOutputGenerator
+
+    return PptScreenshotOutputGenerator(
+        warnings=warnings,
+        screenshot_input_mapping_resolver=_resolve_screenshot_input_mapping,
+        screenshot_replacer_resolver=_get_screenshot_replacer,
+        master_link_target_validator=_assert_master_preserves_external_link_targets,
     )
 
 

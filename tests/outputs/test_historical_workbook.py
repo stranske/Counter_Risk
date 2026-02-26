@@ -157,9 +157,7 @@ def test_historical_workbook_generator_wraps_pipeline_historical_update_flow(
     ) -> None:
         del warnings
         notional = cast(float, totals_records[0]["Notional"])
-        merged.append(
-            (workbook_path, variant, float(notional), as_of_date.month)
-        )
+        merged.append((workbook_path, variant, float(notional), as_of_date.month))
 
     generator = HistoricalWorkbookOutputGenerator(
         parsed_by_variant=parsed_by_variant,
