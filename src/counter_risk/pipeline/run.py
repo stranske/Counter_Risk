@@ -23,6 +23,7 @@ from counter_risk.normalize import (
     normalize_counterparty_with_source,
 )
 from counter_risk.outputs.base import OutputContext, OutputGenerator
+from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
@@ -930,25 +931,48 @@ def _write_outputs(
         run_date=config.run_date or as_of_date,
         warnings=tuple(warnings),
     )
-    screenshot_generator = _build_ppt_screenshot_output_generator(
-        warnings=warnings,
-        ppt_output_names_resolver=resolve_ppt_output_names,
+    registry = _build_output_generator_registry(warnings=warnings)
+    master_generators = registry.load(
+        output_generators=config.output_generators,
+        stage="ppt_master",
+        context=OutputGeneratorRegistryContext(
+            parsed_by_variant=None,
+            warnings=warnings,
+        ),
     )
-    master_output_paths = list(screenshot_generator.generate(context=output_context))
-    if len(master_output_paths) != 1:
-        raise RuntimeError(
-            "PPT screenshot output generator must produce exactly one Master PPT output"
-        )
-    target_master_ppt = master_output_paths[0]
-    output_paths.extend(master_output_paths)
+    target_master_ppt: Path | None = None
+    for generator in master_generators:
+        generated_paths = tuple(generator.generate(context=output_context))
+        output_paths.extend(generated_paths)
+        if generator.name == "ppt_screenshot":
+            if len(generated_paths) != 1:
+                raise RuntimeError(
+                    "PPT screenshot output generator must produce exactly one Master PPT output"
+                )
+            target_master_ppt = generated_paths[0]
+
+    if target_master_ppt is None:
+        LOGGER.info("write_outputs_skip_ppt_no_master_generator run_dir=%s", run_dir)
+        return output_paths, PptProcessingResult(status=PptProcessingStatus.SKIPPED)
+
     readme_ppt_outputs = RunFolderReadmePptOutputs(
         master=target_master_ppt.relative_to(run_dir),
         distribution=target_distribution_ppt.relative_to(run_dir),
     )
 
-    link_refresh_generator = _build_ppt_link_refresh_output_generator(warnings=warnings)
-    link_refresh_generator.generate(context=output_context)
-    refresh_result = _to_ppt_processing_result(link_refresh_generator.last_result)
+    refresh_generators = registry.load(
+        output_generators=config.output_generators,
+        stage="ppt_refresh",
+        context=OutputGeneratorRegistryContext(
+            parsed_by_variant=None,
+            warnings=warnings,
+        ),
+    )
+    refresh_result = PptProcessingResult(status=PptProcessingStatus.SKIPPED)
+    for generator in refresh_generators:
+        generator.generate(context=output_context)
+        if generator.name == "ppt_link_refresh":
+            refresh_result = _to_ppt_processing_result(getattr(generator, "last_result", None))
 
     if refresh_result.status == PptProcessingStatus.FAILED:
         LOGGER.warning(
@@ -989,15 +1013,17 @@ def _write_outputs(
                     f"external relationships in: {rel_parts}"
                 )
         output_paths.append(target_distribution_ppt)
-        distribution_pdf_path = _export_distribution_pdf(
-            source_pptx=target_distribution_ppt,
-            run_dir=run_dir,
-            config=config,
-            as_of_date=as_of_date,
-            warnings=warnings,
+        post_distribution_generators = registry.load(
+            output_generators=config.output_generators,
+            stage="ppt_post_distribution",
+            context=OutputGeneratorRegistryContext(
+                parsed_by_variant=None,
+                source_pptx=target_distribution_ppt,
+                warnings=warnings,
+            ),
         )
-        if distribution_pdf_path is not None:
-            output_paths.append(distribution_pdf_path)
+        for generator in post_distribution_generators:
+            output_paths.extend(generator.generate(context=output_context))
     static_output_paths = _create_static_distribution(
         source_pptx=target_master_ppt,
         run_dir=run_dir,
@@ -1628,9 +1654,14 @@ def _update_historical_outputs(
     warnings: list[str],
 ) -> list[Path]:
     LOGGER.info("historical_update_start run_dir=%s as_of_date=%s", run_dir, as_of_date.isoformat())
-    output_generator = _build_historical_workbook_output_generator(
-        parsed_by_variant=parsed_by_variant,
-        warnings=warnings,
+    registry = _build_output_generator_registry(warnings=warnings)
+    output_generators = registry.load(
+        output_generators=config.output_generators,
+        stage="historical",
+        context=OutputGeneratorRegistryContext(
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        ),
     )
     output_context = OutputContext(
         config=config,
@@ -1639,10 +1670,51 @@ def _update_historical_outputs(
         run_date=config.run_date or as_of_date,
         warnings=tuple(warnings),
     )
-    output_paths = list(output_generator.generate(context=output_context))
+    output_paths: list[Path] = []
+    for output_generator in output_generators:
+        output_paths.extend(output_generator.generate(context=output_context))
 
     LOGGER.info("historical_update_complete workbook_count=%s", len(output_paths))
     return output_paths
+
+
+def _build_output_generator_registry(
+    *,
+    warnings: list[str],
+) -> OutputGeneratorRegistry:
+    return OutputGeneratorRegistry(
+        builtin_factories={
+            "historical_workbook": lambda registry_context: _build_historical_workbook_output_generator(
+                parsed_by_variant=_require_parsed_by_variant(registry_context.parsed_by_variant),
+                warnings=registry_context.warnings,
+            ),
+            "ppt_screenshot": lambda registry_context: _build_ppt_screenshot_output_generator(
+                warnings=registry_context.warnings,
+                ppt_output_names_resolver=resolve_ppt_output_names,
+            ),
+            "ppt_link_refresh": lambda registry_context: _build_ppt_link_refresh_output_generator(
+                warnings=registry_context.warnings
+            ),
+            "pdf_export": lambda registry_context: _build_pdf_export_output_generator(
+                source_pptx=_require_source_pptx(registry_context.source_pptx),
+                warnings=registry_context.warnings,
+            ),
+        }
+    )
+
+
+def _require_parsed_by_variant(
+    parsed_by_variant: Mapping[str, Mapping[str, Any]] | None,
+) -> Mapping[str, Mapping[str, Any]]:
+    if parsed_by_variant is None:
+        raise ValueError("parsed_by_variant is required for historical output generation")
+    return parsed_by_variant
+
+
+def _require_source_pptx(source_pptx: Path | None) -> Path:
+    if source_pptx is None:
+        raise ValueError("source_pptx is required for PDF export output generation")
+    return source_pptx
 
 
 def _build_historical_workbook_output_generator(

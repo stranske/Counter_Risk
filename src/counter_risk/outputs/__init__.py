@@ -12,12 +12,15 @@ from .ppt_link_refresh import (
     PptLinkRefreshStatus,
 )
 from .ppt_screenshot import PptScreenshotOutputGenerator
+from .registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
 
 __all__ = [
     "HistoricalWalWorkbookOutputGenerator",
     "HistoricalWorkbookOutputGenerator",
     "OutputContext",
     "OutputGenerator",
+    "OutputGeneratorRegistry",
+    "OutputGeneratorRegistryContext",
     "PDFExportGenerator",
     "PptLinkRefreshOutputGenerator",
     "PptLinkRefreshResult",
