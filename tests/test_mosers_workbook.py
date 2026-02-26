@@ -12,6 +12,7 @@ from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook,
     generate_mosers_workbook_ex_trend,
     generate_mosers_workbook_trend,
+    get_mosers_plug_values_mapping_requirements,
 )
 from counter_risk.parsers.nisa import (
     NisaAllProgramsData,
@@ -21,6 +22,31 @@ from counter_risk.parsers.nisa import (
 )
 from counter_risk.parsers.nisa_ex_trend import parse_nisa_ex_trend
 from counter_risk.parsers.nisa_trend import parse_nisa_trend
+
+
+def test_plug_values_mapping_requirements_define_supported_mosers_structures() -> None:
+    requirements = get_mosers_plug_values_mapping_requirements()
+
+    assert tuple(
+        (mapping.structure_name, mapping.target_sheet, mapping.section_marker)
+        for mapping in requirements.structure_mappings
+    ) == (
+        ("cprs_ch_totals", "CPRS - CH", "Total by Counterparty/Clearing House"),
+        ("cprs_fcm_totals", "CPRS - FCM", "Total by Counterparty/ FCM"),
+    )
+    assert tuple(
+        (field.source_field, field.target_column)
+        for field in requirements.structure_mappings[0].field_mappings
+    ) == (
+        ("counterparty", "C"),
+        ("tips", "E"),
+        ("treasury", "F"),
+        ("equity", "G"),
+        ("commodity", "H"),
+        ("currency", "I"),
+        ("notional", "K"),
+        ("notional_change", "L"),
+    )
 
 
 @pytest.mark.parametrize("fixture_path", [Path("tests/fixtures/raw_nisa_all_programs.xlsx")])
@@ -175,6 +201,28 @@ def test_generate_mosers_workbook_clears_unused_totals_slots_in_ch_and_fcm_secti
                 None,
                 None,
                 None,
+            )
+    finally:
+        workbook.close()
+
+
+def test_generate_mosers_workbook_applies_documented_plug_values_mappings() -> None:
+    parsed = parse_nisa_all_programs(Path("tests/fixtures/raw_nisa_all_programs.xlsx"))
+    workbook = generate_mosers_workbook(Path("tests/fixtures/raw_nisa_all_programs.xlsx"))
+    requirements = get_mosers_plug_values_mapping_requirements()
+    first_total = parsed.totals_rows[0]
+    try:
+        for structure in requirements.structure_mappings:
+            worksheet = workbook[structure.target_sheet]
+            marker_row = _find_marker_row(worksheet, structure.section_marker)
+            first_data_row = marker_row + 1
+
+            assert tuple(
+                worksheet[f"{field_mapping.target_column}{first_data_row}"].value
+                for field_mapping in structure.field_mappings
+            ) == tuple(
+                getattr(first_total, field_mapping.source_field)
+                for field_mapping in structure.field_mappings
             )
     finally:
         workbook.close()

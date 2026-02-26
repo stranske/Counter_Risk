@@ -61,6 +61,32 @@ class MosersAllProgramsTransformationScope:
     underflow_policy: str
 
 
+@dataclass(frozen=True)
+class MosersPlugValueFieldMapping:
+    """Single source-field to target-column mapping for plug-values writes."""
+
+    source_field: str
+    target_column: str
+
+
+@dataclass(frozen=True)
+class MosersPlugValueStructureMapping:
+    """Plug-values mapping contract for one target MOSERS structure section."""
+
+    structure_name: str
+    target_sheet: str
+    section_marker: str
+    stop_markers: tuple[str, ...]
+    field_mappings: tuple[MosersPlugValueFieldMapping, ...]
+
+
+@dataclass(frozen=True)
+class MosersPlugValuesMappingRequirements:
+    """All applicable plug-values mappings for MOSERS workbook generation."""
+
+    structure_mappings: tuple[MosersPlugValueStructureMapping, ...]
+
+
 def get_mosers_all_programs_output_structure() -> MosersAllProgramsOutputStructure:
     """Return the output-structure contract used for All Programs workbook generation."""
 
@@ -139,6 +165,39 @@ def get_mosers_trend_transformation_scope() -> MosersAllProgramsTransformationSc
     )
 
 
+def get_mosers_plug_values_mapping_requirements() -> MosersPlugValuesMappingRequirements:
+    """Return documented plug-values mappings across all applicable MOSERS structures."""
+
+    totals_field_mappings = (
+        MosersPlugValueFieldMapping(source_field="counterparty", target_column="C"),
+        MosersPlugValueFieldMapping(source_field="tips", target_column="E"),
+        MosersPlugValueFieldMapping(source_field="treasury", target_column="F"),
+        MosersPlugValueFieldMapping(source_field="equity", target_column="G"),
+        MosersPlugValueFieldMapping(source_field="commodity", target_column="H"),
+        MosersPlugValueFieldMapping(source_field="currency", target_column="I"),
+        MosersPlugValueFieldMapping(source_field="notional", target_column="K"),
+        MosersPlugValueFieldMapping(source_field="notional_change", target_column="L"),
+    )
+    return MosersPlugValuesMappingRequirements(
+        structure_mappings=(
+            MosersPlugValueStructureMapping(
+                structure_name="cprs_ch_totals",
+                target_sheet=_TARGET_SHEET,
+                section_marker=_CH_TOTALS_MARKER,
+                stop_markers=_CH_TOTALS_STOP_MARKERS,
+                field_mappings=totals_field_mappings,
+            ),
+            MosersPlugValueStructureMapping(
+                structure_name="cprs_fcm_totals",
+                target_sheet=_FCM_SHEET,
+                section_marker=_FCM_TOTALS_MARKER,
+                stop_markers=_FCM_TOTALS_STOP_MARKERS,
+                field_mappings=totals_field_mappings,
+            ),
+        )
+    )
+
+
 def generate_mosers_workbook(raw_nisa_path: str | Path) -> Workbook:
     """Generate a populated MOSERS workbook from raw NISA input.
 
@@ -211,18 +270,15 @@ def _generate_mosers_workbook_from_parser(
             values=_build_totals_metric_values(parsed.totals_rows, transform.source_metric),
         )
 
-    _write_totals_rows_by_marker(
-        worksheet=workbook[_TARGET_SHEET],
-        totals_rows=parsed.totals_rows,
-        section_marker=_CH_TOTALS_MARKER,
-        stop_markers=_CH_TOTALS_STOP_MARKERS,
-    )
-    _write_totals_rows_by_marker(
-        worksheet=workbook[_FCM_SHEET],
-        totals_rows=parsed.totals_rows,
-        section_marker=_FCM_TOTALS_MARKER,
-        stop_markers=_FCM_TOTALS_STOP_MARKERS,
-    )
+    plug_values_requirements = get_mosers_plug_values_mapping_requirements()
+    for structure_mapping in plug_values_requirements.structure_mappings:
+        _write_totals_rows_by_marker(
+            worksheet=workbook[structure_mapping.target_sheet],
+            totals_rows=parsed.totals_rows,
+            section_marker=structure_mapping.section_marker,
+            stop_markers=structure_mapping.stop_markers,
+            field_mappings=structure_mapping.field_mappings,
+        )
 
     return workbook
 
@@ -267,6 +323,7 @@ def _write_totals_rows_by_marker(
     totals_rows: tuple[NisaTotalsRow, ...],
     section_marker: str,
     stop_markers: tuple[str, ...],
+    field_mappings: tuple[MosersPlugValueFieldMapping, ...],
 ) -> None:
     marker_row = _find_marker_row(worksheet=worksheet, marker_text=section_marker)
     if marker_row is None:
@@ -283,26 +340,44 @@ def _write_totals_rows_by_marker(
         row_number = start_row + index
         if index < len(totals_rows):
             _write_totals_row_values(
-                worksheet=worksheet, row_number=row_number, row=totals_rows[index]
+                worksheet=worksheet,
+                row_number=row_number,
+                row=totals_rows[index],
+                field_mappings=field_mappings,
             )
             continue
-        _clear_totals_row_values(worksheet=worksheet, row_number=row_number)
+        _clear_totals_row_values(
+            worksheet=worksheet, row_number=row_number, field_mappings=field_mappings
+        )
 
 
-def _write_totals_row_values(*, worksheet: Worksheet, row_number: int, row: NisaTotalsRow) -> None:
-    worksheet[f"C{row_number}"] = row.counterparty
-    worksheet[f"E{row_number}"] = row.tips
-    worksheet[f"F{row_number}"] = row.treasury
-    worksheet[f"G{row_number}"] = row.equity
-    worksheet[f"H{row_number}"] = row.commodity
-    worksheet[f"I{row_number}"] = row.currency
-    worksheet[f"K{row_number}"] = row.notional
-    worksheet[f"L{row_number}"] = row.notional_change
+def _write_totals_row_values(
+    *,
+    worksheet: Worksheet,
+    row_number: int,
+    row: NisaTotalsRow,
+    field_mappings: tuple[MosersPlugValueFieldMapping, ...],
+) -> None:
+    for mapping in field_mappings:
+        worksheet[f"{mapping.target_column}{row_number}"] = _get_totals_row_field_value(
+            row=row, source_field=mapping.source_field
+        )
 
 
-def _clear_totals_row_values(*, worksheet: Worksheet, row_number: int) -> None:
-    for column_letter in ("C", "E", "F", "G", "H", "I", "K", "L"):
-        worksheet[f"{column_letter}{row_number}"] = None
+def _clear_totals_row_values(
+    *,
+    worksheet: Worksheet,
+    row_number: int,
+    field_mappings: tuple[MosersPlugValueFieldMapping, ...],
+) -> None:
+    for mapping in field_mappings:
+        worksheet[f"{mapping.target_column}{row_number}"] = None
+
+
+def _get_totals_row_field_value(*, row: NisaTotalsRow, source_field: str) -> Any:
+    if not hasattr(row, source_field):
+        raise ValueError(f"Unsupported plug-values source field: {source_field}")
+    return getattr(row, source_field)
 
 
 def _find_marker_row(*, worksheet: Worksheet, marker_text: str) -> int | None:
