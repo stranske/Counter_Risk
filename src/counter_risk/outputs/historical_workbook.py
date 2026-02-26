@@ -20,30 +20,6 @@ _WorkbookCopier = Callable[[str | Path, str | Path], str]
 _HistoricalWorkbookMerger = Callable[..., None]
 _RecordsExtractor = Callable[[Any], list[dict[str, Any]]]
 
-def _default_workbook_merger(
-    *,
-    workbook_path: Path,
-    variant: str,
-    as_of_date: date,
-    totals_records: list[dict[str, Any]],
-    warnings: list[str],
-) -> None:
-    from counter_risk.pipeline.run import _merge_historical_workbook
-
-    _merge_historical_workbook(
-        workbook_path=workbook_path,
-        variant=variant,
-        as_of_date=as_of_date,
-        totals_records=totals_records,
-        warnings=warnings,
-    )
-
-
-def _default_records_extractor(table: Any) -> list[dict[str, Any]]:
-    from counter_risk.pipeline.run import _records
-
-    return _records(table)
-
 
 @dataclass(frozen=True)
 class HistoricalWorkbookOutputGenerator(OutputGenerator):
@@ -51,10 +27,10 @@ class HistoricalWorkbookOutputGenerator(OutputGenerator):
 
     parsed_by_variant: Mapping[str, Mapping[str, Any]]
     warnings: list[str]
+    workbook_merger: _HistoricalWorkbookMerger
+    records_extractor: _RecordsExtractor
     name: str = "historical_workbook"
     workbook_copier: _WorkbookCopier = cast(_WorkbookCopier, shutil.copy2)
-    workbook_merger: _HistoricalWorkbookMerger = _default_workbook_merger
-    records_extractor: _RecordsExtractor = _default_records_extractor
 
     def generate(self, *, context: OutputContext) -> tuple[Path, ...]:
         mosers_all_programs = context.config.mosers_all_programs_xlsx

@@ -22,7 +22,7 @@ from counter_risk.normalize import (
     normalize_counterparty,
     normalize_counterparty_with_source,
 )
-from counter_risk.outputs.base import OutputContext
+from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
@@ -1676,10 +1676,15 @@ def _build_historical_workbook_output_generator(
     *,
     parsed_by_variant: dict[str, dict[str, Any]],
     warnings: list[str],
-) -> Any:
+) -> OutputGenerator:
     from counter_risk.outputs.historical_workbook import HistoricalWorkbookOutputGenerator
 
-    return HistoricalWorkbookOutputGenerator(parsed_by_variant=parsed_by_variant, warnings=warnings)
+    return HistoricalWorkbookOutputGenerator(
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+        workbook_merger=_merge_historical_workbook,
+        records_extractor=_records,
+    )
 
 
 def _merge_historical_workbook(
