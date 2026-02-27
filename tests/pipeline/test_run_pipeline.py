@@ -8,6 +8,7 @@ import platform
 import re
 import sys
 import types
+import zipfile
 from datetime import date
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -780,6 +781,76 @@ def test_run_pipeline_generates_ex_trend_and_trend_mosers_from_raw_nisa_inputs(
     assert "raw_nisa_trend_xlsx" in manifest["input_hashes"]
     assert "Generated Ex Trend MOSERS workbook from raw NISA input" in manifest["warnings"]
     assert "Generated Trend MOSERS workbook from raw NISA input" in manifest["warnings"]
+
+
+def test_run_pipeline_raw_nisa_generation_produces_parseable_non_vba_workbooks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"raw_nisa_all_programs_xlsx: {fixtures / 'NISA Monthly All Programs - Raw.xlsx'}",
+                f"raw_nisa_ex_trend_xlsx: {fixtures / 'NISA Monthly Ex Trend - Raw.xlsx'}",
+                f"raw_nisa_trend_xlsx: {fixtures / 'NISA Monthly Trend - Raw.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        run_module,
+        "_run_reconciliation_checks",
+        lambda *, run_dir, config, parsed_by_variant, warnings: None,
+    )
+    monkeypatch.setattr(
+        run_module,
+        "_compute_metrics",
+        lambda parsed_by_variant: ({}, {}),
+    )
+    monkeypatch.setattr(
+        run_module,
+        "_compute_and_write_concentration_metrics",
+        lambda *, parsed_by_variant, run_dir: [],
+    )
+    monkeypatch.setattr(
+        run_module,
+        "_update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        run_module,
+        "_write_outputs",
+        lambda *, run_dir, config, as_of_date, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    for variant in ("all_programs", "ex_trend", "trend"):
+        workbook_path = run_dir / f"{variant}-mosers-input.xlsx"
+        assert workbook_path.exists()
+
+        totals_df = run_module.parse_fcm_totals(workbook_path)
+        futures_df = run_module.parse_futures_detail(workbook_path)
+        assert not totals_df.empty
+        assert not futures_df.empty
+        assert list(totals_df.columns) == list(run_module._EXPECTED_TOTAL_COLUMN_ORDER)
+        assert list(futures_df.columns) == list(run_module._EXPECTED_FUTURES_COLUMN_ORDER)
+
+        with zipfile.ZipFile(workbook_path) as workbook_archive:
+            archive_members = {member.casefold() for member in workbook_archive.namelist()}
+        assert "xl/vbaproject.bin" not in archive_members
 
 
 def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
