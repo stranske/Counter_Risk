@@ -106,6 +106,7 @@ class WorkflowConfig(BaseModel):
     output_generators: tuple[OutputGeneratorConfig, ...] = Field(
         default_factory=_default_output_generators
     )
+    enable_llm_logging: bool = False
     output_root: Path = Path("runs")
 
     @property
