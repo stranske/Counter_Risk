@@ -71,32 +71,6 @@ OpenOutputFolderError:
     WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
 End Sub
 
-Public Sub OpenSummary_Click()
-    On Error GoTo OpenSummaryError
-
-    Dim selectedDate As String
-    Dim summaryPath As String
-    Dim missingSummaryMessage As String
-    Dim status As LaunchStatus
-
-    selectedDate = ReadSelectedDate()
-    summaryPath = ResolveDataQualitySummaryPath(ResolveRepoRoot(), selectedDate)
-    missingSummaryMessage = "Summary not found" & " " & summaryPath
-
-    If Not FileExists(summaryPath) Then
-        MsgBox missingSummaryMessage
-        WriteResult "Error " & missingSummaryMessage
-        Exit Sub
-    End If
-
-    status = OpenFile(summaryPath)
-    WriteLaunchResult status
-    Exit Sub
-
-OpenSummaryError:
-    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
-End Sub
-
 Public Function BuildRunArguments(ByVal asOfMonth As String, ByVal mode As RunnerMode) As String
     Dim outputDir As String
     Dim parsedDate As Date
@@ -173,10 +147,6 @@ Public Function ResolveOutputDir(ByVal repoRoot As String, ByVal selectedDate As
     parsedDate = ParseAsOfMonth(selectedDate)
 
     ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\runs\" & Format$(parsedDate, RUN_FOLDER_FORMAT)
-End Function
-
-Public Function ResolveDataQualitySummaryPath(ByVal repoRoot As String, ByVal selectedDate As String) As String
-    ResolveDataQualitySummaryPath = ResolveOutputDir(repoRoot, selectedDate) & "\DATA_QUALITY_SUMMARY.txt"
 End Function
 
 Public Function ExecuteRunnerCommand(ByVal executablePath As String, ByVal command As String) As LaunchStatus
@@ -321,23 +291,6 @@ OpenDirectoryError:
     OpenDirectory = BuildErrorStatus(directoryPath, Err.Number, Err.Description)
 End Function
 
-Private Function OpenFile(ByVal filePath As String) As LaunchStatus
-    Dim status As LaunchStatus
-    Dim shellObject As Object
-    Dim openCommand As String
-
-    On Error GoTo OpenFileError
-    Set shellObject = CreateObject("WScript.Shell")
-    openCommand = BuildOpenFileCommand(filePath)
-    shellObject.Run openCommand, 1, False
-    status = BuildSuccessStatus(openCommand, 0)
-    OpenFile = status
-    Exit Function
-
-OpenFileError:
-    OpenFile = BuildErrorStatus(filePath, Err.Number, Err.Description)
-End Function
-
 Private Function BuildOpenFolderCommand(ByVal directoryPath As String) As String
     Dim platformName As String
     platformName = Application.OperatingSystem
@@ -354,28 +307,8 @@ Private Function BuildOpenFolderCommand(ByVal directoryPath As String) As String
     BuildOpenFolderCommand = "xdg-open " & QuoteArg(directoryPath)
 End Function
 
-Private Function BuildOpenFileCommand(ByVal filePath As String) As String
-    Dim platformName As String
-    platformName = Application.OperatingSystem
-
-    If InStr(1, platformName, "Windows", vbTextCompare) > 0 Then
-        BuildOpenFileCommand = "cmd /c start " & Chr$(34) & Chr$(34) & " " & QuoteArg(filePath)
-        Exit Function
-    End If
-    If InStr(1, platformName, "Mac", vbTextCompare) > 0 Then
-        BuildOpenFileCommand = "open " & QuoteArg(filePath)
-        Exit Function
-    End If
-
-    BuildOpenFileCommand = "xdg-open " & QuoteArg(filePath)
-End Function
-
 Private Function DirectoryExists(ByVal directoryPath As String) As Boolean
     DirectoryExists = LenB(Dir$(directoryPath, vbDirectory)) <> 0
-End Function
-
-Private Function FileExists(ByVal filePath As String) As Boolean
-    FileExists = LenB(Dir$(filePath, vbNormal)) <> 0
 End Function
 
 Private Function BuildSuccessStatus(ByVal command As String, ByVal exitCode As Long) As LaunchStatus
