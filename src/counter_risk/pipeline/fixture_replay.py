@@ -8,6 +8,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from counter_risk.config import WorkflowConfig, load_config
+from counter_risk.pipeline.manifest import (
+    DATA_QUALITY_SUMMARY_FILENAME,
+    build_data_quality_summary_text,
+)
 
 
 def _resolve_config_path(path: Path, *, config_dir: Path) -> Path:
@@ -38,6 +42,13 @@ def _resolve_output_dir(
     if config.output_root.is_absolute():
         return config.output_root
     return (config_path.parent / config.output_root).resolve()
+
+
+def _write_manifest_artifacts(*, run_dir: Path, manifest: dict[str, object]) -> None:
+    summary_path = run_dir / DATA_QUALITY_SUMMARY_FILENAME
+    summary_path.write_text(build_data_quality_summary_text(manifest), encoding="utf-8")
+    manifest_path = run_dir / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
 
 def run_pipeline_with_config(
@@ -84,8 +95,7 @@ def run_pipeline_with_config(
         "as_of_date": None if config.as_of_date is None else config.as_of_date.isoformat(),
         "outputs": copied_outputs,
     }
-    manifest_path = run_dir / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    _write_manifest_artifacts(run_dir=run_dir, manifest=manifest)
     return run_dir
 
 
@@ -122,6 +132,5 @@ def run_fixture_replay(*, config_path: Path, output_dir: Path | None = None) -> 
         "config_path": str(config_path.resolve()),
         "outputs": copied_outputs,
     }
-    manifest_path = run_dir / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    _write_manifest_artifacts(run_dir=run_dir, manifest=manifest)
     return run_dir

@@ -213,6 +213,9 @@ def test_main_run_fixture_replay_mode(tmp_path: Path, capsys: pytest.CaptureFixt
     assert "fixture replay completed" in captured.out.lower()
     manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["mode"] == "fixture_replay"
+    summary = (output_dir / "DATA_QUALITY_SUMMARY.txt").read_text(encoding="utf-8")
+    assert "Counterparty Risk Data Quality Summary" in summary
+    assert "Overall status: INFO (GREEN) - Safe to send." in summary
 
 
 def test_main_run_discover_mode_auto_selects_and_runs(
@@ -312,6 +315,9 @@ def test_main_run_discover_mode_auto_selects_and_runs(
     assert manifest["as_of_date"] == "2025-12-31"
     # Discovered files should have been copied to the output directory
     assert any("Ex Trend" in v for v in manifest["outputs"].values())
+    summary = (output_dir / "DATA_QUALITY_SUMMARY.txt").read_text(encoding="utf-8")
+    assert "Counterparty Risk Data Quality Summary" in summary
+    assert "Overall status: INFO (GREEN) - Safe to send." in summary
 
 
 def test_main_run_discover_mode_requires_as_of_date(

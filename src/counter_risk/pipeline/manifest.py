@@ -14,9 +14,14 @@ from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.data_quality import build_data_quality
 from counter_risk.pipeline.warnings import WarningsCollector
 
-__all__ = ["ManifestBuilder", "WarningsCollector"]
+__all__ = [
+    "ManifestBuilder",
+    "WarningsCollector",
+    "build_data_quality_summary_text",
+    "DATA_QUALITY_SUMMARY_FILENAME",
+]
 
-_DATA_QUALITY_SUMMARY_FILENAME = "DATA_QUALITY_SUMMARY.txt"
+DATA_QUALITY_SUMMARY_FILENAME = "DATA_QUALITY_SUMMARY.txt"
 _SEVERITY_DISPLAY_ORDER = ("info", "warn", "fail")
 _STATUS_COLOR = {"info": "GREEN", "warn": "YELLOW", "fail": "RED"}
 _STATUS_GUIDANCE = {
@@ -117,11 +122,11 @@ class ManifestBuilder:
         return manifest
 
     def write(self, *, run_dir: Path, manifest: dict[str, Any]) -> Path:
-        summary_path = run_dir / _DATA_QUALITY_SUMMARY_FILENAME
+        summary_path = run_dir / DATA_QUALITY_SUMMARY_FILENAME
         path = run_dir / "manifest.json"
         try:
             summary_path.write_text(
-                self._build_data_quality_summary(manifest),
+                build_data_quality_summary_text(manifest),
                 encoding="utf-8",
             )
             self._register_summary_artifact(manifest)
@@ -138,129 +143,12 @@ class ManifestBuilder:
         if not isinstance(output_paths, list):
             return
         rendered_paths = [str(path) for path in output_paths]
-        if _DATA_QUALITY_SUMMARY_FILENAME in rendered_paths:
+        if DATA_QUALITY_SUMMARY_FILENAME in rendered_paths:
             return
-        output_paths.append(_DATA_QUALITY_SUMMARY_FILENAME)
+        output_paths.append(DATA_QUALITY_SUMMARY_FILENAME)
 
     def _build_data_quality_summary(self, manifest: Mapping[str, Any]) -> str:
-        data_quality = manifest.get("data_quality")
-        as_of_date = str(manifest.get("as_of_date", "unknown"))
-        run_date = str(manifest.get("run_date", "unknown"))
-
-        status = "info"
-        counts_by_severity: dict[str, int] = dict.fromkeys(_SEVERITY_DISPLAY_ORDER, 0)
-        total_findings = 0
-        counts_by_category: dict[str, dict[str, int]] = {}
-        findings: list[Mapping[str, Any]] = []
-        actions: list[Mapping[str, Any]] = []
-
-        if isinstance(data_quality, Mapping):
-            status_candidate = str(data_quality.get("overall_status", "info")).strip().lower()
-            if status_candidate in _STATUS_COLOR:
-                status = status_candidate
-
-            counts = data_quality.get("counts")
-            if isinstance(counts, Mapping):
-                total_findings = self._safe_int(counts.get("total_findings", 0))
-                by_severity_raw = counts.get("by_severity")
-                if isinstance(by_severity_raw, Mapping):
-                    for severity in _SEVERITY_DISPLAY_ORDER:
-                        counts_by_severity[severity] = self._safe_int(
-                            by_severity_raw.get(severity, 0)
-                        )
-                by_category_raw = counts.get("by_category")
-                if isinstance(by_category_raw, Mapping):
-                    for category, category_counts in by_category_raw.items():
-                        if not isinstance(category_counts, Mapping):
-                            continue
-                        counts_by_category[str(category)] = {
-                            "info": self._safe_int(category_counts.get("info", 0)),
-                            "warn": self._safe_int(category_counts.get("warn", 0)),
-                            "fail": self._safe_int(category_counts.get("fail", 0)),
-                            "total": self._safe_int(category_counts.get("total", 0)),
-                        }
-
-            findings_raw = data_quality.get("findings")
-            if isinstance(findings_raw, list):
-                findings = [finding for finding in findings_raw if isinstance(finding, Mapping)]
-
-            actions_raw = data_quality.get("recommended_actions")
-            if isinstance(actions_raw, list):
-                actions = [action for action in actions_raw if isinstance(action, Mapping)]
-
-        if findings:
-            derived_total, derived_by_severity, derived_by_category = (
-                self._derive_counts_from_findings(findings)
-            )
-            if total_findings <= 0:
-                total_findings = derived_total
-            if all(count <= 0 for count in counts_by_severity.values()):
-                counts_by_severity = derived_by_severity
-            if not counts_by_category:
-                counts_by_category = derived_by_category
-
-        lines = [
-            "Counterparty Risk Data Quality Summary",
-            "",
-            f"As-of date: {as_of_date}",
-            f"Run date: {run_date}",
-            (
-                f"Overall status: {status.upper()} ({_STATUS_COLOR[status]}) "
-                f"- {_STATUS_GUIDANCE[status]}"
-            ),
-            "",
-            "Finding counts:",
-            f"- Total findings: {total_findings}",
-            *[
-                f"- {severity}: {counts_by_severity[severity]}"
-                for severity in _SEVERITY_DISPLAY_ORDER
-            ],
-            "",
-            "Findings by category:",
-        ]
-
-        if counts_by_category:
-            for category in sorted(counts_by_category, key=str.casefold):
-                category_counts = counts_by_category[category]
-                lines.append(
-                    "- "
-                    f"{category}: total={category_counts['total']} "
-                    f"(info={category_counts['info']}, "
-                    f"warn={category_counts['warn']}, "
-                    f"fail={category_counts['fail']})"
-                )
-        else:
-            lines.append("- none")
-
-        lines.append("")
-        lines.append("Detailed findings:")
-        if findings:
-            for finding in findings:
-                lines.append(
-                    "- "
-                    f"[{str(finding.get('severity', 'warn')).upper()}] "
-                    f"{str(finding.get('category', 'pipeline'))} / "
-                    f"{str(finding.get('code', 'UNKNOWN'))}: "
-                    f"{str(finding.get('message', '')).strip()}"
-                )
-        else:
-            lines.append("- none")
-
-        lines.append("")
-        lines.append("Recommended actions:")
-        if actions:
-            for action in actions:
-                lines.append(
-                    "- "
-                    f"[{str(action.get('severity', 'warn')).upper()}] "
-                    f"{str(action.get('category', 'pipeline'))}: "
-                    f"{str(action.get('action', '')).strip()}"
-                )
-        else:
-            lines.append("- none")
-
-        lines.append("")
-        return "\n".join(lines)
+        return build_data_quality_summary_text(manifest)
 
     def _derive_counts_from_findings(
         self, findings: list[Mapping[str, Any]]
@@ -374,3 +262,144 @@ class ManifestBuilder:
         if missing_paths:
             missing = ", ".join(str(path) for path in missing_paths)
             raise ValueError(f"Manifest output paths do not exist at write time: {missing}")
+
+
+def build_data_quality_summary_text(manifest: Mapping[str, Any]) -> str:
+    data_quality = manifest.get("data_quality")
+    as_of_date = str(manifest.get("as_of_date", "unknown"))
+    run_date = str(manifest.get("run_date", "unknown"))
+
+    status = "info"
+    counts_by_severity: dict[str, int] = dict.fromkeys(_SEVERITY_DISPLAY_ORDER, 0)
+    total_findings = 0
+    counts_by_category: dict[str, dict[str, int]] = {}
+    findings: list[Mapping[str, Any]] = []
+    actions: list[Mapping[str, Any]] = []
+
+    if isinstance(data_quality, Mapping):
+        status_candidate = str(data_quality.get("overall_status", "info")).strip().lower()
+        if status_candidate in _STATUS_COLOR:
+            status = status_candidate
+
+        counts = data_quality.get("counts")
+        if isinstance(counts, Mapping):
+            total_findings = _safe_int(counts.get("total_findings", 0))
+            by_severity_raw = counts.get("by_severity")
+            if isinstance(by_severity_raw, Mapping):
+                for severity in _SEVERITY_DISPLAY_ORDER:
+                    counts_by_severity[severity] = _safe_int(by_severity_raw.get(severity, 0))
+            by_category_raw = counts.get("by_category")
+            if isinstance(by_category_raw, Mapping):
+                for category, category_counts in by_category_raw.items():
+                    if not isinstance(category_counts, Mapping):
+                        continue
+                    counts_by_category[str(category)] = {
+                        "info": _safe_int(category_counts.get("info", 0)),
+                        "warn": _safe_int(category_counts.get("warn", 0)),
+                        "fail": _safe_int(category_counts.get("fail", 0)),
+                        "total": _safe_int(category_counts.get("total", 0)),
+                    }
+
+        findings_raw = data_quality.get("findings")
+        if isinstance(findings_raw, list):
+            findings = [finding for finding in findings_raw if isinstance(finding, Mapping)]
+
+        actions_raw = data_quality.get("recommended_actions")
+        if isinstance(actions_raw, list):
+            actions = [action for action in actions_raw if isinstance(action, Mapping)]
+
+    if findings:
+        derived_total, derived_by_severity, derived_by_category = _derive_counts_from_findings(
+            findings
+        )
+        if total_findings <= 0:
+            total_findings = derived_total
+        if all(count <= 0 for count in counts_by_severity.values()):
+            counts_by_severity = derived_by_severity
+        if not counts_by_category:
+            counts_by_category = derived_by_category
+
+    lines = [
+        "Counterparty Risk Data Quality Summary",
+        "",
+        f"As-of date: {as_of_date}",
+        f"Run date: {run_date}",
+        f"Overall status: {status.upper()} ({_STATUS_COLOR[status]}) - {_STATUS_GUIDANCE[status]}",
+        "",
+        "Finding counts:",
+        f"- Total findings: {total_findings}",
+        *[f"- {severity}: {counts_by_severity[severity]}" for severity in _SEVERITY_DISPLAY_ORDER],
+        "",
+        "Findings by category:",
+    ]
+
+    if counts_by_category:
+        for category in sorted(counts_by_category, key=str.casefold):
+            category_counts = counts_by_category[category]
+            lines.append(
+                "- "
+                f"{category}: total={category_counts['total']} "
+                f"(info={category_counts['info']}, "
+                f"warn={category_counts['warn']}, "
+                f"fail={category_counts['fail']})"
+            )
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    lines.append("Detailed findings:")
+    if findings:
+        for finding in findings:
+            lines.append(
+                "- "
+                f"[{str(finding.get('severity', 'warn')).upper()}] "
+                f"{str(finding.get('category', 'pipeline'))} / "
+                f"{str(finding.get('code', 'UNKNOWN'))}: "
+                f"{str(finding.get('message', '')).strip()}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    lines.append("Recommended actions:")
+    if actions:
+        for action in actions:
+            lines.append(
+                "- "
+                f"[{str(action.get('severity', 'warn')).upper()}] "
+                f"{str(action.get('category', 'pipeline'))}: "
+                f"{str(action.get('action', '')).strip()}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.append("")
+    return "\n".join(lines)
+
+
+def _derive_counts_from_findings(
+    findings: list[Mapping[str, Any]],
+) -> tuple[int, dict[str, int], dict[str, dict[str, int]]]:
+    counts_by_severity: dict[str, int] = dict.fromkeys(_SEVERITY_DISPLAY_ORDER, 0)
+    counts_by_category: dict[str, dict[str, int]] = {}
+
+    for finding in findings:
+        raw_severity = str(finding.get("severity", "warn")).strip().lower()
+        severity = raw_severity if raw_severity in _SEVERITY_DISPLAY_ORDER else "warn"
+        raw_category = str(finding.get("category", "pipeline")).strip().lower()
+        category = raw_category or "pipeline"
+
+        counts_by_severity[severity] += 1
+        if category not in counts_by_category:
+            counts_by_category[category] = {"info": 0, "warn": 0, "fail": 0, "total": 0}
+        counts_by_category[category][severity] += 1
+        counts_by_category[category]["total"] += 1
+
+    return len(findings), counts_by_severity, counts_by_category
+
+
+def _safe_int(raw_value: Any) -> int:
+    try:
+        return int(raw_value)
+    except (TypeError, ValueError):
+        return 0

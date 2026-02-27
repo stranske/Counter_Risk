@@ -117,6 +117,8 @@ def test_run_fixture_replay_preserves_csv_tsv_numeric_payloads(
 
     actual_rows = _read_delimited_records(copied_path, delimiter=delimiter)
     assert_numeric_outputs_close(actual_rows, payload, abs_tol=abs_tol, rel_tol=rel_tol)
+    summary = (run_output / "DATA_QUALITY_SUMMARY.txt").read_text(encoding="utf-8")
+    assert "Counterparty Risk Data Quality Summary" in summary
 
 
 def test_run_fixture_replay_preserves_json_numeric_payloads(tmp_path: Path) -> None:
@@ -142,6 +144,8 @@ def test_run_fixture_replay_preserves_json_numeric_payloads(tmp_path: Path) -> N
 
     actual_payload = json.loads(copied_path.read_text(encoding="utf-8"))
     assert_numeric_outputs_close(actual_payload, payload, abs_tol=1e-10, rel_tol=1e-10)
+    summary = (run_output / "DATA_QUALITY_SUMMARY.txt").read_text(encoding="utf-8")
+    assert "Counterparty Risk Data Quality Summary" in summary
 
 
 def test_run_fixture_replay_preserves_parquet_numeric_payloads(tmp_path: Path) -> None:
@@ -168,3 +172,5 @@ def test_run_fixture_replay_preserves_parquet_numeric_payloads(tmp_path: Path) -
 
     actual_payload_rows = pandas.read_parquet(copied_path).to_dict(orient="records")
     assert_numeric_outputs_close(actual_payload_rows, payload_rows, abs_tol=1e-9, rel_tol=1e-9)
+    summary = (run_output / "DATA_QUALITY_SUMMARY.txt").read_text(encoding="utf-8")
+    assert "Counterparty Risk Data Quality Summary" in summary
