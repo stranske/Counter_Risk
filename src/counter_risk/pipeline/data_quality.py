@@ -21,6 +21,19 @@ _SEVERITY_BY_CODE: dict[str, Severity] = {
     "INVALID_NOTIONAL": "warn",
     "MISSING_DESCRIPTION": "warn",
 }
+_CATEGORY_BY_CODE: dict[str, str] = {
+    "NO_FINDINGS": "pipeline",
+    "MISSING_REQUIRED_INPUTS": "input",
+    "MISSING_OPTIONAL_INPUTS": "input",
+    "UNMATCHED_MAPPINGS": "mapping",
+    "RECONCILIATION_GAPS": "reconciliation",
+    "PPT_GENERATION_FAILED": "ppt",
+    "PPT_GENERATION_SKIPPED": "ppt",
+    "LIMIT_BREACHES": "limits",
+    "MISSING_NOTIONAL": "data_validation",
+    "INVALID_NOTIONAL": "data_validation",
+    "MISSING_DESCRIPTION": "data_validation",
+}
 
 
 def build_data_quality(
@@ -323,6 +336,9 @@ def _classify_severity(*, message: str, code: str) -> str:
 def _categorize(*, message: str, code: str) -> str:
     message_lower = message.lower()
     code_upper = code.upper()
+    category_from_code = _CATEGORY_BY_CODE.get(code_upper)
+    if category_from_code:
+        return category_from_code
     if "ppt" in message_lower:
         return "ppt"
     if "limit" in message_lower:

@@ -171,3 +171,74 @@ def test_manifest_build_classifies_known_finding_types_by_code(tmp_path: Path) -
     assert severities_by_code["MISSING_REQUIRED_INPUTS"] == "fail"
     assert severities_by_code["NO_FINDINGS"] == "info"
     assert severities_by_code["LIMIT_BREACHES"] == "warn"
+
+
+def test_manifest_build_aggregates_counts_by_category_and_severity(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    artifact = run_dir / "output.csv"
+    artifact.write_text("ok\n", encoding="utf-8")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(artifact.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[
+            {"message": "PowerPoint generation failed", "code": "PPT_GENERATION_FAILED"},
+            {"message": "Potential limit warning", "code": "LIMIT_BREACHES"},
+            {"message": "Generated summary row was appended.", "code": "NO_FINDINGS"},
+            {"message": "Unrecognized anomaly", "code": "CUSTOM_UNMAPPED_CODE"},
+        ],
+    )
+
+    counts = manifest["data_quality"]["counts"]
+    assert counts["total_findings"] == 4
+    assert counts["by_severity"] == {"info": 1, "warn": 2, "fail": 1}
+    assert counts["by_category"]["ppt"] == {"info": 0, "warn": 0, "fail": 1, "total": 1}
+    assert counts["by_category"]["limits"] == {"info": 0, "warn": 1, "fail": 0, "total": 1}
+    assert counts["by_category"]["pipeline"] == {"info": 1, "warn": 1, "fail": 0, "total": 2}
+
+
+def test_manifest_build_generates_unique_recommended_actions_by_category_and_severity(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    artifact = run_dir / "output.csv"
+    artifact.write_text("ok\n", encoding="utf-8")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(artifact.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[
+            {"message": "PowerPoint generation failed", "code": "PPT_GENERATION_FAILED"},
+            {"message": "PowerPoint generation failed again", "code": "PPT_GENERATION_FAILED"},
+            {"message": "Optional file is unavailable", "code": "MISSING_OPTIONAL_INPUTS"},
+        ],
+    )
+
+    actions = manifest["data_quality"]["recommended_actions"]
+    assert len(actions) == 2
+    assert {(action["category"], action["severity"], action["action"]) for action in actions} == {
+        (
+            "ppt",
+            "fail",
+            "Investigate and resolve failing checks before sending outputs.",
+        ),
+        ("input", "warn", "Review warnings and confirm run artifacts are acceptable."),
+    }
