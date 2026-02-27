@@ -24,10 +24,10 @@ _TARGET_SHEET = "CPRS - CH"
 _FCM_SHEET = "CPRS - FCM"
 _PROGRAM_NAME_CELL = "B5"
 _SECTION_LABEL_COLUMN = "C"
+_CH_METRIC_START_ROW = 10
+_CH_METRIC_END_ROW = 20
 _CH_TOTALS_MARKER = "Total by Counterparty/Clearing House"
 _CH_TOTALS_STOP_MARKERS = ("Total Current Exposure", "MOSERS Program", "Notional Breakdown")
-_CH_METRIC_SECTION_HEADER_MARKER = "Annualized Volatility"
-_CH_METRIC_STOP_MARKERS = (_CH_TOTALS_MARKER,)
 _FCM_TOTALS_MARKER = "Total by Counterparty/ FCM"
 _FCM_TOTALS_STOP_MARKERS = ("FUTURES DETAIL",)
 _PLUG_VALUES_SOURCE_NAME = "totals_rows"
@@ -41,8 +41,8 @@ class MosersAllProgramsOutputStructure:
     required_sheets: tuple[str, ...]
     cprs_ch_sheet: str
     program_name_cell: str
-    cprs_ch_metric_section_marker: str
-    cprs_ch_metric_stop_markers: tuple[str, ...]
+    cprs_ch_metric_start_row: int
+    cprs_ch_metric_end_row: int
 
 
 @dataclass(frozen=True)
@@ -98,8 +98,8 @@ def get_mosers_all_programs_output_structure() -> MosersAllProgramsOutputStructu
         required_sheets=_REQUIRED_SHEETS,
         cprs_ch_sheet=_TARGET_SHEET,
         program_name_cell=_PROGRAM_NAME_CELL,
-        cprs_ch_metric_section_marker=_CH_METRIC_SECTION_HEADER_MARKER,
-        cprs_ch_metric_stop_markers=_CH_METRIC_STOP_MARKERS,
+        cprs_ch_metric_start_row=_CH_METRIC_START_ROW,
+        cprs_ch_metric_end_row=_CH_METRIC_END_ROW,
     )
 
 
@@ -124,8 +124,8 @@ def get_mosers_ex_trend_output_structure() -> MosersAllProgramsOutputStructure:
         required_sheets=_REQUIRED_SHEETS,
         cprs_ch_sheet=_TARGET_SHEET,
         program_name_cell=_PROGRAM_NAME_CELL,
-        cprs_ch_metric_section_marker=_CH_METRIC_SECTION_HEADER_MARKER,
-        cprs_ch_metric_stop_markers=_CH_METRIC_STOP_MARKERS,
+        cprs_ch_metric_start_row=_CH_METRIC_START_ROW,
+        cprs_ch_metric_end_row=_CH_METRIC_END_ROW,
     )
 
 
@@ -150,8 +150,8 @@ def get_mosers_trend_output_structure() -> MosersAllProgramsOutputStructure:
         required_sheets=_REQUIRED_SHEETS,
         cprs_ch_sheet=_TARGET_SHEET,
         program_name_cell=_PROGRAM_NAME_CELL,
-        cprs_ch_metric_section_marker=_CH_METRIC_SECTION_HEADER_MARKER,
-        cprs_ch_metric_stop_markers=_CH_METRIC_STOP_MARKERS,
+        cprs_ch_metric_start_row=_CH_METRIC_START_ROW,
+        cprs_ch_metric_end_row=_CH_METRIC_END_ROW,
     )
 
 
@@ -269,11 +269,11 @@ def _generate_mosers_workbook_from_parser(
     worksheet[resolved_structure.program_name_cell] = first_program
 
     for transform in resolved_transformation_scope.cprs_ch_transforms:
-        _write_vertical_values_by_marker(
+        _write_vertical_values(
             worksheet=worksheet,
             column_letter=transform.target_column,
-            section_marker=resolved_structure.cprs_ch_metric_section_marker,
-            stop_markers=resolved_structure.cprs_ch_metric_stop_markers,
+            start_row=resolved_structure.cprs_ch_metric_start_row,
+            end_row=resolved_structure.cprs_ch_metric_end_row,
             values=_build_totals_metric_values(parsed.totals_rows, transform.source_metric),
         )
 
@@ -307,23 +307,15 @@ def _build_totals_metric_values(
     raise ValueError(f"Unsupported totals source metric: {source_metric}")
 
 
-def _write_vertical_values_by_marker(
+def _write_vertical_values(
     *,
     worksheet: Worksheet,
     column_letter: str,
-    section_marker: str,
-    stop_markers: tuple[str, ...],
+    start_row: int,
+    end_row: int,
     values: list[float],
 ) -> None:
-    """Write values into a marker-bounded section and clear remaining cells."""
-    section_bounds = _resolve_metric_section_bounds(
-        worksheet=worksheet,
-        header_marker=section_marker,
-        stop_markers=stop_markers,
-    )
-    if section_bounds is None:
-        raise ValueError(f"Unable to locate section marker: {section_marker!r}")
-    start_row, end_row = section_bounds
+    """Write values into a fixed row range and clear remaining cells."""
     total_slots = (end_row - start_row) + 1
     for index in range(total_slots):
         row_number = start_row + index
@@ -428,60 +420,6 @@ def _resolve_section_bounds(
     if end_row < start_row:
         return None
     return start_row, end_row
-
-
-def _resolve_metric_section_bounds(
-    *,
-    worksheet: Worksheet,
-    header_marker: str,
-    stop_markers: tuple[str, ...],
-) -> tuple[int, int] | None:
-    header_row = _find_row_containing_text(worksheet=worksheet, text=header_marker)
-    if header_row is None:
-        return None
-
-    start_row = header_row + 1
-    stop_row = _find_stop_row(worksheet=worksheet, start_row=start_row, stop_markers=stop_markers)
-    end_boundary = (stop_row - 1) if stop_row is not None else int(worksheet.max_row)
-    if end_boundary < start_row:
-        return None
-
-    end_row = _find_contiguous_data_end_row(
-        worksheet=worksheet,
-        start_row=start_row,
-        end_row=end_boundary,
-    )
-    return (start_row, end_row) if end_row >= start_row else None
-
-
-def _find_row_containing_text(*, worksheet: Worksheet, text: str) -> int | None:
-    normalized_target = _normalize_marker_text(text)
-    max_row = int(worksheet.max_row)
-    max_column = int(worksheet.max_column)
-    for row_number in range(1, max_row + 1):
-        for column_number in range(1, max_column + 1):
-            value = worksheet.cell(row=row_number, column=column_number).value
-            if normalized_target in _normalize_marker_text(value):
-                return row_number
-    return None
-
-
-def _find_contiguous_data_end_row(
-    *,
-    worksheet: Worksheet,
-    start_row: int,
-    end_row: int,
-) -> int:
-    current_end = start_row - 1
-    for row_number in range(start_row, end_row + 1):
-        label_text = _normalize_marker_text(worksheet[f"{_SECTION_LABEL_COLUMN}{row_number}"].value)
-        has_data_signal = bool(label_text)
-        if has_data_signal:
-            current_end = row_number
-            continue
-        if current_end >= start_row:
-            break
-    return current_end if current_end >= start_row else end_row
 
 
 def _normalize_marker_text(value: object) -> str:

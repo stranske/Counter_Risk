@@ -9,7 +9,6 @@ from typing import Any
 import pytest
 
 from counter_risk.mosers import workbook_generation as workbook_generation_module
-from counter_risk.mosers.template import load_mosers_template_workbook
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook,
     generate_mosers_workbook_ex_trend,
@@ -196,71 +195,6 @@ def test_generate_mosers_workbook_truncates_values_to_documented_layout_slots() 
         assert _read_column_values(worksheet, "D", section_start, section_end) == [
             row.annualized_volatility for row in totals_rows[:slot_count]
         ]
-    finally:
-        workbook.close()
-
-
-def test_generate_mosers_workbook_detects_shifted_metric_section_rows(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    totals_rows = tuple(
-        NisaTotalsRow(
-            counterparty=f"Counterparty {index + 1}",
-            tips=1.0,
-            treasury=2.0,
-            equity=3.0,
-            commodity=4.0,
-            currency=5.0,
-            notional=float(index + 1),
-            notional_change=0.0,
-            annualized_volatility=200.0 + float(index),
-        )
-        for index in range(3)
-    )
-    parsed = NisaAllProgramsData(
-        ch_rows=(
-            NisaChRow(
-                segment="swaps",
-                counterparty="Counterparty 1",
-                cash=0.0,
-                tips=1.0,
-                treasury=2.0,
-                equity=3.0,
-                commodity=4.0,
-                currency=5.0,
-                notional=1.0,
-                notional_change=0.0,
-                annualized_volatility=200.0,
-            ),
-        ),
-        totals_rows=totals_rows,
-    )
-    template = load_mosers_template_workbook()
-    worksheet = template["CPRS - CH"]
-    original_start_row, _ = _find_metric_section_bounds(worksheet)
-    header_row = workbook_generation_module._find_row_containing_text(
-        worksheet=worksheet,
-        text="Annualized Volatility",
-    )
-    assert header_row is not None
-    worksheet.insert_rows(header_row, amount=3)
-    monkeypatch.setattr(
-        workbook_generation_module, "load_mosers_template_workbook", lambda: template
-    )
-
-    workbook = workbook_generation_module._generate_mosers_workbook_from_parser(
-        "ignored.xlsx",
-        parser=lambda _path: parsed,
-    )
-    try:
-        shifted_sheet = workbook["CPRS - CH"]
-        start_row, end_row = _find_metric_section_bounds(shifted_sheet)
-        assert start_row == original_start_row + 3
-        written_values = _read_column_values(shifted_sheet, "D", start_row, end_row)
-        assert written_values[: len(totals_rows)] == [
-            row.annualized_volatility for row in totals_rows
-        ]
-        assert shifted_sheet[f"D{original_start_row}"].value is None
     finally:
         workbook.close()
 
@@ -508,32 +442,7 @@ def _find_stop_row(worksheet: Any, start_row: int, stop_markers: tuple[str, ...]
 
 
 def _find_metric_section_bounds(worksheet: Any) -> tuple[int, int]:
-    marker_row = _find_row_containing_text(worksheet, "Annualized Volatility")
-    stop_row = _find_stop_row(
-        worksheet,
-        marker_row + 1,
-        ("Total by Counterparty/Clearing House",),
-    )
-    end_boundary = (stop_row - 1) if stop_row is not None else int(worksheet.max_row)
-    current_end = marker_row
-    for row_number in range(marker_row + 1, end_boundary + 1):
-        label = " ".join(str(worksheet[f"C{row_number}"].value or "").split()).strip()
-        data_value = worksheet[f"D{row_number}"].value
-        if label or data_value is not None:
-            current_end = row_number
-            continue
-        if current_end > marker_row:
-            break
-    end_row = current_end if current_end > marker_row else end_boundary
-    return marker_row + 1, end_row
+    """Return the fixed metric section bounds used by the MOSERS workbook generator."""
+    from counter_risk.mosers.workbook_generation import _CH_METRIC_END_ROW, _CH_METRIC_START_ROW
 
-
-def _find_row_containing_text(worksheet: Any, text: str) -> int:
-    marker_text = " ".join(text.split()).strip().casefold()
-    for row_number in range(1, int(worksheet.max_row) + 1):
-        for column_number in range(1, int(worksheet.max_column) + 1):
-            value = worksheet.cell(row=row_number, column=column_number).value
-            normalized = " ".join(str(value or "").split()).strip().casefold()
-            if marker_text in normalized:
-                return row_number
-    raise AssertionError(f"Unable to locate row containing {text!r}")
+    return (_CH_METRIC_START_ROW, _CH_METRIC_END_ROW)

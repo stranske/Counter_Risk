@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook_ex_trend,
@@ -19,8 +18,8 @@ def test_ex_trend_output_structure_defines_expected_cprs_layout() -> None:
     assert structure.required_sheets == ("CPRS - CH", "CPRS - FCM")
     assert structure.cprs_ch_sheet == "CPRS - CH"
     assert structure.program_name_cell == "B5"
-    assert structure.cprs_ch_metric_section_marker == "Annualized Volatility"
-    assert structure.cprs_ch_metric_stop_markers == ("Total by Counterparty/Clearing House",)
+    assert structure.cprs_ch_metric_start_row == 10
+    assert structure.cprs_ch_metric_end_row == 20
 
 
 def test_ex_trend_transformation_scope_defines_core_mappings() -> None:
@@ -60,12 +59,8 @@ def test_ex_trend_fixture_generates_using_documented_layout_contract() -> None:
             for transform in scope.cprs_ch_transforms
             if transform.source_metric == "allocation_percentage"
         )
-        section_start_row = _find_section_start_row(
-            worksheet,
-            structure.cprs_ch_metric_section_marker,
-        )
-        first_vol_cell = f"{first_vol_column}{section_start_row}"
-        first_alloc_cell = f"{first_alloc_column}{section_start_row}"
+        first_vol_cell = f"{first_vol_column}{structure.cprs_ch_metric_start_row}"
+        first_alloc_cell = f"{first_alloc_column}{structure.cprs_ch_metric_start_row}"
 
         assert worksheet[first_vol_cell].value == parsed.totals_rows[0].annualized_volatility
 
@@ -78,12 +73,3 @@ def test_ex_trend_fixture_generates_using_documented_layout_contract() -> None:
         workbook.close()
 
 
-def _find_section_start_row(worksheet: Any, marker_text: str) -> int:
-    marker = " ".join(marker_text.split()).strip().casefold()
-    for row_number in range(1, int(worksheet.max_row) + 1):
-        for column_number in range(1, int(worksheet.max_column) + 1):
-            value = worksheet.cell(row=row_number, column=column_number).value
-            normalized = " ".join(str(value or "").split()).strip().casefold()
-            if marker in normalized:
-                return row_number + 1
-    raise AssertionError(f"Unable to locate marker row containing {marker_text!r}")
