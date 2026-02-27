@@ -5,11 +5,12 @@ from __future__ import annotations
 import contextlib
 import csv
 import hashlib
+import inspect
 import logging
 import math
 import platform
 import shutil
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
@@ -24,6 +25,7 @@ from counter_risk.compute.limits import (
     write_limit_breaches_csv,
 )
 from counter_risk.compute.rollups import (
+    apply_repo_cash_to_totals,
     compute_concentration_metrics,
     write_concentration_metrics_csv,
 )
@@ -38,6 +40,7 @@ from counter_risk.normalize import (
 from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
+from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
@@ -57,7 +60,12 @@ from counter_risk.ppt.pptx_postprocess import (
     scrub_external_relationships_from_pptx,
 )
 from counter_risk.ppt.pptx_static import _rebuild_pptx_from_slide_images
-from counter_risk.writers import generate_mosers_workbook
+from counter_risk.reports import (
+    attribute_changes,
+    write_change_attribution_csv,
+    write_change_attribution_markdown,
+)
+from counter_risk.writers import fill_dropin_template, generate_mosers_workbook
 
 LOGGER = logging.getLogger(__name__)
 
@@ -572,6 +580,11 @@ def run_pipeline(config_path: str | Path) -> Path:
             warnings=warnings,
         )
         parsed_by_variant = _parse_inputs(_resolve_input_paths(runtime_config))
+        _apply_daily_holdings_repo_cash(
+            config=runtime_config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
         _validate_parsed_inputs(parsed_by_variant)
         reconciliation_outcome = _run_reconciliation_checks(
             run_dir=run_dir,
@@ -596,6 +609,7 @@ def run_pipeline(config_path: str | Path) -> Path:
 
     concentration_metrics_records: list[dict[str, Any]] = []
     concentration_metrics_output_paths: list[Path] = []
+    change_attribution_output_paths: list[Path] = []
     try:
         risk_output_paths = _write_risk_outputs(
             run_dir=run_dir,
@@ -616,6 +630,16 @@ def run_pipeline(config_path: str | Path) -> Path:
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=concentration_metrics run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during concentration metrics stage") from exc
+
+    try:
+        change_attribution_output_paths = _write_change_attribution_outputs(
+            run_dir=run_dir,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=change_attribution run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during change attribution stage") from exc
 
     try:
         limit_breaches = _compute_and_write_limit_breaches(
@@ -649,11 +673,12 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during historical update stage") from exc
 
     try:
-        output_result = _write_outputs(
+        output_result = _call_write_outputs(
             run_dir=run_dir,
             config=runtime_config,
             as_of_date=as_of_date,
             warnings=warnings,
+            parsed_by_variant=parsed_by_variant,
         )
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=write_outputs run_dir=%s", run_dir)
@@ -667,6 +692,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         historical_output_paths
         + risk_output_paths
         + concentration_metrics_output_paths
+        + change_attribution_output_paths
         + output_paths
     )
     if limit_breaches.csv_path is not None:
@@ -716,6 +742,25 @@ def run_pipeline(config_path: str | Path) -> Path:
     LOGGER.info("pipeline_complete run_dir=%s manifest=%s", run_dir, manifest_path)
 
     return run_dir
+
+
+def _call_write_outputs(
+    *,
+    run_dir: Path,
+    config: WorkflowConfig,
+    as_of_date: date,
+    warnings: list[str],
+    parsed_by_variant: Mapping[str, Mapping[str, Any]],
+) -> tuple[list[Path], PptProcessingResult]:
+    write_outputs_kwargs: dict[str, Any] = {
+        "run_dir": run_dir,
+        "config": config,
+        "as_of_date": as_of_date,
+        "warnings": warnings,
+    }
+    if "parsed_by_variant" in inspect.signature(_write_outputs).parameters:
+        write_outputs_kwargs["parsed_by_variant"] = parsed_by_variant
+    return _write_outputs(**write_outputs_kwargs)
 
 
 def _create_run_directory(*, as_of_date: date, run_date: date | None = None) -> Path:
@@ -806,6 +851,10 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
         paths["mosers_all_programs_xlsx"] = config.mosers_all_programs_xlsx
     if config.raw_nisa_all_programs_xlsx is not None:
         paths["raw_nisa_all_programs_xlsx"] = config.raw_nisa_all_programs_xlsx
+    if config.daily_holdings_pdf is not None:
+        paths["daily_holdings_pdf"] = config.daily_holdings_pdf
+    if config.dropin_all_programs_template_xlsx is not None:
+        paths["dropin_all_programs_template_xlsx"] = config.dropin_all_programs_template_xlsx
     return paths
 
 
@@ -827,6 +876,18 @@ def _validate_pipeline_config(config: WorkflowConfig) -> None:
         _validate_extension(
             field_name="raw_nisa_all_programs_xlsx",
             path=config.raw_nisa_all_programs_xlsx,
+            expected_suffix=".xlsx",
+        )
+    if config.daily_holdings_pdf is not None:
+        _validate_extension(
+            field_name="daily_holdings_pdf",
+            path=config.daily_holdings_pdf,
+            expected_suffix=".pdf",
+        )
+    if config.dropin_all_programs_template_xlsx is not None:
+        _validate_extension(
+            field_name="dropin_all_programs_template_xlsx",
+            path=config.dropin_all_programs_template_xlsx,
             expected_suffix=".xlsx",
         )
     _validate_extension(
@@ -866,6 +927,33 @@ def _validate_extension(*, field_name: str, path: Path, expected_suffix: str) ->
         raise ValueError(
             f"Invalid file type for {field_name}: expected {expected_suffix}, got '{path.suffix}'"
         )
+
+
+def _apply_daily_holdings_repo_cash(
+    *,
+    config: WorkflowConfig,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    warnings: list[str],
+) -> None:
+    if config.daily_holdings_pdf is None:
+        return
+
+    repo_cash_by_counterparty = parse_daily_holdings_pdf(config.daily_holdings_pdf)
+    all_programs_sections = parsed_by_variant.get("all_programs")
+    if not isinstance(all_programs_sections, dict) or "totals" not in all_programs_sections:
+        raise ValueError(
+            "Parsed payload for variant 'all_programs' is missing the totals section required "
+            "for daily holdings Repo Cash integration"
+        )
+
+    all_programs_sections["totals"] = apply_repo_cash_to_totals(
+        all_programs_sections["totals"],
+        repo_cash_by_counterparty,
+    )
+    warnings.append(
+        "Applied Daily Holdings Repo Cash values to all_programs totals "
+        f"for {len(repo_cash_by_counterparty)} counterparties"
+    )
 
 
 def _validate_input_files(input_paths: dict[str, Path]) -> None:
@@ -1309,6 +1397,59 @@ def _write_risk_outputs(
     return output_paths
 
 
+def _write_change_attribution_outputs(
+    *, run_dir: Path, parsed_by_variant: dict[str, dict[str, Any]], warnings: list[str]
+) -> list[Path]:
+    preferred_variant = "all_programs"
+    variant = preferred_variant if preferred_variant in parsed_by_variant else ""
+    if not variant and parsed_by_variant:
+        variant = sorted(parsed_by_variant, key=str.casefold)[0]
+    if not variant:
+        warnings.append("change_attribution skipped: no parsed variant data available")
+        return []
+
+    totals_table = parsed_by_variant.get(variant, {}).get("totals")
+    current_rows = _records(totals_table) if totals_table is not None else []
+    if not current_rows:
+        warnings.append(f"change_attribution skipped: no totals rows for variant '{variant}'")
+        return []
+
+    prior_rows = _infer_prior_rows_from_notional_change(current_rows=current_rows)
+    if not prior_rows:
+        warnings.append(
+            "change_attribution skipped: prior-month notional deltas unavailable in current totals"
+        )
+        return []
+
+    report = attribute_changes(current_rows, prior_rows)
+    csv_path = run_dir / "change_attribution.csv"
+    markdown_path = run_dir / "change_attribution.md"
+    write_change_attribution_csv(report=report, path=csv_path)
+    write_change_attribution_markdown(report=report, path=markdown_path)
+    return [csv_path, markdown_path]
+
+
+def _infer_prior_rows_from_notional_change(
+    *, current_rows: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    prior_rows: list[dict[str, Any]] = []
+    for record in current_rows:
+        counterparty = str(record.get("counterparty", "")).strip()
+        if not counterparty:
+            continue
+        notional = _coerce_float_or_none(record.get("Notional"))
+        notional_change = _coerce_float_or_none(record.get("NotionalChange"))
+        if notional is None or notional_change is None:
+            continue
+        prior_rows.append(
+            {
+                "counterparty": counterparty,
+                "Notional": notional - notional_change,
+            }
+        )
+    return prior_rows
+
+
 def _rank_proxy_rows(
     *, variant: str, records: list[dict[str, Any]], proxy_column: str
 ) -> list[dict[str, Any]]:
@@ -1396,6 +1537,13 @@ def _first_available_field(*, columns: set[str], candidates: tuple[str, ...]) ->
         if candidate in columns:
             return candidate
     return None
+
+
+def _coerce_float_or_none(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _write_csv_rows(*, path: Path, fieldnames: tuple[str, ...], rows: list[dict[str, Any]]) -> None:
@@ -1644,12 +1792,103 @@ def _build_limit_warning_banner_for_run_dir(run_dir: Path) -> RunFolderWarningBa
     )
 
 
+def _write_all_programs_dropin_output(
+    *,
+    run_dir: Path,
+    config: WorkflowConfig,
+    warnings: list[str],
+    parsed_by_variant: Mapping[str, Mapping[str, Any]] | None,
+) -> Path | None:
+    template_path = config.dropin_all_programs_template_xlsx
+    if template_path is None:
+        return None
+    if parsed_by_variant is None:
+        raise ValueError(
+            "parsed_by_variant is required when dropin_all_programs_template_xlsx is configured"
+        )
+
+    parsed_all_programs = parsed_by_variant.get("all_programs")
+    if not isinstance(parsed_all_programs, Mapping):
+        raise ValueError("Parsed payload for variant 'all_programs' is missing")
+    if "totals" not in parsed_all_programs:
+        raise ValueError(
+            "Parsed payload for variant 'all_programs' is missing the totals section required "
+            "for Drop-In output generation"
+        )
+
+    totals_records = _records(parsed_all_programs["totals"])
+    notional_breakdown = _build_dropin_notional_breakdown(totals_records)
+    output_path = run_dir / _derive_dropin_output_filename(template_path)
+    fill_dropin_template(
+        template_path=template_path,
+        exposures_df=totals_records,
+        breakdown=notional_breakdown,
+        output_path=output_path,
+    )
+    warnings.append("Generated All Programs Drop-In output workbook")
+    return output_path
+
+
+def _derive_dropin_output_filename(template_path: Path) -> str:
+    stem = template_path.stem
+    if "template" in stem.casefold():
+        return f"{stem.replace('Template', 'Filled').replace('template', 'filled')}.xlsx"
+    return f"{stem}-filled.xlsx"
+
+
+def _build_dropin_notional_breakdown(totals_records: Sequence[Mapping[str, Any]]) -> dict[str, float]:
+    class_totals = dict.fromkeys(_CLASS_BREAKDOWN_COLUMNS, 0.0)
+    total_notional = 0.0
+
+    for row in totals_records:
+        total_notional += _row_numeric_value(row, aliases=("Notional", "notional"))
+        for asset_class in _CLASS_BREAKDOWN_COLUMNS:
+            class_totals[asset_class] += _row_numeric_value(
+                row,
+                aliases=(asset_class, asset_class.casefold()),
+            )
+
+    if total_notional == 0.0:
+        return {
+            "tips": 0.0,
+            "treasury": 0.0,
+            "equity": 0.0,
+            "commodity": 0.0,
+            "currency": 0.0,
+            "notional": 0.0,
+        }
+
+    return {
+        "tips": class_totals["TIPS"] / total_notional,
+        "treasury": class_totals["Treasury"] / total_notional,
+        "equity": class_totals["Equity"] / total_notional,
+        "commodity": class_totals["Commodity"] / total_notional,
+        "currency": class_totals["Currency"] / total_notional,
+        "notional": 1.0,
+    }
+
+
+def _row_numeric_value(row: Mapping[str, Any], *, aliases: tuple[str, ...]) -> float:
+    for alias in aliases:
+        if alias not in row:
+            continue
+        value = row.get(alias)
+        if value is None:
+            return 0.0
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return 0.0
+    return 0.0
+
+
 def _write_outputs(
     *,
     run_dir: Path,
     config: WorkflowConfig,
     as_of_date: date,
     warnings: list[str],
+    parsed_by_variant: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> tuple[list[Path], PptProcessingResult]:
     LOGGER.info("write_outputs_start run_dir=%s", run_dir)
 
@@ -1680,6 +1919,15 @@ def _write_outputs(
         if source_mosers.resolve() != target_monthly_book.resolve():
             shutil.copy2(source_mosers, target_monthly_book)
         output_paths.append(target_monthly_book)
+
+    all_programs_dropin_output = _write_all_programs_dropin_output(
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+        parsed_by_variant=parsed_by_variant,
+    )
+    if all_programs_dropin_output is not None:
+        output_paths.append(all_programs_dropin_output)
 
     if not config.ppt_output_enabled:
         LOGGER.info("write_outputs_skip_ppt run_dir=%s", run_dir)

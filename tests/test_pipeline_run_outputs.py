@@ -105,6 +105,85 @@ def test_write_outputs_screenshot_replacement_replaces_expected_number_of_media_
     assert len(changed_media_parts) == len(screenshot_inputs)
 
 
+def test_write_outputs_generates_all_programs_dropin_when_template_is_configured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, screenshot_inputs={}).model_copy(
+        update={
+            "enable_ppt_output": False,
+            "dropin_all_programs_template_xlsx": tmp_path / "inputs" / "dropin-template.xlsx",
+        }
+    )
+    template_path = config.dropin_all_programs_template_xlsx
+    assert template_path is not None
+    template_path.write_bytes(b"fixture")
+    warnings: list[str] = []
+    observed: dict[str, object] = {}
+
+    def _fake_fill_dropin_template(
+        template_path: Path,
+        exposures_df: object,
+        breakdown: object,
+        *,
+        output_path: Path,
+        repo_cash_by_counterparty: object | None = None,
+    ) -> Path:
+        observed["template_path"] = template_path
+        observed["exposures"] = exposures_df
+        observed["breakdown"] = breakdown
+        observed["repo_cash_by_counterparty"] = repo_cash_by_counterparty
+        output_path.write_bytes(b"filled-dropin")
+        return output_path
+
+    monkeypatch.setattr(run_module, "fill_dropin_template", _fake_fill_dropin_template)
+
+    parsed_by_variant: dict[str, dict[str, object]] = {
+        "all_programs": {
+            "totals": [
+                {
+                    "counterparty": "CIBC",
+                    "Cash": 125.0,
+                    "TIPS": 25.0,
+                    "Treasury": 50.0,
+                    "Equity": 75.0,
+                    "Commodity": 10.0,
+                    "Currency": 5.0,
+                    "Notional": 265.0,
+                    "NotionalChange": 12.0,
+                }
+            ],
+            "futures": [],
+        }
+    }
+
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        warnings=warnings,
+        parsed_by_variant=parsed_by_variant,
+    )
+
+    expected_dropin = run_dir / "dropin-filled.xlsx"
+    assert ppt_result.status == run_module.PptProcessingStatus.SKIPPED
+    assert expected_dropin in output_paths
+    assert expected_dropin.exists()
+    assert observed["template_path"] == config.dropin_all_programs_template_xlsx
+    assert observed["exposures"] == parsed_by_variant["all_programs"]["totals"]
+    assert observed["repo_cash_by_counterparty"] is None
+    assert observed["breakdown"] == {
+        "tips": pytest.approx(25.0 / 265.0),
+        "treasury": pytest.approx(50.0 / 265.0),
+        "equity": pytest.approx(75.0 / 265.0),
+        "commodity": pytest.approx(10.0 / 265.0),
+        "currency": pytest.approx(5.0 / 265.0),
+        "notional": pytest.approx(1.0),
+    }
+    assert "Generated All Programs Drop-In output workbook" in warnings
+
+
 def test_write_outputs_skips_all_ppt_generation_when_disabled(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

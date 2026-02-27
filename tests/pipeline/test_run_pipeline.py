@@ -181,6 +181,160 @@ def _minimal_workflow_config(
     )
 
 
+def test_apply_daily_holdings_repo_cash_updates_all_programs_totals(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={"daily_holdings_pdf": tmp_path / "daily-holdings.pdf"}
+    )
+    parsed_by_variant: dict[str, dict[str, Any]] = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "CIBC",
+                        "TIPS": 0.0,
+                        "Treasury": 0.0,
+                        "Equity": 10.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 10.0,
+                        "NotionalChange": 1.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        }
+    }
+    warnings: list[str] = []
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0, "ASL": 3.0})
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    totals_records = cast(
+        list[dict[str, Any]], parsed_by_variant["all_programs"]["totals"].to_dict(orient="records")
+    )
+    by_counterparty = {row["counterparty"]: row for row in totals_records}
+    assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(2.0)
+    assert float(by_counterparty["CIBC"]["Notional"]) == pytest.approx(12.0)
+    assert float(by_counterparty["ASL"]["Cash"]) == pytest.approx(3.0)
+    assert float(by_counterparty["ASL"]["Notional"]) == pytest.approx(3.0)
+    assert any("Applied Daily Holdings Repo Cash values" in warning for warning in warnings)
+
+
+def test_apply_daily_holdings_repo_cash_noop_when_daily_holdings_not_configured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(update={"daily_holdings_pdf": None})
+    parsed_by_variant = _minimal_parsed_by_variant()
+    warnings: list[str] = []
+
+    def _unexpected_call(_: Path) -> dict[str, float]:
+        raise AssertionError("parse_daily_holdings_pdf should not be called")
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", _unexpected_call)
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert warnings == []
+
+
+def test_daily_holdings_repo_cash_flows_into_all_programs_dropin_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={
+            "daily_holdings_pdf": tmp_path / "daily-holdings.pdf",
+            "dropin_all_programs_template_xlsx": tmp_path / "dropin-template.xlsx",
+            "enable_ppt_output": False,
+        }
+    )
+    daily_holdings_pdf = config.daily_holdings_pdf
+    dropin_template = config.dropin_all_programs_template_xlsx
+    assert daily_holdings_pdf is not None
+    assert dropin_template is not None
+    daily_holdings_pdf.write_bytes(b"%PDF-1.4\n%fixture")
+    dropin_template.write_bytes(b"placeholder")
+    for source_path in (
+        config.mosers_all_programs_xlsx,
+        config.mosers_ex_trend_xlsx,
+        config.mosers_trend_xlsx,
+    ):
+        assert source_path is not None
+        source_path.write_text("fixture", encoding="utf-8")
+
+    parsed_by_variant: dict[str, dict[str, Any]] = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "CIBC",
+                        "TIPS": 0.0,
+                        "Treasury": 0.0,
+                        "Equity": 10.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 10.0,
+                        "NotionalChange": 1.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        }
+    }
+    observed: dict[str, Any] = {}
+    warnings: list[str] = []
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0, "ASL": 3.0})
+
+    def _fake_fill_dropin_template(
+        template_path: Path,
+        exposures_df: Any,
+        breakdown: Any,
+        *,
+        output_path: Path,
+        repo_cash_by_counterparty: Any | None = None,
+    ) -> Path:
+        _ = (template_path, breakdown, repo_cash_by_counterparty)
+        observed["exposures"] = exposures_df
+        output_path.write_bytes(b"filled-dropin")
+        return output_path
+
+    monkeypatch.setattr(run_module, "fill_dropin_template", _fake_fill_dropin_template)
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        warnings=warnings,
+        parsed_by_variant=parsed_by_variant,
+    )
+
+    dropin_rows = cast(list[dict[str, Any]], observed["exposures"])
+    by_counterparty = {row["counterparty"]: row for row in dropin_rows}
+    assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(2.0)
+    assert float(by_counterparty["CIBC"]["Notional"]) == pytest.approx(12.0)
+    assert float(by_counterparty["ASL"]["Cash"]) == pytest.approx(3.0)
+    assert float(by_counterparty["ASL"]["Notional"]) == pytest.approx(3.0)
+
+
 def test_build_missing_inputs_summary_complete_with_single_optional_gap(tmp_path: Path) -> None:
     config = _minimal_workflow_config(tmp_path)
     input_paths = run_module._resolve_input_paths(config)
@@ -1141,6 +1295,65 @@ def test_write_risk_outputs_creates_partial_outputs_when_only_notional_proxy_exi
         "risk_proxy_notional_annualized_volatility"
     }
     assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+
+
+def test_write_change_attribution_outputs_writes_markdown_and_csv(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Desk A",
+                        "Notional": 100.0,
+                        "NotionalChange": 10.0,
+                    },
+                    {
+                        "counterparty": "Desk B",
+                        "Notional": 80.0,
+                        "NotionalChange": -5.0,
+                    },
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_change_attribution_outputs(
+        run_dir=tmp_path,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    csv_path = tmp_path / "change_attribution.csv"
+    markdown_path = tmp_path / "change_attribution.md"
+    assert output_paths == [csv_path, markdown_path]
+    assert csv_path.exists()
+    assert markdown_path.exists()
+    assert "confidence" in csv_path.read_text(encoding="utf-8")
+    assert "High" in markdown_path.read_text(encoding="utf-8")
+    assert warnings == []
+
+
+def test_write_change_attribution_outputs_skips_when_notional_delta_unavailable(
+    tmp_path: Path,
+) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "Desk A", "Notional": 100.0}])
+        }
+    }
+
+    output_paths = run_module._write_change_attribution_outputs(
+        run_dir=tmp_path,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert output_paths == []
+    assert not (tmp_path / "change_attribution.csv").exists()
+    assert not (tmp_path / "change_attribution.md").exists()
+    assert any("change_attribution skipped" in warning for warning in warnings)
 
 
 def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
