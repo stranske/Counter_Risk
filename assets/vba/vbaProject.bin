@@ -861,5 +861,4 @@ End Sub
 Private Function ReadSelectedDate() As String
     ReadSelectedDate = CStr(ThisWorkbook.Worksheets(RUNNER_SHEET_NAME).Range("B3").Value)
 End Function
-
 ' END RunnerLaunch.bas mirror

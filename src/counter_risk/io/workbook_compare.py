@@ -13,6 +13,7 @@ _CORE_NS = "http://schemas.openxmlformats.org/package/2006/metadata/core-propert
 _DCTERMS_NS = "http://purl.org/dc/terms/"
 
 _CORE_TAGS_TO_IGNORE = {
+    f"{{{_DCTERMS_NS}}}created",
     f"{{{_DCTERMS_NS}}}modified",
     f"{{{_CORE_NS}}}lastModifiedBy",
 }
