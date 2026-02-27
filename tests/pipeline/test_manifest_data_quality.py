@@ -4,7 +4,7 @@ from datetime import date
 from pathlib import Path
 
 from counter_risk.config import WorkflowConfig
-from counter_risk.pipeline.manifest import ManifestBuilder
+from counter_risk.pipeline.manifest import ManifestBuilder, build_data_quality_summary_text
 
 
 def _make_config(tmp_path: Path) -> WorkflowConfig:
@@ -242,3 +242,97 @@ def test_manifest_build_generates_unique_recommended_actions_by_category_and_sev
         ),
         ("input", "warn", "Review warnings and confirm run artifacts are acceptable."),
     }
+
+
+def test_build_data_quality_summary_text_includes_status_counts_findings_and_actions() -> None:
+    manifest = {
+        "as_of_date": "2026-02-13",
+        "run_date": "2026-02-14",
+        "data_quality": {
+            "overall_status": "warn",
+            "findings": [
+                {
+                    "category": "input",
+                    "severity": "fail",
+                    "code": "MISSING_REQUIRED_INPUTS",
+                    "message": "Missing required inputs: monthly_pptx.",
+                },
+                {
+                    "category": "limits",
+                    "severity": "warn",
+                    "code": "LIMIT_BREACHES",
+                    "message": "Detected 2 limit breaches.",
+                },
+            ],
+            "counts": {
+                "total_findings": 2,
+                "by_severity": {"info": 0, "warn": 1, "fail": 1},
+                "by_category": {
+                    "input": {"info": 0, "warn": 0, "fail": 1, "total": 1},
+                    "limits": {"info": 0, "warn": 1, "fail": 0, "total": 1},
+                },
+            },
+            "recommended_actions": [
+                {
+                    "category": "input",
+                    "severity": "fail",
+                    "action": "Provide missing required files and rerun the pipeline.",
+                },
+                {
+                    "category": "limits",
+                    "severity": "warn",
+                    "action": "Review warnings and confirm run artifacts are acceptable.",
+                },
+            ],
+        },
+    }
+
+    summary = build_data_quality_summary_text(manifest)
+
+    assert "Overall status: WARN (YELLOW) - Review warnings before sending." in summary
+    assert "Finding counts:" in summary
+    assert "- Total findings: 2" in summary
+    assert "- warn: 1" in summary
+    assert "- fail: 1" in summary
+    assert "Detailed findings:" in summary
+    assert (
+        "[FAIL] input / MISSING_REQUIRED_INPUTS: Missing required inputs: monthly_pptx." in summary
+    )
+    assert "[WARN] limits / LIMIT_BREACHES: Detected 2 limit breaches." in summary
+    assert "Recommended actions:" in summary
+    assert "[FAIL] input: Provide missing required files and rerun the pipeline." in summary
+    assert "[WARN] limits: Review warnings and confirm run artifacts are acceptable." in summary
+
+
+def test_build_data_quality_summary_text_derives_counts_from_findings_when_counts_missing() -> None:
+    manifest = {
+        "as_of_date": "2026-02-13",
+        "run_date": "2026-02-14",
+        "data_quality": {
+            "overall_status": "fail",
+            "findings": [
+                {
+                    "category": "input",
+                    "severity": "fail",
+                    "code": "MISSING_REQUIRED_INPUTS",
+                    "message": "Missing required inputs: monthly_pptx.",
+                },
+                {
+                    "category": "ppt",
+                    "severity": "warn",
+                    "code": "PPT_GENERATION_SKIPPED",
+                    "message": "PowerPoint generation was skipped.",
+                },
+            ],
+            "counts": {"total_findings": 0, "by_severity": {"info": 0, "warn": 0, "fail": 0}},
+            "recommended_actions": [],
+        },
+    }
+
+    summary = build_data_quality_summary_text(manifest)
+
+    assert "- Total findings: 2" in summary
+    assert "- warn: 1" in summary
+    assert "- fail: 1" in summary
+    assert "- input: total=1 (info=0, warn=0, fail=1)" in summary
+    assert "- ppt: total=1 (info=0, warn=1, fail=0)" in summary
