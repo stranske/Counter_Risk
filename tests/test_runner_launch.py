@@ -138,11 +138,15 @@ def test_open_data_quality_summary_returns_missing_file_error_without_open_call(
     opened_files: list[str] = []
     summary_path = resolve_data_quality_summary_path("C:/repo", "2025-06-30")
 
+    def open_file(path: str) -> int:
+        opened_files.append(path)
+        return 0
+
     status = open_data_quality_summary(
         repo_root="C:/repo",
         selected_date="2025-06-30",
         file_exists=lambda _: False,
-        open_file=lambda path: opened_files.append(path) or 0,
+        open_file=open_file,
     )
 
     assert status.success is False
@@ -155,11 +159,15 @@ def test_open_data_quality_summary_opens_existing_file() -> None:
     opened_files: list[str] = []
     summary_path = resolve_data_quality_summary_path("C:/repo", "2025-06-30")
 
+    def open_file(path: str) -> int:
+        opened_files.append(path)
+        return 0
+
     status = open_data_quality_summary(
         repo_root="C:/repo",
         selected_date="2025-06-30",
         file_exists=lambda path: path == summary_path,
-        open_file=lambda path: opened_files.append(path) or 0,
+        open_file=open_file,
     )
 
     assert status.success is True
