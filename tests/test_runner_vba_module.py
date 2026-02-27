@@ -107,6 +107,24 @@ def test_runner_vba_module_defines_public_entrypoints() -> None:
     assert "Public Sub RunExTrend_Click()" in module_source
     assert "Public Sub RunTrend_Click()" in module_source
     assert "Public Sub OpenOutputFolder_Click()" in module_source
+    assert "Public Sub OpenSummary_Click()" in module_source
+
+
+def test_runner_vba_open_summary_checks_file_and_uses_resolved_summary_path() -> None:
+    module_source = _module_source()
+
+    assert "Public Sub OpenSummary_Click()" in module_source
+    assert (
+        "summaryPath = ResolveDataQualitySummaryPath(ResolveRepoRoot(), selectedDate)"
+        in module_source
+    )
+    assert 'missingSummaryMessage = "Summary not found" & " " & summaryPath' in module_source
+    assert "If Not FileExists(summaryPath) Then" in module_source
+    assert "status = OpenFile(summaryPath)" in module_source
+    assert (
+        'ResolveDataQualitySummaryPath = ResolveOutputDir(repoRoot, selectedDate) & "\\DATA_QUALITY_SUMMARY.txt"'
+        in module_source
+    )
 
 
 def test_runner_vba_run_all_reads_selected_date_and_calls_shared_builder() -> None:

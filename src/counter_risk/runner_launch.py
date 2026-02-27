@@ -12,6 +12,7 @@ from enum import StrEnum
 
 SHELL_ERROR_BASE = 7100
 _OPERATOR_ACTION_PREFIX = "Operator action:"
+_DATA_QUALITY_SUMMARY_FILENAME = "DATA_QUALITY_SUMMARY.txt"
 
 
 class RunnerMode(StrEnum):
@@ -100,6 +101,10 @@ def resolve_output_dir(repo_root: str, selected_date: str) -> str:
     return f"{normalize_path_separators(repo_root)}\\runs\\{parsed_date.isoformat()}_000000"
 
 
+def resolve_data_quality_summary_path(repo_root: str, selected_date: str) -> str:
+    return f"{resolve_output_dir(repo_root, selected_date)}\\{_DATA_QUALITY_SUMMARY_FILENAME}"
+
+
 def resolve_config_path(run_mode: RunnerMode) -> str:
     if run_mode is RunnerMode.ALL:
         return "config\\all_programs.yml"
@@ -178,5 +183,51 @@ def open_output_folder(
         error_code=0,
         message="Success",
         command=output_dir,
+        exit_code=0,
+    )
+
+
+def open_data_quality_summary(
+    *,
+    repo_root: str,
+    selected_date: str,
+    file_exists: Callable[[str], bool],
+    open_file: Callable[[str], int],
+) -> LaunchStatus:
+    summary_path = resolve_data_quality_summary_path(repo_root, selected_date)
+    if not file_exists(summary_path):
+        return LaunchStatus(
+            success=False,
+            error_code=SHELL_ERROR_BASE + 2,
+            message=f"Summary not found: {summary_path}",
+            command=summary_path,
+            exit_code=-1,
+        )
+
+    try:
+        exit_code = int(open_file(summary_path))
+    except Exception as exc:  # pragma: no cover - defensive parity with VBA error flow
+        return LaunchStatus(
+            success=False,
+            error_code=SHELL_ERROR_BASE + 3,
+            message=str(exc),
+            command=summary_path,
+            exit_code=-1,
+        )
+
+    if exit_code != 0:
+        return LaunchStatus(
+            success=False,
+            error_code=SHELL_ERROR_BASE + exit_code,
+            message=f"Process exited with code {exit_code}",
+            command=summary_path,
+            exit_code=exit_code,
+        )
+
+    return LaunchStatus(
+        success=True,
+        error_code=0,
+        message="Success",
+        command=summary_path,
         exit_code=0,
     )

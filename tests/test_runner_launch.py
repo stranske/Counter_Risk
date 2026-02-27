@@ -13,15 +13,17 @@ from counter_risk.runner_launch import (
     build_discovery_run_command,
     format_launch_error_for_runner,
     map_runner_error_to_operator_message,
+    open_data_quality_summary,
     open_output_folder,
+    resolve_data_quality_summary_path,
     resolve_output_dir,
 )
 
 
 @pytest.fixture
-def filesystem_and_explorer_stubs() -> tuple[
-    set[str], list[str], Callable[[str], bool], Callable[[str], int]
-]:
+def filesystem_and_explorer_stubs() -> (
+    tuple[set[str], list[str], Callable[[str], bool], Callable[[str], int]]
+):
     existing_directories: set[str] = set()
     opened_directories: list[str] = []
 
@@ -130,6 +132,39 @@ def test_open_output_folder_uses_stubbed_explorer_for_existing_directory(
     assert status.success is True
     assert status.message == "Success"
     assert opened_directories == [resolved_path]
+
+
+def test_open_data_quality_summary_returns_missing_file_error_without_open_call() -> None:
+    opened_files: list[str] = []
+    summary_path = resolve_data_quality_summary_path("C:/repo", "2025-06-30")
+
+    status = open_data_quality_summary(
+        repo_root="C:/repo",
+        selected_date="2025-06-30",
+        file_exists=lambda _: False,
+        open_file=lambda path: opened_files.append(path) or 0,
+    )
+
+    assert status.success is False
+    assert status.error_code == 7102
+    assert f"Summary not found: {summary_path}" == status.message
+    assert opened_files == []
+
+
+def test_open_data_quality_summary_opens_existing_file() -> None:
+    opened_files: list[str] = []
+    summary_path = resolve_data_quality_summary_path("C:/repo", "2025-06-30")
+
+    status = open_data_quality_summary(
+        repo_root="C:/repo",
+        selected_date="2025-06-30",
+        file_exists=lambda path: path == summary_path,
+        open_file=lambda path: opened_files.append(path) or 0,
+    )
+
+    assert status.success is True
+    assert status.message == "Success"
+    assert opened_files == [summary_path]
 
 
 @pytest.mark.parametrize(

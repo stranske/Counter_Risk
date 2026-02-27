@@ -218,7 +218,8 @@ def test_runner_workbook_contains_run_controls() -> None:
             "C5": "Run Trend",
             "D5": "Open Output Folder",
             "E5": "Ask about this run",
-            "F5": "Dry-Run Discovery",
+            "F5": "Open Summary",
+            "G5": "Dry-Run Discovery",
         }
         for cell_ref, expected_text in action_cells.items():
             node = runner_sheet_root.find(
