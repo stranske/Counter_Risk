@@ -16,6 +16,15 @@ from counter_risk.pipeline.warnings import WarningsCollector
 
 __all__ = ["ManifestBuilder", "WarningsCollector"]
 
+_DATA_QUALITY_SUMMARY_FILENAME = "DATA_QUALITY_SUMMARY.txt"
+_SEVERITY_DISPLAY_ORDER = ("info", "warn", "fail")
+_STATUS_COLOR = {"info": "GREEN", "warn": "YELLOW", "fail": "RED"}
+_STATUS_GUIDANCE = {
+    "info": "Safe to send.",
+    "warn": "Review warnings before sending.",
+    "fail": "Do not send until failing checks are resolved.",
+}
+
 
 @dataclass(frozen=True)
 class ManifestBuilder:
@@ -108,8 +117,14 @@ class ManifestBuilder:
         return manifest
 
     def write(self, *, run_dir: Path, manifest: dict[str, Any]) -> Path:
+        summary_path = run_dir / _DATA_QUALITY_SUMMARY_FILENAME
         path = run_dir / "manifest.json"
         try:
+            summary_path.write_text(
+                self._build_data_quality_summary(manifest),
+                encoding="utf-8",
+            )
+            self._register_summary_artifact(manifest)
             path.write_text(
                 json.dumps(manifest, sort_keys=True, indent=2) + "\n",
                 encoding="utf-8",
@@ -117,6 +132,130 @@ class ManifestBuilder:
         except OSError as exc:
             raise RuntimeError(f"Failed to write manifest file: {path}") from exc
         return path
+
+    def _register_summary_artifact(self, manifest: dict[str, Any]) -> None:
+        output_paths = manifest.get("output_paths")
+        if not isinstance(output_paths, list):
+            return
+        rendered_paths = [str(path) for path in output_paths]
+        if _DATA_QUALITY_SUMMARY_FILENAME in rendered_paths:
+            return
+        output_paths.append(_DATA_QUALITY_SUMMARY_FILENAME)
+
+    def _build_data_quality_summary(self, manifest: Mapping[str, Any]) -> str:
+        data_quality = manifest.get("data_quality")
+        as_of_date = str(manifest.get("as_of_date", "unknown"))
+        run_date = str(manifest.get("run_date", "unknown"))
+
+        status = "info"
+        counts_by_severity: dict[str, int] = {severity: 0 for severity in _SEVERITY_DISPLAY_ORDER}
+        total_findings = 0
+        counts_by_category: dict[str, dict[str, int]] = {}
+        findings: list[Mapping[str, Any]] = []
+        actions: list[Mapping[str, Any]] = []
+
+        if isinstance(data_quality, Mapping):
+            status_candidate = str(data_quality.get("overall_status", "info")).strip().lower()
+            if status_candidate in _STATUS_COLOR:
+                status = status_candidate
+
+            counts = data_quality.get("counts")
+            if isinstance(counts, Mapping):
+                total_findings = self._safe_int(counts.get("total_findings", 0))
+                by_severity_raw = counts.get("by_severity")
+                if isinstance(by_severity_raw, Mapping):
+                    for severity in _SEVERITY_DISPLAY_ORDER:
+                        counts_by_severity[severity] = self._safe_int(
+                            by_severity_raw.get(severity, 0)
+                        )
+                by_category_raw = counts.get("by_category")
+                if isinstance(by_category_raw, Mapping):
+                    for category, category_counts in by_category_raw.items():
+                        if not isinstance(category_counts, Mapping):
+                            continue
+                        counts_by_category[str(category)] = {
+                            "info": self._safe_int(category_counts.get("info", 0)),
+                            "warn": self._safe_int(category_counts.get("warn", 0)),
+                            "fail": self._safe_int(category_counts.get("fail", 0)),
+                            "total": self._safe_int(category_counts.get("total", 0)),
+                        }
+
+            findings_raw = data_quality.get("findings")
+            if isinstance(findings_raw, list):
+                findings = [finding for finding in findings_raw if isinstance(finding, Mapping)]
+
+            actions_raw = data_quality.get("recommended_actions")
+            if isinstance(actions_raw, list):
+                actions = [action for action in actions_raw if isinstance(action, Mapping)]
+
+        lines = [
+            "Counterparty Risk Data Quality Summary",
+            "",
+            f"As-of date: {as_of_date}",
+            f"Run date: {run_date}",
+            (
+                f"Overall status: {status.upper()} ({_STATUS_COLOR[status]}) "
+                f"- {_STATUS_GUIDANCE[status]}"
+            ),
+            "",
+            "Finding counts:",
+            f"- Total findings: {total_findings}",
+            *[
+                f"- {severity}: {counts_by_severity[severity]}"
+                for severity in _SEVERITY_DISPLAY_ORDER
+            ],
+            "",
+            "Findings by category:",
+        ]
+
+        if counts_by_category:
+            for category in sorted(counts_by_category, key=str.casefold):
+                category_counts = counts_by_category[category]
+                lines.append(
+                    "- "
+                    f"{category}: total={category_counts['total']} "
+                    f"(info={category_counts['info']}, "
+                    f"warn={category_counts['warn']}, "
+                    f"fail={category_counts['fail']})"
+                )
+        else:
+            lines.append("- none")
+
+        lines.append("")
+        lines.append("Detailed findings:")
+        if findings:
+            for finding in findings:
+                lines.append(
+                    "- "
+                    f"[{str(finding.get('severity', 'warn')).upper()}] "
+                    f"{str(finding.get('category', 'pipeline'))} / "
+                    f"{str(finding.get('code', 'UNKNOWN'))}: "
+                    f"{str(finding.get('message', '')).strip()}"
+                )
+        else:
+            lines.append("- none")
+
+        lines.append("")
+        lines.append("Recommended actions:")
+        if actions:
+            for action in actions:
+                lines.append(
+                    "- "
+                    f"[{str(action.get('severity', 'warn')).upper()}] "
+                    f"{str(action.get('category', 'pipeline'))}: "
+                    f"{str(action.get('action', '')).strip()}"
+                )
+        else:
+            lines.append("- none")
+
+        lines.append("")
+        return "\n".join(lines)
+
+    def _safe_int(self, raw_value: Any) -> int:
+        try:
+            return int(raw_value)
+        except (TypeError, ValueError):
+            return 0
 
     def _serialize_config_snapshot(self, config: WorkflowConfig) -> dict[str, Any]:
         raw = config.model_dump(mode="python")

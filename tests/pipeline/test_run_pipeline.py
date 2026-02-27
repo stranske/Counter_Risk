@@ -922,6 +922,12 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
     assert manifest["as_of_date"] == "2025-12-31"
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", manifest["run_date"])
     assert manifest["config_snapshot"]["output_root"] == str(output_root)
+    assert "DATA_QUALITY_SUMMARY.txt" in manifest["output_paths"]
+    summary_path = run_dir / "DATA_QUALITY_SUMMARY.txt"
+    assert summary_path.exists()
+    summary_text = summary_path.read_text(encoding="utf-8")
+    assert "Counterparty Risk Data Quality Summary" in summary_text
+    assert "Recommended actions:" in summary_text
 
     for output_path in manifest["output_paths"]:
         assert not Path(output_path).is_absolute()

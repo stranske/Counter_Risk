@@ -70,6 +70,12 @@ def test_manifest_paths_are_relative_and_resolve_to_existing_files(tmp_path: Pat
         assert not re.match(r"^[A-Za-z]:\\", artifact_path)
         assert ".." not in Path(artifact_path).parts
         assert (run_dir / artifact_path).exists()
+    summary_path = run_dir / "DATA_QUALITY_SUMMARY.txt"
+    assert summary_path.exists()
+    summary_text = summary_path.read_text(encoding="utf-8")
+    assert "Counterparty Risk Data Quality Summary" in summary_text
+    assert "Overall status: INFO (GREEN) - Safe to send." in summary_text
+    assert "DATA_QUALITY_SUMMARY.txt" in parsed["output_paths"]
 
 
 def test_manifest_build_rejects_nonexistent_artifact_paths(tmp_path: Path) -> None:
