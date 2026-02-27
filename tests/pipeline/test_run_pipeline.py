@@ -17,6 +17,7 @@ import pytest
 
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import ReconciliationConfig, WorkflowConfig
+from counter_risk.pipeline.data_quality import build_data_quality
 from counter_risk.pipeline.parsing_types import UnmappedCounterpartyError
 from counter_risk.pipeline.run import run_pipeline
 
@@ -745,6 +746,62 @@ def test_run_reconciliation_checks_strict_raises_on_cprs_ch_totals_mismatch(
             config=config,
             parsed_by_variant=parsed_by_variant,
             warnings=warnings,
+        )
+
+
+def test_run_reconciliation_checks_strict_mode_fails_for_fail_data_quality_findings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[{"counterparty": "Counterparty A", "Notional": 10.0}]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 12.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    warn_config = _minimal_workflow_config(tmp_path, fail_policy="warn")
+    warn_run_dir = tmp_path / "warn-mode"
+    warn_run_dir.mkdir()
+    warn_warnings: list[str] = []
+    warn_outcome = run_module._run_reconciliation_checks(
+        run_dir=warn_run_dir,
+        config=warn_config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warn_warnings,
+    )
+    data_quality = build_data_quality(
+        warn_warnings,
+        unmatched_mappings=warn_outcome["unmatched_mappings"],
+        reconciliation_results=warn_outcome["reconciliation_results"],
+    )
+    assert data_quality["overall_status"] == "fail"
+    assert any(
+        finding["code"] == "RECONCILIATION_GAPS" and finding["severity"] == "fail"
+        for finding in data_quality["findings"]
+    )
+
+    strict_config = _minimal_workflow_config(tmp_path, fail_policy="strict")
+    strict_run_dir = tmp_path / "strict-mode"
+    strict_run_dir.mkdir()
+    with pytest.raises(ValueError, match="Reconciliation strict mode failed"):
+        run_module._run_reconciliation_checks(
+            run_dir=strict_run_dir,
+            config=strict_config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=[],
         )
 
 
