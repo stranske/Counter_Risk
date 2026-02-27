@@ -369,6 +369,7 @@ Private Const RUN_FOLDER_FORMAT As String = "yyyy-mm-dd_hhnnss"
 Private Const PRE_LAUNCH_STATUS As String = "Launching..."
 Private Const POST_LAUNCH_STATUS As String = "Finished"
 Private Const COMPLETE_STATUS As String = "Complete"
+Private Const DQ_STATUS_CELL As String = "B9"
 
 Public Enum RunnerMode
     RunnerModeAllPrograms = 0
@@ -428,6 +429,31 @@ Public Sub OpenOutputFolder_Click()
     Exit Sub
 
 OpenOutputFolderError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
+Public Sub OpenSummary_Click()
+    On Error GoTo OpenSummaryError
+
+    Dim selectedDate As String
+    Dim summaryPath As String
+    Dim missingSummaryMessage As String
+    Dim status As LaunchStatus
+
+    selectedDate = ReadSelectedDate()
+    summaryPath = ResolveDataQualitySummaryPath(ResolveRepoRoot(), selectedDate)
+    missingSummaryMessage = "Summary not found" & " " & summaryPath
+    If Not FileExists(summaryPath) Then
+        MsgBox missingSummaryMessage
+        WriteResult "Error " & missingSummaryMessage
+        Exit Sub
+    End If
+
+    status = OpenFile(summaryPath)
+    WriteLaunchResult status
+    Exit Sub
+
+OpenSummaryError:
     WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
 End Sub
 
@@ -507,6 +533,10 @@ Public Function ResolveOutputDir(ByVal repoRoot As String, ByVal selectedDate As
     parsedDate = ParseAsOfMonth(selectedDate)
 
     ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\runs\" & Format$(parsedDate, RUN_FOLDER_FORMAT)
+End Function
+
+Public Function ResolveDataQualitySummaryPath(ByVal repoRoot As String, ByVal selectedDate As String) As String
+    ResolveDataQualitySummaryPath = ResolveOutputDir(repoRoot, selectedDate) & "\DATA_QUALITY_SUMMARY.txt"
 End Function
 
 Public Function ExecuteRunnerCommand(ByVal executablePath As String, ByVal command As String) As LaunchStatus
@@ -609,6 +639,7 @@ Private Sub RunModeClick(ByVal runMode As String)
         Exit Sub
     End If
     WriteResult "Success"
+    WriteDataQualityStatus outputDir
     Exit Sub
 
 RunModeClickError:
@@ -651,6 +682,23 @@ OpenDirectoryError:
     OpenDirectory = BuildErrorStatus(directoryPath, Err.Number, Err.Description)
 End Function
 
+Private Function OpenFile(ByVal filePath As String) As LaunchStatus
+    Dim status As LaunchStatus
+    Dim shellObject As Object
+    Dim openCommand As String
+
+    On Error GoTo OpenFileError
+    Set shellObject = CreateObject("WScript.Shell")
+    openCommand = BuildOpenFileCommand(filePath)
+    shellObject.Run openCommand, 1, False
+    status = BuildSuccessStatus(openCommand, 0)
+    OpenFile = status
+    Exit Function
+
+OpenFileError:
+    OpenFile = BuildErrorStatus(filePath, Err.Number, Err.Description)
+End Function
+
 Private Function BuildOpenFolderCommand(ByVal directoryPath As String) As String
     Dim platformName As String
     platformName = Application.OperatingSystem
@@ -667,8 +715,28 @@ Private Function BuildOpenFolderCommand(ByVal directoryPath As String) As String
     BuildOpenFolderCommand = "xdg-open " & QuoteArg(directoryPath)
 End Function
 
+Private Function BuildOpenFileCommand(ByVal filePath As String) As String
+    Dim platformName As String
+    platformName = Application.OperatingSystem
+
+    If InStr(1, platformName, "Windows", vbTextCompare) > 0 Then
+        BuildOpenFileCommand = "cmd /c start " & Chr$(34) & Chr$(34) & " " & QuoteArg(filePath)
+        Exit Function
+    End If
+    If InStr(1, platformName, "Mac", vbTextCompare) > 0 Then
+        BuildOpenFileCommand = "open " & QuoteArg(filePath)
+        Exit Function
+    End If
+
+    BuildOpenFileCommand = "xdg-open " & QuoteArg(filePath)
+End Function
+
 Private Function DirectoryExists(ByVal directoryPath As String) As Boolean
     DirectoryExists = LenB(Dir$(directoryPath, vbDirectory)) <> 0
+End Function
+
+Private Function FileExists(ByVal filePath As String) As Boolean
+    FileExists = LenB(Dir$(filePath, vbNormal)) <> 0
 End Function
 
 Private Function BuildSuccessStatus(ByVal command As String, ByVal exitCode As Long) As LaunchStatus
@@ -696,6 +764,71 @@ Private Function BuildErrorStatus( _
     status.ExitCode = -1
     BuildErrorStatus = status
 End Function
+
+Private Sub WriteDataQualityStatus(ByVal outputDir As String)
+    Dim summaryPath As String
+    Dim statusColor As String
+    summaryPath = outputDir & "\DATA_QUALITY_SUMMARY.txt"
+    If Not FileExists(summaryPath) Then
+        Exit Sub
+    End If
+    statusColor = ReadOverallStatusColor(summaryPath)
+    WriteDataQualityStatusCell statusColor
+End Sub
+
+Public Function ReadOverallStatusColor(ByVal summaryPath As String) As String
+    Dim fileNumber As Integer
+    Dim lineText As String
+    Dim upperLine As String
+
+    ReadOverallStatusColor = ""
+    If Not FileExists(summaryPath) Then
+        Exit Function
+    End If
+
+    fileNumber = FreeFile
+    Open summaryPath For Input As #fileNumber
+    Do While Not EOF(fileNumber)
+        Line Input #fileNumber, lineText
+        upperLine = UCase$(lineText)
+        If InStr(1, upperLine, "(GREEN)", vbBinaryCompare) > 0 Then
+            ReadOverallStatusColor = "GREEN"
+            Close #fileNumber
+            Exit Function
+        End If
+        If InStr(1, upperLine, "(RED)", vbBinaryCompare) > 0 Then
+            ReadOverallStatusColor = "RED"
+            Close #fileNumber
+            Exit Function
+        End If
+        If InStr(1, upperLine, "(YELLOW)", vbBinaryCompare) > 0 Then
+            ReadOverallStatusColor = "YELLOW"
+            Close #fileNumber
+            Exit Function
+        End If
+    Loop
+    Close #fileNumber
+End Function
+
+Private Sub WriteDataQualityStatusCell(ByVal statusColor As String)
+    Dim cell As Range
+    Set cell = ThisWorkbook.Worksheets(RUNNER_SHEET_NAME).Range(DQ_STATUS_CELL)
+
+    Select Case UCase$(Trim$(statusColor))
+        Case "GREEN"
+            cell.Value = "GREEN - Safe to send"
+            cell.Interior.Color = RGB(0, 176, 80)
+        Case "YELLOW"
+            cell.Value = "YELLOW - Review warnings"
+            cell.Interior.Color = RGB(255, 192, 0)
+        Case "RED"
+            cell.Value = "RED - Do not send"
+            cell.Interior.Color = RGB(255, 0, 0)
+        Case Else
+            cell.Value = ""
+            cell.Interior.ColorIndex = xlNone
+    End Select
+End Sub
 
 Private Function NormalizePathSeparators(ByVal rawPath As String) As String
     Dim normalizedPath As String

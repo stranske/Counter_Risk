@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import contextlib
+import csv
 import hashlib
+import inspect
 import logging
+import math
 import platform
 import shutil
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
@@ -15,12 +18,20 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 from zipfile import BadZipFile
 
+from counter_risk.compute import compute_risk_proxies
+from counter_risk.compute.limits import (
+    check_limits,
+    find_missing_limit_entities,
+    write_limit_breaches_csv,
+)
 from counter_risk.compute.rollups import (
+    apply_repo_cash_to_totals,
     compute_concentration_metrics,
     write_concentration_metrics_csv,
 )
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
+from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
     canonicalize_name,
     normalize_counterparty,
@@ -29,6 +40,7 @@ from counter_risk.normalize import (
 from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
+from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
@@ -39,6 +51,7 @@ from counter_risk.pipeline.ppt_naming import PptOutputNames, resolve_ppt_output_
 from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
 from counter_risk.pipeline.run_folder_outputs import (
     RunFolderReadmePptOutputs,
+    RunFolderWarningBanner,
     build_run_folder_readme_content,
 )
 from counter_risk.pipeline.time_utils import utc_now_isoformat
@@ -47,7 +60,13 @@ from counter_risk.ppt.pptx_postprocess import (
     scrub_external_relationships_from_pptx,
 )
 from counter_risk.ppt.pptx_static import _rebuild_pptx_from_slide_images
+from counter_risk.reports import (
+    attribute_changes,
+    write_change_attribution_csv,
+    write_change_attribution_markdown,
+)
 from counter_risk.writers import (
+    fill_dropin_template,
     generate_mosers_workbook,
     generate_mosers_workbook_ex_trend,
     generate_mosers_workbook_trend,
@@ -103,6 +122,33 @@ _REQUIRED_HISTORICAL_APPEND_HEADERS: tuple[str, ...] = (
     "value series 1",
     "value series 2",
 )
+_CPRS_CH_TOTAL_TOLERANCE = 1e-6
+_CLASS_BREAKDOWN_TOTAL_TOLERANCE = 1e-6
+_CLASS_BREAKDOWN_COLUMNS: tuple[str, ...] = (
+    "TIPS",
+    "Treasury",
+    "Equity",
+    "Commodity",
+    "Currency",
+)
+_REQUIRED_INPUT_FIELDS: tuple[str, ...] = (
+    "mosers_ex_trend_xlsx",
+    "mosers_trend_xlsx",
+    "hist_all_programs_3yr_xlsx",
+    "hist_ex_llc_3yr_xlsx",
+    "hist_llc_3yr_xlsx",
+    "monthly_pptx",
+)
+_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN = "risk_proxy_notional_annualized_volatility"
+_RISK_PROXY_POSITION_VOL_COLUMN = "risk_proxy_position_usd_vol"
+_NOTIONAL_CHANGE_FIELDS_FOR_MOVER_DELTA: tuple[str, ...] = (
+    "NotionalChange",
+    "NotionalChangeFromPriorMonth",
+)
+_POSITION_CHANGE_FIELDS_FOR_MOVER_DELTA: tuple[str, ...] = (
+    "PositionUSDChange",
+    "PositionChangeFromPriorMonth",
+)
 
 
 @dataclass(frozen=True)
@@ -126,6 +172,14 @@ class PptProcessingResult:
 
     status: PptProcessingStatus
     error_detail: str | None = None
+
+
+@dataclass(frozen=True)
+class LimitBreachEvaluation:
+    """Limit-breach evaluation outcome for manifest/UI surfaces."""
+
+    csv_path: Path | None
+    breach_count: int
 
 
 ScreenshotReplacer = Callable[[Path, Path, dict[str, Path]], None]
@@ -499,12 +553,26 @@ def run_pipeline(config_path: str | Path) -> Path:
         LOGGER.exception("pipeline_failed stage=config_validate config_path=%s", config_path)
         raise RuntimeError(f"Pipeline failed during config validation: {config_path}") from exc
 
+    input_paths: dict[str, Path] = {}
+    missing_inputs: dict[str, Any] = {
+        "required": list(_REQUIRED_INPUT_FIELDS),
+        "missing_required": [],
+        "optional_missing": [],
+        "is_complete": True,
+    }
     try:
         input_paths = _resolve_input_paths(config)
+        missing_inputs = _build_missing_inputs_summary(config=config, input_paths=input_paths)
         _validate_input_files(input_paths)
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=input_validation config_path=%s", config_path)
-        raise RuntimeError("Pipeline failed during input validation stage") from exc
+        operator_message = _build_missing_input_operator_message(
+            missing_inputs=missing_inputs,
+            input_paths=input_paths,
+        )
+        raise RuntimeError(
+            f"Pipeline failed during input validation stage. {operator_message}"
+        ) from exc
 
     try:
         cprs_headers = _collect_cprs_header_candidates(config=config)
@@ -525,6 +593,7 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during run directory setup stage") from exc
 
     warnings: list[str] = []
+    _append_missing_inputs_warnings(missing_inputs=missing_inputs, warnings=warnings)
     runtime_config = config
     try:
         runtime_config = _prepare_runtime_config(
@@ -534,15 +603,25 @@ def run_pipeline(config_path: str | Path) -> Path:
             warnings=warnings,
         )
         parsed_by_variant = _parse_inputs(_resolve_input_paths(runtime_config))
+        _apply_daily_holdings_repo_cash(
+            config=runtime_config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
         _validate_parsed_inputs(parsed_by_variant)
-        _run_reconciliation_checks(
+        reconciliation_outcome = _run_reconciliation_checks(
             run_dir=run_dir,
             config=runtime_config,
             parsed_by_variant=parsed_by_variant,
             warnings=warnings,
         )
+        if reconciliation_outcome is None:
+            reconciliation_outcome = {}
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=parse_inputs run_dir=%s", run_dir)
+        operator_message = _build_parse_stage_operator_message(exc)
+        if operator_message:
+            raise RuntimeError(f"Pipeline failed during parse stage. {operator_message}") from exc
         raise RuntimeError("Pipeline failed during parse stage") from exc
 
     try:
@@ -551,14 +630,58 @@ def run_pipeline(config_path: str | Path) -> Path:
         LOGGER.exception("pipeline_failed stage=compute_metrics run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during compute stage") from exc
 
+    concentration_metrics_records: list[dict[str, Any]] = []
+    concentration_metrics_output_paths: list[Path] = []
+    change_attribution_output_paths: list[Path] = []
+    try:
+        risk_output_paths = _write_risk_outputs(
+            run_dir=run_dir,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=write_risk_outputs run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during risk output stage") from exc
+
     try:
         concentration_metrics_records = _compute_and_write_concentration_metrics(
             parsed_by_variant=parsed_by_variant,
             run_dir=run_dir,
         )
+        if concentration_metrics_records:
+            concentration_metrics_output_paths = [run_dir / "concentration_metrics.csv"]
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=concentration_metrics run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during concentration metrics stage") from exc
+
+    try:
+        change_attribution_output_paths = _write_change_attribution_outputs(
+            run_dir=run_dir,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=change_attribution run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during change attribution stage") from exc
+
+    try:
+        limit_breaches = _compute_and_write_limit_breaches(
+            parsed_by_variant=parsed_by_variant,
+            run_dir=run_dir,
+            warnings=warnings,
+        )
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=limit_breaches run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during limit breach stage") from exc
+
+    limit_breach_summary = _build_limit_breach_summary(
+        run_dir=run_dir,
+        limit_breaches=limit_breaches,
+    )
+    _append_limit_breach_warning_to_manifest_warnings(
+        warnings=warnings,
+        limit_breach_summary=limit_breach_summary,
+    )
 
     try:
         historical_output_paths = _update_historical_outputs(
@@ -573,11 +696,12 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during historical update stage") from exc
 
     try:
-        output_result = _write_outputs(
+        output_result = _call_write_outputs(
             run_dir=run_dir,
             config=runtime_config,
             as_of_date=as_of_date,
             warnings=warnings,
+            parsed_by_variant=parsed_by_variant,
         )
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=write_outputs run_dir=%s", run_dir)
@@ -587,7 +711,15 @@ def run_pipeline(config_path: str | Path) -> Path:
     else:
         output_paths = output_result
         ppt_result = PptProcessingResult(status=PptProcessingStatus.SUCCESS)
-    output_paths = historical_output_paths + output_paths
+    output_paths = (
+        historical_output_paths
+        + risk_output_paths
+        + concentration_metrics_output_paths
+        + change_attribution_output_paths
+        + output_paths
+    )
+    if limit_breaches.csv_path is not None:
+        output_paths.append(limit_breaches.csv_path)
 
     if runtime_config.include_concentration_table_in_ppt and concentration_metrics_records:
         dist_ppt_path = run_dir / resolve_ppt_output_names(as_of_date).distribution_filename
@@ -616,10 +748,14 @@ def run_pipeline(config_path: str | Path) -> Path:
             top_exposures=top_exposures,
             top_changes_per_variant=top_changes_per_variant,
             warnings=warnings,
+            unmatched_mappings=reconciliation_outcome.get("unmatched_mappings"),
+            missing_inputs=missing_inputs,
+            reconciliation_results=reconciliation_outcome.get("reconciliation_results"),
             ppt_status=ppt_result.status.value,
             concentration_metrics=(
                 concentration_metrics_records if concentration_metrics_records else None
             ),
+            limit_breach_summary=limit_breach_summary,
         )
         manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)
     except Exception as exc:
@@ -629,6 +765,25 @@ def run_pipeline(config_path: str | Path) -> Path:
     LOGGER.info("pipeline_complete run_dir=%s manifest=%s", run_dir, manifest_path)
 
     return run_dir
+
+
+def _call_write_outputs(
+    *,
+    run_dir: Path,
+    config: WorkflowConfig,
+    as_of_date: date,
+    warnings: list[str],
+    parsed_by_variant: Mapping[str, Mapping[str, Any]],
+) -> tuple[list[Path], PptProcessingResult]:
+    write_outputs_kwargs: dict[str, Any] = {
+        "run_dir": run_dir,
+        "config": config,
+        "as_of_date": as_of_date,
+        "warnings": warnings,
+    }
+    if "parsed_by_variant" in inspect.signature(_write_outputs).parameters:
+        write_outputs_kwargs["parsed_by_variant"] = parsed_by_variant
+    return _write_outputs(**write_outputs_kwargs)
 
 
 def _create_run_directory(*, as_of_date: date, run_date: date | None = None) -> Path:
@@ -725,6 +880,10 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
         paths["raw_nisa_ex_trend_xlsx"] = config.raw_nisa_ex_trend_xlsx
     if config.raw_nisa_trend_xlsx is not None:
         paths["raw_nisa_trend_xlsx"] = config.raw_nisa_trend_xlsx
+    if config.daily_holdings_pdf is not None:
+        paths["daily_holdings_pdf"] = config.daily_holdings_pdf
+    if config.dropin_all_programs_template_xlsx is not None:
+        paths["dropin_all_programs_template_xlsx"] = config.dropin_all_programs_template_xlsx
     return paths
 
 
@@ -776,6 +935,18 @@ def _validate_pipeline_config(config: WorkflowConfig) -> None:
             path=config.raw_nisa_trend_xlsx,
             expected_suffix=".xlsx",
         )
+    if config.daily_holdings_pdf is not None:
+        _validate_extension(
+            field_name="daily_holdings_pdf",
+            path=config.daily_holdings_pdf,
+            expected_suffix=".pdf",
+        )
+    if config.dropin_all_programs_template_xlsx is not None:
+        _validate_extension(
+            field_name="dropin_all_programs_template_xlsx",
+            path=config.dropin_all_programs_template_xlsx,
+            expected_suffix=".xlsx",
+        )
     _validate_extension(
         field_name="hist_all_programs_3yr_xlsx",
         path=config.hist_all_programs_3yr_xlsx,
@@ -805,11 +976,189 @@ def _validate_extension(*, field_name: str, path: Path, expected_suffix: str) ->
         )
 
 
+def _apply_daily_holdings_repo_cash(
+    *,
+    config: WorkflowConfig,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    warnings: list[str],
+) -> None:
+    if config.daily_holdings_pdf is None:
+        return
+
+    repo_cash_by_counterparty = parse_daily_holdings_pdf(config.daily_holdings_pdf)
+    all_programs_sections = parsed_by_variant.get("all_programs")
+    if not isinstance(all_programs_sections, dict) or "totals" not in all_programs_sections:
+        raise ValueError(
+            "Parsed payload for variant 'all_programs' is missing the totals section required "
+            "for daily holdings Repo Cash integration"
+        )
+
+    all_programs_sections["totals"] = apply_repo_cash_to_totals(
+        all_programs_sections["totals"],
+        repo_cash_by_counterparty,
+    )
+    warnings.append(
+        "Applied Daily Holdings Repo Cash values to all_programs totals "
+        f"for {len(repo_cash_by_counterparty)} counterparties"
+    )
+
+
 def _validate_input_files(input_paths: dict[str, Path]) -> None:
     missing = [f"{name}: {path}" for name, path in input_paths.items() if not path.exists()]
     if missing:
         details = "; ".join(missing)
         raise FileNotFoundError(f"Missing pipeline input files: {details}")
+
+
+def _build_missing_inputs_summary(
+    *, config: WorkflowConfig, input_paths: Mapping[str, Path]
+) -> dict[str, Any]:
+    missing_required = sorted(
+        [name for name in _REQUIRED_INPUT_FIELDS if not input_paths.get(name, Path()).exists()],
+        key=str.casefold,
+    )
+    optional_candidates = (
+        "mosers_all_programs_xlsx",
+        "raw_nisa_all_programs_xlsx",
+    )
+    optional_missing = sorted(
+        [
+            name
+            for name in optional_candidates
+            if getattr(config, name, None) is None
+            or not Path(getattr(config, name, Path())).exists()
+        ],
+        key=str.casefold,
+    )
+    return {
+        "required": list(_REQUIRED_INPUT_FIELDS),
+        "missing_required": missing_required,
+        "optional_missing": optional_missing,
+        "is_complete": len(missing_required) == 0,
+    }
+
+
+def _append_missing_inputs_warnings(
+    *, missing_inputs: Mapping[str, Any], warnings: list[str]
+) -> None:
+    missing_required_raw = missing_inputs.get("missing_required", [])
+    optional_missing_raw = missing_inputs.get("optional_missing", [])
+
+    missing_required = sorted(
+        {
+            str(field).strip()
+            for field in missing_required_raw
+            if isinstance(field, str) and str(field).strip()
+        },
+        key=str.casefold,
+    )
+    optional_missing = sorted(
+        {
+            str(field).strip()
+            for field in optional_missing_raw
+            if isinstance(field, str) and str(field).strip()
+        },
+        key=str.casefold,
+    )
+
+    if missing_required:
+        warnings.append(
+            f"Input validation: missing required inputs ({', '.join(missing_required)})."
+        )
+    if optional_missing:
+        warnings.append(
+            f"Input validation: optional inputs unavailable ({', '.join(optional_missing)})."
+        )
+
+
+def _build_missing_input_operator_message(
+    *, missing_inputs: Mapping[str, Any], input_paths: Mapping[str, Path]
+) -> str:
+    missing_required_raw = missing_inputs.get("missing_required", [])
+    missing_required = sorted(
+        {
+            str(field).strip()
+            for field in missing_required_raw
+            if isinstance(field, str) and str(field).strip()
+        },
+        key=str.casefold,
+    )
+    if not missing_required:
+        return "Operator action: verify configured input file paths are accessible."
+
+    details: list[str] = []
+    for field in missing_required:
+        resolved_path = input_paths.get(field)
+        if resolved_path is None:
+            details.append(field)
+        else:
+            details.append(f"{field} -> {resolved_path}")
+    return (
+        "Operator action: verify required input files are present and paths are correct. "
+        f"Missing required inputs: {', '.join(details)}."
+    )
+
+
+def _build_parse_stage_operator_message(exc: BaseException) -> str:
+    unmapped_error = _find_unmapped_counterparty_error(exc)
+    if unmapped_error is not None:
+        return _build_unmatched_mappings_operator_message(unmapped_error)
+
+    reconciliation_message = _build_reconciliation_failure_operator_message(exc)
+    if reconciliation_message:
+        return reconciliation_message
+    return ""
+
+
+def _find_unmapped_counterparty_error(exc: BaseException) -> UnmappedCounterpartyError | None:
+    current: BaseException | None = exc
+    visited: set[int] = set()
+    while current is not None:
+        current_id = id(current)
+        if current_id in visited:
+            return None
+        visited.add(current_id)
+        if isinstance(current, UnmappedCounterpartyError):
+            return current
+        next_exc = current.__cause__ if current.__cause__ is not None else current.__context__
+        if next_exc is current:
+            return None
+        current = next_exc
+    return None
+
+
+def _build_unmatched_mappings_operator_message(exc: UnmappedCounterpartyError) -> str:
+    sheet = str(exc.sheet).strip() if exc.sheet is not None else ""
+    sheet_detail = f" on worksheet '{sheet}'" if sheet else ""
+    return (
+        "Operator action: update counterparty mappings for this month and rerun. "
+        f"Unmatched counterparty '{exc.raw_counterparty}' normalized to "
+        f"'{exc.normalized_counterparty}'{sheet_detail}."
+    )
+
+
+def _build_reconciliation_failure_operator_message(exc: BaseException) -> str:
+    current: BaseException | None = exc
+    visited: set[int] = set()
+    while current is not None:
+        current_id = id(current)
+        if current_id in visited:
+            break
+        visited.add(current_id)
+
+        detail = str(current).strip()
+        if detail and "reconciliation strict mode failed" in detail.casefold():
+            return (
+                "Operator action: reconcile source totals/class breakdown values, "
+                "apply required mapping updates, and rerun. "
+                f"Details: {detail}."
+            )
+
+        next_exc = current.__cause__ if current.__cause__ is not None else current.__context__
+        if next_exc is current:
+            break
+        current = next_exc
+    return ""
 
 
 def _prepare_runtime_config(
@@ -1025,6 +1374,297 @@ def _compute_metrics(
     return top_exposures, top_changes_per_variant
 
 
+def _write_risk_outputs(
+    *, run_dir: Path, parsed_by_variant: dict[str, dict[str, Any]], warnings: list[str]
+) -> list[Path]:
+    ranking_rows: list[dict[str, Any]] = []
+    mover_rows: list[dict[str, Any]] = []
+    ranking_inputs_available = False
+    mover_inputs_available = False
+
+    for variant, parsed_sections in parsed_by_variant.items():
+        totals_table = parsed_sections.get("totals", [])
+        totals_records = _records(totals_table)
+        if not totals_records:
+            continue
+
+        columns = _column_names(totals_table)
+        has_notional_vol = "Notional" in columns and "AnnualizedVolatility" in columns
+        has_position_vol = "PositionUSD" in columns and "Vol" in columns
+        if not has_notional_vol:
+            warnings.append(
+                "risk proxy notional-volatility skipped for "
+                f"{variant}: requires Notional and AnnualizedVolatility columns"
+            )
+        if not has_position_vol:
+            warnings.append(
+                "risk proxy position-volatility skipped for "
+                f"{variant}: requires PositionUSD and Vol columns"
+            )
+        if not has_notional_vol and not has_position_vol:
+            continue
+
+        ranking_inputs_available = True
+        proxy_records = _records(compute_risk_proxies(totals_records))
+
+        if has_notional_vol:
+            ranking_rows.extend(
+                _rank_proxy_rows(
+                    variant=variant,
+                    records=proxy_records,
+                    proxy_column=_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN,
+                )
+            )
+            change_field = _first_available_field(
+                columns=columns, candidates=_NOTIONAL_CHANGE_FIELDS_FOR_MOVER_DELTA
+            )
+            if change_field is None:
+                warnings.append(
+                    "risk top movers skipped for "
+                    f"{variant} {_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN}: "
+                    "requires a notional prior-month delta column"
+                )
+            else:
+                mover_inputs_available = True
+                mover_rows.extend(
+                    _mover_rows_for_notional_proxy(
+                        variant=variant,
+                        records=totals_records,
+                        change_field=change_field,
+                    )
+                )
+
+        if has_position_vol:
+            ranking_rows.extend(
+                _rank_proxy_rows(
+                    variant=variant,
+                    records=proxy_records,
+                    proxy_column=_RISK_PROXY_POSITION_VOL_COLUMN,
+                )
+            )
+            change_field = _first_available_field(
+                columns=columns, candidates=_POSITION_CHANGE_FIELDS_FOR_MOVER_DELTA
+            )
+            if change_field is None:
+                warnings.append(
+                    "risk top movers skipped for "
+                    f"{variant} {_RISK_PROXY_POSITION_VOL_COLUMN}: "
+                    "requires a position prior-month delta column"
+                )
+            else:
+                mover_inputs_available = True
+                mover_rows.extend(
+                    _mover_rows_for_position_proxy(
+                        variant=variant,
+                        records=totals_records,
+                        change_field=change_field,
+                    )
+                )
+
+    output_paths: list[Path] = []
+    if ranking_rows:
+        risk_rankings_path = run_dir / "risk_rankings.csv"
+        _write_csv_rows(
+            path=risk_rankings_path,
+            fieldnames=(
+                "variant",
+                "counterparty",
+                "proxy_name",
+                "proxy_value",
+                "rank",
+            ),
+            rows=ranking_rows,
+        )
+        output_paths.append(risk_rankings_path)
+    elif not ranking_inputs_available:
+        warnings.append(
+            "risk_rankings.csv skipped: missing required proxy inputs "
+            "(Notional+AnnualizedVolatility and/or PositionUSD+Vol)"
+        )
+
+    if mover_rows:
+        risk_movers_path = run_dir / "risk_top_movers.csv"
+        _write_csv_rows(
+            path=risk_movers_path,
+            fieldnames=(
+                "variant",
+                "counterparty",
+                "proxy_name",
+                "current_proxy_value",
+                "prior_proxy_value",
+                "delta",
+                "absolute_delta",
+                "rank",
+                "delta_source_column",
+            ),
+            rows=mover_rows,
+        )
+        output_paths.append(risk_movers_path)
+    elif ranking_inputs_available and not mover_inputs_available:
+        warnings.append(
+            "risk_top_movers.csv skipped: prior-month delta inputs unavailable for computed proxies"
+        )
+
+    return output_paths
+
+
+def _write_change_attribution_outputs(
+    *, run_dir: Path, parsed_by_variant: dict[str, dict[str, Any]], warnings: list[str]
+) -> list[Path]:
+    preferred_variant = "all_programs"
+    variant = preferred_variant if preferred_variant in parsed_by_variant else ""
+    if not variant and parsed_by_variant:
+        variant = sorted(parsed_by_variant, key=str.casefold)[0]
+    if not variant:
+        warnings.append("change_attribution skipped: no parsed variant data available")
+        return []
+
+    totals_table = parsed_by_variant.get(variant, {}).get("totals")
+    current_rows = _records(totals_table) if totals_table is not None else []
+    if not current_rows:
+        warnings.append(f"change_attribution skipped: no totals rows for variant '{variant}'")
+        return []
+
+    prior_rows = _infer_prior_rows_from_notional_change(current_rows=current_rows)
+    if not prior_rows:
+        warnings.append(
+            "change_attribution skipped: prior-month notional deltas unavailable in current totals"
+        )
+        return []
+
+    report = attribute_changes(current_rows, prior_rows)
+    csv_path = run_dir / "change_attribution.csv"
+    markdown_path = run_dir / "change_attribution.md"
+    write_change_attribution_csv(report=report, path=csv_path)
+    write_change_attribution_markdown(report=report, path=markdown_path)
+    return [csv_path, markdown_path]
+
+
+def _infer_prior_rows_from_notional_change(
+    *, current_rows: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    prior_rows: list[dict[str, Any]] = []
+    for record in current_rows:
+        counterparty = str(record.get("counterparty", "")).strip()
+        if not counterparty:
+            continue
+        notional = _coerce_float_or_none(record.get("Notional"))
+        notional_change = _coerce_float_or_none(record.get("NotionalChange"))
+        if notional is None or notional_change is None:
+            continue
+        prior_rows.append(
+            {
+                "counterparty": counterparty,
+                "Notional": notional - notional_change,
+            }
+        )
+    return prior_rows
+
+
+def _rank_proxy_rows(
+    *, variant: str, records: list[dict[str, Any]], proxy_column: str
+) -> list[dict[str, Any]]:
+    ranked = sorted(
+        records,
+        key=lambda record: (
+            -abs(_to_float(record.get(proxy_column))),
+            str(record.get("counterparty", "")).casefold(),
+        ),
+    )
+    rows: list[dict[str, Any]] = []
+    for index, record in enumerate(ranked, start=1):
+        rows.append(
+            {
+                "variant": variant,
+                "counterparty": str(record.get("counterparty", "")),
+                "proxy_name": proxy_column,
+                "proxy_value": _to_float(record.get(proxy_column)),
+                "rank": index,
+            }
+        )
+    return rows
+
+
+def _mover_rows_for_notional_proxy(
+    *, variant: str, records: list[dict[str, Any]], change_field: str
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for record in records:
+        notional = _to_float(record.get("Notional"))
+        volatility = _to_float(record.get("AnnualizedVolatility"))
+        notional_delta = _to_float(record.get(change_field))
+        current_proxy = notional * volatility
+        delta_proxy = notional_delta * volatility
+        prior_proxy = current_proxy - delta_proxy
+        rows.append(
+            {
+                "variant": variant,
+                "counterparty": str(record.get("counterparty", "")),
+                "proxy_name": _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN,
+                "current_proxy_value": current_proxy,
+                "prior_proxy_value": prior_proxy,
+                "delta": delta_proxy,
+                "absolute_delta": abs(delta_proxy),
+                "delta_source_column": change_field,
+            }
+        )
+    rows.sort(key=lambda row: (-abs(_to_float(row["delta"])), str(row["counterparty"]).casefold()))
+    for index, row in enumerate(rows, start=1):
+        row["rank"] = index
+    return rows
+
+
+def _mover_rows_for_position_proxy(
+    *, variant: str, records: list[dict[str, Any]], change_field: str
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for record in records:
+        position = _to_float(record.get("PositionUSD"))
+        volatility = _to_float(record.get("Vol"))
+        position_delta = _to_float(record.get(change_field))
+        current_proxy = position * volatility
+        delta_proxy = position_delta * volatility
+        prior_proxy = current_proxy - delta_proxy
+        rows.append(
+            {
+                "variant": variant,
+                "counterparty": str(record.get("counterparty", "")),
+                "proxy_name": _RISK_PROXY_POSITION_VOL_COLUMN,
+                "current_proxy_value": current_proxy,
+                "prior_proxy_value": prior_proxy,
+                "delta": delta_proxy,
+                "absolute_delta": abs(delta_proxy),
+                "delta_source_column": change_field,
+            }
+        )
+    rows.sort(key=lambda row: (-abs(_to_float(row["delta"])), str(row["counterparty"]).casefold()))
+    for index, row in enumerate(rows, start=1):
+        row["rank"] = index
+    return rows
+
+
+def _first_available_field(*, columns: set[str], candidates: tuple[str, ...]) -> str | None:
+    for candidate in candidates:
+        if candidate in columns:
+            return candidate
+    return None
+
+
+def _coerce_float_or_none(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _write_csv_rows(*, path: Path, fieldnames: tuple[str, ...], rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as output:
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
 _CONCENTRATION_ASSET_CLASSES: tuple[str, ...] = (
     "TIPS",
     "Treasury",
@@ -1106,8 +1746,260 @@ def _compute_and_write_concentration_metrics(
     return metrics_records
 
 
+def _build_limit_exposure_rows(
+    parsed_by_variant: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for variant, parsed in parsed_by_variant.items():
+        totals_records = _records(parsed["totals"])
+        for record in totals_records:
+            counterparty = str(record.get("counterparty", "")).strip()
+            if not counterparty:
+                continue
+            try:
+                notional = float(record.get("Notional", 0.0) or 0.0)
+            except (TypeError, ValueError):
+                notional = 0.0
+            rows.append(
+                {
+                    "variant": variant,
+                    "counterparty": counterparty,
+                    "notional": notional,
+                }
+            )
+
+        futures_records = _records(parsed["futures"])
+        for record in futures_records:
+            try:
+                notional = float(record.get("notional", 0.0) or 0.0)
+            except (TypeError, ValueError):
+                notional = 0.0
+
+            exposure_row: dict[str, Any] = {
+                "variant": variant,
+                "notional": notional,
+            }
+            for source_key, target_key in (
+                ("fcm", "fcm"),
+                ("clearing_house", "clearing_house"),
+                ("class", "segment"),
+                ("segment", "segment"),
+                ("custom_group", "custom_group"),
+                ("group", "custom_group"),
+            ):
+                value = str(record.get(source_key, "")).strip()
+                if value:
+                    exposure_row[target_key] = value
+
+            if {"fcm", "clearing_house", "segment", "custom_group"} & set(exposure_row):
+                rows.append(exposure_row)
+
+    return rows
+
+
+def _compute_and_write_limit_breaches(
+    *,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    run_dir: Path,
+    warnings: list[str],
+) -> LimitBreachEvaluation:
+    """Compute limit breaches and write limit_breaches.csv when breaches exist."""
+
+    limits_path = _resolve_repo_root() / "config" / "limits.yml"
+    if not limits_path.exists():
+        LOGGER.info("limit_breaches_skipped missing_limits_config path=%s", limits_path)
+        return LimitBreachEvaluation(csv_path=None, breach_count=0)
+
+    limits_cfg = load_limits_config(limits_path)
+    exposure_rows = _build_limit_exposure_rows(parsed_by_variant)
+    missing_limit_entities = find_missing_limit_entities(exposure_rows, limits_cfg)
+    if missing_limit_entities:
+        warning = _format_missing_limit_entities_warning(missing_limit_entities)
+        if limits_cfg.strict_missing_entities:
+            raise RuntimeError(
+                "Configured limit entities are missing from exposures and strict_missing_entities "
+                f"is enabled: {warning}"
+            )
+        warnings.append(warning)
+        LOGGER.warning("limit_breaches_missing_entities %s", warning)
+
+    if not exposure_rows:
+        return LimitBreachEvaluation(csv_path=None, breach_count=0)
+
+    breaches_result = check_limits(exposure_rows, limits_cfg)
+    if hasattr(breaches_result, "to_dict"):
+        breaches_records = breaches_result.to_dict(orient="records")
+    else:
+        breaches_records = [dict(row) for row in breaches_result]
+
+    if not breaches_records:
+        return LimitBreachEvaluation(csv_path=None, breach_count=0)
+
+    csv_path = run_dir / "limit_breaches.csv"
+    write_limit_breaches_csv(breaches_result, csv_path)
+    LOGGER.info("limit_breaches_written path=%s", csv_path)
+    return LimitBreachEvaluation(csv_path=csv_path, breach_count=len(breaches_records))
+
+
+def _format_missing_limit_entities_warning(missing_entities: list[dict[str, str]]) -> str:
+    entities = ", ".join(
+        f"{entry['entity_type']}:{entry['entity_name']}" for entry in missing_entities
+    )
+    return f"Limit check warning: configured limit entities missing from exposure data; {entities}"
+
+
+def _build_limit_breach_summary(
+    *, run_dir: Path, limit_breaches: LimitBreachEvaluation
+) -> dict[str, Any]:
+    has_breaches = limit_breaches.csv_path is not None and limit_breaches.breach_count > 0
+    report_path = (
+        str(limit_breaches.csv_path.relative_to(run_dir))
+        if limit_breaches.csv_path is not None
+        else None
+    )
+    warning_banner = None
+    if has_breaches and report_path is not None:
+        plurality = "breach" if limit_breaches.breach_count == 1 else "breaches"
+        warning_banner = (
+            f"{limit_breaches.breach_count} limit {plurality} detected. Review {report_path}."
+        )
+    return {
+        "has_breaches": has_breaches,
+        "breach_count": limit_breaches.breach_count,
+        "report_path": report_path,
+        "warning_banner": warning_banner,
+    }
+
+
+def _append_limit_breach_warning_to_manifest_warnings(
+    *,
+    warnings: list[str],
+    limit_breach_summary: Mapping[str, Any],
+) -> None:
+    has_breaches = bool(limit_breach_summary.get("has_breaches"))
+    warning_banner = limit_breach_summary.get("warning_banner")
+    if not has_breaches or not isinstance(warning_banner, str) or not warning_banner.strip():
+        return
+    warnings.append(f"Limit breach summary: {warning_banner.strip()}")
+
+
+def _build_limit_warning_banner_for_run_dir(run_dir: Path) -> RunFolderWarningBanner | None:
+    csv_path = run_dir / "limit_breaches.csv"
+    if not csv_path.exists():
+        return None
+
+    with csv_path.open("r", encoding="utf-8", newline="") as stream:
+        row_count = sum(1 for _ in csv.DictReader(stream))
+    if row_count <= 0:
+        return None
+
+    plurality = "breach" if row_count == 1 else "breaches"
+    title = f"Limit {plurality.capitalize()} Detected ({row_count})"
+    message = f"Warning banner: {row_count} configured limit {plurality} were detected."
+    return RunFolderWarningBanner(
+        title=title,
+        message=message,
+        report_path=Path("limit_breaches.csv"),
+    )
+
+
+def _write_all_programs_dropin_output(
+    *,
+    run_dir: Path,
+    config: WorkflowConfig,
+    warnings: list[str],
+    parsed_by_variant: Mapping[str, Mapping[str, Any]] | None,
+) -> Path | None:
+    template_path = config.dropin_all_programs_template_xlsx
+    if template_path is None:
+        return None
+    if parsed_by_variant is None:
+        raise ValueError(
+            "parsed_by_variant is required when dropin_all_programs_template_xlsx is configured"
+        )
+
+    parsed_all_programs = parsed_by_variant.get("all_programs")
+    if not isinstance(parsed_all_programs, Mapping):
+        raise ValueError("Parsed payload for variant 'all_programs' is missing")
+    if "totals" not in parsed_all_programs:
+        raise ValueError(
+            "Parsed payload for variant 'all_programs' is missing the totals section required "
+            "for Drop-In output generation"
+        )
+
+    totals_records = _records(parsed_all_programs["totals"])
+    notional_breakdown = _build_dropin_notional_breakdown(totals_records)
+    output_path = run_dir / _derive_dropin_output_filename(template_path)
+    fill_dropin_template(
+        template_path=template_path,
+        exposures_df=totals_records,
+        breakdown=notional_breakdown,
+        output_path=output_path,
+    )
+    warnings.append("Generated All Programs Drop-In output workbook")
+    return output_path
+
+
+def _derive_dropin_output_filename(template_path: Path) -> str:
+    stem = template_path.stem
+    if "template" in stem.casefold():
+        return f"{stem.replace('Template', 'Filled').replace('template', 'filled')}.xlsx"
+    return f"{stem}-filled.xlsx"
+
+
+def _build_dropin_notional_breakdown(totals_records: Sequence[Mapping[str, Any]]) -> dict[str, float]:
+    class_totals = dict.fromkeys(_CLASS_BREAKDOWN_COLUMNS, 0.0)
+    total_notional = 0.0
+
+    for row in totals_records:
+        total_notional += _row_numeric_value(row, aliases=("Notional", "notional"))
+        for asset_class in _CLASS_BREAKDOWN_COLUMNS:
+            class_totals[asset_class] += _row_numeric_value(
+                row,
+                aliases=(asset_class, asset_class.casefold()),
+            )
+
+    if total_notional == 0.0:
+        return {
+            "tips": 0.0,
+            "treasury": 0.0,
+            "equity": 0.0,
+            "commodity": 0.0,
+            "currency": 0.0,
+            "notional": 0.0,
+        }
+
+    return {
+        "tips": class_totals["TIPS"] / total_notional,
+        "treasury": class_totals["Treasury"] / total_notional,
+        "equity": class_totals["Equity"] / total_notional,
+        "commodity": class_totals["Commodity"] / total_notional,
+        "currency": class_totals["Currency"] / total_notional,
+        "notional": 1.0,
+    }
+
+
+def _row_numeric_value(row: Mapping[str, Any], *, aliases: tuple[str, ...]) -> float:
+    for alias in aliases:
+        if alias not in row:
+            continue
+        value = row.get(alias)
+        if value is None:
+            return 0.0
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return 0.0
+    return 0.0
+
+
 def _write_outputs(
-    *, run_dir: Path, config: WorkflowConfig, as_of_date: date, warnings: list[str]
+    *,
+    run_dir: Path,
+    config: WorkflowConfig,
+    as_of_date: date,
+    warnings: list[str],
+    parsed_by_variant: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> tuple[list[Path], PptProcessingResult]:
     LOGGER.info("write_outputs_start run_dir=%s", run_dir)
 
@@ -1140,6 +2032,15 @@ def _write_outputs(
         if source_mosers.resolve() != target_monthly_book.resolve():
             shutil.copy2(source_mosers, target_monthly_book)
         output_paths.append(target_monthly_book)
+
+    all_programs_dropin_output = _write_all_programs_dropin_output(
+        run_dir=run_dir,
+        config=config,
+        warnings=warnings,
+        parsed_by_variant=parsed_by_variant,
+    )
+    if all_programs_dropin_output is not None:
+        output_paths.append(all_programs_dropin_output)
 
     if not config.ppt_output_enabled:
         LOGGER.info("write_outputs_skip_ppt run_dir=%s", run_dir)
@@ -1255,9 +2156,14 @@ def _write_outputs(
     )
     output_paths.extend(static_output_paths)
     if refresh_result.status == PptProcessingStatus.SUCCESS:
+        warning_banner = _build_limit_warning_banner_for_run_dir(run_dir)
         readme_path = run_dir / "README.txt"
         readme_path.write_text(
-            build_run_folder_readme_content(as_of_date, readme_ppt_outputs),
+            build_run_folder_readme_content(
+                as_of_date,
+                readme_ppt_outputs,
+                warning_banner=warning_banner,
+            ),
             encoding="utf-8",
         )
         output_paths.append(readme_path)
@@ -2198,11 +3104,16 @@ def _run_reconciliation_checks(
     config: WorkflowConfig,
     parsed_by_variant: dict[str, dict[str, Any]],
     warnings: list[str],
-) -> None:
+) -> dict[str, Any]:
     variant_historical_paths: dict[str, Path] = {
         "all_programs": config.hist_all_programs_3yr_xlsx,
         "ex_trend": config.hist_ex_llc_3yr_xlsx,
         "trend": config.hist_llc_3yr_xlsx,
+    }
+    variant_mosers_paths: dict[str, Path | None] = {
+        "all_programs": config.mosers_all_programs_xlsx,
+        "ex_trend": config.mosers_ex_trend_xlsx,
+        "trend": config.mosers_trend_xlsx,
     }
 
     total_gap_count = 0
@@ -2226,6 +3137,27 @@ def _run_reconciliation_checks(
             expected_segments_by_variant=config.reconciliation.expected_segments_by_variant,
             fail_policy=config.reconciliation.fail_policy,
         )
+        cprs_ch_totals_check = _evaluate_cprs_ch_totals_reconciliation(
+            parsed_sections=parsed_sections,
+            variant=variant,
+            mosers_workbook_path=variant_mosers_paths.get(variant),
+        )
+        result["cprs_ch_totals_check"] = cprs_ch_totals_check
+        if cprs_ch_totals_check.get("status") == "failed":
+            total_gap_count += 1
+            warning_message = str(cprs_ch_totals_check.get("message", "")).strip()
+            if warning_message:
+                warnings.append(f"Reconciliation ({variant}): {warning_message}")
+        class_breakdown_sanity_check = _evaluate_class_breakdown_sanity(
+            parsed_sections=parsed_sections,
+            variant=variant,
+        )
+        result["class_breakdown_sanity_check"] = class_breakdown_sanity_check
+        if class_breakdown_sanity_check.get("status") == "failed":
+            total_gap_count += 1
+            warning_message = str(class_breakdown_sanity_check.get("message", "")).strip()
+            if warning_message:
+                warnings.append(f"Reconciliation ({variant}): {warning_message}")
         reconciliation_by_variant[variant] = result
         total_gap_count += int(result.get("gap_count", 0))
         result_exceptions = result.get("exceptions")
@@ -2248,8 +3180,26 @@ def _run_reconciliation_checks(
         for warning in result.get("warnings", []):
             warnings.append(f"Reconciliation ({variant}): {warning}")
 
+    unmatched_mappings = _extract_unmatched_mappings(reconciliation_by_variant)
+    reconciliation_results = {
+        "status": "passed" if total_gap_count == 0 else "failed",
+        "fail_policy": config.reconciliation.fail_policy,
+        "total_gap_count": total_gap_count,
+        "impacted_series_count": impacted_series_count,
+        "impacted_rows_count": impacted_rows_count,
+        "by_variant": {
+            variant: _serializable_reconciliation_result(result)
+            for variant, result in sorted(
+                reconciliation_by_variant.items(), key=lambda item: item[0]
+            )
+        },
+    }
+
     if total_gap_count == 0:
-        return
+        return {
+            "unmatched_mappings": unmatched_mappings,
+            "reconciliation_results": reconciliation_results,
+        }
 
     warnings.append(
         "Reconciliation summary: "
@@ -2271,6 +3221,276 @@ def _run_reconciliation_checks(
             "Reconciliation strict mode failed due to missing/unmapped series; "
             f"gap_count={total_gap_count}"
         )
+    return {
+        "unmatched_mappings": unmatched_mappings,
+        "reconciliation_results": reconciliation_results,
+    }
+
+
+def _serializable_reconciliation_result(result: Mapping[str, Any]) -> dict[str, Any]:
+    serializable: dict[str, Any] = {}
+    for key in (
+        "gap_count",
+        "warnings",
+        "missing_series",
+        "missing_segments",
+        "by_sheet",
+        "cprs_ch_totals_check",
+        "class_breakdown_sanity_check",
+    ):
+        value = result.get(key)
+        if value is not None:
+            serializable[key] = value
+    return serializable
+
+
+def _evaluate_class_breakdown_sanity(
+    *, parsed_sections: Mapping[str, Any], variant: str
+) -> dict[str, Any]:
+    totals_records = _records(parsed_sections.get("totals", []))
+    if not totals_records:
+        return {
+            "status": "skipped",
+            "message": f"Class breakdown sanity check skipped for variant {variant!r}: no totals rows",
+        }
+
+    checked_rows = 0
+    inconsistent_total_rows: list[dict[str, Any]] = []
+    out_of_bounds_rows: list[dict[str, Any]] = []
+
+    for row_index, record in enumerate(totals_records, start=1):
+        if not any(column in record for column in _CLASS_BREAKDOWN_COLUMNS):
+            continue
+
+        checked_rows += 1
+        counterparty = str(record.get("counterparty", "")).strip() or f"row_{row_index}"
+        notional = _to_float(record.get("Notional", 0.0))
+        class_values = {
+            column: _to_float(record.get(column, 0.0)) for column in _CLASS_BREAKDOWN_COLUMNS
+        }
+        class_total = sum(class_values.values())
+        absolute_difference = abs(class_total - notional)
+        if absolute_difference > _CLASS_BREAKDOWN_TOTAL_TOLERANCE:
+            inconsistent_total_rows.append(
+                {
+                    "counterparty": counterparty,
+                    "row_index": row_index,
+                    "class_total": class_total,
+                    "notional": notional,
+                    "absolute_difference": absolute_difference,
+                }
+            )
+
+        max_component_magnitude = max((abs(value) for value in class_values.values()), default=0.0)
+        if max_component_magnitude > abs(notional) + _CLASS_BREAKDOWN_TOTAL_TOLERANCE:
+            out_of_bounds_rows.append(
+                {
+                    "counterparty": counterparty,
+                    "row_index": row_index,
+                    "max_component_magnitude": max_component_magnitude,
+                    "notional": notional,
+                }
+            )
+
+    if checked_rows == 0:
+        return {
+            "status": "skipped",
+            "message": (
+                "Class breakdown sanity check skipped for variant "
+                f"{variant!r}: totals rows do not include class columns"
+            ),
+        }
+
+    result: dict[str, Any] = {
+        "status": (
+            "passed" if not inconsistent_total_rows and not out_of_bounds_rows else "failed"
+        ),
+        "checked_row_count": checked_rows,
+        "inconsistent_row_count": len(inconsistent_total_rows),
+        "out_of_bounds_row_count": len(out_of_bounds_rows),
+        "tolerance": _CLASS_BREAKDOWN_TOTAL_TOLERANCE,
+        "sample_issues": {
+            "inconsistent_totals": inconsistent_total_rows[:5],
+            "out_of_bounds": out_of_bounds_rows[:5],
+        },
+    }
+    if result["status"] == "failed":
+        result["message"] = (
+            "Class breakdown sanity check failed: "
+            f"inconsistent_rows={len(inconsistent_total_rows)}, "
+            f"out_of_bounds_rows={len(out_of_bounds_rows)}"
+        )
+    return result
+
+
+def _to_float(value: Any) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if not math.isfinite(number):
+        return 0.0
+    return number
+
+
+def _evaluate_cprs_ch_totals_reconciliation(
+    *, parsed_sections: Mapping[str, Any], variant: str, mosers_workbook_path: Path | None
+) -> dict[str, Any]:
+    cprs_ch_records = _records(parsed_sections.get("cprs_ch", []))
+    totals_records = _records(parsed_sections.get("totals", []))
+
+    expected_total: float | None = None
+    expected_total_source = "parsed_cprs_ch_rows"
+    if cprs_ch_records:
+        expected_total = sum(
+            float(record.get("Notional", 0.0) or 0.0) for record in cprs_ch_records
+        )
+    else:
+        if mosers_workbook_path is None:
+            return {
+                "status": "skipped",
+                "message": (
+                    f"CPRS-CH totals check skipped for variant {variant!r}: no mosers workbook path"
+                ),
+            }
+        expected_total_source = "cprs_ch_mosers_program_row"
+        try:
+            expected_total = _extract_mosers_program_notional_from_cprs_ch(
+                workbook_path=mosers_workbook_path
+            )
+        except Exception as exc:
+            return {
+                "status": "failed",
+                "message": (
+                    f"CPRS-CH totals check failed for variant {variant!r}: "
+                    f"unable to read CPRS - CH total from {mosers_workbook_path} ({exc})"
+                ),
+            }
+        if expected_total is None:
+            return {
+                "status": "skipped",
+                "message": (
+                    f"CPRS-CH totals check skipped for variant {variant!r}: "
+                    "CPRS - CH did not contain a MOSERS Program notional row"
+                ),
+            }
+
+    computed_total = sum(float(record.get("Notional", 0.0) or 0.0) for record in totals_records)
+    absolute_difference = abs(expected_total - computed_total)
+
+    result: dict[str, Any] = {
+        "status": "passed" if absolute_difference <= _CPRS_CH_TOTAL_TOLERANCE else "failed",
+        "mosers_cprs_ch_total_notional": expected_total,
+        "computed_total_notional": computed_total,
+        "absolute_difference": absolute_difference,
+        "tolerance": _CPRS_CH_TOTAL_TOLERANCE,
+        "expected_total_source": expected_total_source,
+    }
+    if result["status"] == "failed":
+        result["message"] = (
+            "CPRS-CH totals mismatch: "
+            f"mosers_total={expected_total:.6f}, computed_total={computed_total:.6f}, "
+            f"absolute_difference={absolute_difference:.6f}"
+        )
+    return result
+
+
+def _extract_mosers_program_notional_from_cprs_ch(*, workbook_path: Path) -> float | None:
+    try:
+        from openpyxl import load_workbook
+    except ImportError as exc:  # pragma: no cover - environment-dependent
+        raise RuntimeError("CPRS-CH totals check requires openpyxl") from exc
+
+    workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+    workbook_obj: Any = workbook
+    try:
+        sheet_name = _locate_cprs_ch_sheet_name(
+            sheet_names=list(getattr(workbook_obj, "sheetnames", []))
+        )
+        if sheet_name is None:
+            return None
+        worksheet = workbook_obj[sheet_name]
+
+        max_row = int(getattr(worksheet, "max_row", 0))
+        for row in range(1, max_row + 1):
+            label = str(worksheet.cell(row=row, column=3).value or "").strip()
+            if not label:
+                continue
+            if "mosers program" not in label.casefold():
+                continue
+            raw_notional = worksheet.cell(row=row, column=11).value
+            if raw_notional in (None, ""):
+                return None
+            try:
+                return float(raw_notional)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "MOSERS Program row has non-numeric Notional value in CPRS - CH sheet"
+                ) from exc
+        return None
+    finally:
+        workbook_obj.close()
+
+
+def _locate_cprs_ch_sheet_name(*, sheet_names: list[str]) -> str | None:
+    for sheet_name in sheet_names:
+        if sheet_name.strip().casefold() == "cprs - ch":
+            return sheet_name
+    for sheet_name in sheet_names:
+        normalized = sheet_name.strip().casefold()
+        if "cprs" in normalized and "ch" in normalized:
+            return sheet_name
+    return None
+
+
+def _extract_unmatched_mappings(
+    reconciliation_by_variant: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    by_variant: dict[str, list[dict[str, Any]]] = {}
+    total_count = 0
+
+    for variant, payload in reconciliation_by_variant.items():
+        entries: list[dict[str, Any]] = []
+        missing_series = payload.get("missing_series", [])
+        if isinstance(missing_series, list):
+            for item in missing_series:
+                if not isinstance(item, Mapping):
+                    continue
+                if str(item.get("error_type", "")).strip() != "unmapped_counterparty":
+                    continue
+                sheet = str(item.get("sheet", "")).strip()
+                raw_counterparties = sorted(
+                    {
+                        str(value).strip()
+                        for value in item.get("raw_counterparties", [])
+                        if str(value).strip()
+                    },
+                    key=str.casefold,
+                )
+                normalized_counterparties = sorted(
+                    {
+                        str(value).strip()
+                        for value in item.get("normalized_counterparties", [])
+                        if str(value).strip()
+                    },
+                    key=str.casefold,
+                )
+                entries.append(
+                    {
+                        "sheet": sheet,
+                        "raw_counterparties": raw_counterparties,
+                        "normalized_counterparties": normalized_counterparties,
+                    }
+                )
+
+        if entries:
+            by_variant[variant] = entries
+            total_count += sum(len(entry["normalized_counterparties"]) for entry in entries)
+
+    return {
+        "count": total_count,
+        "by_variant": by_variant,
+    }
 
 
 def _build_parsed_data_by_sheet(

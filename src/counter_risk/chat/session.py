@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from functools import cmp_to_key
+from pathlib import Path
 from typing import Final, cast
 
 from counter_risk.chat.context import RunContext
@@ -30,6 +33,14 @@ _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
     re.compile(r"role\s*:\s*(system|developer)", re.IGNORECASE),
     re.compile(r"<\s*system\s*>", re.IGNORECASE),
 )
+_BOUNDARY_TOKENS: Final[tuple[str, ...]] = (
+    "SYSTEM_INSTRUCTIONS_START",
+    "SYSTEM_INSTRUCTIONS_END",
+    "UNTRUSTED_RUN_DATA_START",
+    "UNTRUSTED_RUN_DATA_END",
+    "USER_QUESTION_START",
+    "USER_QUESTION_END",
+)
 
 _HTML_ENTITY_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"&(?:#\d+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]{1,31});"
@@ -39,6 +50,33 @@ _ESCAPE_SEQUENCE_PATTERN: Final[re.Pattern[str]] = re.compile(
 )
 _HEAVY_ESCAPING_RATIO_THRESHOLD: Final[float] = 0.30
 _NON_ALNUM_RATIO_THRESHOLD: Final[float] = 0.60
+_ZERO_WIDTH_OR_BIDI_PATTERN: Final[re.Pattern[str]] = re.compile(
+    "[\u200b\u200c\u200d\u200e\u200f\ufeff\u202a-\u202e\u2066-\u2069]"
+)
+_SPREADSHEET_VECTOR_PATTERNS: Final[tuple[tuple[str, re.Pattern[str]], ...]] = (
+    (
+        "formula_instruction",
+        re.compile(
+            r"(?m)^[ \t]*(?:=|\+|@|-)(?=[A-Za-z_(]).*(?:ignore|disregard|system|developer|prompt)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "dde_formula",
+        re.compile(r"(?m)^[ \t]*=[ \t]*[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*\|", re.IGNORECASE),
+    ),
+    (
+        "char_obfuscation",
+        re.compile(r"(?i)(?:unichar|char)\s*\(\s*\d+\s*\)"),
+    ),
+    (
+        "hidden_html_comment",
+        re.compile(r"<!--.*?-->", re.DOTALL),
+    ),
+)
+_FORMULA_PREFIX_PATTERN: Final[re.Pattern[str]] = re.compile(
+    r"(?m)^([ \t]*)(=|\+|@|-)(?=[A-Za-z_(])"
+)
 
 _INTENT_PATTERNS: Final[tuple[tuple[str, tuple[re.Pattern[str], ...]], ...]] = (
     (
@@ -107,6 +145,8 @@ class ChatSession:
     provider: str = "local"
     model: str = _PLACEHOLDER_MODEL
     history: list[ChatMessage] = field(default_factory=list)
+    enable_llm_logging: bool = False
+    _interaction_counter: int = field(default=0, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.provider = self.provider.strip().lower()
@@ -156,6 +196,18 @@ class ChatSession:
         self.history.append(ChatMessage(role="user", content=clean_question))
         self.history.append(ChatMessage(role="assistant", content=answer))
         _LOGGER.debug("Built guarded prompt of %s characters", len(prompt))
+
+        if self.enable_llm_logging:
+            self._interaction_counter += 1
+            _write_llm_log(
+                run_dir=self.context.run_dir,
+                interaction_number=self._interaction_counter,
+                prompt=prompt,
+                response=answer,
+                provider=selected_provider,
+                model=selected_model,
+            )
+
         return answer
 
     def _build_provider_messages(self, *, prompt: str, question: str) -> list[dict[str, str]]:
@@ -208,7 +260,7 @@ def build_guarded_prompt(context: RunContext, question: str) -> str:
     warnings = sanitize_untrusted_text("\n".join(context.warnings) or "none")
     top_exposures = sanitize_untrusted_text(_format_top_exposures(context.manifest))
 
-    return "\n".join(
+    prompt = "\n".join(
         [
             "SYSTEM_INSTRUCTIONS_START",
             "You are Counter Risk run QA assistant.",
@@ -225,6 +277,8 @@ def build_guarded_prompt(context: RunContext, question: str) -> str:
             "USER_QUESTION_END",
         ]
     )
+    validate_prompt_boundaries(prompt)
+    return prompt
 
 
 def validate_user_query(question: str) -> str:
@@ -244,21 +298,60 @@ def validate_user_query(question: str) -> str:
                 "Question rejected due to suspected prompt-injection content"
             )
 
+    for token in _BOUNDARY_TOKENS:
+        if token in normalized:
+            raise PromptInjectionError("Question rejected due to reserved prompt boundary token")
+
     return normalized
+
+
+def validate_prompt_boundaries(prompt: str) -> None:
+    """Ensure guarded prompt contains exactly one well-ordered boundary block."""
+
+    marker_positions = {
+        token: prompt.find(token)
+        for token in (
+            "SYSTEM_INSTRUCTIONS_START",
+            "SYSTEM_INSTRUCTIONS_END",
+            "UNTRUSTED_RUN_DATA_START",
+            "UNTRUSTED_RUN_DATA_END",
+            "USER_QUESTION_START",
+            "USER_QUESTION_END",
+        )
+    }
+    if any(position < 0 for position in marker_positions.values()):
+        raise PromptInjectionError("Guarded prompt missing required boundary marker")
+    if any(prompt.count(token) != 1 for token in marker_positions):
+        raise PromptInjectionError("Guarded prompt contains duplicate boundary markers")
+
+    ordered_positions = [marker_positions[token] for token in marker_positions]
+    if ordered_positions != sorted(ordered_positions):
+        raise PromptInjectionError("Guarded prompt boundary markers are out of order")
 
 
 def sanitize_untrusted_text(raw_text: str) -> str:
     """Sanitize untrusted workbook/manifest text before prompt insertion."""
 
     normalized = normalize_untrusted_text(raw_text)
+    vector_hits = detect_spreadsheet_injection_vectors(normalized)
+    if vector_hits:
+        _LOGGER.warning(
+            "Detected suspicious spreadsheet prompt-injection vectors in untrusted text: %s",
+            ", ".join(vector_hits),
+        )
+
     sanitized = "".join(
         char if (char.isprintable() or char in {"\n", "\t"}) else " " for char in normalized
     )
+    sanitized = _FORMULA_PREFIX_PATTERN.sub(r"\1[FORMULA_PREFIX:\2]", sanitized)
+    sanitized = _ZERO_WIDTH_OR_BIDI_PATTERN.sub("", sanitized)
     sanitized = sanitized.replace("```", "` ` `")
     sanitized = sanitized.replace("SYSTEM_INSTRUCTIONS_START", "SYSTEM_INSTRUCTIONS_START_REDACTED")
     sanitized = sanitized.replace("SYSTEM_INSTRUCTIONS_END", "SYSTEM_INSTRUCTIONS_END_REDACTED")
     sanitized = sanitized.replace("UNTRUSTED_RUN_DATA_START", "UNTRUSTED_RUN_DATA_START_REDACTED")
     sanitized = sanitized.replace("UNTRUSTED_RUN_DATA_END", "UNTRUSTED_RUN_DATA_END_REDACTED")
+    sanitized = sanitized.replace("USER_QUESTION_START", "USER_QUESTION_START_REDACTED")
+    sanitized = sanitized.replace("USER_QUESTION_END", "USER_QUESTION_END_REDACTED")
 
     redacted = sanitized
     for pattern in _INJECTION_PATTERNS:
@@ -276,6 +369,20 @@ def normalize_untrusted_text(raw_text: str) -> str:
     """Return canonical untrusted text used as the sanitization baseline."""
 
     return raw_text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def detect_spreadsheet_injection_vectors(raw_text: str) -> tuple[str, ...]:
+    """Detect known prompt-injection patterns common in spreadsheet text."""
+
+    hits: list[str] = []
+    if _ZERO_WIDTH_OR_BIDI_PATTERN.search(raw_text):
+        hits.append("zero_width_or_bidi_controls")
+
+    for name, pattern in _SPREADSHEET_VECTOR_PATTERNS:
+        if pattern.search(raw_text):
+            hits.append(name)
+
+    return tuple(sorted(set(hits)))
 
 
 def _warn_on_heavy_encoding_or_escaping(text: str) -> None:
@@ -505,3 +612,44 @@ def _find_delta_metric(record: dict[str, object]) -> tuple[str, str]:
         return str(key), str(value)
 
     return "value", "unknown"
+
+
+_LLM_LOG_DIR_NAME: Final[str] = "llm_logs"
+
+
+def _write_llm_log(
+    *,
+    run_dir: Path,
+    interaction_number: int,
+    prompt: str,
+    response: str,
+    provider: str,
+    model: str,
+) -> None:
+    """Write a prompt/response log artifact to the run folder."""
+
+    log_dir = run_dir / _LLM_LOG_DIR_NAME
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        _LOGGER.warning("Failed to create LLM log directory: %s", log_dir)
+        return
+
+    timestamp = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
+    filename = f"{interaction_number:04d}_{timestamp}.json"
+    log_path = log_dir / filename
+
+    payload = {
+        "interaction": interaction_number,
+        "timestamp": timestamp,
+        "provider": provider,
+        "model": model,
+        "prompt": prompt,
+        "response": response,
+    }
+
+    try:
+        log_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        _LOGGER.debug("Wrote LLM log artifact: %s", log_path)
+    except OSError:
+        _LOGGER.warning("Failed to write LLM log artifact: %s", log_path)

@@ -321,17 +321,17 @@ Include confidence flags and “unattributed remainder.”
 - Complex factor decomposition
 
 ## Tasks
-- [ ] Implement `attribute_changes(current_df, prior_df) -> attribution_report`
-- [ ] Define confidence levels:
-- [ ] High: exact match keys + clean deltas
-- [ ] Medium: normalized match with minor differences
-- [ ] Low: fuzzy/partial match or missing prior data
-- [ ] Output `change_attribution.md` and `change_attribution.csv`
-- [ ] Add tests with synthetic prior/current pairs
+- [x] Implement `attribute_changes(current_df, prior_df) -> attribution_report`
+- [x] Define confidence levels:
+- [x] High: exact match keys + clean deltas
+- [x] Medium: normalized match with minor differences
+- [x] Low: fuzzy/partial match or missing prior data
+- [x] Output `change_attribution.md` and `change_attribution.csv`
+- [x] Add tests with synthetic prior/current pairs
 
 ## Acceptance Criteria
-- [ ] When prior month data is available, attribution outputs are generated
-- [ ] Unmatched items and low-confidence matches are explicitly labeled (no silent assumptions)
+- [x] When prior month data is available, attribution outputs are generated
+- [x] Unmatched items and low-confidence matches are explicitly labeled (no silent assumptions)
 
 
 13. [Agent] [M3] Add a “Data Quality Report” section to manifest + operator-friendly warnings in Runner UI
@@ -394,7 +394,6 @@ Introduce a mapping registry and a guided process for maintainers to update it w
 ## Acceptance Criteria
 - [ ] The system produces an explicit report when new names appear
 - [ ] Maintainers can update the registry and re-run to clear reconciliation warnings
-
 
 
 

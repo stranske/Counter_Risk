@@ -218,7 +218,8 @@ def test_runner_workbook_contains_run_controls() -> None:
             "C5": "Run Trend",
             "D5": "Open Output Folder",
             "E5": "Ask about this run",
-            "F5": "Dry-Run Discovery",
+            "F5": "Open Summary",
+            "G5": "Dry-Run Discovery",
         }
         for cell_ref, expected_text in action_cells.items():
             node = runner_sheet_root.find(
@@ -227,6 +228,38 @@ def test_runner_workbook_contains_run_controls() -> None:
             )
             assert node is not None
             assert node.text == expected_text
+
+
+def test_runner_workbook_contains_data_quality_row() -> None:
+    workbook_path = Path("Runner.xlsm")
+    with ZipFile(workbook_path) as zip_file:
+        workbook_root = _read_xml(zip_file, "xl/workbook.xml")
+        workbook_rels_root = _read_xml(zip_file, "xl/_rels/workbook.xml.rels")
+
+        sheets = workbook_root.findall("ss:sheets/ss:sheet", NAMESPACES)
+        sheet_by_name = {sheet.attrib["name"]: sheet for sheet in sheets}
+        rel_target_by_id = {
+            rel.attrib["Id"]: rel.attrib["Target"]
+            for rel in workbook_rels_root.findall("pr:Relationship", NAMESPACES)
+        }
+
+        runner_sheet_target = rel_target_by_id[
+            sheet_by_name["Runner"].attrib[f"{{{RELATIONSHIP_NS}}}id"]
+        ]
+        runner_sheet_root = _read_xml(zip_file, f"xl/{runner_sheet_target}")
+
+        label_node = runner_sheet_root.find(
+            "ss:sheetData/ss:row[@r='9']/ss:c[@r='A9']/ss:is/ss:t",
+            NAMESPACES,
+        )
+        assert label_node is not None
+        assert label_node.text == "Data Quality"
+
+        status_cell = runner_sheet_root.find(
+            "ss:sheetData/ss:row[@r='9']/ss:c[@r='B9']",
+            NAMESPACES,
+        )
+        assert status_cell is not None
 
 
 def test_build_runner_workbook_embeds_valid_vba_binary_with_matching_hash(tmp_path: Path) -> None:

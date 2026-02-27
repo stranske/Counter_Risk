@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import platform
@@ -18,6 +19,7 @@ import pytest
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import ReconciliationConfig, WorkflowConfig
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
+from counter_risk.pipeline.data_quality import build_data_quality
 from counter_risk.pipeline.parsing_types import UnmappedCounterpartyError
 from counter_risk.pipeline.run import run_pipeline
 
@@ -179,6 +181,222 @@ def _minimal_workflow_config(
         hist_llc_3yr_xlsx=tmp_path / "hist-trend.xlsx",
         monthly_pptx=tmp_path / "monthly.pptx",
     )
+
+
+def test_apply_daily_holdings_repo_cash_updates_all_programs_totals(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={"daily_holdings_pdf": tmp_path / "daily-holdings.pdf"}
+    )
+    parsed_by_variant: dict[str, dict[str, Any]] = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "CIBC",
+                        "TIPS": 0.0,
+                        "Treasury": 0.0,
+                        "Equity": 10.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 10.0,
+                        "NotionalChange": 1.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        }
+    }
+    warnings: list[str] = []
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0, "ASL": 3.0})
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    totals_records = cast(
+        list[dict[str, Any]], parsed_by_variant["all_programs"]["totals"].to_dict(orient="records")
+    )
+    by_counterparty = {row["counterparty"]: row for row in totals_records}
+    assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(2.0)
+    assert float(by_counterparty["CIBC"]["Notional"]) == pytest.approx(12.0)
+    assert float(by_counterparty["ASL"]["Cash"]) == pytest.approx(3.0)
+    assert float(by_counterparty["ASL"]["Notional"]) == pytest.approx(3.0)
+    assert any("Applied Daily Holdings Repo Cash values" in warning for warning in warnings)
+
+
+def test_apply_daily_holdings_repo_cash_noop_when_daily_holdings_not_configured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(update={"daily_holdings_pdf": None})
+    parsed_by_variant = _minimal_parsed_by_variant()
+    warnings: list[str] = []
+
+    def _unexpected_call(_: Path) -> dict[str, float]:
+        raise AssertionError("parse_daily_holdings_pdf should not be called")
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", _unexpected_call)
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert warnings == []
+
+
+def test_daily_holdings_repo_cash_flows_into_all_programs_dropin_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={
+            "daily_holdings_pdf": tmp_path / "daily-holdings.pdf",
+            "dropin_all_programs_template_xlsx": tmp_path / "dropin-template.xlsx",
+            "enable_ppt_output": False,
+        }
+    )
+    daily_holdings_pdf = config.daily_holdings_pdf
+    dropin_template = config.dropin_all_programs_template_xlsx
+    assert daily_holdings_pdf is not None
+    assert dropin_template is not None
+    daily_holdings_pdf.write_bytes(b"%PDF-1.4\n%fixture")
+    dropin_template.write_bytes(b"placeholder")
+    for source_path in (
+        config.mosers_all_programs_xlsx,
+        config.mosers_ex_trend_xlsx,
+        config.mosers_trend_xlsx,
+    ):
+        assert source_path is not None
+        source_path.write_text("fixture", encoding="utf-8")
+
+    parsed_by_variant: dict[str, dict[str, Any]] = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "CIBC",
+                        "TIPS": 0.0,
+                        "Treasury": 0.0,
+                        "Equity": 10.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 10.0,
+                        "NotionalChange": 1.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        }
+    }
+    observed: dict[str, Any] = {}
+    warnings: list[str] = []
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0, "ASL": 3.0})
+
+    def _fake_fill_dropin_template(
+        template_path: Path,
+        exposures_df: Any,
+        breakdown: Any,
+        *,
+        output_path: Path,
+        repo_cash_by_counterparty: Any | None = None,
+    ) -> Path:
+        _ = (template_path, breakdown, repo_cash_by_counterparty)
+        observed["exposures"] = exposures_df
+        output_path.write_bytes(b"filled-dropin")
+        return output_path
+
+    monkeypatch.setattr(run_module, "fill_dropin_template", _fake_fill_dropin_template)
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        warnings=warnings,
+        parsed_by_variant=parsed_by_variant,
+    )
+
+    dropin_rows = cast(list[dict[str, Any]], observed["exposures"])
+    by_counterparty = {row["counterparty"]: row for row in dropin_rows}
+    assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(2.0)
+    assert float(by_counterparty["CIBC"]["Notional"]) == pytest.approx(12.0)
+    assert float(by_counterparty["ASL"]["Cash"]) == pytest.approx(3.0)
+    assert float(by_counterparty["ASL"]["Notional"]) == pytest.approx(3.0)
+
+
+def test_build_missing_inputs_summary_complete_with_single_optional_gap(tmp_path: Path) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    input_paths = run_module._resolve_input_paths(config)
+    for path in input_paths.values():
+        path.write_text("fixture", encoding="utf-8")
+
+    summary = run_module._build_missing_inputs_summary(config=config, input_paths=input_paths)
+
+    assert summary["required"] == list(run_module._REQUIRED_INPUT_FIELDS)
+    assert summary["missing_required"] == []
+    assert summary["optional_missing"] == ["raw_nisa_all_programs_xlsx"]
+    assert summary["is_complete"] is True
+
+
+def test_build_missing_inputs_summary_tracks_missing_required_fields(tmp_path: Path) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    input_paths = run_module._resolve_input_paths(config)
+
+    summary = run_module._build_missing_inputs_summary(config=config, input_paths=input_paths)
+
+    assert summary["required"] == list(run_module._REQUIRED_INPUT_FIELDS)
+    assert summary["missing_required"] == sorted(
+        run_module._REQUIRED_INPUT_FIELDS, key=str.casefold
+    )
+    assert summary["optional_missing"] == [
+        "mosers_all_programs_xlsx",
+        "raw_nisa_all_programs_xlsx",
+    ]
+    assert summary["is_complete"] is False
+
+
+def test_append_missing_inputs_warnings_adds_required_and_optional_messages() -> None:
+    warnings: list[str] = []
+
+    run_module._append_missing_inputs_warnings(
+        missing_inputs={
+            "missing_required": ["monthly_pptx", "hist_llc_3yr_xlsx"],
+            "optional_missing": ["raw_nisa_all_programs_xlsx"],
+        },
+        warnings=warnings,
+    )
+
+    assert warnings == [
+        "Input validation: missing required inputs (hist_llc_3yr_xlsx, monthly_pptx).",
+        "Input validation: optional inputs unavailable (raw_nisa_all_programs_xlsx).",
+    ]
+
+
+def test_append_missing_inputs_warnings_ignores_blank_and_non_string_entries() -> None:
+    warnings: list[str] = []
+
+    run_module._append_missing_inputs_warnings(
+        missing_inputs={
+            "missing_required": ["", "   ", None, 123],
+            "optional_missing": [None, "", "mosers_all_programs_xlsx", "  "],
+        },
+        warnings=warnings,
+    )
+
+    assert warnings == ["Input validation: optional inputs unavailable (mosers_all_programs_xlsx)."]
 
 
 def test_build_parsed_data_by_sheet_uses_historical_sheet_names_without_total_key() -> None:
@@ -586,6 +804,287 @@ def test_run_reconciliation_checks_strict_raises_unmapped_counterparty_error_fro
     assert exc_info.value.normalized_counterparty == "ACME LTD"
 
 
+def test_evaluate_cprs_ch_totals_reconciliation_passes_when_totals_match() -> None:
+    result = run_module._evaluate_cprs_ch_totals_reconciliation(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Counterparty A", "Notional": 60.0},
+                    {"counterparty": "Counterparty B", "Notional": 40.0},
+                ]
+            ),
+            "cprs_ch": _FakeDataFrame(
+                records=[
+                    {"Counterparty": "Counterparty A", "Notional": 70.0},
+                    {"Counterparty": "Counterparty B", "Notional": 30.0},
+                ]
+            ),
+        },
+        variant="all_programs",
+        mosers_workbook_path=None,
+    )
+
+    assert result["status"] == "passed"
+    assert result["mosers_cprs_ch_total_notional"] == 100.0
+    assert result["computed_total_notional"] == 100.0
+    assert result["absolute_difference"] == 0.0
+    assert "message" not in result
+
+
+def test_run_reconciliation_checks_records_cprs_ch_totals_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[{"counterparty": "Counterparty A", "Notional": 75.0}]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 100.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    outcome = run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert outcome["reconciliation_results"]["status"] == "failed"
+    assert outcome["reconciliation_results"]["total_gap_count"] == 1
+    all_programs_result = outcome["reconciliation_results"]["by_variant"]["all_programs"]
+    assert all_programs_result["cprs_ch_totals_check"]["status"] == "failed"
+    assert all_programs_result["cprs_ch_totals_check"]["absolute_difference"] == 25.0
+    assert any("CPRS-CH totals mismatch" in warning for warning in warnings)
+
+
+def test_run_reconciliation_checks_strict_raises_on_cprs_ch_totals_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path, fail_policy="strict")
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[{"counterparty": "Counterparty A", "Notional": 10.0}]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 12.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    with pytest.raises(ValueError, match="Reconciliation strict mode failed"):
+        run_module._run_reconciliation_checks(
+            run_dir=tmp_path,
+            config=config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+
+
+def test_run_reconciliation_checks_strict_mode_fails_for_fail_data_quality_findings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[{"counterparty": "Counterparty A", "Notional": 10.0}]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 12.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    warn_config = _minimal_workflow_config(tmp_path, fail_policy="warn")
+    warn_run_dir = tmp_path / "warn-mode"
+    warn_run_dir.mkdir()
+    warn_warnings: list[str] = []
+    warn_outcome = run_module._run_reconciliation_checks(
+        run_dir=warn_run_dir,
+        config=warn_config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warn_warnings,
+    )
+    data_quality = build_data_quality(
+        warn_warnings,
+        unmatched_mappings=warn_outcome["unmatched_mappings"],
+        reconciliation_results=warn_outcome["reconciliation_results"],
+    )
+    assert data_quality["overall_status"] == "fail"
+    assert any(
+        finding["code"] == "RECONCILIATION_GAPS" and finding["severity"] == "fail"
+        for finding in data_quality["findings"]
+    )
+
+    strict_config = _minimal_workflow_config(tmp_path, fail_policy="strict")
+    strict_run_dir = tmp_path / "strict-mode"
+    strict_run_dir.mkdir()
+    with pytest.raises(ValueError, match="Reconciliation strict mode failed"):
+        run_module._run_reconciliation_checks(
+            run_dir=strict_run_dir,
+            config=strict_config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=[],
+        )
+
+
+def test_evaluate_cprs_ch_totals_reconciliation_uses_mosers_program_row_when_cprs_rows_absent() -> (
+    None
+):
+    fixture_path = (
+        Path("tests/fixtures") / "MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx"
+    )
+    result = run_module._evaluate_cprs_ch_totals_reconciliation(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "synthetic",
+                        "Notional": 7811999634.2546015,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        variant="all_programs",
+        mosers_workbook_path=fixture_path,
+    )
+
+    assert result["status"] == "passed"
+    assert result["expected_total_source"] == "cprs_ch_mosers_program_row"
+
+
+def test_evaluate_class_breakdown_sanity_passes_for_consistent_rows() -> None:
+    result = run_module._evaluate_class_breakdown_sanity(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Counterparty A",
+                        "TIPS": 10.0,
+                        "Treasury": 20.0,
+                        "Equity": 30.0,
+                        "Commodity": 5.0,
+                        "Currency": -5.0,
+                        "Notional": 60.0,
+                    }
+                ]
+            )
+        },
+        variant="all_programs",
+    )
+
+    assert result["status"] == "passed"
+    assert result["checked_row_count"] == 1
+    assert result["inconsistent_row_count"] == 0
+    assert result["out_of_bounds_row_count"] == 0
+
+
+def test_evaluate_class_breakdown_sanity_fails_for_inconsistent_and_out_of_bounds_rows() -> None:
+    result = run_module._evaluate_class_breakdown_sanity(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Counterparty A",
+                        "TIPS": 70.0,
+                        "Treasury": 10.0,
+                        "Equity": 0.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 50.0,
+                    }
+                ]
+            )
+        },
+        variant="all_programs",
+    )
+
+    assert result["status"] == "failed"
+    assert result["inconsistent_row_count"] == 1
+    assert result["out_of_bounds_row_count"] == 1
+    assert "Class breakdown sanity check failed" in result["message"]
+
+
+def test_run_reconciliation_checks_records_class_breakdown_sanity_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Counterparty A",
+                        "TIPS": 1.0,
+                        "Treasury": 1.0,
+                        "Equity": 1.0,
+                        "Commodity": 1.0,
+                        "Currency": 1.0,
+                        "Notional": 3.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    outcome = run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert outcome["reconciliation_results"]["status"] == "failed"
+    assert outcome["reconciliation_results"]["total_gap_count"] == 2
+    all_programs_result = outcome["reconciliation_results"]["by_variant"]["all_programs"]
+    assert all_programs_result["class_breakdown_sanity_check"]["status"] == "failed"
+    assert any("Class breakdown sanity check failed" in warning for warning in warnings)
+
+
 def test_run_pipeline_writes_expected_outputs_and_manifest(
     tmp_path: Path, fake_pandas: None
 ) -> None:
@@ -636,12 +1135,29 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
     assert manifest["as_of_date"] == "2025-12-31"
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", manifest["run_date"])
     assert manifest["config_snapshot"]["output_root"] == str(output_root)
+    assert "DATA_QUALITY_SUMMARY.txt" in manifest["output_paths"]
+    summary_path = run_dir / "DATA_QUALITY_SUMMARY.txt"
+    assert summary_path.exists()
+    summary_text = summary_path.read_text(encoding="utf-8")
+    assert "Counterparty Risk Data Quality Summary" in summary_text
+    assert "Recommended actions:" in summary_text
 
     for output_path in manifest["output_paths"]:
         assert not Path(output_path).is_absolute()
         assert (run_dir / output_path).exists(), f"Manifest references missing path: {output_path}"
 
     assert "PPT links not refreshed; COM refresh skipped" in manifest["warnings"]
+    assert (
+        "Input validation: optional inputs unavailable (raw_nisa_all_programs_xlsx)."
+        in manifest["warnings"]
+    )
+    assert manifest["unmatched_mappings"]["count"] >= 0
+    assert isinstance(manifest["unmatched_mappings"]["by_variant"], dict)
+    assert manifest["missing_inputs"]["is_complete"] is True
+    assert manifest["missing_inputs"]["missing_required"] == []
+    assert manifest["reconciliation_results"]["status"] in {"passed", "failed"}
+    assert manifest["reconciliation_results"]["fail_policy"] in {"warn", "strict"}
+    assert isinstance(manifest["reconciliation_results"]["by_variant"], dict)
 
     expected_hashes = {
         "mosers_all_programs_xlsx": _sha256(
@@ -669,6 +1185,559 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
     for variant in ("all_programs", "ex_trend", "trend"):
         assert variant in manifest["top_exposures"]
         assert variant in manifest["top_changes_per_variant"]
+
+
+def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 100.0,
+                        "AnnualizedVolatility": 0.3,
+                        "NotionalChange": 10.0,
+                        "PositionUSD": 200.0,
+                        "Vol": 0.2,
+                        "PositionUSDChange": 20.0,
+                    },
+                    {
+                        "counterparty": "B",
+                        "Notional": 50.0,
+                        "AnnualizedVolatility": 0.1,
+                        "NotionalChange": 5.0,
+                        "PositionUSD": 300.0,
+                        "Vol": 0.1,
+                        "PositionUSDChange": -10.0,
+                    },
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert tmp_path / "risk_rankings.csv" in output_paths
+    assert tmp_path / "risk_top_movers.csv" in output_paths
+
+    with (tmp_path / "risk_rankings.csv").open("r", encoding="utf-8", newline="") as stream:
+        ranking_rows = list(csv.DictReader(stream))
+    assert any(
+        row["proxy_name"] == "risk_proxy_notional_annualized_volatility" and row["rank"] == "1"
+        for row in ranking_rows
+    )
+    assert any(
+        row["proxy_name"] == "risk_proxy_position_usd_vol" and row["rank"] == "1"
+        for row in ranking_rows
+    )
+
+    with (tmp_path / "risk_top_movers.csv").open("r", encoding="utf-8", newline="") as stream:
+        mover_rows = list(csv.DictReader(stream))
+    assert {row["proxy_name"] for row in mover_rows} == {
+        "risk_proxy_notional_annualized_volatility",
+        "risk_proxy_position_usd_vol",
+    }
+    assert "risk_rankings.csv skipped" not in "\n".join(warnings)
+
+
+def test_write_risk_outputs_warns_and_skips_rankings_when_proxy_columns_missing(
+    tmp_path: Path,
+) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "A", "Notional": 100.0}])
+        }
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert output_paths == []
+    assert not (tmp_path / "risk_rankings.csv").exists()
+    assert any(
+        "requires Notional and AnnualizedVolatility columns" in warning for warning in warnings
+    )
+    assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+    assert any("risk_rankings.csv skipped" in warning for warning in warnings)
+
+
+def test_write_risk_outputs_creates_partial_outputs_when_only_notional_proxy_exists(
+    tmp_path: Path,
+) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 120.0,
+                        "AnnualizedVolatility": 0.25,
+                        "NotionalChange": 12.0,
+                    }
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert tmp_path / "risk_rankings.csv" in output_paths
+    assert tmp_path / "risk_top_movers.csv" in output_paths
+    with (tmp_path / "risk_rankings.csv").open("r", encoding="utf-8", newline="") as stream:
+        ranking_rows = list(csv.DictReader(stream))
+    assert {row["proxy_name"] for row in ranking_rows} == {
+        "risk_proxy_notional_annualized_volatility"
+    }
+    assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+
+
+def test_write_change_attribution_outputs_writes_markdown_and_csv(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Desk A",
+                        "Notional": 100.0,
+                        "NotionalChange": 10.0,
+                    },
+                    {
+                        "counterparty": "Desk B",
+                        "Notional": 80.0,
+                        "NotionalChange": -5.0,
+                    },
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_change_attribution_outputs(
+        run_dir=tmp_path,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    csv_path = tmp_path / "change_attribution.csv"
+    markdown_path = tmp_path / "change_attribution.md"
+    assert output_paths == [csv_path, markdown_path]
+    assert csv_path.exists()
+    assert markdown_path.exists()
+    assert "confidence" in csv_path.read_text(encoding="utf-8")
+    assert "High" in markdown_path.read_text(encoding="utf-8")
+    assert warnings == []
+
+
+def test_write_change_attribution_outputs_skips_when_notional_delta_unavailable(
+    tmp_path: Path,
+) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "Desk A", "Notional": 100.0}])
+        }
+    }
+
+    output_paths = run_module._write_change_attribution_outputs(
+        run_dir=tmp_path,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert output_paths == []
+    assert not (tmp_path / "change_attribution.csv").exists()
+    assert not (tmp_path / "change_attribution.md").exists()
+    assert any("change_attribution skipped" in warning for warning in warnings)
+
+
+def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "config.yml"
+    for required_file in (
+        "all.xlsx",
+        "ex.xlsx",
+        "trend.xlsx",
+        "hist-all.xlsx",
+        "hist-ex.xlsx",
+        "hist-trend.xlsx",
+        "monthly.pptx",
+    ):
+        (tmp_path / required_file).write_text("fixture", encoding="utf-8")
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {tmp_path / 'all.xlsx'}",
+                f"mosers_ex_trend_xlsx: {tmp_path / 'ex.xlsx'}",
+                f"mosers_trend_xlsx: {tmp_path / 'trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {tmp_path / 'hist-all.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {tmp_path / 'hist-ex.xlsx'}",
+                f"hist_llc_3yr_xlsx: {tmp_path / 'hist-trend.xlsx'}",
+                f"monthly_pptx: {tmp_path / 'monthly.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 100.0,
+                        "AnnualizedVolatility": 0.2,
+                        "NotionalChange": 20.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(
+                records=[
+                    {
+                        "account": "account-a",
+                        "description": "desc",
+                        "class": "class-a",
+                        "fcm": "fcm-a",
+                        "clearing_house": "ch-a",
+                        "notional": 1.0,
+                    }
+                ]
+            ),
+        },
+        "ex_trend": {
+            "totals": _FakeDataFrame(
+                records=[],
+                columns=["counterparty", "Notional", "NotionalChange"],
+            ),
+            "futures": _FakeDataFrame(
+                records=[],
+                columns=["account", "description", "class", "fcm", "clearing_house", "notional"],
+            ),
+        },
+        "trend": {
+            "totals": _FakeDataFrame(
+                records=[],
+                columns=["counterparty", "Notional", "NotionalChange"],
+            ),
+            "futures": _FakeDataFrame(
+                records=[],
+                columns=["account", "description", "class", "fcm", "clearing_house", "notional"],
+            ),
+        },
+    }
+
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed_by_variant)
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._run_reconciliation_checks",
+        lambda *, run_dir, config, parsed_by_variant, warnings: None,
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, as_of_date, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    assert (run_dir / "risk_rankings.csv").exists()
+    assert (run_dir / "risk_top_movers.csv").exists()
+
+
+def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir(parents=True, exist_ok=True)
+    limits_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "limits:",
+                "  - entity_type: counterparty",
+                "    entity_name: citibank",
+                "    limit_value: 250000000",
+                "    limit_kind: absolute_notional",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    totals = _FakeDataFrame(
+        records=[
+            {
+                "counterparty": "Citibank",
+                "Notional": 300_000_000.0,
+                "NotionalChange": 10_000_000.0,
+            }
+        ]
+    )
+    futures = _FakeDataFrame(
+        records=[
+            {
+                "account": "acct-1",
+                "description": "desc",
+                "class": "Treasury",
+                "fcm": "fcm-a",
+                "clearing_house": "ch-a",
+                "notional": 50_000_000.0,
+            }
+        ]
+    )
+    parsed = {
+        "all_programs": {"totals": totals, "futures": futures},
+        "ex_trend": {"totals": totals, "futures": futures},
+        "trend": {"totals": totals, "futures": futures},
+    }
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, as_of_date, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SKIPPED),
+        ),
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    limit_breaches_path = run_dir / "limit_breaches.csv"
+    assert limit_breaches_path.exists()
+    content = limit_breaches_path.read_text(encoding="utf-8")
+    assert "entity_type,entity_name,limit_kind,actual_value,limit_value,breach_amount" in content
+    assert "counterparty,citibank,absolute_notional" in content
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert "limit_breaches.csv" in manifest["output_paths"]
+    assert manifest["limit_breach_summary"]["has_breaches"] is True
+    assert manifest["limit_breach_summary"]["breach_count"] >= 1
+    assert manifest["limit_breach_summary"]["report_path"] == "limit_breaches.csv"
+    assert "limit_breaches.csv" in manifest["limit_breach_summary"]["warning_banner"]
+    assert any(
+        "Limit breach summary:" in warning and "limit_breaches.csv" in warning
+        for warning in manifest["warnings"]
+    )
+
+
+def test_run_pipeline_warns_on_missing_limit_entities_by_default(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir(parents=True, exist_ok=True)
+    limits_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "strict_missing_entities: false",
+                "limits:",
+                "  - entity_type: counterparty",
+                "    entity_name: not_present_counterparty",
+                "    limit_value: 250000000",
+                "    limit_kind: absolute_notional",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    totals = _FakeDataFrame(
+        records=[
+            {
+                "counterparty": "Citibank",
+                "Notional": 200_000_000.0,
+                "NotionalChange": 10_000_000.0,
+            }
+        ]
+    )
+    futures = _FakeDataFrame(
+        records=[
+            {
+                "account": "acct-1",
+                "description": "desc",
+                "class": "Treasury",
+                "fcm": "fcm-a",
+                "clearing_house": "ch-a",
+                "notional": 50_000_000.0,
+            }
+        ]
+    )
+    parsed = {
+        "all_programs": {"totals": totals, "futures": futures},
+        "ex_trend": {"totals": totals, "futures": futures},
+        "trend": {"totals": totals, "futures": futures},
+    }
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, as_of_date, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SKIPPED),
+        ),
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert "limit_breaches.csv" not in manifest["output_paths"]
+    assert manifest["limit_breach_summary"] == {
+        "has_breaches": False,
+        "breach_count": 0,
+        "report_path": None,
+        "warning_banner": None,
+    }
+    assert any(
+        "Limit check warning: configured limit entities missing from exposure data" in warning
+        for warning in manifest["warnings"]
+    )
+    assert any(
+        "counterparty:not_present_counterparty" in warning for warning in manifest["warnings"]
+    )
+    assert all("Limit breach summary:" not in warning for warning in manifest["warnings"])
+
+
+def test_run_pipeline_strict_missing_limit_entities_fails(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir(parents=True, exist_ok=True)
+    limits_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "strict_missing_entities: true",
+                "limits:",
+                "  - entity_type: counterparty",
+                "    entity_name: not_present_counterparty",
+                "    limit_value: 250000000",
+                "    limit_kind: absolute_notional",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    totals = _FakeDataFrame(
+        records=[
+            {
+                "counterparty": "Citibank",
+                "Notional": 200_000_000.0,
+                "NotionalChange": 10_000_000.0,
+            }
+        ]
+    )
+    futures = _FakeDataFrame(
+        records=[
+            {
+                "account": "acct-1",
+                "description": "desc",
+                "class": "Treasury",
+                "fcm": "fcm-a",
+                "clearing_house": "ch-a",
+                "notional": 50_000_000.0,
+            }
+        ]
+    )
+    parsed = {
+        "all_programs": {"totals": totals, "futures": futures},
+        "ex_trend": {"totals": totals, "futures": futures},
+        "trend": {"totals": totals, "futures": futures},
+    }
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, as_of_date, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SKIPPED),
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during limit breach stage"):
+        run_pipeline(config_path)
 
 
 def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
@@ -1166,6 +2235,10 @@ def test_run_pipeline_warn_mode_writes_mapping_updates_and_completes(
     assert "fail_policy: warn" in text
     assert "missing_from_historical_headers" in text
     assert any("Reconciliation summary:" in warning for warning in manifest["warnings"])
+    assert manifest["reconciliation_results"]["status"] == "failed"
+    assert manifest["reconciliation_results"]["total_gap_count"] > 0
+    assert manifest["unmatched_mappings"]["count"] > 0
+    assert "all_programs" in manifest["unmatched_mappings"]["by_variant"]
 
 
 def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
@@ -1196,6 +2269,51 @@ def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
 
     assert isinstance(exc_info.value.__cause__, UnmappedCounterpartyError)
     assert "Unmapped normalized counterparty" in str(exc_info.value.__cause__)
+    assert "Operator action: update counterparty mappings for this month and rerun." in str(
+        exc_info.value
+    )
+    assert "Unmatched counterparty 'Counterparty A'" in str(exc_info.value)
+
+
+def test_run_pipeline_strict_mode_reconciliation_failure_uses_operator_message(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8")
+        + "\n".join(
+            [
+                "reconciliation:",
+                "  fail_policy: strict",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+
+    def _boom(
+        *,
+        run_dir: Path,
+        config: Any,
+        parsed_by_variant: dict[str, dict[str, Any]],
+        warnings: list[str],
+    ) -> dict[str, Any]:
+        _ = (run_dir, config, parsed_by_variant, warnings)
+        raise ValueError(
+            "Reconciliation strict mode failed due to missing/unmapped series; gap_count=2"
+        )
+
+    monkeypatch.setattr("counter_risk.pipeline.run._run_reconciliation_checks", _boom)
+
+    with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
+        run_pipeline(config_path)
+
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert "reconcile source totals/class breakdown values" in str(exc_info.value)
+    assert "gap_count=2" in str(exc_info.value)
 
 
 def test_run_pipeline_wraps_output_write_errors(
@@ -1240,6 +2358,107 @@ def test_run_pipeline_wraps_input_validation_errors(
 
     assert isinstance(exc_info.value.__cause__, FileNotFoundError)
     assert "missing source workbook" in str(exc_info.value.__cause__)
+    assert "Operator action: verify configured input file paths are accessible." in str(
+        exc_info.value
+    )
+
+
+def test_run_pipeline_input_validation_uses_missing_required_operator_message(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = _write_valid_config(tmp_path=tmp_path, output_root=tmp_path / "runs")
+
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._build_missing_inputs_summary",
+        lambda *, config, input_paths: {
+            "required": list(run_module._REQUIRED_INPUT_FIELDS),
+            "missing_required": ["monthly_pptx", "hist_llc_3yr_xlsx"],
+            "optional_missing": [],
+            "is_complete": False,
+        },
+    )
+
+    def _boom(_: dict[str, Path]) -> None:
+        raise FileNotFoundError("missing source workbook")
+
+    monkeypatch.setattr("counter_risk.pipeline.run._validate_input_files", _boom)
+
+    with pytest.raises(
+        RuntimeError, match="Pipeline failed during input validation stage"
+    ) as exc_info:
+        run_pipeline(config_path)
+
+    assert "Operator action: verify required input files are present and paths are correct." in str(
+        exc_info.value
+    )
+    assert "monthly_pptx -> " in str(exc_info.value)
+
+
+def test_build_missing_input_operator_message_with_missing_required_paths(tmp_path: Path) -> None:
+    message = run_module._build_missing_input_operator_message(
+        missing_inputs={"missing_required": ["monthly_pptx", "hist_llc_3yr_xlsx"]},
+        input_paths={
+            "monthly_pptx": tmp_path / "monthly.pptx",
+            "hist_llc_3yr_xlsx": tmp_path / "hist_trend.xlsx",
+        },
+    )
+
+    assert (
+        "Operator action: verify required input files are present and paths are correct." in message
+    )
+    assert f"monthly_pptx -> {tmp_path / 'monthly.pptx'}" in message
+    assert f"hist_llc_3yr_xlsx -> {tmp_path / 'hist_trend.xlsx'}" in message
+
+
+def test_build_missing_input_operator_message_without_missing_required_paths() -> None:
+    message = run_module._build_missing_input_operator_message(
+        missing_inputs={"missing_required": []},
+        input_paths={},
+    )
+
+    assert message == "Operator action: verify configured input file paths are accessible."
+
+
+def test_build_unmatched_mappings_operator_message_with_sheet_context() -> None:
+    message = run_module._build_unmatched_mappings_operator_message(
+        UnmappedCounterpartyError(
+            normalized_counterparty="ACME LTD",
+            raw_counterparty="Acme Ltd.",
+            sheet="Total",
+        )
+    )
+
+    assert "Operator action: update counterparty mappings for this month and rerun." in message
+    assert "Unmatched counterparty 'Acme Ltd.'" in message
+    assert "normalized to 'ACME LTD'" in message
+    assert "worksheet 'Total'" in message
+
+
+def test_build_parse_stage_operator_message_returns_empty_for_non_unmapped_errors() -> None:
+    assert run_module._build_parse_stage_operator_message(ValueError("bad parse")) == ""
+
+
+def test_build_parse_stage_operator_message_uses_nested_unmapped_counterparty_error() -> None:
+    nested = RuntimeError("outer")
+    nested.__cause__ = UnmappedCounterpartyError(
+        normalized_counterparty="ACME LTD",
+        raw_counterparty="Acme Ltd.",
+        sheet=None,
+    )
+
+    message = run_module._build_parse_stage_operator_message(nested)
+
+    assert "Operator action: update counterparty mappings for this month and rerun." in message
+    assert "Unmatched counterparty 'Acme Ltd.'" in message
+
+
+def test_build_parse_stage_operator_message_uses_reconciliation_failure_error() -> None:
+    message = run_module._build_parse_stage_operator_message(
+        ValueError("Reconciliation strict mode failed due to missing/unmapped series; gap_count=3")
+    )
+
+    assert "Operator action: reconcile source totals/class breakdown values" in message
+    assert "gap_count=3" in message
 
 
 def test_run_pipeline_wraps_compute_errors(

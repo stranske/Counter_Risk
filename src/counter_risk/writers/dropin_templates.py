@@ -12,6 +12,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
 
+from counter_risk.compute.rollups import apply_repo_cash_to_totals
 from counter_risk.normalize import normalize_clearing_house, normalize_counterparty
 
 _COUNTERPARTY_COLUMNS = (
@@ -355,6 +356,7 @@ def fill_dropin_template(
     breakdown: Mapping[str, Any],
     *,
     output_path: str | Path,
+    repo_cash_by_counterparty: Mapping[str, float] | None = None,
 ) -> Path:
     """Load a drop-in template and write a populated output workbook.
 
@@ -370,6 +372,10 @@ def fill_dropin_template(
     _validate_workbook_path(output_file, field_name="output_path", must_exist=False)
 
     rows = _iter_rows(exposures_df)
+    if repo_cash_by_counterparty is not None:
+        rows = _iter_rows(
+            apply_repo_cash_to_totals(rows, repo_cash_by_counterparty),
+        )
     _validate_exposure_rows(rows)
     exposures_by_name = _build_exposure_index(rows)
     normalized_breakdown = _coerce_breakdown(breakdown)

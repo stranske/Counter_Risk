@@ -51,12 +51,31 @@ def test_manifest_paths_are_relative_and_resolve_to_existing_files(tmp_path: Pat
     parsed = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert parsed["run_dir"] == "."
     assert parsed["ppt_status"] in {"success", "skipped", "failed"}
+    assert parsed["unmatched_mappings"] == {"count": 0, "by_variant": {}}
+    assert parsed["missing_inputs"] == {
+        "required": [],
+        "missing_required": [],
+        "optional_missing": [],
+        "is_complete": True,
+    }
+    assert parsed["reconciliation_results"] == {
+        "status": "not_run",
+        "fail_policy": "warn",
+        "total_gap_count": 0,
+        "by_variant": {},
+    }
 
     for artifact_path in parsed["output_paths"]:
         assert not artifact_path.startswith("/")
         assert not re.match(r"^[A-Za-z]:\\", artifact_path)
         assert ".." not in Path(artifact_path).parts
         assert (run_dir / artifact_path).exists()
+    summary_path = run_dir / "DATA_QUALITY_SUMMARY.txt"
+    assert summary_path.exists()
+    summary_text = summary_path.read_text(encoding="utf-8")
+    assert "Counterparty Risk Data Quality Summary" in summary_text
+    assert "Overall status: INFO (GREEN) - Safe to send." in summary_text
+    assert "DATA_QUALITY_SUMMARY.txt" in parsed["output_paths"]
 
 
 def test_manifest_build_rejects_nonexistent_artifact_paths(tmp_path: Path) -> None:
@@ -77,6 +96,40 @@ def test_manifest_build_rejects_nonexistent_artifact_paths(tmp_path: Path) -> No
             top_changes_per_variant={"all_programs": []},
             warnings=[],
         )
+
+
+def test_manifest_warnings_are_normalized_to_strings(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    workbook_path = run_dir / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx"
+    workbook_path.write_bytes(b"hist")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(workbook_path.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[
+            "plain warning",
+            {"message": "Reconciliation warning", "sheet": "Total", "row_idx": 4},
+            {"code": "MISSING_NOTIONAL", "row_idx": 2},
+            None,
+            "   ",
+        ],
+    )
+
+    assert manifest["warnings"] == [
+        "plain warning",
+        "Reconciliation warning (sheet=Total, row_idx=4)",
+        "code=MISSING_NOTIONAL, row_idx=2",
+    ]
+    assert all(isinstance(entry, str) for entry in manifest["warnings"])
 
 
 def test_to_relative_artifact_path_normalizes_absolute_path_under_run_dir(tmp_path: Path) -> None:
@@ -142,3 +195,52 @@ def test_to_relative_artifact_path_rejects_absolute_path_outside_run_dir(tmp_pat
     )
     with pytest.raises(ValueError, match="must be within run_dir"):
         builder._to_relative_artifact_path(run_dir=run_dir, artifact_path=outside)
+
+
+def test_data_quality_summary_derives_counts_when_counts_missing(tmp_path: Path) -> None:
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    summary_text = builder._build_data_quality_summary(
+        {
+            "as_of_date": "2026-02-13",
+            "run_date": "2026-02-14",
+            "data_quality": {
+                "overall_status": "warn",
+                "findings": [
+                    {
+                        "category": "input",
+                        "severity": "fail",
+                        "code": "MISSING_REQUIRED_INPUTS",
+                        "message": "Missing required input workbook.",
+                    },
+                    {
+                        "category": "ppt",
+                        "severity": "warn",
+                        "code": "PPT_GENERATION_SKIPPED",
+                        "message": "PPT generation was skipped for this run.",
+                    },
+                ],
+                "recommended_actions": [
+                    {
+                        "category": "input",
+                        "severity": "fail",
+                        "action": "Restore required input files before rerunning.",
+                    }
+                ],
+            },
+        }
+    )
+
+    assert "Overall status: WARN (YELLOW) - Review warnings before sending." in summary_text
+    assert "Finding counts:" in summary_text
+    assert "- Total findings: 2" in summary_text
+    assert "- warn: 1" in summary_text
+    assert "- fail: 1" in summary_text
+    assert "- input: total=1 (info=0, warn=0, fail=1)" in summary_text
+    assert (
+        "- [FAIL] input / MISSING_REQUIRED_INPUTS: Missing required input workbook." in summary_text
+    )
+    assert "- [FAIL] input: Restore required input files before rerunning." in summary_text

@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import csv
+import math
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any, cast
+
+from counter_risk.normalize import normalize_counterparty
 
 _COUNTERPARTY_KEYS = ("counterparty", "counterparty_name", "name")
 _ASSET_CLASS_KEYS = ("asset_class", "class", "segment")
@@ -36,9 +39,30 @@ _TOP_CHANGE_COLUMNS = (
     "notional_change",
     "absolute_change",
 )
+_NOTIONAL_PROXY_COLUMNS = ("Notional", "AnnualizedVolatility")
+_POSITION_PROXY_COLUMNS = ("PositionUSD", "Vol")
+_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN = "risk_proxy_notional_annualized_volatility"
+_RISK_PROXY_POSITION_VOL_COLUMN = "risk_proxy_position_usd_vol"
 
 _CONCENTRATION_GROUP_COLUMNS = ("variant", "segment")
 _CONCENTRATION_METRIC_COLUMNS = ("top5_share", "top10_share", "hhi")
+
+_REPO_CASH_OUTPUT_COLUMNS = (
+    "counterparty",
+    "group_type",
+    "group_name",
+    "TIPS",
+    "Treasury",
+    "Equity",
+    "Commodity",
+    "Currency",
+    "notional",
+    "prior_notional",
+    "notional_change",
+    "Cash",
+    "Notional",
+    "NotionalChange",
+)
 
 
 def _is_dataframe_like(value: Any) -> bool:
@@ -119,6 +143,24 @@ def _records_from_table(table: Any, *, arg_name: str) -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
+def _column_names_from_rows(table: Any, rows: list[Mapping[str, Any]]) -> tuple[str, ...]:
+    if _is_dataframe_like(table):
+        columns = getattr(table, "columns", ())
+        normalized = [str(column) for column in columns]
+        return tuple(normalized)
+
+    ordered_columns: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        for key in row:
+            normalized_key = str(key)
+            if normalized_key in seen:
+                continue
+            seen.add(normalized_key)
+            ordered_columns.append(normalized_key)
+    return tuple(ordered_columns)
+
+
 def compute_totals(exposures_df: Any) -> Any:
     """Aggregate exposures by counterparty and asset class.
 
@@ -180,6 +222,112 @@ def compute_totals(exposures_df: Any) -> Any:
         )
 
     return _to_dataframe_or_records(records=records, columns=_TOTAL_COLUMNS)
+
+
+def apply_repo_cash_to_totals(
+    totals_df: Any,
+    repo_cash_by_counterparty: Mapping[str, float],
+) -> Any:
+    """Overlay parsed daily-holdings Repo Cash onto All Programs totals rows.
+
+    For matched counterparties, this increments both ``Cash`` and ``Notional``.
+    For unmatched counterparties, a new totals row is appended with zeroes for
+    non-cash asset classes and ``NotionalChange`` defaulted to ``0.0``.
+    """
+
+    rows = _iter_rows(totals_df, arg_name="totals_df")
+    records = [dict(row) for row in rows]
+    output_columns = list(_column_names_from_rows(totals_df, rows))
+    for column in _REPO_CASH_OUTPUT_COLUMNS:
+        if column not in output_columns:
+            output_columns.append(column)
+
+    if not repo_cash_by_counterparty:
+        return _to_dataframe_or_records(records=records, columns=tuple(output_columns))
+
+    normalized_index: dict[str, int] = {}
+    for index, row in enumerate(records):
+        counterparty_raw = _counterparty_label_from_totals_row(row)
+        if counterparty_raw is None:
+            continue
+        normalized_index[normalize_counterparty(counterparty_raw)] = index
+
+    for raw_counterparty, raw_amount in repo_cash_by_counterparty.items():
+        counterparty = str(raw_counterparty).strip()
+        if not counterparty:
+            raise ValueError("repo_cash_by_counterparty contains an empty counterparty key")
+
+        try:
+            amount = float(raw_amount)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"repo_cash_by_counterparty value for {counterparty!r} must be numeric"
+            ) from exc
+        if not math.isfinite(amount):
+            raise ValueError(f"repo_cash_by_counterparty value for {counterparty!r} must be finite")
+
+        normalized = normalize_counterparty(counterparty)
+        matched_index = normalized_index.get(normalized)
+        if matched_index is None:
+            records.append(
+                {
+                    "counterparty": counterparty,
+                    "group_type": "counterparty",
+                    "group_name": counterparty,
+                    "TIPS": 0.0,
+                    "Treasury": 0.0,
+                    "Equity": 0.0,
+                    "Commodity": 0.0,
+                    "Currency": 0.0,
+                    "Cash": amount,
+                    "notional": amount,
+                    "prior_notional": 0.0,
+                    "notional_change": amount,
+                    "Notional": amount,
+                    "NotionalChange": 0.0,
+                }
+            )
+            normalized_index[normalized] = len(records) - 1
+            continue
+
+        row = records[matched_index]
+        _add_amount_to_aliases(row=row, aliases=("cash", "Cash"), amount=amount)
+        _add_amount_to_aliases(row=row, aliases=("notional", "Notional"), amount=amount)
+        if row.get("group_type") == "counterparty":
+            row["group_name"] = _counterparty_label_from_totals_row(row) or counterparty
+            row["notional_change"] = float(row.get("notional_change", 0.0) or 0.0) + amount
+
+    return _to_dataframe_or_records(records=records, columns=tuple(output_columns))
+
+
+def _counterparty_label_from_totals_row(row: Mapping[str, Any]) -> str | None:
+    counterparty_raw = row.get("counterparty")
+    if isinstance(counterparty_raw, str) and counterparty_raw.strip():
+        return counterparty_raw.strip()
+
+    group_type = str(row.get("group_type", "")).strip().casefold()
+    if group_type != "counterparty":
+        return None
+
+    group_name = row.get("group_name")
+    if isinstance(group_name, str) and group_name.strip():
+        return group_name.strip()
+
+    return None
+
+
+def _add_amount_to_aliases(*, row: dict[str, Any], aliases: tuple[str, ...], amount: float) -> None:
+    current = 0.0
+    for alias in aliases:
+        raw = row.get(alias)
+        if raw is None or (isinstance(raw, str) and not raw.strip()):
+            continue
+        current = float(raw)
+        break
+
+    updated = current + amount
+    for alias in aliases:
+        row[alias] = updated
 
 
 def compute_notional_breakdown(exposures_df: Any) -> dict[str, float]:
@@ -282,6 +430,45 @@ def top_changes(totals_df: Any, n: int = 10) -> Any:
     )
 
     return _to_dataframe_or_records(records=change_rows[:n], columns=_TOP_CHANGE_COLUMNS)
+
+
+def compute_risk_proxies(exposures_df: Any) -> Any:
+    """Return exposure rows annotated with available risk proxy calculations."""
+
+    rows = _iter_rows(exposures_df, arg_name="exposures_df")
+    columns = _column_names_from_rows(exposures_df, rows)
+    has_notional_proxy_inputs = all(column in columns for column in _NOTIONAL_PROXY_COLUMNS)
+    has_position_proxy_inputs = all(column in columns for column in _POSITION_PROXY_COLUMNS)
+
+    proxy_records: list[dict[str, Any]] = []
+    for row in rows:
+        normalized_row = dict(row)
+        if has_notional_proxy_inputs:
+            notional = _find_numeric(row, ("Notional",), field="Notional", default=0.0)
+            annualized_volatility = _find_numeric(
+                row,
+                ("AnnualizedVolatility",),
+                field="AnnualizedVolatility",
+                default=0.0,
+            )
+            normalized_row[_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN] = (
+                notional * annualized_volatility
+            )
+
+        if has_position_proxy_inputs:
+            position_usd = _find_numeric(row, ("PositionUSD",), field="PositionUSD", default=0.0)
+            volatility = _find_numeric(row, ("Vol",), field="Vol", default=0.0)
+            normalized_row[_RISK_PROXY_POSITION_VOL_COLUMN] = position_usd * volatility
+
+        proxy_records.append(normalized_row)
+
+    output_columns = list(columns)
+    if has_notional_proxy_inputs and _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN not in output_columns:
+        output_columns.append(_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN)
+    if has_position_proxy_inputs and _RISK_PROXY_POSITION_VOL_COLUMN not in output_columns:
+        output_columns.append(_RISK_PROXY_POSITION_VOL_COLUMN)
+
+    return _to_dataframe_or_records(records=proxy_records, columns=tuple(output_columns))
 
 
 def compute_concentration_metrics(

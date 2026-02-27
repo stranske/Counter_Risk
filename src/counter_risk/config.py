@@ -86,6 +86,8 @@ class WorkflowConfig(BaseModel):
     run_date: date | None = None
     mosers_all_programs_xlsx: Path | None = None
     raw_nisa_all_programs_xlsx: Path | None = None
+    daily_holdings_pdf: Path | None = None
+    dropin_all_programs_template_xlsx: Path | None = None
     mosers_ex_trend_xlsx: Path | None = None
     raw_nisa_ex_trend_xlsx: Path | None = None
     mosers_trend_xlsx: Path | None = None
@@ -106,6 +108,7 @@ class WorkflowConfig(BaseModel):
     output_generators: tuple[OutputGeneratorConfig, ...] = Field(
         default_factory=_default_output_generators
     )
+    enable_llm_logging: bool = False
     output_root: Path = Path("runs")
 
     @property
