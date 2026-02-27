@@ -44,3 +44,33 @@ def test_manifest_schema_defines_limit_breach_summary_shape() -> None:
     assert summary["properties"]["breach_count"]["type"] == "integer"
     assert summary["properties"]["report_path"]["type"] == ["string", "null"]
     assert summary["properties"]["warning_banner"]["type"] == ["string", "null"]
+
+
+def test_manifest_schema_defines_data_quality_shape() -> None:
+    schema = manifest_schema()
+
+    data_quality = schema["properties"]["data_quality"]
+    assert data_quality["required"] == [
+        "overall_status",
+        "severity_levels",
+        "findings",
+        "counts",
+        "recommended_actions",
+    ]
+    assert data_quality["properties"]["overall_status"]["enum"] == ["info", "warn", "fail"]
+    assert data_quality["properties"]["findings"]["items"]["required"] == [
+        "category",
+        "severity",
+        "code",
+        "message",
+    ]
+    assert data_quality["properties"]["findings"]["items"]["properties"]["severity"]["enum"] == [
+        "info",
+        "warn",
+        "fail",
+    ]
+    assert data_quality["properties"]["recommended_actions"]["items"]["required"] == [
+        "category",
+        "severity",
+        "action",
+    ]

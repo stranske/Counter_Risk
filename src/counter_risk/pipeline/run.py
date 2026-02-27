@@ -548,7 +548,7 @@ def run_pipeline(config_path: str | Path) -> Path:
             input_paths=input_paths,
         )
         raise RuntimeError(
-            "Pipeline failed during input validation stage. " f"{operator_message}"
+            f"Pipeline failed during input validation stage. {operator_message}"
         ) from exc
 
     try:
@@ -1016,11 +1016,11 @@ def _append_missing_inputs_warnings(
 
     if missing_required:
         warnings.append(
-            "Input validation: missing required inputs " f"({', '.join(missing_required)})."
+            f"Input validation: missing required inputs ({', '.join(missing_required)})."
         )
     if optional_missing:
         warnings.append(
-            "Input validation: optional inputs unavailable " f"({', '.join(optional_missing)})."
+            f"Input validation: optional inputs unavailable ({', '.join(optional_missing)})."
         )
 
 
@@ -1734,9 +1734,7 @@ def _format_missing_limit_entities_warning(missing_entities: list[dict[str, str]
     entities = ", ".join(
         f"{entry['entity_type']}:{entry['entity_name']}" for entry in missing_entities
     )
-    return (
-        "Limit check warning: configured limit entities missing from exposure data; " f"{entities}"
-    )
+    return f"Limit check warning: configured limit entities missing from exposure data; {entities}"
 
 
 def _build_limit_breach_summary(
@@ -1752,7 +1750,7 @@ def _build_limit_breach_summary(
     if has_breaches and report_path is not None:
         plurality = "breach" if limit_breaches.breach_count == 1 else "breaches"
         warning_banner = (
-            f"{limit_breaches.breach_count} limit {plurality} detected. " f"Review {report_path}."
+            f"{limit_breaches.breach_count} limit {plurality} detected. Review {report_path}."
         )
     return {
         "has_breaches": has_breaches,
@@ -2702,9 +2700,13 @@ def _build_output_generator_registry(
 ) -> OutputGeneratorRegistry:
     return OutputGeneratorRegistry(
         builtin_factories={
-            "historical_workbook": lambda registry_context: _build_historical_workbook_output_generator(
-                parsed_by_variant=_require_parsed_by_variant(registry_context.parsed_by_variant),
-                warnings=registry_context.warnings,
+            "historical_workbook": lambda registry_context: (
+                _build_historical_workbook_output_generator(
+                    parsed_by_variant=_require_parsed_by_variant(
+                        registry_context.parsed_by_variant
+                    ),
+                    warnings=registry_context.warnings,
+                )
             ),
             "ppt_screenshot": lambda registry_context: _build_ppt_screenshot_output_generator(
                 warnings=registry_context.warnings,
