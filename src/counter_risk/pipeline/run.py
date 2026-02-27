@@ -1121,12 +1121,14 @@ def _write_outputs(
         ),
         _VariantInputs(
             name="ex_trend",
-            workbook_path=config.mosers_ex_trend_xlsx,
+            workbook_path=_require_path(
+                config.mosers_ex_trend_xlsx, field_name="mosers_ex_trend_xlsx"
+            ),
             historical_path=config.hist_ex_llc_3yr_xlsx,
         ),
         _VariantInputs(
             name="trend",
-            workbook_path=config.mosers_trend_xlsx,
+            workbook_path=_require_path(config.mosers_trend_xlsx, field_name="mosers_trend_xlsx"),
             historical_path=config.hist_llc_3yr_xlsx,
         ),
     ]
