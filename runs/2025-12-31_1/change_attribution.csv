@@ -1,0 +1,13 @@
+counterparty,matched_prior_counterparty,current_notional,prior_notional,notional_change,match_type,confidence,attribution_reason,is_unmatched,is_low_confidence,review_label
+Bank of America,Bank of America,1999535796.3,1674313677.0199997,325222119.2800002,exact,High,exact_key_match,False,False,NONE
+BNP Paribas,BNP Paribas,2340676037.8314,2331954256.2256002,8721781.605799675,exact,High,exact_key_match,False,False,NONE
+Citibank,Citibank,-8187360.202,-8164297.988,-23062.213999999687,exact,High,exact_key_match,False,False,NONE
+CME,CME,276748382.98,242237697.55,34510685.43000001,exact,High,exact_key_match,False,False,NONE
+Credit Agricole,Credit Agricole,54711186.40000001,54516880.04,194306.3600000143,exact,High,exact_key_match,False,False,NONE
+Goldman Sachs,Goldman Sachs,623429882.56,621655709.299,1774173.260999918,exact,High,exact_key_match,False,False,NONE
+ICE,ICE,52096306.524,50474060.554000005,1622245.9699999914,exact,High,exact_key_match,False,False,NONE
+JP Morgan,JP Morgan,1648697237.146,1876513717.4218998,-227816480.2758999,exact,High,exact_key_match,False,False,NONE
+Mitsubishi,Mitsubishi,4614050.99,4598664.54,15386.450000000186,exact,High,exact_key_match,False,False,NONE
+Morgan Stanley,Morgan Stanley,336420109.6014,342006545.59560007,-5586435.994200051,exact,High,exact_key_match,False,False,NONE
+Nomura,Nomura,181693248.4,256877644.48,-75184396.07999998,exact,High,exact_key_match,False,False,NONE
+Soc Gen,Soc Gen,268169780.92,265471490.48,2698290.4399999976,exact,High,exact_key_match,False,False,NONE

@@ -1,0 +1,33 @@
+Counterparty Risk Data Quality Summary
+
+As-of date: 2025-12-31
+Run date: 2026-02-27
+Overall status: WARN (YELLOW) - Review warnings before sending.
+
+Finding counts:
+- Total findings: 9
+- info: 3
+- warn: 6
+- fail: 0
+
+Findings by category:
+- input: total=1 (info=0, warn=1, fail=0)
+- limits: total=1 (info=0, warn=1, fail=0)
+- pipeline: total=7 (info=3, warn=4, fail=0)
+
+Detailed findings:
+- [WARN] pipeline / INPUT_VALIDATION_OPTIONAL_INPUTS_UNAVAILABLE_MOSERS_ALL_PROGRAMS: Input validation: optional inputs unavailable (mosers_all_programs_xlsx).
+- [INFO] pipeline / GENERATED_ALL_PROGRAMS_MOSERS_WORKBOOK_FROM_RAW_NISA_INPUT: Generated All Programs MOSERS workbook from raw NISA input
+- [INFO] pipeline / GENERATED_EX_TREND_MOSERS_WORKBOOK_FROM_RAW_NISA_INPUT: Generated Ex Trend MOSERS workbook from raw NISA input
+- [INFO] pipeline / GENERATED_TREND_MOSERS_WORKBOOK_FROM_RAW_NISA_INPUT: Generated Trend MOSERS workbook from raw NISA input
+- [WARN] pipeline / RISK_PROXY_NOTIONAL_VOLATILITY_SKIPPED_FOR_ALL_PROGRAMS_REQUIRES: risk proxy notional-volatility skipped for all_programs: requires Notional and AnnualizedVolatility columns
+- [WARN] pipeline / RISK_PROXY_POSITION_VOLATILITY_SKIPPED_FOR_ALL_PROGRAMS_REQUIRES: risk proxy position-volatility skipped for all_programs: requires PositionUSD and Vol columns
+- [WARN] pipeline / RISK_RANKINGSCSV_SKIPPED_MISSING_REQUIRED_PROXY_INPUTS_NOTIONALA: risk_rankings.csv skipped: missing required proxy inputs (Notional+AnnualizedVolatility and/or PositionUSD+Vol)
+- [WARN] limits / LIMIT_CHECK_WARNING_CONFIGURED_LIMIT_ENTITIES_MISSING_FROM_EXPOS: Limit check warning: configured limit entities missing from exposure data; clearing_house:cme
+- [WARN] input / MISSING_OPTIONAL_INPUTS: Optional inputs unavailable: mosers_all_programs_xlsx.
+
+Recommended actions:
+- [WARN] pipeline: Review warnings and confirm run artifacts are acceptable.
+- [INFO] pipeline: No immediate action required.
+- [WARN] limits: Review warnings and confirm run artifacts are acceptable.
+- [WARN] input: Review warnings and confirm run artifacts are acceptable.

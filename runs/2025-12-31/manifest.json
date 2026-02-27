@@ -1,0 +1,239 @@
+{
+  "as_of_date": "2025-12-31",
+  "config_snapshot": {
+    "as_of_date": "2025-12-31",
+    "daily_holdings_pdf": null,
+    "distribution_static": false,
+    "dropin_all_programs_template_xlsx": null,
+    "enable_llm_logging": false,
+    "enable_ppt_output": true,
+    "enable_screenshot_replacement": false,
+    "export_pdf": false,
+    "hist_all_programs_3yr_xlsx": "tests/fixtures/Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+    "hist_ex_llc_3yr_xlsx": "tests/fixtures/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+    "hist_llc_3yr_xlsx": "tests/fixtures/Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+    "include_concentration_table_in_ppt": false,
+    "input_discovery": {
+      "directory_roots": {},
+      "naming_patterns": {}
+    },
+    "monthly_pptx": "tests/fixtures/Monthly Counterparty Exposure Report.pptx",
+    "mosers_all_programs_xlsx": null,
+    "mosers_ex_trend_xlsx": null,
+    "mosers_trend_xlsx": null,
+    "output_generators": [
+      {
+        "enabled": true,
+        "name": "historical_workbook",
+        "registration": "builtin:historical_workbook",
+        "stage": "historical"
+      },
+      {
+        "enabled": true,
+        "name": "ppt_screenshot",
+        "registration": "builtin:ppt_screenshot",
+        "stage": "ppt_master"
+      },
+      {
+        "enabled": true,
+        "name": "ppt_link_refresh",
+        "registration": "builtin:ppt_link_refresh",
+        "stage": "ppt_refresh"
+      },
+      {
+        "enabled": true,
+        "name": "pdf_export",
+        "registration": "builtin:pdf_export",
+        "stage": "ppt_post_distribution"
+      }
+    ],
+    "output_root": "/tmp/pytest-of-runner/pytest-2/test_run_pipeline_generates_no0/runs",
+    "raw_nisa_all_programs_xlsx": "tests/fixtures/NISA Monthly All Programs - Raw.xlsx",
+    "raw_nisa_ex_trend_xlsx": "tests/fixtures/NISA Monthly Ex Trend - Raw.xlsx",
+    "raw_nisa_trend_xlsx": "tests/fixtures/NISA Monthly Trend - Raw.xlsx",
+    "reconciliation": {
+      "expected_segments_by_variant": {},
+      "fail_policy": "warn"
+    },
+    "run_date": null,
+    "screenshot_inputs": {},
+    "screenshot_replacement_implementation": "zip"
+  },
+  "data_quality": {
+    "counts": {
+      "by_category": {
+        "input": {
+          "fail": 0,
+          "info": 0,
+          "total": 1,
+          "warn": 1
+        },
+        "limits": {
+          "fail": 0,
+          "info": 0,
+          "total": 1,
+          "warn": 1
+        },
+        "pipeline": {
+          "fail": 0,
+          "info": 3,
+          "total": 7,
+          "warn": 4
+        }
+      },
+      "by_severity": {
+        "fail": 0,
+        "info": 3,
+        "warn": 6
+      },
+      "total_findings": 9
+    },
+    "findings": [
+      {
+        "category": "pipeline",
+        "code": "INPUT_VALIDATION_OPTIONAL_INPUTS_UNAVAILABLE_MOSERS_ALL_PROGRAMS",
+        "message": "Input validation: optional inputs unavailable (mosers_all_programs_xlsx).",
+        "severity": "warn"
+      },
+      {
+        "category": "pipeline",
+        "code": "GENERATED_ALL_PROGRAMS_MOSERS_WORKBOOK_FROM_RAW_NISA_INPUT",
+        "message": "Generated All Programs MOSERS workbook from raw NISA input",
+        "severity": "info"
+      },
+      {
+        "category": "pipeline",
+        "code": "GENERATED_EX_TREND_MOSERS_WORKBOOK_FROM_RAW_NISA_INPUT",
+        "message": "Generated Ex Trend MOSERS workbook from raw NISA input",
+        "severity": "info"
+      },
+      {
+        "category": "pipeline",
+        "code": "GENERATED_TREND_MOSERS_WORKBOOK_FROM_RAW_NISA_INPUT",
+        "message": "Generated Trend MOSERS workbook from raw NISA input",
+        "severity": "info"
+      },
+      {
+        "category": "pipeline",
+        "code": "RISK_PROXY_NOTIONAL_VOLATILITY_SKIPPED_FOR_ALL_PROGRAMS_REQUIRES",
+        "message": "risk proxy notional-volatility skipped for all_programs: requires Notional and AnnualizedVolatility columns",
+        "severity": "warn"
+      },
+      {
+        "category": "pipeline",
+        "code": "RISK_PROXY_POSITION_VOLATILITY_SKIPPED_FOR_ALL_PROGRAMS_REQUIRES",
+        "message": "risk proxy position-volatility skipped for all_programs: requires PositionUSD and Vol columns",
+        "severity": "warn"
+      },
+      {
+        "category": "pipeline",
+        "code": "RISK_RANKINGSCSV_SKIPPED_MISSING_REQUIRED_PROXY_INPUTS_NOTIONALA",
+        "message": "risk_rankings.csv skipped: missing required proxy inputs (Notional+AnnualizedVolatility and/or PositionUSD+Vol)",
+        "severity": "warn"
+      },
+      {
+        "category": "limits",
+        "code": "LIMIT_CHECK_WARNING_CONFIGURED_LIMIT_ENTITIES_MISSING_FROM_EXPOS",
+        "message": "Limit check warning: configured limit entities missing from exposure data; clearing_house:cme",
+        "severity": "warn"
+      },
+      {
+        "category": "input",
+        "code": "MISSING_OPTIONAL_INPUTS",
+        "message": "Optional inputs unavailable: mosers_all_programs_xlsx.",
+        "severity": "warn"
+      }
+    ],
+    "overall_status": "warn",
+    "recommended_actions": [
+      {
+        "action": "Review warnings and confirm run artifacts are acceptable.",
+        "category": "pipeline",
+        "severity": "warn"
+      },
+      {
+        "action": "No immediate action required.",
+        "category": "pipeline",
+        "severity": "info"
+      },
+      {
+        "action": "Review warnings and confirm run artifacts are acceptable.",
+        "category": "limits",
+        "severity": "warn"
+      },
+      {
+        "action": "Review warnings and confirm run artifacts are acceptable.",
+        "category": "input",
+        "severity": "warn"
+      }
+    ],
+    "severity_levels": [
+      "info",
+      "warn",
+      "fail"
+    ]
+  },
+  "input_hashes": {
+    "hist_all_programs_3yr_xlsx": "cac11f1476f4d7a5443bf086f62ed7fc069f1f92ed1592b28204ecf5b5212a6d",
+    "hist_ex_llc_3yr_xlsx": "b49051ce55428be1f5e89ddd72c9727c8a270dd00e6af2ee0489cf771008734a",
+    "hist_llc_3yr_xlsx": "c494e3fbc6c8e3c9144e1fa47230473b968f0b1d9fb590425c92e61bd814231f",
+    "monthly_pptx": "6eb3817e7b41f2788c9bdd6acf661aaf064b73eda56c9ac237854919f3ecbc00",
+    "mosers_all_programs_xlsx": "d042e01b2a57c25a90f5338baf7bb1db76b578a47d7c0a0d44025bba545d117a",
+    "mosers_ex_trend_xlsx": "59e8f2a9263c9c7299e62486ddb70d90740c5d49f2e03b29eda0ec6b14c0e4ac",
+    "mosers_trend_xlsx": "c2dda2328cf5acc3b15fd3a7a6eabae746de9f6ae6611d4bf16f5af89cc9f551",
+    "raw_nisa_all_programs_xlsx": "2cdd76d93354c79b0d401297e884cf1d7b135119a54b19f03e80092be3cc78f7",
+    "raw_nisa_ex_trend_xlsx": "eac015ad2027f46c674370a4303fefc38135ba85a49536f882dc6fab4b411ae7",
+    "raw_nisa_trend_xlsx": "8afbab36a82ba55d44f831c3548e9e9d9dee98e75632741820e109c8d7eacd20"
+  },
+  "limit_breach_summary": {
+    "breach_count": 0,
+    "has_breaches": false,
+    "report_path": null,
+    "warning_banner": null
+  },
+  "missing_inputs": {
+    "is_complete": true,
+    "missing_required": [],
+    "optional_missing": [
+      "mosers_all_programs_xlsx"
+    ],
+    "required": [
+      "mosers_ex_trend_xlsx",
+      "mosers_trend_xlsx",
+      "hist_all_programs_3yr_xlsx",
+      "hist_ex_llc_3yr_xlsx",
+      "hist_llc_3yr_xlsx",
+      "monthly_pptx"
+    ]
+  },
+  "output_paths": [
+    "change_attribution.csv",
+    "change_attribution.md",
+    "DATA_QUALITY_SUMMARY.txt"
+  ],
+  "ppt_status": "success",
+  "reconciliation_results": {
+    "by_variant": {},
+    "fail_policy": "warn",
+    "status": "not_run",
+    "total_gap_count": 0
+  },
+  "run_date": "2026-02-27",
+  "run_dir": ".",
+  "top_changes_per_variant": {},
+  "top_exposures": {},
+  "unmatched_mappings": {
+    "by_variant": {},
+    "count": 0
+  },
+  "warnings": [
+    "Input validation: optional inputs unavailable (mosers_all_programs_xlsx).",
+    "Generated All Programs MOSERS workbook from raw NISA input",
+    "Generated Ex Trend MOSERS workbook from raw NISA input",
+    "Generated Trend MOSERS workbook from raw NISA input",
+    "risk proxy notional-volatility skipped for all_programs: requires Notional and AnnualizedVolatility columns",
+    "risk proxy position-volatility skipped for all_programs: requires PositionUSD and Vol columns",
+    "risk_rankings.csv skipped: missing required proxy inputs (Notional+AnnualizedVolatility and/or PositionUSD+Vol)",
+    "Limit check warning: configured limit entities missing from exposure data; clearing_house:cme"
+  ]
+}
