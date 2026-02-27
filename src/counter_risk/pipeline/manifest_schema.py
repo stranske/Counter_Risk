@@ -14,6 +14,81 @@ _PPT_OUTPUT_ENTRY_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+_DATA_QUALITY_SEVERITY_SCHEMA: dict[str, Any] = {"type": "string", "enum": ["info", "warn", "fail"]}
+
+_DATA_QUALITY_FINDING_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["category", "severity", "code", "message"],
+    "properties": {
+        "category": {"type": "string", "minLength": 1},
+        "severity": _DATA_QUALITY_SEVERITY_SCHEMA,
+        "code": {"type": "string", "minLength": 1},
+        "message": {"type": "string"},
+    },
+    "additionalProperties": False,
+}
+
+_DATA_QUALITY_ACTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["category", "severity", "action"],
+    "properties": {
+        "category": {"type": "string", "minLength": 1},
+        "severity": _DATA_QUALITY_SEVERITY_SCHEMA,
+        "action": {"type": "string", "minLength": 1},
+    },
+    "additionalProperties": False,
+}
+
+_DATA_QUALITY_COUNTS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["total_findings", "by_severity", "by_category"],
+    "properties": {
+        "total_findings": {"type": "integer", "minimum": 0},
+        "by_severity": {
+            "type": "object",
+            "required": ["info", "warn", "fail"],
+            "properties": {
+                "info": {"type": "integer", "minimum": 0},
+                "warn": {"type": "integer", "minimum": 0},
+                "fail": {"type": "integer", "minimum": 0},
+            },
+            "additionalProperties": False,
+        },
+        "by_category": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "required": ["info", "warn", "fail", "total"],
+                "properties": {
+                    "info": {"type": "integer", "minimum": 0},
+                    "warn": {"type": "integer", "minimum": 0},
+                    "fail": {"type": "integer", "minimum": 0},
+                    "total": {"type": "integer", "minimum": 0},
+                },
+                "additionalProperties": False,
+            },
+        },
+    },
+    "additionalProperties": False,
+}
+
+_DATA_QUALITY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["overall_status", "severity_levels", "findings", "counts", "recommended_actions"],
+    "properties": {
+        "overall_status": _DATA_QUALITY_SEVERITY_SCHEMA,
+        "severity_levels": {
+            "type": "array",
+            "items": _DATA_QUALITY_SEVERITY_SCHEMA,
+            "minItems": 3,
+        },
+        "findings": {"type": "array", "items": _DATA_QUALITY_FINDING_SCHEMA},
+        "counts": _DATA_QUALITY_COUNTS_SCHEMA,
+        "recommended_actions": {"type": "array", "items": _DATA_QUALITY_ACTION_SCHEMA},
+    },
+    "additionalProperties": False,
+}
+
 
 def manifest_schema() -> dict[str, Any]:
     """Return the run manifest schema used by pipeline validation."""
@@ -31,6 +106,7 @@ def manifest_schema() -> dict[str, Any]:
             "top_exposures",
             "top_changes_per_variant",
             "warnings",
+            "data_quality",
             "unmatched_mappings",
             "missing_inputs",
             "reconciliation_results",
@@ -46,6 +122,7 @@ def manifest_schema() -> dict[str, Any]:
             "top_exposures": {"type": "object"},
             "top_changes_per_variant": {"type": "object"},
             "warnings": {"type": "array", "items": {"type": "string"}},
+            "data_quality": _DATA_QUALITY_SCHEMA,
             "unmatched_mappings": {
                 "type": "object",
                 "required": ["count", "by_variant"],
@@ -144,3 +221,60 @@ def validate_manifest_ppt_outputs(
     if has_distribution:
         return False, "Manifest ppt_outputs is missing required Master PPT entry."
     return False, "Manifest ppt_outputs must include both Master and Distribution entries."
+
+
+def validate_manifest_data_quality(manifest: Mapping[str, Any]) -> tuple[bool, str | None]:
+    """Validate data_quality shape for focused acceptance checks."""
+
+    data_quality = manifest.get("data_quality")
+    if not isinstance(data_quality, Mapping):
+        return False, "Manifest must include data_quality object."
+
+    required_fields = [
+        "overall_status",
+        "severity_levels",
+        "findings",
+        "counts",
+        "recommended_actions",
+    ]
+    for field in required_fields:
+        if field not in data_quality:
+            if field == "recommended_actions":
+                return False, "Manifest data_quality is missing required recommended_actions field."
+            return False, f"Manifest data_quality is missing required {field} field."
+
+    recommended_actions = data_quality.get("recommended_actions")
+    if not isinstance(recommended_actions, list):
+        return False, "Manifest data_quality recommended_actions must be an array."
+
+    valid_severities = {"info", "warn", "fail"}
+    for index, action in enumerate(recommended_actions):
+        if not isinstance(action, Mapping):
+            return (
+                False,
+                f"Manifest data_quality recommended_actions[{index}] must be an object.",
+            )
+
+        category = action.get("category")
+        if not isinstance(category, str) or not category.strip():
+            return (
+                False,
+                f"Manifest data_quality recommended_actions[{index}] must include non-empty category.",
+            )
+
+        severity = action.get("severity")
+        if not isinstance(severity, str) or severity not in valid_severities:
+            return (
+                False,
+                "Manifest data_quality recommended_actions"
+                f"[{index}].severity must be one of: info, warn, fail.",
+            )
+
+        description = action.get("action")
+        if not isinstance(description, str) or not description.strip():
+            return (
+                False,
+                f"Manifest data_quality recommended_actions[{index}] must include non-empty action.",
+            )
+
+    return True, None

@@ -7,6 +7,7 @@ from counter_risk.compute.futures_delta import (
 )
 from counter_risk.compute.limits import check_limits, write_limit_breaches_csv
 from counter_risk.compute.rollups import (
+    apply_repo_cash_to_totals,
     compute_notional_breakdown,
     compute_risk_proxies,
     compute_totals,
@@ -16,6 +17,7 @@ from counter_risk.compute.rollups import (
 
 __all__ = [
     "compute_totals",
+    "apply_repo_cash_to_totals",
     "compute_notional_breakdown",
     "compute_risk_proxies",
     "top_exposures",
