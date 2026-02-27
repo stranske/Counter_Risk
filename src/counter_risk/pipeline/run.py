@@ -65,7 +65,12 @@ from counter_risk.reports import (
     write_change_attribution_csv,
     write_change_attribution_markdown,
 )
-from counter_risk.writers import fill_dropin_template, generate_mosers_workbook
+from counter_risk.writers import (
+    fill_dropin_template,
+    generate_mosers_workbook,
+    generate_mosers_workbook_ex_trend,
+    generate_mosers_workbook_trend,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -81,6 +86,24 @@ _COM_SHAPE_FORMAT_PNG: int = 2  # ppShapeFormatPNG
 _SHAPE_MATCH_CONFIDENCE_THRESHOLD: float = 0.8
 _REQUIRED_TOTAL_COLUMNS: tuple[str, ...] = ("counterparty", "Notional", "NotionalChange")
 _REQUIRED_FUTURES_COLUMNS: tuple[str, ...] = (
+    "account",
+    "description",
+    "class",
+    "fcm",
+    "clearing_house",
+    "notional",
+)
+_EXPECTED_TOTAL_COLUMN_ORDER: tuple[str, ...] = (
+    "counterparty",
+    "TIPS",
+    "Treasury",
+    "Equity",
+    "Commodity",
+    "Currency",
+    "Notional",
+    "NotionalChange",
+)
+_EXPECTED_FUTURES_COLUMN_ORDER: tuple[str, ...] = (
     "account",
     "description",
     "class",
@@ -840,8 +863,6 @@ def _extract_header_text_lines(
 
 def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
     paths: dict[str, Path] = {
-        "mosers_ex_trend_xlsx": config.mosers_ex_trend_xlsx,
-        "mosers_trend_xlsx": config.mosers_trend_xlsx,
         "hist_all_programs_3yr_xlsx": config.hist_all_programs_3yr_xlsx,
         "hist_ex_llc_3yr_xlsx": config.hist_ex_llc_3yr_xlsx,
         "hist_llc_3yr_xlsx": config.hist_llc_3yr_xlsx,
@@ -849,8 +870,16 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
     }
     if config.mosers_all_programs_xlsx is not None:
         paths["mosers_all_programs_xlsx"] = config.mosers_all_programs_xlsx
+    if config.mosers_ex_trend_xlsx is not None:
+        paths["mosers_ex_trend_xlsx"] = config.mosers_ex_trend_xlsx
+    if config.mosers_trend_xlsx is not None:
+        paths["mosers_trend_xlsx"] = config.mosers_trend_xlsx
     if config.raw_nisa_all_programs_xlsx is not None:
         paths["raw_nisa_all_programs_xlsx"] = config.raw_nisa_all_programs_xlsx
+    if config.raw_nisa_ex_trend_xlsx is not None:
+        paths["raw_nisa_ex_trend_xlsx"] = config.raw_nisa_ex_trend_xlsx
+    if config.raw_nisa_trend_xlsx is not None:
+        paths["raw_nisa_trend_xlsx"] = config.raw_nisa_trend_xlsx
     if config.daily_holdings_pdf is not None:
         paths["daily_holdings_pdf"] = config.daily_holdings_pdf
     if config.dropin_all_programs_template_xlsx is not None:
@@ -878,6 +907,34 @@ def _validate_pipeline_config(config: WorkflowConfig) -> None:
             path=config.raw_nisa_all_programs_xlsx,
             expected_suffix=".xlsx",
         )
+    if config.mosers_ex_trend_xlsx is None and config.raw_nisa_ex_trend_xlsx is None:
+        raise ValueError("One of mosers_ex_trend_xlsx or raw_nisa_ex_trend_xlsx must be configured")
+    if config.mosers_ex_trend_xlsx is not None:
+        _validate_extension(
+            field_name="mosers_ex_trend_xlsx",
+            path=config.mosers_ex_trend_xlsx,
+            expected_suffix=".xlsx",
+        )
+    if config.raw_nisa_ex_trend_xlsx is not None:
+        _validate_extension(
+            field_name="raw_nisa_ex_trend_xlsx",
+            path=config.raw_nisa_ex_trend_xlsx,
+            expected_suffix=".xlsx",
+        )
+    if config.mosers_trend_xlsx is None and config.raw_nisa_trend_xlsx is None:
+        raise ValueError("One of mosers_trend_xlsx or raw_nisa_trend_xlsx must be configured")
+    if config.mosers_trend_xlsx is not None:
+        _validate_extension(
+            field_name="mosers_trend_xlsx",
+            path=config.mosers_trend_xlsx,
+            expected_suffix=".xlsx",
+        )
+    if config.raw_nisa_trend_xlsx is not None:
+        _validate_extension(
+            field_name="raw_nisa_trend_xlsx",
+            path=config.raw_nisa_trend_xlsx,
+            expected_suffix=".xlsx",
+        )
     if config.daily_holdings_pdf is not None:
         _validate_extension(
             field_name="daily_holdings_pdf",
@@ -890,16 +947,6 @@ def _validate_pipeline_config(config: WorkflowConfig) -> None:
             path=config.dropin_all_programs_template_xlsx,
             expected_suffix=".xlsx",
         )
-    _validate_extension(
-        field_name="mosers_ex_trend_xlsx",
-        path=config.mosers_ex_trend_xlsx,
-        expected_suffix=".xlsx",
-    )
-    _validate_extension(
-        field_name="mosers_trend_xlsx",
-        path=config.mosers_trend_xlsx,
-        expected_suffix=".xlsx",
-    )
     _validate_extension(
         field_name="hist_all_programs_3yr_xlsx",
         path=config.hist_all_programs_3yr_xlsx,
@@ -1121,22 +1168,86 @@ def _prepare_runtime_config(
     as_of_date: date,
     warnings: list[str],
 ) -> WorkflowConfig:
-    raw_nisa_path = config.raw_nisa_all_programs_xlsx
-    if raw_nisa_path is None:
-        return config
-
     generated_dir = run_dir / "_generated"
-    generated_dir.mkdir(parents=True, exist_ok=True)
-    generated_mosers_path = generated_dir / "all_programs-generated-mosers.xlsx"
-    canonical_mosers_path = run_dir / "all_programs-mosers-input.xlsx"
-    generate_mosers_workbook(
-        raw_nisa_path=raw_nisa_path,
-        output_path=generated_mosers_path,
-        as_of_date=as_of_date,
+    updates: dict[str, Path] = {}
+    generation_specs: tuple[
+        tuple[str, Path | None, str, str, str, Callable[..., Path]],
+        ...,
+    ] = (
+        (
+            "all_programs",
+            config.raw_nisa_all_programs_xlsx,
+            "all_programs-generated-mosers.xlsx",
+            "all_programs-mosers-input.xlsx",
+            "Generated All Programs MOSERS workbook from raw NISA input",
+            generate_mosers_workbook,
+        ),
+        (
+            "ex_trend",
+            config.raw_nisa_ex_trend_xlsx,
+            "ex_trend-generated-mosers.xlsx",
+            "ex_trend-mosers-input.xlsx",
+            "Generated Ex Trend MOSERS workbook from raw NISA input",
+            generate_mosers_workbook_ex_trend,
+        ),
+        (
+            "trend",
+            config.raw_nisa_trend_xlsx,
+            "trend-generated-mosers.xlsx",
+            "trend-mosers-input.xlsx",
+            "Generated Trend MOSERS workbook from raw NISA input",
+            generate_mosers_workbook_trend,
+        ),
     )
-    shutil.copy2(generated_mosers_path, canonical_mosers_path)
-    warnings.append("Generated All Programs MOSERS workbook from raw NISA input")
-    return config.model_copy(update={"mosers_all_programs_xlsx": canonical_mosers_path})
+
+    for (
+        variant,
+        raw_nisa_path,
+        generated_filename,
+        canonical_filename,
+        warning,
+        generator,
+    ) in generation_specs:
+        if raw_nisa_path is None:
+            continue
+        generated_dir.mkdir(parents=True, exist_ok=True)
+        generated_mosers_path = generated_dir / generated_filename
+        canonical_mosers_path = run_dir / canonical_filename
+        generator(
+            raw_nisa_path=raw_nisa_path,
+            output_path=generated_mosers_path,
+            as_of_date=as_of_date,
+        )
+        shutil.copy2(generated_mosers_path, canonical_mosers_path)
+        _validate_milestone_one_parser_contract(
+            workbook_path=canonical_mosers_path,
+            variant=variant,
+        )
+        warnings.append(warning)
+        updates[f"mosers_{variant}_xlsx"] = canonical_mosers_path
+
+    if not updates:
+        return config
+    return config.model_copy(update=updates)
+
+
+def _validate_milestone_one_parser_contract(*, workbook_path: Path, variant: str) -> None:
+    totals_df = parse_fcm_totals(workbook_path)
+    futures_df = parse_futures_detail(workbook_path)
+    totals_columns = _ordered_column_names(totals_df)
+    futures_columns = _ordered_column_names(futures_df)
+    if totals_columns != _EXPECTED_TOTAL_COLUMN_ORDER:
+        raise ValueError(
+            "Generated MOSERS workbook does not match Milestone 1 totals parser contract "
+            f"for variant {variant!r}. Expected columns {_EXPECTED_TOTAL_COLUMN_ORDER!r}, "
+            f"got {totals_columns!r}"
+        )
+    if futures_columns != _EXPECTED_FUTURES_COLUMN_ORDER:
+        raise ValueError(
+            "Generated MOSERS workbook does not match Milestone 1 futures parser contract "
+            f"for variant {variant!r}. Expected columns {_EXPECTED_FUTURES_COLUMN_ORDER!r}, "
+            f"got {futures_columns!r}"
+        )
 
 
 def _parse_inputs(input_paths: dict[str, Path]) -> dict[str, dict[str, Any]]:
@@ -1902,12 +2013,14 @@ def _write_outputs(
         ),
         _VariantInputs(
             name="ex_trend",
-            workbook_path=config.mosers_ex_trend_xlsx,
+            workbook_path=_require_path(
+                config.mosers_ex_trend_xlsx, field_name="mosers_ex_trend_xlsx"
+            ),
             historical_path=config.hist_ex_llc_3yr_xlsx,
         ),
         _VariantInputs(
             name="trend",
-            workbook_path=config.mosers_trend_xlsx,
+            workbook_path=_require_path(config.mosers_trend_xlsx, field_name="mosers_trend_xlsx"),
             historical_path=config.hist_llc_3yr_xlsx,
         ),
     ]
@@ -2963,6 +3076,16 @@ def _column_names(table: Any) -> set[str]:
     if not records:
         return set()
     return {str(column) for column in records[0]}
+
+
+def _ordered_column_names(table: Any) -> tuple[str, ...]:
+    if hasattr(table, "columns"):
+        raw_columns = table.columns
+        try:
+            return tuple(str(column) for column in raw_columns)
+        except TypeError:
+            return ()
+    return tuple(_column_names(table))
 
 
 def _row_count(table: Any) -> int:
