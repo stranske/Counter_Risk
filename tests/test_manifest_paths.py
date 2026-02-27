@@ -195,3 +195,52 @@ def test_to_relative_artifact_path_rejects_absolute_path_outside_run_dir(tmp_pat
     )
     with pytest.raises(ValueError, match="must be within run_dir"):
         builder._to_relative_artifact_path(run_dir=run_dir, artifact_path=outside)
+
+
+def test_data_quality_summary_derives_counts_when_counts_missing(tmp_path: Path) -> None:
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    summary_text = builder._build_data_quality_summary(
+        {
+            "as_of_date": "2026-02-13",
+            "run_date": "2026-02-14",
+            "data_quality": {
+                "overall_status": "warn",
+                "findings": [
+                    {
+                        "category": "input",
+                        "severity": "fail",
+                        "code": "MISSING_REQUIRED_INPUTS",
+                        "message": "Missing required input workbook.",
+                    },
+                    {
+                        "category": "ppt",
+                        "severity": "warn",
+                        "code": "PPT_GENERATION_SKIPPED",
+                        "message": "PPT generation was skipped for this run.",
+                    },
+                ],
+                "recommended_actions": [
+                    {
+                        "category": "input",
+                        "severity": "fail",
+                        "action": "Restore required input files before rerunning.",
+                    }
+                ],
+            },
+        }
+    )
+
+    assert "Overall status: WARN (YELLOW) - Review warnings before sending." in summary_text
+    assert "Finding counts:" in summary_text
+    assert "- Total findings: 2" in summary_text
+    assert "- warn: 1" in summary_text
+    assert "- fail: 1" in summary_text
+    assert "- input: total=1 (info=0, warn=0, fail=1)" in summary_text
+    assert (
+        "- [FAIL] input / MISSING_REQUIRED_INPUTS: Missing required input workbook." in summary_text
+    )
+    assert "- [FAIL] input: Restore required input files before rerunning." in summary_text

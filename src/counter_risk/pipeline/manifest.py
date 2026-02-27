@@ -188,6 +188,17 @@ class ManifestBuilder:
             if isinstance(actions_raw, list):
                 actions = [action for action in actions_raw if isinstance(action, Mapping)]
 
+        if findings:
+            derived_total, derived_by_severity, derived_by_category = (
+                self._derive_counts_from_findings(findings)
+            )
+            if total_findings <= 0:
+                total_findings = derived_total
+            if all(count <= 0 for count in counts_by_severity.values()):
+                counts_by_severity = derived_by_severity
+            if not counts_by_category:
+                counts_by_category = derived_by_category
+
         lines = [
             "Counterparty Risk Data Quality Summary",
             "",
@@ -250,6 +261,26 @@ class ManifestBuilder:
 
         lines.append("")
         return "\n".join(lines)
+
+    def _derive_counts_from_findings(
+        self, findings: list[Mapping[str, Any]]
+    ) -> tuple[int, dict[str, int], dict[str, dict[str, int]]]:
+        counts_by_severity: dict[str, int] = dict.fromkeys(_SEVERITY_DISPLAY_ORDER, 0)
+        counts_by_category: dict[str, dict[str, int]] = {}
+
+        for finding in findings:
+            raw_severity = str(finding.get("severity", "warn")).strip().lower()
+            severity = raw_severity if raw_severity in _SEVERITY_DISPLAY_ORDER else "warn"
+            raw_category = str(finding.get("category", "pipeline")).strip().lower()
+            category = raw_category or "pipeline"
+
+            counts_by_severity[severity] += 1
+            if category not in counts_by_category:
+                counts_by_category[category] = {"info": 0, "warn": 0, "fail": 0, "total": 0}
+            counts_by_category[category][severity] += 1
+            counts_by_category[category]["total"] += 1
+
+        return len(findings), counts_by_severity, counts_by_category
 
     def _safe_int(self, raw_value: Any) -> int:
         try:
