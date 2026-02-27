@@ -8,6 +8,7 @@ from typing import Any, cast
 import pytest
 
 from counter_risk.compute.rollups import (
+    apply_repo_cash_to_totals,
     compute_notional_breakdown,
     compute_risk_proxies,
     compute_totals,
@@ -147,6 +148,76 @@ def test_compute_totals_aggregates_counterparty_and_asset_class() -> None:
         ("asset_class", "Cash", 16.0),
         ("asset_class", "Equity", 5.0),
     }
+
+
+def test_apply_repo_cash_to_totals_updates_existing_and_appends_new_counterparty() -> None:
+    totals_rows = [
+        {
+            "counterparty": "CIBC",
+            "TIPS": 0.0,
+            "Treasury": 0.0,
+            "Equity": 10.0,
+            "Commodity": 0.0,
+            "Currency": 0.0,
+            "Notional": 10.0,
+            "NotionalChange": 1.0,
+        }
+    ]
+
+    updated = _as_records(
+        apply_repo_cash_to_totals(
+            totals_rows,
+            {
+                "CIBC": 2.5,
+                "ASL": 3.0,
+            },
+        )
+    )
+
+    by_counterparty = {row["counterparty"]: row for row in updated}
+    assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(2.5)
+    assert float(by_counterparty["CIBC"]["Notional"]) == pytest.approx(12.5)
+    assert float(by_counterparty["ASL"]["Cash"]) == pytest.approx(3.0)
+    assert float(by_counterparty["ASL"]["Notional"]) == pytest.approx(3.0)
+
+
+def test_apply_repo_cash_to_totals_rejects_non_numeric_repo_cash() -> None:
+    with pytest.raises(ValueError, match="must be numeric"):
+        apply_repo_cash_to_totals(
+            [{"counterparty": "A", "Notional": 1.0}],
+            cast(dict[str, float], {"A": "not-numeric"}),
+        )
+
+
+def test_apply_repo_cash_to_totals_updates_counterparty_group_rows_from_rollups_schema() -> None:
+    totals_rows = [
+        {
+            "group_type": "counterparty",
+            "group_name": "CIBC",
+            "notional": 10.0,
+            "prior_notional": 8.0,
+            "notional_change": 2.0,
+        },
+        {
+            "group_type": "asset_class",
+            "group_name": "Cash",
+            "notional": 15.0,
+            "prior_notional": 14.0,
+            "notional_change": 1.0,
+        },
+    ]
+
+    updated = _as_records(apply_repo_cash_to_totals(totals_rows, {"CIBC": 3.5, "ASL": 1.0}))
+    by_key = {(row.get("group_type"), row.get("group_name")): row for row in updated}
+
+    cibc = by_key[("counterparty", "CIBC")]
+    assert float(cibc["notional"]) == pytest.approx(13.5)
+    assert float(cibc["notional_change"]) == pytest.approx(5.5)
+
+    asl = by_key[("counterparty", "ASL")]
+    assert float(asl["notional"]) == pytest.approx(1.0)
+    assert float(asl["notional_change"]) == pytest.approx(1.0)
+    assert float(asl["Cash"]) == pytest.approx(1.0)
 
 
 def test_top_exposures_is_deterministic_for_ties() -> None:

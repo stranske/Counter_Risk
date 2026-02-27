@@ -707,9 +707,9 @@ def append_wal_row(
                 columns=tuple(range(1, preserve_through_column + 1)),
             )
 
-        worksheet.cell(row=append_target.append_row, column=append_target.date_column).value = (
-            px_date
-        )
+        worksheet.cell(
+            row=append_target.append_row, column=append_target.date_column
+        ).value = px_date
         worksheet.cell(row=append_target.append_row, column=append_target.wal_column).value = float(
             wal_value
         )

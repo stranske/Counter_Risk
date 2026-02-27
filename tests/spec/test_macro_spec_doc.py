@@ -19,9 +19,9 @@ def test_macro_spec_doc_exists() -> None:
 
 def test_macro_spec_doc_lists_runnerlaunch_macro_intents() -> None:
     content = MACRO_SPEC_PATH.read_text(encoding="utf-8")
-    assert (
-        "Macro Intent (Plain Language)" in content
-    ), "docs/macro_spec.md must include a plain-language macro intent section."
+    assert "Macro Intent (Plain Language)" in content, (
+        "docs/macro_spec.md must include a plain-language macro intent section."
+    )
 
     for macro_name in EXPECTED_MACROS:
         assert f"`{macro_name}`" in content, (
@@ -32,9 +32,9 @@ def test_macro_spec_doc_lists_runnerlaunch_macro_intents() -> None:
 
 def test_macro_spec_doc_lists_required_inputs_and_output_expectations_per_macro() -> None:
     content = MACRO_SPEC_PATH.read_text(encoding="utf-8")
-    assert (
-        "Per-Macro Requirements" in content
-    ), "docs/macro_spec.md must include a per-macro requirements section."
+    assert "Per-Macro Requirements" in content, (
+        "docs/macro_spec.md must include a per-macro requirements section."
+    )
 
     required_section_markers = (
         "Required inputs (sheet names, columns):",
@@ -65,12 +65,12 @@ def test_macro_spec_doc_lists_required_inputs_and_output_expectations_per_macro(
 
 def test_macro_spec_doc_includes_known_acceptable_drift_section() -> None:
     content = MACRO_SPEC_PATH.read_text(encoding="utf-8")
-    assert (
-        "Known-Acceptable Drift" in content
-    ), "docs/macro_spec.md must document known-acceptable drift."
-    assert (
-        "rel_tol=1e-12" in content and "abs_tol=1e-12" in content
-    ), "Known-acceptable drift must include explicit numeric tolerances."
-    assert (
-        "rounding" in content.lower()
-    ), "Known-acceptable drift must include explicit rounding guidance."
+    assert "Known-Acceptable Drift" in content, (
+        "docs/macro_spec.md must document known-acceptable drift."
+    )
+    assert "rel_tol=1e-12" in content and "abs_tol=1e-12" in content, (
+        "Known-acceptable drift must include explicit numeric tolerances."
+    )
+    assert "rounding" in content.lower(), (
+        "Known-acceptable drift must include explicit rounding guidance."
+    )

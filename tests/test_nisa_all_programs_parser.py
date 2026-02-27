@@ -69,9 +69,9 @@ def _build_raw_nisa_workbook(
     for offset, header_name in enumerate(header_order, start=2):
         header_columns[header_name] = offset
         worksheet.cell(row=header_row, column=offset).value = _HEADER_LABELS[header_name]
-    worksheet.cell(row=header_row - 1, column=header_columns["annualized_volatility"]).value = (
-        "Annualized Volatility"
-    )
+    worksheet.cell(
+        row=header_row - 1, column=header_columns["annualized_volatility"]
+    ).value = "Annualized Volatility"
 
     segment_column = 1
     first_ch_row = header_row + 2
@@ -263,9 +263,9 @@ def _build_raw_nisa_workbook(
         header_name="annualized_volatility",
         value=0.11,
     )
-    worksheet.cell(row=totals_marker_row + 2, column=header_columns["counterparty"]).value = (
-        "Total Current Exposure"
-    )
+    worksheet.cell(
+        row=totals_marker_row + 2, column=header_columns["counterparty"]
+    ).value = "Total Current Exposure"
 
     path.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(path)

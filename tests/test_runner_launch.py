@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from pathlib import Path
 
 import pytest
 
@@ -11,9 +12,13 @@ from counter_risk.runner_launch import (
     build_command,
     build_discovery_dry_run_command,
     build_discovery_run_command,
+    data_quality_status_label,
     format_launch_error_for_runner,
     map_runner_error_to_operator_message,
+    open_data_quality_summary,
     open_output_folder,
+    read_overall_status_color,
+    resolve_data_quality_summary_path,
     resolve_output_dir,
 )
 
@@ -132,6 +137,47 @@ def test_open_output_folder_uses_stubbed_explorer_for_existing_directory(
     assert opened_directories == [resolved_path]
 
 
+def test_open_data_quality_summary_returns_missing_file_error_without_open_call() -> None:
+    opened_files: list[str] = []
+    summary_path = resolve_data_quality_summary_path("C:/repo", "2025-06-30")
+
+    def open_file(path: str) -> int:
+        opened_files.append(path)
+        return 0
+
+    status = open_data_quality_summary(
+        repo_root="C:/repo",
+        selected_date="2025-06-30",
+        file_exists=lambda _: False,
+        open_file=open_file,
+    )
+
+    assert status.success is False
+    assert status.error_code == 7102
+    assert f"Summary not found: {summary_path}" == status.message
+    assert opened_files == []
+
+
+def test_open_data_quality_summary_opens_existing_file() -> None:
+    opened_files: list[str] = []
+    summary_path = resolve_data_quality_summary_path("C:/repo", "2025-06-30")
+
+    def open_file(path: str) -> int:
+        opened_files.append(path)
+        return 0
+
+    status = open_data_quality_summary(
+        repo_root="C:/repo",
+        selected_date="2025-06-30",
+        file_exists=lambda path: path == summary_path,
+        open_file=open_file,
+    )
+
+    assert status.success is True
+    assert status.message == "Success"
+    assert opened_files == [summary_path]
+
+
 @pytest.mark.parametrize(
     ("mode", "expected_config"),
     [
@@ -212,3 +258,53 @@ def test_format_launch_error_for_runner_includes_error_code_and_guidance() -> No
 
     assert rendered.startswith(f"Error {status.error_code}: Operator action:")
     assert "review the run log details and rerun" in rendered
+
+
+@pytest.mark.parametrize(
+    ("status_text", "expected_color"),
+    [
+        ("Overall status: INFO (GREEN) - Safe to send.", "GREEN"),
+        ("Overall status: WARN (YELLOW) - Review warnings before sending.", "YELLOW"),
+        ("Overall status: FAIL (RED) - Do not send until failing checks are resolved.", "RED"),
+    ],
+)
+def test_read_overall_status_color_extracts_color_from_summary(
+    tmp_path: Path, status_text: str, expected_color: str
+) -> None:
+    summary = tmp_path / "DATA_QUALITY_SUMMARY.txt"
+    summary.write_text(
+        f"Counterparty Risk Data Quality Summary\n\n{status_text}\n",
+        encoding="utf-8",
+    )
+
+    assert read_overall_status_color(summary) == expected_color
+
+
+def test_read_overall_status_color_returns_empty_for_missing_file(tmp_path: Path) -> None:
+    assert read_overall_status_color(tmp_path / "missing.txt") == ""
+
+
+def test_read_overall_status_color_returns_empty_for_no_status_marker(tmp_path: Path) -> None:
+    summary = tmp_path / "DATA_QUALITY_SUMMARY.txt"
+    summary.write_text("Some text without a status marker.\n", encoding="utf-8")
+
+    assert read_overall_status_color(summary) == ""
+
+
+@pytest.mark.parametrize(
+    ("color", "expected_label"),
+    [
+        ("GREEN", "GREEN - Safe to send"),
+        ("YELLOW", "YELLOW - Review warnings"),
+        ("RED", "RED - Do not send"),
+    ],
+)
+def test_data_quality_status_label_maps_color_to_label(
+    color: str, expected_label: str
+) -> None:
+    assert data_quality_status_label(color) == expected_label
+
+
+def test_data_quality_status_label_returns_empty_for_unknown_color() -> None:
+    assert data_quality_status_label("PURPLE") == ""
+    assert data_quality_status_label("") == ""

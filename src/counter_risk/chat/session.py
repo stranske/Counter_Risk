@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from functools import cmp_to_key
+from pathlib import Path
 from typing import Final, cast
 
 from counter_risk.chat.context import RunContext
@@ -142,6 +145,8 @@ class ChatSession:
     provider: str = "local"
     model: str = _PLACEHOLDER_MODEL
     history: list[ChatMessage] = field(default_factory=list)
+    enable_llm_logging: bool = False
+    _interaction_counter: int = field(default=0, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.provider = self.provider.strip().lower()
@@ -191,6 +196,18 @@ class ChatSession:
         self.history.append(ChatMessage(role="user", content=clean_question))
         self.history.append(ChatMessage(role="assistant", content=answer))
         _LOGGER.debug("Built guarded prompt of %s characters", len(prompt))
+
+        if self.enable_llm_logging:
+            self._interaction_counter += 1
+            _write_llm_log(
+                run_dir=self.context.run_dir,
+                interaction_number=self._interaction_counter,
+                prompt=prompt,
+                response=answer,
+                provider=selected_provider,
+                model=selected_model,
+            )
+
         return answer
 
     def _build_provider_messages(self, *, prompt: str, question: str) -> list[dict[str, str]]:
@@ -595,3 +612,44 @@ def _find_delta_metric(record: dict[str, object]) -> tuple[str, str]:
         return str(key), str(value)
 
     return "value", "unknown"
+
+
+_LLM_LOG_DIR_NAME: Final[str] = "llm_logs"
+
+
+def _write_llm_log(
+    *,
+    run_dir: Path,
+    interaction_number: int,
+    prompt: str,
+    response: str,
+    provider: str,
+    model: str,
+) -> None:
+    """Write a prompt/response log artifact to the run folder."""
+
+    log_dir = run_dir / _LLM_LOG_DIR_NAME
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        _LOGGER.warning("Failed to create LLM log directory: %s", log_dir)
+        return
+
+    timestamp = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
+    filename = f"{interaction_number:04d}_{timestamp}.json"
+    log_path = log_dir / filename
+
+    payload = {
+        "interaction": interaction_number,
+        "timestamp": timestamp,
+        "provider": provider,
+        "model": model,
+        "prompt": prompt,
+        "response": response,
+    }
+
+    try:
+        log_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        _LOGGER.debug("Wrote LLM log artifact: %s", log_path)
+    except OSError:
+        _LOGGER.warning("Failed to write LLM log artifact: %s", log_path)

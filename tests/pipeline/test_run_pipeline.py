@@ -17,6 +17,7 @@ import pytest
 
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import ReconciliationConfig, WorkflowConfig
+from counter_risk.pipeline.data_quality import build_data_quality
 from counter_risk.pipeline.parsing_types import UnmappedCounterpartyError
 from counter_risk.pipeline.run import run_pipeline
 
@@ -178,6 +179,160 @@ def _minimal_workflow_config(
         hist_llc_3yr_xlsx=tmp_path / "hist-trend.xlsx",
         monthly_pptx=tmp_path / "monthly.pptx",
     )
+
+
+def test_apply_daily_holdings_repo_cash_updates_all_programs_totals(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={"daily_holdings_pdf": tmp_path / "daily-holdings.pdf"}
+    )
+    parsed_by_variant: dict[str, dict[str, Any]] = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "CIBC",
+                        "TIPS": 0.0,
+                        "Treasury": 0.0,
+                        "Equity": 10.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 10.0,
+                        "NotionalChange": 1.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        }
+    }
+    warnings: list[str] = []
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0, "ASL": 3.0})
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    totals_records = cast(
+        list[dict[str, Any]], parsed_by_variant["all_programs"]["totals"].to_dict(orient="records")
+    )
+    by_counterparty = {row["counterparty"]: row for row in totals_records}
+    assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(2.0)
+    assert float(by_counterparty["CIBC"]["Notional"]) == pytest.approx(12.0)
+    assert float(by_counterparty["ASL"]["Cash"]) == pytest.approx(3.0)
+    assert float(by_counterparty["ASL"]["Notional"]) == pytest.approx(3.0)
+    assert any("Applied Daily Holdings Repo Cash values" in warning for warning in warnings)
+
+
+def test_apply_daily_holdings_repo_cash_noop_when_daily_holdings_not_configured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(update={"daily_holdings_pdf": None})
+    parsed_by_variant = _minimal_parsed_by_variant()
+    warnings: list[str] = []
+
+    def _unexpected_call(_: Path) -> dict[str, float]:
+        raise AssertionError("parse_daily_holdings_pdf should not be called")
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", _unexpected_call)
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert warnings == []
+
+
+def test_daily_holdings_repo_cash_flows_into_all_programs_dropin_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={
+            "daily_holdings_pdf": tmp_path / "daily-holdings.pdf",
+            "dropin_all_programs_template_xlsx": tmp_path / "dropin-template.xlsx",
+            "enable_ppt_output": False,
+        }
+    )
+    daily_holdings_pdf = config.daily_holdings_pdf
+    dropin_template = config.dropin_all_programs_template_xlsx
+    assert daily_holdings_pdf is not None
+    assert dropin_template is not None
+    daily_holdings_pdf.write_bytes(b"%PDF-1.4\n%fixture")
+    dropin_template.write_bytes(b"placeholder")
+    for source_path in (
+        config.mosers_all_programs_xlsx,
+        config.mosers_ex_trend_xlsx,
+        config.mosers_trend_xlsx,
+    ):
+        assert source_path is not None
+        source_path.write_text("fixture", encoding="utf-8")
+
+    parsed_by_variant: dict[str, dict[str, Any]] = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "CIBC",
+                        "TIPS": 0.0,
+                        "Treasury": 0.0,
+                        "Equity": 10.0,
+                        "Commodity": 0.0,
+                        "Currency": 0.0,
+                        "Notional": 10.0,
+                        "NotionalChange": 1.0,
+                    }
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        }
+    }
+    observed: dict[str, Any] = {}
+    warnings: list[str] = []
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0, "ASL": 3.0})
+
+    def _fake_fill_dropin_template(
+        template_path: Path,
+        exposures_df: Any,
+        breakdown: Any,
+        *,
+        output_path: Path,
+        repo_cash_by_counterparty: Any | None = None,
+    ) -> Path:
+        _ = (template_path, breakdown, repo_cash_by_counterparty)
+        observed["exposures"] = exposures_df
+        output_path.write_bytes(b"filled-dropin")
+        return output_path
+
+    monkeypatch.setattr(run_module, "fill_dropin_template", _fake_fill_dropin_template)
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        warnings=warnings,
+        parsed_by_variant=parsed_by_variant,
+    )
+
+    dropin_rows = cast(list[dict[str, Any]], observed["exposures"])
+    by_counterparty = {row["counterparty"]: row for row in dropin_rows}
+    assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(2.0)
+    assert float(by_counterparty["CIBC"]["Notional"]) == pytest.approx(12.0)
+    assert float(by_counterparty["ASL"]["Cash"]) == pytest.approx(3.0)
+    assert float(by_counterparty["ASL"]["Notional"]) == pytest.approx(3.0)
 
 
 def test_build_missing_inputs_summary_complete_with_single_optional_gap(tmp_path: Path) -> None:
@@ -748,6 +903,62 @@ def test_run_reconciliation_checks_strict_raises_on_cprs_ch_totals_mismatch(
         )
 
 
+def test_run_reconciliation_checks_strict_mode_fails_for_fail_data_quality_findings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[{"counterparty": "Counterparty A", "Notional": 10.0}]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 12.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty A",)},
+    )
+
+    warn_config = _minimal_workflow_config(tmp_path, fail_policy="warn")
+    warn_run_dir = tmp_path / "warn-mode"
+    warn_run_dir.mkdir()
+    warn_warnings: list[str] = []
+    warn_outcome = run_module._run_reconciliation_checks(
+        run_dir=warn_run_dir,
+        config=warn_config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warn_warnings,
+    )
+    data_quality = build_data_quality(
+        warn_warnings,
+        unmatched_mappings=warn_outcome["unmatched_mappings"],
+        reconciliation_results=warn_outcome["reconciliation_results"],
+    )
+    assert data_quality["overall_status"] == "fail"
+    assert any(
+        finding["code"] == "RECONCILIATION_GAPS" and finding["severity"] == "fail"
+        for finding in data_quality["findings"]
+    )
+
+    strict_config = _minimal_workflow_config(tmp_path, fail_policy="strict")
+    strict_run_dir = tmp_path / "strict-mode"
+    strict_run_dir.mkdir()
+    with pytest.raises(ValueError, match="Reconciliation strict mode failed"):
+        run_module._run_reconciliation_checks(
+            run_dir=strict_run_dir,
+            config=strict_config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=[],
+        )
+
+
 def test_evaluate_cprs_ch_totals_reconciliation_uses_mosers_program_row_when_cprs_rows_absent() -> (
     None
 ):
@@ -922,6 +1133,12 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
     assert manifest["as_of_date"] == "2025-12-31"
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", manifest["run_date"])
     assert manifest["config_snapshot"]["output_root"] == str(output_root)
+    assert "DATA_QUALITY_SUMMARY.txt" in manifest["output_paths"]
+    summary_path = run_dir / "DATA_QUALITY_SUMMARY.txt"
+    assert summary_path.exists()
+    summary_text = summary_path.read_text(encoding="utf-8")
+    assert "Counterparty Risk Data Quality Summary" in summary_text
+    assert "Recommended actions:" in summary_text
 
     for output_path in manifest["output_paths"]:
         assert not Path(output_path).is_absolute()

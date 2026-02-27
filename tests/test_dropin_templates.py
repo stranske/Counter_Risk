@@ -422,6 +422,39 @@ def test_fill_dropin_template_aggregates_duplicate_counterparty_rows(
     assert sheet.cell(8, 10).value == 25.0
 
 
+def test_fill_dropin_template_applies_repo_cash_overlay(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_template = tmp_path / "template.xlsx"
+    fake_template.write_text("placeholder", encoding="utf-8")
+
+    sheet = _FakeWorksheet()
+    sheet.set_value(5, 2, "Counterparty/ \nClearing House")
+    sheet.set_value(6, 3, "Cash")
+    sheet.set_value(6, 10, "Notional")
+    sheet.set_value(8, 2, "CIBC")
+    sheet.set_value(9, 2, "ASL")
+
+    workbook = _FakeWorkbook(sheet)
+    _install_fake_openpyxl(monkeypatch, workbook)
+
+    fill_dropin_template(
+        template_path=fake_template,
+        exposures_df=[
+            {"counterparty": "CIBC", "cash": 2.0, "notional": 20.0},
+            {"counterparty": "ASL", "cash": 0.0, "notional": 0.0},
+        ],
+        breakdown={},
+        output_path=tmp_path / "out.xlsx",
+        repo_cash_by_counterparty={"CIBC": 3.0, "ASL": 4.5},
+    )
+
+    assert sheet.cell(8, 3).value == pytest.approx(5.0)
+    assert sheet.cell(8, 10).value == pytest.approx(23.0)
+    assert sheet.cell(9, 3).value == pytest.approx(4.5)
+    assert sheet.cell(9, 10).value == pytest.approx(4.5)
+
+
 def test_fill_dropin_template_populates_notional_breakdown_row(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

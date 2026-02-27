@@ -5,6 +5,7 @@ from counter_risk.parsers.cprs_fcm import (
     parse_fcm_totals,
     parse_futures_detail,
 )
+from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
 from counter_risk.parsers.exposure_maturity_schedule import (
     parse_exposure_maturity_schedule,
 )
@@ -17,6 +18,7 @@ __all__ = [
     "parse_fcm_totals",
     "parse_futures_detail",
     "parse_exposure_maturity_schedule",
+    "parse_daily_holdings_pdf",
     "parse_nisa_all_programs",
     "parse_nisa_ex_trend",
     "parse_nisa_trend",

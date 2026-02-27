@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from counter_risk.chat.context import load_run_context
 from counter_risk.chat.providers.anthropic_stub import AnthropicStubProvider
 from counter_risk.chat.providers.openai_stub import OpenAIStubProvider
 from counter_risk.chat.session import (
+    _LLM_LOG_DIR_NAME,
     ChatSession,
     ChatSessionError,
     PromptInjectionError,
@@ -246,3 +248,55 @@ def test_sanitize_untrusted_text_neutralizes_formula_prefix_and_hidden_unicode()
     assert "[FORMULA_PREFIX:=]SUM(A1:A5)" in sanitized
     assert "[FORMULA_PREFIX:@][REDACTED_INJECTION_PATTERN]" in sanitized
     assert zero_width_space not in sanitized
+
+
+def test_llm_logging_writes_prompt_response_artifacts_when_enabled(tmp_path: Path) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(
+        context=context, provider="local", model=_MODEL_KEY, enable_llm_logging=True
+    )
+
+    session.ask("top exposures")
+
+    log_dir = context.run_dir / _LLM_LOG_DIR_NAME
+    assert log_dir.exists()
+    log_files = list(log_dir.glob("*.json"))
+    assert len(log_files) == 1
+
+    payload = json.loads(log_files[0].read_text(encoding="utf-8"))
+    assert payload["interaction"] == 1
+    assert "SYSTEM_INSTRUCTIONS_START" in payload["prompt"]
+    assert payload["provider"] == "local"
+    assert payload["model"] == _MODEL_KEY
+    assert payload["response"]
+
+
+def test_llm_logging_writes_multiple_artifacts_for_multiple_interactions(tmp_path: Path) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(
+        context=context, provider="local", model=_MODEL_KEY, enable_llm_logging=True
+    )
+
+    session.ask("top exposures")
+    session.ask("show deltas")
+
+    log_dir = context.run_dir / _LLM_LOG_DIR_NAME
+    log_files = sorted(log_dir.glob("*.json"))
+    assert len(log_files) == 2
+
+    first = json.loads(log_files[0].read_text(encoding="utf-8"))
+    second = json.loads(log_files[1].read_text(encoding="utf-8"))
+    assert first["interaction"] == 1
+    assert second["interaction"] == 2
+
+
+def test_llm_logging_disabled_writes_no_artifacts(tmp_path: Path) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(
+        context=context, provider="local", model=_MODEL_KEY, enable_llm_logging=False
+    )
+
+    session.ask("top exposures")
+
+    log_dir = context.run_dir / _LLM_LOG_DIR_NAME
+    assert not log_dir.exists()
