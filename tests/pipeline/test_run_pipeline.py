@@ -729,6 +729,59 @@ def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
     assert "Generated All Programs MOSERS workbook from raw NISA input" in manifest["warnings"]
 
 
+def test_run_pipeline_generates_ex_trend_and_trend_mosers_from_raw_nisa_inputs(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"raw_nisa_ex_trend_xlsx: {fixtures / 'NISA Monthly Ex Trend - Raw.xlsx'}",
+                f"raw_nisa_trend_xlsx: {fixtures / 'NISA Monthly Trend - Raw.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _minimal_parsed_by_variant()
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs",
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+    )
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._write_outputs",
+        lambda *, run_dir, config, as_of_date, warnings: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
+    )
+
+    run_dir = run_pipeline(config_path)
+
+    for variant in ("ex_trend", "trend"):
+        generated_mosers_output = run_dir / f"{variant}-mosers-input.xlsx"
+        intermediate_generated_output = run_dir / "_generated" / f"{variant}-generated-mosers.xlsx"
+        assert generated_mosers_output.exists()
+        assert intermediate_generated_output.exists()
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert "raw_nisa_ex_trend_xlsx" in manifest["input_hashes"]
+    assert "raw_nisa_trend_xlsx" in manifest["input_hashes"]
+    assert "Generated Ex Trend MOSERS workbook from raw NISA input" in manifest["warnings"]
+    assert "Generated Trend MOSERS workbook from raw NISA input" in manifest["warnings"]
+
+
 def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -767,6 +820,12 @@ def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
 
     monkeypatch.setattr(run_module, "generate_mosers_workbook", _fake_generate_mosers_workbook)
     monkeypatch.setattr(
+        run_module, "generate_mosers_workbook_ex_trend", _fake_generate_mosers_workbook
+    )
+    monkeypatch.setattr(
+        run_module, "generate_mosers_workbook_trend", _fake_generate_mosers_workbook
+    )
+    monkeypatch.setattr(
         run_module,
         "_validate_milestone_one_parser_contract",
         lambda *, workbook_path, variant: parser_contract_validation_calls.append(
@@ -780,9 +839,11 @@ def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
     config = WorkflowConfig(
         as_of_date=date(2025, 12, 31),
         raw_nisa_all_programs_xlsx=raw_nisa,
+        raw_nisa_ex_trend_xlsx=ex_trend,
+        raw_nisa_trend_xlsx=trend,
         mosers_all_programs_xlsx=None,
-        mosers_ex_trend_xlsx=ex_trend,
-        mosers_trend_xlsx=trend,
+        mosers_ex_trend_xlsx=None,
+        mosers_trend_xlsx=None,
         hist_all_programs_3yr_xlsx=hist_all,
         hist_ex_llc_3yr_xlsx=hist_ex,
         hist_llc_3yr_xlsx=hist_trend,
@@ -798,27 +859,66 @@ def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
         warnings=warnings,
     )
 
-    generated_path = run_dir / "_generated" / "all_programs-generated-mosers.xlsx"
-    canonical_path = run_dir / "all_programs-mosers-input.xlsx"
+    expected_generated_paths = {
+        "all_programs": run_dir / "_generated" / "all_programs-generated-mosers.xlsx",
+        "ex_trend": run_dir / "_generated" / "ex_trend-generated-mosers.xlsx",
+        "trend": run_dir / "_generated" / "trend-generated-mosers.xlsx",
+    }
+    expected_canonical_paths = {
+        "all_programs": run_dir / "all_programs-mosers-input.xlsx",
+        "ex_trend": run_dir / "ex_trend-mosers-input.xlsx",
+        "trend": run_dir / "trend-mosers-input.xlsx",
+    }
+    expected_raw_paths = {
+        "all_programs": raw_nisa,
+        "ex_trend": ex_trend,
+        "trend": trend,
+    }
 
     assert generated_calls == [
         {
-            "raw_nisa_path": raw_nisa,
-            "output_path": generated_path,
+            "raw_nisa_path": expected_raw_paths["all_programs"],
+            "output_path": expected_generated_paths["all_programs"],
             "as_of_date": date(2025, 12, 31),
-        }
+        },
+        {
+            "raw_nisa_path": expected_raw_paths["ex_trend"],
+            "output_path": expected_generated_paths["ex_trend"],
+            "as_of_date": date(2025, 12, 31),
+        },
+        {
+            "raw_nisa_path": expected_raw_paths["trend"],
+            "output_path": expected_generated_paths["trend"],
+            "as_of_date": date(2025, 12, 31),
+        },
     ]
-    assert generated_path.exists()
-    assert canonical_path.exists()
-    assert generated_path.read_bytes() == canonical_path.read_bytes()
+    for variant in ("all_programs", "ex_trend", "trend"):
+        generated_path = expected_generated_paths[variant]
+        canonical_path = expected_canonical_paths[variant]
+        assert generated_path.exists()
+        assert canonical_path.exists()
+        assert generated_path.read_bytes() == canonical_path.read_bytes()
+
     assert parser_contract_validation_calls == [
         {
-            "workbook_path": canonical_path,
+            "workbook_path": expected_canonical_paths["all_programs"],
             "variant": "all_programs",
-        }
+        },
+        {
+            "workbook_path": expected_canonical_paths["ex_trend"],
+            "variant": "ex_trend",
+        },
+        {
+            "workbook_path": expected_canonical_paths["trend"],
+            "variant": "trend",
+        },
     ]
-    assert runtime_config.mosers_all_programs_xlsx == canonical_path
+    assert runtime_config.mosers_all_programs_xlsx == expected_canonical_paths["all_programs"]
+    assert runtime_config.mosers_ex_trend_xlsx == expected_canonical_paths["ex_trend"]
+    assert runtime_config.mosers_trend_xlsx == expected_canonical_paths["trend"]
     assert "Generated All Programs MOSERS workbook from raw NISA input" in warnings
+    assert "Generated Ex Trend MOSERS workbook from raw NISA input" in warnings
+    assert "Generated Trend MOSERS workbook from raw NISA input" in warnings
 
 
 def test_validate_milestone_one_parser_contract_raises_when_generated_totals_columns_drift(

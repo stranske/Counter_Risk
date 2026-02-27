@@ -86,8 +86,10 @@ class WorkflowConfig(BaseModel):
     run_date: date | None = None
     mosers_all_programs_xlsx: Path | None = None
     raw_nisa_all_programs_xlsx: Path | None = None
-    mosers_ex_trend_xlsx: Path
-    mosers_trend_xlsx: Path
+    mosers_ex_trend_xlsx: Path | None = None
+    raw_nisa_ex_trend_xlsx: Path | None = None
+    mosers_trend_xlsx: Path | None = None
+    raw_nisa_trend_xlsx: Path | None = None
     hist_all_programs_3yr_xlsx: Path
     hist_ex_llc_3yr_xlsx: Path
     hist_llc_3yr_xlsx: Path
