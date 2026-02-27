@@ -148,7 +148,7 @@ class ManifestBuilder:
         run_date = str(manifest.get("run_date", "unknown"))
 
         status = "info"
-        counts_by_severity: dict[str, int] = {severity: 0 for severity in _SEVERITY_DISPLAY_ORDER}
+        counts_by_severity: dict[str, int] = dict.fromkeys(_SEVERITY_DISPLAY_ORDER, 0)
         total_findings = 0
         counts_by_category: dict[str, dict[str, int]] = {}
         findings: list[Mapping[str, Any]] = []
