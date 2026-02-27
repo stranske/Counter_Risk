@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 import math
 import re
 from collections import defaultdict
 from pathlib import Path
 
 from counter_risk.normalize import canonicalize_name
+
+_log = logging.getLogger(__name__)
 
 _EXPECTED_REPO_COUNTERPARTIES: tuple[str, ...] = (
     "ASL",
@@ -95,7 +98,8 @@ def _extract_text(path: Path) -> str:
 def _extract_text_with_pdfplumber(path: Path) -> str:
     try:
         import pdfplumber  # type: ignore[import-not-found]
-    except Exception:
+    except ImportError:
+        _log.debug("pdfplumber not installed, skipping")
         return ""
 
     lines: list[str] = []
@@ -113,6 +117,7 @@ def _extract_text_with_pdfplumber(path: Path) -> str:
                         if pieces:
                             lines.append(" ".join(pieces))
     except Exception:
+        _log.warning("pdfplumber failed to extract text from %s", path, exc_info=True)
         return ""
 
     return "\n".join(lines)
@@ -121,7 +126,8 @@ def _extract_text_with_pdfplumber(path: Path) -> str:
 def _extract_text_with_pypdf(path: Path) -> str:
     try:
         from pypdf import PdfReader  # type: ignore[import-not-found]
-    except Exception:
+    except ImportError:
+        _log.debug("pypdf not installed, skipping")
         return ""
 
     lines: list[str] = []
@@ -132,6 +138,7 @@ def _extract_text_with_pypdf(path: Path) -> str:
             if page_text:
                 lines.append(page_text)
     except Exception:
+        _log.warning("pypdf failed to extract text from %s", path, exc_info=True)
         return ""
 
     return "\n".join(lines)
@@ -141,7 +148,8 @@ def _extract_text_with_ocr(path: Path) -> str:
     try:
         import pytesseract  # type: ignore[import-not-found]
         from pdf2image import convert_from_path  # type: ignore[import-not-found]
-    except Exception:
+    except ImportError:
+        _log.debug("pytesseract/pdf2image not installed, skipping OCR")
         return ""
 
     lines: list[str] = []
@@ -151,6 +159,7 @@ def _extract_text_with_ocr(path: Path) -> str:
             if text:
                 lines.append(text)
     except Exception:
+        _log.warning("OCR extraction failed for %s", path, exc_info=True)
         return ""
 
     return "\n".join(lines)
@@ -205,8 +214,11 @@ def _parse_counterparty_amount_line(line: str) -> tuple[str, float] | None:
 def _match_counterparty(text: str) -> str | None:
     lowered = canonicalize_name(text).casefold()
     for canonical_name, aliases in _COUNTERPARTY_ALIASES.items():
-        if any(alias in lowered for alias in aliases):
-            return canonical_name
+        for alias in aliases:
+            alias_norm = canonicalize_name(alias).casefold()
+            pattern = rf"\b{re.escape(alias_norm)}\b"
+            if re.search(pattern, lowered):
+                return canonical_name
     return None
 
 
