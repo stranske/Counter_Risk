@@ -64,6 +64,17 @@ _HEADER_SCAN_ROW_LIMIT = 200
 
 
 @dataclass(frozen=True)
+class NisaAllProgramsInputStructure:
+    """Expected raw NISA input structure for All Programs parsing."""
+
+    required_headers: tuple[str, ...]
+    header_aliases: dict[str, tuple[str, ...]]
+    totals_marker: str
+    totals_stop_markers: tuple[str, ...]
+    segment_aliases: dict[str, str]
+
+
+@dataclass(frozen=True)
 class NisaChRow:
     """Normalized row from the top CPRS-CH segment block."""
 
@@ -101,6 +112,18 @@ class NisaAllProgramsData:
 
     ch_rows: tuple[NisaChRow, ...]
     totals_rows: tuple[NisaTotalsRow, ...]
+
+
+def get_nisa_all_programs_input_structure() -> NisaAllProgramsInputStructure:
+    """Return the parser's expected raw NISA All Programs input contract."""
+
+    return NisaAllProgramsInputStructure(
+        required_headers=_REQUIRED_HEADERS,
+        header_aliases=_HEADER_ALIASES,
+        totals_marker=_TOTALS_MARKER,
+        totals_stop_markers=_TOTALS_STOP_MARKERS,
+        segment_aliases=_SEGMENT_MAP,
+    )
 
 
 def parse_nisa_all_programs(path: Path | str) -> NisaAllProgramsData:
@@ -450,8 +473,10 @@ def _parse_totals_rows(
 
 
 __all__ = [
+    "NisaAllProgramsInputStructure",
     "NisaAllProgramsData",
     "NisaChRow",
     "NisaTotalsRow",
+    "get_nisa_all_programs_input_structure",
     "parse_nisa_all_programs",
 ]
