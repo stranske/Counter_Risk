@@ -100,6 +100,30 @@ def test_runner_vba_module_has_stub_friendly_shell_and_filesystem_boundaries() -
     assert "Dir$(directoryPath, vbDirectory)" in module_source
 
 
+def test_runner_vba_module_reads_data_quality_status_and_writes_colored_cell() -> None:
+    module_source = _module_source()
+
+    assert 'DQ_STATUS_CELL As String = "B9"' in module_source
+    assert "Public Function ReadOverallStatusColor" in module_source
+    assert "Private Sub WriteDataQualityStatusCell" in module_source
+    assert "Private Sub WriteDataQualityStatus" in module_source
+    assert 'summaryPath = outputDir & "\\DATA_QUALITY_SUMMARY.txt"' in module_source
+    assert "statusColor = ReadOverallStatusColor(summaryPath)" in module_source
+    assert "WriteDataQualityStatusCell statusColor" in module_source
+    assert 'cell.Value = "GREEN - Safe to send"' in module_source
+    assert 'cell.Value = "YELLOW - Review warnings"' in module_source
+    assert 'cell.Value = "RED - Do not send"' in module_source
+    assert "cell.Interior.Color = RGB(0, 176, 80)" in module_source
+    assert "cell.Interior.Color = RGB(255, 192, 0)" in module_source
+    assert "cell.Interior.Color = RGB(255, 0, 0)" in module_source
+
+
+def test_runner_vba_run_mode_click_writes_data_quality_status_after_success() -> None:
+    module_source = _module_source()
+
+    assert "WriteDataQualityStatus outputDir" in module_source
+
+
 def test_runner_vba_module_defines_public_entrypoints() -> None:
     module_source = Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
 

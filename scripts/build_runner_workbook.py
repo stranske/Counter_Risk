@@ -73,6 +73,10 @@ def _runner_sheet_xml(validation_formula: str) -> str:
       {_inline_str_cell("F5", "Open Summary")}
       {_inline_str_cell("G5", "Dry-Run Discovery")}
     </row>
+    <row r="9">
+      {_inline_str_cell("A9", "Data Quality")}
+      <c r="B9"/>
+    </row>
   </sheetData>
   <dataValidations count="1">
     <dataValidation type="list" allowBlank="0" showErrorMessage="1" sqref="B3">

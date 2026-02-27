@@ -9,6 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
+from pathlib import Path
 
 SHELL_ERROR_BASE = 7100
 _OPERATOR_ACTION_PREFIX = "Operator action:"
@@ -231,3 +232,32 @@ def open_data_quality_summary(
         command=summary_path,
         exit_code=0,
     )
+
+
+_STATUS_COLOR_LABELS: dict[str, str] = {
+    "GREEN": "GREEN - Safe to send",
+    "YELLOW": "YELLOW - Review warnings",
+    "RED": "RED - Do not send",
+}
+
+
+def read_overall_status_color(summary_path: str | Path) -> str:
+    """Read a DATA_QUALITY_SUMMARY.txt and extract the overall status color."""
+    path = Path(summary_path)
+    if not path.is_file():
+        return ""
+    text = path.read_text(encoding="utf-8")
+    for line in text.splitlines():
+        upper_line = line.upper()
+        if "(GREEN)" in upper_line:
+            return "GREEN"
+        if "(RED)" in upper_line:
+            return "RED"
+        if "(YELLOW)" in upper_line:
+            return "YELLOW"
+    return ""
+
+
+def data_quality_status_label(status_color: str) -> str:
+    """Map a status color string to a Runner UI display label."""
+    return _STATUS_COLOR_LABELS.get(status_color.upper(), "")
