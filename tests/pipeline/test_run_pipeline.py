@@ -1234,6 +1234,65 @@ def test_write_risk_outputs_creates_partial_outputs_when_only_notional_proxy_exi
     assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
 
 
+def test_write_change_attribution_outputs_writes_markdown_and_csv(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Desk A",
+                        "Notional": 100.0,
+                        "NotionalChange": 10.0,
+                    },
+                    {
+                        "counterparty": "Desk B",
+                        "Notional": 80.0,
+                        "NotionalChange": -5.0,
+                    },
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_change_attribution_outputs(
+        run_dir=tmp_path,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    csv_path = tmp_path / "change_attribution.csv"
+    markdown_path = tmp_path / "change_attribution.md"
+    assert output_paths == [csv_path, markdown_path]
+    assert csv_path.exists()
+    assert markdown_path.exists()
+    assert "confidence" in csv_path.read_text(encoding="utf-8")
+    assert "High" in markdown_path.read_text(encoding="utf-8")
+    assert warnings == []
+
+
+def test_write_change_attribution_outputs_skips_when_notional_delta_unavailable(
+    tmp_path: Path,
+) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(records=[{"counterparty": "Desk A", "Notional": 100.0}])
+        }
+    }
+
+    output_paths = run_module._write_change_attribution_outputs(
+        run_dir=tmp_path,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert output_paths == []
+    assert not (tmp_path / "change_attribution.csv").exists()
+    assert not (tmp_path / "change_attribution.md").exists()
+    assert any("change_attribution skipped" in warning for warning in warnings)
+
+
 def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
