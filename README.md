@@ -76,9 +76,36 @@ Typical maintainer loop:
 If a change requires editing synced workflow files, do it in **stranske/Workflows** first and then sync.
 
 ## Testing
+
 Autopilot smoke tests are enabled to validate basic keepalive and automation flow behavior.
 
+### Slow test strategy
+
+Some tests are too expensive for PR feedback but still need to run before
+merging to `main`.  These are tagged with the **`slow`** pytest marker and
+excluded from the PR Gate so that CI stays under five minutes.
+
+| Where it runs | Marker filter | Typical duration |
+|---------------|---------------|------------------|
+| **PR Gate** (`pr-00-gate.yml`) | `not release and not slow` | ~4 min |
+| **Main CI** (`ci.yml`) | *(all tests)* | ~12-15 min |
+| **Release E2E** (`release-e2e.yml`) | `release` | nightly / on label |
+
+What counts as "slow":
+
+- `tests/pipeline/test_run_pipeline.py` — every `test_run_pipeline_*` test
+  calls `run_pipeline()` with real Excel fixtures (100-170 s each on CI).
+  Auto-marked via `tests/pipeline/conftest.py`.
+- `tests/spec/test_macro_spec_fixtures.py` — session-scoped fixture parses
+  three large NISA workbooks (~85 s one-time cost).  Module-level
+  `pytestmark = pytest.mark.slow`.
+
+When adding new tests that parse real workbooks or run full pipeline
+orchestration, mark them `@pytest.mark.slow` (or add them to the conftest
+hook) so the Gate stays fast.
+
 ## Development
+
 Use these maintainer commands from the repository root:
 
 - `make lint` runs `ruff check src/ tests/`
@@ -247,9 +274,6 @@ After 3 failures, keepalive pauses and adds `needs-human`:
 - [Consumer README](https://github.com/stranske/Workflows/blob/main/templates/consumer-repo/README.md) - Complete setup guide
 - [Keepalive Architecture](https://github.com/stranske/Workflows/blob/main/docs/keepalive/GoalsAndPlumbing.md) - Detailed design
 - [Setup Checklist](docs/keepalive/SETUP_CHECKLIST.md) - Step-by-step configuration
-
-## Testing
-Autopilot smoke tests are enabled to validate basic keepalive and automation flow behavior.
 
 ## License
 
