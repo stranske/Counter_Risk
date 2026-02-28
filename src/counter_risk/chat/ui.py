@@ -41,6 +41,12 @@ def submit_chat_message(
             validation_error="Select a valid provider and model before submitting.",
         )
 
-    session = session_factory(context, provider_key, model_key)
-    answer = session.send(message, provider_key=provider_key, model_key=model_key)
+    try:
+        session = session_factory(context, provider_key, model_key)
+        answer = session.send(message, provider_key=provider_key, model_key=model_key)
+    except Exception as exc:
+        return SubmitResult(
+            assistant_message=None,
+            validation_error=f"Chat provider call failed: {exc}",
+        )
     return SubmitResult(assistant_message=answer, validation_error=None)

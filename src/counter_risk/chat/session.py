@@ -12,19 +12,20 @@ from pathlib import Path
 from typing import Final, cast
 
 from counter_risk.chat.context import RunContext
-from counter_risk.chat.providers.anthropic_stub import AnthropicStubProvider
-from counter_risk.chat.providers.base import ProviderClient
-from counter_risk.chat.providers.openai_stub import OpenAIStubProvider
+from counter_risk.chat.providers.base import (
+    ProviderClient,
+    build_provider_clients,
+    build_provider_model_registry,
+    provider_env_available,
+)
 from counter_risk.chat.utils import cmp_with_tol, is_close
 
 _LOGGER = logging.getLogger(__name__)
 
 _PLACEHOLDER_MODEL: Final[str] = "chat-model-placeholder"
-_PROVIDER_MODELS: Final[dict[str, set[str]]] = {
-    "local": {_PLACEHOLDER_MODEL},
-    "openai": {_PLACEHOLDER_MODEL},
-    "anthropic": {_PLACEHOLDER_MODEL},
-}
+_PROVIDER_MODELS: Final[dict[str, set[str]]] = build_provider_model_registry(
+    local_model=_PLACEHOLDER_MODEL
+).provider_models
 
 _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
     re.compile(r"ignore\s+(all\s+)?(previous|prior)\s+instructions", re.IGNORECASE),
@@ -132,8 +133,7 @@ class _LocalStubProvider:
 
 _PROVIDER_CLIENTS: Final[dict[str, ProviderClient]] = {
     "local": _LocalStubProvider(),
-    "openai": OpenAIStubProvider(),
-    "anthropic": AnthropicStubProvider(),
+    **build_provider_clients(),
 }
 
 
@@ -152,6 +152,10 @@ class ChatSession:
         self.provider = self.provider.strip().lower()
         self.model = self.model.strip()
 
+        if self.provider != "local" and not provider_env_available(self.provider):
+            raise ChatSessionError(
+                f"Provider '{self.provider}' is not configured in the environment."
+            )
         if not is_provider_model_supported(self.provider, self.model):
             available_models = _PROVIDER_MODELS.get(self.provider)
             if available_models is None:
@@ -179,6 +183,10 @@ class ChatSession:
         selected_provider = (provider_key or self.provider).strip().lower()
         selected_model = (model_key or self.model).strip()
 
+        if selected_provider != "local" and not provider_env_available(selected_provider):
+            raise ChatSessionError(
+                f"Provider '{selected_provider}' is not configured in the environment."
+            )
         if not is_provider_model_supported(selected_provider, selected_model):
             raise ChatSessionError(
                 f"Unsupported provider/model selection: {selected_provider}/{selected_model}"
@@ -247,7 +255,15 @@ def is_provider_model_supported(provider: str, model: str) -> bool:
     available_models = _PROVIDER_MODELS.get(provider_key)
     if available_models is None:
         return False
+    if provider_key != "local" and not provider_env_available(provider_key):
+        return False
     return model_key in available_models
+
+
+def get_provider_models() -> dict[str, tuple[str, ...]]:
+    """Return provider/model catalog for UI and validation surfaces."""
+
+    return {provider: tuple(sorted(models)) for provider, models in _PROVIDER_MODELS.items()}
 
 
 # Safeguards reduce injection risk but do not replace model-side safety systems.

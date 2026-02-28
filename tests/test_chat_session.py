@@ -8,9 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from counter_risk.chat import session as session_module
 from counter_risk.chat.context import load_run_context
-from counter_risk.chat.providers.anthropic_stub import AnthropicStubProvider
-from counter_risk.chat.providers.openai_stub import OpenAIStubProvider
 from counter_risk.chat.session import (
     _LLM_LOG_DIR_NAME,
     ChatSession,
@@ -18,12 +17,25 @@ from counter_risk.chat.session import (
     PromptInjectionError,
     build_guarded_prompt,
     detect_spreadsheet_injection_vectors,
+    get_provider_models,
     sanitize_untrusted_text,
     validate_prompt_boundaries,
     validate_user_query,
 )
 
 _MODEL_KEY = "chat-model-placeholder"
+
+
+@pytest.fixture(autouse=True)
+def _provider_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setenv("CLAUDE_API_STRANSKE", "test-token")
+
+
+def _provider_model(provider: str) -> str:
+    models = get_provider_models()[provider]
+    assert models
+    return models[0]
 
 
 def _write_minimal_run(tmp_path: Path) -> Path:
@@ -90,50 +102,89 @@ def test_chat_session_returns_manifest_top_exposure(tmp_path: Path) -> None:
     assert len(session.history) == 2
 
 
-def test_chat_session_stub_provider_is_deterministic_for_same_prompt(tmp_path: Path) -> None:
+def test_chat_session_provider_is_deterministic_for_same_prompt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
-    session = ChatSession(context=context, provider="openai", model=_MODEL_KEY)
+    model_key = _provider_model("openai")
+
+    class _DeterministicProvider:
+        def generate(self, messages: list[dict[str, str]], model: str, **kwargs: object) -> str:
+            context_answer = str(kwargs.get("context_answer", "No answer available."))
+            return f"openai-mock:{model} | {context_answer}"
+
+    monkeypatch.setitem(session_module._PROVIDER_CLIENTS, "openai", _DeterministicProvider())
+    session = ChatSession(context=context, provider="openai", model=model_key)
 
     first = session.ask("show deltas")
     second = session.ask("show deltas")
 
     assert first == second
-    assert "openai-stub:chat-model-placeholder" in first
+    assert first.startswith(f"openai-mock:{model_key}")
 
 
 @pytest.mark.parametrize(
-    ("provider", "provider_marker"),
+    ("provider_key", "model_key", "provider_marker"),
     (
-        (OpenAIStubProvider(), "openai-stub"),
-        (AnthropicStubProvider(), "anthropic-stub"),
+        ("openai", "openai", "openai-mock"),
+        ("anthropic", "anthropic", "anthropic-mock"),
     ),
 )
-def test_provider_stubs_are_deterministic_for_same_messages_and_model(
-    provider: OpenAIStubProvider | AnthropicStubProvider,
+def test_selected_provider_client_is_deterministic_for_same_messages_and_model(
+    provider_key: str,
+    model_key: str,
     provider_marker: str,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    resolved_model = _provider_model(model_key)
+
+    class _DeterministicProvider:
+        def __init__(self, marker: str) -> None:
+            self._marker = marker
+
+        def generate(self, messages: list[dict[str, str]], model: str, **kwargs: object) -> str:
+            context_answer = str(kwargs.get("context_answer", "No answer available."))
+            return f"{self._marker}:{model} | {context_answer}"
+
+    monkeypatch.setitem(
+        session_module._PROVIDER_CLIENTS, provider_key, _DeterministicProvider(provider_marker)
+    )
+
     messages = [
         {"role": "system", "content": "system prompt"},
         {"role": "user", "content": "top exposures"},
     ]
-    first = provider.generate(messages=messages, model=_MODEL_KEY, context_answer="answer")
-    second = provider.generate(messages=messages, model=_MODEL_KEY, context_answer="answer")
+    provider = session_module._PROVIDER_CLIENTS[provider_key]
+    first = provider.generate(messages=messages, model=resolved_model, context_answer="answer")
+    second = provider.generate(messages=messages, model=resolved_model, context_answer="answer")
 
     assert first == second
-    assert first.startswith(f"{provider_marker}:{_MODEL_KEY}")
+    assert first.startswith(f"{provider_marker}:{resolved_model}")
 
 
-def test_chat_session_dispatches_selected_provider_and_model(tmp_path: Path) -> None:
+def test_chat_session_dispatches_selected_provider_and_model(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
     session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
+    anthropic_model = _provider_model("anthropic")
+
+    class _DeterministicProvider:
+        def generate(self, messages: list[dict[str, str]], model: str, **kwargs: object) -> str:
+            context_answer = str(kwargs.get("context_answer", "No answer available."))
+            return f"anthropic-mock:{model} | {context_answer}"
+
+    monkeypatch.setitem(session_module._PROVIDER_CLIENTS, "anthropic", _DeterministicProvider())
 
     answer = session.send(
         "what are the key warnings?",
         provider_key="anthropic",
-        model_key=_MODEL_KEY,
+        model_key=anthropic_model,
     )
 
-    assert "anthropic-stub:chat-model-placeholder" in answer
+    assert answer.startswith(f"anthropic-mock:{anthropic_model}")
     assert "Key warnings (2):" in answer
 
 
@@ -203,6 +254,7 @@ def test_chat_session_routes_deltas_to_delta_handler(tmp_path: Path) -> None:
 
 def test_chat_session_rejects_invalid_model_for_provider(tmp_path: Path) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
+    _ = _provider_model("openai")
 
     with pytest.raises(ChatSessionError, match="Unsupported model"):
         ChatSession(context=context, provider="openai", model="not-a-real-model")
