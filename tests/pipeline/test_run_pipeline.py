@@ -1303,7 +1303,23 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
     assert manifest["missing_inputs"]["missing_required"] == []
     assert manifest["reconciliation_results"]["status"] in {"passed", "failed"}
     assert manifest["reconciliation_results"]["fail_policy"] in {"warn", "strict"}
-    assert isinstance(manifest["reconciliation_results"]["by_variant"], dict)
+    by_variant = manifest["reconciliation_results"]["by_variant"]
+    assert isinstance(by_variant, dict)
+    assert by_variant
+    for variant_result in by_variant.values():
+        by_sheet = variant_result["by_sheet"]
+        assert isinstance(by_sheet, dict)
+        assert by_sheet
+        for sheet_result in by_sheet.values():
+            canonical_key_by_series = sheet_result["canonical_key_by_series"]
+            assert isinstance(canonical_key_by_series, dict)
+            counterparties_in_data = sheet_result["counterparties_in_data"]
+            clearing_houses_in_data = sheet_result["clearing_houses_in_data"]
+            for series_label in set(counterparties_in_data).union(clearing_houses_in_data):
+                assert series_label in canonical_key_by_series
+                canonical_value = canonical_key_by_series[series_label]
+                assert isinstance(canonical_value, str)
+                assert canonical_value.strip()
 
     expected_hashes = {
         "mosers_all_programs_xlsx": _sha256(

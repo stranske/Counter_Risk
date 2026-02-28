@@ -7,6 +7,7 @@ import pytest
 from pptx import Presentation
 from pptx.util import Inches
 
+from counter_risk.writers import pptx_screenshots as screenshots_module
 from counter_risk.writers.pptx_screenshots import replace_screenshot_pictures
 
 _RED_PNG = base64.b64decode(
@@ -129,3 +130,18 @@ def test_replace_screenshot_pictures_raises_when_section_not_found(tmp_path: Pat
             {"Missing Section": replacement},
             output,
         )
+
+
+def test_normalize_key_uses_canonicalize_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[str] = []
+
+    def _fake_canonicalize(value: str) -> str:
+        calls.append(value)
+        return "Ex Trend"
+
+    monkeypatch.setattr(screenshots_module, "canonicalize_name", _fake_canonicalize)
+
+    normalized = screenshots_module._normalize_key("Ex\u2014Trend")
+
+    assert normalized == "extrend"
+    assert calls == ["Ex\u2014Trend"]
