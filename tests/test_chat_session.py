@@ -454,3 +454,28 @@ def test_chat_session_surfaces_chat_log_write_failures(
 
     with pytest.raises(RuntimeError, match="Failed to write chat log transcript"):
         session.ask("top exposures")
+
+
+def test_chat_session_surfaces_chat_log_directory_create_failures(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
+
+    original_mkdir = Path.mkdir
+
+    def _failing_mkdir(
+        self: Path,
+        mode: int = 0o777,
+        parents: bool = False,
+        exist_ok: bool = False,
+    ) -> None:
+        if self.name == _CHAT_LOG_DIR_NAME:
+            raise OSError("permission denied")
+        original_mkdir(self, mode=mode, parents=parents, exist_ok=exist_ok)
+
+    monkeypatch.setattr(Path, "mkdir", _failing_mkdir)
+
+    with pytest.raises(RuntimeError, match="Failed to write chat log transcript"):
+        session.ask("top exposures")

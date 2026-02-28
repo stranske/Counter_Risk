@@ -681,7 +681,6 @@ def _append_chat_turn_log(
     timestamp = now.isoformat().replace("+00:00", "Z")
     daystamp = now.strftime("%Y%m%d")
     log_dir = run_dir / _CHAT_LOG_DIR_NAME
-    log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / f"chat_log_{daystamp}.jsonl"
 
     payload = {
@@ -699,6 +698,7 @@ def _append_chat_turn_log(
     }
 
     try:
+        log_dir.mkdir(parents=True, exist_ok=True)
         with log_path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(payload, sort_keys=True))
             handle.write("\n")
