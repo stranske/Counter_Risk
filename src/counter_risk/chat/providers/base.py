@@ -15,7 +15,9 @@ from tools.langchain_client import (
 )
 from tools.llm_provider import build_langsmith_metadata
 
-_OPENAI_ENV_KEYS: Final[tuple[str, ...]] = ("GITHUB_TOKEN", "OPENAI_API_KEY")
+_GITHUB_ENV_KEYS: Final[tuple[str, ...]] = ("GITHUB_TOKEN",)
+_OPENAI_API_ENV_KEYS: Final[tuple[str, ...]] = ("OPENAI_API_KEY",)
+_OPENAI_ENV_KEYS: Final[tuple[str, ...]] = _GITHUB_ENV_KEYS + _OPENAI_API_ENV_KEYS
 _ANTHROPIC_ENV_KEYS: Final[tuple[str, ...]] = ("CLAUDE_API_STRANSKE",)
 
 
@@ -35,14 +37,16 @@ class ProviderModelRegistry:
     """Available model ids keyed by chat provider."""
 
     provider_models: dict[str, set[str]]
+    provider_model_required_env_keys: dict[str, dict[str, tuple[str, ...]]]
 
 
 def build_provider_model_registry(*, local_model: str) -> ProviderModelRegistry:
     """Build provider model allowlists from shared slot configuration."""
 
     slot_catalog = get_provider_model_catalog()
-    openai_models = set(slot_catalog.get(PROVIDER_GITHUB, set()))
-    openai_models.update(slot_catalog.get(PROVIDER_OPENAI, set()))
+    github_models = set(slot_catalog.get(PROVIDER_GITHUB, set()))
+    openai_api_models = set(slot_catalog.get(PROVIDER_OPENAI, set()))
+    openai_models = set(github_models).union(openai_api_models)
     anthropic_models = set(slot_catalog.get(PROVIDER_ANTHROPIC, set()))
 
     if not openai_models:
@@ -50,12 +54,30 @@ def build_provider_model_registry(*, local_model: str) -> ProviderModelRegistry:
     if not anthropic_models:
         anthropic_models.add("claude-sonnet-4-5-20250929")
 
+    openai_model_requirements: dict[str, tuple[str, ...]] = {}
+    for model in sorted(github_models):
+        openai_model_requirements[model] = _GITHUB_ENV_KEYS
+    for model in sorted(openai_api_models):
+        if model in openai_model_requirements:
+            openai_model_requirements[model] = _OPENAI_ENV_KEYS
+        else:
+            openai_model_requirements[model] = _OPENAI_API_ENV_KEYS
+    for model in sorted(openai_models):
+        openai_model_requirements.setdefault(model, _OPENAI_ENV_KEYS)
+
+    anthropic_model_requirements = dict.fromkeys(sorted(anthropic_models), _ANTHROPIC_ENV_KEYS)
+
     return ProviderModelRegistry(
         provider_models={
             "local": {local_model},
             "openai": openai_models,
             "anthropic": anthropic_models,
-        }
+        },
+        provider_model_required_env_keys={
+            "local": {local_model: ()},
+            "openai": openai_model_requirements,
+            "anthropic": anthropic_model_requirements,
+        },
     )
 
 
@@ -69,15 +91,19 @@ class LangChainProviderClient:
     def generate(self, messages: list[dict[str, str]], model: str, **kwargs: object) -> str:
         last_error: Exception | None = None
         metadata = build_langsmith_metadata(operation="counter-risk-chat")
+        slot_catalog = get_provider_model_catalog()
 
         for provider_name in self._provider_chain:
+            provider_models = slot_catalog.get(provider_name, set())
+            if provider_models and model not in provider_models:
+                continue
             client_info = build_chat_client(provider=provider_name, model=model)
             if client_info is None:
                 continue
             try:
                 client = cast(_LangChainInvokeClient, client_info.client)
                 response = client.invoke(messages, config=metadata)
-            except Exception as exc:  # pragma: no cover - network/provider dependent
+            except Exception as exc:
                 last_error = exc
                 continue
             response_text = _coerce_response_text(response)

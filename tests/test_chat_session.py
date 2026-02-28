@@ -260,6 +260,24 @@ def test_chat_session_rejects_invalid_model_for_provider(tmp_path: Path) -> None
         ChatSession(context=context, provider="openai", model="not-a-real-model")
 
 
+def test_chat_session_rejects_model_when_required_credential_path_is_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setitem(session_module._PROVIDER_MODELS, "openai", {"github-only-model"})
+    monkeypatch.setitem(
+        session_module._PROVIDER_MODEL_REQUIRED_ENV_KEYS,
+        "openai",
+        {"github-only-model": ("GITHUB_TOKEN",)},
+    )
+
+    with pytest.raises(ChatSessionError, match="Unsupported model"):
+        ChatSession(context=context, provider="openai", model="github-only-model")
+
+
 def test_validate_prompt_boundaries_rejects_duplicate_markers() -> None:
     prompt = "\n".join(
         [

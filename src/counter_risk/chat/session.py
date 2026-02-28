@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -23,9 +24,11 @@ from counter_risk.chat.utils import cmp_with_tol, is_close
 _LOGGER = logging.getLogger(__name__)
 
 _PLACEHOLDER_MODEL: Final[str] = "chat-model-placeholder"
-_PROVIDER_MODELS: Final[dict[str, set[str]]] = build_provider_model_registry(
-    local_model=_PLACEHOLDER_MODEL
-).provider_models
+_PROVIDER_MODEL_REGISTRY = build_provider_model_registry(local_model=_PLACEHOLDER_MODEL)
+_PROVIDER_MODELS: Final[dict[str, set[str]]] = _PROVIDER_MODEL_REGISTRY.provider_models
+_PROVIDER_MODEL_REQUIRED_ENV_KEYS: Final[dict[str, dict[str, tuple[str, ...]]]] = (
+    _PROVIDER_MODEL_REGISTRY.provider_model_required_env_keys
+)
 
 _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
     re.compile(r"ignore\s+(all\s+)?(previous|prior)\s+instructions", re.IGNORECASE),
@@ -255,7 +258,8 @@ def is_provider_model_supported(provider: str, model: str) -> bool:
     available_models = _PROVIDER_MODELS.get(provider_key)
     if available_models is None:
         return False
-    if provider_key != "local" and not provider_env_available(provider_key):
+    required_env_keys = _PROVIDER_MODEL_REQUIRED_ENV_KEYS.get(provider_key, {}).get(model_key, ())
+    if required_env_keys and not any(os.environ.get(env_key) for env_key in required_env_keys):
         return False
     return model_key in available_models
 
