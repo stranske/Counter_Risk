@@ -8,6 +8,7 @@ import hashlib
 import inspect
 import logging
 import math
+import os
 import platform
 import shutil
 import tempfile
@@ -554,21 +555,27 @@ def run_pipeline_with_config(
     """
 
     config_dir.mkdir(parents=True, exist_ok=True)
+    temp_parent = Path(tempfile.gettempdir()) / "counter-risk-runtime"
+    temp_parent.mkdir(parents=True, exist_ok=True)
     serialized = config.model_dump(mode="json")
     with tempfile.NamedTemporaryFile(
         mode="w",
         encoding="utf-8",
         suffix=".yml",
         prefix="counter-risk-runtime-",
-        dir=config_dir,
+        dir=temp_parent,
         delete=False,
     ) as temp_config:
         temp_config_path = Path(temp_config.name)
         yaml.safe_dump(serialized, temp_config, sort_keys=False)
 
+    original_working_directory = Path.cwd()
     try:
+        os.chdir(config_dir)
         return run_pipeline(temp_config_path, output_dir=output_dir)
     finally:
+        with contextlib.suppress(OSError):
+            os.chdir(original_working_directory)
         with contextlib.suppress(OSError):
             temp_config_path.unlink()
 
@@ -831,7 +838,23 @@ def _create_run_directory(
 ) -> Path:
     if output_dir is not None:
         resolved_output_dir = output_dir.resolve()
-        resolved_output_dir.mkdir(parents=True, exist_ok=True)
+        if resolved_output_dir.exists():
+            if not resolved_output_dir.is_dir():
+                raise ValueError(f"output_dir must be a directory path: {resolved_output_dir}")
+            try:
+                has_existing_entries = any(resolved_output_dir.iterdir())
+            except OSError as exc:
+                raise RuntimeError(
+                    f"Unable to inspect output_dir contents: {resolved_output_dir}"
+                ) from exc
+            if has_existing_entries:
+                raise FileExistsError(
+                    "Output directory already exists and is not empty: "
+                    f"{resolved_output_dir}. Choose an empty directory or remove existing files."
+                )
+            return resolved_output_dir
+
+        resolved_output_dir.mkdir(parents=True, exist_ok=False)
         return resolved_output_dir
 
     runs_root = _resolve_repo_root() / "runs"

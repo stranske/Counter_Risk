@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from counter_risk.pipeline.run import run_pipeline
+from counter_risk.pipeline.run import _create_run_directory, run_pipeline
 
 
 def _write_placeholder(path: Path, *, content: bytes = b"fixture") -> None:
@@ -208,3 +209,30 @@ def test_pipeline_run_directory_includes_run_date_when_configured(
     run_dir = run_pipeline(config_path)
 
     assert run_dir == tmp_path / "runs" / "2026-02-13__run_2026-02-14"
+
+
+def test_create_run_directory_with_explicit_output_dir_uses_empty_directory(tmp_path: Path) -> None:
+    output_dir = tmp_path / "explicit-run-dir"
+
+    run_dir = _create_run_directory(
+        as_of_date=date(2026, 2, 13),
+        run_date=None,
+        output_dir=output_dir,
+    )
+
+    assert run_dir == output_dir.resolve()
+    assert output_dir.exists()
+    assert output_dir.is_dir()
+
+
+def test_create_run_directory_with_non_empty_output_dir_raises(tmp_path: Path) -> None:
+    output_dir = tmp_path / "explicit-run-dir"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    (output_dir / "manifest.json").write_text("{}", encoding="utf-8")
+
+    with pytest.raises(FileExistsError, match="not empty"):
+        _create_run_directory(
+            as_of_date=date(2026, 2, 13),
+            run_date=None,
+            output_dir=output_dir,
+        )
