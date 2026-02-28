@@ -331,6 +331,47 @@ def test_apply_daily_holdings_repo_cash_applies_overrides_from_default_file(
     assert any(str(overrides_path) in warning for warning in warnings)
 
 
+def test_apply_daily_holdings_repo_cash_resolves_default_overrides_from_config_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True)
+    overrides_path = config_dir / "cash_overrides_2025-12-31.csv"
+    overrides_path.write_text(
+        "\n".join(
+            [
+                "counterparty,cash_value,note",
+                "CIBC,8.0,config-dir override",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={"daily_holdings_pdf": tmp_path / "daily-holdings.pdf"}
+    )
+    parsed_by_variant = _minimal_parsed_by_variant()
+    warnings: list[str] = []
+
+    unrelated_cwd = tmp_path / "other-cwd"
+    unrelated_cwd.mkdir(parents=True)
+    monkeypatch.chdir(unrelated_cwd)
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0})
+
+    run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+        as_of_date=date(2025, 12, 31),
+        config_dir=config_dir,
+    )
+
+    totals_records = parsed_by_variant["all_programs"]["totals"].to_dict(orient="records")
+    by_counterparty = {row["counterparty"]: row for row in totals_records}
+    assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(8.0)
+    assert any(str(overrides_path) in warning for warning in warnings)
+
+
 def test_apply_daily_holdings_repo_cash_strict_policy_raises_for_missing_required_counterparties(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

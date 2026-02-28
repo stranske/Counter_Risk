@@ -612,6 +612,7 @@ def run_pipeline(config_path: str | Path) -> Path:
             parsed_by_variant=parsed_by_variant,
             warnings=warnings,
             as_of_date=as_of_date,
+            config_dir=Path(config_path).resolve().parent,
         )
         _validate_parsed_inputs(parsed_by_variant)
         reconciliation_outcome = _run_reconciliation_checks(
@@ -1004,11 +1005,13 @@ def _apply_daily_holdings_repo_cash(
     parsed_by_variant: dict[str, dict[str, Any]],
     warnings: list[str],
     as_of_date: date | None = None,
+    config_dir: Path | None = None,
 ) -> None:
     repo_cash_by_counterparty, source_label = _load_repo_cash_by_counterparty(
         config=config,
         warnings=warnings,
         as_of_date=as_of_date,
+        config_dir=config_dir,
     )
     if not repo_cash_by_counterparty:
         return
@@ -1035,6 +1038,7 @@ def _load_repo_cash_by_counterparty(
     config: WorkflowConfig,
     warnings: list[str],
     as_of_date: date | None,
+    config_dir: Path | None = None,
 ) -> tuple[dict[str, float], str]:
     fail_policy = config.reconciliation.fail_policy
     source_type, source_path = _resolve_repo_cash_source(config)
@@ -1054,7 +1058,11 @@ def _load_repo_cash_by_counterparty(
     source_label = f"{source_type}:{source_path}"
     warnings.append(f"Repo Cash source used: {source_label}")
 
-    overrides_path = _resolve_repo_cash_overrides_path(config=config, as_of_date=as_of_date)
+    overrides_path = _resolve_repo_cash_overrides_path(
+        config=config,
+        as_of_date=as_of_date,
+        config_dir=config_dir,
+    )
     if overrides_path is not None:
         overrides, audit_rows = load_repo_cash_overrides_csv(overrides_path)
         if overrides:
@@ -1136,15 +1144,28 @@ def _resolve_repo_cash_source(config: WorkflowConfig) -> tuple[str, Path | None]
 
 
 def _resolve_repo_cash_overrides_path(
-    *, config: WorkflowConfig, as_of_date: date | None
+    *,
+    config: WorkflowConfig,
+    as_of_date: date | None,
+    config_dir: Path | None = None,
 ) -> Path | None:
     if config.cash_overrides_csv is not None:
         return config.cash_overrides_csv
     if as_of_date is None:
         return None
-    candidate = Path.cwd() / f"cash_overrides_{as_of_date.isoformat()}.csv"
-    if candidate.exists():
-        return candidate
+    candidate_name = f"cash_overrides_{as_of_date.isoformat()}.csv"
+    search_roots: list[Path] = []
+    if config_dir is not None:
+        search_roots.append(config_dir.resolve())
+    search_roots.append(Path.cwd().resolve())
+    seen_roots: set[Path] = set()
+    for root in search_roots:
+        if root in seen_roots:
+            continue
+        seen_roots.add(root)
+        candidate = root / candidate_name
+        if candidate.exists():
+            return candidate
     return None
 
 
