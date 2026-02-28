@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, NoReturn
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
 from zipfile import BadZipFile
 
 from counter_risk.compute import compute_risk_proxies
@@ -41,6 +41,10 @@ from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
+from counter_risk.parsers.repo_cash_sources import (
+    load_repo_cash_overrides_csv,
+    load_repo_cash_structured_source,
+)
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     ParsedDataInvalidShapeError,
@@ -607,6 +611,7 @@ def run_pipeline(config_path: str | Path) -> Path:
             config=runtime_config,
             parsed_by_variant=parsed_by_variant,
             warnings=warnings,
+            as_of_date=as_of_date,
         )
         _validate_parsed_inputs(parsed_by_variant)
         reconciliation_outcome = _run_reconciliation_checks(
@@ -882,6 +887,10 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
         paths["raw_nisa_trend_xlsx"] = config.raw_nisa_trend_xlsx
     if config.daily_holdings_pdf is not None:
         paths["daily_holdings_pdf"] = config.daily_holdings_pdf
+    if config.cash_source_path is not None:
+        paths["cash_source_path"] = config.cash_source_path
+    if config.cash_overrides_csv is not None:
+        paths["cash_overrides_csv"] = config.cash_overrides_csv
     if config.dropin_all_programs_template_xlsx is not None:
         paths["dropin_all_programs_template_xlsx"] = config.dropin_all_programs_template_xlsx
     return paths
@@ -941,6 +950,19 @@ def _validate_pipeline_config(config: WorkflowConfig) -> None:
             path=config.daily_holdings_pdf,
             expected_suffix=".pdf",
         )
+    if config.cash_source_path is not None:
+        cash_source_suffix = config.cash_source_path.suffix.lower()
+        if cash_source_suffix not in {".pdf", ".csv", ".xlsx", ".xlsm"}:
+            raise ValueError(
+                "cash_source_path must be one of .pdf, .csv, .xlsx, or .xlsm "
+                f"(got '{config.cash_source_path.suffix}')"
+            )
+    if config.cash_overrides_csv is not None:
+        _validate_extension(
+            field_name="cash_overrides_csv",
+            path=config.cash_overrides_csv,
+            expected_suffix=".csv",
+        )
     if config.dropin_all_programs_template_xlsx is not None:
         _validate_extension(
             field_name="dropin_all_programs_template_xlsx",
@@ -981,11 +1003,16 @@ def _apply_daily_holdings_repo_cash(
     config: WorkflowConfig,
     parsed_by_variant: dict[str, dict[str, Any]],
     warnings: list[str],
+    as_of_date: date | None = None,
 ) -> None:
-    if config.daily_holdings_pdf is None:
+    repo_cash_by_counterparty, source_label = _load_repo_cash_by_counterparty(
+        config=config,
+        warnings=warnings,
+        as_of_date=as_of_date,
+    )
+    if not repo_cash_by_counterparty:
         return
 
-    repo_cash_by_counterparty = parse_daily_holdings_pdf(config.daily_holdings_pdf)
     all_programs_sections = parsed_by_variant.get("all_programs")
     if not isinstance(all_programs_sections, dict) or "totals" not in all_programs_sections:
         raise ValueError(
@@ -998,9 +1025,142 @@ def _apply_daily_holdings_repo_cash(
         repo_cash_by_counterparty,
     )
     warnings.append(
-        "Applied Daily Holdings Repo Cash values to all_programs totals "
-        f"for {len(repo_cash_by_counterparty)} counterparties"
+        "Applied Repo Cash values to all_programs totals "
+        f"for {len(repo_cash_by_counterparty)} counterparties using {source_label}"
     )
+
+
+def _load_repo_cash_by_counterparty(
+    *,
+    config: WorkflowConfig,
+    warnings: list[str],
+    as_of_date: date | None,
+) -> tuple[dict[str, float], str]:
+    fail_policy = config.reconciliation.fail_policy
+    source_type, source_path = _resolve_repo_cash_source(config)
+    source_label = source_type
+
+    if source_type == "none" or source_path is None:
+        _handle_repo_cash_condition(
+            "Repo Cash source is not configured (cash_source_type=none).",
+            warnings=warnings,
+            fail_policy=fail_policy,
+        )
+        return {}, "none"
+
+    if source_type == "pdf":
+        repo_cash_by_counterparty = parse_daily_holdings_pdf(source_path)
+    else:
+        repo_cash_by_counterparty = load_repo_cash_structured_source(
+            source_path,
+            source_type=cast(Literal["csv", "xlsx"], source_type),
+        )
+    source_label = f"{source_type}:{source_path}"
+    warnings.append(f"Repo Cash source used: {source_label}")
+
+    overrides_path = _resolve_repo_cash_overrides_path(config=config, as_of_date=as_of_date)
+    if overrides_path is not None:
+        overrides, audit_rows = load_repo_cash_overrides_csv(overrides_path)
+        if overrides:
+            repo_cash_by_counterparty.update(overrides)
+            warnings.append(
+                "Repo Cash overrides applied from "
+                f"{overrides_path} ({len(audit_rows)} override rows)"
+            )
+        else:
+            warnings.append(f"Repo Cash overrides file present but empty: {overrides_path}")
+
+    required_counterparties = sorted(
+        {normalize_counterparty(value) for value in config.required_repo_counterparties if value.strip()},
+        key=str.casefold,
+    )
+    missing_required = [
+        counterparty for counterparty in required_counterparties if counterparty not in repo_cash_by_counterparty
+    ]
+    if missing_required:
+        _handle_repo_cash_condition(
+            "Repo Cash source is missing required counterparties: "
+            f"{', '.join(missing_required)}.",
+            warnings=warnings,
+            fail_policy=fail_policy,
+        )
+
+    total_cash = sum(repo_cash_by_counterparty.values())
+    if config.cash_total_min is not None and total_cash < config.cash_total_min:
+        _handle_repo_cash_condition(
+            f"Repo Cash total {total_cash:.2f} is below configured minimum {config.cash_total_min:.2f}.",
+            warnings=warnings,
+            fail_policy=fail_policy,
+        )
+    if config.cash_total_max is not None and total_cash > config.cash_total_max:
+        _handle_repo_cash_condition(
+            f"Repo Cash total {total_cash:.2f} exceeds configured maximum {config.cash_total_max:.2f}.",
+            warnings=warnings,
+            fail_policy=fail_policy,
+        )
+
+    if not repo_cash_by_counterparty:
+        _handle_repo_cash_condition(
+            f"Repo Cash source '{source_label}' did not yield any counterparty values.",
+            warnings=warnings,
+            fail_policy=fail_policy,
+        )
+    return repo_cash_by_counterparty, source_label
+
+
+def _resolve_repo_cash_source(config: WorkflowConfig) -> tuple[str, Path | None]:
+    source_type = (config.cash_source_type or "").strip().casefold()
+    source_path = config.cash_source_path
+    if source_type == "none":
+        return "none", None
+    if source_type in {"csv", "xlsx"}:
+        if source_path is None:
+            raise ValueError(f"cash_source_type={source_type} requires cash_source_path.")
+        return source_type, source_path
+    if source_type == "pdf":
+        resolved_pdf = source_path or config.daily_holdings_pdf
+        if resolved_pdf is None:
+            raise ValueError(
+                "cash_source_type=pdf requires cash_source_path or daily_holdings_pdf in config."
+            )
+        return "pdf", resolved_pdf
+
+    if source_path is not None:
+        suffix = source_path.suffix.lower()
+        if suffix == ".csv":
+            return "csv", source_path
+        if suffix in {".xlsx", ".xlsm"}:
+            return "xlsx", source_path
+        if suffix == ".pdf":
+            return "pdf", source_path
+        raise ValueError(f"Unsupported cash_source_path extension: {source_path.suffix}")
+    if config.daily_holdings_pdf is not None:
+        return "pdf", config.daily_holdings_pdf
+    return "none", None
+
+
+def _resolve_repo_cash_overrides_path(
+    *, config: WorkflowConfig, as_of_date: date | None
+) -> Path | None:
+    if config.cash_overrides_csv is not None:
+        return config.cash_overrides_csv
+    if as_of_date is None:
+        return None
+    candidate = Path.cwd() / f"cash_overrides_{as_of_date.isoformat()}.csv"
+    if candidate.exists():
+        return candidate
+    return None
+
+
+def _handle_repo_cash_condition(
+    message: str,
+    *,
+    warnings: list[str],
+    fail_policy: Literal["warn", "strict"],
+) -> None:
+    if fail_policy == "strict":
+        raise ValueError(message)
+    warnings.append(message)
 
 
 def _validate_input_files(input_paths: dict[str, Path]) -> None:

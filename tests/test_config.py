@@ -446,6 +446,42 @@ def test_load_config_accepts_input_discovery_settings(tmp_path: Path) -> None:
     }
 
 
+def test_load_config_accepts_repo_cash_source_settings(tmp_path: Path) -> None:
+    config_path = tmp_path / "repo_cash_source.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                "mosers_all_programs_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
+                "mosers_ex_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+                "mosers_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+                "hist_all_programs_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+                "hist_ex_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+                "hist_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+                "monthly_pptx: docs/Ratings Instructiosns/Monthly Counterparty Exposure Report.pptx",
+                "output_root: runs/test",
+                "cash_source_type: csv",
+                "cash_source_path: inputs/repo_cash.csv",
+                "cash_overrides_csv: inputs/cash_overrides_2025-12-31.csv",
+                "required_repo_counterparties: [CIBC, ASL]",
+                "cash_total_min: 1.0",
+                "cash_total_max: 20.0",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config.cash_source_type == "csv"
+    assert config.cash_source_path == Path("inputs/repo_cash.csv")
+    assert config.cash_overrides_csv == Path("inputs/cash_overrides_2025-12-31.csv")
+    assert config.required_repo_counterparties == ("CIBC", "ASL")
+    assert config.cash_total_min == 1.0
+    assert config.cash_total_max == 20.0
+
+
 def test_load_config_rejects_input_discovery_with_non_list_patterns(tmp_path: Path) -> None:
     config_path = tmp_path / "bad_input_discovery_patterns.yml"
     config_path.write_text(
