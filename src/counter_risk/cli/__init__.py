@@ -112,7 +112,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="as_of_date",
         type=str,
         default=date.today().isoformat(),
-        help="As-of reporting date in YYYY-MM-DD format.",
+        help="As-of reporting date in YYYY-MM-DD format (normalized to month-end).",
     )
     gui_parser.add_argument(
         "--mode",

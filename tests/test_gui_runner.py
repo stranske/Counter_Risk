@@ -28,7 +28,9 @@ def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> 
 
     assert result.exit_code == 0
     assert result.output_dir == Path(tmp_path / "runs" / "2025-12-31_000000")
-    assert result.settings_path == tmp_path / "counter-risk-runner-settings.json"
+    assert result.settings_path.parent == tmp_path
+    assert result.settings_path.name.startswith("counter-risk-runner-settings-")
+    assert result.settings_path.suffix == ".json"
     assert result.settings_path.is_file()
     settings_payload = json.loads(result.settings_path.read_text(encoding="utf-8"))
     assert settings_payload["strict_policy"] == "strict"
@@ -43,6 +45,28 @@ def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> 
     assert "--output-dir" in captured["argv"]
     assert "--settings" in captured["argv"]
     assert "--strict-policy" in captured["argv"]
+
+
+def test_execute_gui_run_resolves_runtime_config_path(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    captured: dict[str, list[str]] = {}
+
+    def fake_runner(argv: list[str]) -> int:
+        captured["argv"] = argv
+        return 0
+
+    monkeypatch.setattr(
+        "counter_risk.gui.runner.resolve_runtime_path",
+        lambda path: Path("/bundle") / Path(path),
+    )
+    state = GuiRunState(as_of_date="2025-12-31", run_mode="trend")
+
+    result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
+
+    assert result.exit_code == 0
+    assert captured["argv"][2] == str(Path("/bundle/config/trend.yml"))
 
 
 def test_execute_gui_run_supports_discovery_and_dry_run(tmp_path: Path) -> None:
