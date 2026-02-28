@@ -21,6 +21,7 @@ def test_runner_vba_module_constructs_arguments_from_date_and_mode() -> None:
     assert "Format$(parsedDate, RUN_FOLDER_FORMAT)" in module_source
     assert 'RUN_FOLDER_FORMAT As String = "yyyy-mm-dd_hhnnss"' in module_source
     assert '" --as-of-date " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd"))' in module_source
+    assert '" --settings " & QuoteArg(settingsPath)' in module_source
 
     assert "Case RunnerModeAllPrograms" in module_source
     assert 'ResolveConfigPath = "config\\all_programs.yml"' in module_source
@@ -45,6 +46,9 @@ def test_runner_vba_module_defines_structured_launch_status_and_execution() -> N
     assert 'Set shellObject = CreateObject("WScript.Shell")' in module_source
     assert "shellObject.Run(shellCommand, 0, True)" in module_source
     assert 'WriteStatus "Error"' in module_source
+    assert "ResolveSettingsFilePath" in module_source
+    assert "BuildSettingsJson" in module_source
+    assert "WriteSettingsFile settingsPath, BuildSettingsJson()" in module_source
 
 
 def test_runner_vba_module_uses_single_shared_builder_for_all_run_modes() -> None:
@@ -132,6 +136,8 @@ def test_runner_vba_module_defines_public_entrypoints() -> None:
     assert "Public Sub RunTrend_Click()" in module_source
     assert "Public Sub OpenOutputFolder_Click()" in module_source
     assert "Public Sub OpenSummary_Click()" in module_source
+    assert "Public Sub OpenManifest_Click()" in module_source
+    assert "Public Sub OpenPPTFolder_Click()" in module_source
 
 
 def test_runner_vba_open_summary_checks_file_and_uses_resolved_summary_path() -> None:
@@ -149,6 +155,8 @@ def test_runner_vba_open_summary_checks_file_and_uses_resolved_summary_path() ->
         'ResolveDataQualitySummaryPath = ResolveOutputDir(repoRoot, selectedDate) & "\\DATA_QUALITY_SUMMARY.txt"'
         in module_source
     )
+    assert "ResolveManifestPath" in module_source
+    assert "ResolvePPTOutputDir" in module_source
 
 
 def test_runner_vba_run_all_reads_selected_date_and_calls_shared_builder() -> None:
@@ -181,3 +189,5 @@ def test_runner_workbook_embeds_runnerlaunch_entrypoints_in_vba_project() -> Non
     assert "Public Sub RunExTrend_Click()" in vba_project
     assert "Public Sub RunTrend_Click()" in vba_project
     assert "Public Sub OpenOutputFolder_Click()" in vba_project
+    assert "Public Sub OpenManifest_Click()" in vba_project
+    assert "Public Sub OpenPPTFolder_Click()" in vba_project

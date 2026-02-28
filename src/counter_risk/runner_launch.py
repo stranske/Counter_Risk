@@ -5,6 +5,9 @@ These helpers keep launch decision logic testable in Python without Excel automa
 
 from __future__ import annotations
 
+import json
+import os
+import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
@@ -14,6 +17,8 @@ from pathlib import Path
 SHELL_ERROR_BASE = 7100
 _OPERATOR_ACTION_PREFIX = "Operator action:"
 _DATA_QUALITY_SUMMARY_FILENAME = "DATA_QUALITY_SUMMARY.txt"
+_MANIFEST_FILENAME = "manifest.json"
+_PPT_OUTPUT_DIRNAME = "distribution_static"
 
 
 class RunnerMode(StrEnum):
@@ -106,6 +111,14 @@ def resolve_data_quality_summary_path(repo_root: str, selected_date: str) -> str
     return f"{resolve_output_dir(repo_root, selected_date)}\\{_DATA_QUALITY_SUMMARY_FILENAME}"
 
 
+def resolve_manifest_path(repo_root: str, selected_date: str) -> str:
+    return f"{resolve_output_dir(repo_root, selected_date)}\\{_MANIFEST_FILENAME}"
+
+
+def resolve_ppt_output_dir(repo_root: str, selected_date: str) -> str:
+    return f"{resolve_output_dir(repo_root, selected_date)}\\{_PPT_OUTPUT_DIRNAME}"
+
+
 def resolve_config_path(run_mode: RunnerMode) -> str:
     if run_mode is RunnerMode.ALL:
         return "config\\all_programs.yml"
@@ -114,36 +127,78 @@ def resolve_config_path(run_mode: RunnerMode) -> str:
     return "config\\trend.yml"
 
 
-def build_command(run_mode: RunnerMode, selected_date: str, output_dir: str) -> str:
+def resolve_settings_path(temp_root: str | None = None) -> str:
+    root = temp_root or os.environ.get("TEMP") or tempfile.gettempdir()
+    normalized_root = normalize_path_separators(root)
+    return f"{normalized_root}\\counter-risk-runner-settings.json"
+
+
+def build_runner_settings_payload(
+    *,
+    input_root: str,
+    discovery_mode: str,
+    strict_policy: str,
+    formatting_profile: str,
+    output_root: str,
+) -> str:
+    payload = {
+        "input_root": input_root.strip(),
+        "discovery_mode": discovery_mode.strip(),
+        "strict_policy": strict_policy.strip(),
+        "formatting_profile": formatting_profile.strip(),
+        "output_root": output_root.strip(),
+    }
+    return json.dumps(payload, sort_keys=True)
+
+
+def write_runner_settings_file(settings_payload: str, settings_path: str) -> None:
+    target = Path(settings_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(settings_payload, encoding="utf-8")
+
+
+def build_command(
+    run_mode: RunnerMode, selected_date: str, output_dir: str, settings_path: str | None = None
+) -> str:
     # Keep date validation behavior aligned with VBA parser semantics.
     parsed_date = parse_as_of_month(selected_date)
     config_path = resolve_config_path(run_mode)
+    selected_settings_path = settings_path or resolve_settings_path()
     return (
         "run "
         f'--config "{config_path}" '
         f'--as-of-date "{parsed_date.isoformat()}" '
-        f'--output-dir "{output_dir}"'
+        f'--output-dir "{output_dir}" '
+        f'--settings "{selected_settings_path}"'
     )
 
 
-def build_discovery_dry_run_command(run_mode: RunnerMode, selected_date: str) -> str:
+def build_discovery_dry_run_command(
+    run_mode: RunnerMode, selected_date: str, settings_path: str | None = None
+) -> str:
     parsed_date = parse_as_of_month(selected_date)
     config_path = resolve_config_path(run_mode)
+    selected_settings_path = settings_path or resolve_settings_path()
     return (
         "run --dry-run-discovery "
         f'--config "{config_path}" '
-        f'--as-of-month "{parsed_date.isoformat()}"'
+        f'--as-of-month "{parsed_date.isoformat()}" '
+        f'--settings "{selected_settings_path}"'
     )
 
 
-def build_discovery_run_command(run_mode: RunnerMode, selected_date: str, output_dir: str) -> str:
+def build_discovery_run_command(
+    run_mode: RunnerMode, selected_date: str, output_dir: str, settings_path: str | None = None
+) -> str:
     parsed_date = parse_as_of_month(selected_date)
     config_path = resolve_config_path(run_mode)
+    selected_settings_path = settings_path or resolve_settings_path()
     return (
         "run --discover "
         f'--config "{config_path}" '
         f'--as-of-month "{parsed_date.isoformat()}" '
-        f'--output-dir "{output_dir}"'
+        f'--output-dir "{output_dir}" '
+        f'--settings "{selected_settings_path}"'
     )
 
 
@@ -235,6 +290,92 @@ def open_data_quality_summary(
         error_code=0,
         message="Success",
         command=summary_path,
+        exit_code=0,
+    )
+
+
+def open_manifest(
+    *,
+    repo_root: str,
+    selected_date: str,
+    file_exists: Callable[[str], bool],
+    open_file: Callable[[str], int],
+) -> LaunchStatus:
+    manifest_path = resolve_manifest_path(repo_root, selected_date)
+    if not file_exists(manifest_path):
+        return LaunchStatus(
+            success=False,
+            error_code=SHELL_ERROR_BASE + 4,
+            message=f"Manifest not found: {manifest_path}",
+            command=manifest_path,
+            exit_code=-1,
+        )
+    try:
+        exit_code = int(open_file(manifest_path))
+    except Exception as exc:  # pragma: no cover - defensive parity with VBA error flow
+        return LaunchStatus(
+            success=False,
+            error_code=SHELL_ERROR_BASE + 5,
+            message=str(exc),
+            command=manifest_path,
+            exit_code=-1,
+        )
+    if exit_code != 0:
+        return LaunchStatus(
+            success=False,
+            error_code=SHELL_ERROR_BASE + exit_code,
+            message=f"Process exited with code {exit_code}",
+            command=manifest_path,
+            exit_code=exit_code,
+        )
+    return LaunchStatus(
+        success=True,
+        error_code=0,
+        message="Success",
+        command=manifest_path,
+        exit_code=0,
+    )
+
+
+def open_ppt_output_folder(
+    *,
+    repo_root: str,
+    selected_date: str,
+    directory_exists: Callable[[str], bool],
+    open_directory: Callable[[str], int],
+) -> LaunchStatus:
+    ppt_dir = resolve_ppt_output_dir(repo_root, selected_date)
+    if not directory_exists(ppt_dir):
+        return LaunchStatus(
+            success=False,
+            error_code=SHELL_ERROR_BASE + 6,
+            message=f"PPT output folder not found: {ppt_dir}",
+            command=ppt_dir,
+            exit_code=-1,
+        )
+    try:
+        exit_code = int(open_directory(ppt_dir))
+    except Exception as exc:  # pragma: no cover - defensive parity with VBA error flow
+        return LaunchStatus(
+            success=False,
+            error_code=SHELL_ERROR_BASE + 7,
+            message=str(exc),
+            command=ppt_dir,
+            exit_code=-1,
+        )
+    if exit_code != 0:
+        return LaunchStatus(
+            success=False,
+            error_code=SHELL_ERROR_BASE + exit_code,
+            message=f"Process exited with code {exit_code}",
+            command=ppt_dir,
+            exit_code=exit_code,
+        )
+    return LaunchStatus(
+        success=True,
+        error_code=0,
+        message="Success",
+        command=ppt_dir,
         exit_code=0,
     )
 

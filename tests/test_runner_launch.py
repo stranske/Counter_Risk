@@ -12,14 +12,21 @@ from counter_risk.runner_launch import (
     build_command,
     build_discovery_dry_run_command,
     build_discovery_run_command,
+    build_runner_settings_payload,
     data_quality_status_label,
     format_launch_error_for_runner,
     map_runner_error_to_operator_message,
     open_data_quality_summary,
+    open_manifest,
     open_output_folder,
+    open_ppt_output_folder,
     read_overall_status_color,
     resolve_data_quality_summary_path,
+    resolve_manifest_path,
     resolve_output_dir,
+    resolve_ppt_output_dir,
+    resolve_settings_path,
+    write_runner_settings_file,
 )
 
 
@@ -57,6 +64,7 @@ def test_build_command_all_mode_for_distinct_dates(
     assert '--config "config\\all_programs.yml"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
     assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}_000000"' in command
+    assert '--settings "' in command
 
 
 @pytest.mark.parametrize(
@@ -76,6 +84,7 @@ def test_build_command_ex_trend_mode_for_distinct_dates(
     assert '--config "config\\ex_trend.yml"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
     assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}_000000"' in command
+    assert '--settings "' in command
 
 
 @pytest.mark.parametrize(
@@ -95,6 +104,7 @@ def test_build_command_trend_mode_for_distinct_dates(
     assert '--config "config\\trend.yml"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
     assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}_000000"' in command
+    assert '--settings "' in command
 
 
 def test_open_output_folder_returns_missing_directory_error_without_open_call(
@@ -181,6 +191,73 @@ def test_open_data_quality_summary_opens_existing_file() -> None:
     assert opened_files == [summary_path]
 
 
+def test_open_manifest_returns_missing_file_error_without_open_call() -> None:
+    opened_files: list[str] = []
+    manifest_path = resolve_manifest_path("C:/repo", "2025-06-30")
+
+    def open_file(path: str) -> int:
+        opened_files.append(path)
+        return 0
+
+    status = open_manifest(
+        repo_root="C:/repo",
+        selected_date="2025-06-30",
+        file_exists=lambda _: False,
+        open_file=open_file,
+    )
+
+    assert status.success is False
+    assert f"Manifest not found: {manifest_path}" == status.message
+    assert opened_files == []
+
+
+def test_open_ppt_output_folder_opens_existing_directory() -> None:
+    opened_directories: list[str] = []
+    ppt_dir = resolve_ppt_output_dir("C:/repo", "2025-06-30")
+
+    def open_directory(path: str) -> int:
+        opened_directories.append(path)
+        return 0
+
+    status = open_ppt_output_folder(
+        repo_root="C:/repo",
+        selected_date="2025-06-30",
+        directory_exists=lambda path: path == ppt_dir,
+        open_directory=open_directory,
+    )
+
+    assert status.success is True
+    assert status.message == "Success"
+    assert opened_directories == [ppt_dir]
+
+
+def test_resolve_settings_path_uses_temp_root_and_expected_filename() -> None:
+    resolved = resolve_settings_path("C:/Temp")
+    assert resolved == "C:\\Temp\\counter-risk-runner-settings.json"
+
+
+def test_build_runner_settings_payload_serializes_expected_fields() -> None:
+    payload = build_runner_settings_payload(
+        input_root="inputs",
+        discovery_mode="discover",
+        strict_policy="warn",
+        formatting_profile="default",
+        output_root="runs",
+    )
+    assert '"input_root": "inputs"' in payload
+    assert '"discovery_mode": "discover"' in payload
+    assert '"strict_policy": "warn"' in payload
+    assert '"formatting_profile": "default"' in payload
+    assert '"output_root": "runs"' in payload
+
+
+def test_write_runner_settings_file_writes_json_payload(tmp_path: Path) -> None:
+    target = tmp_path / "counter-risk-runner-settings.json"
+    payload = '{"input_root":"inputs"}'
+    write_runner_settings_file(payload, str(target))
+    assert target.read_text(encoding="utf-8") == payload
+
+
 @pytest.mark.parametrize(
     ("mode", "expected_config"),
     [
@@ -197,6 +274,7 @@ def test_build_discovery_dry_run_command_includes_mode_config_and_as_of_date(
     assert "run --dry-run-discovery" in command
     assert expected_config in command
     assert '--as-of-month "2025-02-28"' in command
+    assert '--settings "' in command
 
 
 @pytest.mark.parametrize(
@@ -216,6 +294,7 @@ def test_build_discovery_run_command_includes_discover_flag_and_output_dir(
     assert expected_config in command
     assert '--as-of-month "2025-02-28"' in command
     assert '--output-dir "C:\\repo\\runs\\2025-02-28_000000"' in command
+    assert '--settings "' in command
 
 
 def test_map_runner_error_to_operator_message_prefers_explicit_operator_action() -> None:
