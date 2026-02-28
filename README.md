@@ -85,6 +85,19 @@ Use these maintainer commands from the repository root:
 - `make format` runs `ruff format src/ tests/`
 - `make test` runs `pytest -m "not slow"`
 
+## Chat Provider Configuration
+
+The run-context chat assistant now uses LangChain-backed providers (instead of stubs) for
+`openai` and `anthropic`.
+
+- Copy `.env.example` to a local `.env` (or set variables in your runtime environment).
+- Configure at least one credential path:
+  - `GITHUB_TOKEN` (used for OpenAI-compatible GitHub Models path)
+  - `OPENAI_API_KEY` (direct OpenAI path)
+  - `CLAUDE_API_STRANSKE` (Anthropic path)
+- Optional routing/model overrides are also documented in `.env.example` (`LANGCHAIN_PROVIDER`,
+  `LANGCHAIN_MODEL`, slot overrides, timeout/retry settings).
+
 ## Features
 
 - 🐍 **Python 3.11+** - Modern Python with type hints

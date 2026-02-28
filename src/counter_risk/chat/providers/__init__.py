@@ -1,7 +1,19 @@
 """Provider clients for chat session dispatch."""
 
-from counter_risk.chat.providers.anthropic_stub import AnthropicStubProvider
-from counter_risk.chat.providers.base import ProviderClient
-from counter_risk.chat.providers.openai_stub import OpenAIStubProvider
+from counter_risk.chat.providers.base import (
+    LangChainProviderClient,
+    ProviderClient,
+    ProviderModelRegistry,
+    build_provider_clients,
+    build_provider_model_registry,
+    provider_env_available,
+)
 
-__all__ = ["AnthropicStubProvider", "OpenAIStubProvider", "ProviderClient"]
+__all__ = [
+    "LangChainProviderClient",
+    "ProviderClient",
+    "ProviderModelRegistry",
+    "build_provider_clients",
+    "build_provider_model_registry",
+    "provider_env_available",
+]

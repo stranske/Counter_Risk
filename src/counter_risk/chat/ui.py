@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 
 from counter_risk.chat.context import RunContext
-from counter_risk.chat.session import ChatSession, is_provider_model_supported
+from counter_risk.chat.session import (
+    ChatSession,
+    ChatSessionError,
+    PromptInjectionError,
+    is_provider_model_supported,
+)
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -41,6 +49,21 @@ def submit_chat_message(
             validation_error="Select a valid provider and model before submitting.",
         )
 
-    session = session_factory(context, provider_key, model_key)
-    answer = session.send(message, provider_key=provider_key, model_key=model_key)
+    try:
+        session = session_factory(context, provider_key, model_key)
+        answer = session.send(message, provider_key=provider_key, model_key=model_key)
+    except (ChatSessionError, PromptInjectionError) as exc:
+        return SubmitResult(assistant_message=None, validation_error=str(exc))
+    except RuntimeError:
+        _LOGGER.exception(
+            "Chat provider invocation failed for provider=%s model=%s",
+            provider_key,
+            model_key,
+        )
+        return SubmitResult(
+            assistant_message=None,
+            validation_error=(
+                "Chat provider call failed. Check provider credentials/connectivity and retry."
+            ),
+        )
     return SubmitResult(assistant_message=answer, validation_error=None)
