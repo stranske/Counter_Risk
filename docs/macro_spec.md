@@ -52,10 +52,13 @@ Output expectations (ranges affected, invariants):
 - Uses All Programs config for pipeline invocation
 - Generated workbook includes `CPRS - CH`
 - `CPRS - CH!B5` matches parsed lead counterparty from source
-- `CPRS - CH!D10:D20` reflects annualized-volatility transformation
-- `CPRS - CH!E10:E20` reflects notional-allocation transformation
-- No blank numeric cells in `CPRS - CH!D10:E20`
-- Headers in `CPRS - CH!C10:C20` match MOSERS template
+- CPRS-CH annualized/allocation metric writes target the marker-resolved row block
+  bounded by the `Goldman Sachs` and `Credit Agricole` rows before
+  `Total by Counterparty/Clearing House`
+- Default template anchor for the marker-resolved block remains `CPRS - CH!C10:C20`
+  with values written to `CPRS - CH!D10:D20` and `CPRS - CH!E10:E20`
+- No blank numeric cells in the resolved CPRS-CH metric range
+- Marker rows required for writes are present and ordered consistently
 
 ### `RunExTrend_Click`
 
@@ -72,10 +75,13 @@ Output expectations (ranges affected, invariants):
 - Uses Ex Trend config for pipeline invocation
 - Generated workbook includes `CPRS - CH`
 - `CPRS - CH!B5` matches parsed lead counterparty from source
-- `CPRS - CH!D10:D20` reflects annualized-volatility transformation
-- `CPRS - CH!E10:E20` reflects notional-allocation transformation
-- No blank numeric cells in `CPRS - CH!D10:E20`
-- Headers in `CPRS - CH!C10:C20` match MOSERS template
+- CPRS-CH annualized/allocation metric writes target the marker-resolved row block
+  bounded by the `Goldman Sachs` and `Credit Agricole` rows before
+  `Total by Counterparty/Clearing House`
+- Default template anchor for the marker-resolved block remains `CPRS - CH!C10:C20`
+  with values written to `CPRS - CH!D10:D20` and `CPRS - CH!E10:E20`
+- No blank numeric cells in the resolved CPRS-CH metric range
+- Marker rows required for writes are present and ordered consistently
 
 ### `RunTrend_Click`
 
@@ -92,10 +98,13 @@ Output expectations (ranges affected, invariants):
 - Uses Trend config for pipeline invocation
 - Generated workbook includes `CPRS - CH`
 - `CPRS - CH!B5` matches parsed lead counterparty from source
-- `CPRS - CH!D10:D20` reflects annualized-volatility transformation
-- `CPRS - CH!E10:E20` reflects notional-allocation transformation
-- No blank numeric cells in `CPRS - CH!D10:E20`
-- Headers in `CPRS - CH!C10:C20` match MOSERS template
+- CPRS-CH annualized/allocation metric writes target the marker-resolved row block
+  bounded by the `Goldman Sachs` and `Credit Agricole` rows before
+  `Total by Counterparty/Clearing House`
+- Default template anchor for the marker-resolved block remains `CPRS - CH!C10:C20`
+  with values written to `CPRS - CH!D10:D20` and `CPRS - CH!E10:E20`
+- No blank numeric cells in the resolved CPRS-CH metric range
+- Marker rows required for writes are present and ordered consistently
 
 ### `OpenOutputFolder_Click`
 
@@ -113,7 +122,7 @@ Output expectations (ranges affected, invariants):
 
 - Floating-point comparisons for transformed numeric values use tolerance
   `rel_tol=1e-12` and `abs_tol=1e-12`.
-- Allocation percentages in `CPRS - CH!E10:E20` are derived from
+- Allocation percentages in the resolved CPRS-CH metric allocation column are derived from
   `row.notional / sum(notional)` with no additional discretionary rounding in tests.
 - Empty tail slots after available rows are accepted as blanks (`None`) in range-level
   checks, but invariant checks require non-blank values in the enforced core numeric

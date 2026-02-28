@@ -7,7 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeAlias
 
-from counter_risk.mosers.template import load_mosers_template_workbook
+from counter_risk.mosers.template import (
+    find_row_containing_text,
+    load_mosers_template_workbook,
+    resolve_marker_bound_range,
+)
 from counter_risk.parsers.nisa import (
     NisaAllProgramsData,
     NisaTotalsRow,
@@ -23,9 +27,12 @@ _REQUIRED_SHEETS = ("CPRS - CH", "CPRS - FCM")
 _TARGET_SHEET = "CPRS - CH"
 _FCM_SHEET = "CPRS - FCM"
 _PROGRAM_NAME_CELL = "B5"
-_SECTION_LABEL_COLUMN = "C"
-_CH_METRIC_START_ROW = 10
-_CH_METRIC_END_ROW = 20
+_CH_METRIC_START_MARKER = "Goldman Sachs"
+_CH_METRIC_END_MARKER = "Credit Agricole"
+_CH_METRIC_REQUIRED_HEADERS: tuple[tuple[str, ...], ...] = (
+    ("Annualized Volatility",),
+    ("Allocation %", "%"),
+)
 _CH_TOTALS_MARKER = "Total by Counterparty/Clearing House"
 _CH_TOTALS_STOP_MARKERS = ("Total Current Exposure", "MOSERS Program", "Notional Breakdown")
 _FCM_TOTALS_MARKER = "Total by Counterparty/ FCM"
@@ -94,12 +101,13 @@ class MosersPlugValuesMappingRequirements:
 def get_mosers_all_programs_output_structure() -> MosersAllProgramsOutputStructure:
     """Return the output-structure contract used for All Programs workbook generation."""
 
+    metric_start_row, metric_end_row = _resolve_cprs_ch_metric_row_bounds_from_template()
     return MosersAllProgramsOutputStructure(
         required_sheets=_REQUIRED_SHEETS,
         cprs_ch_sheet=_TARGET_SHEET,
         program_name_cell=_PROGRAM_NAME_CELL,
-        cprs_ch_metric_start_row=_CH_METRIC_START_ROW,
-        cprs_ch_metric_end_row=_CH_METRIC_END_ROW,
+        cprs_ch_metric_start_row=metric_start_row,
+        cprs_ch_metric_end_row=metric_end_row,
     )
 
 
@@ -120,12 +128,13 @@ def get_mosers_all_programs_transformation_scope() -> MosersAllProgramsTransform
 def get_mosers_ex_trend_output_structure() -> MosersAllProgramsOutputStructure:
     """Return the output-structure contract used for Ex Trend workbook generation."""
 
+    metric_start_row, metric_end_row = _resolve_cprs_ch_metric_row_bounds_from_template()
     return MosersAllProgramsOutputStructure(
         required_sheets=_REQUIRED_SHEETS,
         cprs_ch_sheet=_TARGET_SHEET,
         program_name_cell=_PROGRAM_NAME_CELL,
-        cprs_ch_metric_start_row=_CH_METRIC_START_ROW,
-        cprs_ch_metric_end_row=_CH_METRIC_END_ROW,
+        cprs_ch_metric_start_row=metric_start_row,
+        cprs_ch_metric_end_row=metric_end_row,
     )
 
 
@@ -146,12 +155,13 @@ def get_mosers_ex_trend_transformation_scope() -> MosersAllProgramsTransformatio
 def get_mosers_trend_output_structure() -> MosersAllProgramsOutputStructure:
     """Return the output-structure contract used for Trend workbook generation."""
 
+    metric_start_row, metric_end_row = _resolve_cprs_ch_metric_row_bounds_from_template()
     return MosersAllProgramsOutputStructure(
         required_sheets=_REQUIRED_SHEETS,
         cprs_ch_sheet=_TARGET_SHEET,
         program_name_cell=_PROGRAM_NAME_CELL,
-        cprs_ch_metric_start_row=_CH_METRIC_START_ROW,
-        cprs_ch_metric_end_row=_CH_METRIC_END_ROW,
+        cprs_ch_metric_start_row=metric_start_row,
+        cprs_ch_metric_end_row=metric_end_row,
     )
 
 
@@ -268,12 +278,13 @@ def _generate_mosers_workbook_from_parser(
     first_program = parsed.ch_rows[0].counterparty if parsed.ch_rows else ""
     worksheet[resolved_structure.program_name_cell] = first_program
 
+    metric_start_row, metric_end_row = _resolve_cprs_ch_metric_row_bounds(worksheet)
     for transform in resolved_transformation_scope.cprs_ch_transforms:
         _write_vertical_values(
             worksheet=worksheet,
             column_letter=transform.target_column,
-            start_row=resolved_structure.cprs_ch_metric_start_row,
-            end_row=resolved_structure.cprs_ch_metric_end_row,
+            start_row=metric_start_row,
+            end_row=metric_end_row,
             values=_build_totals_metric_values(parsed.totals_rows, transform.source_metric),
         )
 
@@ -337,7 +348,9 @@ def _write_totals_rows_by_marker(
         stop_markers=stop_markers,
     )
     if section_bounds is None:
-        return
+        raise ValueError(
+            f"Unable to resolve section marker {section_marker!r} in sheet {worksheet.title!r}."
+        )
     start_row, end_row = section_bounds
 
     total_slots = (end_row - start_row) + 1
@@ -386,23 +399,19 @@ def _get_totals_row_field_value(*, row: NisaTotalsRow, source_field: str) -> Any
 
 
 def _find_marker_row(*, worksheet: Worksheet, marker_text: str) -> int | None:
-    marker = _normalize_marker_text(marker_text)
-    for row_number in range(1, int(worksheet.max_row) + 1):
-        cell_text = worksheet[f"{_SECTION_LABEL_COLUMN}{row_number}"].value
-        if marker in _normalize_marker_text(cell_text):
-            return row_number
-    return None
+    return find_row_containing_text(worksheet, marker_text)
 
 
 def _find_stop_row(
     *, worksheet: Worksheet, start_row: int, stop_markers: tuple[str, ...]
 ) -> int | None:
-    normalized_markers = tuple(_normalize_marker_text(marker) for marker in stop_markers)
-    for row_number in range(start_row, int(worksheet.max_row) + 1):
-        cell_text = _normalize_marker_text(worksheet[f"{_SECTION_LABEL_COLUMN}{row_number}"].value)
-        if any(marker in cell_text for marker in normalized_markers):
-            return row_number
-    return None
+    candidate_rows = [
+        find_row_containing_text(worksheet, marker, min_row=start_row) for marker in stop_markers
+    ]
+    matches = [row for row in candidate_rows if row is not None]
+    if not matches:
+        return None
+    return min(matches)
 
 
 def _resolve_section_bounds(
@@ -422,5 +431,42 @@ def _resolve_section_bounds(
     return start_row, end_row
 
 
-def _normalize_marker_text(value: object) -> str:
-    return " ".join(str(value or "").split()).strip().casefold()
+def _resolve_cprs_ch_metric_row_bounds_from_template() -> tuple[int, int]:
+    workbook = load_mosers_template_workbook()
+    try:
+        if _TARGET_SHEET not in workbook.sheetnames:
+            raise ValueError(f"Unable to locate required MOSERS template sheet {_TARGET_SHEET!r}.")
+        worksheet = workbook[_TARGET_SHEET]
+        return _resolve_cprs_ch_metric_row_bounds(worksheet)
+    finally:
+        workbook.close()
+
+
+def _resolve_cprs_ch_metric_row_bounds(worksheet: Worksheet) -> tuple[int, int]:
+    _validate_metric_headers_present(worksheet)
+    totals_marker_row = _find_marker_row(worksheet=worksheet, marker_text=_CH_TOTALS_MARKER)
+    if totals_marker_row is None:
+        raise ValueError(
+            f"Unable to locate {_CH_TOTALS_MARKER!r} marker in sheet {worksheet.title!r}."
+        )
+    marker_range = resolve_marker_bound_range(
+        worksheet,
+        start_marker=_CH_METRIC_START_MARKER,
+        end_marker=_CH_METRIC_END_MARKER,
+        max_row=totals_marker_row - 1,
+    )
+    return marker_range.start_row, marker_range.end_row
+
+
+def _validate_metric_headers_present(worksheet: Worksheet) -> None:
+    for aliases in _CH_METRIC_REQUIRED_HEADERS:
+        if any(
+            _find_marker_row(worksheet=worksheet, marker_text=alias) is not None
+            for alias in aliases
+        ):
+            continue
+        joined_aliases = ", ".join(repr(alias) for alias in aliases)
+        raise ValueError(
+            "Unable to locate expected CPRS-CH metric header "
+            f"({joined_aliases}) in sheet {worksheet.title!r}."
+        )

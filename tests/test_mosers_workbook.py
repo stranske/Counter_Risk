@@ -348,6 +348,75 @@ def test_generate_mosers_workbook_trend_populates_values_from_trend_fixture() ->
         workbook.close()
 
 
+def test_resolve_cprs_ch_metric_row_bounds_tracks_template_row_shifts() -> None:
+    workbook = workbook_generation_module.load_mosers_template_workbook()
+    try:
+        worksheet = workbook["CPRS - CH"]
+        baseline_start, baseline_end = workbook_generation_module._resolve_cprs_ch_metric_row_bounds(
+            worksheet
+        )
+        worksheet.insert_rows(baseline_start, amount=2)
+        shifted_start, shifted_end = workbook_generation_module._resolve_cprs_ch_metric_row_bounds(
+            worksheet
+        )
+
+        assert shifted_start == baseline_start + 2
+        assert shifted_end == baseline_end + 2
+    finally:
+        workbook.close()
+
+
+def test_generate_mosers_workbook_fails_when_required_markers_are_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workbook = workbook_generation_module.load_mosers_template_workbook()
+    try:
+        worksheet = workbook["CPRS - CH"]
+        marker_row = workbook_generation_module._find_marker_row(
+            worksheet=worksheet,
+            marker_text="Total by Counterparty/Clearing House",
+        )
+        assert marker_row is not None
+        worksheet[f"C{marker_row}"] = "missing marker"
+
+        monkeypatch.setattr(
+            workbook_generation_module,
+            "load_mosers_template_workbook",
+            lambda: workbook,
+        )
+
+        with pytest.raises(ValueError, match="Total by Counterparty/Clearing House"):
+            generate_mosers_workbook(Path("tests/fixtures/raw_nisa_all_programs.xlsx"))
+    finally:
+        workbook.close()
+
+
+def test_find_marker_row_handles_column_shifts() -> None:
+    workbook = workbook_generation_module.load_mosers_template_workbook()
+    try:
+        worksheet = workbook["CPRS - CH"]
+        marker_text = "Total by Counterparty/Clearing House"
+        marker_row = workbook_generation_module._find_marker_row(
+            worksheet=worksheet,
+            marker_text=marker_text,
+        )
+        assert marker_row is not None
+
+        marker_value = worksheet[f"C{marker_row}"].value
+        worksheet[f"B{marker_row}"] = marker_value
+        worksheet[f"C{marker_row}"] = None
+
+        assert (
+            workbook_generation_module._find_marker_row(
+                worksheet=worksheet,
+                marker_text=marker_text,
+            )
+            == marker_row
+        )
+    finally:
+        workbook.close()
+
+
 def _bump_first_annualized_volatility_column(workbook: Any) -> bool:
     for sheet_name in workbook.sheetnames:
         worksheet = workbook[sheet_name]
@@ -442,7 +511,5 @@ def _find_stop_row(worksheet: Any, start_row: int, stop_markers: tuple[str, ...]
 
 
 def _find_metric_section_bounds(worksheet: Any) -> tuple[int, int]:
-    """Return the fixed metric section bounds used by the MOSERS workbook generator."""
-    from counter_risk.mosers.workbook_generation import _CH_METRIC_END_ROW, _CH_METRIC_START_ROW
-
-    return (_CH_METRIC_START_ROW, _CH_METRIC_END_ROW)
+    """Return metric section bounds resolved from template markers."""
+    return workbook_generation_module._resolve_cprs_ch_metric_row_bounds(worksheet)
