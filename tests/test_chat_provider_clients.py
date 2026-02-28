@@ -65,6 +65,10 @@ def test_langchain_provider_client_uses_fallback_provider_when_first_unavailable
             "anthropic": set(),
         },
     )
+    monkeypatch.setenv("LANGSMITH_API_KEY", "test-key")
+    monkeypatch.delenv("LANGCHAIN_TRACING_V2", raising=False)
+    monkeypatch.delenv("LANGCHAIN_API_KEY", raising=False)
+    monkeypatch.delenv("LANGCHAIN_PROJECT", raising=False)
     calls: list[tuple[str | None, str | None]] = []
 
     def _fake_build_chat_client(

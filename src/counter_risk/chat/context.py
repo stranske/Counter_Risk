@@ -125,13 +125,17 @@ def load_chat_logs(run_dir: Path | str) -> list[dict[str, Any]]:
     for log_path in sorted(chat_dir.glob("*.jsonl")):
         try:
             with log_path.open("r", encoding="utf-8") as handle:
-                for line in handle:
+                for line_number, line in enumerate(handle, start=1):
                     stripped = line.strip()
                     if not stripped:
                         continue
                     payload = json.loads(stripped)
-                    if isinstance(payload, dict):
-                        records.append(dict(payload))
+                    if not isinstance(payload, dict):
+                        raise RunContextError(
+                            "Malformed chat log file: "
+                            f"{log_path} contains non-object JSON on line {line_number}"
+                        )
+                    records.append(dict(payload))
         except json.JSONDecodeError as exc:
             raise RunContextError(f"Malformed chat log file: {log_path}") from exc
         except OSError as exc:

@@ -161,3 +161,13 @@ def test_load_chat_logs_raises_for_malformed_jsonl(tmp_path: Path) -> None:
 
     with pytest.raises(RunContextError, match="Malformed chat log file"):
         load_chat_logs(run_dir)
+
+
+def test_load_chat_logs_raises_for_non_object_json_payload(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    chat_dir = run_dir / "chat_logs"
+    chat_dir.mkdir(parents=True)
+    (chat_dir / "chat_log_20260213.jsonl").write_text('["not-an-object"]\n', encoding="utf-8")
+
+    with pytest.raises(RunContextError, match="non-object JSON on line 1"):
+        load_chat_logs(run_dir)
