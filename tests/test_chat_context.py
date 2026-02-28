@@ -13,6 +13,7 @@ from counter_risk.chat.context import (
     RunContextError,
     _load_parquet_table,
     discover_tables,
+    load_chat_logs,
     load_manifest,
     load_run_context,
 )
@@ -36,12 +37,30 @@ def test_load_run_context_returns_non_empty_summary(tmp_path: Path) -> None:
         "counterparty,Notional,NotionalChange\nA,10.0,2.5\n",
         encoding="utf-8",
     )
+    chat_dir = run_dir / "chat_logs"
+    chat_dir.mkdir()
+    (chat_dir / "chat_log_20260213.jsonl").write_text(
+        json.dumps(
+            {
+                "interaction": 1,
+                "provider": "openai",
+                "model": "gpt-5.2",
+                "question": "top exposures",
+                "response": "ok",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     context = load_run_context(run_dir)
 
     assert context.warnings
     assert context.deltas["all_programs"][0]["counterparty"] == "A"
     assert "totals.csv" in context.tables
+    assert len(context.chat_logs) == 1
+    assert context.chat_logs[0]["provider"] == "openai"
+    assert "Chat turns: 1" in context.summary()
     assert context.summary().strip() != ""
 
 
@@ -125,3 +144,20 @@ def test_load_parquet_table_pyarrow_io_error_message(
         _load_parquet_table(parquet_path)
 
     assert "Check file path and permissions" in str(exc_info.value)
+
+
+def test_load_chat_logs_returns_empty_when_directory_missing(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+
+    assert load_chat_logs(run_dir) == []
+
+
+def test_load_chat_logs_raises_for_malformed_jsonl(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    chat_dir = run_dir / "chat_logs"
+    chat_dir.mkdir(parents=True)
+    (chat_dir / "chat_log_20260213.jsonl").write_text("{bad-json\n", encoding="utf-8")
+
+    with pytest.raises(RunContextError, match="Malformed chat log file"):
+        load_chat_logs(run_dir)

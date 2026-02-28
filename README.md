@@ -97,6 +97,8 @@ The run-context chat assistant now uses LangChain-backed providers (instead of s
   - `CLAUDE_API_STRANSKE` (Anthropic path)
 - Optional routing/model overrides are also documented in `.env.example` (`LANGCHAIN_PROVIDER`,
   `LANGCHAIN_MODEL`, slot overrides, timeout/retry settings).
+- Chat transcripts are written per run under `runs/<...>/chat_logs/`; see
+  [docs/chat_logging.md](docs/chat_logging.md) for payload fields and LangSmith trace linkage.
 
 ## Features
 
