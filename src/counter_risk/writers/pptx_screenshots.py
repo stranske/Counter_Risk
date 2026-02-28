@@ -10,6 +10,8 @@ from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.shapes.base import BaseShape
 from pptx.slide import Slide
 
+from counter_risk.normalize import canonicalize_name
+
 _SECTION_TITLE_SUBSTRINGS: dict[str, tuple[str, ...]] = {
     "allprograms": ("allprograms",),
     "extrend": ("extrend", "excludingtrend"),
@@ -24,7 +26,8 @@ _EXPECTED_PICTURE_GEOMETRY_BY_SECTION: dict[str, tuple[tuple[int, int, int, int]
 
 
 def _normalize_key(value: str) -> str:
-    return "".join(ch.lower() for ch in value if ch.isalnum())
+    canonical = canonicalize_name(value)
+    return "".join(ch.lower() for ch in canonical if ch.isalnum())
 
 
 def _slide_title(slide: Slide) -> str:
