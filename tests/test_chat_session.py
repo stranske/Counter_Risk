@@ -30,6 +30,7 @@ _MODEL_KEY = "chat-model-placeholder"
 def _provider_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GITHUB_TOKEN", "test-token")
     monkeypatch.setenv("CLAUDE_API_STRANSKE", "test-token")
+    monkeypatch.setenv("COUNTER_RISK_CHAT_OFFLINE_MODE", "1")
 
 
 def _provider_model(provider: str) -> str:
@@ -100,6 +101,29 @@ def test_chat_session_returns_manifest_top_exposure(tmp_path: Path) -> None:
     assert "all_programs: A (10.00)" in answer
     assert answer.index("all_programs: B (20.00)") < answer.index("all_programs: A (10.00)")
     assert len(session.history) == 2
+
+
+def test_chat_session_rejects_local_provider_when_offline_mode_is_disabled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("COUNTER_RISK_CHAT_OFFLINE_MODE", raising=False)
+    context = load_run_context(_write_minimal_run(tmp_path))
+
+    with pytest.raises(ChatSessionError, match="offline test mode"):
+        ChatSession(context=context, provider="local", model=_MODEL_KEY)
+
+
+def test_get_provider_models_hides_local_provider_when_offline_mode_is_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("COUNTER_RISK_CHAT_OFFLINE_MODE", raising=False)
+
+    provider_models = get_provider_models()
+
+    assert "local" not in provider_models
+    assert "openai" in provider_models
+    assert "anthropic" in provider_models
 
 
 def test_chat_session_provider_is_deterministic_for_same_prompt(

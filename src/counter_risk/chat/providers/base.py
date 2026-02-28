@@ -40,7 +40,9 @@ class ProviderModelRegistry:
     provider_model_required_env_keys: dict[str, dict[str, tuple[str, ...]]]
 
 
-def build_provider_model_registry(*, local_model: str) -> ProviderModelRegistry:
+def build_provider_model_registry(
+    *, local_model: str, include_local: bool = True
+) -> ProviderModelRegistry:
     """Build provider model allowlists from shared slot configuration."""
 
     slot_catalog = get_provider_model_catalog()
@@ -67,17 +69,21 @@ def build_provider_model_registry(*, local_model: str) -> ProviderModelRegistry:
 
     anthropic_model_requirements = dict.fromkeys(sorted(anthropic_models), _ANTHROPIC_ENV_KEYS)
 
+    provider_models: dict[str, set[str]] = {
+        "openai": openai_models,
+        "anthropic": anthropic_models,
+    }
+    provider_model_required_env_keys: dict[str, dict[str, tuple[str, ...]]] = {
+        "openai": openai_model_requirements,
+        "anthropic": anthropic_model_requirements,
+    }
+    if include_local:
+        provider_models["local"] = {local_model}
+        provider_model_required_env_keys["local"] = {local_model: ()}
+
     return ProviderModelRegistry(
-        provider_models={
-            "local": {local_model},
-            "openai": openai_models,
-            "anthropic": anthropic_models,
-        },
-        provider_model_required_env_keys={
-            "local": {local_model: ()},
-            "openai": openai_model_requirements,
-            "anthropic": anthropic_model_requirements,
-        },
+        provider_models=provider_models,
+        provider_model_required_env_keys=provider_model_required_env_keys,
     )
 
 

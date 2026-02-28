@@ -24,11 +24,48 @@ from counter_risk.chat.utils import cmp_with_tol, is_close
 _LOGGER = logging.getLogger(__name__)
 
 _PLACEHOLDER_MODEL: Final[str] = "chat-model-placeholder"
+_OFFLINE_MODE_ENV: Final[str] = "COUNTER_RISK_CHAT_OFFLINE_MODE"
 _PROVIDER_MODEL_REGISTRY = build_provider_model_registry(local_model=_PLACEHOLDER_MODEL)
 _PROVIDER_MODELS: Final[dict[str, set[str]]] = _PROVIDER_MODEL_REGISTRY.provider_models
 _PROVIDER_MODEL_REQUIRED_ENV_KEYS: Final[dict[str, dict[str, tuple[str, ...]]]] = (
     _PROVIDER_MODEL_REGISTRY.provider_model_required_env_keys
 )
+
+
+def _is_truthy(value: str | None) -> bool:
+    if value is None:
+        return False
+    return value.strip().casefold() in {"1", "true", "yes", "on"}
+
+
+def _offline_mode_enabled() -> bool:
+    return _is_truthy(os.environ.get(_OFFLINE_MODE_ENV))
+
+
+def _visible_provider_models() -> dict[str, set[str]]:
+    if _offline_mode_enabled():
+        return _PROVIDER_MODELS
+    return {
+        provider: models
+        for provider, models in _PROVIDER_MODELS.items()
+        if provider != "local"
+    }
+
+
+def _default_provider_key() -> str:
+    visible = _visible_provider_models()
+    for provider in ("openai", "anthropic", "local"):
+        if provider in visible:
+            return provider
+    return "openai"
+
+
+def _default_model_key() -> str:
+    provider = _default_provider_key()
+    models = tuple(sorted(_visible_provider_models().get(provider, ())))
+    if models:
+        return models[0]
+    return _PLACEHOLDER_MODEL
 
 _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
     re.compile(r"ignore\s+(all\s+)?(previous|prior)\s+instructions", re.IGNORECASE),
@@ -145,8 +182,8 @@ class ChatSession:
     """In-memory chat session with provider/model validation and guarded prompting."""
 
     context: RunContext
-    provider: str = "local"
-    model: str = _PLACEHOLDER_MODEL
+    provider: str = field(default_factory=_default_provider_key)
+    model: str = field(default_factory=_default_model_key)
     history: list[ChatMessage] = field(default_factory=list)
     enable_llm_logging: bool = False
     _interaction_counter: int = field(default=0, init=False, repr=False)
@@ -155,6 +192,11 @@ class ChatSession:
         self.provider = self.provider.strip().lower()
         self.model = self.model.strip()
 
+        if self.provider == "local" and not _offline_mode_enabled():
+            raise ChatSessionError(
+                "Provider 'local' is only available in offline test mode "
+                f"({_OFFLINE_MODE_ENV}=1)."
+            )
         if self.provider != "local" and not provider_env_available(self.provider):
             raise ChatSessionError(
                 f"Provider '{self.provider}' is not configured in the environment."
@@ -186,6 +228,11 @@ class ChatSession:
         selected_provider = (provider_key or self.provider).strip().lower()
         selected_model = (model_key or self.model).strip()
 
+        if selected_provider == "local" and not _offline_mode_enabled():
+            raise ChatSessionError(
+                "Provider 'local' is only available in offline test mode "
+                f"({_OFFLINE_MODE_ENV}=1)."
+            )
         if selected_provider != "local" and not provider_env_available(selected_provider):
             raise ChatSessionError(
                 f"Provider '{selected_provider}' is not configured in the environment."
@@ -254,6 +301,8 @@ def is_provider_model_supported(provider: str, model: str) -> bool:
     """Return True when provider/model selection is allowed."""
 
     provider_key = provider.strip().lower()
+    if provider_key == "local" and not _offline_mode_enabled():
+        return False
     model_key = model.strip()
     available_models = _PROVIDER_MODELS.get(provider_key)
     if available_models is None:
@@ -267,7 +316,10 @@ def is_provider_model_supported(provider: str, model: str) -> bool:
 def get_provider_models() -> dict[str, tuple[str, ...]]:
     """Return provider/model catalog for UI and validation surfaces."""
 
-    return {provider: tuple(sorted(models)) for provider, models in _PROVIDER_MODELS.items()}
+    return {
+        provider: tuple(sorted(models))
+        for provider, models in _visible_provider_models().items()
+    }
 
 
 # Safeguards reduce injection risk but do not replace model-side safety systems.
