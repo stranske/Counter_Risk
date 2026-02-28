@@ -87,6 +87,12 @@ class WorkflowConfig(BaseModel):
     mosers_all_programs_xlsx: Path | None = None
     raw_nisa_all_programs_xlsx: Path | None = None
     daily_holdings_pdf: Path | None = None
+    cash_source_type: Literal["xlsx", "csv", "pdf", "none"] | None = None
+    cash_source_path: Path | None = None
+    cash_overrides_csv: Path | None = None
+    required_repo_counterparties: tuple[str, ...] = Field(default_factory=tuple)
+    cash_total_min: float | None = None
+    cash_total_max: float | None = None
     dropin_all_programs_template_xlsx: Path | None = None
     mosers_ex_trend_xlsx: Path | None = None
     raw_nisa_ex_trend_xlsx: Path | None = None
@@ -147,6 +153,16 @@ class WorkflowConfig(BaseModel):
             if normalized_name in seen:
                 raise ValueError(f"output_generators contains duplicate name: {entry.name!r}")
             seen.add(normalized_name)
+        return value
+
+    @field_validator("cash_total_max")
+    @classmethod
+    def _validate_cash_total_range_upper_bound(cls, value: float | None, info: Any) -> float | None:
+        if value is None:
+            return value
+        lower_bound = info.data.get("cash_total_min")
+        if isinstance(lower_bound, (int, float)) and value < float(lower_bound):
+            raise ValueError("cash_total_max must be greater than or equal to cash_total_min")
         return value
 
 
