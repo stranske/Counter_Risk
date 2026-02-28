@@ -321,17 +321,17 @@ Include confidence flags and “unattributed remainder.”
 - Complex factor decomposition
 
 ## Tasks
-- [x] Implement `attribute_changes(current_df, prior_df) -> attribution_report`
-- [x] Define confidence levels:
-- [x] High: exact match keys + clean deltas
-- [x] Medium: normalized match with minor differences
-- [x] Low: fuzzy/partial match or missing prior data
-- [x] Output `change_attribution.md` and `change_attribution.csv`
-- [x] Add tests with synthetic prior/current pairs
+- [ ] Implement `attribute_changes(current_df, prior_df) -> attribution_report`
+- [ ] Define confidence levels:
+- [ ] High: exact match keys + clean deltas
+- [ ] Medium: normalized match with minor differences
+- [ ] Low: fuzzy/partial match or missing prior data
+- [ ] Output `change_attribution.md` and `change_attribution.csv`
+- [ ] Add tests with synthetic prior/current pairs
 
 ## Acceptance Criteria
-- [x] When prior month data is available, attribution outputs are generated
-- [x] Unmatched items and low-confidence matches are explicitly labeled (no silent assumptions)
+- [ ] When prior month data is available, attribution outputs are generated
+- [ ] Unmatched items and low-confidence matches are explicitly labeled (no silent assumptions)
 
 
 13. [Agent] [M3] Add a “Data Quality Report” section to manifest + operator-friendly warnings in Runner UI
@@ -396,4 +396,200 @@ Introduce a mapping registry and a guided process for maintainers to update it w
 - [ ] Maintainers can update the registry and re-run to clear reconciliation warnings
 
 
+15. [Agent] [Ops] Productionize `counter-risk run` for real monthly executions
+## Why
+The CLI and Runner workbook still call the fixture replay stub, so operators cannot execute the actual monthly pipeline without developer assistance. We need a real `counter-risk run` command that drives the same orchestration used by maintainers.
 
+## Scope
+Teach the CLI to discover inputs, invoke `counter_risk.pipeline.run`, and write run artifacts for All/Ex/Trend variants, then update Runner.xlsm to call the new command.
+
+## Non-Goals
+- Building new operator UI controls (handled in follow-on issues)
+- Adding LangChain/LLM safeguards
+
+## Tasks
+- [ ] Add a production `run` handler in `src/counter_risk/cli.py` that accepts config/settings flags (profile, discovery mode, strict policy, formatting profile) and calls a new orchestration function.
+- [ ] Extend `src/counter_risk/pipeline/run.py` (or a new module) with an entrypoint that performs input discovery/manual overrides, executes writers, and records manifest/data-quality artifacts.
+- [ ] Update `assets/vba/RunnerLaunch.bas` and `src/counter_risk/runner_launch.py` to build command arguments for the new run mode (no `--fixture-replay`).
+- [ ] Add pytest integration coverage that shells out to `counter-risk run` with sample configs to verify successful runs and missing-input failures.
+- [ ] Document the new command-line usage in `README.md` and operator docs.
+
+## Acceptance Criteria
+- [ ] `counter-risk run --config <cfg> --as-of-date YYYY-MM-DD` processes real inputs and writes manifest + data-quality summary into `runs/<timestamp>`.
+- [ ] Runner buttons launch the new command path (validated manually or via mocked VBA parity tests).
+- [ ] Integration tests cover success plus missing-input error handling and run in CI.
+- [ ] README/operator docs describe the command and arguments for operators and maintainers.
+
+## Implementation Notes
+- Update `src/counter_risk/cli.py`, `src/counter_risk/pipeline/run.py`, `assets/vba/RunnerLaunch.bas`, `src/counter_risk/runner_launch.py`, add `tests/integration/test_cli_run.py`.
+- Reuse `counter_risk.config.load_config` and `ManifestBuilder` so artifacts stay consistent with maintainer runs.
+
+
+16. [Agent] [Ops] Expand Runner.xlsm with operator settings + manifest status links
+## Why
+Runner.xlsm only exposes the As-Of date selector and fixture replay buttons. Operators cannot toggle auto-discovery/manual input mode, strict vs warn policies, or formatting profiles, nor can they access manifest/data-quality artifacts directly after a run.
+
+## Scope
+Enhance the workbook build + VBA to include a Settings sheet, serialize operator choices to the CLI, and show completion status with hyperlinks into the latest run folder.
+
+## Non-Goals
+- Tkinter desktop UI (covered separately)
+- Changing business logic beyond wiring new CLI flags
+
+## Tasks
+- [ ] Update `scripts/build_runner_workbook.py` to add a Settings sheet (input roots, discovery mode, strict/warn toggle, formatting profile, output root) plus named ranges.
+- [ ] Extend `assets/vba/RunnerLaunch.bas` to read Settings values, serialize them to a temporary JSON/YAML file, and pass the path via a `--settings` argument.
+- [ ] Add status/result cells plus buttons that open the manifest, data-quality summary, and PPT output folder once the run finishes.
+- [ ] Write deterministic tests (e.g., `tests/test_runner_workbook.py`) validating the generated XLSM structure and named ranges.
+- [ ] Document the new Settings workflow in `docs/operator_ux_decision.md` and `README.md`.
+
+## Acceptance Criteria
+- [ ] Operators can edit discovery mode, strict policy, formatting profile, and output root inside Runner.xlsm before launching a run.
+- [ ] Launch buttons pass the serialized settings to the CLI (verified via automated tests or local run).
+- [ ] After completion, buttons open manifest/data-quality/output folder without manual navigation.
+- [ ] Workbook build/tests confirm the Settings sheet and status elements exist with default values.
+
+## Implementation Notes
+- Touch `scripts/build_runner_workbook.py`, `assets/vba/RunnerLaunch.bas`, `src/counter_risk/runner_launch.py`, `docs/operator_ux_decision.md`, `README.md`.
+- Store settings files under `%TEMP%/counter-risk-runner-settings.json` to avoid repo writes.
+
+
+17. [Agent] [Ops] Ship a Tkinter GUI runner for macro-restricted operators
+## Why
+Some operator environments block macros entirely. We need a lightweight Windows desktop app that mirrors Runner.xlsm controls so monthly runs stay fully automated without CLI access.
+
+## Scope
+Add a Tkinter-based GUI that exposes the same settings as Runner.xlsm, launches the pipeline via the new CLI entrypoint, and surfaces status plus artifact links. Package it via PyInstaller alongside the CLI.
+
+## Non-Goals
+- Replacing Runner.xlsm where macros are allowed
+- Scheduling/queue management
+
+## Tasks
+- [ ] Create `src/counter_risk/gui/runner.py` (or similar) implementing the Tkinter window with date picker, variant toggles, discovery/strict switches, formatting dropdown, and output buttons.
+- [ ] Teach `src/counter_risk/cli.py` to open the GUI when invoked with `counter-risk gui` (or no args when GUI mode enabled).
+- [ ] Wire GUI actions to serialize settings and invoke the same orchestration as the CLI (subprocess or shared function).
+- [ ] Update `release.spec` and packaging docs so PyInstaller bundles the GUI dependencies.
+- [ ] Add smoke tests (headless if possible) that launch the GUI in dry-run mode and exit cleanly, plus operator documentation with screenshots.
+
+## Acceptance Criteria
+- [ ] `counter-risk gui` opens a window where operators can configure and start runs without Excel/macros.
+- [ ] GUI provides live status plus buttons to open manifest, data-quality summary, and output folders post-run.
+- [ ] PyInstaller bundle includes the GUI mode and documentation tells operators how to install/run it.
+- [ ] Automated smoke/integration tests validate GUI startup and dry-run execution.
+
+## Implementation Notes
+- New module under `src/counter_risk/gui/`, updates to `src/counter_risk/cli.py`, `release.spec`, docs (`docs/operator_ux_decision.md`, new `docs/gui_runner.md`), plus tests (could use `pytest-qt` or Tkinter-friendly harness).
+
+
+18. [Agent] [Ops] Introduce a formatting settings contract and enforcement layer
+## Why
+Stakeholders need control over decimals, currency symbols, and accounting styles without code edits. Today formatting relies on template defaults, so adjustments are manual and error-prone.
+
+## Scope
+Define a formatting settings schema, let operators choose profiles via Runner settings/GUI, and apply those formats consistently across MOSERS workbooks, historical appenders, and PPT/table renderers.
+
+## Non-Goals
+- Redesigning Excel templates beyond applying number formats
+- Handling arbitrary style/theming (focus on numeric formatting)
+
+## Tasks
+- [ ] Document the formatting schema (e.g., `docs/FORMAT_SETTINGS.md`) covering fields like currency_format, decimal places per metric, negative style, and thousands separators.
+- [ ] Implement `src/counter_risk/formatting.py` to parse settings, validate Excel number-format strings, and expose helper functions for writers/renderers.
+- [ ] Update `src/counter_risk/mosers/workbook_generation.py` to apply requested formats when writing new cells.
+- [ ] Update `src/counter_risk/writers/historical_update.py` and related writers to override number formats per settings after copying styles.
+- [ ] Ensure PPT/table rendering pipelines honor the same settings before rasterizing tables, and add tests verifying outputs change when settings change.
+
+## Acceptance Criteria
+- [ ] Operators can select at least one alternate formatting profile and see it reflected in MOSERS + historical outputs.
+- [ ] Formatting settings are serialized with each run and recorded in the manifest or companion file.
+- [ ] Tests cover default vs custom settings across MOSERS, historical append, and table renders.
+- [ ] Documentation describes every formatting option, defaults, and how to change them safely.
+
+## Implementation Notes
+- Files: new `src/counter_risk/formatting.py`, updates to `Runner` settings serialization, MOSERS writer, historical appenders, PPT/table renderers, plus `tests/test_formatting.py`.
+
+
+19. [Agent] [Ops] Make MOSERS CPRS-CH writes marker-driven with fail-fast warnings
+## Why
+`workbook_generation.py` still uses fixed row/column coordinates for CPRS-CH metrics. Template edits silently misplace values, breaking the “no hard-coded row numbers” acceptance criteria.
+
+## Scope
+Detect the CPRS-CH section via headers/markers (or named ranges), write relative to those anchors, and emit manifest warnings when markers are missing or shifted.
+
+## Non-Goals
+- Broader MOSERS template redesign
+- Formatting profile work (handled separately)
+
+## Tasks
+- [ ] Enhance the MOSERS template helper to locate metric blocks by scanning for headers like “Annualized Volatility” and “Allocation %” and return column/row spans.
+- [ ] Update `generate_mosers_workbook*` functions to consume the dynamic coordinates and remove `_START_ROW/_END_ROW` constants.
+- [ ] When markers are missing, raise a descriptive error or log a manifest warning instead of silently skipping writes.
+- [ ] Add tests that simulate row/column shifts in the template to verify detection/failure behavior.
+- [ ] Update `docs/macro_spec.md` (or MOSERS-specific docs) to explain the marker-based approach.
+
+## Acceptance Criteria
+- [ ] MOSERS writers no longer rely on fixed row/column constants for CPRS-CH metrics.
+- [ ] Runs fail or warn loudly when markers are absent or inconsistent.
+- [ ] Tests cover both nominal templates and shifted templates.
+- [ ] Documentation reflects the marker-driven requirement and troubleshooting steps.
+
+## Implementation Notes
+- Modify `src/counter_risk/mosers/workbook_generation.py`, potentially add helper utilities under `src/counter_risk/mosers/template.py`, ensure manifest warning plumbing exists, and extend `tests/mosers/test_workbook_generation.py`.
+
+
+20. [Agent] [Chat] Replace stub providers with real LangChain clients
+## Why
+The current chat workflow only talks to deterministic stub classes (`openai_stub`, `anthropic_stub`). Operators cannot query actual GPT or Claude models, and Issue #33’s “LLM interaction layer” remains unfulfilled.
+
+## Scope
+Integrate the shared LangChain provider helpers from `tools/llm_provider.py`, expose real provider/model lists to the chat session/UI, and remove the temporary placeholder model roster.
+
+## Non-Goals
+- UI transcript logging (handled separately)
+- LangSmith prompt logging
+
+## Tasks
+- [ ] Update `src/counter_risk/chat/providers/base.py` to define a concrete `LangChainProviderClient` wrapper that calls `tools.llm_provider.get_llm_provider()` with selected provider/model.
+- [ ] Replace `_PROVIDER_CLIENTS` and `_PROVIDER_MODELS` definitions in `src/counter_risk/chat/session.py` with data sourced from `tools.llm_provider` (real model names + availability checks).
+- [ ] Implement provider adapters that call LangChain’s `ChatOpenAI` / `ChatAnthropic` / GitHub Models endpoints (using the shared helper) and return assistant text + optional trace metadata.
+- [ ] Add environment/config plumbing so provider API keys and base URLs are loaded from the same mechanism used by repo automation (docs + `.env.example` update).
+- [ ] Expand unit tests (`tests/test_chat_session.py`) to cover real provider selection (mocking LangChain client responses) and invalid model errors.
+
+## Acceptance Criteria
+- [ ] Chat UI/session code can call at least two real providers (OpenAI via GitHub Models + Anthropic) when credentials are configured.
+- [ ] Provider/model dropdowns list actual model IDs returned by the LangChain helper instead of placeholder text.
+- [ ] When a provider call fails (rate limit, invalid key), `SubmitResult` returns a clear error string and no assistant message.
+- [ ] Tests cover provider/model validation and ensure stubs are only used in offline test mode.
+
+## Implementation Notes
+- Touch `src/counter_risk/chat/providers/*.py`, `src/counter_risk/chat/session.py`, `src/counter_risk/chat/ui.py`, `tools/llm_provider.py` (if additional hooks needed), plus docs under `docs/AGENTS.md` or a new `docs/chat/README.md`.
+
+
+21. [Agent] [Chat] Persist chat prompts/responses with LangSmith trace metadata
+## Why
+Issue #33 requires treating workbook text as untrusted and logging prompt/response interactions. Currently chat runs are ephemeral—no transcript storage, no LangSmith trace links, and no manifests capturing what was asked.
+
+## Scope
+Capture each chat turn (sanitized prompt, provider/model, response, timestamps, LangSmith trace URL if available) into the run folder and expose a summary for auditors/operators.
+
+## Non-Goals
+- Building a full chat UI dashboard (CLI export is sufficient)
+- Redacting secrets beyond existing sanitization (reuse existing guardrails)
+
+## Tasks
+- [ ] Extend `ChatSession.ask()` to capture prompt payload, LangChain response metadata (trace/run IDs), and assistant output before returning.
+- [ ] Add a logging sink (e.g., `run_dir/chat_logs/chat_log_<timestamp>.jsonl`) that appends each turn with fields: provider, model, sanitized prompt text, response text, LangSmith trace URL if present.
+- [ ] Update `RunContext` to load chat logs (or at least provide a helper) so future UI features can display history.
+- [ ] Surface trace links/errors to the user: include the LangSmith URL (when available) and instruct operators how to retrieve the transcript.
+- [ ] Write documentation (`docs/AGENTS.md` or new `docs/chat_logging.md`) explaining retention policy, sensitive data handling, and how to review logs.
+- [ ] Add tests ensuring logs are written, rotations occur per run, and LangSmith metadata is included/mocked when the provider returns it.
+
+## Acceptance Criteria
+- [ ] Every chat submission writes a JSONL record with prompt, response, provider/model, timestamp, and (when available) LangSmith trace URL.
+- [ ] Operators can locate logs under the associated run folder and correlate them with LangSmith traces.
+- [ ] Test suite validates logging behavior and ensures failures when the log directory is unwritable surface clear errors.
+- [ ] Documentation covers how to enable/disable logging and how to review prompts for audit purposes.
+
+## Implementation Notes
+- Modify `src/counter_risk/chat/session.py`, `src/counter_risk/chat/context.py`, add a logging helper module, and update docs. Consider gating logging via config/env (`CHAT_LOGGING_ENABLED`, default true).
