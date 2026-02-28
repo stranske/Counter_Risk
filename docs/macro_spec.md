@@ -78,6 +78,8 @@ Output expectations (ranges affected, invariants):
 - CPRS-CH annualized/allocation metric writes target the marker-resolved row block
   bounded by the `Goldman Sachs` and `Credit Agricole` rows before
   `Total by Counterparty/Clearing House`
+- Default template anchor for the marker-resolved block remains `CPRS - CH!C10:C20`
+  with values written to `CPRS - CH!D10:D20` and `CPRS - CH!E10:E20`
 - No blank numeric cells in the resolved CPRS-CH metric range
 - Marker rows required for writes are present and ordered consistently
 
@@ -99,6 +101,8 @@ Output expectations (ranges affected, invariants):
 - CPRS-CH annualized/allocation metric writes target the marker-resolved row block
   bounded by the `Goldman Sachs` and `Credit Agricole` rows before
   `Total by Counterparty/Clearing House`
+- Default template anchor for the marker-resolved block remains `CPRS - CH!C10:C20`
+  with values written to `CPRS - CH!D10:D20` and `CPRS - CH!E10:E20`
 - No blank numeric cells in the resolved CPRS-CH metric range
 - Marker rows required for writes are present and ordered consistently
 
