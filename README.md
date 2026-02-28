@@ -47,6 +47,24 @@ output_generators:
 
 Setting `enabled: false` cleanly skips that generator for the run.
 
+## Repo Cash Source Configuration
+
+Repo Cash loading supports layered source selection and audit-friendly overrides:
+
+1. `cash_overrides_<as_of_date>.csv` (or explicit `cash_overrides_csv`)
+2. Structured source (`cash_source_type: csv|xlsx` with `cash_source_path`)
+3. PDF source (`cash_source_type: pdf` or `daily_holdings_pdf`)
+
+Optional config keys:
+
+- `cash_source_type`: `csv`, `xlsx`, `pdf`, or `none`
+- `cash_source_path`: explicit source file path
+- `cash_overrides_csv`: explicit overrides CSV path
+- `required_repo_counterparties`: counterparties that must be present in the loaded map
+- `cash_total_min` / `cash_total_max`: expected total-range checks
+
+Source choice and overrides are emitted in run warnings, which are persisted in `manifest.json`.
+
 ## Start here
 
 - **Project agent guide:** [AGENTS.md](AGENTS.md)
