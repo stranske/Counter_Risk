@@ -140,6 +140,8 @@ The run-context chat assistant now uses LangChain-backed providers (instead of s
   - `GITHUB_TOKEN` (used for OpenAI-compatible GitHub Models path)
   - `OPENAI_API_KEY` (direct OpenAI path)
   - `CLAUDE_API_STRANSKE` (Anthropic path)
+- The deterministic local stub provider is disabled by default and only available when
+  `COUNTER_RISK_CHAT_OFFLINE_MODE=1` (intended for offline tests/dev only).
 - Optional routing/model overrides are also documented in `.env.example` (`LANGCHAIN_PROVIDER`,
   `LANGCHAIN_MODEL`, slot overrides, timeout/retry settings).
 
