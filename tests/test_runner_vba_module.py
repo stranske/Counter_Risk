@@ -17,7 +17,10 @@ def test_runner_vba_module_constructs_arguments_from_date_and_mode() -> None:
     assert "BuildCommandArguments(ModeToString(mode), parsedDate, outputDir)" in module_source
 
     assert "Public Function ResolveOutputDir" in module_source
-    assert 'ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\\runs\\"' in module_source
+    assert "configuredOutputRoot = ReadSettingValue(\"RunnerSetting_OutputRoot\", \"runs\")" in module_source
+    assert "ResolveOutputRootPath(repoRoot, configuredOutputRoot)" in module_source
+    assert "Private Function ResolveOutputRootPath" in module_source
+    assert "Private Function IsAbsoluteWindowsPath" in module_source
     assert "Format$(parsedDate, RUN_FOLDER_FORMAT)" in module_source
     assert 'RUN_FOLDER_FORMAT As String = "yyyy-mm-dd_hhnnss"' in module_source
     assert '" --as-of-date " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd"))' in module_source

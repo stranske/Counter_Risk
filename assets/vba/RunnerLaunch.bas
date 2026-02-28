@@ -228,9 +228,12 @@ End Function
 
 Public Function ResolveOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
     Dim parsedDate As Date
-    parsedDate = ParseAsOfMonth(selectedDate)
+    Dim configuredOutputRoot As String
 
-    ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\runs\" & Format$(parsedDate, RUN_FOLDER_FORMAT)
+    parsedDate = ParseAsOfMonth(selectedDate)
+    configuredOutputRoot = ReadSettingValue("RunnerSetting_OutputRoot", "runs")
+
+    ResolveOutputDir = ResolveOutputRootPath(repoRoot, configuredOutputRoot) & "\" & Format$(parsedDate, RUN_FOLDER_FORMAT)
 End Function
 
 Public Function ResolveDataQualitySummaryPath(ByVal repoRoot As String, ByVal selectedDate As String) As String
@@ -243,6 +246,25 @@ End Function
 
 Public Function ResolvePPTOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
     ResolvePPTOutputDir = ResolveOutputDir(repoRoot, selectedDate) & "\" & PPT_OUTPUT_DIRNAME
+End Function
+
+Private Function ResolveOutputRootPath(ByVal repoRoot As String, ByVal outputRootSetting As String) As String
+    Dim normalizedOutputRoot As String
+    normalizedOutputRoot = NormalizePathSeparators(outputRootSetting)
+    If LenB(normalizedOutputRoot) = 0 Then
+        normalizedOutputRoot = "runs"
+    End If
+
+    If Left$(normalizedOutputRoot, 2) = "\\" Or IsAbsoluteWindowsPath(normalizedOutputRoot) Then
+        ResolveOutputRootPath = normalizedOutputRoot
+        Exit Function
+    End If
+
+    ResolveOutputRootPath = NormalizePathSeparators(repoRoot) & "\" & normalizedOutputRoot
+End Function
+
+Private Function IsAbsoluteWindowsPath(ByVal candidatePath As String) As Boolean
+    IsAbsoluteWindowsPath = (Len(candidatePath) >= 2 And Mid$(candidatePath, 2, 1) = ":")
 End Function
 
 Public Function ExecuteRunnerCommand(ByVal executablePath As String, ByVal command As String) As LaunchStatus

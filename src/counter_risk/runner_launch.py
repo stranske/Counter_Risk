@@ -100,23 +100,32 @@ def normalize_path_separators(raw_path: str) -> str:
     return normalized_path
 
 
-def resolve_output_dir(repo_root: str, selected_date: str) -> str:
+def resolve_output_root(repo_root: str, output_root: str = "runs") -> str:
+    normalized_output_root = normalize_path_separators(output_root or "runs")
+    if normalized_output_root.startswith("\\\\"):
+        return normalized_output_root
+    if len(normalized_output_root) >= 2 and normalized_output_root[1] == ":":
+        return normalized_output_root
+    return f"{normalize_path_separators(repo_root)}\\{normalized_output_root}"
+
+
+def resolve_output_dir(repo_root: str, selected_date: str, output_root: str = "runs") -> str:
     parsed_date = parse_as_of_month(selected_date)
     # Mirror RunnerLaunch.bas: Format$(parsedDate, "yyyy-mm-dd_hhnnss") on a date-only value.
     # VBA dates carry a midnight time component by default, so the time segment is deterministic.
-    return f"{normalize_path_separators(repo_root)}\\runs\\{parsed_date.isoformat()}_000000"
+    return f"{resolve_output_root(repo_root, output_root)}\\{parsed_date.isoformat()}_000000"
 
 
-def resolve_data_quality_summary_path(repo_root: str, selected_date: str) -> str:
-    return f"{resolve_output_dir(repo_root, selected_date)}\\{_DATA_QUALITY_SUMMARY_FILENAME}"
+def resolve_data_quality_summary_path(repo_root: str, selected_date: str, output_root: str = "runs") -> str:
+    return f"{resolve_output_dir(repo_root, selected_date, output_root)}\\{_DATA_QUALITY_SUMMARY_FILENAME}"
 
 
-def resolve_manifest_path(repo_root: str, selected_date: str) -> str:
-    return f"{resolve_output_dir(repo_root, selected_date)}\\{_MANIFEST_FILENAME}"
+def resolve_manifest_path(repo_root: str, selected_date: str, output_root: str = "runs") -> str:
+    return f"{resolve_output_dir(repo_root, selected_date, output_root)}\\{_MANIFEST_FILENAME}"
 
 
-def resolve_ppt_output_dir(repo_root: str, selected_date: str) -> str:
-    return f"{resolve_output_dir(repo_root, selected_date)}\\{_PPT_OUTPUT_DIRNAME}"
+def resolve_ppt_output_dir(repo_root: str, selected_date: str, output_root: str = "runs") -> str:
+    return f"{resolve_output_dir(repo_root, selected_date, output_root)}\\{_PPT_OUTPUT_DIRNAME}"
 
 
 def resolve_config_path(run_mode: RunnerMode) -> str:

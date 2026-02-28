@@ -24,6 +24,7 @@ from counter_risk.runner_launch import (
     resolve_data_quality_summary_path,
     resolve_manifest_path,
     resolve_output_dir,
+    resolve_output_root,
     resolve_ppt_output_dir,
     resolve_settings_path,
     write_runner_settings_file,
@@ -234,6 +235,17 @@ def test_open_ppt_output_folder_opens_existing_directory() -> None:
 def test_resolve_settings_path_uses_temp_root_and_expected_filename() -> None:
     resolved = resolve_settings_path("C:/Temp")
     assert resolved == "C:\\Temp\\counter-risk-runner-settings.json"
+
+
+def test_resolve_output_root_supports_relative_and_absolute_values() -> None:
+    assert resolve_output_root("C:/repo", "runs") == "C:\\repo\\runs"
+    assert resolve_output_root("C:/repo", "C:/shared/runs") == "C:\\shared\\runs"
+    assert resolve_output_root("C:/repo", "//server/share/runs") == "\\\\server\\share\\runs"
+
+
+def test_resolve_output_dir_uses_configured_output_root() -> None:
+    resolved = resolve_output_dir("C:/repo", "2025-06-30", output_root="C:/shared/runs")
+    assert resolved == "C:\\shared\\runs\\2025-06-30_000000"
 
 
 def test_build_runner_settings_payload_serializes_expected_fields() -> None:
