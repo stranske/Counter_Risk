@@ -129,18 +129,38 @@ The run-context chat assistant now uses LangChain-backed providers (instead of s
 
 The production workflow run path is:
 
-`counter-risk run --config <workflow.yml> --as-of-date YYYY-MM-DD --output-dir <runs/<timestamp>>`
+`counter-risk run --config <workflow.yml> --as-of-date YYYY-MM-DD --output-dir <runs/<timestamp>> --settings <path/to/settings.json>`
 
 Examples:
 
-- `python -m counter_risk.cli run --config config/all_programs.yml --as-of-date 2025-12-31 --output-dir runs/2025-12-31_000000`
-- `python -m counter_risk.cli run --discover --config config/all_programs.yml --as-of-date 2025-12-31 --output-dir runs/2025-12-31_000000`
+- `python -m counter_risk.cli run --config config/all_programs.yml --as-of-date 2025-12-31 --output-dir runs/2025-12-31_000000 --settings /tmp/counter-risk-runner-settings.json`
+- `python -m counter_risk.cli run --discover --config config/all_programs.yml --as-of-month 2025-12-31 --output-dir runs/2025-12-31_000000 --settings /tmp/counter-risk-runner-settings.json`
 
 Optional runtime overrides:
 
 - `--strict-policy warn|strict` (reconciliation fail policy override)
 - `--export-pdf` / `--no-export-pdf`
 - `--formatting-profile <name>` (reserved selector for formatter policy wiring)
+
+## Runner Workbook Settings
+
+`Runner.xlsm` now includes a dedicated `Settings` sheet so operators can adjust run
+inputs without touching CLI arguments. The workbook serializes these values to a
+temporary JSON file and passes it through `--settings`.
+
+Default settings keys:
+
+- `input_root`
+- `discovery_mode`
+- `strict_policy`
+- `formatting_profile`
+- `output_root`
+
+The `Runner` sheet also includes direct artifact buttons for:
+
+- `Open Manifest`
+- `Open Summary` (`DATA_QUALITY_SUMMARY.txt`)
+- `Open PPT Folder` (`distribution_static/`)
 
 Legacy packaging path is still available for release validation only:
 

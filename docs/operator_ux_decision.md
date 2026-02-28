@@ -8,15 +8,16 @@ This document defines the operator experience for running the monthly counterpar
 
 1. Open the runner tool (Excel `Runner.xlsm` or Windows desktop app).
 2. Select `As-Of Date` and optional variant (`All Programs`, `Ex Trend`, `Trend`).
-3. Click `Run`.
-4. Wait for completion and review run status summary.
-5. Open the generated output folder from the provided link/button.
-6. Verify expected outputs exist:
+3. Review/update run settings (input root, discovery mode, strict policy, formatting profile, output root).
+4. Click `Run`.
+5. Wait for completion and review run status summary.
+6. Open the generated output folder from the provided link/button.
+7. Verify expected outputs exist:
    - Updated historical workbooks
    - Updated monthly presentation outputs
    - Run manifest
    - Data quality summary
-7. Escalate warnings according to operations policy if reconciliation gaps are reported.
+8. Escalate warnings according to operations policy if reconciliation gaps are reported.
 
 ## Approach A: Excel Runner (`Runner.xlsm`)
 
@@ -33,20 +34,28 @@ This document defines the operator experience for running the monthly counterpar
 1. Open `Runner.xlsm` from the approved shared location.
 2. Enable macros (if organizational policy allows signed macro content).
 3. Pick `As-Of Date` and variant.
-4. Click `Run Monthly Process`.
-5. Review completion message and warnings panel.
-6. Click `Open Output Folder` to access produced artifacts.
+4. Open the `Settings` sheet and update:
+   - `Input Root`
+   - `Discovery Mode` (`discover` or manual mode)
+   - `Strict Policy` (`warn` or `strict`)
+   - `Formatting Profile`
+   - `Output Root`
+5. Click `Run Monthly Process`.
+6. Review completion message and warnings panel.
+7. Click `Open Output Folder` to access produced artifacts.
+8. Use `Open Manifest`, `Open Summary`, and `Open PPT Folder` for post-run review.
 
 ### Runner Backend Command Contract
 
 The Excel runner should execute workflow mode, not fixture replay:
 
-`counter-risk run --config <config/<variant>.yml> --as-of-date <YYYY-MM-DD> --output-dir <runs/<timestamp>>`
+`counter-risk run --config <config/<variant>.yml> --as-of-date <YYYY-MM-DD> --output-dir <runs/<timestamp>> --settings <temp/counter-risk-runner-settings.json>`
 
 Notes:
 
 - `--fixture-replay` is reserved for packaging/release validation and should not be used by monthly operators.
-- Discovery runs may use `--discover` with the same `--as-of-date` and `--output-dir` contract.
+- Discovery runs may use `--discover --as-of-month <YYYY-MM-DD>` with the same `--output-dir` and `--settings` contract.
+- The workbook writes settings under `%TEMP%/counter-risk-runner-settings.json` and does not persist operator changes in repo files.
 
 ## Approach B: Windows Desktop App
 
