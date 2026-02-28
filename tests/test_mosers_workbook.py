@@ -372,7 +372,12 @@ def test_generate_mosers_workbook_fails_when_required_markers_are_missing(
     workbook = workbook_generation_module.load_mosers_template_workbook()
     try:
         worksheet = workbook["CPRS - CH"]
-        worksheet["C30"] = "missing marker"
+        marker_row = workbook_generation_module._find_marker_row(
+            worksheet=worksheet,
+            marker_text="Total by Counterparty/Clearing House",
+        )
+        assert marker_row is not None
+        worksheet[f"C{marker_row}"] = "missing marker"
 
         monkeypatch.setattr(
             workbook_generation_module,
@@ -390,16 +395,23 @@ def test_find_marker_row_handles_column_shifts() -> None:
     workbook = workbook_generation_module.load_mosers_template_workbook()
     try:
         worksheet = workbook["CPRS - CH"]
-        marker_value = worksheet["C30"].value
-        worksheet["B30"] = marker_value
-        worksheet["C30"] = None
+        marker_text = "Total by Counterparty/Clearing House"
+        marker_row = workbook_generation_module._find_marker_row(
+            worksheet=worksheet,
+            marker_text=marker_text,
+        )
+        assert marker_row is not None
+
+        marker_value = worksheet[f"C{marker_row}"].value
+        worksheet[f"B{marker_row}"] = marker_value
+        worksheet[f"C{marker_row}"] = None
 
         assert (
             workbook_generation_module._find_marker_row(
                 worksheet=worksheet,
-                marker_text="Total by Counterparty/Clearing House",
+                marker_text=marker_text,
             )
-            == 30
+            == marker_row
         )
     finally:
         workbook.close()

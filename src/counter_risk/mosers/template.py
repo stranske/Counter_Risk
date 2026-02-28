@@ -60,7 +60,7 @@ def find_row_containing_text(
 
     if min_row < 1:
         min_row = 1
-    end_row = int(worksheet.max_row) if max_row is None else max(1, int(max_row))
+    end_row = int(worksheet.max_row) if max_row is None else int(max_row)
     if end_row < min_row:
         return None
 
@@ -102,9 +102,4 @@ def resolve_marker_bound_range(
     )
     if end_row is None:
         raise ValueError(f"Unable to locate marker {end_marker!r} in sheet {worksheet.title!r}.")
-    if end_row < start_row:
-        raise ValueError(
-            f"Marker ordering invalid in sheet {worksheet.title!r}: "
-            f"start marker {start_marker!r} occurs after end marker {end_marker!r}."
-        )
     return MarkerBoundRange(start_row=start_row, end_row=end_row)

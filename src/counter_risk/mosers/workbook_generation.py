@@ -434,6 +434,8 @@ def _resolve_section_bounds(
 def _resolve_cprs_ch_metric_row_bounds_from_template() -> tuple[int, int]:
     workbook = load_mosers_template_workbook()
     try:
+        if _TARGET_SHEET not in workbook.sheetnames:
+            raise ValueError(f"Unable to locate required MOSERS template sheet {_TARGET_SHEET!r}.")
         worksheet = workbook[_TARGET_SHEET]
         return _resolve_cprs_ch_metric_row_bounds(worksheet)
     finally:
