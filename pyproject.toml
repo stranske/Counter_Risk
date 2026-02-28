@@ -62,6 +62,7 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 markers = [
     "release: slow release/packaging tests (PyInstaller build + packaged executable)",
+    "slow: heavyweight tests that parse real Excel fixtures or run full pipeline (skip in PR gate)",
 ]
 
 [tool.coverage.run]
