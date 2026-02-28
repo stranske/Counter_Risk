@@ -30,6 +30,7 @@ _MODEL_KEY = "chat-model-placeholder"
 def _provider_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GITHUB_TOKEN", "test-token")
     monkeypatch.setenv("CLAUDE_API_STRANSKE", "test-token")
+    monkeypatch.setenv("COUNTER_RISK_CHAT_OFFLINE_MODE", "1")
 
 
 def _provider_model(provider: str) -> str:
@@ -100,6 +101,76 @@ def test_chat_session_returns_manifest_top_exposure(tmp_path: Path) -> None:
     assert "all_programs: A (10.00)" in answer
     assert answer.index("all_programs: B (20.00)") < answer.index("all_programs: A (10.00)")
     assert len(session.history) == 2
+
+
+def test_chat_session_rejects_local_provider_when_offline_mode_is_disabled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("COUNTER_RISK_CHAT_OFFLINE_MODE", raising=False)
+    context = load_run_context(_write_minimal_run(tmp_path))
+
+    with pytest.raises(ChatSessionError, match="offline test mode"):
+        ChatSession(context=context, provider="local", model=_MODEL_KEY)
+
+
+def test_get_provider_models_hides_local_provider_when_offline_mode_is_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("COUNTER_RISK_CHAT_OFFLINE_MODE", raising=False)
+
+    provider_models = get_provider_models()
+
+    assert "local" not in provider_models
+    assert "openai" in provider_models
+    assert "anthropic" in provider_models
+
+
+def test_chat_session_default_provider_prefers_available_provider_credentials(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("COUNTER_RISK_CHAT_OFFLINE_MODE", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("CLAUDE_API_STRANSKE", "anthropic-test-token")
+    context = load_run_context(_write_minimal_run(tmp_path))
+
+    session = ChatSession(context=context)
+
+    assert session.provider == "anthropic"
+    assert session.model in session_module.get_provider_models()["anthropic"]
+
+
+def test_chat_session_default_model_uses_credential_compatible_option(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("COUNTER_RISK_CHAT_OFFLINE_MODE", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("CLAUDE_API_STRANSKE", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-test-token")
+    monkeypatch.setattr(
+        session_module,
+        "_PROVIDER_MODELS",
+        {"openai": {"github-only-model", "openai-only-model"}},
+    )
+    monkeypatch.setattr(
+        session_module,
+        "_PROVIDER_MODEL_REQUIRED_ENV_KEYS",
+        {
+            "openai": {
+                "github-only-model": ("GITHUB_TOKEN",),
+                "openai-only-model": ("OPENAI_API_KEY",),
+            }
+        },
+    )
+    context = load_run_context(_write_minimal_run(tmp_path))
+
+    session = ChatSession(context=context)
+
+    assert session.provider == "openai"
+    assert session.model == "openai-only-model"
 
 
 def test_chat_session_provider_is_deterministic_for_same_prompt(

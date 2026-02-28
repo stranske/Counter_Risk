@@ -19,6 +19,16 @@ def test_build_provider_model_registry_uses_real_model_ids() -> None:
     assert registry.provider_models["anthropic"]
 
 
+def test_build_provider_model_registry_can_exclude_local_stub_model() -> None:
+    registry = provider_base.build_provider_model_registry(
+        local_model="chat-model-placeholder",
+        include_local=False,
+    )
+
+    assert "local" not in registry.provider_models
+    assert "local" not in registry.provider_model_required_env_keys
+
+
 def test_build_provider_model_registry_tracks_credential_requirements_per_model(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
