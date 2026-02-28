@@ -18,12 +18,37 @@ def test_main_without_command_prints_help(capsys: pytest.CaptureFixture[str]) ->
     assert "usage:" in captured.out.lower()
 
 
-def test_main_run_command_returns_zero(capsys: pytest.CaptureFixture[str]) -> None:
-    result = cli.main(["run"])
+def test_main_run_command_returns_zero(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "workflow.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "hist_all_programs_3yr_xlsx: placeholder-all.xlsx",
+                "hist_ex_llc_3yr_xlsx: placeholder-ex.xlsx",
+                "hist_llc_3yr_xlsx: placeholder-trend.xlsx",
+                "monthly_pptx: placeholder.pptx",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    run_dir = tmp_path / "run-output"
+
+    def fake_run_pipeline_with_config(config, *, config_dir, output_dir=None):
+        _ = (config, config_dir, output_dir)
+        run_dir.mkdir(parents=True, exist_ok=True)
+        return run_dir
+
+    monkeypatch.setattr(cli, "run_pipeline_with_config", fake_run_pipeline_with_config)
+
+    result = cli.main(["run", "--config", str(config_path), "--as-of-date", "2025-12-31"])
     captured = capsys.readouterr()
 
     assert result == 0
-    assert "not implemented yet" in captured.out.lower()
+    assert "counter risk run completed" in captured.out.lower()
 
 
 def test_run_parser_accepts_export_pdf_flags() -> None:
@@ -41,7 +66,7 @@ def test_run_parser_accepts_dry_run_discovery_and_as_of_month() -> None:
 
     args = parser.parse_args(["run", "--dry-run-discovery", "--as-of-month", "2025-12-31"])
     assert args.dry_run_discovery is True
-    assert args.as_of_month == "2025-12-31"
+    assert args.as_of_date == "2025-12-31"
 
 
 def test_main_run_dry_run_discovery_lists_matches(
@@ -216,7 +241,7 @@ def test_main_run_fixture_replay_mode(tmp_path: Path, capsys: pytest.CaptureFixt
 
 
 def test_main_run_discover_mode_auto_selects_and_runs(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """--discover with single-match inputs auto-selects and runs the pipeline."""
 
@@ -291,13 +316,32 @@ def test_main_run_discover_mode_auto_selects_and_runs(
     )
 
     output_dir = tmp_path / "run-output"
+    run_dir = output_dir.resolve()
+
+    def fake_run_pipeline_with_config(config, *, config_dir, output_dir=None):
+        _ = config_dir
+        output = run_dir if output_dir is None else Path(output_dir).resolve()
+        output.mkdir(parents=True, exist_ok=True)
+        manifest = {
+            "mode": "discovery",
+            "as_of_date": None if config.as_of_date is None else config.as_of_date.isoformat(),
+            "outputs": {
+                "mosers_ex_trend_xlsx": str(config.mosers_ex_trend_xlsx),
+                "monthly_pptx": str(config.monthly_pptx),
+            },
+        }
+        (output / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        return output
+
+    monkeypatch.setattr(cli, "run_pipeline_with_config", fake_run_pipeline_with_config)
+
     result = cli.main(
         [
             "run",
             "--discover",
             "--config",
             str(config_path),
-            "--as-of-month",
+            "--as-of-date",
             "2025-12-31",
             "--output-dir",
             str(output_dir),
@@ -345,4 +389,4 @@ def test_run_parser_accepts_discover_flag() -> None:
 
     args = parser.parse_args(["run", "--discover", "--as-of-month", "2025-12-31"])
     assert args.discover is True
-    assert args.as_of_month == "2025-12-31"
+    assert args.as_of_date == "2025-12-31"

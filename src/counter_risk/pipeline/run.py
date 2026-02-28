@@ -10,6 +10,7 @@ import logging
 import math
 import platform
 import shutil
+import tempfile
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -17,6 +18,8 @@ from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 from zipfile import BadZipFile
+
+import yaml
 
 from counter_risk.compute import compute_risk_proxies
 from counter_risk.compute.limits import (
@@ -537,7 +540,40 @@ def _raw_counterparties_by_normalized_from_parsed_data(
     return _raw_counterparties_by_normalized_from_records(totals_records)
 
 
-def run_pipeline(config_path: str | Path) -> Path:
+def run_pipeline_with_config(
+    config: WorkflowConfig,
+    *,
+    config_dir: Path,
+    output_dir: Path | None = None,
+) -> Path:
+    """Run the full pipeline from an in-memory config object.
+
+    Discovery mode and Runner settings can override config values at runtime.
+    This helper serializes those resolved values to a temporary workflow YAML
+    and executes the standard run orchestration.
+    """
+
+    config_dir.mkdir(parents=True, exist_ok=True)
+    serialized = config.model_dump(mode="json")
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        suffix=".yml",
+        prefix="counter-risk-runtime-",
+        dir=config_dir,
+        delete=False,
+    ) as temp_config:
+        temp_config_path = Path(temp_config.name)
+        yaml.safe_dump(serialized, temp_config, sort_keys=False)
+
+    try:
+        return run_pipeline(temp_config_path, output_dir=output_dir)
+    finally:
+        with contextlib.suppress(OSError):
+            temp_config_path.unlink()
+
+
+def run_pipeline(config_path: str | Path, *, output_dir: Path | None = None) -> Path:
     """Run the Counter Risk pipeline and return the output run directory."""
 
     LOGGER.info("pipeline_start config_path=%s", config_path)
@@ -584,7 +620,11 @@ def run_pipeline(config_path: str | Path) -> Path:
         raise RuntimeError("Pipeline failed during date derivation stage") from exc
 
     try:
-        run_dir = _create_run_directory(as_of_date=as_of_date, run_date=run_date_for_directory)
+        run_dir = _create_run_directory(
+            as_of_date=as_of_date,
+            run_date=run_date_for_directory,
+            output_dir=output_dir,
+        )
     except Exception as exc:
         LOGGER.exception(
             "pipeline_failed stage=run_dir_setup run_dir=%s",
@@ -786,7 +826,14 @@ def _call_write_outputs(
     return _write_outputs(**write_outputs_kwargs)
 
 
-def _create_run_directory(*, as_of_date: date, run_date: date | None = None) -> Path:
+def _create_run_directory(
+    *, as_of_date: date, run_date: date | None = None, output_dir: Path | None = None
+) -> Path:
+    if output_dir is not None:
+        resolved_output_dir = output_dir.resolve()
+        resolved_output_dir.mkdir(parents=True, exist_ok=True)
+        return resolved_output_dir
+
     runs_root = _resolve_repo_root() / "runs"
     base_name = (
         as_of_date.isoformat()

@@ -98,6 +98,27 @@ The run-context chat assistant now uses LangChain-backed providers (instead of s
 - Optional routing/model overrides are also documented in `.env.example` (`LANGCHAIN_PROVIDER`,
   `LANGCHAIN_MODEL`, slot overrides, timeout/retry settings).
 
+## Workflow Run Command
+
+The production workflow run path is:
+
+`counter-risk run --config <workflow.yml> --as-of-date YYYY-MM-DD --output-dir <runs/<timestamp>>`
+
+Examples:
+
+- `python -m counter_risk.cli run --config config/all_programs.yml --as-of-date 2025-12-31 --output-dir runs/2025-12-31_000000`
+- `python -m counter_risk.cli run --discover --config config/all_programs.yml --as-of-date 2025-12-31 --output-dir runs/2025-12-31_000000`
+
+Optional runtime overrides:
+
+- `--strict-policy warn|strict` (reconciliation fail policy override)
+- `--export-pdf` / `--no-export-pdf`
+- `--formatting-profile <name>` (reserved selector for formatter policy wiring)
+
+Legacy packaging path is still available for release validation only:
+
+- `counter-risk run --fixture-replay --config config/fixture_replay.yml --output-dir <path>`
+
 ## Features
 
 - 🐍 **Python 3.11+** - Modern Python with type hints

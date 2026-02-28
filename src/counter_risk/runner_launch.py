@@ -116,9 +116,14 @@ def resolve_config_path(run_mode: RunnerMode) -> str:
 
 def build_command(run_mode: RunnerMode, selected_date: str, output_dir: str) -> str:
     # Keep date validation behavior aligned with VBA parser semantics.
-    parse_as_of_month(selected_date)
+    parsed_date = parse_as_of_month(selected_date)
     config_path = resolve_config_path(run_mode)
-    return f'run --fixture-replay --config "{config_path}" --output-dir "{output_dir}"'
+    return (
+        "run "
+        f'--config "{config_path}" '
+        f'--as-of-date "{parsed_date.isoformat()}" '
+        f'--output-dir "{output_dir}"'
+    )
 
 
 def build_discovery_dry_run_command(run_mode: RunnerMode, selected_date: str) -> str:

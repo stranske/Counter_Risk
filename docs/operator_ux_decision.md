@@ -37,6 +37,17 @@ This document defines the operator experience for running the monthly counterpar
 5. Review completion message and warnings panel.
 6. Click `Open Output Folder` to access produced artifacts.
 
+### Runner Backend Command Contract
+
+The Excel runner should execute workflow mode, not fixture replay:
+
+`counter-risk run --config <config/<variant>.yml> --as-of-date <YYYY-MM-DD> --output-dir <runs/<timestamp>>`
+
+Notes:
+
+- `--fixture-replay` is reserved for packaging/release validation and should not be used by monthly operators.
+- Discovery runs may use `--discover` with the same `--as-of-date` and `--output-dir` contract.
+
 ## Approach B: Windows Desktop App
 
 ### Technical Requirements
