@@ -1,4 +1,4 @@
-"""Command-line interface for Counter Risk maintainers."""
+"""Command-line interface for Counter Risk maintainers and operators."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="counter-risk")
     subparsers = parser.add_subparsers(dest="command")
 
-    run_parser = subparsers.add_parser("run", help="Run the Counter Risk pipeline (stub)")
+    run_parser = subparsers.add_parser("run", help="Run the Counter Risk pipeline")
     run_parser.add_argument(
         "--fixture-replay",
         action="store_true",
@@ -36,13 +36,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-dir",
         type=Path,
         default=None,
-        help="Output directory override for --fixture-replay mode.",
+        help="Output directory override for workflow-mode or --fixture-replay runs.",
     )
     run_parser.add_argument(
+        "--as-of-date",
         "--as-of-month",
+        dest="as_of_date",
         type=str,
         default=None,
-        help="As-of reporting date in YYYY-MM-DD format for discovery preview.",
+        help="As-of reporting date in YYYY-MM-DD format.",
     )
     run_parser.add_argument(
         "--dry-run-discovery",
@@ -69,6 +71,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Disable PDF export in workflow-mode runs.",
     )
+    run_parser.add_argument(
+        "--strict-policy",
+        choices=("warn", "strict"),
+        default=None,
+        help="Override reconciliation.fail_policy for this run.",
+    )
+    run_parser.add_argument(
+        "--formatting-profile",
+        type=str,
+        default=None,
+        help="Reserved runtime formatting profile selector (stored for follow-on workflows).",
+    )
     run_parser.set_defaults(handler=_run_command)
     return parser
 
@@ -78,12 +92,12 @@ def _run_command(args: argparse.Namespace) -> int:
         config = load_config(args.config)
         as_of_date = _resolve_discovery_as_of_date(
             config=config,
-            as_of_month=getattr(args, "as_of_month", None),
+            as_of_date=getattr(args, "as_of_date", None),
         )
         if as_of_date is None:
             print(
                 "Discovery dry-run requires an as-of date. "
-                "Set config.as_of_date or pass --as-of-month YYYY-MM-DD."
+                "Set config.as_of_date or pass --as-of-date YYYY-MM-DD."
             )
             return 2
 
@@ -98,8 +112,7 @@ def _run_command(args: argparse.Namespace) -> int:
         print(f"Counter Risk fixture replay completed: {run_dir}")
         return 0
 
-    print("Counter Risk run command is not implemented yet.")
-    return 0
+    return _run_workflow_mode(args)
 
 
 def _run_with_discovery(args: argparse.Namespace) -> int:
@@ -108,12 +121,12 @@ def _run_with_discovery(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     as_of_date = _resolve_discovery_as_of_date(
         config=config,
-        as_of_month=getattr(args, "as_of_month", None),
+        as_of_date=getattr(args, "as_of_date", None),
     )
     if as_of_date is None:
         print(
             "Discovery mode requires an as-of date. "
-            "Set config.as_of_date or pass --as-of-month YYYY-MM-DD."
+            "Set config.as_of_date or pass --as-of-date YYYY-MM-DD."
         )
         return 2
 
@@ -143,6 +156,14 @@ def _run_with_discovery(args: argparse.Namespace) -> int:
 
     # Build an updated config with discovered paths overriding defaults
     overrides: dict[str, object] = {"as_of_date": as_of_date}
+    strict_policy = cast(str | None, getattr(args, "strict_policy", None))
+    if strict_policy:
+        overrides["reconciliation"] = config.reconciliation.model_copy(
+            update={"fail_policy": strict_policy}
+        )
+    export_pdf = getattr(args, "export_pdf", None)
+    if export_pdf is not None:
+        overrides["export_pdf"] = bool(export_pdf)
     for input_name, path in selected.items():
         if hasattr(config, input_name):
             overrides[input_name] = path
@@ -155,16 +176,59 @@ def _run_with_discovery(args: argparse.Namespace) -> int:
         config_dir=config_dir,
         output_dir=output_dir,
     )
+    formatting_profile = cast(str | None, getattr(args, "formatting_profile", None))
+    if formatting_profile:
+        print(
+            "Note: formatting profile support will be applied in output formatters; "
+            f"recorded selection: {formatting_profile}"
+        )
+
     print(f"\nCounter Risk discovery run completed: {run_dir}")
     return 0
 
 
 def _resolve_discovery_as_of_date(
-    *, config: WorkflowConfig, as_of_month: str | None
+    *, config: WorkflowConfig, as_of_date: str | None
 ) -> date | None:
-    if as_of_month:
-        return date.fromisoformat(as_of_month.strip())
+    if as_of_date:
+        return date.fromisoformat(as_of_date.strip())
     return config.as_of_date
+
+
+def _run_workflow_mode(args: argparse.Namespace) -> int:
+    """Run the full workflow pipeline using the provided config."""
+
+    try:
+        config = load_config(args.config)
+        overrides: dict[str, object] = {}
+        as_of_date_raw = cast(str | None, getattr(args, "as_of_date", None))
+        if as_of_date_raw:
+            overrides["as_of_date"] = date.fromisoformat(as_of_date_raw.strip())
+        strict_policy = cast(str | None, getattr(args, "strict_policy", None))
+        if strict_policy:
+            overrides["reconciliation"] = config.reconciliation.model_copy(
+                update={"fail_policy": strict_policy}
+            )
+        export_pdf = getattr(args, "export_pdf", None)
+        if export_pdf is not None:
+            overrides["export_pdf"] = bool(export_pdf)
+        runtime_config = config.model_copy(update=overrides) if overrides else config
+        run_dir = run_pipeline_with_config(
+            runtime_config,
+            config_dir=args.config.resolve().parent,
+            output_dir=getattr(args, "output_dir", None),
+        )
+        formatting_profile = cast(str | None, getattr(args, "formatting_profile", None))
+        if formatting_profile:
+            print(
+                "Note: formatting profile support will be applied in output formatters; "
+                f"recorded selection: {formatting_profile}"
+            )
+        print(f"Counter Risk run completed: {run_dir}")
+        return 0
+    except Exception as exc:
+        print(f"Counter Risk run failed: {exc}")
+        return 1
 
 
 def _format_discovery_dry_run(*, config: WorkflowConfig, as_of_date: date) -> str:

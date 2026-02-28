@@ -514,9 +514,9 @@ Private Function BuildCommandArguments( _
     ByVal parsedDate As Date, _
     ByVal outputDir As String _
 ) As String
-    BuildCommandArguments = "run --fixture-replay --config " & _
+    BuildCommandArguments = "run --config " & _
                             QuoteArg(ResolveConfigPath(ResolveRunnerMode(runMode))) & _
-                            " --as-of-month " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd")) & _
+                            " --as-of-date " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd")) & _
                             " --output-dir " & QuoteArg(outputDir)
 End Function
 

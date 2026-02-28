@@ -8,6 +8,11 @@ from typing import Any
 
 import pytest
 
+# Every test in this module relies on a session-scoped fixture that parses
+# three large NISA Excel workbooks (~85 s).  Mark the whole module so the PR
+# gate can skip these and keep feedback under five minutes.
+pytestmark = pytest.mark.slow
+
 _MACRO_BY_VARIANT = {
     "all_programs": "RunAll_Click",
     "ex_trend": "RunExTrend_Click",
