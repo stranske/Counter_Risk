@@ -6,8 +6,6 @@ import csv
 from pathlib import Path
 from typing import Literal
 
-from openpyxl import load_workbook  # type: ignore[import-untyped]
-
 from counter_risk.normalize import normalize_counterparty
 
 _COUNTERPARTY_HEADER_ALIASES = ("counterparty", "counterparty_name", "name")
@@ -71,9 +69,17 @@ def _resolve_source_type(
     source_path: Path,
     source_type: Literal["csv", "xlsx"] | None,
 ) -> Literal["csv", "xlsx"]:
-    if source_type is not None:
-        return source_type
     suffix = source_path.suffix.lower()
+    if source_type is not None:
+        if source_type == "csv" and suffix not in {"", ".csv"}:
+            raise ValueError(
+                f"cash_source_type=csv requires a .csv file path, got '{source_path}'."
+            )
+        if source_type == "xlsx" and suffix not in {"", ".xlsx", ".xlsm"}:
+            raise ValueError(
+                f"cash_source_type=xlsx requires a .xlsx/.xlsm file path, got '{source_path}'."
+            )
+        return source_type
     if suffix == ".csv":
         return "csv"
     if suffix in {".xlsx", ".xlsm"}:
@@ -84,10 +90,28 @@ def _resolve_source_type(
 def _load_csv_rows(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
-        return [dict(row) for row in reader if row is not None]
+        rows: list[dict[str, str]] = []
+        for row in reader:
+            if row is None:
+                continue
+            normalized_row = {
+                key: "" if value is None else str(value)
+                for key, value in row.items()
+                if isinstance(key, str)
+            }
+            if normalized_row:
+                rows.append(normalized_row)
+        return rows
 
 
 def _load_xlsx_rows(path: Path) -> list[dict[str, str]]:
+    try:
+        from openpyxl import load_workbook  # type: ignore[import-untyped]
+    except ModuleNotFoundError as exc:  # pragma: no cover - exercised in dependency-absence tests
+        raise RuntimeError(
+            "openpyxl is required to load structured Repo Cash XLSX sources."
+        ) from exc
+
     workbook = load_workbook(filename=path, data_only=True, read_only=True)
     try:
         worksheet = workbook.active

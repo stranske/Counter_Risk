@@ -1041,11 +1041,7 @@ def _load_repo_cash_by_counterparty(
     source_label = source_type
 
     if source_type == "none" or source_path is None:
-        _handle_repo_cash_condition(
-            "Repo Cash source is not configured (cash_source_type=none).",
-            warnings=warnings,
-            fail_policy=fail_policy,
-        )
+        warnings.append("Repo Cash source is not configured (cash_source_type=none).")
         return {}, "none"
 
     if source_type == "pdf":

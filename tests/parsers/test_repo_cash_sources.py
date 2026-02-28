@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from openpyxl import Workbook  # type: ignore[import-untyped]
+import pytest
 
 from counter_risk.parsers.repo_cash_sources import (
     load_repo_cash_overrides_csv,
@@ -33,8 +33,9 @@ def test_load_repo_cash_structured_source_from_csv(tmp_path: Path) -> None:
 
 
 def test_load_repo_cash_structured_source_from_xlsx(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
     source_path = tmp_path / "repo_cash.xlsx"
-    workbook = Workbook()
+    workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "RepoCash"
     sheet.append(["counterparty_name", "cash"])
@@ -67,3 +68,13 @@ def test_load_repo_cash_overrides_csv_returns_mapping_and_audit_rows(tmp_path: P
     assert mapping["CIBC"] == 9.0
     assert mapping["ASL"] == 4.5
     assert audit_rows[0]["note"] == "manual correction"
+
+
+def test_load_repo_cash_structured_source_raises_for_source_type_extension_mismatch(
+    tmp_path: Path,
+) -> None:
+    source_path = tmp_path / "repo_cash.xlsx"
+    source_path.write_text("counterparty,cash_value\nCIBC,1.0\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="cash_source_type=csv requires a .csv file path"):
+        load_repo_cash_structured_source(source_path, source_type="csv")
