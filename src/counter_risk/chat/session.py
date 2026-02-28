@@ -52,10 +52,25 @@ def _visible_provider_models() -> dict[str, set[str]]:
     }
 
 
+def _model_credentials_available(provider: str, model: str) -> bool:
+    required_env_keys = _PROVIDER_MODEL_REQUIRED_ENV_KEYS.get(provider, {}).get(model, ())
+    if not required_env_keys:
+        return True
+    return any(os.environ.get(env_key) for env_key in required_env_keys)
+
+
 def _default_provider_key() -> str:
     visible = _visible_provider_models()
     for provider in ("openai", "anthropic", "local"):
-        if provider in visible:
+        provider_models = visible.get(provider)
+        if not provider_models:
+            continue
+        if provider != "local" and not provider_env_available(provider):
+            continue
+        if any(_model_credentials_available(provider, model) for model in provider_models):
+            return provider
+    for provider, provider_models in visible.items():
+        if any(_model_credentials_available(provider, model) for model in provider_models):
             return provider
     return "openai"
 
@@ -63,6 +78,9 @@ def _default_provider_key() -> str:
 def _default_model_key() -> str:
     provider = _default_provider_key()
     models = tuple(sorted(_visible_provider_models().get(provider, ())))
+    for model in models:
+        if _model_credentials_available(provider, model):
+            return model
     if models:
         return models[0]
     return _PLACEHOLDER_MODEL
