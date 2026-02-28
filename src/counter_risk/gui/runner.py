@@ -8,10 +8,12 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from counter_risk.runner_launch import parse_as_of_month
+from counter_risk.runtime_paths import resolve_runtime_path
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -53,8 +55,9 @@ def _normalize_run_mode(raw_mode: str) -> str:
 
 def _resolve_config_path(state: GuiRunState) -> Path:
     if state.config_path is not None:
-        return state.config_path
-    return Path(_RUN_MODE_TO_CONFIG[_normalize_run_mode(state.run_mode)])
+        return resolve_runtime_path(state.config_path)
+    run_mode = _normalize_run_mode(state.run_mode)
+    return resolve_runtime_path(_RUN_MODE_TO_CONFIG[run_mode])
 
 
 def _resolve_output_dir(state: GuiRunState) -> Path:
@@ -77,9 +80,16 @@ def _build_settings_payload(state: GuiRunState) -> str:
 def _write_settings_file(payload: str, temp_dir: Path | None = None) -> Path:
     settings_root = temp_dir or Path(tempfile.gettempdir())
     settings_root.mkdir(parents=True, exist_ok=True)
-    settings_path = settings_root / "counter-risk-runner-settings.json"
-    settings_path.write_text(payload, encoding="utf-8")
-    return settings_path
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        suffix=".json",
+        prefix="counter-risk-runner-settings-",
+        dir=settings_root,
+        delete=False,
+    ) as handle:
+        handle.write(payload)
+        return Path(handle.name)
 
 
 def _build_cli_args(
@@ -88,12 +98,12 @@ def _build_cli_args(
     settings_path: Path,
     dry_run_discovery: bool,
 ) -> list[str]:
-    mode = _normalize_run_mode(state.run_mode)
+    config_path = _resolve_config_path(state)
     month_end = parse_as_of_month(state.as_of_date).isoformat()
     cli_args: list[str] = [
         "run",
         "--config",
-        str(_resolve_config_path(state)),
+        str(config_path),
         "--settings",
         str(settings_path),
     ]
@@ -114,10 +124,6 @@ def _build_cli_args(
         cli_args.append("--export-pdf")
     if state.export_pdf is False:
         cli_args.append("--no-export-pdf")
-    if mode == "ex_trend" and state.config_path is None:
-        cli_args[2] = _RUN_MODE_TO_CONFIG["ex_trend"]
-    if mode == "trend" and state.config_path is None:
-        cli_args[2] = _RUN_MODE_TO_CONFIG["trend"]
     return cli_args
 
 
@@ -176,7 +182,8 @@ def launch_gui(
         msg = "Tkinter is unavailable; use `counter-risk run` or `counter-risk gui --headless`."
         raise RuntimeError(msg) from exc
 
-    state = initial_state or GuiRunState(as_of_date=parse_as_of_month("2025-01-31").isoformat())
+    default_as_of_date = parse_as_of_month(date.today().isoformat()).isoformat()
+    state = initial_state or GuiRunState(as_of_date=default_as_of_date)
     run_counter_risk = runner or _default_runner
 
     root = tk.Tk()
