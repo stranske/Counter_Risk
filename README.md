@@ -97,11 +97,19 @@ If a change requires editing synced workflow files, do it in **stranske/Workflow
 
 Autopilot smoke tests are enabled to validate basic keepalive and automation flow behavior.
 
-### Slow test strategy
+## Development
 
-Some tests are too expensive for PR feedback but still need to run before
-merging to `main`.  These are tagged with the **`slow`** pytest marker and
-excluded from the PR Gate so that CI stays under five minutes.
+Use these maintainer commands from the repository root:
+
+- `make lint` runs `ruff check src/ tests/`
+- `make format` runs `ruff format src/ tests/`
+- `make test` runs `pytest -m "not slow"`
+
+## Slow Test Strategy
+
+Some tests are too expensive for PR feedback, so they are tagged with the
+**`slow`** pytest marker and excluded from PR Gate. They still run in Main CI
+after merges to `main`.
 
 | Where it runs | Marker filter | Typical duration |
 |---------------|---------------|------------------|
@@ -115,20 +123,12 @@ What counts as "slow":
   calls `run_pipeline()` with real Excel fixtures (100-170 s each on CI).
   Auto-marked via `tests/pipeline/conftest.py`.
 - `tests/spec/test_macro_spec_fixtures.py` — session-scoped fixture parses
-  three large NISA workbooks (~85 s one-time cost).  Module-level
+  three large NISA workbooks (~85 s one-time cost). Module-level
   `pytestmark = pytest.mark.slow`.
 
 When adding new tests that parse real workbooks or run full pipeline
 orchestration, mark them `@pytest.mark.slow` (or add them to the conftest
 hook) so the Gate stays fast.
-
-## Development
-
-Use these maintainer commands from the repository root:
-
-- `make lint` runs `ruff check src/ tests/`
-- `make format` runs `ruff format src/ tests/`
-- `make test` runs `pytest -m "not slow"`
 
 ## Chat Provider Configuration
 
