@@ -78,18 +78,58 @@ This repo is tuned so PR Gate stays reasonably fast by skipping the most expensi
 
 PR Gate uses `.github/workflows/pr-00-gate.yml`:
 
-- Runs pytest **in parallel** with xdist (`-n auto --dist loadscope`).
+- Runs pytest **in parallel** with xdist (`-n auto --dist load`).
 - Runs pytest **without coverage**.
 - Skips `tests/integration/` and `tests/integrations/`.
-- Skips `release`-marked tests (`pytest_markers: "not release"`).
+- Skips `release`- and `slow`-marked tests (`pytest_markers: "not release and not slow"`).
 
 ### Main CI (push to `main`)
 
 Main CI uses `.github/workflows/ci.yml`:
 
 - Runs pytest **with coverage** and enforces `coverage-min`.
-- Runs pytest **in parallel** with xdist.
-- Runs the full test suite.
+- Runs pytest **in parallel** with xdist (`--dist loadscope`).
+- Runs **all** tests including `slow`-marked ones.
+- This is where heavyweight pipeline and spec-fixture tests are validated.
+
+### Slow tests
+
+Tests that take a long time because they parse real Excel workbooks or run
+full pipeline orchestration are tagged `@pytest.mark.slow`.  The Gate
+excludes them so PR feedback stays under five minutes; Main CI runs them on
+every merge.
+
+Currently slow-marked tests:
+
+| File | Why it's slow | How it's marked |
+|------|---------------|-----------------|
+| `tests/pipeline/test_run_pipeline.py` | Each `test_run_pipeline_*` calls `run_pipeline()` with real Excel fixtures (100-170 s per test) | Auto-marked by `tests/pipeline/conftest.py` hook |
+| `tests/spec/test_macro_spec_fixtures.py` | Session-scoped fixture parses three NISA workbooks (~85 s) | Module-level `pytestmark = pytest.mark.slow` |
+
+#### When to mark a test slow
+
+Mark a new test `@pytest.mark.slow` if it:
+
+- Calls `run_pipeline()` or `run_pipeline_with_config()` with real fixture files.
+- Relies on a session-scoped fixture that parses large workbooks.
+- Takes more than ~30 s on CI in isolation.
+
+You can apply the marker with a decorator (`@pytest.mark.slow`) or add the
+test pattern to the `pytest_collection_modifyitems` hook in the appropriate
+`conftest.py`.
+
+#### Running slow tests locally
+
+```bash
+# Run only slow tests
+pytest -m slow
+
+# Run everything (same as Main CI)
+pytest
+
+# Run without slow tests (same as Gate)
+pytest -m "not slow"
+```
 
 ### Release tests (nightly or label)
 
@@ -100,7 +140,8 @@ The slowest release/packaging checks are isolated behind the `release` marker an
 
 ### Agent guidance
 
-When a PR touches release/packaging mechanics (e.g., `release.spec`, `pyinstaller_runtime_hook.py`, templates/config bundling), make sure `release` tests run by applying the `run-release` label.
+- When a PR touches release/packaging mechanics (e.g., `release.spec`, `pyinstaller_runtime_hook.py`, templates/config bundling), make sure `release` tests run by applying the `run-release` label.
+- When adding tests that parse real workbooks or run full pipeline orchestration, mark them `@pytest.mark.slow` so the Gate stays fast.  Do **not** add heavyweight tests without the marker — it will regress Gate duration for every PR.
 
 ## Agent guardrails (must follow)
 
