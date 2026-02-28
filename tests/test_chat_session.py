@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from typing import IO, Any
 
 import pytest
 
 from counter_risk.chat import session as session_module
 from counter_risk.chat.context import load_run_context
 from counter_risk.chat.session import (
+    _CHAT_LOG_DIR_NAME,
     _LLM_LOG_DIR_NAME,
     ChatSession,
     ChatSessionError,
@@ -340,6 +342,10 @@ def test_llm_logging_writes_prompt_response_artifacts_when_enabled(tmp_path: Pat
     assert payload["model"] == _MODEL_KEY
     assert payload["response"]
 
+    chat_log_dir = context.run_dir / _CHAT_LOG_DIR_NAME
+    chat_logs = sorted(chat_log_dir.glob("*.jsonl"))
+    assert len(chat_logs) == 1
+
 
 def test_llm_logging_writes_multiple_artifacts_for_multiple_interactions(tmp_path: Path) -> None:
     context = load_run_context(_write_minimal_run(tmp_path))
@@ -370,3 +376,106 @@ def test_llm_logging_disabled_writes_no_artifacts(tmp_path: Path) -> None:
 
     log_dir = context.run_dir / _LLM_LOG_DIR_NAME
     assert not log_dir.exists()
+
+    chat_log_dir = context.run_dir / _CHAT_LOG_DIR_NAME
+    chat_logs = sorted(chat_log_dir.glob("*.jsonl"))
+    assert len(chat_logs) == 1
+
+
+def test_chat_session_writes_jsonl_chat_log_with_trace_metadata(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    openai_model = _provider_model("openai")
+
+    class _TraceProvider:
+        def generate(self, messages: list[dict[str, str]], model: str, **kwargs: object) -> str:
+            _ = messages
+            metadata = kwargs.get("response_metadata")
+            if isinstance(metadata, dict):
+                metadata.update(
+                    {
+                        "provider": "github-models",
+                        "model": model,
+                        "trace_id": "trace-123",
+                        "trace_url": "https://smith.langchain.com/r/trace-123",
+                    }
+                )
+            return "trace-enabled-response"
+
+    monkeypatch.setitem(session_module._PROVIDER_CLIENTS, "openai", _TraceProvider())
+    session = ChatSession(context=context, provider="openai", model=openai_model)
+
+    answer = session.ask("top exposures")
+
+    assert answer == "trace-enabled-response"
+    chat_log_dir = context.run_dir / _CHAT_LOG_DIR_NAME
+    chat_logs = sorted(chat_log_dir.glob("*.jsonl"))
+    assert len(chat_logs) == 1
+    lines = [line for line in chat_logs[0].read_text(encoding="utf-8").splitlines() if line]
+    assert len(lines) == 1
+    payload = json.loads(lines[0])
+    assert payload["provider"] == "github-models"
+    assert payload["model"] == openai_model
+    assert payload["trace_id"] == "trace-123"
+    assert payload["trace_url"] == "https://smith.langchain.com/r/trace-123"
+
+
+def test_chat_session_surfaces_chat_log_write_failures(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
+
+    original_open = Path.open
+
+    def _failing_open(
+        self: Path,
+        mode: str = "r",
+        buffering: int = -1,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+    ) -> IO[Any]:
+        if self.suffix == ".jsonl" and "chat_logs" in str(self):
+            raise OSError("permission denied")
+        return original_open(
+            self,
+            mode=mode,
+            buffering=buffering,
+            encoding=encoding,
+            errors=errors,
+            newline=newline,
+        )
+
+    monkeypatch.setattr(Path, "open", _failing_open)
+
+    with pytest.raises(RuntimeError, match="Failed to write chat log transcript"):
+        session.ask("top exposures")
+
+
+def test_chat_session_surfaces_chat_log_directory_create_failures(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
+
+    original_mkdir = Path.mkdir
+
+    def _failing_mkdir(
+        self: Path,
+        mode: int = 0o777,
+        parents: bool = False,
+        exist_ok: bool = False,
+    ) -> None:
+        if self.name == _CHAT_LOG_DIR_NAME:
+            raise OSError("permission denied")
+        original_mkdir(self, mode=mode, parents=parents, exist_ok=exist_ok)
+
+    monkeypatch.setattr(Path, "mkdir", _failing_mkdir)
+
+    with pytest.raises(RuntimeError, match="Failed to write chat log transcript"):
+        session.ask("top exposures")
