@@ -219,4 +219,28 @@ def test_submit_chat_message_returns_error_when_provider_call_fails(tmp_path: Pa
 
     assert result.assistant_message is None
     assert result.validation_error is not None
-    assert "rate limit exceeded" in result.validation_error
+    assert result.validation_error == (
+        "Chat provider call failed. Check provider credentials/connectivity and retry."
+    )
+
+
+def test_submit_chat_message_propagates_unexpected_session_errors(tmp_path: Path) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    openai_model = _provider_model("openai")
+
+    class _BrokenSession:
+        def send(self, question: str, *, provider_key: str, model_key: str) -> str:
+            _ = (question, provider_key, model_key)
+            raise ValueError("unexpected bug")
+
+    def _session_factory(*_: object) -> _BrokenSession:
+        return _BrokenSession()
+
+    with pytest.raises(ValueError, match="unexpected bug"):
+        submit_chat_message(
+            context=context,
+            user_text="top exposures",
+            provider_key="openai",
+            model_key=openai_model,
+            session_factory=_session_factory,  # type: ignore[arg-type]
+        )
