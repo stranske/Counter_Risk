@@ -56,6 +56,7 @@ Setting `enabled: false` cleanly skips that generator for the run.
 - **CI/Workflows integration guide:** [docs/CI_SYSTEM_GUIDE.md](docs/CI_SYSTEM_GUIDE.md)
 - **Keepalive troubleshooting:** [docs/KEEPALIVE_TROUBLESHOOTING.md](docs/KEEPALIVE_TROUBLESHOOTING.md)
 - **Consumer setup checklist:** [docs/SETUP_CHECKLIST.md](docs/SETUP_CHECKLIST.md)
+- **GUI runner usage:** [docs/gui_runner.md](docs/gui_runner.md)
 
 ## Name Registry Workflow
 
@@ -138,6 +139,13 @@ The `Runner` sheet also includes direct artifact buttons for:
 Legacy packaging path is still available for release validation only:
 
 - `counter-risk run --fixture-replay --config config/fixture_replay.yml --output-dir <path>`
+
+## GUI Command
+
+For macro-restricted environments, operators can launch the Tkinter runner:
+
+- `counter-risk gui`
+- `counter-risk gui --headless --as-of-date 2025-12-31 --mode all` (CI/smoke)
 
 ## Features
 

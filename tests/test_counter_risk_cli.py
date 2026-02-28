@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from counter_risk import cli
+from counter_risk.gui.runner import GuiRunResult
 
 
 def test_main_without_command_prints_help(capsys: pytest.CaptureFixture[str]) -> None:
@@ -550,3 +551,65 @@ def test_main_run_rejects_invalid_settings_json(
 
     assert result == 2
     assert "runner settings error" in captured.out.lower()
+
+
+def test_gui_parser_accepts_headless_options() -> None:
+    parser = cli.build_parser()
+    args = parser.parse_args(
+        [
+            "gui",
+            "--headless",
+            "--mode",
+            "trend",
+            "--discovery-mode",
+            "discover",
+            "--as-of-date",
+            "2025-12-31",
+        ]
+    )
+
+    assert args.command == "gui"
+    assert args.headless is True
+    assert args.mode == "trend"
+    assert args.discovery_mode == "discover"
+    assert args.as_of_date == "2025-12-31"
+
+
+def test_main_gui_headless_executes_gui_runner(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_execute_gui_run(*, state, runner, dry_run_discovery=False, temp_dir=None):
+        _ = (runner, temp_dir)
+        captured["state"] = state
+        captured["dry_run_discovery"] = dry_run_discovery
+        return GuiRunResult(
+            exit_code=0,
+            cli_args=("run", "--dry-run-discovery"),
+            settings_path=tmp_path / "counter-risk-runner-settings.json",
+            output_dir=None,
+        )
+
+    monkeypatch.setattr("counter_risk.gui.runner.execute_gui_run", fake_execute_gui_run)
+    monkeypatch.setattr(
+        "counter_risk.gui.runner.launch_gui",
+        lambda **_: (_ for _ in ()).throw(AssertionError("launch_gui should not be called")),
+    )
+
+    result = cli.main(
+        [
+            "gui",
+            "--headless",
+            "--dry-run-discovery",
+            "--as-of-date",
+            "2025-12-31",
+            "--mode",
+            "all",
+        ]
+    )
+    captured_output = capsys.readouterr()
+
+    assert result == 0
+    assert "gui headless run completed" in captured_output.out.lower()
+    assert captured["dry_run_discovery"] is True
