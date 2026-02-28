@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from typing import Final, Protocol
+from typing import Final, Protocol, cast
 
 from tools.langchain_client import (
     PROVIDER_ANTHROPIC,
@@ -24,6 +24,10 @@ class ProviderClient(Protocol):
 
     def generate(self, messages: list[dict[str, str]], model: str, **kwargs: object) -> str:
         """Return provider text for a prepared messages list and selected model."""
+
+
+class _LangChainInvokeClient(Protocol):
+    def invoke(self, messages: list[dict[str, str]], config: object | None = None) -> object: ...
 
 
 @dataclass(frozen=True)
@@ -71,7 +75,8 @@ class LangChainProviderClient:
             if client_info is None:
                 continue
             try:
-                response = client_info.client.invoke(messages, config=metadata)
+                client = cast(_LangChainInvokeClient, client_info.client)
+                response = client.invoke(messages, config=metadata)
             except Exception as exc:  # pragma: no cover - network/provider dependent
                 last_error = exc
                 continue

@@ -24,7 +24,9 @@ def test_langchain_provider_client_uses_fallback_provider_when_first_unavailable
 ) -> None:
     calls: list[tuple[str | None, str | None]] = []
 
-    def _fake_build_chat_client(*, provider: str | None = None, model: str | None = None, **_: object):
+    def _fake_build_chat_client(
+        *, provider: str | None = None, model: str | None = None, **_: object
+    ) -> SimpleNamespace | None:
         calls.append((provider, model))
         if provider == "github-models":
             return None
@@ -51,7 +53,9 @@ def test_langchain_provider_client_uses_fallback_provider_when_first_unavailable
 def test_langchain_provider_client_retries_next_provider_after_invoke_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def _fake_build_chat_client(*, provider: str | None = None, model: str | None = None, **_: object):
+    def _fake_build_chat_client(
+        *, provider: str | None = None, model: str | None = None, **_: object
+    ) -> SimpleNamespace:
         class _FailingClient:
             def invoke(self, messages: object, config: object | None = None) -> object:
                 _ = (messages, config)
