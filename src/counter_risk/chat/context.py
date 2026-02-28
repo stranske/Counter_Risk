@@ -37,6 +37,7 @@ class RunContext:
     tables: dict[str, list[dict[str, Any]]]
     warnings: list[str]
     deltas: dict[str, list[dict[str, Any]]]
+    chat_logs: list[dict[str, Any]]
 
     def summary(self) -> str:
         """Build a compact summary string for chat prompt bootstrap."""
@@ -49,7 +50,8 @@ class RunContext:
             f"As-of date: {self.manifest.get('as_of_date', 'unknown')}; "
             f"Warnings: {len(self.warnings)}; "
             f"Variants: {variant_summary}; "
-            f"Tables: {table_summary}"
+            f"Tables: {table_summary}; "
+            f"Chat turns: {len(self.chat_logs)}"
         )
 
 
@@ -63,6 +65,7 @@ def load_run_context(run_dir: Path | str) -> RunContext:
     manifest = load_manifest(run_path)
     tables = discover_tables(run_path)
     warnings, deltas = extract_key_warnings_and_deltas(manifest)
+    chat_logs = load_chat_logs(run_path)
 
     return RunContext(
         run_dir=run_path,
@@ -70,6 +73,7 @@ def load_run_context(run_dir: Path | str) -> RunContext:
         tables=tables,
         warnings=warnings,
         deltas=deltas,
+        chat_logs=chat_logs,
     )
 
 
@@ -107,6 +111,32 @@ def discover_tables(run_dir: Path | str) -> dict[str, list[dict[str, Any]]]:
             tables[table_key] = _load_parquet_table(table_path)
 
     return tables
+
+
+def load_chat_logs(run_dir: Path | str) -> list[dict[str, Any]]:
+    """Load JSONL chat transcripts from ``run_dir/chat_logs``."""
+
+    run_path = Path(run_dir)
+    chat_dir = run_path / "chat_logs"
+    if not chat_dir.is_dir():
+        return []
+
+    records: list[dict[str, Any]] = []
+    for log_path in sorted(chat_dir.glob("*.jsonl")):
+        try:
+            with log_path.open("r", encoding="utf-8") as handle:
+                for line in handle:
+                    stripped = line.strip()
+                    if not stripped:
+                        continue
+                    payload = json.loads(stripped)
+                    if isinstance(payload, dict):
+                        records.append(dict(payload))
+        except json.JSONDecodeError as exc:
+            raise RunContextError(f"Malformed chat log file: {log_path}") from exc
+        except OSError as exc:
+            raise RunContextError(f"Failed to read chat log file: {log_path}") from exc
+    return records
 
 
 def extract_key_warnings_and_deltas(
