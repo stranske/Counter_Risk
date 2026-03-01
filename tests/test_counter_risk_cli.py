@@ -38,8 +38,10 @@ def test_main_run_command_returns_zero(
 
     run_dir = tmp_path / "run-output"
 
-    def fake_run_pipeline_with_config(config, *, config_dir, output_dir=None):
-        _ = (config, config_dir, output_dir)
+    def fake_run_pipeline_with_config(
+        config, *, config_dir, output_dir=None, formatting_profile=None
+    ):
+        _ = (config, config_dir, output_dir, formatting_profile)
         run_dir.mkdir(parents=True, exist_ok=True)
         return run_dir
 
@@ -378,8 +380,10 @@ def test_main_run_discover_mode_auto_selects_and_runs(
     output_dir = tmp_path / "run-output"
     run_dir = output_dir.resolve()
 
-    def fake_run_pipeline_with_config(config, *, config_dir, output_dir=None):
-        _ = config_dir
+    def fake_run_pipeline_with_config(
+        config, *, config_dir, output_dir=None, formatting_profile=None
+    ):
+        _ = (config_dir, formatting_profile)
         output = run_dir if output_dir is None else Path(output_dir).resolve()
         output.mkdir(parents=True, exist_ok=True)
         manifest = {
@@ -498,12 +502,15 @@ def test_main_run_applies_runner_settings_defaults(
 
     captured_config: dict[str, object] = {}
 
-    def fake_run_pipeline_with_config(config, *, config_dir, output_dir=None):
+    def fake_run_pipeline_with_config(
+        config, *, config_dir, output_dir=None, formatting_profile=None
+    ):
         captured_config["fail_policy"] = config.reconciliation.fail_policy
         captured_config["output_root"] = config.output_root
         captured_config["discovery_roots"] = dict(config.input_discovery.directory_roots)
         captured_config["config_dir"] = config_dir
         captured_config["output_dir"] = output_dir
+        captured_config["formatting_profile"] = formatting_profile
         run_dir = tmp_path / "run-output"
         run_dir.mkdir(parents=True, exist_ok=True)
         return run_dir
@@ -524,7 +531,7 @@ def test_main_run_applies_runner_settings_defaults(
     captured = capsys.readouterr()
 
     assert result == 0
-    assert "recorded selection: accounting" in captured.out
+    assert "selected profile: accounting" in captured.out
     assert captured_config["fail_policy"] == "strict"
     assert captured_config["output_root"] == Path(str(tmp_path / "shared-runs"))
     assert captured_config["discovery_roots"] == {
@@ -533,6 +540,7 @@ def test_main_run_applies_runner_settings_defaults(
         "template_inputs": Path(str(tmp_path / "shared-inputs")),
     }
     assert captured_config["output_dir"] is None
+    assert captured_config["formatting_profile"] == "accounting"
 
 
 def test_main_run_uses_discovery_mode_from_settings(

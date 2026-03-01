@@ -18,6 +18,7 @@ class OutputContext:
     run_dir: Path
     as_of_date: date
     run_date: date
+    formatting_profile: str | None = None
     warnings: tuple[str, ...] = field(default_factory=tuple)
 
 

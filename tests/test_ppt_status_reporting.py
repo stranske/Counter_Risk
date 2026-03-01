@@ -66,8 +66,9 @@ def _prepare_pipeline_for_status_tests(tmp_path: Path, monkeypatch: pytest.Monke
         parsed_by_variant: dict[str, dict[str, Any]],
         as_of_date: Any,
         warnings: list[str],
+        formatting_profile: str,
     ) -> list[Path]:
-        _ = (config, parsed_by_variant, as_of_date, warnings)
+        _ = (config, parsed_by_variant, as_of_date, warnings, formatting_profile)
         output = run_dir / "historical-output.xlsx"
         output.write_bytes(b"historical")
         return [output]

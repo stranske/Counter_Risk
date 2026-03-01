@@ -2994,6 +2994,68 @@ def test_merge_historical_workbook_fails_fast_when_required_headers_missing(
     assert broken.cell(row=3, column=1).value is None
 
 
+def test_merge_historical_workbook_applies_currency_formatting_profile(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workbook_path = tmp_path / "hist.xlsx"
+    workbook_path.write_bytes(b"fixture")
+
+    target = _FakeWorksheet("Total")
+    target.set_value(1, 1, "Date")
+    target.set_value(1, 2, "Series A")
+    target.set_value(1, 3, "Series B")
+    target.set_value(2, 1, "2025-12-31")
+
+    workbook = _FakeWorkbook({"Total": target})
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook)
+    )
+
+    run_module._merge_historical_workbook(
+        workbook_path=workbook_path,
+        variant="all_programs",
+        as_of_date=date(2026, 2, 13),
+        totals_records=[{"Notional": 10.0, "counterparty": "A"}],
+        formatting_profile="currency",
+        warnings=[],
+    )
+
+    assert target.cell(row=3, column=2).number_format == "$#,##0.00;[Red]-$#,##0.00"
+    assert target.cell(row=3, column=3).number_format == "0"
+
+
+def test_merge_historical_workbook_applies_accounting_formatting_profile(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workbook_path = tmp_path / "hist.xlsx"
+    workbook_path.write_bytes(b"fixture")
+
+    target = _FakeWorksheet("Total")
+    target.set_value(1, 1, "Date")
+    target.set_value(1, 2, "Series A")
+    target.set_value(1, 3, "Series B")
+    target.set_value(2, 1, "2025-12-31")
+
+    workbook = _FakeWorkbook({"Total": target})
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook)
+    )
+
+    run_module._merge_historical_workbook(
+        workbook_path=workbook_path,
+        variant="all_programs",
+        as_of_date=date(2026, 2, 13),
+        totals_records=[{"Notional": 10.0, "counterparty": "A"}],
+        formatting_profile="accounting",
+        warnings=[],
+    )
+
+    notional_format = target.cell(row=3, column=2).number_format
+    assert isinstance(notional_format, str)
+    assert "#,##0.00" in notional_format
+    assert target.cell(row=3, column=3).number_format == "0"
+
+
 # ---------------------------------------------------------------------------
 # Static distribution fallback tests
 # ---------------------------------------------------------------------------

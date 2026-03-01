@@ -38,7 +38,7 @@ This document defines the operator experience for running the monthly counterpar
    - `Input Root`
    - `Discovery Mode` (`discover` or manual mode)
    - `Strict Policy` (`warn` or `strict`)
-   - `Formatting Profile`
+   - `Formatting Profile` (`default`, `currency`, `accounting`, or `plain`)
    - `Output Root`
 5. Click `Run Monthly Process`.
 6. Review completion message and warnings panel.

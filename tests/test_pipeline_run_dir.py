@@ -67,8 +67,9 @@ def test_pipeline_writes_outputs_only_to_repo_root_runs_date_dir(
         parsed_by_variant: dict[str, dict[str, Any]],
         as_of_date: Any,
         warnings: list[str],
+        formatting_profile: str,
     ) -> list[Path]:
-        _ = (config, parsed_by_variant, as_of_date, warnings)
+        _ = (config, parsed_by_variant, as_of_date, warnings, formatting_profile)
         output = run_dir / "historical-output.xlsx"
         output.write_bytes(b"historical")
         return [output]
@@ -139,8 +140,9 @@ def test_run_directory_creation_same_date_repeat_run_uses_unique_directory_suffi
         parsed_by_variant: dict[str, dict[str, Any]],
         as_of_date: Any,
         warnings: list[str],
+        formatting_profile: str,
     ) -> list[Path]:
-        _ = (config, parsed_by_variant, as_of_date, warnings)
+        _ = (config, parsed_by_variant, as_of_date, warnings, formatting_profile)
         output = run_dir / "historical-output.xlsx"
         output.write_bytes(b"historical")
         return [output]
@@ -199,7 +201,7 @@ def test_pipeline_run_directory_includes_run_date_when_configured(
     monkeypatch.setattr("counter_risk.pipeline.run._compute_metrics", lambda _: ({}, {}))
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings, formatting_profile: [],
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
