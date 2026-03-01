@@ -87,13 +87,9 @@ def resolve_marker_bound_range(
 ) -> MarkerBoundRange:
     """Resolve inclusive row bounds by locating *start_marker* and *end_marker*."""
 
-    start_row = find_row_containing_text(
-        worksheet, start_marker, min_row=min_row, max_row=max_row
-    )
+    start_row = find_row_containing_text(worksheet, start_marker, min_row=min_row, max_row=max_row)
     if start_row is None:
-        raise ValueError(
-            f"Unable to locate marker {start_marker!r} in sheet {worksheet.title!r}."
-        )
+        raise ValueError(f"Unable to locate marker {start_marker!r} in sheet {worksheet.title!r}.")
     end_row = find_row_containing_text(
         worksheet,
         end_marker,

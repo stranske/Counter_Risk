@@ -71,4 +71,3 @@ def test_all_programs_fixture_generates_using_documented_layout_contract() -> No
         assert worksheet[first_alloc_cell].value == expected_allocation
     finally:
         workbook.close()
-

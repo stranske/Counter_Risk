@@ -1145,11 +1145,17 @@ def _load_repo_cash_by_counterparty(
             warnings.append(f"Repo Cash overrides file present but empty: {overrides_path}")
 
     required_counterparties = sorted(
-        {normalize_counterparty(value) for value in config.required_repo_counterparties if value.strip()},
+        {
+            normalize_counterparty(value)
+            for value in config.required_repo_counterparties
+            if value.strip()
+        },
         key=str.casefold,
     )
     missing_required = [
-        counterparty for counterparty in required_counterparties if counterparty not in repo_cash_by_counterparty
+        counterparty
+        for counterparty in required_counterparties
+        if counterparty not in repo_cash_by_counterparty
     ]
     if missing_required:
         _handle_repo_cash_condition(
@@ -2194,7 +2200,9 @@ def _derive_dropin_output_filename(template_path: Path) -> str:
     return f"{stem}-filled.xlsx"
 
 
-def _build_dropin_notional_breakdown(totals_records: Sequence[Mapping[str, Any]]) -> dict[str, float]:
+def _build_dropin_notional_breakdown(
+    totals_records: Sequence[Mapping[str, Any]],
+) -> dict[str, float]:
     class_totals = dict.fromkeys(_CLASS_BREAKDOWN_COLUMNS, 0.0)
     total_notional = 0.0
 

@@ -32,9 +32,9 @@ from counter_risk.runner_launch import (
 
 
 @pytest.fixture
-def filesystem_and_explorer_stubs() -> tuple[
-    set[str], list[str], Callable[[str], bool], Callable[[str], int]
-]:
+def filesystem_and_explorer_stubs() -> (
+    tuple[set[str], list[str], Callable[[str], bool], Callable[[str], int]]
+):
     existing_directories: set[str] = set()
     opened_directories: list[str] = []
 
@@ -394,9 +394,7 @@ def test_read_overall_status_color_returns_empty_for_no_status_marker(tmp_path: 
         ("RED", "RED - Do not send"),
     ],
 )
-def test_data_quality_status_label_maps_color_to_label(
-    color: str, expected_label: str
-) -> None:
+def test_data_quality_status_label_maps_color_to_label(color: str, expected_label: str) -> None:
     assert data_quality_status_label(color) == expected_label
 
 

@@ -139,7 +139,9 @@ def _load_xlsx_rows(path: Path) -> list[dict[str, str]]:
 def _rows_to_repo_cash_mapping(rows: list[dict[str, str]], *, path: Path) -> dict[str, float]:
     if not rows:
         return {}
-    normalized_rows = [{_normalize_header(key): value for key, value in row.items()} for row in rows]
+    normalized_rows = [
+        {_normalize_header(key): value for key, value in row.items()} for row in rows
+    ]
     header_names = {key for row in normalized_rows for key in row}
     counterparty_header = _first_matching_header(header_names, _COUNTERPARTY_HEADER_ALIASES)
     cash_header = _first_matching_header(header_names, _CASH_HEADER_ALIASES)
@@ -157,7 +159,9 @@ def _rows_to_repo_cash_mapping(rows: list[dict[str, str]], *, path: Path) -> dic
         if not raw_cash:
             continue
         canonical_counterparty = normalize_counterparty(raw_counterparty)
-        mapping[canonical_counterparty] = _coerce_cash_value(raw_cash, path=path, row_index=row_index)
+        mapping[canonical_counterparty] = _coerce_cash_value(
+            raw_cash, path=path, row_index=row_index
+        )
     return mapping
 
 
@@ -165,9 +169,7 @@ def _normalize_header(value: str) -> str:
     return value.strip().casefold().replace(" ", "_")
 
 
-def _first_matching_header(
-    headers: set[str], candidates: tuple[str, ...]
-) -> str | None:
+def _first_matching_header(headers: set[str], candidates: tuple[str, ...]) -> str | None:
     for candidate in candidates:
         if candidate in headers:
             return candidate

@@ -71,4 +71,3 @@ def test_trend_fixture_generates_using_documented_layout_contract() -> None:
         assert worksheet[first_alloc_cell].value == expected_allocation
     finally:
         workbook.close()
-

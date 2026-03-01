@@ -352,8 +352,8 @@ def test_resolve_cprs_ch_metric_row_bounds_tracks_template_row_shifts() -> None:
     workbook = workbook_generation_module.load_mosers_template_workbook()
     try:
         worksheet = workbook["CPRS - CH"]
-        baseline_start, baseline_end = workbook_generation_module._resolve_cprs_ch_metric_row_bounds(
-            worksheet
+        baseline_start, baseline_end = (
+            workbook_generation_module._resolve_cprs_ch_metric_row_bounds(worksheet)
         )
         worksheet.insert_rows(baseline_start, amount=2)
         shifted_start, shifted_end = workbook_generation_module._resolve_cprs_ch_metric_row_bounds(

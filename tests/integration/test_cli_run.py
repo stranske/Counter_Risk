@@ -36,7 +36,9 @@ def _run_cli(*, repo_root: Path, args: list[str]) -> subprocess.CompletedProcess
     env = os.environ.copy()
     src_path = str(repo_root / "src")
     existing_pythonpath = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = src_path if not existing_pythonpath else f"{src_path}{os.pathsep}{existing_pythonpath}"
+    env["PYTHONPATH"] = (
+        src_path if not existing_pythonpath else f"{src_path}{os.pathsep}{existing_pythonpath}"
+    )
     return subprocess.run(
         [sys.executable, "-m", "counter_risk.cli", *args],
         cwd=repo_root,
