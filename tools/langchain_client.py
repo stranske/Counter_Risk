@@ -148,12 +148,6 @@ def _resolve_slots() -> list[SlotDefinition]:
     return _apply_slot_env_overrides(_load_slot_config())
 
 
-def list_slot_definitions() -> list[SlotDefinition]:
-    """Return configured LLM slot definitions after env overrides."""
-
-    return list(_resolve_slots())
-
-
 def get_provider_model_catalog() -> dict[str, set[str]]:
     """Return provider->model mappings from configured slots."""
 
