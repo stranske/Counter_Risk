@@ -4,10 +4,13 @@ Counter_Risk persists each chat interaction to the active run folder for auditab
 
 ## Logging Controls
 
-- Transcript logging (`chat_logs/*.jsonl`) is always enabled by design for run-level auditability.
-- There is no runtime toggle to disable transcript logging.
-- Legacy debug prompt/response artifacts (`llm_logs/*.json`) are optional and only written when
-  `ChatSession(enable_llm_logging=True)` is used by the caller.
+- Logging mode is controlled by `ChatSession(log_mode=...)` or `COUNTER_RISK_CHAT_LOG_MODE`.
+- Supported modes:
+  - `transcript` (default): write `chat_logs/*.jsonl` only
+  - `full`: write `chat_logs/*.jsonl` and `llm_logs/*.json`
+  - `off`: write no chat artifacts
+- Legacy debug flag `ChatSession(enable_llm_logging=True)` still forces `llm_logs/*.json`
+  regardless of mode for backward compatibility.
 
 ## Log Location
 
