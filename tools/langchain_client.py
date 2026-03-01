@@ -148,29 +148,6 @@ def _resolve_slots() -> list[SlotDefinition]:
     return _apply_slot_env_overrides(_load_slot_config())
 
 
-def list_slot_definitions() -> list[SlotDefinition]:
-    """Return configured LLM slot definitions after env overrides."""
-
-    return list(_resolve_slots())
-
-
-def get_provider_model_catalog() -> dict[str, set[str]]:
-    """Return provider->model mappings from configured slots."""
-
-    catalog: dict[str, set[str]] = {
-        PROVIDER_OPENAI: set(),
-        PROVIDER_ANTHROPIC: set(),
-        PROVIDER_GITHUB: set(),
-    }
-    for slot in _resolve_slots():
-        catalog.setdefault(slot.provider, set()).add(slot.model)
-
-    if not any(catalog.values()):
-        for slot in _default_slots():
-            catalog.setdefault(slot.provider, set()).add(slot.model)
-    return catalog
-
-
 def _is_reasoning_model(model: str) -> bool:
     """Return True if the model is an OpenAI reasoning model that rejects temperature.
 
