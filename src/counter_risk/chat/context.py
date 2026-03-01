@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, cast
 
 try:
-    import pyarrow.lib as _pyarrow_lib  # type: ignore[import-not-found]
+    import pyarrow.lib as _pyarrow_lib
 except (ImportError, ModuleNotFoundError):
     _PYARROW_IO_ERROR_TYPES: tuple[type[BaseException], ...] = (OSError,)
 else:
@@ -192,7 +192,7 @@ def _load_csv_table(path: Path) -> list[dict[str, Any]]:
 
 def _load_parquet_table(path: Path) -> list[dict[str, Any]]:
     try:
-        import pandas as pd  # type: ignore[import-untyped]
+        import pandas as pd
     except (ImportError, ModuleNotFoundError) as exc:
         raise RunContextError(
             f"Parquet table found but pandas is unavailable: {path}. "
