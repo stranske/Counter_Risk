@@ -160,6 +160,65 @@ def test_main_run_dry_run_discovery_lists_matches(
     assert "NISA Monthly All Programs - Raw.xlsx" in captured.out
 
 
+def test_main_run_dry_run_discovery_applies_runner_settings_input_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "dry_run_discovery_settings.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "hist_all_programs_3yr_xlsx: placeholder-all.xlsx",
+                "hist_ex_llc_3yr_xlsx: placeholder-ex.xlsx",
+                "hist_llc_3yr_xlsx: placeholder-trend.xlsx",
+                "monthly_pptx: placeholder.pptx",
+                "input_discovery:",
+                "  directory_roots:",
+                "    monthly_inputs: monthly",
+                "    historical_inputs: historical",
+                "    template_inputs: templates",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    settings_path = tmp_path / "runner-settings.json"
+    settings_path.write_text(
+        json.dumps({"input_root": str(tmp_path / "shared-inputs")}),
+        encoding="utf-8",
+    )
+
+    captured: dict[str, object] = {}
+
+    def fake_format_discovery_dry_run(*, config, as_of_date):
+        captured["as_of_date"] = as_of_date.isoformat()
+        captured["roots"] = dict(config.input_discovery.directory_roots)
+        return "ok"
+
+    monkeypatch.setattr(cli, "_format_discovery_dry_run", fake_format_discovery_dry_run)
+
+    result = cli.main(
+        [
+            "run",
+            "--dry-run-discovery",
+            "--config",
+            str(config_path),
+            "--as-of-month",
+            "2025-12-31",
+            "--settings",
+            str(settings_path),
+        ]
+    )
+
+    assert result == 0
+    assert captured["as_of_date"] == "2025-12-31"
+    assert captured["roots"] == {
+        "historical_inputs": Path(str(tmp_path / "shared-inputs")),
+        "monthly_inputs": Path(str(tmp_path / "shared-inputs")),
+        "template_inputs": Path(str(tmp_path / "shared-inputs")),
+    }
+
+
 def test_main_run_dry_run_discovery_requires_as_of_date(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -390,3 +449,163 @@ def test_run_parser_accepts_discover_flag() -> None:
     args = parser.parse_args(["run", "--discover", "--as-of-month", "2025-12-31"])
     assert args.discover is True
     assert args.as_of_date == "2025-12-31"
+
+
+def test_run_parser_accepts_settings_path(tmp_path: Path) -> None:
+    parser = cli.build_parser()
+
+    settings_path = tmp_path / "runner-settings.json"
+    args = parser.parse_args(["run", "--settings", str(settings_path)])
+
+    assert args.settings == settings_path
+
+
+def test_main_run_applies_runner_settings_defaults(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "workflow.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "hist_all_programs_3yr_xlsx: placeholder-all.xlsx",
+                "hist_ex_llc_3yr_xlsx: placeholder-ex.xlsx",
+                "hist_llc_3yr_xlsx: placeholder-trend.xlsx",
+                "monthly_pptx: placeholder.pptx",
+                "input_discovery:",
+                "  directory_roots:",
+                "    monthly_inputs: monthly",
+                "    historical_inputs: historical",
+                "    template_inputs: templates",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    settings_path = tmp_path / "runner-settings.json"
+    settings_path.write_text(
+        json.dumps(
+            {
+                "strict_policy": "strict",
+                "formatting_profile": "accounting",
+                "input_root": str(tmp_path / "shared-inputs"),
+                "output_root": str(tmp_path / "shared-runs"),
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    captured_config: dict[str, object] = {}
+
+    def fake_run_pipeline_with_config(config, *, config_dir, output_dir=None):
+        captured_config["fail_policy"] = config.reconciliation.fail_policy
+        captured_config["output_root"] = config.output_root
+        captured_config["discovery_roots"] = dict(config.input_discovery.directory_roots)
+        captured_config["config_dir"] = config_dir
+        captured_config["output_dir"] = output_dir
+        run_dir = tmp_path / "run-output"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        return run_dir
+
+    monkeypatch.setattr(cli, "run_pipeline_with_config", fake_run_pipeline_with_config)
+
+    result = cli.main(
+        [
+            "run",
+            "--config",
+            str(config_path),
+            "--as-of-date",
+            "2025-12-31",
+            "--settings",
+            str(settings_path),
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert result == 0
+    assert "recorded selection: accounting" in captured.out
+    assert captured_config["fail_policy"] == "strict"
+    assert captured_config["output_root"] == Path(str(tmp_path / "shared-runs"))
+    assert captured_config["discovery_roots"] == {
+        "historical_inputs": Path(str(tmp_path / "shared-inputs")),
+        "monthly_inputs": Path(str(tmp_path / "shared-inputs")),
+        "template_inputs": Path(str(tmp_path / "shared-inputs")),
+    }
+    assert captured_config["output_dir"] is None
+
+
+def test_main_run_uses_discovery_mode_from_settings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "workflow.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "hist_all_programs_3yr_xlsx: placeholder-all.xlsx",
+                "hist_ex_llc_3yr_xlsx: placeholder-ex.xlsx",
+                "hist_llc_3yr_xlsx: placeholder-trend.xlsx",
+                "monthly_pptx: placeholder.pptx",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    settings_path = tmp_path / "runner-settings.json"
+    settings_path.write_text(json.dumps({"discovery_mode": "discover"}), encoding="utf-8")
+
+    calls: dict[str, int] = {"discover": 0, "workflow": 0}
+
+    def fake_run_with_discovery(_args: object) -> int:
+        calls["discover"] += 1
+        return 0
+
+    def fake_run_workflow_mode(_args: object) -> int:
+        calls["workflow"] += 1
+        return 0
+
+    monkeypatch.setattr(cli, "_run_with_discovery", fake_run_with_discovery)
+    monkeypatch.setattr(cli, "_run_workflow_mode", fake_run_workflow_mode)
+
+    result = cli.main(
+        [
+            "run",
+            "--config",
+            str(config_path),
+            "--as-of-date",
+            "2025-12-31",
+            "--settings",
+            str(settings_path),
+        ]
+    )
+
+    assert result == 0
+    assert calls["discover"] == 1
+    assert calls["workflow"] == 0
+
+
+def test_main_run_rejects_invalid_settings_json(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_path = tmp_path / "workflow.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "hist_all_programs_3yr_xlsx: placeholder-all.xlsx",
+                "hist_ex_llc_3yr_xlsx: placeholder-ex.xlsx",
+                "hist_llc_3yr_xlsx: placeholder-trend.xlsx",
+                "monthly_pptx: placeholder.pptx",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    settings_path = tmp_path / "runner-settings.json"
+    settings_path.write_text("{not-valid-json", encoding="utf-8")
+
+    result = cli.main(["run", "--config", str(config_path), "--settings", str(settings_path)])
+    captured = capsys.readouterr()
+
+    assert result == 2
+    assert "runner settings error" in captured.out.lower()

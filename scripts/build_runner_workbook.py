@@ -21,6 +21,20 @@ from counter_risk.runner_date_control import (
 OUTPUT_PATH = Path("Runner.xlsm")
 VBA_PROJECT_PATH = Path("assets/vba/vbaProject.bin")
 OLE_CFB_SIGNATURE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+_SETTINGS_ROWS: tuple[tuple[str, str], ...] = (
+    ("Input Root", "inputs"),
+    ("Discovery Mode", "discover"),
+    ("Strict Policy", "warn"),
+    ("Formatting Profile", "default"),
+    ("Output Root", "runs"),
+)
+_SETTINGS_NAMED_RANGES: tuple[tuple[str, str], ...] = (
+    ("RunnerSetting_InputRoot", "Settings!$B$2"),
+    ("RunnerSetting_DiscoveryMode", "Settings!$B$3"),
+    ("RunnerSetting_StrictPolicy", "Settings!$B$4"),
+    ("RunnerSetting_FormattingProfile", "Settings!$B$5"),
+    ("RunnerSetting_OutputRoot", "Settings!$B$6"),
+)
 
 
 def _month_end_dates(start_year: int, start_month: int, end_year: int, end_month: int) -> list[str]:
@@ -48,7 +62,7 @@ def _inline_str_cell(cell_ref: str, value: str) -> str:
 def _runner_sheet_xml(validation_formula: str) -> str:
     return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <dimension ref="A1:G12"/>
+  <dimension ref="A1:I12"/>
   <sheetViews>
     <sheetView workbookViewId="0"/>
   </sheetViews>
@@ -68,10 +82,20 @@ def _runner_sheet_xml(validation_formula: str) -> str:
       {_inline_str_cell("A5", "Run All")}
       {_inline_str_cell("B5", "Run Ex Trend")}
       {_inline_str_cell("C5", "Run Trend")}
-      {_inline_str_cell("D5", "Open Output Folder")}
-      {_inline_str_cell("E5", "Ask about this run")}
-      {_inline_str_cell("F5", "Open Summary")}
-      {_inline_str_cell("G5", "Dry-Run Discovery")}
+      {_inline_str_cell("D5", "Dry-Run Discovery")}
+      {_inline_str_cell("E5", "Open Output Folder")}
+      {_inline_str_cell("F5", "Open Manifest")}
+      {_inline_str_cell("G5", "Open Summary")}
+      {_inline_str_cell("H5", "Open PPT Folder")}
+      {_inline_str_cell("I5", "Ask about this run")}
+    </row>
+    <row r="7">
+      {_inline_str_cell("A7", "Status")}
+      <c r="B7"/>
+    </row>
+    <row r="8">
+      {_inline_str_cell("A8", "Result")}
+      <c r="B8"/>
     </row>
     <row r="9">
       {_inline_str_cell("A9", "Data Quality")}
@@ -110,8 +134,38 @@ def _control_data_sheet_xml(month_values: list[str]) -> str:
 """
 
 
+def _settings_sheet_xml() -> str:
+    rows = ['<row r="1">' + _inline_str_cell("A1", "Setting") + _inline_str_cell("B1", "Value") + "</row>"]
+    for index, (label, value) in enumerate(_SETTINGS_ROWS, start=2):
+        rows.append(
+            '<row r="{row}">{label_cell}{value_cell}</row>'.format(
+                row=index,
+                label_cell=_inline_str_cell(f"A{index}", label),
+                value_cell=_inline_str_cell(f"B{index}", value),
+            )
+        )
+    rows_xml = "\n    ".join(rows)
+
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <dimension ref="A1:B{len(_SETTINGS_ROWS) + 1}"/>
+  <sheetViews>
+    <sheetView workbookViewId="0"/>
+  </sheetViews>
+  <sheetFormatPr defaultRowHeight="15"/>
+  <sheetData>
+    {rows_xml}
+  </sheetData>
+</worksheet>
+"""
+
+
 def _workbook_xml() -> str:
-    return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    defined_names = "\n    ".join(
+        f'<definedName name="{name}">{reference}</definedName>'
+        for name, reference in _SETTINGS_NAMED_RANGES
+    )
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
           xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <fileVersion appName="xl"/>
@@ -122,7 +176,11 @@ def _workbook_xml() -> str:
   <sheets>
     <sheet name="Runner" sheetId="1" r:id="rId1"/>
     <sheet name="ControlData" sheetId="2" state="hidden" r:id="rId2"/>
+    <sheet name="Settings" sheetId="3" r:id="rId3"/>
   </sheets>
+  <definedNames>
+    {defined_names}
+  </definedNames>
 </workbook>
 """
 
@@ -132,8 +190,9 @@ def _workbook_rels_xml() -> str:
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
-  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
-  <Relationship Id="rId4" Type="http://schemas.microsoft.com/office/2006/relationships/vbaProject" Target="vbaProject.bin"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.microsoft.com/office/2006/relationships/vbaProject" Target="vbaProject.bin"/>
 </Relationships>
 """
 
@@ -170,6 +229,7 @@ def _content_types_xml() -> str:
   <Override PartName="/xl/vbaProject.bin" ContentType="application/vnd.ms-office.vbaProject"/>
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
   <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
   <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
@@ -266,6 +326,11 @@ def build_runner_workbook(path: Path = OUTPUT_PATH) -> None:
             zip_file,
             "xl/worksheets/sheet2.xml",
             _control_data_sheet_xml(month_values),
+        )
+        _write_zip_member(
+            zip_file,
+            "xl/worksheets/sheet3.xml",
+            _settings_sheet_xml(),
         )
 
 

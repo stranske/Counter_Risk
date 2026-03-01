@@ -161,6 +161,7 @@ Optional runtime overrides:
 - `--strict-policy warn|strict` (reconciliation fail policy override)
 - `--export-pdf` / `--no-export-pdf`
 - `--formatting-profile <name>` (reserved selector for formatter policy wiring)
+- `--settings <path/to/runner-settings.json>` (Runner.xlsm / GUI serialized settings payload)
 
 Legacy packaging path is still available for release validation only:
 

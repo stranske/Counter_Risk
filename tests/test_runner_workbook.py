@@ -83,6 +83,7 @@ def test_runner_workbook_has_required_ooxml_structure_and_content_types() -> Non
             "xl/vbaProject.bin",
             "xl/worksheets/sheet1.xml",
             "xl/worksheets/sheet2.xml",
+            "xl/worksheets/sheet3.xml",
         }
         assert expected_members.issubset(members)
 
@@ -107,6 +108,10 @@ def test_runner_workbook_has_required_ooxml_structure_and_content_types() -> Non
         )
         assert (
             override_content_types["/xl/worksheets/sheet2.xml"]
+            == "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+        )
+        assert (
+            override_content_types["/xl/worksheets/sheet3.xml"]
             == "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
         )
         assert (
@@ -144,6 +149,7 @@ def test_runner_workbook_contains_month_selector_dropdown() -> None:
 
         assert "Runner" in sheet_by_name
         assert "ControlData" in sheet_by_name
+        assert "Settings" in sheet_by_name
         assert sheet_by_name["ControlData"].attrib.get("state") == "hidden"
 
         rel_target_by_id = {
@@ -157,9 +163,13 @@ def test_runner_workbook_contains_month_selector_dropdown() -> None:
         control_sheet_target = rel_target_by_id[
             sheet_by_name["ControlData"].attrib[f"{{{RELATIONSHIP_NS}}}id"]
         ]
+        settings_sheet_target = rel_target_by_id[
+            sheet_by_name["Settings"].attrib[f"{{{RELATIONSHIP_NS}}}id"]
+        ]
 
         runner_sheet_root = _read_xml(zip_file, f"xl/{runner_sheet_target}")
         control_sheet_root = _read_xml(zip_file, f"xl/{control_sheet_target}")
+        settings_sheet_root = _read_xml(zip_file, f"xl/{settings_sheet_target}")
 
         selector_label = runner_sheet_root.find(
             "ss:sheetData/ss:row[@r='3']/ss:c[@r='A3']/ss:is/ss:t",
@@ -193,6 +203,16 @@ def test_runner_workbook_contains_month_selector_dropdown() -> None:
         for current, next_value in zip(parsed_dates, parsed_dates[1:], strict=False):
             assert next_value == _next_month_end(current)
 
+        settings_labels = settings_sheet_root.findall(
+            "ss:sheetData/ss:row/ss:c/ss:is/ss:t",
+            NAMESPACES,
+        )
+        settings_values = [node.text for node in settings_labels if node.text]
+        assert "Discovery Mode" in settings_values
+        assert "Strict Policy" in settings_values
+        assert "Formatting Profile" in settings_values
+        assert "Output Root" in settings_values
+
 
 def test_runner_workbook_contains_run_controls() -> None:
     workbook_path = Path("Runner.xlsm")
@@ -216,10 +236,12 @@ def test_runner_workbook_contains_run_controls() -> None:
             "A5": "Run All",
             "B5": "Run Ex Trend",
             "C5": "Run Trend",
-            "D5": "Open Output Folder",
-            "E5": "Ask about this run",
-            "F5": "Open Summary",
-            "G5": "Dry-Run Discovery",
+            "D5": "Dry-Run Discovery",
+            "E5": "Open Output Folder",
+            "F5": "Open Manifest",
+            "G5": "Open Summary",
+            "H5": "Open PPT Folder",
+            "I5": "Ask about this run",
         }
         for cell_ref, expected_text in action_cells.items():
             node = runner_sheet_root.find(
@@ -228,6 +250,20 @@ def test_runner_workbook_contains_run_controls() -> None:
             )
             assert node is not None
             assert node.text == expected_text
+
+
+def test_runner_workbook_defines_named_ranges_for_settings_cells() -> None:
+    workbook_path = Path("Runner.xlsm")
+    with ZipFile(workbook_path) as zip_file:
+        workbook_root = _read_xml(zip_file, "xl/workbook.xml")
+        defined_names = workbook_root.findall("ss:definedNames/ss:definedName", NAMESPACES)
+        names = {node.attrib.get("name"): node.text for node in defined_names}
+
+    assert names["RunnerSetting_InputRoot"] == "Settings!$B$2"
+    assert names["RunnerSetting_DiscoveryMode"] == "Settings!$B$3"
+    assert names["RunnerSetting_StrictPolicy"] == "Settings!$B$4"
+    assert names["RunnerSetting_FormattingProfile"] == "Settings!$B$5"
+    assert names["RunnerSetting_OutputRoot"] == "Settings!$B$6"
 
 
 def test_runner_workbook_contains_data_quality_row() -> None:
@@ -260,6 +296,20 @@ def test_runner_workbook_contains_data_quality_row() -> None:
             NAMESPACES,
         )
         assert status_cell is not None
+
+        status_label = runner_sheet_root.find(
+            "ss:sheetData/ss:row[@r='7']/ss:c[@r='A7']/ss:is/ss:t",
+            NAMESPACES,
+        )
+        assert status_label is not None
+        assert status_label.text == "Status"
+
+        result_label = runner_sheet_root.find(
+            "ss:sheetData/ss:row[@r='8']/ss:c[@r='A8']/ss:is/ss:t",
+            NAMESPACES,
+        )
+        assert result_label is not None
+        assert result_label.text == "Result"
 
 
 def test_build_runner_workbook_embeds_valid_vba_binary_with_matching_hash(tmp_path: Path) -> None:
