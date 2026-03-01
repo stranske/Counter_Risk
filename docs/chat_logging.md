@@ -22,7 +22,8 @@ Each JSONL row contains:
 - `interaction`: incrementing interaction number in the current session
 - `timestamp`: UTC timestamp (`Z` suffix)
 - `selected_provider` / `selected_model`: provider/model chosen by the operator
-- `provider` / `model`: resolved provider/model used for the actual invocation
+- `provider` / `model`: provider/model reported by the provider client for the actual invocation
+  (falls back to `selected_provider` / `selected_model` when runtime metadata is unavailable)
 - `question`: validated user question text
 - `prompt`: guarded prompt payload sent to provider
 - `response`: assistant text returned by provider
