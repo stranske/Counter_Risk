@@ -124,6 +124,22 @@ def test_execute_gui_run_validates_dates_before_runner_call(tmp_path: Path) -> N
     assert calls == 0
 
 
+def test_execute_gui_run_cleanup_flag_removes_settings_file(tmp_path: Path) -> None:
+    def fake_runner(_argv: list[str]) -> int:
+        return 0
+
+    state = GuiRunState(as_of_date="2025-12-31")
+    result = execute_gui_run(
+        state=state,
+        runner=fake_runner,
+        temp_dir=tmp_path,
+        cleanup_settings_file=True,
+    )
+
+    assert result.exit_code == 0
+    assert result.settings_path.exists() is False
+
+
 def test_launch_gui_starts_tk_mainloop_with_headless_stubs(monkeypatch) -> None:
     created: dict[str, object] = {}
 

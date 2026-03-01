@@ -92,6 +92,14 @@ def _write_settings_file(payload: str, temp_dir: Path | None = None) -> Path:
         return Path(handle.name)
 
 
+def _cleanup_settings_file(settings_path: Path) -> None:
+    try:
+        settings_path.unlink(missing_ok=True)
+    except OSError:
+        # Best-effort cleanup; run execution result is more important than temp file deletion.
+        return
+
+
 def _build_cli_args(
     *,
     state: GuiRunState,
@@ -133,6 +141,7 @@ def execute_gui_run(
     runner: Callable[[list[str]], int],
     dry_run_discovery: bool = False,
     temp_dir: Path | None = None,
+    cleanup_settings_file: bool = False,
 ) -> GuiRunResult:
     # Re-using parse_as_of_month keeps validation behavior aligned with Runner.xlsm.
     parse_as_of_month(state.as_of_date)
@@ -143,7 +152,11 @@ def execute_gui_run(
         settings_path=settings_path,
         dry_run_discovery=dry_run_discovery,
     )
-    exit_code = int(runner(cli_args))
+    try:
+        exit_code = int(runner(cli_args))
+    finally:
+        if cleanup_settings_file:
+            _cleanup_settings_file(settings_path)
     output_dir = None if dry_run_discovery else _resolve_output_dir(state)
     return GuiRunResult(
         exit_code=exit_code,
@@ -221,6 +234,7 @@ def launch_gui(
                 state=current,
                 runner=run_counter_risk,
                 dry_run_discovery=dry_run_discovery,
+                cleanup_settings_file=True,
             )
             if result.exit_code == 0:
                 status_var.set("Complete")

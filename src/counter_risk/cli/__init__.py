@@ -224,11 +224,16 @@ def _gui_command(args: argparse.Namespace) -> int:
         return int(main(argv))
 
     if bool(getattr(args, "headless", False)):
-        result = execute_gui_run(
-            state=state,
-            runner=_run_callback,
-            dry_run_discovery=bool(getattr(args, "dry_run_discovery", False)),
-        )
+        try:
+            result = execute_gui_run(
+                state=state,
+                runner=_run_callback,
+                dry_run_discovery=bool(getattr(args, "dry_run_discovery", False)),
+                cleanup_settings_file=True,
+            )
+        except Exception as exc:
+            print(f"Counter Risk GUI headless run failed: {exc}")
+            return 1
         if result.exit_code == 0:
             print("Counter Risk GUI headless run completed.")
             return 0

@@ -60,7 +60,7 @@ counter-risk gui --headless --dry-run-discovery --as-of-date 2025-12-31
 
 ## Settings Serialization
 
-GUI runs write `counter-risk-runner-settings.json` under the system temp directory and pass it through `--settings` to the `run` command. The same settings contract as `Runner.xlsm` is used:
+GUI runs write `counter-risk-runner-settings-*.json` under the system temp directory and pass it through `--settings` to the `run` command. The same settings contract as `Runner.xlsm` is used:
 
 - `input_root`
 - `discovery_mode`

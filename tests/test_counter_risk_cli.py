@@ -639,10 +639,18 @@ def test_main_gui_headless_executes_gui_runner(
 ) -> None:
     captured: dict[str, object] = {}
 
-    def fake_execute_gui_run(*, state, runner, dry_run_discovery=False, temp_dir=None):
+    def fake_execute_gui_run(
+        *,
+        state,
+        runner,
+        dry_run_discovery=False,
+        temp_dir=None,
+        cleanup_settings_file=False,
+    ):
         _ = (runner, temp_dir)
         captured["state"] = state
         captured["dry_run_discovery"] = dry_run_discovery
+        captured["cleanup_settings_file"] = cleanup_settings_file
         return GuiRunResult(
             exit_code=0,
             cli_args=("run", "--dry-run-discovery"),
@@ -672,3 +680,23 @@ def test_main_gui_headless_executes_gui_runner(
     assert result == 0
     assert "gui headless run completed" in captured_output.out.lower()
     assert captured["dry_run_discovery"] is True
+    assert captured["cleanup_settings_file"] is True
+
+
+def test_main_gui_headless_reports_runner_exceptions(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_execute_gui_run(**_kwargs):
+        raise ValueError("invalid as-of date")
+
+    monkeypatch.setattr("counter_risk.gui.runner.execute_gui_run", fake_execute_gui_run)
+    monkeypatch.setattr(
+        "counter_risk.gui.runner.launch_gui",
+        lambda **_: (_ for _ in ()).throw(AssertionError("launch_gui should not be called")),
+    )
+
+    result = cli.main(["gui", "--headless", "--as-of-date", "not-a-date"])
+    captured_output = capsys.readouterr()
+
+    assert result == 1
+    assert "gui headless run failed: invalid as-of date" in captured_output.out.lower()
