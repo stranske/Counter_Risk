@@ -10,6 +10,9 @@ Private Const PRE_LAUNCH_STATUS As String = "Launching..."
 Private Const POST_LAUNCH_STATUS As String = "Finished"
 Private Const COMPLETE_STATUS As String = "Complete"
 Private Const DQ_STATUS_CELL As String = "B9"
+Private Const SETTINGS_TEMP_FILENAME As String = "counter-risk-runner-settings.json"
+Private Const MANIFEST_FILENAME As String = "manifest.json"
+Private Const PPT_OUTPUT_DIRNAME As String = "distribution_static"
 
 Public Enum RunnerMode
     RunnerModeAllPrograms = 0
@@ -97,6 +100,56 @@ OpenSummaryError:
     WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
 End Sub
 
+Public Sub OpenManifest_Click()
+    On Error GoTo OpenManifestError
+
+    Dim selectedDate As String
+    Dim manifestPath As String
+    Dim missingManifestMessage As String
+    Dim status As LaunchStatus
+
+    selectedDate = ReadSelectedDate()
+    manifestPath = ResolveManifestPath(ResolveRepoRoot(), selectedDate)
+    missingManifestMessage = "Manifest not found" & " " & manifestPath
+    If Not FileExists(manifestPath) Then
+        MsgBox missingManifestMessage
+        WriteResult "Error " & missingManifestMessage
+        Exit Sub
+    End If
+
+    status = OpenFile(manifestPath)
+    WriteLaunchResult status
+    Exit Sub
+
+OpenManifestError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
+Public Sub OpenPPTFolder_Click()
+    On Error GoTo OpenPPTFolderError
+
+    Dim selectedDate As String
+    Dim pptOutputDir As String
+    Dim missingDirectoryMessage As String
+    Dim status As LaunchStatus
+
+    selectedDate = ReadSelectedDate()
+    pptOutputDir = ResolvePPTOutputDir(ResolveRepoRoot(), selectedDate)
+    missingDirectoryMessage = "PPT output folder not found" & " " & pptOutputDir
+    If Not DirectoryExists(pptOutputDir) Then
+        MsgBox missingDirectoryMessage
+        WriteResult "Error " & missingDirectoryMessage
+        Exit Sub
+    End If
+
+    status = OpenDirectory(pptOutputDir)
+    WriteLaunchResult status
+    Exit Sub
+
+OpenPPTFolderError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
 Public Function BuildRunArguments(ByVal asOfMonth As String, ByVal mode As RunnerMode) As String
     Dim outputDir As String
     Dim parsedDate As Date
@@ -154,10 +207,15 @@ Private Function BuildCommandArguments( _
     ByVal parsedDate As Date, _
     ByVal outputDir As String _
 ) As String
+    Dim settingsPath As String
+    settingsPath = ResolveSettingsFilePath()
+    WriteSettingsFile settingsPath, BuildSettingsJson()
+
     BuildCommandArguments = "run --config " & _
                             QuoteArg(ResolveConfigPath(ResolveRunnerMode(runMode))) & _
                             " --as-of-date " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd")) & _
-                            " --output-dir " & QuoteArg(outputDir)
+                            " --output-dir " & QuoteArg(outputDir) & _
+                            " --settings " & QuoteArg(settingsPath)
 End Function
 
 Public Function BuildExecutableCommand( _
@@ -170,13 +228,43 @@ End Function
 
 Public Function ResolveOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
     Dim parsedDate As Date
-    parsedDate = ParseAsOfMonth(selectedDate)
+    Dim configuredOutputRoot As String
 
-    ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\runs\" & Format$(parsedDate, RUN_FOLDER_FORMAT)
+    parsedDate = ParseAsOfMonth(selectedDate)
+    configuredOutputRoot = ReadSettingValue("RunnerSetting_OutputRoot", "runs")
+
+    ResolveOutputDir = ResolveOutputRootPath(repoRoot, configuredOutputRoot) & "\" & Format$(parsedDate, RUN_FOLDER_FORMAT)
 End Function
 
 Public Function ResolveDataQualitySummaryPath(ByVal repoRoot As String, ByVal selectedDate As String) As String
     ResolveDataQualitySummaryPath = ResolveOutputDir(repoRoot, selectedDate) & "\DATA_QUALITY_SUMMARY.txt"
+End Function
+
+Public Function ResolveManifestPath(ByVal repoRoot As String, ByVal selectedDate As String) As String
+    ResolveManifestPath = ResolveOutputDir(repoRoot, selectedDate) & "\" & MANIFEST_FILENAME
+End Function
+
+Public Function ResolvePPTOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
+    ResolvePPTOutputDir = ResolveOutputDir(repoRoot, selectedDate) & "\" & PPT_OUTPUT_DIRNAME
+End Function
+
+Private Function ResolveOutputRootPath(ByVal repoRoot As String, ByVal outputRootSetting As String) As String
+    Dim normalizedOutputRoot As String
+    normalizedOutputRoot = NormalizePathSeparators(outputRootSetting)
+    If LenB(normalizedOutputRoot) = 0 Then
+        normalizedOutputRoot = "runs"
+    End If
+
+    If Left$(normalizedOutputRoot, 2) = "\\" Or IsAbsoluteWindowsPath(normalizedOutputRoot) Then
+        ResolveOutputRootPath = normalizedOutputRoot
+        Exit Function
+    End If
+
+    ResolveOutputRootPath = NormalizePathSeparators(repoRoot) & "\" & normalizedOutputRoot
+End Function
+
+Private Function IsAbsoluteWindowsPath(ByVal candidatePath As String) As Boolean
+    IsAbsoluteWindowsPath = (Len(candidatePath) >= 2 And Mid$(candidatePath, 2, 1) = ":")
 End Function
 
 Public Function ExecuteRunnerCommand(ByVal executablePath As String, ByVal command As String) As LaunchStatus
@@ -469,6 +557,61 @@ Private Sub WriteDataQualityStatusCell(ByVal statusColor As String)
             cell.Interior.ColorIndex = xlNone
     End Select
 End Sub
+
+Private Function ResolveSettingsFilePath() As String
+    Dim tempRoot As String
+    tempRoot = NormalizePathSeparators(Environ$("TEMP"))
+    If LenB(tempRoot) = 0 Then
+        tempRoot = NormalizePathSeparators(ResolveRepoRoot())
+    End If
+    ResolveSettingsFilePath = tempRoot & "\" & SETTINGS_TEMP_FILENAME
+End Function
+
+Private Sub WriteSettingsFile(ByVal filePath As String, ByVal payload As String)
+    Dim fileNumber As Integer
+    Dim normalizedPath As String
+    normalizedPath = NormalizePathSeparators(filePath)
+
+    On Error GoTo WriteSettingsFileError
+    fileNumber = FreeFile
+    Open normalizedPath For Output As #fileNumber
+    Print #fileNumber, payload
+    Close #fileNumber
+    Exit Sub
+
+WriteSettingsFileError:
+    If fileNumber > 0 Then
+        Close #fileNumber
+    End If
+    Err.Raise Err.Number, "RunnerLaunch.WriteSettingsFile", Err.Description
+End Sub
+
+Private Function BuildSettingsJson() As String
+    BuildSettingsJson = "{" & _
+                        Chr$(34) & "input_root" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_InputRoot", "inputs")) & Chr$(34) & "," & _
+                        Chr$(34) & "discovery_mode" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_DiscoveryMode", "discover")) & Chr$(34) & "," & _
+                        Chr$(34) & "strict_policy" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_StrictPolicy", "warn")) & Chr$(34) & "," & _
+                        Chr$(34) & "formatting_profile" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_FormattingProfile", "default")) & Chr$(34) & "," & _
+                        Chr$(34) & "output_root" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_OutputRoot", "runs")) & Chr$(34) & _
+                        "}"
+End Function
+
+Private Function ReadSettingValue(ByVal settingName As String, ByVal fallbackValue As String) As String
+    On Error GoTo ReadSettingValueFallback
+    ReadSettingValue = CStr(ThisWorkbook.Names(settingName).RefersToRange.Value)
+    If LenB(Trim$(ReadSettingValue)) = 0 Then
+        ReadSettingValue = fallbackValue
+    End If
+    Exit Function
+
+ReadSettingValueFallback:
+    ReadSettingValue = fallbackValue
+End Function
+
+Private Function JsonEscape(ByVal rawValue As String) As String
+    JsonEscape = Replace(rawValue, "\", "\\")
+    JsonEscape = Replace(JsonEscape, Chr$(34), "\" & Chr$(34))
+End Function
 
 Private Function NormalizePathSeparators(ByVal rawPath As String) As String
     Dim normalizedPath As String
