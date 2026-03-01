@@ -2,6 +2,23 @@
 
 `counter-risk gui` provides a macro-free operator interface for monthly runs.
 
+## Install (packaged operators)
+
+For operator machines that do not have Python/CLI tooling:
+
+1. Build the release bundle from this repo root:
+
+   ```bash
+   pyinstaller release.spec
+   ```
+
+2. Copy the generated `dist/counter-risk/` folder to the approved shared location.
+3. Ensure `config/` and `templates/` are present alongside the executable (the spec bundles them).
+4. Operators launch `counter-risk` from that folder and use `counter-risk gui`.
+
+If your environment blocks Tkinter, use `counter-risk gui --headless` (CI/smoke) or
+fall back to `Runner.xlsm`.
+
 ## Launch
 
 ```bash

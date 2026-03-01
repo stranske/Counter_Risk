@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+from types import ModuleType, SimpleNamespace
 
-from counter_risk.gui.runner import GuiRunState, execute_gui_run
+from counter_risk.gui import runner as gui_runner
+from counter_risk.gui.runner import GuiRunState, execute_gui_run, launch_gui
 
 
 def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> None:
@@ -119,3 +122,101 @@ def test_execute_gui_run_validates_dates_before_runner_call(tmp_path: Path) -> N
         raise AssertionError("Expected ValueError for invalid date input.")
 
     assert calls == 0
+
+
+def test_launch_gui_starts_tk_mainloop_with_headless_stubs(monkeypatch) -> None:
+    created: dict[str, object] = {}
+
+    class _FakeStringVar:
+        def __init__(self, value: str = "") -> None:
+            self._value = value
+
+        def get(self) -> str:
+            return self._value
+
+        def set(self, value: str) -> None:
+            self._value = value
+
+    class _FakeWidget:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            self.args = args
+            self.kwargs = kwargs
+            self.grid_calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+
+        def grid(self, *args: object, **kwargs: object) -> None:
+            self.grid_calls.append((args, kwargs))
+
+    class _FakeTk:
+        def __init__(self) -> None:
+            created["root"] = self
+            self.title_value = ""
+            self.geometry_value = ""
+            self.mainloop_called = False
+            self.idle_updates = 0
+            self.column_config_calls: list[tuple[int, int]] = []
+
+        def title(self, value: str) -> None:
+            self.title_value = value
+
+        def geometry(self, value: str) -> None:
+            self.geometry_value = value
+
+        def update_idletasks(self) -> None:
+            self.idle_updates += 1
+
+        def columnconfigure(self, column: int, weight: int) -> None:
+            self.column_config_calls.append((column, weight))
+
+        def mainloop(self) -> None:
+            self.mainloop_called = True
+
+    tkinter_module = ModuleType("tkinter")
+    tkinter_module.Tk = _FakeTk
+    tkinter_module.StringVar = _FakeStringVar
+    tkinter_module.messagebox = SimpleNamespace(showerror=lambda *_args, **_kwargs: None)
+
+    ttk_module = ModuleType("tkinter.ttk")
+    ttk_module.Label = _FakeWidget
+    ttk_module.Combobox = _FakeWidget
+    ttk_module.Entry = _FakeWidget
+    ttk_module.Button = _FakeWidget
+    tkinter_module.ttk = ttk_module
+
+    monkeypatch.setitem(sys.modules, "tkinter", tkinter_module)
+    monkeypatch.setitem(sys.modules, "tkinter.ttk", ttk_module)
+
+    launch_gui(
+        initial_state=GuiRunState(as_of_date="2025-12-31"),
+        runner=lambda _argv: 0,
+    )
+
+    fake_root = created.get("root")
+    assert fake_root is not None
+    assert isinstance(fake_root, _FakeTk)
+    assert fake_root.title_value == "Counter Risk Runner"
+    assert fake_root.geometry_value == "640x380"
+    assert fake_root.mainloop_called is True
+    assert (1, 1) in fake_root.column_config_calls
+
+
+def test_main_gui_non_headless_path_calls_launch_gui(
+    monkeypatch,
+    capsys,
+) -> None:
+    launch_invocations: list[tuple[GuiRunState, object | None]] = []
+
+    def fake_launch_gui(*, initial_state: GuiRunState | None = None, runner=None) -> None:
+        launch_invocations.append((initial_state or GuiRunState(as_of_date="1970-01-31"), runner))
+
+    monkeypatch.setattr(gui_runner, "launch_gui", fake_launch_gui)
+    monkeypatch.setattr(gui_runner, "execute_gui_run", lambda **_kwargs: None)
+
+    from counter_risk import cli
+
+    result = cli.main(["gui", "--as-of-date", "2025-12-31"])
+    captured = capsys.readouterr()
+
+    assert result == 0
+    assert "gui headless run completed" not in captured.out.lower()
+    assert len(launch_invocations) == 1
+    assert launch_invocations[0][0].as_of_date == "2025-12-31"
