@@ -139,6 +139,10 @@ module = "counter_risk.pipeline.run"
 disable_error_code = ["import-untyped"]
 
 [[tool.mypy.overrides]]
+module = "counter_risk.chat.context"
+disable_error_code = ["import-untyped", "import-not-found"]
+
+[[tool.mypy.overrides]]
 module = "counter_risk.mosers.workbook_generation"
 disable_error_code = ["import-untyped"]
 

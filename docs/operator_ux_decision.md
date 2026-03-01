@@ -45,6 +45,10 @@ This document defines the operator experience for running the monthly counterpar
 7. Click `Open Output Folder` to access produced artifacts.
 8. Use `Open Manifest`, `Open Summary`, and `Open PPT Folder` for post-run review.
 
+Formatting profile support currently applies to:
+- Historical workbook append rows.
+- CPRS table PNG rendering helpers (when that renderer path is used).
+
 ### Runner Backend Command Contract
 
 The Excel runner should execute workflow mode, not fixture replay:

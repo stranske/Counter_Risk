@@ -184,6 +184,7 @@ Supported formatting profile values:
 Current profile application scope:
 
 - Historical workbook append rows written by the pipeline.
+- CPRS-CH/CPRS-FCM static table PNG renderers when invoked with `formatting_profile`.
 
 Legacy packaging path is still available for release validation only:
 

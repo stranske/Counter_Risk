@@ -15,6 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
+from counter_risk.formatting import normalize_formatting_profile
+
 RGB = tuple[int, int, int]
 
 _SCALE = 2
@@ -182,7 +184,11 @@ def cprs_ch_view_spec() -> dict[str, object]:
 
 
 def render_cprs_ch_png(
-    exposures_df: object, output_png: Path | str, *, variant: str | None = None
+    exposures_df: object,
+    output_png: Path | str,
+    *,
+    variant: str | None = None,
+    formatting_profile: str | None = None,
 ) -> None:
     """Render a deterministic CPRS-CH table PNG."""
     _render_cprs_table_png(
@@ -190,12 +196,17 @@ def render_cprs_ch_png(
         output_png,
         layout=_CPRS_CH_LAYOUT,
         variant=variant,
+        formatting_profile=formatting_profile,
         min_rows_by_variant=_CPRS_MIN_ROWS_BY_VARIANT,
     )
 
 
 def render_cprs_fcm_png(
-    exposures_df: object, output_png: Path | str, *, variant: str | None = None
+    exposures_df: object,
+    output_png: Path | str,
+    *,
+    variant: str | None = None,
+    formatting_profile: str | None = None,
 ) -> None:
     """Render a deterministic CPRS-FCM table PNG."""
     _render_cprs_table_png(
@@ -203,6 +214,7 @@ def render_cprs_fcm_png(
         output_png,
         layout=_CPRS_CH_LAYOUT,
         variant=variant,
+        formatting_profile=formatting_profile,
         min_rows_by_variant=_CPRS_MIN_ROWS_BY_VARIANT,
     )
 
@@ -213,11 +225,13 @@ def _render_cprs_table_png(
     *,
     layout: _TableLayout,
     variant: str | None = None,
+    formatting_profile: str | None = None,
     min_rows_by_variant: dict[str, int] | None = None,
 ) -> None:
     rows = _to_renderable_rows(
         exposures_df,
         variant=variant,
+        formatting_profile=formatting_profile,
         min_rows_by_variant=min_rows_by_variant,
     )
     destination = Path(output_png)
@@ -305,6 +319,7 @@ def _to_renderable_rows(
     exposures_df: object,
     *,
     variant: str | None = None,
+    formatting_profile: str | None = None,
     min_rows_by_variant: dict[str, int] | None = None,
 ) -> list[dict[str, str]]:
     records = _read_records(exposures_df)
@@ -333,6 +348,7 @@ def _to_renderable_rows(
         raise ValueError(f"exposures_df is missing required columns: {missing}")
 
     rendered: list[dict[str, str]] = []
+    resolved_profile = normalize_formatting_profile(formatting_profile)
     for index, record in enumerate(records):
         normalized: dict[str, str] = {}
         for column in _TABLE_COLUMNS:
@@ -344,10 +360,20 @@ def _to_renderable_rows(
                 continue
 
             number = _coerce_number(value, row_index=index, column_name=column.key)
-            normalized[column.key] = f"{number:,.2f}"
+            normalized[column.key] = _format_render_number(number, profile=resolved_profile)
         rendered.append(normalized)
 
     return rendered
+
+
+def _format_render_number(number: float, *, profile: str) -> str:
+    base = f"{abs(number):,.2f}"
+    if profile == "currency":
+        return f"-${base}" if number < 0 else f"${base}"
+    if profile == "accounting":
+        return f"(${base})" if number < 0 else f"${base}"
+    # default/plain
+    return f"-{base}" if number < 0 else base
 
 
 def _normalize_variant_key(variant: str) -> str:
