@@ -54,7 +54,7 @@ def test_render_cprs_fcm_png_is_importable_from_renderers_package() -> None:
 def test_render_cprs_fcm_png_and_ch_png_route_through_shared_internal_helper(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    calls: list[tuple[object, Path | str, str | None]] = []
+    calls: list[tuple[object, Path | str, str | None, str | None]] = []
 
     def _fake_helper(
         exposures_df: object,
@@ -62,20 +62,28 @@ def test_render_cprs_fcm_png_and_ch_png_route_through_shared_internal_helper(
         *,
         layout: object,
         variant: str | None = None,
+        formatting_profile: str | None = None,
         min_rows_by_variant: dict[str, int] | None = None,
     ) -> None:
-        _ = (layout, min_rows_by_variant)
-        calls.append((exposures_df, output_png, variant))
+        _ = (layout, min_rows_by_variant, formatting_profile)
+        calls.append((exposures_df, output_png, variant, formatting_profile))
 
     monkeypatch.setattr("counter_risk.renderers.table_png._render_cprs_table_png", _fake_helper)
 
     frame = _frame_for_variant("all_programs")
-    render_cprs_ch_png(frame, tmp_path / "ch.png", variant="all_programs")
+    render_cprs_ch_png(
+        frame,
+        tmp_path / "ch.png",
+        variant="all_programs",
+        formatting_profile="currency",
+    )
     render_cprs_fcm_png(frame, tmp_path / "fcm.png", variant="all_programs")
 
     assert len(calls) == 2
     assert calls[0][2] == "all_programs"
+    assert calls[0][3] == "currency"
     assert calls[1][2] == "all_programs"
+    assert calls[1][3] is None
 
 
 @pytest.mark.parametrize("variant", ("all_programs", "ex_trend", "trend"))

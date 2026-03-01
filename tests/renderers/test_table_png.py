@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from counter_risk.renderers.table_png import (
+    _to_renderable_rows,
     cprs_ch_font_spec,
     cprs_ch_render_backend,
     cprs_ch_render_backend_notes,
@@ -142,6 +143,20 @@ def test_render_cprs_ch_png_malformed_numeric_value_raises(tmp_path: Path) -> No
 
     with pytest.raises(ValueError, match="non-numeric value"):
         render_cprs_ch_png(bad, output)
+
+
+def test_to_renderable_rows_formats_currency_profile_with_symbol() -> None:
+    rows = _to_renderable_rows(_sample_frame(), formatting_profile="currency")
+
+    assert rows[0]["Cash"] == "$125.00"
+    assert rows[0]["Equity"] == "-$15.00"
+
+
+def test_to_renderable_rows_formats_accounting_profile_with_parentheses() -> None:
+    rows = _to_renderable_rows(_sample_frame(), formatting_profile="accounting")
+
+    assert rows[0]["Cash"] == "$125.00"
+    assert rows[0]["Equity"] == "($15.00)"
 
 
 def test_render_cprs_fcm_png_none_exposures_df_raises(tmp_path: Path) -> None:

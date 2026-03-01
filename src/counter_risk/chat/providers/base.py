@@ -6,15 +6,15 @@ import os
 from dataclasses import dataclass
 from typing import Final, Protocol, cast
 
-from tools.langchain_client import (
+from counter_risk.chat.providers.langchain_runtime import (
     PROVIDER_ANTHROPIC,
     PROVIDER_GITHUB,
     PROVIDER_OPENAI,
     build_chat_client,
+    build_langsmith_metadata,
     get_provider_model_catalog,
     missing_provider_dependencies,
 )
-from tools.llm_provider import build_langsmith_metadata
 
 _GITHUB_ENV_KEYS: Final[tuple[str, ...]] = ("GITHUB_TOKEN",)
 _OPENAI_API_ENV_KEYS: Final[tuple[str, ...]] = ("OPENAI_API_KEY",)

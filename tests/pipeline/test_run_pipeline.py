@@ -1606,7 +1606,7 @@ def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
@@ -1690,7 +1690,7 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
     monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
@@ -1789,7 +1789,7 @@ def test_run_pipeline_warns_on_missing_limit_entities_by_default(
     monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
@@ -1888,7 +1888,7 @@ def test_run_pipeline_strict_missing_limit_entities_fails(
     monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
@@ -1932,7 +1932,7 @@ def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
@@ -1990,7 +1990,7 @@ def test_run_pipeline_generates_ex_trend_and_trend_mosers_from_raw_nisa_inputs(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
@@ -2056,7 +2056,7 @@ def test_run_pipeline_raw_nisa_generation_produces_parseable_non_vba_workbooks(
     monkeypatch.setattr(
         run_module,
         "_update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     monkeypatch.setattr(
         run_module,
@@ -2377,7 +2377,7 @@ def test_run_pipeline_warn_mode_writes_mapping_updates_and_completes(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
@@ -2487,7 +2487,7 @@ def test_run_pipeline_wraps_output_write_errors(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
 
     def _boom(*, run_dir: Path, config: Any, as_of_date: date, warnings: list[str]) -> list[Path]:
@@ -2659,9 +2659,10 @@ def test_run_pipeline_wraps_historical_update_errors(
         config: Any,
         parsed_by_variant: dict[str, dict[str, Any]],
         as_of_date: date,
+        formatting_profile: str,
         warnings: list[str],
     ) -> list[Path]:
-        _ = (run_dir, config, parsed_by_variant, as_of_date, warnings)
+        _ = (run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings)
         raise OSError("historical workbook write failed")
 
     monkeypatch.setattr("counter_risk.pipeline.run._update_historical_outputs", _boom)
@@ -2684,7 +2685,7 @@ def test_run_pipeline_wraps_manifest_generation_errors(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
@@ -2724,9 +2725,10 @@ def test_run_pipeline_passes_as_of_date_and_parsed_inputs_to_historical_update(
         config: Any,
         parsed_by_variant: dict[str, dict[str, Any]],
         as_of_date: date,
+        formatting_profile: str,
         warnings: list[str],
     ) -> list[Path]:
-        _ = config
+        _ = (config, formatting_profile)
         calls.append(
             {
                 "run_dir": run_dir,
@@ -2756,7 +2758,7 @@ def test_run_pipeline_invokes_ppt_link_refresh(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     seen: dict[str, Path] = {}
 
@@ -2786,7 +2788,7 @@ def test_run_pipeline_ignores_config_output_root_for_run_directory(
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
-        lambda *, run_dir, config, parsed_by_variant, as_of_date, warnings: [],
+        lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
     )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._write_outputs",
