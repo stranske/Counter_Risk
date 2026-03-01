@@ -4,6 +4,7 @@ from counter_risk.chat.context import (
     RunContext,
     RunContextError,
     extract_key_warnings_and_deltas,
+    load_chat_logs,
     load_manifest,
     load_run_context,
 )
@@ -30,6 +31,7 @@ __all__ = [
     "SubmitResult",
     "build_guarded_prompt",
     "extract_key_warnings_and_deltas",
+    "load_chat_logs",
     "get_provider_models",
     "is_provider_model_supported",
     "load_manifest",

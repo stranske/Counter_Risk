@@ -263,18 +263,41 @@ class ChatSession:
         provider_client = _PROVIDER_CLIENTS[selected_provider]
         context_answer = self._answer_from_context(clean_question)
         messages = self._build_provider_messages(prompt=prompt, question=clean_question)
+        provider_response_metadata: dict[str, object] = {}
         answer = provider_client.generate(
             messages=messages,
             model=selected_model,
             context_answer=context_answer,
+            response_metadata=provider_response_metadata,
         )
 
         self.history.append(ChatMessage(role="user", content=clean_question))
         self.history.append(ChatMessage(role="assistant", content=answer))
+        self._interaction_counter += 1
         _LOGGER.debug("Built guarded prompt of %s characters", len(prompt))
 
+        resolved_provider = str(provider_response_metadata.get("provider") or selected_provider)
+        resolved_model = str(provider_response_metadata.get("model") or selected_model)
+        trace_id_raw = provider_response_metadata.get("trace_id")
+        trace_url_raw = provider_response_metadata.get("trace_url")
+        trace_id = None if trace_id_raw in (None, "") else str(trace_id_raw)
+        trace_url = None if trace_url_raw in (None, "") else str(trace_url_raw)
+
+        _append_chat_turn_log(
+            run_dir=self.context.run_dir,
+            interaction_number=self._interaction_counter,
+            question=clean_question,
+            prompt=prompt,
+            response=answer,
+            selected_provider=selected_provider,
+            selected_model=selected_model,
+            resolved_provider=resolved_provider,
+            resolved_model=resolved_model,
+            trace_id=trace_id,
+            trace_url=trace_url,
+        )
+
         if self.enable_llm_logging:
-            self._interaction_counter += 1
             _write_llm_log(
                 run_dir=self.context.run_dir,
                 interaction_number=self._interaction_counter,
@@ -705,6 +728,52 @@ def _find_delta_metric(record: dict[str, object]) -> tuple[str, str]:
 
 
 _LLM_LOG_DIR_NAME: Final[str] = "llm_logs"
+_CHAT_LOG_DIR_NAME: Final[str] = "chat_logs"
+
+
+def _append_chat_turn_log(
+    *,
+    run_dir: Path,
+    interaction_number: int,
+    question: str,
+    prompt: str,
+    response: str,
+    selected_provider: str,
+    selected_model: str,
+    resolved_provider: str,
+    resolved_model: str,
+    trace_id: str | None,
+    trace_url: str | None,
+) -> None:
+    """Append one chat interaction to the run-level JSONL transcript."""
+
+    now = datetime.now(tz=UTC)
+    timestamp = now.isoformat().replace("+00:00", "Z")
+    daystamp = now.strftime("%Y%m%d")
+    log_dir = run_dir / _CHAT_LOG_DIR_NAME
+    log_path = log_dir / f"chat_log_{daystamp}.jsonl"
+
+    payload = {
+        "interaction": interaction_number,
+        "timestamp": timestamp,
+        "selected_provider": selected_provider,
+        "selected_model": selected_model,
+        "provider": resolved_provider,
+        "model": resolved_model,
+        "question": question,
+        "prompt": prompt,
+        "response": response,
+        "trace_id": trace_id,
+        "trace_url": trace_url,
+    }
+
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, sort_keys=True))
+            handle.write("\n")
+    except OSError as exc:
+        raise RuntimeError(f"Failed to write chat log transcript: {log_path}") from exc
 
 
 def _write_llm_log(

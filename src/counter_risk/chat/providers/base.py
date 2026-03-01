@@ -97,6 +97,8 @@ class LangChainProviderClient:
     def generate(self, messages: list[dict[str, str]], model: str, **kwargs: object) -> str:
         last_error: Exception | None = None
         metadata = build_langsmith_metadata(operation="counter-risk-chat")
+        response_metadata = kwargs.get("response_metadata")
+        metadata_sink = response_metadata if isinstance(response_metadata, dict) else None
         slot_catalog = get_provider_model_catalog()
 
         for provider_name in self._provider_chain:
@@ -114,6 +116,14 @@ class LangChainProviderClient:
                 continue
             response_text = _coerce_response_text(response)
             if response_text:
+                if metadata_sink is not None:
+                    metadata_sink["provider"] = client_info.provider
+                    metadata_sink["model"] = client_info.model
+                    trace_id, trace_url = _extract_trace_metadata(response)
+                    if trace_id:
+                        metadata_sink["trace_id"] = trace_id
+                    if trace_url:
+                        metadata_sink["trace_url"] = trace_url
                 return response_text
             last_error = RuntimeError(
                 f"Provider {provider_name!r} returned an empty response for model {model!r}."
@@ -175,3 +185,37 @@ def _coerce_response_text(response: object) -> str:
                     chunks.append(text)
         return "".join(chunks).strip()
     return str(response).strip()
+
+
+def _extract_trace_metadata(response: object) -> tuple[str | None, str | None]:
+    trace_id: str | None = None
+    trace_url: str | None = None
+
+    for mapping in (
+        getattr(response, "response_metadata", None),
+        getattr(response, "additional_kwargs", None),
+    ):
+        if not isinstance(mapping, dict):
+            continue
+        trace_id = trace_id or _coerce_metadata_value(mapping, ("trace_id", "run_id", "id"))
+        trace_url = trace_url or _coerce_metadata_value(mapping, ("trace_url", "run_url"))
+
+    response_id = getattr(response, "id", None)
+    if trace_id is None and isinstance(response_id, str):
+        normalized_response_id = response_id.strip()
+        if normalized_response_id:
+            trace_id = normalized_response_id
+
+    return trace_id, trace_url
+
+
+def _coerce_metadata_value(
+    payload: dict[object, object], candidate_keys: tuple[str, ...]
+) -> str | None:
+    for key in candidate_keys:
+        value = payload.get(key)
+        if isinstance(value, str):
+            normalized = value.strip()
+            if normalized:
+                return normalized
+    return None
