@@ -76,6 +76,11 @@ Notes:
 5. Review run status, warnings, and data quality summary.
 6. Click `Open Output Folder` to view produced artifacts.
 
+Current implementation command:
+
+- `counter-risk gui` (interactive Tkinter window)
+- `counter-risk gui --headless` (automation smoke mode)
+
 ## Pros and Cons Comparison
 
 | Approach | Pros | Cons |

@@ -104,6 +104,69 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to runner settings JSON written by Runner.xlsm.",
     )
     run_parser.set_defaults(handler=_run_command)
+
+    gui_parser = subparsers.add_parser("gui", help="Launch the Tkinter operator runner")
+    gui_parser.add_argument(
+        "--as-of-date",
+        "--as-of-month",
+        dest="as_of_date",
+        type=str,
+        default=date.today().isoformat(),
+        help="As-of reporting date in YYYY-MM-DD format (normalized to month-end).",
+    )
+    gui_parser.add_argument(
+        "--mode",
+        choices=("all", "ex_trend", "trend"),
+        default="all",
+        help="Workflow mode to run from the GUI.",
+    )
+    gui_parser.add_argument(
+        "--discovery-mode",
+        choices=("manual", "discover"),
+        default="manual",
+        help="Default discovery behavior for GUI-run commands.",
+    )
+    gui_parser.add_argument(
+        "--strict-policy",
+        choices=("warn", "strict"),
+        default="warn",
+        help="Default reconciliation policy in the GUI.",
+    )
+    gui_parser.add_argument(
+        "--formatting-profile",
+        type=str,
+        default="default",
+        help="Default formatting profile shown in the GUI.",
+    )
+    gui_parser.add_argument(
+        "--input-root",
+        type=str,
+        default="inputs",
+        help="Default input root shown in the GUI.",
+    )
+    gui_parser.add_argument(
+        "--output-root",
+        type=str,
+        default="runs",
+        help="Default output root shown in the GUI.",
+    )
+    gui_parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help="Optional config override path for GUI runs.",
+    )
+    gui_parser.add_argument(
+        "--dry-run-discovery",
+        action="store_true",
+        help="For --headless mode, run discovery dry-run and exit.",
+    )
+    gui_parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Execute GUI logic without opening a window (for CI/smoke tests).",
+    )
+    gui_parser.set_defaults(handler=_gui_command)
     return parser
 
 
@@ -141,6 +204,44 @@ def _run_command(args: argparse.Namespace) -> int:
         return 0
 
     return _run_workflow_mode(args)
+
+
+def _gui_command(args: argparse.Namespace) -> int:
+    from counter_risk.gui.runner import GuiRunState, execute_gui_run, launch_gui
+
+    state = GuiRunState(
+        as_of_date=cast(str, getattr(args, "as_of_date", date.today().isoformat())),
+        run_mode=cast(str, getattr(args, "mode", "all")),
+        discovery_mode=cast(str, getattr(args, "discovery_mode", "manual")),
+        strict_policy=cast(str, getattr(args, "strict_policy", "warn")),
+        formatting_profile=cast(str, getattr(args, "formatting_profile", "default")),
+        input_root=cast(str, getattr(args, "input_root", "inputs")),
+        output_root=cast(str, getattr(args, "output_root", "runs")),
+        config_path=cast(Path | None, getattr(args, "config", None)),
+    )
+
+    def _run_callback(argv: list[str]) -> int:
+        return int(main(argv))
+
+    if bool(getattr(args, "headless", False)):
+        try:
+            result = execute_gui_run(
+                state=state,
+                runner=_run_callback,
+                dry_run_discovery=bool(getattr(args, "dry_run_discovery", False)),
+                cleanup_settings_file=True,
+            )
+        except Exception as exc:
+            print(f"Counter Risk GUI headless run failed: {exc}")
+            return 1
+        if result.exit_code == 0:
+            print("Counter Risk GUI headless run completed.")
+            return 0
+        print(f"Counter Risk GUI headless run failed with exit code {result.exit_code}.")
+        return result.exit_code
+
+    launch_gui(initial_state=state, runner=_run_callback)
+    return 0
 
 
 def _run_with_discovery(args: argparse.Namespace) -> int:
