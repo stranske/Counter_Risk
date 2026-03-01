@@ -87,32 +87,6 @@ See `docs/INTEGRATION_GUIDE.md` in Workflows repo.
 - Fix in Workflows repo → sync will propagate here
 - Or request manual sync: `gh workflow run maint-68-sync-consumer-repos.yml --repo stranske/Workflows`
 
-## Slow Test Strategy
-
-This repo uses a `slow` pytest marker to keep PR Gate fast (~4 min) while
-ensuring heavyweight tests still run on Main CI.
-
-**How it works:**
-
-- `pyproject.toml` registers the `slow` marker.
-- `pr-00-gate.yml` passes `pytest_markers: "not release and not slow"` to
-  exclude slow tests from PR feedback.
-- `ci.yml` (Main CI) runs the **full** suite including slow tests.
-- Locally, `make test` also excludes slow tests for fast iteration.
-
-**Currently marked slow:**
-
-- `tests/pipeline/test_run_pipeline.py` — auto-marked by
-  `tests/pipeline/conftest.py` (each test runs the full pipeline with
-  real Excel fixtures, 100-170 s each).
-- `tests/spec/test_macro_spec_fixtures.py` — module-level
-  `pytestmark = pytest.mark.slow` (session fixture parses three NISA
-  workbooks, ~85 s).
-
-**Rule for agents:** any new test that parses real workbooks or calls
-`run_pipeline()` **must** be marked `@pytest.mark.slow`.  Omitting the
-marker will silently regress Gate duration for every open PR.
-
 ## Reference Implementation
 
 **Travel-Plan-Permission** is the reference consumer repo. When debugging:
