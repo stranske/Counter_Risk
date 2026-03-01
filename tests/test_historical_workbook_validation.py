@@ -451,8 +451,10 @@ def test_historical_output_generator_builder_preserves_variant_merge_contract(
         variant: str,
         as_of_date: date,
         totals_records: list[dict[str, Any]],
+        formatting_profile: str | None = None,
         warnings: list[str],
     ) -> None:
+        _ = formatting_profile
         assert as_of_date == date(2026, 2, 13)
         merge_calls.append((workbook_path, variant, totals_records, warnings))
 

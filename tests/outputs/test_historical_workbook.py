@@ -153,9 +153,10 @@ def test_historical_workbook_generator_wraps_pipeline_historical_update_flow(
         variant: str,
         as_of_date: date,
         totals_records: list[dict[str, object]],
+        formatting_profile: str | None = None,
         warnings: list[str],
     ) -> None:
-        del warnings
+        del warnings, formatting_profile
         notional = cast(float, totals_records[0]["Notional"])
         merged.append((workbook_path, variant, float(notional), as_of_date.month))
 

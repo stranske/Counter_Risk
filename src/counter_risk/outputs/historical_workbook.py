@@ -53,6 +53,7 @@ class HistoricalWorkbookOutputGenerator(OutputGenerator):
                 variant=variant,
                 as_of_date=context.as_of_date,
                 totals_records=totals_records,
+                formatting_profile=context.formatting_profile,
                 warnings=self.warnings,
             )
             output_paths.append(target_hist)
