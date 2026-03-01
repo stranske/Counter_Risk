@@ -27,6 +27,15 @@ _LOGGER = logging.getLogger(__name__)
 
 _PLACEHOLDER_MODEL: Final[str] = "chat-model-placeholder"
 _OFFLINE_MODE_ENV: Final[str] = "COUNTER_RISK_CHAT_OFFLINE_MODE"
+_CHAT_LOG_MODE_ENV: Final[str] = "COUNTER_RISK_CHAT_LOG_MODE"
+_CHAT_LOG_MODE_TRANSCRIPT: Final[str] = "transcript"
+_CHAT_LOG_MODE_FULL: Final[str] = "full"
+_CHAT_LOG_MODE_OFF: Final[str] = "off"
+_VALID_CHAT_LOG_MODES: Final[set[str]] = {
+    _CHAT_LOG_MODE_TRANSCRIPT,
+    _CHAT_LOG_MODE_FULL,
+    _CHAT_LOG_MODE_OFF,
+}
 _PROVIDER_MODEL_REGISTRY = build_provider_model_registry(local_model=_PLACEHOLDER_MODEL)
 _PROVIDER_MODELS: Final[dict[str, set[str]]] = _PROVIDER_MODEL_REGISTRY.provider_models
 _PROVIDER_MODEL_REQUIRED_ENV_KEYS: Final[dict[str, dict[str, tuple[str, ...]]]] = (
@@ -84,6 +93,17 @@ def _default_model_key() -> str:
     if models:
         return models[0]
     return _PLACEHOLDER_MODEL
+
+
+def _resolve_chat_log_mode(log_mode: str | None) -> str:
+    raw_mode = log_mode if log_mode is not None else os.environ.get(_CHAT_LOG_MODE_ENV)
+    normalized = _CHAT_LOG_MODE_TRANSCRIPT if raw_mode is None else raw_mode.strip().lower()
+    if normalized not in _VALID_CHAT_LOG_MODES:
+        valid_modes = ", ".join(sorted(_VALID_CHAT_LOG_MODES))
+        raise ChatSessionError(
+            f"Unsupported chat log mode '{normalized}'. Valid modes: {valid_modes}."
+        )
+    return normalized
 
 
 _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
@@ -205,11 +225,13 @@ class ChatSession:
     model: str = field(default_factory=_default_model_key)
     history: list[ChatMessage] = field(default_factory=list)
     enable_llm_logging: bool = False
+    log_mode: str | None = None
     _interaction_counter: int = field(default=0, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.provider = self.provider.strip().lower()
         self.model = self.model.strip()
+        self.log_mode = _resolve_chat_log_mode(self.log_mode)
 
         if self.provider == "local" and not _offline_mode_enabled():
             raise ChatSessionError(
@@ -280,6 +302,7 @@ class ChatSession:
         self.history.append(ChatMessage(role="assistant", content=answer))
         self._interaction_counter += 1
         _LOGGER.debug("Built guarded prompt of %s characters", len(prompt))
+        resolved_log_mode = _resolve_chat_log_mode(self.log_mode)
 
         resolved_provider = str(provider_response_metadata.get("provider") or selected_provider)
         resolved_model = str(provider_response_metadata.get("model") or selected_model)
@@ -288,21 +311,30 @@ class ChatSession:
         trace_id = None if trace_id_raw in (None, "") else str(trace_id_raw)
         trace_url = None if trace_url_raw in (None, "") else str(trace_url_raw)
 
-        _append_chat_turn_log(
-            run_dir=self.context.run_dir,
-            interaction_number=self._interaction_counter,
-            question=clean_question,
-            prompt=prompt,
-            response=answer,
-            selected_provider=selected_provider,
-            selected_model=selected_model,
-            resolved_provider=resolved_provider,
-            resolved_model=resolved_model,
-            trace_id=trace_id,
-            trace_url=trace_url,
+        should_write_transcript = resolved_log_mode in {
+            _CHAT_LOG_MODE_TRANSCRIPT,
+            _CHAT_LOG_MODE_FULL,
+        }
+        should_write_llm_artifact = self.enable_llm_logging or (
+            resolved_log_mode == _CHAT_LOG_MODE_FULL
         )
 
-        if self.enable_llm_logging:
+        if should_write_transcript:
+            _append_chat_turn_log(
+                run_dir=self.context.run_dir,
+                interaction_number=self._interaction_counter,
+                question=clean_question,
+                prompt=prompt,
+                response=answer,
+                selected_provider=selected_provider,
+                selected_model=selected_model,
+                resolved_provider=resolved_provider,
+                resolved_model=resolved_model,
+                trace_id=trace_id,
+                trace_url=trace_url,
+            )
+
+        if should_write_llm_artifact:
             _write_llm_log(
                 run_dir=self.context.run_dir,
                 interaction_number=self._interaction_counter,

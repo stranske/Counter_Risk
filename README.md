@@ -148,10 +148,10 @@ The run-context chat assistant now uses LangChain-backed providers (instead of s
   `COUNTER_RISK_CHAT_OFFLINE_MODE=1` (intended for offline tests/dev only).
 - Optional routing/model overrides are also documented in `.env.example` (`LANGCHAIN_PROVIDER`,
   `LANGCHAIN_MODEL`, slot overrides, timeout/retry settings).
-- Chat transcripts are written per run under `runs/<...>/chat_logs/`; see
-  [docs/chat_logging.md](docs/chat_logging.md) for payload fields and LangSmith trace linkage.
-- Transcript logging is always on for audits; optional legacy `llm_logs` artifacts can be
-  enabled by code paths that set `ChatSession(enable_llm_logging=True)`.
+- Chat logging mode defaults to `transcript`; override with `COUNTER_RISK_CHAT_LOG_MODE`
+  (`transcript`, `full`, `off`).
+- See [docs/chat_logging.md](docs/chat_logging.md) for mode behavior, payload fields, and
+  LangSmith trace linkage.
 
 ## Workflow Run Command
 

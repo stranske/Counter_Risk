@@ -499,6 +499,50 @@ def test_llm_logging_disabled_writes_no_artifacts(tmp_path: Path) -> None:
     assert len(chat_logs) == 1
 
 
+def test_chat_log_mode_off_writes_no_chat_or_llm_artifacts(tmp_path: Path) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY, log_mode="off")
+
+    session.ask("top exposures")
+
+    assert not (context.run_dir / _CHAT_LOG_DIR_NAME).exists()
+    assert not (context.run_dir / _LLM_LOG_DIR_NAME).exists()
+
+
+def test_chat_log_mode_full_writes_chat_and_llm_artifacts_without_legacy_flag(
+    tmp_path: Path,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY, log_mode="full")
+
+    session.ask("top exposures")
+
+    chat_logs = sorted((context.run_dir / _CHAT_LOG_DIR_NAME).glob("*.jsonl"))
+    llm_logs = sorted((context.run_dir / _LLM_LOG_DIR_NAME).glob("*.json"))
+    assert len(chat_logs) == 1
+    assert len(llm_logs) == 1
+
+
+def test_chat_session_rejects_invalid_log_mode(tmp_path: Path) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+
+    with pytest.raises(ChatSessionError, match="Unsupported chat log mode"):
+        ChatSession(context=context, provider="local", model=_MODEL_KEY, log_mode="invalid")
+
+
+def test_chat_log_mode_can_be_configured_via_environment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("COUNTER_RISK_CHAT_LOG_MODE", "off")
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
+
+    session.ask("top exposures")
+
+    assert not (context.run_dir / _CHAT_LOG_DIR_NAME).exists()
+
+
 def test_chat_session_writes_jsonl_chat_log_with_trace_metadata(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
