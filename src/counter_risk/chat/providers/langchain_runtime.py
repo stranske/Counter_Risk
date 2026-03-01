@@ -24,6 +24,10 @@ ENV_MAX_RETRIES = "LANGCHAIN_MAX_RETRIES"
 ENV_SLOT_CONFIG = "LANGCHAIN_SLOT_CONFIG"
 ENV_SLOT_PREFIX = "LANGCHAIN_SLOT"
 ENV_ANTHROPIC_KEY = "CLAUDE_API_STRANSKE"
+ENV_LANGSMITH_KEY = "LANGSMITH_API_KEY"
+ENV_LANGCHAIN_TRACING_V2 = "LANGCHAIN_TRACING_V2"
+ENV_LANGCHAIN_API_KEY = "LANGCHAIN_API_KEY"
+ENV_LANGCHAIN_PROJECT = "LANGCHAIN_PROJECT"
 
 PROVIDER_OPENAI = "openai"
 PROVIDER_ANTHROPIC = "anthropic"
@@ -33,6 +37,7 @@ GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com"
 DEFAULT_MODEL = "codex-mini-latest"
 
 DEFAULT_SLOT_CONFIG_PATH = "config/llm_slots.json"
+DEFAULT_LANGCHAIN_PROJECT = "workflows-agents"
 
 LANGCHAIN_OPENAI_DIST = "langchain-openai"
 LANGCHAIN_ANTHROPIC_DIST = "langchain-anthropic"
@@ -103,7 +108,8 @@ def _resolve_provider(provider: str | None, *, force_openai: bool) -> tuple[str 
     if provider is not None:
         return _normalize_provider(provider), True
     env_provider = os.environ.get(ENV_PROVIDER)
-    return _normalize_provider(env_provider), bool(env_provider)
+    normalized_env = _normalize_provider(env_provider)
+    return normalized_env, normalized_env is not None
 
 
 def _default_slots() -> list[SlotDefinition]:
@@ -124,6 +130,8 @@ def _load_slot_config() -> list[SlotDefinition]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
+        return _default_slots()
+    if not isinstance(payload, dict):
         return _default_slots()
 
     slots: list[SlotDefinition] = []
@@ -366,6 +374,8 @@ def build_langsmith_metadata(
                 env_pr if env_pr.isdigit() else env_issue if env_issue.isdigit() else "unknown"
             )
 
+    tracing_enabled = _ensure_langsmith_tracing_env()
+
     metadata: dict[str, object] = {
         "repo": repo_value,
         "run_id": run_id_value,
@@ -374,8 +384,10 @@ def build_langsmith_metadata(
         "pr_number": str(pr_number) if pr_number is not None else None,
         "issue_number": str(issue_number) if issue_number is not None else None,
     }
-    if os.environ.get("LANGSMITH_API_KEY"):
-        metadata["langsmith_project"] = os.environ.get("LANGCHAIN_PROJECT", "workflows-agents")
+    if tracing_enabled:
+        metadata["langsmith_project"] = os.environ.get(
+            ENV_LANGCHAIN_PROJECT, DEFAULT_LANGCHAIN_PROJECT
+        )
 
     tags = [
         "workflows-agents",
@@ -385,3 +397,14 @@ def build_langsmith_metadata(
         f"run_id:{run_id_value}",
     ]
     return {"metadata": metadata, "tags": tags}
+
+
+def _ensure_langsmith_tracing_env() -> bool:
+    api_key = os.environ.get(ENV_LANGSMITH_KEY)
+    if not api_key:
+        return False
+    os.environ.setdefault(ENV_LANGCHAIN_TRACING_V2, "true")
+    os.environ.setdefault(ENV_LANGCHAIN_PROJECT, DEFAULT_LANGCHAIN_PROJECT)
+    os.environ.setdefault(ENV_LANGCHAIN_API_KEY, api_key)
+    os.environ.setdefault(ENV_LANGSMITH_KEY, api_key)
+    return True
