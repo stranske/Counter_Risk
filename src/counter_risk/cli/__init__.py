@@ -197,6 +197,7 @@ def _run_with_discovery(args: argparse.Namespace) -> int:
         if hasattr(config, input_name):
             overrides[input_name] = path
     updated_config = config.model_copy(update=overrides)
+    formatting_profile = _effective_formatting_profile(args, runner_settings)
 
     config_dir = args.config.resolve().parent
     output_dir: Path | None = getattr(args, "output_dir", None)
@@ -204,12 +205,12 @@ def _run_with_discovery(args: argparse.Namespace) -> int:
         updated_config,
         config_dir=config_dir,
         output_dir=output_dir,
+        formatting_profile=formatting_profile,
     )
-    formatting_profile = _effective_formatting_profile(args, runner_settings)
     if formatting_profile:
         print(
-            "Note: formatting profile support will be applied in output formatters; "
-            f"recorded selection: {formatting_profile}"
+            "Note: formatting profile applied to supported output formatters; "
+            f"selected profile: {formatting_profile}"
         )
 
     print(f"\nCounter Risk discovery run completed: {run_dir}")
@@ -241,16 +242,17 @@ def _run_workflow_mode(args: argparse.Namespace) -> int:
         if export_pdf is not None:
             overrides["export_pdf"] = bool(export_pdf)
         runtime_config = config.model_copy(update=overrides) if overrides else config
+        formatting_profile = _effective_formatting_profile(args, runner_settings)
         run_dir = run_pipeline_with_config(
             runtime_config,
             config_dir=args.config.resolve().parent,
             output_dir=getattr(args, "output_dir", None),
+            formatting_profile=formatting_profile,
         )
-        formatting_profile = _effective_formatting_profile(args, runner_settings)
         if formatting_profile:
             print(
-                "Note: formatting profile support will be applied in output formatters; "
-                f"recorded selection: {formatting_profile}"
+                "Note: formatting profile applied to supported output formatters; "
+                f"selected profile: {formatting_profile}"
             )
         print(f"Counter Risk run completed: {run_dir}")
         return 0

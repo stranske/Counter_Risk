@@ -57,4 +57,3 @@ def resolve_formatting_policy(profile: str | None) -> FormattingPolicy:
 
     normalized = normalize_formatting_profile(profile)
     return _FORMATTING_POLICIES[normalized]
-

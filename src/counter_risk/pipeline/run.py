@@ -35,6 +35,7 @@ from counter_risk.compute.rollups import (
 )
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.dates import derive_as_of_date, derive_run_date
+from counter_risk.formatting import normalize_formatting_profile, resolve_formatting_policy
 from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
     canonicalize_name,
@@ -550,6 +551,7 @@ def run_pipeline_with_config(
     *,
     config_dir: Path,
     output_dir: Path | None = None,
+    formatting_profile: str | None = None,
 ) -> Path:
     """Run the full pipeline from an in-memory config object.
 
@@ -576,7 +578,11 @@ def run_pipeline_with_config(
     original_working_directory = Path.cwd()
     try:
         os.chdir(config_dir)
-        return run_pipeline(temp_config_path, output_dir=output_dir)
+        return run_pipeline(
+            temp_config_path,
+            output_dir=output_dir,
+            formatting_profile=formatting_profile,
+        )
     finally:
         with contextlib.suppress(OSError):
             os.chdir(original_working_directory)
@@ -584,7 +590,12 @@ def run_pipeline_with_config(
             temp_config_path.unlink()
 
 
-def run_pipeline(config_path: str | Path, *, output_dir: Path | None = None) -> Path:
+def run_pipeline(
+    config_path: str | Path,
+    *,
+    output_dir: Path | None = None,
+    formatting_profile: str | None = None,
+) -> Path:
     """Run the Counter Risk pipeline and return the output run directory."""
 
     LOGGER.info("pipeline_start config_path=%s", config_path)
@@ -644,6 +655,7 @@ def run_pipeline(config_path: str | Path, *, output_dir: Path | None = None) -> 
         raise RuntimeError("Pipeline failed during run directory setup stage") from exc
 
     warnings: list[str] = []
+    resolved_formatting_profile = normalize_formatting_profile(formatting_profile)
     _append_missing_inputs_warnings(missing_inputs=missing_inputs, warnings=warnings)
     runtime_config = config
     try:
@@ -742,6 +754,7 @@ def run_pipeline(config_path: str | Path, *, output_dir: Path | None = None) -> 
             config=runtime_config,
             parsed_by_variant=parsed_by_variant,
             as_of_date=as_of_date,
+            formatting_profile=resolved_formatting_profile,
             warnings=warnings,
         )
     except Exception as exc:
@@ -3035,6 +3048,7 @@ def _update_historical_outputs(
     config: WorkflowConfig,
     parsed_by_variant: dict[str, dict[str, Any]],
     as_of_date: date,
+    formatting_profile: str | None = None,
     warnings: list[str],
 ) -> list[Path]:
     LOGGER.info("historical_update_start run_dir=%s as_of_date=%s", run_dir, as_of_date.isoformat())
@@ -3052,6 +3066,7 @@ def _update_historical_outputs(
         run_dir=run_dir,
         as_of_date=as_of_date,
         run_date=config.run_date or as_of_date,
+        formatting_profile=formatting_profile,
         warnings=tuple(warnings),
     )
     output_paths: list[Path] = []
@@ -3184,6 +3199,7 @@ def _merge_historical_workbook(
     variant: str,
     as_of_date: date,
     totals_records: list[dict[str, Any]],
+    formatting_profile: str | None = None,
     warnings: list[str],
 ) -> None:
     try:
@@ -3217,8 +3233,15 @@ def _merge_historical_workbook(
         )
 
         worksheet.cell(row=append_row, column=1).value = as_of_date
-        worksheet.cell(row=append_row, column=2).value = total_notional
-        worksheet.cell(row=append_row, column=3).value = counterparties
+        notional_cell = worksheet.cell(row=append_row, column=2)
+        counterparties_cell = worksheet.cell(row=append_row, column=3)
+        notional_cell.value = total_notional
+        counterparties_cell.value = counterparties
+        formatting_policy = resolve_formatting_policy(formatting_profile)
+        if formatting_policy.notional_number_format is not None:
+            notional_cell.number_format = formatting_policy.notional_number_format
+        if formatting_policy.counterparties_number_format is not None:
+            counterparties_cell.number_format = formatting_policy.counterparties_number_format
         workbook.save(workbook_path)
         LOGGER.info(
             "historical_update_variant_complete variant=%s row=%s notional=%s counterparties=%s",

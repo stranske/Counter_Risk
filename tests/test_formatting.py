@@ -35,4 +35,3 @@ def test_resolve_formatting_policy_returns_expected_excel_formats() -> None:
     default = resolve_formatting_policy("default")
     assert default.notional_number_format is None
     assert default.counterparties_number_format is None
-

@@ -164,8 +164,21 @@ Optional runtime overrides:
 
 - `--strict-policy warn|strict` (reconciliation fail policy override)
 - `--export-pdf` / `--no-export-pdf`
-- `--formatting-profile <name>` (reserved selector for formatter policy wiring)
+- `--formatting-profile <name>` (applies supported numeric formatting policies to output writers)
 - `--settings <path/to/runner-settings.json>` (Runner.xlsm / GUI serialized settings payload)
+
+### Formatting Profiles
+
+Supported formatting profile values:
+
+- `default` - preserve template/default number formats.
+- `currency` - USD-style currency formatting for historical notional outputs.
+- `accounting` - accounting-style currency formatting for historical notional outputs.
+- `plain` - non-currency numeric format with two decimals.
+
+Current profile application scope:
+
+- Historical workbook append rows written by the pipeline.
 
 Legacy packaging path is still available for release validation only:
 
