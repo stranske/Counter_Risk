@@ -65,6 +65,10 @@ def test_langchain_provider_client_uses_fallback_provider_when_first_unavailable
             "anthropic": set(),
         },
     )
+    monkeypatch.setenv("LANGSMITH_API_KEY", "test-key")
+    monkeypatch.delenv("LANGCHAIN_TRACING_V2", raising=False)
+    monkeypatch.delenv("LANGCHAIN_API_KEY", raising=False)
+    monkeypatch.delenv("LANGCHAIN_PROJECT", raising=False)
     calls: list[tuple[str | None, str | None]] = []
 
     def _fake_build_chat_client(
@@ -87,10 +91,64 @@ def test_langchain_provider_client_uses_fallback_provider_when_first_unavailable
         provider_chain=("github-models", "openai"),
         required_env_keys=("GITHUB_TOKEN", "OPENAI_API_KEY"),
     )
-    response = client.generate(messages=[{"role": "user", "content": "hello"}], model="gpt-5.2")
+    response_metadata: dict[str, object] = {}
+    response = client.generate(
+        messages=[{"role": "user", "content": "hello"}],
+        model="gpt-5.2",
+        response_metadata=response_metadata,
+    )
 
     assert response == "provider-response"
     assert calls == [("github-models", "gpt-5.2"), ("openai", "gpt-5.2")]
+    assert response_metadata["provider"] == "openai"
+    assert response_metadata["model"] == "gpt-5.2"
+
+
+def test_langchain_provider_client_populates_trace_metadata_from_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        provider_base,
+        "get_provider_model_catalog",
+        lambda: {
+            "github-models": {"gpt-5.2"},
+            "openai": {"gpt-5.2"},
+            "anthropic": set(),
+        },
+    )
+
+    def _fake_build_chat_client(
+        *, provider: str | None = None, model: str | None = None, **_: object
+    ) -> SimpleNamespace:
+        class _Client:
+            def invoke(self, messages: object, config: object | None = None) -> object:
+                _ = (messages, config)
+                return SimpleNamespace(
+                    content="trace-response",
+                    id="trace-123",
+                    response_metadata={"trace_url": "https://smith.langchain.com/r/trace-123"},
+                )
+
+        return SimpleNamespace(client=_Client(), provider=provider, model=model)
+
+    monkeypatch.setattr(provider_base, "build_chat_client", _fake_build_chat_client)
+
+    client = provider_base.LangChainProviderClient(
+        provider_chain=("openai",),
+        required_env_keys=("OPENAI_API_KEY",),
+    )
+    response_metadata: dict[str, object] = {}
+    response = client.generate(
+        messages=[{"role": "user", "content": "hello"}],
+        model="gpt-5.2",
+        response_metadata=response_metadata,
+    )
+
+    assert response == "trace-response"
+    assert response_metadata["provider"] == "openai"
+    assert response_metadata["model"] == "gpt-5.2"
+    assert response_metadata["trace_id"] == "trace-123"
+    assert response_metadata["trace_url"] == "https://smith.langchain.com/r/trace-123"
 
 
 def test_langchain_provider_client_retries_next_provider_after_invoke_error(
