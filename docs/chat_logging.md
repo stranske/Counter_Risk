@@ -2,6 +2,13 @@
 
 Counter_Risk persists each chat interaction to the active run folder for auditability.
 
+## Logging Controls
+
+- Transcript logging (`chat_logs/*.jsonl`) is always enabled by design for run-level auditability.
+- There is no runtime toggle to disable transcript logging.
+- Legacy debug prompt/response artifacts (`llm_logs/*.json`) are optional and only written when
+  `ChatSession(enable_llm_logging=True)` is used by the caller.
+
 ## Log Location
 
 - Directory: `runs/<as_of_timestamp>/chat_logs/`

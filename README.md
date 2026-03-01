@@ -146,6 +146,8 @@ The run-context chat assistant now uses LangChain-backed providers (instead of s
   `LANGCHAIN_MODEL`, slot overrides, timeout/retry settings).
 - Chat transcripts are written per run under `runs/<...>/chat_logs/`; see
   [docs/chat_logging.md](docs/chat_logging.md) for payload fields and LangSmith trace linkage.
+- Transcript logging is always on for audits; optional legacy `llm_logs` artifacts can be
+  enabled by code paths that set `ChatSession(enable_llm_logging=True)`.
 
 ## Workflow Run Command
 
