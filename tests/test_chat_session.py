@@ -116,6 +116,29 @@ def test_chat_session_rejects_local_provider_when_offline_mode_is_disabled(
         ChatSession(context=context, provider="local", model=_MODEL_KEY)
 
 
+def test_chat_session_reports_missing_provider_dependency_on_send(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("COUNTER_RISK_CHAT_OFFLINE_MODE", "1")
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setattr(
+        session_module,
+        "provider_dependency_error",
+        lambda provider: (
+            "Provider 'openai' requires missing dependencies (langchain-openai). "
+            "Install packages: langchain-openai."
+            if provider == "openai"
+            else None
+        ),
+    )
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
+
+    with pytest.raises(ChatSessionError, match="langchain-openai"):
+        session.ask("top exposures", provider_key="openai", model_key=_provider_model("openai"))
+
+
 def test_get_provider_models_hides_local_provider_when_offline_mode_is_disabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -173,6 +196,29 @@ def test_chat_session_default_model_uses_credential_compatible_option(
 
     assert session.provider == "openai"
     assert session.model == "openai-only-model"
+
+
+def test_chat_session_reports_missing_provider_dependency_on_selected_send(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
+    monkeypatch.setattr(
+        session_module,
+        "provider_dependency_error",
+        lambda provider: (
+            "Provider 'anthropic' requires missing dependencies (langchain-anthropic). "
+            "Install packages: langchain-anthropic."
+            if provider == "anthropic"
+            else None
+        ),
+    )
+
+    with pytest.raises(ChatSessionError, match="langchain-anthropic"):
+        session.ask(
+            "top exposures", provider_key="anthropic", model_key=_provider_model("anthropic")
+        )
 
 
 def test_chat_session_provider_is_deterministic_for_same_prompt(
