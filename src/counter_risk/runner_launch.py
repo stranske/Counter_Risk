@@ -116,7 +116,9 @@ def resolve_output_dir(repo_root: str, selected_date: str, output_root: str = "r
     return f"{resolve_output_root(repo_root, output_root)}\\{parsed_date.isoformat()}_000000"
 
 
-def resolve_data_quality_summary_path(repo_root: str, selected_date: str, output_root: str = "runs") -> str:
+def resolve_data_quality_summary_path(
+    repo_root: str, selected_date: str, output_root: str = "runs"
+) -> str:
     return f"{resolve_output_dir(repo_root, selected_date, output_root)}\\{_DATA_QUALITY_SUMMARY_FILENAME}"
 
 

@@ -216,9 +216,7 @@ def _run_with_discovery(args: argparse.Namespace) -> int:
     return 0
 
 
-def _resolve_discovery_as_of_date(
-    *, config: WorkflowConfig, as_of_date: str | None
-) -> date | None:
+def _resolve_discovery_as_of_date(*, config: WorkflowConfig, as_of_date: str | None) -> date | None:
     if as_of_date:
         return date.fromisoformat(as_of_date.strip())
     return config.as_of_date
@@ -321,7 +319,9 @@ def _runner_settings_enable_discovery(settings: dict[str, str]) -> bool:
     return settings.get(_SETTINGS_DISCOVERY_MODE_KEY, "").strip().casefold() == "discover"
 
 
-def _load_config_with_runner_settings(config_path: Path, settings: dict[str, str]) -> WorkflowConfig:
+def _load_config_with_runner_settings(
+    config_path: Path, settings: dict[str, str]
+) -> WorkflowConfig:
     config = load_config(config_path)
     overrides: dict[str, Any] = {}
 
@@ -335,9 +335,7 @@ def _load_config_with_runner_settings(config_path: Path, settings: dict[str, str
         configured_roots = dict(config.input_discovery.directory_roots)
         if configured_roots:
             overrides["input_discovery"] = config.input_discovery.model_copy(
-                update={
-                    "directory_roots": dict.fromkeys(sorted(configured_roots), input_root_path)
-                }
+                update={"directory_roots": dict.fromkeys(sorted(configured_roots), input_root_path)}
             )
         else:
             overrides["input_discovery"] = config.input_discovery.model_copy(

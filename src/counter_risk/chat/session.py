@@ -46,9 +46,7 @@ def _visible_provider_models() -> dict[str, set[str]]:
     if _offline_mode_enabled():
         return _PROVIDER_MODELS
     return {
-        provider: models
-        for provider, models in _PROVIDER_MODELS.items()
-        if provider != "local"
+        provider: models for provider, models in _PROVIDER_MODELS.items() if provider != "local"
     }
 
 
@@ -84,6 +82,7 @@ def _default_model_key() -> str:
     if models:
         return models[0]
     return _PLACEHOLDER_MODEL
+
 
 _INJECTION_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
     re.compile(r"ignore\s+(all\s+)?(previous|prior)\s+instructions", re.IGNORECASE),
@@ -358,8 +357,7 @@ def get_provider_models() -> dict[str, tuple[str, ...]]:
     """Return provider/model catalog for UI and validation surfaces."""
 
     return {
-        provider: tuple(sorted(models))
-        for provider, models in _visible_provider_models().items()
+        provider: tuple(sorted(models)) for provider, models in _visible_provider_models().items()
     }
 
 

@@ -207,9 +207,9 @@ class TestWorkbookWriteBack:
         wb = load_mosers_workbook(_FIXTURE_PATH)
         section = locate_futures_detail_section(wb)
         ws = wb[section.sheet_name]
-        ws.cell(
-            row=section.header_col_row, column=section.prior_month_col
-        ).value = "Current Month Notional"
+        ws.cell(row=section.header_col_row, column=section.prior_month_col).value = (
+            "Current Month Notional"
+        )
         path = tmp_path / "missing_col.xlsx"
         wb.save(path)
 
@@ -231,9 +231,9 @@ class TestWorkbookWriteBack:
             desc = str(ws.cell(row=data_row, column=section.description_col).value or "").strip()
             prior_val = ws.cell(row=data_row, column=section.prior_month_col).value
             expected = _PRIOR_NOTIONALS.get(desc)
-            assert prior_val == pytest.approx(expected), (
-                f"Row {data_row} ({desc!r}): expected {expected}, got {prior_val}"
-            )
+            assert prior_val == pytest.approx(
+                expected
+            ), f"Row {data_row} ({desc!r}): expected {expected}, got {prior_val}"
 
     def test_write_prior_month_notional_values_are_numeric(self, tmp_path: Path) -> None:
         """Written prior-month values must be numeric (not strings)."""
@@ -244,9 +244,9 @@ class TestWorkbookWriteBack:
         ws = wb[section.sheet_name]
         for data_row in range(section.data_start_row, section.data_end_row + 1):
             prior_val = ws.cell(row=data_row, column=section.prior_month_col).value
-            assert isinstance(prior_val, (int, float)), (
-                f"Row {data_row}: expected numeric, got {type(prior_val)}"
-            )
+            assert isinstance(
+                prior_val, (int, float)
+            ), f"Row {data_row}: expected numeric, got {type(prior_val)}"
 
     def test_write_only_modifies_prior_month_column(self, tmp_path: Path) -> None:
         """Only the prior-month notional column is modified; all other cells unchanged."""

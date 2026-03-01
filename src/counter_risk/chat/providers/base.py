@@ -90,7 +90,9 @@ def build_provider_model_registry(
 class LangChainProviderClient:
     """LangChain-backed provider client with ordered provider fallbacks."""
 
-    def __init__(self, *, provider_chain: tuple[str, ...], required_env_keys: tuple[str, ...]) -> None:
+    def __init__(
+        self, *, provider_chain: tuple[str, ...], required_env_keys: tuple[str, ...]
+    ) -> None:
         self._provider_chain = provider_chain
         self._required_env_keys = required_env_keys
 
