@@ -46,6 +46,7 @@ def test_runner_vba_module_defines_structured_launch_status_and_execution() -> N
 
     assert "Public Function BuildCommand" in module_source
     assert "On Error GoTo BuildCommandError" in module_source
+    assert "resolvedOutputDir = ResolveOutputDir(repoRoot, selectedDate)" in module_source
     assert 'Set shellObject = CreateObject("WScript.Shell")' in module_source
     assert "shellObject.Run(shellCommand, 0, True)" in module_source
     assert 'WriteStatus "Error"' in module_source

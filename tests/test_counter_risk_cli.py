@@ -160,6 +160,65 @@ def test_main_run_dry_run_discovery_lists_matches(
     assert "NISA Monthly All Programs - Raw.xlsx" in captured.out
 
 
+def test_main_run_dry_run_discovery_applies_runner_settings_input_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config_path = tmp_path / "dry_run_discovery_settings.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "hist_all_programs_3yr_xlsx: placeholder-all.xlsx",
+                "hist_ex_llc_3yr_xlsx: placeholder-ex.xlsx",
+                "hist_llc_3yr_xlsx: placeholder-trend.xlsx",
+                "monthly_pptx: placeholder.pptx",
+                "input_discovery:",
+                "  directory_roots:",
+                "    monthly_inputs: monthly",
+                "    historical_inputs: historical",
+                "    template_inputs: templates",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    settings_path = tmp_path / "runner-settings.json"
+    settings_path.write_text(
+        json.dumps({"input_root": str(tmp_path / "shared-inputs")}),
+        encoding="utf-8",
+    )
+
+    captured: dict[str, object] = {}
+
+    def fake_format_discovery_dry_run(*, config, as_of_date):
+        captured["as_of_date"] = as_of_date.isoformat()
+        captured["roots"] = dict(config.input_discovery.directory_roots)
+        return "ok"
+
+    monkeypatch.setattr(cli, "_format_discovery_dry_run", fake_format_discovery_dry_run)
+
+    result = cli.main(
+        [
+            "run",
+            "--dry-run-discovery",
+            "--config",
+            str(config_path),
+            "--as-of-month",
+            "2025-12-31",
+            "--settings",
+            str(settings_path),
+        ]
+    )
+
+    assert result == 0
+    assert captured["as_of_date"] == "2025-12-31"
+    assert captured["roots"] == {
+        "historical_inputs": Path(str(tmp_path / "shared-inputs")),
+        "monthly_inputs": Path(str(tmp_path / "shared-inputs")),
+        "template_inputs": Path(str(tmp_path / "shared-inputs")),
+    }
+
+
 def test_main_run_dry_run_discovery_requires_as_of_date(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

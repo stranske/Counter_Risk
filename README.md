@@ -47,6 +47,24 @@ output_generators:
 
 Setting `enabled: false` cleanly skips that generator for the run.
 
+## Repo Cash Source Configuration
+
+Repo Cash loading supports layered source selection and audit-friendly overrides:
+
+1. `cash_overrides_<as_of_date>.csv` (or explicit `cash_overrides_csv`)
+2. Structured source (`cash_source_type: csv|xlsx` with `cash_source_path`)
+3. PDF source (`cash_source_type: pdf` or `daily_holdings_pdf`)
+
+Optional config keys:
+
+- `cash_source_type`: `csv`, `xlsx`, `pdf`, or `none`
+- `cash_source_path`: explicit source file path
+- `cash_overrides_csv`: explicit overrides CSV path
+- `required_repo_counterparties`: counterparties that must be present in the loaded map
+- `cash_total_min` / `cash_total_max`: expected total-range checks
+
+Source choice and overrides are emitted in run warnings, which are persisted in `manifest.json`.
+
 ## Start here
 
 - **Project agent guide:** [AGENTS.md](AGENTS.md)
@@ -76,14 +94,41 @@ Typical maintainer loop:
 If a change requires editing synced workflow files, do it in **stranske/Workflows** first and then sync.
 
 ## Testing
+
 Autopilot smoke tests are enabled to validate basic keepalive and automation flow behavior.
 
 ## Development
+
 Use these maintainer commands from the repository root:
 
 - `make lint` runs `ruff check src/ tests/`
 - `make format` runs `ruff format src/ tests/`
 - `make test` runs `pytest -m "not slow"`
+
+## Slow Test Strategy
+
+Some tests are too expensive for PR feedback, so they are tagged with the
+**`slow`** pytest marker and excluded from PR Gate. They still run in Main CI
+after merges to `main`.
+
+| Where it runs | Marker filter | Typical duration |
+|---------------|---------------|------------------|
+| **PR Gate** (`pr-00-gate.yml`) | `not release and not slow` | ~4 min |
+| **Main CI** (`ci.yml`) | *(all tests)* | ~12-15 min |
+| **Release E2E** (`release-e2e.yml`) | `release` | nightly / on label |
+
+What counts as "slow":
+
+- `tests/pipeline/test_run_pipeline.py` — every `test_run_pipeline_*` test
+  calls `run_pipeline()` with real Excel fixtures (100-170 s each on CI).
+  Auto-marked via `tests/pipeline/conftest.py`.
+- `tests/spec/test_macro_spec_fixtures.py` — session-scoped fixture parses
+  three large NISA workbooks (~85 s one-time cost). Module-level
+  `pytestmark = pytest.mark.slow`.
+
+When adding new tests that parse real workbooks or run full pipeline
+orchestration, mark them `@pytest.mark.slow` (or add them to the conftest
+hook) so the Gate stays fast.
 
 ## Chat Provider Configuration
 
@@ -95,6 +140,8 @@ The run-context chat assistant now uses LangChain-backed providers (instead of s
   - `GITHUB_TOKEN` (used for OpenAI-compatible GitHub Models path)
   - `OPENAI_API_KEY` (direct OpenAI path)
   - `CLAUDE_API_STRANSKE` (Anthropic path)
+- The deterministic local stub provider is disabled by default and only available when
+  `COUNTER_RISK_CHAT_OFFLINE_MODE=1` (intended for offline tests/dev only).
 - Optional routing/model overrides are also documented in `.env.example` (`LANGCHAIN_PROVIDER`,
   `LANGCHAIN_MODEL`, slot overrides, timeout/retry settings).
 
@@ -102,38 +149,19 @@ The run-context chat assistant now uses LangChain-backed providers (instead of s
 
 The production workflow run path is:
 
-`counter-risk run --config <workflow.yml> --as-of-date YYYY-MM-DD --output-dir <runs/<timestamp>> --settings <path/to/settings.json>`
+`counter-risk run --config <workflow.yml> --as-of-date YYYY-MM-DD --output-dir <runs/<timestamp>>`
 
 Examples:
 
-- `python -m counter_risk.cli run --config config/all_programs.yml --as-of-date 2025-12-31 --output-dir runs/2025-12-31_000000 --settings /tmp/counter-risk-runner-settings.json`
-- `python -m counter_risk.cli run --discover --config config/all_programs.yml --as-of-month 2025-12-31 --output-dir runs/2025-12-31_000000 --settings /tmp/counter-risk-runner-settings.json`
+- `python -m counter_risk.cli run --config config/all_programs.yml --as-of-date 2025-12-31 --output-dir runs/2025-12-31_000000`
+- `python -m counter_risk.cli run --discover --config config/all_programs.yml --as-of-date 2025-12-31 --output-dir runs/2025-12-31_000000`
 
 Optional runtime overrides:
 
 - `--strict-policy warn|strict` (reconciliation fail policy override)
 - `--export-pdf` / `--no-export-pdf`
 - `--formatting-profile <name>` (reserved selector for formatter policy wiring)
-
-## Runner Workbook Settings
-
-`Runner.xlsm` now includes a dedicated `Settings` sheet so operators can adjust run
-inputs without touching CLI arguments. The workbook serializes these values to a
-temporary JSON file and passes it through `--settings`.
-
-Default settings keys:
-
-- `input_root`
-- `discovery_mode`
-- `strict_policy`
-- `formatting_profile`
-- `output_root`
-
-The `Runner` sheet also includes direct artifact buttons for:
-
-- `Open Manifest`
-- `Open Summary` (`DATA_QUALITY_SUMMARY.txt`)
-- `Open PPT Folder` (`distribution_static/`)
+- `--settings <path/to/runner-settings.json>` (Runner.xlsm / GUI serialized settings payload)
 
 Legacy packaging path is still available for release validation only:
 
@@ -267,9 +295,6 @@ After 3 failures, keepalive pauses and adds `needs-human`:
 - [Consumer README](https://github.com/stranske/Workflows/blob/main/templates/consumer-repo/README.md) - Complete setup guide
 - [Keepalive Architecture](https://github.com/stranske/Workflows/blob/main/docs/keepalive/GoalsAndPlumbing.md) - Detailed design
 - [Setup Checklist](docs/keepalive/SETUP_CHECKLIST.md) - Step-by-step configuration
-
-## Testing
-Autopilot smoke tests are enabled to validate basic keepalive and automation flow behavior.
 
 ## License
 

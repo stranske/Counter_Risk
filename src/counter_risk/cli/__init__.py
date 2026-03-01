@@ -117,7 +117,7 @@ def _run_command(args: argparse.Namespace) -> int:
     args.runner_settings = runner_settings
 
     if bool(getattr(args, "dry_run_discovery", False)):
-        config = load_config(args.config)
+        config = _load_config_with_runner_settings(args.config, runner_settings)
         as_of_date = _resolve_discovery_as_of_date(
             config=config,
             as_of_date=getattr(args, "as_of_date", None),

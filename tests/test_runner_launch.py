@@ -209,6 +209,7 @@ def test_open_manifest_returns_missing_file_error_without_open_call() -> None:
 
     assert status.success is False
     assert f"Manifest not found: {manifest_path}" == status.message
+    assert status.error_code == 7104
     assert opened_files == []
 
 

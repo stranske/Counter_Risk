@@ -525,7 +525,6 @@ Public Function BuildCommand( _
     ByVal outputDir As String _
 ) As String
     Dim parsedDate As Date
-    Dim parsedDateValue As String
     Dim repoRoot As String
     Dim resolvedOutputDir As String
     Dim command As String
@@ -538,9 +537,8 @@ Public Function BuildCommand( _
 
     parsedDate = ParseAsOfMonth(selectedDate)
     parsedDate = CDate(parsedDate)
-    parsedDateValue = Format$(parsedDate, RUN_FOLDER_FORMAT)
     repoRoot = ResolveRepoRoot()
-    resolvedOutputDir = NormalizePathSeparators(repoRoot) & "\runs\" & parsedDateValue
+    resolvedOutputDir = ResolveOutputDir(repoRoot, selectedDate)
     outputDir = resolvedOutputDir
 
     command = BuildCommandArguments(runMode, parsedDate, resolvedOutputDir)
