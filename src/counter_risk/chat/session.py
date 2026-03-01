@@ -14,9 +14,11 @@ from typing import Final, cast
 
 from counter_risk.chat.context import RunContext
 from counter_risk.chat.providers.base import (
+    LangChainProviderClient,
     ProviderClient,
     build_provider_clients,
     build_provider_model_registry,
+    provider_dependency_error,
     provider_env_available,
 )
 from counter_risk.chat.utils import cmp_with_tol, is_close
@@ -260,6 +262,10 @@ class ChatSession:
             )
 
         provider_client = _PROVIDER_CLIENTS[selected_provider]
+        if isinstance(provider_client, LangChainProviderClient):
+            dependency_error = provider_dependency_error(selected_provider)
+            if dependency_error is not None:
+                raise ChatSessionError(dependency_error)
         context_answer = self._answer_from_context(clean_question)
         messages = self._build_provider_messages(prompt=prompt, question=clean_question)
         provider_response_metadata: dict[str, object] = {}

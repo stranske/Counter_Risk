@@ -6,6 +6,7 @@ from counter_risk.chat.providers.base import (
     ProviderModelRegistry,
     build_provider_clients,
     build_provider_model_registry,
+    provider_dependency_error,
     provider_env_available,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "ProviderModelRegistry",
     "build_provider_clients",
     "build_provider_model_registry",
+    "provider_dependency_error",
     "provider_env_available",
 ]

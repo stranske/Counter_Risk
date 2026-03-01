@@ -12,6 +12,7 @@ from tools.langchain_client import (
     PROVIDER_OPENAI,
     build_chat_client,
     get_provider_model_catalog,
+    missing_provider_dependencies,
 )
 from tools.llm_provider import build_langsmith_metadata
 
@@ -102,6 +103,8 @@ class LangChainProviderClient:
         response_metadata = kwargs.get("response_metadata")
         metadata_sink = response_metadata if isinstance(response_metadata, dict) else None
         slot_catalog = get_provider_model_catalog()
+        missing_dependency_names: set[str] = set()
+        runtime_ready_provider_seen = False
 
         for provider_name in self._provider_chain:
             provider_models = slot_catalog.get(provider_name, set())
@@ -109,7 +112,13 @@ class LangChainProviderClient:
                 continue
             client_info = build_chat_client(provider=provider_name, model=model)
             if client_info is None:
+                missing_dependencies = missing_provider_dependencies(provider_name)
+                if missing_dependencies:
+                    missing_dependency_names.update(missing_dependencies)
+                else:
+                    runtime_ready_provider_seen = True
                 continue
+            runtime_ready_provider_seen = True
             try:
                 client = cast(_LangChainInvokeClient, client_info.client)
                 response = client.invoke(messages, config=metadata)
@@ -134,12 +143,22 @@ class LangChainProviderClient:
         if last_error is not None:
             raise RuntimeError(f"Provider request failed: {last_error}") from last_error
 
-        missing_env = ", ".join(self._required_env_keys)
-        if missing_env:
+        if self._required_env_keys and not any(
+            os.environ.get(key) for key in self._required_env_keys
+        ):
+            missing_env = ", ".join(self._required_env_keys)
             raise RuntimeError(
                 "No provider credentials/configured clients available. "
                 f"Set one of: {missing_env}."
             )
+
+        if not runtime_ready_provider_seen and missing_dependency_names:
+            missing_rendered = ", ".join(sorted(missing_dependency_names))
+            raise RuntimeError(
+                "LangChain provider dependencies are missing for the selected provider/model. "
+                f"Install required packages: {missing_rendered}."
+            )
+
         chain = ", ".join(self._provider_chain)
         raise RuntimeError(f"No configured clients available for provider chain: {chain}.")
 
@@ -168,6 +187,20 @@ def provider_env_available(provider: str) -> bool:
     if provider_key == "anthropic":
         return any(os.environ.get(key) for key in _ANTHROPIC_ENV_KEYS)
     return True
+
+
+def provider_dependency_error(provider: str) -> str | None:
+    """Return install guidance when LangChain provider dependencies are unavailable."""
+
+    provider_key = provider.strip().lower()
+    missing = missing_provider_dependencies(provider_key)
+    if not missing:
+        return None
+    rendered = ", ".join(missing)
+    return (
+        f"Provider '{provider_key}' requires missing dependencies ({rendered}). "
+        f"Install packages: {rendered}."
+    )
 
 
 def _coerce_response_text(response: object) -> str:

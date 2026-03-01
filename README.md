@@ -135,11 +135,15 @@ hook) so the Gate stays fast.
 The run-context chat assistant now uses LangChain-backed providers (instead of stubs) for
 `openai` and `anthropic`.
 
+- Ensure runtime dependencies are installed before using chat providers
+  (for example `pip install -r requirements.txt` or `pip install -e .`).
 - Copy `.env.example` to a local `.env` (or set variables in your runtime environment).
 - Configure at least one credential path:
   - `GITHUB_TOKEN` (used for OpenAI-compatible GitHub Models path)
   - `OPENAI_API_KEY` (direct OpenAI path)
   - `CLAUDE_API_STRANSKE` (Anthropic path)
+- Missing package failures are surfaced with explicit install guidance
+  (`langchain-openai` or `langchain-anthropic`) before provider calls execute.
 - The deterministic local stub provider is disabled by default and only available when
   `COUNTER_RISK_CHAT_OFFLINE_MODE=1` (intended for offline tests/dev only).
 - Optional routing/model overrides are also documented in `.env.example` (`LANGCHAIN_PROVIDER`,
