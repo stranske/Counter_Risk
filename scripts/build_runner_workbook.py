@@ -135,7 +135,12 @@ def _control_data_sheet_xml(month_values: list[str]) -> str:
 
 
 def _settings_sheet_xml() -> str:
-    rows = ['<row r="1">' + _inline_str_cell("A1", "Setting") + _inline_str_cell("B1", "Value") + "</row>"]
+    rows = [
+        '<row r="1">'
+        + _inline_str_cell("A1", "Setting")
+        + _inline_str_cell("B1", "Value")
+        + "</row>"
+    ]
     for index, (label, value) in enumerate(_SETTINGS_ROWS, start=2):
         rows.append(
             '<row r="{row}">{label_cell}{value_cell}</row>'.format(

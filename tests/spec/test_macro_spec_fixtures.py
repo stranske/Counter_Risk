@@ -25,9 +25,9 @@ _TEMPLATE_WORKBOOK_PATH = Path(
 
 def test_macro_spec_fixture_inputs_exist(macro_spec_cases: tuple[Any, ...]) -> None:
     for case in macro_spec_cases:
-        assert case.raw_input_path.is_file(), (
-            f"Missing macro-spec fixture input for {case.variant}: {case.raw_input_path}"
-        )
+        assert (
+            case.raw_input_path.is_file()
+        ), f"Missing macro-spec fixture input for {case.variant}: {case.raw_input_path}"
 
 
 def test_macro_spec_fixture_parsers_load_sample_inputs(
@@ -44,9 +44,9 @@ def test_macro_spec_fixture_generators_create_cprs_ch_sheet(
     for case in macro_spec_cases:
         workbook = case.generator(case.raw_input_path)
         try:
-            assert "CPRS - CH" in workbook.sheetnames, (
-                f"{case.variant}: generated workbook missing required CPRS - CH sheet"
-            )
+            assert (
+                "CPRS - CH" in workbook.sheetnames
+            ), f"{case.variant}: generated workbook missing required CPRS - CH sheet"
         finally:
             workbook.close()
 
@@ -70,9 +70,9 @@ def test_macro_spec_range_level_outputs_match_expected_mosers_format(
             actual_vols = [worksheet[f"D{row_number}"].value for row_number in range(10, 21)]
             actual_allocations = [worksheet[f"E{row_number}"].value for row_number in range(10, 21)]
 
-            assert worksheet["B5"].value == parsed.ch_rows[0].counterparty, (
-                f"{macro_name}: CPRS - CH!B5 deviates from expected counterparty transformation"
-            )
+            assert (
+                worksheet["B5"].value == parsed.ch_rows[0].counterparty
+            ), f"{macro_name}: CPRS - CH!B5 deviates from expected counterparty transformation"
             assert actual_vols == expected_vols, (
                 f"{macro_name}: CPRS - CH!D10:D20 deviates from expected annualized-volatility "
                 "range transformation"
