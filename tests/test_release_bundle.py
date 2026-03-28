@@ -444,8 +444,12 @@ def test_copy_remote_scripts_copies_both_cmd_files(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     scripts_dir = repo_root / "scripts" / "windows"
     scripts_dir.mkdir(parents=True, exist_ok=True)
-    (scripts_dir / "request_counter_risk_remote.cmd").write_text("@echo request\n", encoding="utf-8")
-    (scripts_dir / "process_counter_risk_remote.cmd").write_text("@echo process\n", encoding="utf-8")
+    (scripts_dir / "request_counter_risk_remote.cmd").write_text(
+        "@echo request\n", encoding="utf-8"
+    )
+    (scripts_dir / "process_counter_risk_remote.cmd").write_text(
+        "@echo process\n", encoding="utf-8"
+    )
     bundle_dir = tmp_path / "bundle"
     bundle_dir.mkdir(parents=True, exist_ok=True)
 
