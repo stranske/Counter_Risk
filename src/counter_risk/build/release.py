@@ -101,7 +101,8 @@ def _build_runner_xlsm(root: Path, bundle_dir: Path, version: str) -> list[Path]
     if not template.is_file():
         raise ValueError(
             f"Required XLSM template not found at '{template}'. "
-            "Ensure assets/templates/counter_risk_template.xlsm is present before building a release."
+            "Ensure assets/templates/counter_risk_template.xlsm is present "
+            "before building a release."
         )
     dst = bundle_dir / "counter_risk_runner.xlsm"
     run_date = datetime.now(UTC)
