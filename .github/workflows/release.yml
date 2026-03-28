@@ -31,7 +31,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.ref || github.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -48,9 +48,6 @@ jobs:
         id: version
         shell: bash
         run: echo "version=$(cat VERSION | tr -d '\r\n')" >> "$GITHUB_OUTPUT"
-
-      - name: Build executable with PyInstaller
-        run: pyinstaller -y release.spec
 
       - name: Assemble release bundle
         run: >
