@@ -97,9 +97,21 @@ def _copy_tree_filtered(
 def _copy_runner_xlsm(root: Path, bundle_dir: Path) -> list[Path]:
     src = root / "Runner.xlsm"
     if not src.is_file():
-        LOGGER.warning("Runner.xlsm not found at '%s'; skipping.", src)
-        return []
+        raise ValueError(
+            f"Required Excel runner not found at '{src}'. "
+            "Ensure Runner.xlsm is present in the repository root before building a release."
+        )
     dst = bundle_dir / "counter_risk_runner.xlsm"
+    shutil.copy2(src, dst)
+    return [dst]
+
+
+def _copy_remote_trigger_doc(root: Path, bundle_dir: Path) -> list[Path]:
+    src = root / "docs" / "remote_trigger_testing.md"
+    if not src.is_file():
+        LOGGER.warning("remote_trigger_testing.md not found at '%s'; skipping.", src)
+        return []
+    dst = bundle_dir / "remote_trigger_testing.md"
     shutil.copy2(src, dst)
     return [dst]
 
@@ -266,7 +278,7 @@ def _write_readme(bundle_dir: Path, version: str) -> Path:
                 "## Remote request (worker machine required)",
                 "- Requester: run request_counter_risk_remote.cmd",
                 "- Worker: run process_counter_risk_remote.cmd",
-                "- See docs/remote_trigger_testing.md for full details.",
+                "- See remote_trigger_testing.md (in this folder) for full details.",
                 "",
                 "This bundle was assembled for non-technical operator use.",
             ]
@@ -338,6 +350,7 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
     copied["runner"] = [runner_file]
 
     copied["remote_scripts"] = _copy_remote_scripts(root, bundle_dir)
+    copied["remote_trigger_doc"] = _copy_remote_trigger_doc(root, bundle_dir)
 
     readme_file = _write_readme(bundle_dir, version)
     copied["readme"] = [readme_file]

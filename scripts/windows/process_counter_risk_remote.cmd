@@ -51,7 +51,7 @@ echo.
 :scan_loop
 set "FOUND=0"
 
-for %%F in ("%REQUEST_FOLDER%\*.request") do (
+for %%F in ("%REQUEST_FOLDER%\*.request") do if exist "%%F" (
     set "FOUND=1"
     set "REQ=%%F"
     set "BASE=%%~nF"
@@ -104,8 +104,8 @@ for %%F in ("%REQUEST_FOLDER%\*.request") do (
             goto :next_file
         )
 
-        :: Build and write a settings JSON to TEMP
-        set "SETTINGS_FILE=%TEMP%\counter-risk-runner-settings.json"
+        :: Build and write a per-request settings JSON to TEMP (unique name avoids collisions)
+        set "SETTINGS_FILE=%TEMP%\counter-risk-runner-settings-!BASE!.json"
         set "INPUT_ROOT_VAL=!INPUT_ROOT!"
         if "!INPUT_ROOT_VAL!"=="" set "INPUT_ROOT_VAL=%SCRIPT_DIR%"
         (
@@ -134,6 +134,7 @@ for %%F in ("%REQUEST_FOLDER%\*.request") do (
             echo [%TIME%] DONE:   !BASE!
             ren "!PROC_FILE!" "!BASE!.done"
         )
+        if exist "!SETTINGS_FILE!" del "!SETTINGS_FILE!" 2>nul
     )
     :next_file
 )

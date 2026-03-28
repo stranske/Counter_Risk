@@ -33,7 +33,7 @@ reach the pipeline's input data.
 | Requirement | Requester | Worker |
 |---|---|---|
 | Bundle extracted locally | yes | yes |
-| Macros allowed (Runner.xlsm) | yes (optional) | no |
+| Macros allowed (counter_risk_runner.xlsm) | yes (optional) | no |
 | Read/write access to shared folder | yes | yes |
 | Access to source data (N:\\ or equivalent) | no | yes |
 | Access to output directory | read (to view results) | write |

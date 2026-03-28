@@ -25,12 +25,24 @@ def _write_fake_repo(root: Path) -> None:
     (root / "templates").mkdir(parents=True, exist_ok=True)
     (root / "assets" / "templates").mkdir(parents=True, exist_ok=True)
     (root / "tests" / "fixtures").mkdir(parents=True, exist_ok=True)
+    (root / "scripts" / "windows").mkdir(parents=True, exist_ok=True)
+    (root / "docs").mkdir(parents=True, exist_ok=True)
     (root / "release.spec").write_text("# fake\n", encoding="utf-8")
     (root / "config" / "fixture_replay.yml").write_text("name: fixture\n", encoding="utf-8")
     (root / "templates" / "Monthly Counterparty Exposure Report.pptx").write_bytes(b"ppt-template")
     (root / "assets" / "templates" / "counter_risk_template.xlsm").write_bytes(b"xlsm-template")
     (root / "tests" / "fixtures" / "fixture.xlsx").write_bytes(b"xlsx")
     (root / "tests" / "fixtures" / "fixture.pptx").write_bytes(b"fixture-ppt")
+    (root / "Runner.xlsm").write_bytes(b"fake-runner-xlsm")
+    (root / "scripts" / "windows" / "request_counter_risk_remote.cmd").write_text(
+        "@echo off\necho request\n", encoding="utf-8"
+    )
+    (root / "scripts" / "windows" / "process_counter_risk_remote.cmd").write_text(
+        "@echo off\necho process\n", encoding="utf-8"
+    )
+    (root / "docs" / "remote_trigger_testing.md").write_text(
+        "# Remote Trigger Testing\n", encoding="utf-8"
+    )
 
 
 def _create_fake_built_executable(root: Path, executable_name: str) -> Path:
@@ -382,3 +394,88 @@ def test_release_bundle_executable_runs_fixture_replay_and_matches_numeric_fixtu
         abs_tol=1e-9,
         rel_tol=1e-9,
     )
+
+
+def test_copy_runner_xlsm_copies_to_bundle_root(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    (repo_root / "Runner.xlsm").write_bytes(b"fake-runner")
+    bundle_dir = tmp_path / "bundle"
+    bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    result = release._copy_runner_xlsm(repo_root, bundle_dir)
+
+    assert len(result) == 1
+    assert result[0] == bundle_dir / "counter_risk_runner.xlsm"
+    assert result[0].read_bytes() == b"fake-runner"
+
+
+def test_copy_runner_xlsm_raises_when_missing(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir(parents=True, exist_ok=True)
+    bundle_dir = tmp_path / "bundle"
+    bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    with pytest.raises(ValueError, match="Required Excel runner not found"):
+        release._copy_runner_xlsm(repo_root, bundle_dir)
+
+
+def test_copy_remote_scripts_copies_both_cmd_files(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    scripts_dir = repo_root / "scripts" / "windows"
+    scripts_dir.mkdir(parents=True, exist_ok=True)
+    (scripts_dir / "request_counter_risk_remote.cmd").write_text("@echo request\n", encoding="utf-8")
+    (scripts_dir / "process_counter_risk_remote.cmd").write_text("@echo process\n", encoding="utf-8")
+    bundle_dir = tmp_path / "bundle"
+    bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    result = release._copy_remote_scripts(repo_root, bundle_dir)
+
+    names = {p.name for p in result}
+    assert "request_counter_risk_remote.cmd" in names
+    assert "process_counter_risk_remote.cmd" in names
+    for p in result:
+        assert p.parent == bundle_dir
+
+
+def test_assemble_release_includes_runner_xlsm_and_remote_scripts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "repo"
+    _write_fake_repo(repo_root)
+    output_dir = tmp_path / "release"
+
+    monkeypatch.setattr(release, "repository_root", lambda: repo_root)
+    monkeypatch.setattr(
+        release,
+        "_run_pyinstaller",
+        lambda root, spec_path: _create_fake_built_executable(
+            root, release._executable_filename(for_windows=False)
+        ),
+    )
+
+    bundle_dir = release.assemble_release("2.0.0", output_dir)
+
+    assert (bundle_dir / "counter_risk_runner.xlsm").is_file()
+    assert (bundle_dir / "request_counter_risk_remote.cmd").is_file()
+    assert (bundle_dir / "process_counter_risk_remote.cmd").is_file()
+    assert (bundle_dir / "remote_trigger_testing.md").is_file()
+
+    manifest = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["artifacts"]["runner_xlsm"] == ["counter_risk_runner.xlsm"]
+    assert "request_counter_risk_remote.cmd" in manifest["artifacts"]["remote_scripts"][0]
+    assert "process_counter_risk_remote.cmd" in manifest["artifacts"]["remote_scripts"][1]
+
+
+def test_assemble_release_fails_fast_when_runner_xlsm_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "repo"
+    _write_fake_repo(repo_root)
+    (repo_root / "Runner.xlsm").unlink()
+    output_dir = tmp_path / "release"
+
+    monkeypatch.setattr(release, "repository_root", lambda: repo_root)
+
+    with pytest.raises(ValueError, match="Required Excel runner not found"):
+        release.assemble_release("3.0.0", output_dir)

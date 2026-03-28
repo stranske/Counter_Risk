@@ -44,7 +44,7 @@ if "%OUTPUT_DIR%"=="" (
 
 :: --- Input root (optional) ---
 echo.
-set /p INPUT_ROOT=Enter input root directory (leave blank to use config default):
+set /p INPUT_ROOT=Enter input root directory (leave blank to use worker default - bundle folder):
 
 :: --- Shared request folder ---
 echo.
@@ -55,8 +55,18 @@ if "%REQUEST_FOLDER%"=="" (
 )
 
 :: --- Build timestamp for unique filename ---
+set "DT="
 for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value 2^>nul') do set "DT=%%I"
-set "TIMESTAMP=%DT:~0,8%_%DT:~8,6%"
+if defined DT (
+    set "TIMESTAMP=%DT:~0,8%_%DT:~8,6%"
+) else (
+    for /f %%I in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss" 2^>nul') do set "TIMESTAMP=%%I"
+)
+if "%TIMESTAMP%"=="" (
+    echo ERROR: Could not generate timestamp for request filename.
+    echo Ensure WMIC or PowerShell is available on this system.
+    goto :error
+)
 
 :: --- Write request file ---
 set "REQUEST_FILE=%REQUEST_FOLDER%\counter_risk_%AS_OF_DATE%_%MODE%_%TIMESTAMP%.request"
