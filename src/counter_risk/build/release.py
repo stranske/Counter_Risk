@@ -104,11 +104,12 @@ def _build_runner_xlsm(root: Path, bundle_dir: Path, version: str) -> list[Path]
             "Ensure assets/templates/counter_risk_template.xlsm is present before building a release."
         )
     dst = bundle_dir / "counter_risk_runner.xlsm"
+    run_date = datetime.now(UTC)
     build_xlsm_artifact(
         template_path=template,
         output_path=dst,
-        as_of_date=date.today(),
-        run_date=datetime.now(UTC),
+        as_of_date=run_date.date(),
+        run_date=run_date,
         version=version,
     )
     return [dst]
