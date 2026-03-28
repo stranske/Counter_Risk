@@ -94,6 +94,43 @@ def _copy_tree_filtered(
     return copied
 
 
+def _copy_runner_xlsm(root: Path, bundle_dir: Path) -> list[Path]:
+    src = root / "Runner.xlsm"
+    if not src.is_file():
+        raise ValueError(
+            f"Required Excel runner not found at '{src}'. "
+            "Ensure Runner.xlsm is present in the repository root before building a release."
+        )
+    dst = bundle_dir / "counter_risk_runner.xlsm"
+    shutil.copy2(src, dst)
+    return [dst]
+
+
+def _copy_remote_trigger_doc(root: Path, bundle_dir: Path) -> list[Path]:
+    src = root / "docs" / "remote_trigger_testing.md"
+    if not src.is_file():
+        LOGGER.warning("remote_trigger_testing.md not found at '%s'; skipping.", src)
+        return []
+    dst = bundle_dir / "remote_trigger_testing.md"
+    shutil.copy2(src, dst)
+    return [dst]
+
+
+def _copy_remote_scripts(root: Path, bundle_dir: Path) -> list[Path]:
+    scripts_src = root / "scripts" / "windows"
+    names = ["request_counter_risk_remote.cmd", "process_counter_risk_remote.cmd"]
+    copied: list[Path] = []
+    for name in names:
+        src = scripts_src / name
+        if not src.is_file():
+            LOGGER.warning("Remote script not found at '%s'; skipping.", src)
+            continue
+        dst = bundle_dir / name
+        shutil.copy2(src, dst)
+        copied.append(dst)
+    return copied
+
+
 def _create_runner_file(bundle_dir: Path) -> Path:
     runner_path = bundle_dir / "run_counter_risk.cmd"
     runner_path.write_text(
@@ -229,10 +266,19 @@ def _write_readme(bundle_dir: Path, version: str) -> Path:
                 "",
                 f"Version: {version}",
                 "",
-                "## How to run",
+                "## Operator (Excel) - recommended",
                 "1. Copy this entire folder to a working location.",
                 "2. Update YAML files in config/ if input paths changed.",
-                "3. Double-click run_counter_risk.cmd.",
+                "3. Open counter_risk_runner.xlsm and enable macros.",
+                "4. Select the as-of date and mode, then click Run.",
+                "",
+                "## Fallback launcher",
+                "Double-click run_counter_risk.cmd to run via the command line.",
+                "",
+                "## Remote request (worker machine required)",
+                "- Requester: run request_counter_risk_remote.cmd",
+                "- Worker: run process_counter_risk_remote.cmd",
+                "- See remote_trigger_testing.md (in this folder) for full details.",
                 "",
                 "This bundle was assembled for non-technical operator use.",
             ]
@@ -284,6 +330,7 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
     bundle_dir.mkdir(parents=True, exist_ok=True)
 
     copied: dict[str, list[Path]] = {}
+    copied["runner_xlsm"] = _copy_runner_xlsm(root, bundle_dir)
     copied["templates"] = _copy_templates(root, bundle_dir)
     copied["fixtures"] = _copy_fixture_artifacts(root, bundle_dir)
 
@@ -301,6 +348,9 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
 
     runner_file = _create_runner_file(bundle_dir)
     copied["runner"] = [runner_file]
+
+    copied["remote_scripts"] = _copy_remote_scripts(root, bundle_dir)
+    copied["remote_trigger_doc"] = _copy_remote_trigger_doc(root, bundle_dir)
 
     readme_file = _write_readme(bundle_dir, version)
     copied["readme"] = [readme_file]
