@@ -8,7 +8,7 @@ import logging
 import shutil
 import subprocess
 import sys
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from counter_risk.build.xlsm import build_xlsm_artifact
