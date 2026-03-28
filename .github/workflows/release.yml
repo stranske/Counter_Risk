@@ -1,0 +1,91 @@
+# Builds a versioned Windows operator bundle using PyInstaller.
+# Downloads the artifact from the GitHub Actions run summary page.
+#
+# Trigger modes:
+# - Manual dispatch (workflow_dispatch)
+# - Push of a version tag (e.g. v0.1.0)
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag, or SHA to build from (defaults to the current branch)"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*.*.*"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-windows:
+    name: Build Windows bundle
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e ".[dev]"
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: echo "version=$(cat VERSION | tr -d '\r\n')" >> "$GITHUB_OUTPUT"
+
+      - name: Build executable with PyInstaller
+        run: pyinstaller -y release.spec
+
+      - name: Assemble release bundle
+        run: >
+          python -m counter_risk.build.release
+          --version-file VERSION
+          --output-dir release
+          --force
+
+      - name: Verify bundle contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          BUNDLE="release/${VERSION}"
+          for path in \
+            "${BUNDLE}/VERSION" \
+            "${BUNDLE}/manifest.json" \
+            "${BUNDLE}/counter_risk_runner.xlsm" \
+            "${BUNDLE}/run_counter_risk.cmd" \
+            "${BUNDLE}/request_counter_risk_remote.cmd" \
+            "${BUNDLE}/process_counter_risk_remote.cmd" \
+            "${BUNDLE}/remote_trigger_testing.md" \
+            "${BUNDLE}/README_HOW_TO_RUN.md" \
+            "${BUNDLE}/bin/counter-risk.exe"
+          do
+            if [ ! -e "$path" ]; then
+              echo "MISSING: $path" && exit 1
+            fi
+            echo "OK: $path"
+          done
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: counter-risk-${{ steps.version.outputs.version }}-windows
+          path: release/${{ steps.version.outputs.version }}/
+          if-no-files-found: error
+          retention-days: 30
