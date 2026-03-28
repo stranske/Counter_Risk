@@ -113,7 +113,7 @@ def _replace_zip_member(zip_path: Path, member_name: str, member_bytes: bytes) -
             info.compress_type = ZIP_DEFLATED
             target.writestr(info, member_bytes)
 
-        temp_path.replace(zip_path)
+        shutil.move(str(temp_path), zip_path)
     finally:
         temp_path.unlink(missing_ok=True)
 
