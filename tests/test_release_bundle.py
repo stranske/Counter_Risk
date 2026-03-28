@@ -2,17 +2,30 @@
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import re
 import subprocess
 import sys
 from pathlib import Path
+from zipfile import ZipFile
 
 import pytest
 
 from counter_risk.build import release
 from tests.utils.assertions import assert_numeric_outputs_close
+
+
+def _make_minimal_xlsm() -> bytes:
+    """Return bytes for a minimal valid XLSM (ZIP) with a docProps/core.xml stub."""
+    buf = io.BytesIO()
+    with ZipFile(buf, "w") as zf:
+        zf.writestr(
+            "docProps/core.xml",
+            b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties/>',
+        )
+    return buf.getvalue()
 
 _FORBIDDEN_RUNNER_ENTRYPOINT_PATTERN = re.compile(
     r"\bpython(?:\.exe)?\b|\bpy(?:\.exe)?\b|\.py\b",
@@ -30,10 +43,11 @@ def _write_fake_repo(root: Path) -> None:
     (root / "release.spec").write_text("# fake\n", encoding="utf-8")
     (root / "config" / "fixture_replay.yml").write_text("name: fixture\n", encoding="utf-8")
     (root / "templates" / "Monthly Counterparty Exposure Report.pptx").write_bytes(b"ppt-template")
-    (root / "assets" / "templates" / "counter_risk_template.xlsm").write_bytes(b"xlsm-template")
+    (root / "assets" / "templates" / "counter_risk_template.xlsm").write_bytes(
+        _make_minimal_xlsm()
+    )
     (root / "tests" / "fixtures" / "fixture.xlsx").write_bytes(b"xlsx")
     (root / "tests" / "fixtures" / "fixture.pptx").write_bytes(b"fixture-ppt")
-    (root / "Runner.xlsm").write_bytes(b"fake-runner-xlsm")
     (root / "scripts" / "windows" / "request_counter_risk_remote.cmd").write_text(
         "@echo off\necho request\n", encoding="utf-8"
     )
@@ -396,36 +410,46 @@ def test_release_bundle_executable_runs_fixture_replay_and_matches_numeric_fixtu
     )
 
 
-def test_copy_runner_xlsm_copies_to_bundle_root(tmp_path: Path) -> None:
+def test_build_runner_xlsm_produces_bundle_artifact(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
-    repo_root.mkdir(parents=True, exist_ok=True)
-    (repo_root / "Runner.xlsm").write_bytes(b"fake-runner")
+    (repo_root / "assets" / "templates").mkdir(parents=True, exist_ok=True)
+    (repo_root / "assets" / "templates" / "counter_risk_template.xlsm").write_bytes(
+        _make_minimal_xlsm()
+    )
     bundle_dir = tmp_path / "bundle"
     bundle_dir.mkdir(parents=True, exist_ok=True)
 
-    result = release._copy_runner_xlsm(repo_root, bundle_dir)
+    result = release._build_runner_xlsm(repo_root, bundle_dir, "1.2.3")
 
     assert len(result) == 1
     assert result[0] == bundle_dir / "counter_risk_runner.xlsm"
-    assert result[0].read_bytes() == b"fake-runner"
+    assert result[0].is_file()
+    # Confirm version metadata was injected (file is a valid ZIP)
+    with ZipFile(result[0]) as zf:
+        core_xml = zf.read("docProps/core.xml").decode("utf-8")
+    assert "1.2.3" in core_xml
 
 
-def test_copy_runner_xlsm_raises_when_missing(tmp_path: Path) -> None:
+def test_build_runner_xlsm_raises_when_template_missing(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir(parents=True, exist_ok=True)
     bundle_dir = tmp_path / "bundle"
     bundle_dir.mkdir(parents=True, exist_ok=True)
 
-    with pytest.raises(ValueError, match="Required Excel runner not found"):
-        release._copy_runner_xlsm(repo_root, bundle_dir)
+    with pytest.raises(ValueError, match="Required XLSM template not found"):
+        release._build_runner_xlsm(repo_root, bundle_dir, "1.0.0")
 
 
 def test_copy_remote_scripts_copies_both_cmd_files(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     scripts_dir = repo_root / "scripts" / "windows"
     scripts_dir.mkdir(parents=True, exist_ok=True)
-    (scripts_dir / "request_counter_risk_remote.cmd").write_text("@echo request\n", encoding="utf-8")
-    (scripts_dir / "process_counter_risk_remote.cmd").write_text("@echo process\n", encoding="utf-8")
+    (scripts_dir / "request_counter_risk_remote.cmd").write_text(
+        "@echo request\n", encoding="utf-8"
+    )
+    (scripts_dir / "process_counter_risk_remote.cmd").write_text(
+        "@echo process\n", encoding="utf-8"
+    )
     bundle_dir = tmp_path / "bundle"
     bundle_dir.mkdir(parents=True, exist_ok=True)
 
@@ -467,15 +491,15 @@ def test_assemble_release_includes_runner_xlsm_and_remote_scripts(
     assert "process_counter_risk_remote.cmd" in manifest["artifacts"]["remote_scripts"][1]
 
 
-def test_assemble_release_fails_fast_when_runner_xlsm_missing(
+def test_assemble_release_fails_fast_when_xlsm_template_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repo_root = tmp_path / "repo"
     _write_fake_repo(repo_root)
-    (repo_root / "Runner.xlsm").unlink()
+    (repo_root / "assets" / "templates" / "counter_risk_template.xlsm").unlink()
     output_dir = tmp_path / "release"
 
     monkeypatch.setattr(release, "repository_root", lambda: repo_root)
 
-    with pytest.raises(ValueError, match="Required Excel runner not found"):
+    with pytest.raises(ValueError, match="Required XLSM template not found"):
         release.assemble_release("3.0.0", output_dir)
