@@ -11,7 +11,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from counter_risk.build.xlsm import build_xlsm_artifact
+from counter_risk.build.xlsm import build_xlsm_artifact, template_xlsm_path
 
 RELEASE_NAME_PREFIX = "counter-risk"
 EXECUTABLE_BASENAME = "counter-risk"
@@ -97,7 +97,7 @@ def _copy_tree_filtered(
 
 
 def _build_runner_xlsm(root: Path, bundle_dir: Path, version: str) -> list[Path]:
-    template = root / "assets" / "templates" / "counter_risk_template.xlsm"
+    template = template_xlsm_path(root)
     if not template.is_file():
         raise ValueError(
             f"Required XLSM template not found at '{template}'. "
