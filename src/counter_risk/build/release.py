@@ -11,6 +11,8 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+from counter_risk.build.xlsm import build_xlsm_artifact
+
 RELEASE_NAME_PREFIX = "counter-risk"
 EXECUTABLE_BASENAME = "counter-risk"
 LOGGER = logging.getLogger(__name__)
@@ -94,15 +96,23 @@ def _copy_tree_filtered(
     return copied
 
 
-def _copy_runner_xlsm(root: Path, bundle_dir: Path) -> list[Path]:
-    src = root / "Runner.xlsm"
-    if not src.is_file():
+def _build_runner_xlsm(root: Path, bundle_dir: Path, version: str) -> list[Path]:
+    template = root / "assets" / "templates" / "counter_risk_template.xlsm"
+    if not template.is_file():
         raise ValueError(
-            f"Required Excel runner not found at '{src}'. "
-            "Ensure Runner.xlsm is present in the repository root before building a release."
+            f"Required XLSM template not found at '{template}'. "
+            "Ensure assets/templates/counter_risk_template.xlsm is present "
+            "before building a release."
         )
     dst = bundle_dir / "counter_risk_runner.xlsm"
-    shutil.copy2(src, dst)
+    run_date = datetime.now(UTC)
+    build_xlsm_artifact(
+        template_path=template,
+        output_path=dst,
+        as_of_date=run_date.date(),
+        run_date=run_date,
+        version=version,
+    )
     return [dst]
 
 
@@ -330,7 +340,7 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
     bundle_dir.mkdir(parents=True, exist_ok=True)
 
     copied: dict[str, list[Path]] = {}
-    copied["runner_xlsm"] = _copy_runner_xlsm(root, bundle_dir)
+    copied["runner_xlsm"] = _build_runner_xlsm(root, bundle_dir, version)
     copied["templates"] = _copy_templates(root, bundle_dir)
     copied["fixtures"] = _copy_fixture_artifacts(root, bundle_dir)
 
