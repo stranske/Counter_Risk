@@ -590,7 +590,14 @@ Private Function BuildSettingsJson() As String
                         Chr$(34) & "discovery_mode" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_DiscoveryMode", "discover")) & Chr$(34) & "," & _
                         Chr$(34) & "strict_policy" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_StrictPolicy", "warn")) & Chr$(34) & "," & _
                         Chr$(34) & "formatting_profile" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_FormattingProfile", "default")) & Chr$(34) & "," & _
-                        Chr$(34) & "output_root" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_OutputRoot", "runs")) & Chr$(34) & _
+                        Chr$(34) & "output_root" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_OutputRoot", "runs")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_mosers_all_programs_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_MosersAllPrograms", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_mosers_ex_trend_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_MosersExTrend", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_mosers_trend_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_MosersTrend", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_hist_all_programs_3yr_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_HistAllPrograms3yr", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_hist_ex_llc_3yr_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_HistExLlc3yr", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_hist_llc_3yr_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_HistLlc3yr", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_monthly_pptx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_MonthlyPptx", "")) & Chr$(34) & _
                         "}"
 End Function
 
