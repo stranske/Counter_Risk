@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 pytestmark = pytest.mark.release
 
