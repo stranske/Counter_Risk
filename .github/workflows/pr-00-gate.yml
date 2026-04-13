@@ -42,7 +42,7 @@ jobs:
     name: Python CI
     uses: stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main
     with:
-      python-versions: '["3.11"]'
+      python-versions: '["3.12", "3.13"]'
       # PR Gate is optimized for fast feedback. Full coverage enforcement runs on main.
       coverage: false
       format_check: false  # Using ruff for formatting

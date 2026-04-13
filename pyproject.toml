@@ -7,7 +7,7 @@ name = "my-project"
 version = "0.1.0"
 description = "Template Python project with stranske/Workflows CI integration"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     {name = "Your Name", email = "your.email@example.com"},
@@ -17,12 +17,11 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "pydantic>=2.7,<3",
+    "pydantic>=2.12.5,<3",
     "Pillow>=12,<14",
     "PyYAML>=6.0.2,<7",
     "python-pptx==1.0.2",
@@ -41,6 +40,7 @@ dev = [
     "black==26.1.0",
     "ruff==0.15.1",
     "mypy==1.19.1",
+    "types-PyYAML==6.0.12.20250915",
     # Required by scripts/sync_test_dependencies.py when --fix is needed in CI
     "tomlkit>=0.13.0",
 ]
@@ -82,7 +82,7 @@ exclude_lines = [
 fail_under = "${COVERAGE_FAIL_UNDER-0}"
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 100
 src = ["src", "tests"]
 
@@ -106,7 +106,7 @@ ignore = [
 known-first-party = ["counter_risk", "my_project", "tools"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_configs = true

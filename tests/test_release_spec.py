@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -81,6 +82,8 @@ def test_release_spec_pyinstaller_build_outputs_expected_executable(
     pyinstaller = shutil.which("pyinstaller")
     if pyinstaller is None:
         pytest.skip("PyInstaller is not installed in this environment.")
+    if Path(pyinstaller).resolve().parent != Path(sys.executable).resolve().parent:
+        pytest.skip("PyInstaller is not installed in the active test environment.")
 
     repo_root = Path(__file__).resolve().parents[1]
     temp_root = tmp_path / "project"
@@ -92,13 +95,16 @@ def test_release_spec_pyinstaller_build_outputs_expected_executable(
         repo_root / "pyinstaller_runtime_hook.py",
         temp_root / "pyinstaller_runtime_hook.py",
     )
+    env = os.environ.copy()
+    env["PYINSTALLER_CONFIG_DIR"] = str(temp_root / ".pyinstaller")
 
     subprocess.run(
-        [pyinstaller, "-y", "release.spec"],
+        [pyinstaller, "--clean", "-y", "release.spec"],
         cwd=temp_root,
         text=True,
         capture_output=True,
         check=True,
+        env=env,
     )
 
     expected_executable = (
