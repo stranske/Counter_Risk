@@ -7,7 +7,7 @@ name = "my-project"
 version = "0.1.0"
 description = "Template Python project with stranske/Workflows CI integration"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     {name = "Your Name", email = "your.email@example.com"},
@@ -17,7 +17,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
@@ -82,7 +81,7 @@ exclude_lines = [
 fail_under = "${COVERAGE_FAIL_UNDER-0}"
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 100
 src = ["src", "tests"]
 
@@ -106,7 +105,7 @@ ignore = [
 known-first-party = ["counter_risk", "my_project", "tools"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
