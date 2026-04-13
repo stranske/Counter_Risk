@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import shutil
 import subprocess
 import sys
@@ -223,13 +224,20 @@ def _expected_pyinstaller_output(root: Path, *, for_windows: bool | None = None)
     return root / "dist" / RELEASE_NAME_PREFIX / _executable_filename(for_windows=for_windows)
 
 
+def _pyinstaller_env(root: Path) -> dict[str, str]:
+    env = os.environ.copy()
+    env.setdefault("PYINSTALLER_CONFIG_DIR", str(root / ".pyinstaller"))
+    return env
+
+
 def _run_pyinstaller(root: Path, spec_path: Path) -> None:
     result = subprocess.run(
-        ["pyinstaller", "-y", str(spec_path)],
+        ["pyinstaller", "--clean", "-y", str(spec_path)],
         cwd=root,
         text=True,
         capture_output=True,
         check=False,
+        env=_pyinstaller_env(root),
     )
     stdout = result.stdout.strip()
     stderr = result.stderr.strip()
