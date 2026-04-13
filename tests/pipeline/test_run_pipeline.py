@@ -84,6 +84,7 @@ class _LocIndexer:
 class _FakeCell:
     def __init__(self, value: Any = None) -> None:
         self.value = value
+        self.number_format = "0"
 
 
 class _FakeWorksheet:
