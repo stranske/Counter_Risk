@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+from typing import Any
+
+import pytest
 
 from counter_risk.gui import runner as gui_runner
 from counter_risk.gui.runner import GuiRunState, execute_gui_run, launch_gui
@@ -52,7 +56,7 @@ def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> 
 
 def test_execute_gui_run_resolves_runtime_config_path(
     tmp_path: Path,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     captured: dict[str, list[str]] = {}
 
@@ -140,7 +144,9 @@ def test_execute_gui_run_cleanup_flag_removes_settings_file(tmp_path: Path) -> N
     assert result.settings_path.exists() is False
 
 
-def test_launch_gui_starts_tk_mainloop_with_headless_stubs(monkeypatch) -> None:
+def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     created: dict[str, object] = {}
 
     class _FakeStringVar:
@@ -186,12 +192,12 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(monkeypatch) -> None:
         def mainloop(self) -> None:
             self.mainloop_called = True
 
-    tkinter_module = ModuleType("tkinter")
+    tkinter_module: Any = ModuleType("tkinter")
     tkinter_module.Tk = _FakeTk
     tkinter_module.StringVar = _FakeStringVar
     tkinter_module.messagebox = SimpleNamespace(showerror=lambda *_args, **_kwargs: None)
 
-    ttk_module = ModuleType("tkinter.ttk")
+    ttk_module: Any = ModuleType("tkinter.ttk")
     ttk_module.Label = _FakeWidget
     ttk_module.Combobox = _FakeWidget
     ttk_module.Entry = _FakeWidget
@@ -216,12 +222,16 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(monkeypatch) -> None:
 
 
 def test_main_gui_non_headless_path_calls_launch_gui(
-    monkeypatch,
-    capsys,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    launch_invocations: list[tuple[GuiRunState, object | None]] = []
+    launch_invocations: list[tuple[GuiRunState, Callable[[list[str]], int] | None]] = []
 
-    def fake_launch_gui(*, initial_state: GuiRunState | None = None, runner=None) -> None:
+    def fake_launch_gui(
+        *,
+        initial_state: GuiRunState | None = None,
+        runner: Callable[[list[str]], int] | None = None,
+    ) -> None:
         launch_invocations.append((initial_state or GuiRunState(as_of_date="1970-01-31"), runner))
 
     monkeypatch.setattr(gui_runner, "launch_gui", fake_launch_gui)
