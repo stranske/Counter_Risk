@@ -19,12 +19,22 @@ _SETTINGS_INPUT_ROOT_KEY = "input_root"
 _SETTINGS_OUTPUT_ROOT_KEY = "output_root"
 _SETTINGS_STRICT_POLICY_KEY = "strict_policy"
 _SETTINGS_FORMATTING_PROFILE_KEY = "formatting_profile"
+_PATH_SETTING_TO_CONFIG_FIELD: dict[str, str] = {
+    "path_mosers_all_programs_xlsx": "mosers_all_programs_xlsx",
+    "path_mosers_ex_trend_xlsx": "mosers_ex_trend_xlsx",
+    "path_mosers_trend_xlsx": "mosers_trend_xlsx",
+    "path_hist_all_programs_3yr_xlsx": "hist_all_programs_3yr_xlsx",
+    "path_hist_ex_llc_3yr_xlsx": "hist_ex_llc_3yr_xlsx",
+    "path_hist_llc_3yr_xlsx": "hist_llc_3yr_xlsx",
+    "path_monthly_pptx": "monthly_pptx",
+}
 _KNOWN_RUNNER_SETTINGS = {
     _SETTINGS_DISCOVERY_MODE_KEY,
     _SETTINGS_INPUT_ROOT_KEY,
     _SETTINGS_OUTPUT_ROOT_KEY,
     _SETTINGS_STRICT_POLICY_KEY,
     _SETTINGS_FORMATTING_PROFILE_KEY,
+    *_PATH_SETTING_TO_CONFIG_FIELD,
 }
 
 
@@ -450,6 +460,11 @@ def _load_config_with_runner_settings(
                     }
                 }
             )
+
+    for setting_key, config_field in _PATH_SETTING_TO_CONFIG_FIELD.items():
+        path_value = settings.get(setting_key)
+        if path_value:
+            overrides[config_field] = Path(path_value)
 
     if not overrides:
         return config
