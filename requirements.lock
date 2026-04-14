@@ -167,7 +167,7 @@ tomlkit==0.14.0
     # via my-project (pyproject.toml)
 tqdm==4.67.3
     # via openai
-types-pyyaml==6.0.12.20250915
+types-pyyaml==6.0.12.20260408
     # via my-project (pyproject.toml)
 typing-extensions==4.15.0
     # via
