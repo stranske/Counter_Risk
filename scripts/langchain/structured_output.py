@@ -3,9 +3,12 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, ValidationError
+
+T = TypeVar("T", bound=BaseModel)
+
 
 DEFAULT_REPAIR_PROMPT = """
 The previous response did not match the required JSON schema.
@@ -28,7 +31,7 @@ MAX_REPAIR_ATTEMPTS = 1
 
 
 @dataclass(frozen=True)
-class StructuredOutputResult[T: BaseModel]:
+class StructuredOutputResult(Generic[T]):
     payload: T | None
     raw_content: str | None
     error_stage: str | None
@@ -92,7 +95,7 @@ def clamp_repair_attempts(max_repair_attempts: int) -> int:
     )
 
 
-def _invoke_repair_loop[T: BaseModel](
+def _invoke_repair_loop(
     *,
     repair: Callable[[str, str, str], str | None] | None,
     attempts: int,
@@ -151,7 +154,7 @@ def _invoke_repair_loop[T: BaseModel](
     )
 
 
-def invoke_repair_loop[T: BaseModel](
+def invoke_repair_loop(
     *,
     repair: Callable[[str, str, str], str | None] | None,
     attempts: int,
@@ -168,7 +171,7 @@ def invoke_repair_loop[T: BaseModel](
     )
 
 
-def parse_structured_output[T: BaseModel](
+def parse_structured_output(
     content: str,
     model: type[T],
     *,
