@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=82.0.1", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -22,10 +22,10 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.13.0,<3",
-    "Pillow>=12,<14",
+    "Pillow>=12.2.0,<14",
     "PyYAML>=6.0.2,<7",
     "python-pptx==1.0.2",
-    "openpyxl>=3.1,<4",
+    "openpyxl>=3.1.5,<4",
     "langchain-openai>=1.0.1,<2",
     "langchain-anthropic>=1.0.1,<2",
 ]
@@ -36,13 +36,13 @@ dev = [
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
     "pytest-xdist==3.8.0",
-    "pandas>=2.2,<4",
+    "pandas>=3.0.2,<4",
     "black==26.1.0",
     "ruff==0.15.1",
     "mypy==1.19.1",
-    "types-PyYAML==6.0.12.20250915",
+    "types-PyYAML==6.0.12.20260408",
     # Required by scripts/sync_test_dependencies.py when --fix is needed in CI
-    "tomlkit>=0.13.0",
+    "tomlkit>=0.14.0",
 ]
 
 [project.urls]
