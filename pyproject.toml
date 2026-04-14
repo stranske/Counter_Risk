@@ -40,7 +40,7 @@ dev = [
     "black==26.1.0",
     "ruff==0.15.1",
     "mypy==1.19.1",
-    "types-PyYAML==6.0.12.20250915",
+    "types-PyYAML==6.0.12.20260408",
     # Required by scripts/sync_test_dependencies.py when --fix is needed in CI
     "tomlkit>=0.14.0",
 ]
