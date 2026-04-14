@@ -6,10 +6,11 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 pytestmark = pytest.mark.release
 
@@ -28,17 +29,22 @@ def _build_packaged_output(tmp_path: Path) -> Path:
     pyinstaller = shutil.which("pyinstaller")
     if pyinstaller is None:
         pytest.skip("PyInstaller is not installed in this environment.")
+    if Path(pyinstaller).resolve().parent != Path(sys.executable).resolve().parent:
+        pytest.skip("PyInstaller is not installed in the active test environment.")
 
     repo_root = Path(__file__).resolve().parents[2]
     build_root = tmp_path / "build"
     build_root.mkdir(parents=True, exist_ok=True)
+    env = os.environ.copy()
+    env["PYINSTALLER_CONFIG_DIR"] = str(tmp_path / ".pyinstaller")
 
     subprocess.run(
-        [pyinstaller, "-y", str(repo_root / "release.spec")],
+        [pyinstaller, "--clean", "-y", str(repo_root / "release.spec")],
         cwd=repo_root,
         text=True,
         capture_output=True,
         check=True,
+        env=env,
     )
 
     produced_dir = repo_root / "dist" / "counter-risk"

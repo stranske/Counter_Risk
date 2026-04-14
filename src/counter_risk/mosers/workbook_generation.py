@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any
 
 from counter_risk.mosers.template import (
     find_row_containing_text,
@@ -20,8 +20,19 @@ from counter_risk.parsers.nisa import (
 from counter_risk.parsers.nisa_ex_trend import parse_nisa_ex_trend
 from counter_risk.parsers.nisa_trend import parse_nisa_trend
 
-Workbook: TypeAlias = Any
-Worksheet: TypeAlias = Any
+type Workbook = Any
+type Worksheet = Any
+
+__all__ = [
+    "MosersAllProgramsOutputStructure",
+    "generate_mosers_workbook",
+    "generate_mosers_workbook_ex_trend",
+    "generate_mosers_workbook_trend",
+    "get_mosers_all_programs_output_structure",
+    "get_mosers_ex_trend_output_structure",
+    "get_mosers_trend_output_structure",
+    "load_mosers_template_workbook",
+]
 
 _REQUIRED_SHEETS = ("CPRS - CH", "CPRS - FCM")
 _TARGET_SHEET = "CPRS - CH"

@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
@@ -37,13 +37,13 @@ jobs:
     )
 
 
-def test_verify_release_workflow_dispatch_reports_missing_workflow_file() -> None:
+def test_verify_release_workflow_dispatch_reports_missing_workflow_file(tmp_path: Path) -> None:
     result = subprocess.run(
         [str(SCRIPT_PATH), "release.yml", "main"],
         text=True,
         capture_output=True,
         check=False,
-        cwd=REPO_ROOT,
+        cwd=tmp_path,
     )
 
     output = f"{result.stdout}\n{result.stderr}"
@@ -117,7 +117,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - run: pytest tests/
       - uses: actions/upload-artifact@v4
         with:
@@ -164,7 +164,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec

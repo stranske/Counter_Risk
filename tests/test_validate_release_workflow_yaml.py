@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
@@ -122,7 +122,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: "3.11"}
+        with: {python-version: "3.12"}
       - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: python -m counter_risk.build.release
@@ -142,7 +142,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: "3.11"}
+        with: {python-version: "3.12"}
       - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
@@ -163,7 +163,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: "3.11"}
+        with: {python-version: "3.12"}
       - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
@@ -205,7 +205,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
@@ -237,7 +237,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v3
-        with: {python-version: "3.11"}
+        with: {python-version: "3.12"}
       - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
@@ -303,7 +303,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: "3.11"}
+        with: {python-version: "3.12"}
       - run: python -m pip install -r requirements.txt
       - run: pytest tests/
       - run: pyinstaller -y release.spec
