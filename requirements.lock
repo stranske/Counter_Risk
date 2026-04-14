@@ -95,7 +95,7 @@ packaging==25.0
     #   langchain-core
     #   langsmith
     #   pytest
-pandas==2.2.3
+pandas==3.0.2
     # via my-project (pyproject.toml)
 pathspec==1.0.4
     # via
@@ -138,8 +138,6 @@ python-pptx==1.0.2
     # via my-project (pyproject.toml)
 pytokens==0.4.1
     # via black
-pytz==2025.2
-    # via pandas
 pyyaml==6.0.2
     # via
     #   my-project (pyproject.toml)
@@ -184,7 +182,7 @@ typing-extensions==4.15.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic
-tzdata==2025.3
+tzdata==2025.3 ; sys_platform == 'emscripten' or sys_platform == 'win32'
     # via pandas
 urllib3==2.6.3
     # via requests
