@@ -138,7 +138,7 @@ python-pptx==1.0.2
     # via my-project (pyproject.toml)
 pytokens==0.4.1
     # via black
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   my-project (pyproject.toml)
     #   langchain-core
