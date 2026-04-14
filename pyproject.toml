@@ -21,7 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "pydantic>=2.12.5,<3",
+    "pydantic>=2.13.0,<3",
     "Pillow>=12,<14",
     "PyYAML>=6.0.2,<7",
     "python-pptx==1.0.2",
