@@ -111,7 +111,7 @@ pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
-pydantic==2.12.5
+pydantic==2.13.0
     # via
     #   my-project (pyproject.toml)
     #   anthropic
@@ -119,7 +119,7 @@ pydantic==2.12.5
     #   langchain-core
     #   langsmith
     #   openai
-pydantic-core==2.41.5
+pydantic-core==2.46.0
     # via pydantic
 pygments==2.19.2
     # via pytest
