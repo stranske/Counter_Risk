@@ -9,7 +9,7 @@ anyio==4.12.1
     #   anthropic
     #   httpx
     #   openai
-black==26.1.0
+black==26.3.1
     # via my-project (pyproject.toml)
 certifi==2026.2.25
     # via
@@ -25,7 +25,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   click
     #   pytest
     #   tqdm
-coverage==7.13.4
+coverage==7.13.5
     # via pytest-cov
 distro==1.9.0
     # via
@@ -75,7 +75,7 @@ librt==0.8.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 lxml==6.0.2
     # via python-pptx
-mypy==1.19.1
+mypy==1.20.1
     # via my-project (pyproject.toml)
 mypy-extensions==1.1.0
     # via
@@ -123,12 +123,12 @@ pydantic-core==2.46.0
     # via pydantic
 pygments==2.19.2
     # via pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   my-project (pyproject.toml)
     #   pytest-cov
     #   pytest-xdist
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via my-project (pyproject.toml)
 pytest-xdist==3.8.0
     # via my-project (pyproject.toml)
@@ -151,7 +151,7 @@ requests==2.32.5
     #   tiktoken
 requests-toolbelt==1.0.0
     # via langsmith
-ruff==0.15.1
+ruff==0.15.10
     # via my-project (pyproject.toml)
 six==1.17.0
     # via python-dateutil
