@@ -125,7 +125,7 @@ def _extract_text_with_pdfplumber(path: Path) -> str:
 
 def _extract_text_with_pypdf(path: Path) -> str:
     try:
-        from pypdf import PdfReader  # type: ignore[import-not-found]
+        from pypdf import PdfReader
     except ImportError:
         _log.debug("pypdf not installed, skipping")
         return ""
