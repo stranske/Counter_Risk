@@ -27,8 +27,8 @@ def compare_workbook_ranges(
     """Return range-level differences between reference and generated workbooks."""
 
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
-        from openpyxl.utils.cell import (  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
+        from openpyxl.utils.cell import (
             get_column_letter,
             range_boundaries,
         )

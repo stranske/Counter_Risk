@@ -106,7 +106,7 @@ def _load_csv_rows(path: Path) -> list[dict[str, str]]:
 
 def _load_xlsx_rows(path: Path) -> list[dict[str, str]]:
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ModuleNotFoundError as exc:  # pragma: no cover - exercised in dependency-absence tests
         raise RuntimeError(
             "openpyxl is required to load structured Repo Cash XLSX sources."
