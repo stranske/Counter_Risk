@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from counter_risk.config import WorkflowConfig
+from counter_risk.dates import DateResolution
 from counter_risk.pipeline.data_quality import build_data_quality
 from counter_risk.pipeline.warnings import WarningsCollector
 
@@ -33,6 +34,8 @@ class ManifestBuilder:
     config: WorkflowConfig
     as_of_date: date
     run_date: date
+    as_of_date_resolution: DateResolution | None = None
+    run_date_resolution: DateResolution | None = None
 
     def build(
         self,
@@ -90,6 +93,7 @@ class ManifestBuilder:
         manifest: dict[str, Any] = {
             "as_of_date": self.as_of_date.isoformat(),
             "run_date": self.run_date.isoformat(),
+            "date_resolution": self._build_date_resolution_block(),
             "run_dir": ".",
             "config_snapshot": config_snapshot,
             "input_hashes": input_hashes,
@@ -287,6 +291,32 @@ class ManifestBuilder:
             return int(raw_value)
         except (TypeError, ValueError):
             return 0
+
+    def _build_date_resolution_block(self) -> dict[str, Any]:
+        return {
+            "as_of_date": self._render_date_resolution_entry(
+                resolution=self.as_of_date_resolution,
+                fallback_value=self.as_of_date,
+            ),
+            "run_date": self._render_date_resolution_entry(
+                resolution=self.run_date_resolution,
+                fallback_value=self.run_date,
+            ),
+        }
+
+    def _render_date_resolution_entry(
+        self,
+        *,
+        resolution: DateResolution | None,
+        fallback_value: date,
+    ) -> dict[str, Any]:
+        if resolution is not None:
+            return resolution.to_manifest_entry()
+        return {
+            "value": fallback_value.isoformat(),
+            "source": "unspecified",
+            "details": {},
+        }
 
     def _serialize_config_snapshot(self, config: WorkflowConfig) -> dict[str, Any]:
         raw = config.model_dump(mode="python")
