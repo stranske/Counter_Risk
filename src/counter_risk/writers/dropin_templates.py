@@ -381,7 +381,7 @@ def fill_dropin_template(
     normalized_breakdown = _coerce_breakdown(breakdown)
 
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
         raise RuntimeError(
             "openpyxl is required to fill drop-in templates. "

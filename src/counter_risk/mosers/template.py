@@ -28,7 +28,7 @@ def load_mosers_template_workbook() -> Any:
     """Load the internal MOSERS template workbook into an editable openpyxl workbook."""
 
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
         raise RuntimeError("openpyxl is required to load MOSERS template workbooks") from exc
 

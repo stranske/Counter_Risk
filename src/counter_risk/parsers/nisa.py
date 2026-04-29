@@ -136,7 +136,7 @@ def parse_nisa_all_programs(path: Path | str) -> NisaAllProgramsData:
         raise ValueError(f"NISA raw workbook must be an .xlsx file: {workbook_path}")
 
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
         raise RuntimeError("openpyxl is required to parse NISA workbooks") from exc
 

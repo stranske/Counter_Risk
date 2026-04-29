@@ -160,7 +160,7 @@ def open_ex_llc_3_year_workbook(
         expected_relative_path=expected_relative_path,
     )
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
         raise RuntimeError(
             "openpyxl is required to open historical workbooks. "
@@ -480,7 +480,7 @@ def _copy_row_cell_presentation(
     worksheet: Any, *, source_row: int, target_row: int, columns: tuple[int, ...]
 ) -> None:
     try:
-        from openpyxl.formula.translate import Translator  # type: ignore[import-untyped]
+        from openpyxl.formula.translate import Translator
 
         translator_cls = Translator
     except ModuleNotFoundError:  # pragma: no cover - environment dependent

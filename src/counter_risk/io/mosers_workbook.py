@@ -122,7 +122,7 @@ def load_mosers_workbook(path: Path | str) -> Any:
         If openpyxl is not installed.
     """
     try:
-        import openpyxl  # type: ignore[import-untyped]
+        import openpyxl
     except ModuleNotFoundError as exc:
         raise RuntimeError(
             "openpyxl is required for MOSERS workbook write-back.  "
