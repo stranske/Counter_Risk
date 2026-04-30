@@ -34,7 +34,7 @@ from counter_risk.compute.rollups import (
     write_concentration_metrics_csv,
 )
 from counter_risk.config import WorkflowConfig, load_config
-from counter_risk.dates import derive_as_of_date, derive_run_date
+from counter_risk.dates import resolve_as_of_date, resolve_run_date
 from counter_risk.formatting import normalize_formatting_profile, resolve_formatting_policy
 from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
@@ -634,8 +634,10 @@ def run_pipeline(
 
     try:
         cprs_headers = _collect_cprs_header_candidates(config=config)
-        as_of_date = derive_as_of_date(config, cprs_headers)
-        run_date = derive_run_date(config)
+        as_of_date_resolution = resolve_as_of_date(config, cprs_headers)
+        run_date_resolution = resolve_run_date(config)
+        as_of_date = as_of_date_resolution.value
+        run_date = run_date_resolution.value
         run_date_for_directory = config.run_date
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=date_derivation config_path=%s", config_path)
@@ -805,7 +807,13 @@ def run_pipeline(
         input_hashes = {
             name: _sha256_file(path) for name, path in _resolve_input_paths(runtime_config).items()
         }
-        manifest_builder = ManifestBuilder(config=config, as_of_date=as_of_date, run_date=run_date)
+        manifest_builder = ManifestBuilder(
+            config=config,
+            as_of_date=as_of_date,
+            run_date=run_date,
+            as_of_date_resolution=as_of_date_resolution,
+            run_date_resolution=run_date_resolution,
+        )
         output_paths_for_manifest = [path.relative_to(run_dir) for path in output_paths]
         manifest = manifest_builder.build(
             run_dir=run_dir,

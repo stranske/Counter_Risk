@@ -125,7 +125,7 @@ def _find_numeric(
 
 def _to_dataframe_or_records(*, records: list[dict[str, Any]], columns: tuple[str, ...]) -> Any:
     try:
-        import pandas as pd  # type: ignore[import-untyped]
+        import pandas as pd
     except ModuleNotFoundError:
         return [{column: row.get(column) for column in columns} for row in records]
 

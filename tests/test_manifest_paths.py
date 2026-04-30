@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from counter_risk.config import WorkflowConfig
+from counter_risk.dates import resolve_as_of_date, resolve_run_date
 from counter_risk.pipeline.manifest import ManifestBuilder
 
 
@@ -244,3 +245,74 @@ def test_data_quality_summary_derives_counts_when_counts_missing(tmp_path: Path)
         "- [FAIL] input / MISSING_REQUIRED_INPUTS: Missing required input workbook." in summary_text
     )
     assert "- [FAIL] input: Restore required input files before rerunning." in summary_text
+
+
+def test_manifest_records_date_resolution_block_when_resolutions_supplied(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    workbook_path = run_dir / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx"
+    workbook_path.write_bytes(b"hist")
+
+    config = _make_config(tmp_path).model_copy(update={"as_of_date": None})
+    as_of_resolution = resolve_as_of_date(config, {"CPRS CH Header Date": "02/13/2026"})
+    run_resolution = resolve_run_date(config.model_copy(update={"run_date": date(2026, 2, 14)}))
+
+    builder = ManifestBuilder(
+        config=config,
+        as_of_date=as_of_resolution.value,
+        run_date=run_resolution.value,
+        as_of_date_resolution=as_of_resolution,
+        run_date_resolution=run_resolution,
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(workbook_path.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[],
+    )
+    manifest_path = builder.write(run_dir=run_dir, manifest=manifest)
+    parsed = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert parsed["as_of_date"] == "2026-02-13"
+    assert parsed["run_date"] == "2026-02-14"
+    assert parsed["date_resolution"]["as_of_date"] == {
+        "value": "2026-02-13",
+        "source": "cprs_header_mapping",
+        "details": {
+            "header_label": "CPRS CH Header Date",
+            "raw_value": "02/13/2026",
+        },
+    }
+    assert parsed["date_resolution"]["run_date"] == {
+        "value": "2026-02-14",
+        "source": "config",
+        "details": {"config_field": "run_date"},
+    }
+
+
+def test_manifest_date_resolution_falls_back_when_resolutions_omitted(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    workbook_path = run_dir / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx"
+    workbook_path.write_bytes(b"hist")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=[Path(workbook_path.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[],
+    )
+
+    assert manifest["date_resolution"] == {
+        "as_of_date": {"value": "2026-02-13", "source": "unspecified", "details": {}},
+        "run_date": {"value": "2026-02-14", "source": "unspecified", "details": {}},
+    }
