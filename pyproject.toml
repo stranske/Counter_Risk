@@ -159,6 +159,18 @@ module = "pypdf"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = [
+    "openpyxl",
+    "openpyxl.*",
+    "pandas",
+    "pandas.*",
+    "pdf2image",
+    "pdfplumber",
+    "pytesseract",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "scripts.*"
 ignore_errors = true
 
