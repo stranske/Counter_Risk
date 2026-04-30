@@ -97,7 +97,7 @@ def _extract_text(path: Path) -> str:
 
 def _extract_text_with_pdfplumber(path: Path) -> str:
     try:
-        import pdfplumber  # type: ignore[import-not-found]
+        import pdfplumber
     except ImportError:
         _log.debug("pdfplumber not installed, skipping")
         return ""
@@ -146,8 +146,8 @@ def _extract_text_with_pypdf(path: Path) -> str:
 
 def _extract_text_with_ocr(path: Path) -> str:
     try:
-        import pytesseract  # type: ignore[import-not-found]
-        from pdf2image import convert_from_path  # type: ignore[import-not-found]
+        import pytesseract
+        from pdf2image import convert_from_path
     except ImportError:
         _log.debug("pytesseract/pdf2image not installed, skipping OCR")
         return ""

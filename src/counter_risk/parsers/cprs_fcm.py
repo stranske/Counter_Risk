@@ -378,7 +378,7 @@ def _to_dataframe(
     *, records: list[dict[str, object]], columns: tuple[str, ...], dtypes: dict[str, str]
 ) -> Any:
     try:
-        import pandas as pd  # type: ignore[import-untyped]
+        import pandas as pd
     except ModuleNotFoundError as exc:  # pragma: no cover - environment-dependent
         raise ModuleNotFoundError(
             "CPRS-FCM parser requires pandas to be installed in the runtime environment"

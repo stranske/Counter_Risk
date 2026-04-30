@@ -528,7 +528,7 @@ def _extract_notional(
 def _to_output(*, records: list[dict[str, Any]]) -> Any:
     """Return the records as a DataFrame when pandas is available."""
     try:
-        import pandas as pd  # type: ignore[import-untyped]
+        import pandas as pd
     except ModuleNotFoundError:
         return [{col: row.get(col, "") for col in _OUTPUT_COLUMNS} for row in records]
 
