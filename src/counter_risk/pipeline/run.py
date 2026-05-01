@@ -2174,6 +2174,13 @@ def _write_outputs(
         )
         output_paths.extend(static_output_paths)
     if refresh_result.status == PptProcessingStatus.SUCCESS and config.enable_distribution_output:
+        distribution_pdf_path = run_dir / f"{target_distribution_ppt.stem}.pdf"
+        if distribution_pdf_path.exists():
+            readme_ppt_outputs = RunFolderReadmePptOutputs(
+                master=readme_ppt_outputs.master,
+                distribution=readme_ppt_outputs.distribution,
+                distribution_pdf=distribution_pdf_path.relative_to(run_dir),
+            )
         warning_banner = _build_limit_warning_banner_for_run_dir(run_dir)
         readme_path = run_dir / "README.txt"
         readme_path.write_text(

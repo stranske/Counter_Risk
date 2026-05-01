@@ -13,6 +13,7 @@ class RunFolderReadmePptOutputs:
 
     master: Path
     distribution: Path
+    distribution_pdf: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -34,16 +35,30 @@ def build_run_folder_readme_content(
     _ = as_of_date
     master = str(ppt_outputs.master)
     distribution = str(ppt_outputs.distribution)
+    distribution_pdf = (
+        None if ppt_outputs.distribution_pdf is None else str(ppt_outputs.distribution_pdf)
+    )
+    send_line = (
+        f"2. Send this file to recipients: {distribution_pdf}."
+        if distribution_pdf is not None
+        else f"2. Send this file to recipients: {distribution}."
+    )
     lines = [
         "Counterparty Risk PPT Distribution Guide",
         "",
-        f"Master PPT: {master}",
-        f"Distribution PPT: {distribution}",
-        "",
-        "1. Use the Master PPT only for maintainer edits and final checks inside this run folder.",
-        f"2. Confirm the standalone Distribution PPT is present as '{distribution}'.",
-        "3. Send only the Distribution PPT to recipients; keep the Master PPT maintainer-only.",
+        f"Maintainer-only file (do not send): {master}",
+        f"Recipient file (safe to send): {distribution}",
     ]
+    if distribution_pdf is not None:
+        lines.append(f"Recipient PDF (preferred when available): {distribution_pdf}")
+    lines.extend(
+        [
+        "",
+        "1. Edit only the maintainer Master PPT and keep it inside this run folder.",
+        send_line,
+        "3. Do not send the Master PPT to recipients.",
+    ]
+    )
 
     if warning_banner is not None:
         lines.extend(

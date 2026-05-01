@@ -130,6 +130,53 @@ def test_ppt_enabled_names_produce_exactly_two_expected_pptx_files(
     }
 
 
+def test_ppt_enabled_run_writes_readme_consistent_with_manifest_entries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    as_of_date = date(2025, 12, 31)
+    output_names = resolve_ppt_output_names(as_of_date)
+
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+    )
+
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=as_of_date,
+        warnings=[],
+    )
+
+    readme_path = run_dir / "README.txt"
+    assert readme_path.exists()
+    readme_content = readme_path.read_text(encoding="utf-8")
+    assert output_names.master_filename in readme_content
+    assert output_names.distribution_filename in readme_content
+
+    manifest = ManifestBuilder(
+        config=config,
+        as_of_date=as_of_date,
+        run_date=date(2026, 1, 2),
+    ).build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=ppt_result.status.value,
+    )
+
+    assert "README.txt" in manifest["output_paths"]
+    assert manifest["ppt_outputs"]["master"]["path"] == output_names.master_filename
+    assert manifest["ppt_outputs"]["distribution"]["path"] == output_names.distribution_filename
+
+
 def test_master_refresh_failure_logs_error_and_skips_distribution_derivation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
