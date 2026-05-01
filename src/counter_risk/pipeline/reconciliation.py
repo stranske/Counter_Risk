@@ -130,6 +130,7 @@ def reconcile_series_coverage(
             gap_count += len(missing_from_historical)
             missing_series.append(
                 {
+                    "variant": variant,
                     "sheet": sheet_name,
                     "missing_from_historical_headers": missing_from_historical,
                     "data_source_context": "counterparties_and_clearing_houses",
@@ -184,6 +185,7 @@ def reconcile_series_coverage(
             if raw_counterparties_for_metadata:
                 missing_series.append(
                     {
+                        "variant": variant,
                         "sheet": sheet_name,
                         "error_type": "unmapped_counterparty",
                         "raw_counterparties": raw_counterparties_for_metadata,

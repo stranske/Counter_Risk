@@ -105,6 +105,7 @@ def test_reconcile_series_coverage_extracts_counterparties_and_clearing_houses()
     assert result["gap_count"] == 4
     assert len(result["warnings"]) == 3
     assert {
+        "variant": None,
         "sheet": "All Programs",
         "missing_from_historical_headers": ["Citibank", "CME", "ICE", "JPMorgan"],
         "data_source_context": "counterparties_and_clearing_houses",
@@ -357,6 +358,24 @@ def test_non_strict_missing_series_preserves_existing_consumer_keys() -> None:
     )
     assert unmapped_entry["sheet"] == "Total"
     assert unmapped_entry["normalized_counterparties"] == ["ACME LTD"]
+
+
+def test_missing_series_includes_variant_when_provided() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": " ACME  LTD "}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Legacy Counterparty",)},
+        variant="all_programs",
+        fail_policy="warn",
+    )
+
+    missing_entry = next(
+        entry
+        for entry in result["missing_series"]
+        if entry.get("error_type") == "unmapped_counterparty"
+    )
+    assert missing_entry["variant"] == "all_programs"
 
 
 def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_header_key() -> None:
