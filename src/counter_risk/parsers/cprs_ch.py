@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import math
-import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import BadZipFile, ZipFile
+
+from counter_risk.normalize import canonicalize_name
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -231,8 +232,7 @@ def _to_dataframe(records: list[dict[str, object]]) -> pd.DataFrame:
 def _normalize_text(value: str | None) -> str:
     if value is None:
         return ""
-    collapsed = re.sub(r"\s+", " ", value.replace("\n", " ")).strip()
-    return collapsed
+    return canonicalize_name(value.replace("\n", " "))
 
 
 def _scan_segments(rows: dict[int, dict[int, str | None]]) -> list[SegmentMetadata]:

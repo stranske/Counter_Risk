@@ -12,11 +12,12 @@ The available section differs by workbook variant:
 
 from __future__ import annotations
 
-import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 from zipfile import BadZipFile, ZipFile
+
+from counter_risk.normalize import canonicalize_name
 
 _XML_NS = {
     "main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -354,7 +355,7 @@ def _cell_value(cell_node: ET.Element, shared_strings: list[str]) -> str | None:
 def _normalize_text(value: str | None) -> str:
     if value is None:
         return ""
-    return re.sub(r"\s+", " ", value.replace("\n", " ")).strip()
+    return canonicalize_name(value.replace("\n", " "))
 
 
 def _extract_numeric(value: str | None) -> float:
