@@ -12,6 +12,7 @@ import math
 import os
 import platform
 import shutil
+import sys
 import tempfile
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -2432,7 +2433,12 @@ def _create_static_distribution(
         LOGGER.info("distribution_static_skipped reason=non_windows")
         return []
 
-    if importlib.util.find_spec("win32com.client") is None:
+    try:
+        win32com_available = importlib.util.find_spec("win32com.client") is not None
+    except (ImportError, ValueError):
+        win32com_available = "win32com.client" in sys.modules
+
+    if not win32com_available:
         warnings.append(
             "distribution_static requested but win32com is not installed; "
             "no static distribution produced"

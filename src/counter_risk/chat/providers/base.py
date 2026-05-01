@@ -105,6 +105,7 @@ class LangChainProviderClient:
         slot_catalog = get_provider_model_catalog()
         missing_dependency_names: set[str] = set()
         runtime_ready_provider_seen = False
+        attempted_provider_without_client = False
 
         for provider_name in self._provider_chain:
             provider_models = slot_catalog.get(provider_name, set())
@@ -112,6 +113,7 @@ class LangChainProviderClient:
                 continue
             client_info = build_chat_client(provider=provider_name, model=model)
             if client_info is None:
+                attempted_provider_without_client = True
                 missing_dependencies = missing_provider_dependencies(provider_name)
                 if missing_dependencies:
                     missing_dependency_names.update(missing_dependencies)
@@ -157,6 +159,13 @@ class LangChainProviderClient:
             raise RuntimeError(
                 "LangChain provider dependencies are missing for the selected provider/model. "
                 f"Install required packages: {missing_rendered}."
+            )
+
+        if self._required_env_keys and attempted_provider_without_client:
+            missing_env = ", ".join(self._required_env_keys)
+            raise RuntimeError(
+                "No provider credentials/configured clients available. "
+                f"Set one of: {missing_env}."
             )
 
         chain = ", ".join(self._provider_chain)
