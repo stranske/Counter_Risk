@@ -143,7 +143,7 @@ def test_macro_spec_invariant_no_blank_numeric_cells_in_core_ranges(
 def test_macro_spec_invariant_headers_match_expected_template(
     macro_spec_cases: tuple[Any, ...],
 ) -> None:
-    from openpyxl import load_workbook  # type: ignore[import-untyped]
+    from openpyxl import load_workbook
 
     template_workbook = load_workbook(_TEMPLATE_WORKBOOK_PATH, data_only=True)
     try:

@@ -25,7 +25,7 @@ def test_generate_mosers_workbook_creates_new_file_with_required_sheets(tmp_path
     assert output_path == destination
     assert output_path.exists()
 
-    from openpyxl import load_workbook  # type: ignore[import-untyped]
+    from openpyxl import load_workbook
 
     workbook = load_workbook(output_path, read_only=True, data_only=True)
     try:

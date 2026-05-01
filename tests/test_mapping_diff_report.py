@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from counter_risk.reports.mapping_diff import generate_mapping_diff_report
+from counter_risk.reports.mapping_diff import (
+    collect_mapping_diff_findings,
+    generate_mapping_diff_report,
+)
 
 
 def _write_registry(path: Path) -> None:
@@ -197,3 +200,23 @@ def test_generate_mapping_diff_report_sections_use_required_line_formats(tmp_pat
     assert unmapped_lines == ["UNKNOWN broker"]
     assert fallback_lines == ["Citigroup -> Citibank"]
     assert suggestion_lines == ["UNKNOWN broker -> Unknown Broker"]
+
+
+def test_collect_mapping_diff_findings_scans_reconciliation_counterparty_fields(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    findings = collect_mapping_diff_findings(
+        registry_path,
+        {
+            "reconciliation": {
+                "counterparties_in_data": ["Citigroup", "LCH"],
+                "raw_counterparty_labels": ["Citigroup", "LCH"],
+            }
+        },
+    )
+
+    assert findings["unmapped_raw_names"] == ["LCH"]
+    assert findings["fallback_mapped"] == {"Citigroup": "Citibank"}

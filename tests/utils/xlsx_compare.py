@@ -95,7 +95,7 @@ def _coerce_workbook(workbook_source: WorkbookSource) -> tuple[Any, bool]:
 
     path = Path(workbook_source)
     try:
-        from openpyxl import load_workbook  # type: ignore[import-untyped]
+        from openpyxl import load_workbook
     except ModuleNotFoundError as exc:  # pragma: no cover
         raise RuntimeError("openpyxl is required for workbook comparison") from exc
 

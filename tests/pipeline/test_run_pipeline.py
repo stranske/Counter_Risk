@@ -662,7 +662,7 @@ def test_run_reconciliation_checks_counts_only_rows_tied_to_missing_series(
     assert any("impacted_rows=1" in warning for warning in warnings)
 
 
-def test_write_needs_mapping_updates_ignores_unmapped_counterparty_metadata_for_legacy_output(
+def test_write_needs_mapping_updates_renders_unmapped_counterparty_with_canonical_and_action(
     tmp_path: Path,
 ) -> None:
     output_path = run_module._write_needs_mapping_updates(
@@ -687,12 +687,247 @@ def test_write_needs_mapping_updates_ignores_unmapped_counterparty_metadata_for_
         total_gap_count=2,
         impacted_series_count=2,
         impacted_rows_count=1,
+        parsed_data_by_sheet_by_variant={
+            "all_programs": {
+                "Total": {
+                    "totals": [
+                        {"counterparty": " ACME  LTD ", "Notional": 1.0},
+                        {"counterparty": "Counterparty A", "Notional": 2.0},
+                    ],
+                    "futures": [],
+                }
+            }
+        },
     )
 
     text = output_path.read_text(encoding="utf-8")
+    # Legacy missing_from_historical_headers list line is preserved.
     assert "missing_from_historical_headers=Counterparty A" in text
-    assert "raw_counterparties" not in text
-    assert "ACME LTD" not in text
+    # The missing-header label gets a per-label impacted_rows + action line.
+    assert 'label "Counterparty A"' in text
+    assert "impacted_rows=1" in text
+    assert "Add header 'Counterparty A' to the historical workbook for variant all_programs" in text
+    # Unmapped counterparty entries now render raw_name, canonical_key, rows, and
+    # an actionable maintainer instruction pointing at config/name_registry.yml.
+    assert 'unmapped_counterparty raw_name=" ACME  LTD "' in text
+    assert 'canonical_key="ACME LTD"' in text
+    assert "impacted_rows=1" in text
+    assert "config/name_registry.yml" in text
+
+
+def test_write_needs_mapping_updates_renders_missing_segments_with_action(
+    tmp_path: Path,
+) -> None:
+    output_path = run_module._write_needs_mapping_updates(
+        run_dir=tmp_path,
+        fail_policy="warn",
+        reconciliation_by_variant={
+            "all_programs": {
+                "missing_series": [],
+                "missing_segments": [
+                    {
+                        "variant": "all_programs",
+                        "sheet": "CPRS - CH",
+                        "expected_segment_identifiers": ["futures_cdx"],
+                    }
+                ],
+            }
+        },
+        total_gap_count=1,
+        impacted_series_count=0,
+        impacted_rows_count=0,
+        parsed_data_by_sheet_by_variant={"all_programs": {}},
+    )
+
+    text = output_path.read_text(encoding="utf-8")
+    assert "missing_expected_segments=futures_cdx" in text
+    assert 'segment "futures_cdx"' in text
+    assert "Confirm segment 'futures_cdx' is captured for variant all_programs" in text
+    assert "expected_segments_by_variant" in text
+
+
+def test_write_needs_mapping_updates_unknown_canonical_key_for_unmapped_counterparty(
+    tmp_path: Path,
+) -> None:
+    output_path = run_module._write_needs_mapping_updates(
+        run_dir=tmp_path,
+        fail_policy="strict",
+        reconciliation_by_variant={
+            "trend": {
+                "missing_series": [
+                    {
+                        "sheet": "Total",
+                        "error_type": "unmapped_counterparty",
+                        "raw_counterparties": ["NewCo"],
+                        "normalized_counterparties": [],
+                    }
+                ]
+            }
+        },
+        total_gap_count=1,
+        impacted_series_count=1,
+        impacted_rows_count=2,
+        parsed_data_by_sheet_by_variant={
+            "trend": {
+                "Total": {
+                    "totals": [
+                        {"counterparty": "NewCo", "Notional": 1.0},
+                        {"counterparty": "NewCo", "Notional": 2.0},
+                    ],
+                    "futures": [],
+                }
+            }
+        },
+    )
+
+    text = output_path.read_text(encoding="utf-8")
+    assert 'raw_name="NewCo"' in text
+    assert 'canonical_key="<unknown>"' in text
+    assert "impacted_rows=2" in text
+    # Without a known canonical key, the action should ask the maintainer to
+    # define a brand-new canonical entry rather than extending an existing one.
+    assert "Add a canonical entry for raw counterparty 'NewCo'" in text
+
+
+def test_run_reconciliation_checks_warn_mode_writes_mapping_updates_for_combined_gaps(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    config.reconciliation = ReconciliationConfig(
+        fail_policy="warn",
+        expected_segments_by_variant={"all_programs": ["required_segment"]},
+    )
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Counterparty A", "Notional": 1.0, "NotionalChange": 0.5},
+                    {"counterparty": "Counterparty NEW", "Notional": 2.0, "NotionalChange": 0.1},
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Total": ("Counterparty A",)},
+    )
+
+    outcome = run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert outcome["reconciliation_results"]["status"] == "failed"
+    mapping_updates = tmp_path / "NEEDS_MAPPING_UPDATES.txt"
+    assert mapping_updates.exists()
+    text = mapping_updates.read_text(encoding="utf-8")
+    assert 'unmapped_counterparty raw_name="Counterparty NEW"' in text
+    assert "missing_from_historical_headers=Counterparty NEW" in text
+    assert "missing_expected_segments=required_segment" in text
+    assert 'canonical_key="Counterparty NEW"' in text
+    assert "config/name_registry.yml" in text
+    assert "impacted_rows_count:" in text
+    assert any("Reconciliation summary:" in warning for warning in warnings)
+
+
+def test_run_reconciliation_checks_strict_mode_raises_before_outputs_for_missing_segment_gap(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path, fail_policy="strict")
+    config.reconciliation = ReconciliationConfig(
+        fail_policy="strict",
+        expected_segments_by_variant={"all_programs": ["required_segment"]},
+    )
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Counterparty A", "Notional": 1.0, "NotionalChange": 0.5},
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Total": ("Counterparty A",)},
+    )
+
+    with pytest.raises(ValueError, match="Reconciliation strict mode failed"):
+        run_module._run_reconciliation_checks(
+            run_dir=tmp_path,
+            config=config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+
+    mapping_updates = tmp_path / "NEEDS_MAPPING_UPDATES.txt"
+    assert mapping_updates.exists()
+    text = mapping_updates.read_text(encoding="utf-8")
+    assert "fail_policy: strict" in text
+    assert "missing_expected_segments=required_segment" in text
+
+
+def test_run_reconciliation_checks_attaches_per_finding_impacted_rows_to_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path)
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Counterparty A", "Notional": 1.0},
+                    {"counterparty": "Counterparty A", "Notional": 2.0},
+                    {"counterparty": "Counterparty B", "Notional": 3.0},
+                ]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Sheet A": ("Counterparty B",)},
+    )
+
+    outcome = run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    by_variant = outcome["reconciliation_results"]["by_variant"]
+    missing_series = by_variant["all_programs"]["missing_series"]
+    matching = [
+        entry
+        for entry in missing_series
+        if "missing_from_historical_headers" in entry
+        and "Counterparty A" in entry["missing_from_historical_headers"]
+    ]
+    assert matching, "missing_from_historical_headers entry for Counterparty A not found"
+    entry = matching[0]
+    # Per-finding impacted_rows and per-label breakdown are now persisted on the
+    # manifest reconciliation_results so consumers can rank by blast radius.
+    assert entry["impacted_rows"] == 2
+    assert entry["impacted_rows_by_label"]["Counterparty A"] == 2
 
 
 def test_manifest_impacted_rows_counts_only_matching_normalized_label() -> None:
@@ -1950,7 +2185,7 @@ def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
     assert generated_mosers_output.exists()
     assert intermediate_generated_output.exists()
 
-    from openpyxl import load_workbook  # type: ignore[import-untyped]
+    from openpyxl import load_workbook
 
     workbook = load_workbook(generated_mosers_output, read_only=True, data_only=True)
     try:
@@ -2426,6 +2661,26 @@ def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
         "counter_risk.pipeline.run._extract_historical_series_headers_by_sheet",
         lambda _: {"Total": ("Legacy Counterparty",)},
     )
+    historical_called = False
+    outputs_called = False
+
+    def _unexpected_historical(**_: Any) -> list[Path]:
+        nonlocal historical_called
+        historical_called = True
+        return []
+
+    def _unexpected_outputs(**_: Any) -> tuple[list[Path], run_module.PptProcessingResult]:
+        nonlocal outputs_called
+        outputs_called = True
+        return (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        )
+
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs", _unexpected_historical
+    )
+    monkeypatch.setattr("counter_risk.pipeline.run._write_outputs", _unexpected_outputs)
 
     with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
         run_pipeline(config_path)
@@ -2436,6 +2691,8 @@ def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
         exc_info.value
     )
     assert "Unmatched counterparty 'Counterparty A'" in str(exc_info.value)
+    assert historical_called is False
+    assert outputs_called is False
 
 
 def test_run_pipeline_strict_mode_reconciliation_failure_uses_operator_message(

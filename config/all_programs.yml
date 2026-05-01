@@ -6,4 +6,6 @@ hist_all_programs_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty R
 hist_ex_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx
 hist_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - LLC 3 Year.xlsx
 monthly_pptx: docs/Ratings Instructiosns/Monthly Counterparty Exposure Report.pptx
+reconciliation:
+  fail_policy: warn
 output_root: runs/all_programs
