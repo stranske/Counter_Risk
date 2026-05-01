@@ -42,6 +42,7 @@ from counter_risk.normalize import (
     normalize_counterparty_with_source,
 )
 from counter_risk.outputs.base import OutputContext, OutputGenerator
+from counter_risk.outputs.ppt_screenshot import export_ppt_slides_as_png_via_com
 from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
@@ -2443,20 +2444,10 @@ def _create_static_distribution(
     output_paths: list[Path] = []
     slide_images_dir = run_dir / "_distribution_slides"
     static_pptx_path = output_path or run_dir / f"{source_pptx.stem}_distribution_static.pptx"
-    app = None
-    presentation = None
     try:
-        app = win32com.client.DispatchEx("PowerPoint.Application")
-        app.Visible = False
-        presentation = app.Presentations.Open(str(source_pptx), WithWindow=False)
-
-        # Preferred: export each slide as a PNG and rebuild the entire deck as
-        # one picture per slide, removing all live chart/OLE objects.
-        slide_images_dir.mkdir(parents=True, exist_ok=True)
-        slide_images = _export_slides_as_images(
-            com_presentation=presentation,
+        slide_images = export_ppt_slides_as_png_via_com(
+            source_pptx=source_pptx,
             slide_images_dir=slide_images_dir,
-            warnings=warnings,
         )
         _rebuild_pptx_from_slide_images(
             source_pptx=source_pptx,
@@ -2473,13 +2464,6 @@ def _create_static_distribution(
     except Exception as exc:
         warnings.append(f"distribution_static generation failed: {exc}")
         LOGGER.exception("distribution_static_failed")
-    finally:
-        if presentation is not None:
-            with contextlib.suppress(Exception):
-                presentation.Close()
-        if app is not None:
-            with contextlib.suppress(Exception):
-                app.Quit()
 
     return output_paths
 
@@ -2517,29 +2501,6 @@ def _export_pptx_to_pdf(*, source_pptx: Path, pdf_path: Path) -> None:
     from counter_risk.outputs.pdf_export import export_pptx_to_pdf_via_com
 
     export_pptx_to_pdf_via_com(source_pptx=source_pptx, pdf_path=pdf_path)
-
-
-def _export_slides_as_images(
-    *,
-    com_presentation: Any,
-    slide_images_dir: Path,
-    warnings: list[str],
-) -> list[Path]:
-    """Export each slide in the COM presentation as a PNG image."""
-    slide_images: list[Path] = []
-    slide_count = int(com_presentation.Slides.Count)
-    for slide_idx in range(1, slide_count + 1):
-        image_path = slide_images_dir / f"slide_{slide_idx:04d}.png"
-        try:
-            com_presentation.Slides[slide_idx].Export(str(image_path), "PNG")
-            slide_images.append(image_path)
-        except Exception as exc:
-            warnings.append(f"distribution_static slide export failed (slide {slide_idx}): {exc}")
-            LOGGER.warning(
-                "distribution_static_slide_export_failed slide=%d exc=%s", slide_idx, exc
-            )
-            raise
-    return slide_images
 
 
 def _export_chart_shapes_as_images(

@@ -3453,50 +3453,22 @@ def test_create_static_distribution_rebuilds_from_slide_images(
         b"\x00\x00\x00\x00IEND\xaeB`\x82"
     )
 
-    class _FakeSlide:
-        def __init__(self, slide_idx: int) -> None:
-            self._slide_idx = slide_idx
-
-        def Export(self, path: str, fmt: str) -> None:  # noqa: N802
-            assert fmt == "PNG"
-            Path(path).write_bytes(png_bytes)
-
-    class _FakeSlides:
-        def __init__(self, count: int) -> None:
-            self.Count = count
-            self._slides = {idx: _FakeSlide(idx) for idx in range(1, count + 1)}
-
-        def __getitem__(self, idx: int) -> _FakeSlide:
-            return self._slides[idx]
-
-    class _FakePresentation:
-        def __init__(self) -> None:
-            self.Slides = _FakeSlides(2)
-
-        def ExportAsFixedFormat(self, path: str, fmt: int) -> None:  # noqa: N802
-            assert fmt == 2
-            Path(path).write_bytes(b"%PDF-1.4\n")
-
-        def Close(self) -> None:  # noqa: N802
-            return None
-
-    class _FakePowerPointApplication:
-        def __init__(self) -> None:
-            self.Visible = False
-            self.Presentations = types.SimpleNamespace(
-                Open=lambda *_args, **_kwargs: _FakePresentation()
-            )
-
-        def Quit(self) -> None:  # noqa: N802
-            return None
-
-    fake_client = types.SimpleNamespace(
-        DispatchEx=lambda *_args, **_kwargs: _FakePowerPointApplication()
-    )
+    fake_client = types.SimpleNamespace(DispatchEx=lambda *_args, **_kwargs: object())
     fake_win32com = types.ModuleType("win32com")
     cast(Any, fake_win32com).client = fake_client
     monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
     monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+    monkeypatch.setattr(
+        run_module,
+        "export_ppt_slides_as_png_via_com",
+        lambda *, source_pptx, slide_images_dir: [
+            slide_images_dir / "slide_0001.png",
+            slide_images_dir / "slide_0002.png",
+        ],
+    )
+    (run_dir / "_distribution_slides").mkdir(parents=True, exist_ok=True)
+    (run_dir / "_distribution_slides" / "slide_0001.png").write_bytes(png_bytes)
+    (run_dir / "_distribution_slides" / "slide_0002.png").write_bytes(png_bytes)
 
     output = run_module._create_static_distribution(
         source_pptx=source_pptx,
@@ -3541,41 +3513,18 @@ def test_create_static_distribution_can_overwrite_canonical_distribution(
         b"\x00\x00\x00\x00IEND\xaeB`\x82"
     )
 
-    class _FakeSlide:
-        def Export(self, path: str, fmt: str) -> None:  # noqa: N802
-            assert fmt == "PNG"
-            Path(path).write_bytes(png_bytes)
-
-    class _FakeSlides:
-        Count = 1
-
-        def __getitem__(self, idx: int) -> _FakeSlide:
-            assert idx == 1
-            return _FakeSlide()
-
-    class _FakePresentation:
-        Slides = _FakeSlides()
-
-        def Close(self) -> None:  # noqa: N802
-            return None
-
-    class _FakePowerPointApplication:
-        def __init__(self) -> None:
-            self.Visible = False
-            self.Presentations = types.SimpleNamespace(
-                Open=lambda *_args, **_kwargs: _FakePresentation()
-            )
-
-        def Quit(self) -> None:  # noqa: N802
-            return None
-
-    fake_client = types.SimpleNamespace(
-        DispatchEx=lambda *_args, **_kwargs: _FakePowerPointApplication()
-    )
+    fake_client = types.SimpleNamespace(DispatchEx=lambda *_args, **_kwargs: object())
     fake_win32com = types.ModuleType("win32com")
     cast(Any, fake_win32com).client = fake_client
     monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
     monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+    monkeypatch.setattr(
+        run_module,
+        "export_ppt_slides_as_png_via_com",
+        lambda *, source_pptx, slide_images_dir: [slide_images_dir / "slide_0001.png"],
+    )
+    (run_dir / "_distribution_slides").mkdir(parents=True, exist_ok=True)
+    (run_dir / "_distribution_slides" / "slide_0001.png").write_bytes(png_bytes)
 
     output = run_module._create_static_distribution(
         source_pptx=source_pptx,
