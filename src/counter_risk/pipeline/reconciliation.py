@@ -15,6 +15,7 @@ from counter_risk.pipeline.parsing_types import (
     ParsedDataMissingKeyError,
     UnmappedCounterpartyError,
 )
+from counter_risk.reports.mapping_diff import collect_mapping_diff_findings
 
 
 def reconcile_series_coverage(
@@ -125,6 +126,17 @@ def reconcile_series_coverage(
         missing_expected_segments = sorted(
             expected_segments.difference(parsed_segments), key=str.casefold
         )
+        mapping_diff_findings = collect_mapping_diff_findings(
+            "config/name_registry.yml",
+            {
+                "reconciliation": {
+                    "counterparties_in_data": counterparties_in_data,
+                    "raw_counterparty_labels": counterparties_in_data,
+                }
+            },
+        )
+        unmapped_source_names = mapping_diff_findings["unmapped_raw_names"]
+        fallback_mapped_source_names = mapping_diff_findings["fallback_mapped"]
 
         if missing_from_historical:
             gap_count += len(missing_from_historical)
@@ -241,6 +253,8 @@ def reconcile_series_coverage(
             "segments_in_data": sorted(parsed_segments, key=str.casefold),
             "missing_expected_segments": missing_expected_segments,
             "canonical_key_by_series": canonical_key_by_series,
+            "mapping_diff_unmapped_source_names": unmapped_source_names,
+            "mapping_diff_fallback_mapped": fallback_mapped_source_names,
         }
     result = {
         "by_sheet": by_sheet,

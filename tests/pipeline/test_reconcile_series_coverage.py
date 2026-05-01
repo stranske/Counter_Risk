@@ -51,6 +51,8 @@ def test_reconcile_series_coverage_accepts_historical_headers_parameter() -> Non
                 "segments_in_data": [],
                 "missing_expected_segments": [],
                 "canonical_key_by_series": {"A": "A"},
+                "mapping_diff_unmapped_source_names": ["A"],
+                "mapping_diff_fallback_mapped": {},
             }
         },
         "gap_count": 1,
@@ -101,6 +103,8 @@ def test_reconcile_series_coverage_extracts_counterparties_and_clearing_houses()
             "CME": "CME",
             "ICE": "ICE",
         },
+        "mapping_diff_unmapped_source_names": ["JPMorgan"],
+        "mapping_diff_fallback_mapped": {},
     }
     assert result["gap_count"] == 4
     assert len(result["warnings"]) == 3
@@ -148,6 +152,8 @@ def test_reconcile_series_coverage_extracts_historical_series_headers_per_sheet(
         "segments_in_data": [],
         "missing_expected_segments": [],
         "canonical_key_by_series": {},
+        "mapping_diff_unmapped_source_names": [],
+        "mapping_diff_fallback_mapped": {},
     }
     assert result["gap_count"] == 3
 
@@ -396,6 +402,21 @@ def test_reconcile_series_coverage_does_not_warn_when_raw_labels_normalize_to_he
     assert result["by_sheet"]["Total"]["missing_from_data"] == []
     assert result["by_sheet"]["Total"]["missing_normalized_counterparties"] == []
     assert not any("unmapped counterparty" in warning for warning in result["warnings"])
+
+
+def test_reconcile_series_coverage_compares_source_names_against_registry_mapping_diff() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "Unknown House"}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Unknown House",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Total"]["mapping_diff_unmapped_source_names"] == ["Unknown House"]
+    assert result["by_sheet"]["Total"]["mapping_diff_fallback_mapped"] == {}
+    assert result["warnings"] == []
+    assert result["missing_series"] == []
 
 
 def test_reconcile_series_coverage_includes_fallback_source_in_unmapped_warning(
