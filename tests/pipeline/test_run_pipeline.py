@@ -2661,6 +2661,26 @@ def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
         "counter_risk.pipeline.run._extract_historical_series_headers_by_sheet",
         lambda _: {"Total": ("Legacy Counterparty",)},
     )
+    historical_called = False
+    outputs_called = False
+
+    def _unexpected_historical(**_: Any) -> list[Path]:
+        nonlocal historical_called
+        historical_called = True
+        return []
+
+    def _unexpected_outputs(**_: Any) -> tuple[list[Path], run_module.PptProcessingResult]:
+        nonlocal outputs_called
+        outputs_called = True
+        return (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        )
+
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._update_historical_outputs", _unexpected_historical
+    )
+    monkeypatch.setattr("counter_risk.pipeline.run._write_outputs", _unexpected_outputs)
 
     with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as exc_info:
         run_pipeline(config_path)
@@ -2671,6 +2691,8 @@ def test_run_pipeline_strict_mode_fails_when_reconciliation_has_gaps(
         exc_info.value
     )
     assert "Unmatched counterparty 'Counterparty A'" in str(exc_info.value)
+    assert historical_called is False
+    assert outputs_called is False
 
 
 def test_run_pipeline_strict_mode_reconciliation_failure_uses_operator_message(
