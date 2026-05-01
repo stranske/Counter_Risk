@@ -211,6 +211,60 @@ def test_write_outputs_skips_all_ppt_generation_when_disabled(
     assert list(run_dir.glob("*.pptx")) == []
 
 
+@pytest.mark.parametrize(
+    ("enable_distribution_output", "expected_distribution_count"),
+    ((True, 1), (False, 0)),
+)
+def test_write_outputs_successful_run_writes_master_and_optional_distribution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    enable_distribution_output: bool,
+    expected_distribution_count: int,
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, screenshot_inputs={}).model_copy(
+        update={
+            "enable_screenshot_replacement": False,
+            "enable_distribution_output": enable_distribution_output,
+        }
+    )
+    as_of_date = date(2025, 12, 31)
+    output_names = resolve_ppt_output_names(as_of_date)
+    master_ppt = run_dir / output_names.master_filename
+    distribution_ppt = run_dir / output_names.distribution_filename
+
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+    )
+    monkeypatch.setattr(run_module, "_apply_chart_replacement", lambda **_kwargs: True)
+    monkeypatch.setattr(
+        run_module,
+        "validate_distribution_ppt_standalone",
+        lambda _path: PptStandaloneValidationResult(
+            is_valid=True,
+            external_relationship_count=0,
+            relationship_parts_scanned=(),
+            external_relationship_parts=(),
+        ),
+    )
+
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=as_of_date,
+        warnings=[],
+    )
+
+    assert ppt_result.status == run_module.PptProcessingStatus.SUCCESS
+    assert master_ppt in output_paths
+    assert master_ppt.exists()
+    assert int(distribution_ppt in output_paths) == expected_distribution_count
+    assert int(distribution_ppt.exists()) == expected_distribution_count
+
+
 def test_write_outputs_skips_distribution_when_master_refresh_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
