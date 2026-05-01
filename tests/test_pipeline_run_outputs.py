@@ -399,3 +399,43 @@ def test_write_outputs_runs_config_registered_generator_without_pipeline_changes
     custom_output = run_dir / "config-registered-output.txt"
     assert custom_output in output_paths
     assert custom_output.read_text(encoding="utf-8") == "ok"
+
+
+def test_write_outputs_passes_distribution_static_to_chart_replacement(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, screenshot_inputs={}).model_copy(
+        update={"enable_screenshot_replacement": False, "distribution_static": True}
+    )
+    observed: dict[str, bool] = {}
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", lambda _path: True)
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", lambda **_kwargs: None)
+    monkeypatch.setattr(run_module, "_create_static_distribution", lambda **_kwargs: [])
+    monkeypatch.setattr(
+        run_module,
+        "validate_distribution_ppt_standalone",
+        lambda _path: PptStandaloneValidationResult(
+            is_valid=True,
+            relationship_parts_scanned=(),
+            external_relationship_count=0,
+            external_relationship_parts=(),
+        ),
+    )
+
+    def _capture_chart_replacement(*, static_mode: bool, **_kwargs: object) -> bool:
+        observed["static_mode"] = static_mode
+        return False
+
+    monkeypatch.setattr(run_module, "_apply_chart_replacement", _capture_chart_replacement)
+
+    run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        warnings=[],
+    )
+
+    assert observed["static_mode"] is True
