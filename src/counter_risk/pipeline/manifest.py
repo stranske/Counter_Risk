@@ -51,6 +51,7 @@ class ManifestBuilder:
         missing_inputs: dict[str, Any] | None = None,
         reconciliation_results: dict[str, Any] | None = None,
         ppt_status: str = "success",
+        ppt_outputs: dict[str, dict[str, str]] | None = None,
         concentration_metrics: list[dict[str, Any]] | None = None,
         limit_breach_summary: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
@@ -118,6 +119,7 @@ class ManifestBuilder:
         ppt_outputs = self._build_ppt_outputs(
             output_paths=normalized_output_paths,
             ppt_status=ppt_status,
+            explicit_outputs=ppt_outputs,
         )
         if ppt_outputs:
             manifest["ppt_outputs"] = ppt_outputs
@@ -154,10 +156,16 @@ class ManifestBuilder:
         output_paths.append(_DATA_QUALITY_SUMMARY_FILENAME)
 
     def _build_ppt_outputs(
-        self, *, output_paths: list[Path], ppt_status: str
+        self,
+        *,
+        output_paths: list[Path],
+        ppt_status: str,
+        explicit_outputs: dict[str, dict[str, str]] | None = None,
     ) -> dict[str, dict[str, str]]:
         if not self.config.ppt_output_enabled:
             return {}
+        if explicit_outputs is not None:
+            return explicit_outputs
 
         output_path_strings = {path.as_posix() for path in output_paths}
         output_names = resolve_ppt_output_names(self.as_of_date)

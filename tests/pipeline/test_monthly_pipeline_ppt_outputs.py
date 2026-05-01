@@ -285,6 +285,61 @@ def test_distribution_disabled_keeps_master_and_records_skipped_manifest_entry(
     }
 
 
+def test_master_refresh_skipped_records_master_skipped_and_distribution_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    as_of_date = date(2025, 12, 31)
+    output_names = run_module.resolve_ppt_output_names(as_of_date)
+
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(
+            status=run_module.PptProcessingStatus.SKIPPED,
+            error_detail="unsupported platform",
+        ),
+    )
+
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=as_of_date,
+        warnings=[],
+    )
+
+    manifest = ManifestBuilder(
+        config=config,
+        as_of_date=as_of_date,
+        run_date=date(2026, 1, 2),
+    ).build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=ppt_result.status.value,
+        ppt_outputs=ppt_result.ppt_outputs,
+    )
+
+    assert manifest["ppt_outputs"]["master"] == {
+        "generation_step": "ppt_master",
+        "path": output_names.master_filename,
+        "role": "maintainer_master",
+        "skipped_reason": "unsupported platform",
+        "status": "skipped",
+    }
+    assert manifest["ppt_outputs"]["distribution"] == {
+        "generation_step": "ppt_distribution",
+        "path": output_names.distribution_filename,
+        "role": "distribution",
+        "status": "success",
+    }
+
+
 def test_no_distribution_without_master_when_master_generation_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
