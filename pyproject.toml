@@ -174,10 +174,6 @@ ignore_missing_imports = true
 module = "scripts.*"
 ignore_errors = true
 
-[[tool.mypy.overrides]]
-module = "tools.*"
-ignore_errors = true
-
 [tool.black]
 line-length = 100
 extend-exclude = '''

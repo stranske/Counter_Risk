@@ -2093,7 +2093,7 @@ def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
     assert generated_mosers_output.exists()
     assert intermediate_generated_output.exists()
 
-    from openpyxl import load_workbook  # type: ignore[import-untyped]
+    from openpyxl import load_workbook
 
     workbook = load_workbook(generated_mosers_output, read_only=True, data_only=True)
     try:

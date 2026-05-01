@@ -371,7 +371,7 @@ def _records(table: Any) -> list[dict[str, Any]]:
     if isinstance(table, list):
         return [dict(record) for record in table if isinstance(record, Mapping)]
     if hasattr(table, "to_dict"):
-        to_dict = getattr(table, "to_dict")
+        to_dict = table.to_dict
         try:
             data = to_dict(orient="records")
         except TypeError:

@@ -39,6 +39,7 @@ from counter_risk.formatting import normalize_formatting_profile, resolve_format
 from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
     normalize_counterparty,
+    normalize_counterparty_with_source,
 )
 from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
@@ -52,13 +53,17 @@ from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     UnmappedCounterpartyError,
 )
-from counter_risk.pipeline.reconciliation import (
-    _normalized_counterparties_from_parsed_data,
-    _normalized_counterparties_from_records,
-    reconcile_series_coverage,
-)
 from counter_risk.pipeline.ppt_naming import PptOutputNames, resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
+from counter_risk.pipeline.reconciliation import (
+    _normalized_counterparties_from_parsed_data as _normalized_counterparties_from_parsed_data,
+)
+from counter_risk.pipeline.reconciliation import (
+    _normalized_counterparties_from_records as _normalized_counterparties_from_records,
+)
+from counter_risk.pipeline.reconciliation import (
+    reconcile_series_coverage as _reconcile_series_coverage,
+)
 from counter_risk.pipeline.run_folder_outputs import (
     RunFolderReadmePptOutputs,
     RunFolderWarningBanner,
@@ -83,6 +88,37 @@ from counter_risk.writers import (
 )
 
 LOGGER = logging.getLogger(__name__)
+
+__all__ = [
+    "_normalized_counterparties_from_parsed_data",
+    "_normalized_counterparties_from_records",
+    "reconcile_series_coverage",
+]
+
+
+def reconcile_series_coverage(
+    *,
+    parsed_data_by_sheet: Mapping[str, Mapping[str, Any]],
+    historical_series_headers_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]],
+    variant: str | None = None,
+    expected_segments_by_variant: (
+        Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
+    ) = None,
+    fail_policy: Literal["warn", "strict"] = "warn",
+) -> dict[str, Any]:
+    reconciliation_globals = _reconcile_series_coverage.__globals__
+    original = reconciliation_globals.get("normalize_counterparty_with_source")
+    reconciliation_globals["normalize_counterparty_with_source"] = normalize_counterparty_with_source
+    try:
+        return _reconcile_series_coverage(
+            parsed_data_by_sheet=parsed_data_by_sheet,
+            historical_series_headers_by_sheet=historical_series_headers_by_sheet,
+            variant=variant,
+            expected_segments_by_variant=expected_segments_by_variant,
+            fail_policy=fail_policy,
+        )
+    finally:
+        reconciliation_globals["normalize_counterparty_with_source"] = original
 
 if TYPE_CHECKING:
     from counter_risk.outputs.ppt_link_refresh import PptLinkRefreshOutputGenerator
