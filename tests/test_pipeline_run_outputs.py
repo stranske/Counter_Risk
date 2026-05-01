@@ -329,7 +329,7 @@ def test_write_outputs_raises_when_distribution_standalone_validation_fails(
     assert called["validate_distribution"] == 1
 
 
-def test_write_outputs_skips_disabled_refresh_generator(
+def test_write_outputs_runs_master_refresh_even_when_refresh_generator_is_disabled(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     run_dir = tmp_path / "run"
@@ -361,7 +361,7 @@ def test_write_outputs_skips_disabled_refresh_generator(
     )
 
     output_names = resolve_ppt_output_names(date(2025, 12, 31))
-    assert called["refresh"] == 0
+    assert called["refresh"] == 1
     assert (run_dir / output_names.master_filename) in output_paths
     assert (run_dir / output_names.distribution_filename) in output_paths
 

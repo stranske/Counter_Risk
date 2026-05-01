@@ -2057,10 +2057,27 @@ def _write_outputs(
         ),
     )
     refresh_result = PptProcessingResult(status=PptProcessingStatus.SKIPPED)
+    ran_master_refresh = False
     for generator in refresh_generators:
         generator.generate(context=output_context)
         if generator.name == "ppt_link_refresh":
             refresh_result = _to_ppt_processing_result(getattr(generator, "last_result", None))
+            ran_master_refresh = True
+
+    if not ran_master_refresh:
+        try:
+            refresh_result = _refresh_ppt_links(target_master_ppt)
+        except Exception as exc:
+            refresh_result = PptProcessingResult(
+                status=PptProcessingStatus.FAILED,
+                error_detail=str(exc),
+            )
+            warnings.append(
+                "PPT links refresh failed; COM refresh encountered an error"
+                if not refresh_result.error_detail
+                else f"PPT links refresh failed; {refresh_result.error_detail}"
+            )
+            LOGGER.error("Master PPT link refresh failed: %s", exc)
 
     if refresh_result.status == PptProcessingStatus.FAILED:
         LOGGER.warning(
