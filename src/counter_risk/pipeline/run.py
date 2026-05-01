@@ -2098,9 +2098,8 @@ def _write_outputs(
             static_mode=config.distribution_static,
             warnings=warnings,
         )
-        distribution_source = chart_replaced_ppt if chart_replacement_applied else target_master_ppt
         _derive_distribution_ppt(
-            master_pptx_path=distribution_source,
+            master_pptx_path=target_master_ppt,
             distribution_pptx_path=target_distribution_ppt,
         )
         try:

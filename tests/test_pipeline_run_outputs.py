@@ -366,6 +366,52 @@ def test_write_outputs_runs_master_refresh_even_when_refresh_generator_is_disabl
     assert (run_dir / output_names.distribution_filename) in output_paths
 
 
+def test_write_outputs_derives_distribution_from_resolved_master_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, screenshot_inputs={}).model_copy(
+        update={"enable_screenshot_replacement": False}
+    )
+    as_of_date = date(2025, 12, 31)
+    output_names = resolve_ppt_output_names(as_of_date)
+    expected_master_path = run_dir / output_names.master_filename
+    observed: dict[str, Path] = {}
+
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+    )
+    monkeypatch.setattr(run_module, "_apply_chart_replacement", lambda **_kwargs: True)
+
+    def _capture_derive(*, master_pptx_path: Path, distribution_pptx_path: Path) -> None:
+        observed["master_pptx_path"] = master_pptx_path
+        distribution_pptx_path.write_bytes(b"distribution")
+
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", _capture_derive)
+    monkeypatch.setattr(
+        run_module,
+        "validate_distribution_ppt_standalone",
+        lambda _path: PptStandaloneValidationResult(
+            is_valid=True,
+            external_relationship_count=0,
+            relationship_parts_scanned=(),
+            external_relationship_parts=(),
+        ),
+    )
+
+    run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=as_of_date,
+        warnings=[],
+    )
+
+    assert observed["master_pptx_path"] == expected_master_path
+
+
 def test_write_outputs_runs_config_registered_generator_without_pipeline_changes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
