@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import csv
 import hashlib
+import importlib.util
 import inspect
 import logging
 import math
@@ -2431,9 +2432,7 @@ def _create_static_distribution(
         LOGGER.info("distribution_static_skipped reason=non_windows")
         return []
 
-    try:
-        import win32com.client
-    except ImportError:
+    if importlib.util.find_spec("win32com.client") is None:
         warnings.append(
             "distribution_static requested but win32com is not installed; "
             "no static distribution produced"

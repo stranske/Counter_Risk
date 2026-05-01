@@ -4,6 +4,8 @@ from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from counter_risk.config import WorkflowConfig
 from counter_risk.outputs import OutputContext, PptScreenshotOutputGenerator
 from counter_risk.outputs.ppt_screenshot import export_ppt_slides_as_png_via_com
@@ -121,7 +123,9 @@ def test_ppt_screenshot_generator_copies_source_when_replacement_disabled(tmp_pa
     ]
 
 
-def test_export_ppt_slides_as_png_via_com_exports_all_slides(tmp_path: Path, monkeypatch) -> None:
+def test_export_ppt_slides_as_png_via_com_exports_all_slides(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     source_pptx = tmp_path / "source.pptx"
     source_pptx.write_bytes(b"pptx")
     slide_images_dir = tmp_path / "slides"
