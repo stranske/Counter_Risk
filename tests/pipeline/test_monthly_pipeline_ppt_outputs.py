@@ -11,6 +11,7 @@ import pytest
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.manifest import ManifestBuilder
+from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import PptStandaloneValidationResult
 
 
@@ -233,7 +234,7 @@ def test_distribution_disabled_keeps_master_and_records_skipped_manifest_entry(
         enable_distribution_output=False,
     )
     as_of_date = date(2025, 12, 31)
-    output_names = run_module.resolve_ppt_output_names(as_of_date)
+    output_names = resolve_ppt_output_names(as_of_date)
     calls = {"distribution": 0}
 
     monkeypatch.setattr(
@@ -292,7 +293,7 @@ def test_master_refresh_skipped_records_master_skipped_and_distribution_success(
     run_dir.mkdir(parents=True)
     config = _build_config(tmp_path, enable_ppt_output=True)
     as_of_date = date(2025, 12, 31)
-    output_names = run_module.resolve_ppt_output_names(as_of_date)
+    output_names = resolve_ppt_output_names(as_of_date)
 
     monkeypatch.setattr(
         run_module,

@@ -2117,7 +2117,7 @@ def _write_outputs(
             if refresh_result.error_detail:
                 manifest_ppt_outputs["master"]["skipped_reason"] = refresh_result.error_detail
         chart_replaced_ppt = run_dir / f"{target_master_ppt.stem}_chart_replaced.pptx"
-        chart_replacement_applied = _apply_chart_replacement(
+        _apply_chart_replacement(
             master_pptx_path=target_master_ppt,
             output_path=chart_replaced_ppt,
             run_dir=run_dir,
