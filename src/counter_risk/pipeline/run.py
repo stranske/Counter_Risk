@@ -38,7 +38,6 @@ from counter_risk.dates import resolve_as_of_date, resolve_run_date
 from counter_risk.formatting import normalize_formatting_profile, resolve_formatting_policy
 from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
-    canonicalize_name,
     normalize_counterparty,
     normalize_counterparty_with_source,
 )
@@ -52,12 +51,19 @@ from counter_risk.parsers.repo_cash_sources import (
 )
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
-    ParsedDataInvalidShapeError,
-    ParsedDataMissingKeyError,
     UnmappedCounterpartyError,
 )
 from counter_risk.pipeline.ppt_naming import PptOutputNames, resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import validate_distribution_ppt_standalone
+from counter_risk.pipeline.reconciliation import (
+    _normalized_counterparties_from_parsed_data as _normalized_counterparties_from_parsed_data,
+)
+from counter_risk.pipeline.reconciliation import (
+    _normalized_counterparties_from_records as _normalized_counterparties_from_records,
+)
+from counter_risk.pipeline.reconciliation import (
+    reconcile_series_coverage as _reconcile_series_coverage,
+)
 from counter_risk.pipeline.run_folder_outputs import (
     RunFolderReadmePptOutputs,
     RunFolderWarningBanner,
@@ -82,6 +88,37 @@ from counter_risk.writers import (
 )
 
 LOGGER = logging.getLogger(__name__)
+
+__all__ = [
+    "_normalized_counterparties_from_parsed_data",
+    "_normalized_counterparties_from_records",
+    "reconcile_series_coverage",
+]
+
+
+def reconcile_series_coverage(
+    *,
+    parsed_data_by_sheet: Mapping[str, Mapping[str, Any]],
+    historical_series_headers_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]],
+    variant: str | None = None,
+    expected_segments_by_variant: (
+        Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
+    ) = None,
+    fail_policy: Literal["warn", "strict"] = "warn",
+) -> dict[str, Any]:
+    reconciliation_globals = _reconcile_series_coverage.__globals__
+    original = reconciliation_globals.get("normalize_counterparty_with_source")
+    reconciliation_globals["normalize_counterparty_with_source"] = normalize_counterparty_with_source
+    try:
+        return _reconcile_series_coverage(
+            parsed_data_by_sheet=parsed_data_by_sheet,
+            historical_series_headers_by_sheet=historical_series_headers_by_sheet,
+            variant=variant,
+            expected_segments_by_variant=expected_segments_by_variant,
+            fail_policy=fail_policy,
+        )
+    finally:
+        reconciliation_globals["normalize_counterparty_with_source"] = original
 
 if TYPE_CHECKING:
     from counter_risk.outputs.ppt_link_refresh import PptLinkRefreshOutputGenerator
@@ -192,358 +229,6 @@ class LimitBreachEvaluation:
 
 
 ScreenshotReplacer = Callable[[Path, Path, dict[str, Path]], None]
-
-
-def reconcile_series_coverage(
-    *,
-    parsed_data_by_sheet: Mapping[str, Mapping[str, Any]],
-    historical_series_headers_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]],
-    variant: str | None = None,
-    expected_segments_by_variant: (
-        Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
-    ) = None,
-    fail_policy: Literal["warn", "strict"] = "warn",
-) -> dict[str, Any]:
-    """Reconcile parsed series labels against historical workbook headers per sheet.
-
-    Compares current-month series labels from parsed tables against historical workbook
-    headers and optionally validates variant-specific segment expectations.
-    """
-    _validate_reconciliation_parsed_data_by_sheet(parsed_data_by_sheet=parsed_data_by_sheet)
-
-    by_sheet: dict[str, dict[str, Any]] = {}
-    missing_series: list[dict[str, Any]] = []
-    missing_segments: list[dict[str, Any]] = []
-    exceptions: list[UnmappedCounterpartyError] = []
-    warnings: list[str] = []
-    gap_count = 0
-
-    expected_segments = _expected_segments_for_variant(
-        variant=variant,
-        expected_segments_by_variant=expected_segments_by_variant,
-    )
-    sheet_names = sorted(
-        set(parsed_data_by_sheet).union(historical_series_headers_by_sheet), key=str.casefold
-    )
-    for sheet_name in sheet_names:
-        parsed_sections = parsed_data_by_sheet.get(sheet_name, {})
-        totals_records = _records(parsed_sections.get("totals", []))
-        futures_records = _records(parsed_sections.get("futures", []))
-        historical_series_headers = sorted(
-            {
-                value
-                for value in (
-                    canonicalize_name(str(header))
-                    for header in historical_series_headers_by_sheet.get(sheet_name, ())
-                )
-                if value
-            }
-        )
-
-        counterparties_in_data = sorted(
-            {
-                value
-                for value in (
-                    str(record.get("counterparty", "")).strip() for record in totals_records
-                )
-                if value
-            }
-        )
-        (
-            normalized_counterparties_in_data,
-            counterparty_sources_by_raw_name,
-        ) = _counterparty_resolution_maps_from_records(totals_records)
-        raw_counterparties_by_normalized = _raw_counterparties_by_normalized_from_parsed_data(
-            parsed_sections
-        )
-        clearing_houses_in_data = sorted(
-            {
-                value
-                for value in (
-                    canonicalize_name(str(record.get("clearing_house", "")))
-                    for record in futures_records
-                )
-                if value
-            }
-        )
-        normalized_historical_series_headers = {
-            normalize_counterparty(header) for header in historical_series_headers
-        }
-        missing_normalized_counterparties = sorted(
-            set(normalized_counterparties_in_data).difference(normalized_historical_series_headers),
-            key=str.casefold,
-        )
-        missing_counterparty_labels = sorted(
-            {
-                canonicalize_name(raw_name)
-                for normalized_name in missing_normalized_counterparties
-                for raw_name in normalized_counterparties_in_data.get(normalized_name, ())
-                if canonicalize_name(raw_name)
-            },
-            key=str.casefold,
-        )
-        missing_clearing_houses = sorted(
-            set(clearing_houses_in_data).difference(historical_series_headers), key=str.casefold
-        )
-        current_series_labels = sorted(
-            set(counterparties_in_data).union(clearing_houses_in_data), key=str.casefold
-        )
-        normalized_current_series_labels = set(normalized_counterparties_in_data).union(
-            {normalize_counterparty(clearing_house) for clearing_house in clearing_houses_in_data}
-        )
-        missing_from_historical = sorted(
-            set(missing_counterparty_labels).union(missing_clearing_houses), key=str.casefold
-        )
-        missing_from_data = sorted(
-            {
-                header
-                for header in historical_series_headers
-                if normalize_counterparty(header) not in normalized_current_series_labels
-            },
-            key=str.casefold,
-        )
-        parsed_segments = _extract_segments_from_records(parsed_sections)
-        missing_expected_segments = sorted(
-            expected_segments.difference(parsed_segments), key=str.casefold
-        )
-
-        if missing_from_historical:
-            gap_count += len(missing_from_historical)
-            missing_series.append(
-                {
-                    "sheet": sheet_name,
-                    "missing_from_historical_headers": missing_from_historical,
-                    "data_source_context": "counterparties_and_clearing_houses",
-                }
-            )
-            warnings.append(
-                "Reconciliation gap in sheet "
-                f"{sheet_name!r}: series present in parsed data but missing from historical "
-                f"headers ({', '.join(missing_from_historical)})"
-            )
-
-        if missing_from_data:
-            gap_count += len(missing_from_data)
-            warnings.append(
-                "Reconciliation gap in sheet "
-                f"{sheet_name!r}: series present in historical headers but missing from parsed "
-                f"data ({', '.join(missing_from_data)})"
-            )
-
-        if missing_normalized_counterparties:
-            sheet_exceptions: list[UnmappedCounterpartyError] = []
-            raw_counterparties_for_metadata: list[str] = []
-            for normalized_name in missing_normalized_counterparties:
-                raw_names = sorted(
-                    set(raw_counterparties_by_normalized.get(normalized_name, ())),
-                    key=str.casefold,
-                )
-                raw_counterparties_for_metadata.extend(raw_names)
-                raw_display = ", ".join(raw_names)
-                warnings.append(
-                    "Reconciliation unmapped counterparty in sheet "
-                    f"{sheet_name!r}: raw={raw_display!r}, normalized={normalized_name!r}, "
-                    "source="
-                    + ",".join(
-                        sorted(
-                            {
-                                counterparty_sources_by_raw_name.get(raw_name, "unmapped")
-                                for raw_name in raw_names
-                            }
-                        )
-                    )
-                )
-                for raw_name in raw_names:
-                    error = UnmappedCounterpartyError(
-                        normalized_counterparty=normalized_name,
-                        raw_counterparty=raw_name,
-                        sheet=sheet_name,
-                    )
-                    sheet_exceptions.append(error)
-                    exceptions.append(error)
-
-            if raw_counterparties_for_metadata:
-                missing_series.append(
-                    {
-                        "sheet": sheet_name,
-                        "error_type": "unmapped_counterparty",
-                        "raw_counterparties": raw_counterparties_for_metadata,
-                        "normalized_counterparties": missing_normalized_counterparties,
-                    }
-                )
-
-            if fail_policy == "strict":
-                if sheet_exceptions:
-                    raise sheet_exceptions[0]
-                raise UnmappedCounterpartyError(
-                    normalized_counterparty=missing_normalized_counterparties[0],
-                    raw_counterparty=missing_normalized_counterparties[0],
-                    sheet=sheet_name,
-                )
-
-        if missing_expected_segments:
-            gap_count += len(missing_expected_segments)
-            missing_segments.append(
-                {
-                    "variant": variant,
-                    "sheet": sheet_name,
-                    "expected_segment_identifiers": missing_expected_segments,
-                }
-            )
-            warnings.append(
-                "Reconciliation gap in variant "
-                f"{variant!r} sheet {sheet_name!r}: expected segments missing from parsed "
-                f"results ({', '.join(missing_expected_segments)})"
-            )
-
-        canonical_key_by_series: dict[str, str] = {}
-        for canonical_name, raw_name_set in normalized_counterparties_in_data.items():
-            for raw in raw_name_set:
-                canonical_key_by_series[raw] = canonical_name
-        for ch in clearing_houses_in_data:
-            canonical_key_by_series[ch] = normalize_counterparty(ch)
-
-        by_sheet[sheet_name] = {
-            "counterparties_in_data": counterparties_in_data,
-            "normalized_counterparties_in_data": sorted(
-                normalized_counterparties_in_data, key=str.casefold
-            ),
-            "clearing_houses_in_data": clearing_houses_in_data,
-            "historical_series_headers": historical_series_headers,
-            "normalized_historical_series_headers": sorted(
-                normalized_historical_series_headers, key=str.casefold
-            ),
-            "current_series_labels": current_series_labels,
-            "missing_from_historical_headers": missing_from_historical,
-            "missing_normalized_counterparties": missing_normalized_counterparties,
-            "missing_from_data": missing_from_data,
-            "segments_in_data": sorted(parsed_segments, key=str.casefold),
-            "missing_expected_segments": missing_expected_segments,
-            "canonical_key_by_series": canonical_key_by_series,
-        }
-    result = {
-        "by_sheet": by_sheet,
-        "gap_count": gap_count,
-        "warnings": warnings,
-        "missing_series": missing_series,
-        "missing_segments": missing_segments,
-    }
-    if exceptions:
-        result["exceptions"] = list(exceptions)
-    return result
-
-
-def _validate_reconciliation_parsed_data_by_sheet(
-    *, parsed_data_by_sheet: Mapping[str, Mapping[str, Any]]
-) -> None:
-    for raw_sheet_name, raw_sections in parsed_data_by_sheet.items():
-        sheet_name = str(raw_sheet_name)
-        if not isinstance(raw_sections, Mapping):
-            raise ParsedDataInvalidShapeError(
-                f"Invalid parsed_data shape for sheet {sheet_name!r}: expected a mapping/object"
-            )
-
-        missing_sections = [
-            section for section in ("totals", "futures") if section not in raw_sections
-        ]
-        if missing_sections:
-            raise ParsedDataMissingKeyError(
-                f"Missing required parsed_data section(s) for sheet {sheet_name!r}: "
-                f"{', '.join(missing_sections)}"
-            )
-
-        for section_name in ("totals", "futures"):
-            section_value = raw_sections[section_name]
-            if not _is_supported_table_shape(section_value):
-                raise ParsedDataInvalidShapeError(
-                    f"Invalid parsed_data shape for sheet {sheet_name!r} section "
-                    f"{section_name!r}: expected list of mappings or tabular object with "
-                    "to_dict(orient='records')/to_records()"
-                )
-
-
-def _is_supported_table_shape(table: Any) -> bool:
-    if isinstance(table, list):
-        return all(isinstance(record, Mapping) for record in table)
-    return hasattr(table, "to_dict") or hasattr(table, "to_records")
-
-
-def _expected_segments_for_variant(
-    *,
-    variant: str | None,
-    expected_segments_by_variant: Mapping[str, tuple[str, ...] | list[str] | set[str]] | None,
-) -> set[str]:
-    if not variant or not expected_segments_by_variant:
-        return set()
-
-    for key, values in expected_segments_by_variant.items():
-        if str(key).strip().casefold() != variant.strip().casefold():
-            continue
-        return {str(value).strip() for value in values if str(value).strip()}
-    return set()
-
-
-def _extract_segments_from_records(parsed_sections: Mapping[str, Any]) -> set[str]:
-    segments: set[str] = set()
-    for table in parsed_sections.values():
-        for record in _records(table):
-            raw_segment = record.get("segment", record.get("Segment", ""))
-            label = str(raw_segment).strip()
-            if label:
-                segments.add(label)
-    return segments
-
-
-def _counterparty_resolution_maps_from_records(
-    totals_records: list[dict[str, Any]],
-) -> tuple[dict[str, set[str]], dict[str, str]]:
-    normalized_to_raw: dict[str, set[str]] = {}
-    sources_by_raw_name: dict[str, str] = {}
-    for record in totals_records:
-        raw_name = str(record.get("counterparty", "")).strip()
-        if not raw_name:
-            continue
-        resolution = normalize_counterparty_with_source(raw_name)
-        normalized_to_raw.setdefault(resolution.canonical_name, set()).add(raw_name)
-        sources_by_raw_name[raw_name] = resolution.source
-    return normalized_to_raw, sources_by_raw_name
-
-
-def _normalized_counterparties_from_records(
-    totals_records: list[dict[str, Any]],
-) -> dict[str, set[str]]:
-    normalized_to_raw, _ = _counterparty_resolution_maps_from_records(totals_records)
-    return normalized_to_raw
-
-
-def _raw_counterparties_by_normalized_from_records(
-    totals_records: list[dict[str, Any]],
-) -> dict[str, set[str]]:
-    normalized_to_raw: dict[str, set[str]] = {}
-    for record in totals_records:
-        raw_value = record.get("counterparty", "")
-        if raw_value is None:
-            continue
-        raw_name = str(raw_value)
-        if not raw_name.strip():
-            continue
-        normalized_name = normalize_counterparty(raw_name)
-        normalized_to_raw.setdefault(normalized_name, set()).add(raw_name)
-    return normalized_to_raw
-
-
-def _normalized_counterparties_from_parsed_data(
-    parsed_sections: Mapping[str, Any],
-) -> dict[str, set[str]]:
-    totals_records = _records(parsed_sections.get("totals", []))
-    return _normalized_counterparties_from_records(totals_records)
-
-
-def _raw_counterparties_by_normalized_from_parsed_data(
-    parsed_sections: Mapping[str, Any],
-) -> dict[str, set[str]]:
-    totals_records = _records(parsed_sections.get("totals", []))
-    return _raw_counterparties_by_normalized_from_records(totals_records)
 
 
 def run_pipeline_with_config(
@@ -3407,6 +3092,7 @@ def _run_reconciliation_checks(
     impacted_rows_count = 0
     first_unmapped_counterparty_error: UnmappedCounterpartyError | None = None
     reconciliation_by_variant: dict[str, dict[str, Any]] = {}
+    parsed_data_by_sheet_by_variant: dict[str, Mapping[str, Mapping[str, Any]]] = {}
     for variant, historical_path in variant_historical_paths.items():
         parsed_sections = parsed_by_variant.get(variant, {})
         if not _has_reconciliation_rows(parsed_sections):
@@ -3416,6 +3102,7 @@ def _run_reconciliation_checks(
             parsed_sections=parsed_sections,
             historical_series_headers_by_sheet=historical_headers_by_sheet,
         )
+        parsed_data_by_sheet_by_variant[variant] = parsed_data_by_sheet
         result = reconcile_series_coverage(
             parsed_data_by_sheet=parsed_data_by_sheet,
             historical_series_headers_by_sheet=historical_headers_by_sheet,
@@ -3463,6 +3150,10 @@ def _run_reconciliation_checks(
                 )
                 impacted_series_count += series_delta
                 impacted_rows_count += rows_delta
+        _augment_missing_series_with_impacted_rows(
+            result=result,
+            parsed_data_by_sheet=parsed_data_by_sheet,
+        )
         for warning in result.get("warnings", []):
             warnings.append(f"Reconciliation ({variant}): {warning}")
 
@@ -3499,6 +3190,7 @@ def _run_reconciliation_checks(
         total_gap_count=total_gap_count,
         impacted_series_count=impacted_series_count,
         impacted_rows_count=impacted_rows_count,
+        parsed_data_by_sheet_by_variant=parsed_data_by_sheet_by_variant,
     )
     if config.reconciliation.fail_policy == "strict":
         if first_unmapped_counterparty_error is not None:
@@ -3916,6 +3608,64 @@ def _count_rows_for_normalized_label(
     return impacted_rows
 
 
+def _augment_missing_series_with_impacted_rows(
+    *,
+    result: dict[str, Any],
+    parsed_data_by_sheet: Mapping[str, Mapping[str, Any]],
+) -> None:
+    """Attach per-entry impacted_rows counts to missing_series for manifest readers.
+
+    Mutates ``result['missing_series']`` in place. Entries with
+    ``error_type == 'unmapped_counterparty'`` get ``impacted_rows`` plus a
+    ``impacted_rows_by_raw`` map keyed by raw counterparty label. Other entries
+    (legacy ``missing_from_historical_headers`` shape) get ``impacted_rows``
+    plus ``impacted_rows_by_label`` keyed by the missing label.
+    """
+    missing_series = result.get("missing_series")
+    if not isinstance(missing_series, list):
+        return
+    for entry in missing_series:
+        if not isinstance(entry, dict):
+            continue
+        sheet_name = str(entry.get("sheet", ""))
+        sheet_parsed = parsed_data_by_sheet.get(sheet_name, {})
+        if str(entry.get("error_type", "")).strip() == "unmapped_counterparty":
+            raw_names = entry.get("raw_counterparties", [])
+            impacted_rows_total = 0
+            impacted_rows_by_raw: dict[str, int] = {}
+            if isinstance(raw_names, list):
+                for raw_name in raw_names:
+                    raw_value = str(raw_name).strip()
+                    if not raw_value:
+                        continue
+                    count = _count_rows_for_normalized_label(
+                        parsed_sections=sheet_parsed,
+                        normalized_label=normalize_counterparty(raw_value),
+                    )
+                    impacted_rows_by_raw[str(raw_name)] = count
+                    impacted_rows_total += count
+            entry["impacted_rows"] = impacted_rows_total
+            entry["impacted_rows_by_raw"] = impacted_rows_by_raw
+            continue
+        labels = entry.get("missing_from_historical_headers", [])
+        if not isinstance(labels, list):
+            continue
+        impacted_rows_total = 0
+        impacted_rows_by_label: dict[str, int] = {}
+        for label in labels:
+            label_value = str(label).strip()
+            if not label_value:
+                continue
+            count = _count_rows_for_normalized_label(
+                parsed_sections=sheet_parsed,
+                normalized_label=normalize_counterparty(label_value),
+            )
+            impacted_rows_by_label[str(label)] = count
+            impacted_rows_total += count
+        entry["impacted_rows"] = impacted_rows_total
+        entry["impacted_rows_by_label"] = impacted_rows_by_label
+
+
 def _record_normalized_label(*, record: Mapping[str, Any], raw_label_key: str) -> str:
     normalized_field = str(record.get("normalized_label", "")).strip()
     if normalized_field:
@@ -4045,6 +3795,7 @@ def _write_needs_mapping_updates(
     total_gap_count: int,
     impacted_series_count: int,
     impacted_rows_count: int,
+    parsed_data_by_sheet_by_variant: Mapping[str, Mapping[str, Mapping[str, Any]]] | None = None,
 ) -> Path:
     timestamp = utc_now_isoformat()
     lines: list[str] = [
@@ -4057,10 +3808,14 @@ def _write_needs_mapping_updates(
         f"impacted_rows_count: {impacted_rows_count}",
         "",
     ]
+    parsed_lookup: Mapping[str, Mapping[str, Mapping[str, Any]]] = (
+        parsed_data_by_sheet_by_variant or {}
+    )
 
     for variant in sorted(reconciliation_by_variant, key=str.casefold):
         payload = reconciliation_by_variant[variant]
         lines.append(f"[variant: {variant}]")
+        parsed_data_by_sheet = parsed_lookup.get(variant, {})
 
         missing_series = payload.get("missing_series", [])
         if isinstance(missing_series, list):
@@ -4068,12 +3823,65 @@ def _write_needs_mapping_updates(
                 if not isinstance(item, Mapping):
                     continue
                 sheet_name = str(item.get("sheet", "unknown"))
+                parsed_sections = parsed_data_by_sheet.get(sheet_name, {})
+
+                if str(item.get("error_type", "")).strip() == "unmapped_counterparty":
+                    raw_names = item.get("raw_counterparties", [])
+                    normalized_names = item.get("normalized_counterparties", [])
+                    canonical_key = (
+                        str(normalized_names[0]).strip()
+                        if isinstance(normalized_names, list) and normalized_names
+                        else ""
+                    )
+                    if isinstance(raw_names, list):
+                        for raw_name in raw_names:
+                            raw_display = str(raw_name)
+                            if not raw_display.strip():
+                                continue
+                            impacted_rows = _count_rows_for_normalized_label(
+                                parsed_sections=parsed_sections,
+                                normalized_label=normalize_counterparty(raw_display),
+                            )
+                            action = _recommended_action_for_unmapped_counterparty(
+                                raw_name=raw_display.strip(),
+                                canonical_key=canonical_key,
+                                variant=variant,
+                                sheet=sheet_name,
+                            )
+                            canonical_field = canonical_key or "<unknown>"
+                            lines.append(
+                                f"- sheet {sheet_name}: unmapped_counterparty "
+                                f'raw_name="{raw_display}" '
+                                f'canonical_key="{canonical_field}" '
+                                f"impacted_rows={impacted_rows} "
+                                f'action="{action}"'
+                            )
+                    continue
+
                 missing_labels = item.get("missing_from_historical_headers", [])
                 if isinstance(missing_labels, list) and missing_labels:
                     lines.append(
                         f"- sheet {sheet_name}: missing_from_historical_headers="
                         f"{', '.join(str(label) for label in missing_labels)}"
                     )
+                    for label in missing_labels:
+                        label_value = str(label).strip()
+                        if not label_value:
+                            continue
+                        impacted_rows = _count_rows_for_normalized_label(
+                            parsed_sections=parsed_sections,
+                            normalized_label=normalize_counterparty(label_value),
+                        )
+                        action = _recommended_action_for_missing_header(
+                            label=label_value,
+                            variant=variant,
+                            sheet=sheet_name,
+                        )
+                        lines.append(
+                            f'  - label "{label_value}" '
+                            f"impacted_rows={impacted_rows} "
+                            f'action="{action}"'
+                        )
 
         missing_segments = payload.get("missing_segments", [])
         if isinstance(missing_segments, list):
@@ -4087,9 +3895,54 @@ def _write_needs_mapping_updates(
                         f"- sheet {sheet_name}: missing_expected_segments="
                         f"{', '.join(str(label) for label in expected_labels)}"
                     )
+                    for label in expected_labels:
+                        label_value = str(label).strip()
+                        if not label_value:
+                            continue
+                        action = _recommended_action_for_missing_segment(
+                            segment=label_value,
+                            variant=variant,
+                            sheet=sheet_name,
+                        )
+                        lines.append(f'  - segment "{label_value}" ' f'action="{action}"')
 
         lines.append("")
 
     output_path = run_dir / "NEEDS_MAPPING_UPDATES.txt"
     output_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     return output_path
+
+
+def _recommended_action_for_unmapped_counterparty(
+    *,
+    raw_name: str,
+    canonical_key: str,
+    variant: str,
+    sheet: str,
+) -> str:
+    if canonical_key:
+        return (
+            f"Add alias '{raw_name}' to the existing config/name_registry.yml entry whose "
+            f"canonical key normalizes to '{canonical_key}', or define a new canonical entry"
+            f" if none applies (variant {variant}, sheet {sheet})."
+        )
+    return (
+        f"Add a canonical entry for raw counterparty '{raw_name}' to "
+        f"config/name_registry.yml (variant {variant}, sheet {sheet})."
+    )
+
+
+def _recommended_action_for_missing_header(*, label: str, variant: str, sheet: str) -> str:
+    return (
+        f"Add header '{label}' to the historical workbook for variant {variant}, "
+        f"sheet {sheet}, or update config/name_registry.yml if this label should map "
+        "to an existing header."
+    )
+
+
+def _recommended_action_for_missing_segment(*, segment: str, variant: str, sheet: str) -> str:
+    return (
+        f"Confirm segment '{segment}' is captured for variant {variant}, sheet {sheet}; "
+        "either adjust upstream parsing/inputs or remove the segment from "
+        "ReconciliationConfig.expected_segments_by_variant if it is no longer required."
+    )

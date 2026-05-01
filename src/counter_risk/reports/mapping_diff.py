@@ -111,18 +111,13 @@ def _iter_input_names(input_sources: Mapping[str, Any]) -> Iterable[str]:
         yield from _iter_string_values(payload)
 
 
-def generate_mapping_diff_report(
+def collect_mapping_diff_findings(
     registry_path: str | Path,
     input_sources: Mapping[str, Any],
-    *,
-    output_format: str = "text",
-) -> str:
-    """Generate a deterministic mapping diff report."""
+) -> dict[str, Any]:
+    """Collect unmapped and fallback-mapped raw names using mapping-diff scan semantics."""
 
-    if output_format != "text":
-        raise ValueError(f"Unsupported output format: {output_format}")
-
-    # Load once so missing/unreadable/invalid registry is treated as fatal for report generation.
+    # Load once so missing/unreadable/invalid registry is treated as fatal for comparison.
     load_name_registry(registry_path)
 
     unmapped_names: dict[str, None] = {}
@@ -136,12 +131,35 @@ def generate_mapping_diff_report(
         if result.source == "unmapped":
             unmapped_names.setdefault(raw_name, None)
 
+    return {
+        "unmapped_raw_names": _sorted_raw_names(unmapped_names),
+        "fallback_mapped": {
+            raw_name: fallback_mapped[raw_name] for raw_name in _sorted_raw_names(fallback_mapped)
+        },
+    }
+
+
+def generate_mapping_diff_report(
+    registry_path: str | Path,
+    input_sources: Mapping[str, Any],
+    *,
+    output_format: str = "text",
+) -> str:
+    """Generate a deterministic mapping diff report."""
+
+    if output_format != "text":
+        raise ValueError(f"Unsupported output format: {output_format}")
+
+    findings = collect_mapping_diff_findings(registry_path, input_sources)
+    unmapped_names = findings["unmapped_raw_names"]
+    fallback_mapped = findings["fallback_mapped"]
+
     lines: list[str] = ["UNMAPPED"]
-    lines.extend(_sorted_raw_names(unmapped_names))
+    lines.extend(unmapped_names)
     lines.append("")
 
     lines.append("FALLBACK_MAPPED")
-    for raw_name in _sorted_raw_names(fallback_mapped):
+    for raw_name in fallback_mapped:
         lines.append(f"{raw_name} -> {fallback_mapped[raw_name]}")
     lines.append("")
 

@@ -14,6 +14,7 @@ _SEVERITY_BY_CODE: dict[str, Severity] = {
     "MISSING_OPTIONAL_INPUTS": "warn",
     "UNMATCHED_MAPPINGS": "fail",
     "RECONCILIATION_GAPS": "fail",
+    "RECONCILIATION_GAP_DETAIL": "fail",
     "PPT_GENERATION_FAILED": "fail",
     "PPT_GENERATION_SKIPPED": "warn",
     "LIMIT_BREACHES": "warn",
@@ -27,6 +28,7 @@ _CATEGORY_BY_CODE: dict[str, str] = {
     "MISSING_OPTIONAL_INPUTS": "input",
     "UNMATCHED_MAPPINGS": "mapping",
     "RECONCILIATION_GAPS": "reconciliation",
+    "RECONCILIATION_GAP_DETAIL": "reconciliation",
     "PPT_GENERATION_FAILED": "ppt",
     "PPT_GENERATION_SKIPPED": "ppt",
     "LIMIT_BREACHES": "limits",
@@ -178,6 +180,7 @@ def _collect_validation_findings(
                 message=f"Reconciliation reported {gap_count} gap{'s' if gap_count != 1 else ''}.",
             )
         )
+        findings.extend(_build_reconciliation_gap_detail_findings(reconciliation_results))
 
     normalized_ppt_status = str(ppt_status).strip().lower()
     if normalized_ppt_status == "failed":
@@ -209,6 +212,58 @@ def _collect_validation_findings(
         )
 
     return findings
+
+
+def _build_reconciliation_gap_detail_findings(
+    reconciliation_results: Mapping[str, Any],
+) -> list[dict[str, str]]:
+    by_variant = reconciliation_results.get("by_variant")
+    if not isinstance(by_variant, Mapping):
+        return []
+
+    findings: list[dict[str, str]] = []
+    for variant, variant_result in by_variant.items():
+        if not isinstance(variant_result, Mapping):
+            continue
+        missing_series = variant_result.get("missing_series")
+        if not isinstance(missing_series, Sequence) or isinstance(missing_series, (str, bytes)):
+            continue
+        for entry in missing_series:
+            if not isinstance(entry, Mapping):
+                continue
+            sheet = str(entry.get("sheet", "unknown")).strip() or "unknown"
+            impacted_rows = _safe_int(entry.get("impacted_rows", 0))
+            issue = _reconciliation_issue_summary(entry)
+            findings.append(
+                _make_finding(
+                    category="reconciliation",
+                    code="RECONCILIATION_GAP_DETAIL",
+                    message=(
+                        "Reconciliation gap detail: "
+                        f"variant={variant}, sheet={sheet}, impacted_rows={impacted_rows}, "
+                        f"issue={issue}."
+                    ),
+                )
+            )
+    return findings
+
+
+def _reconciliation_issue_summary(entry: Mapping[str, Any]) -> str:
+    error_type = str(entry.get("error_type", "")).strip()
+    if error_type == "unmapped_counterparty":
+        raw_names = _string_list(entry.get("raw_counterparties", []), max_items=3)
+        if raw_names:
+            return "unmapped_counterparty(" + ", ".join(raw_names) + ")"
+        return "unmapped_counterparty"
+
+    missing_headers = _string_list(entry.get("missing_from_historical_headers", []), max_items=3)
+    if missing_headers:
+        return "missing_from_historical_headers(" + ", ".join(missing_headers) + ")"
+
+    source_context = str(entry.get("data_source_context", "")).strip()
+    if source_context:
+        return source_context
+    return "reconciliation_gap"
 
 
 def _dedupe_findings(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:

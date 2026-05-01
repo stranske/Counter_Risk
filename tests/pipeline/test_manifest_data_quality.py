@@ -141,6 +141,53 @@ def test_manifest_build_collects_data_quality_from_validation_context(tmp_path: 
     assert data_quality["counts"]["by_category"]["limits"]["warn"] >= 1
 
 
+def test_manifest_build_includes_reconciliation_gap_detail_findings(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    artifact = run_dir / "output.csv"
+    artifact.write_text("ok\n", encoding="utf-8")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(artifact.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[],
+        reconciliation_results={
+            "status": "failed",
+            "fail_policy": "warn",
+            "total_gap_count": 1,
+            "by_variant": {
+                "all_programs": {
+                    "missing_series": [
+                        {
+                            "sheet": "Total",
+                            "missing_from_historical_headers": ["Counterparty NEW"],
+                            "impacted_rows": 2,
+                        }
+                    ]
+                }
+            },
+        },
+    )
+
+    detailed_finding = next(
+        finding
+        for finding in manifest["data_quality"]["findings"]
+        if finding["code"] == "RECONCILIATION_GAP_DETAIL"
+    )
+    assert detailed_finding["severity"] == "fail"
+    assert "variant=all_programs" in detailed_finding["message"]
+    assert "sheet=Total" in detailed_finding["message"]
+    assert "impacted_rows=2" in detailed_finding["message"]
+
+
 def test_manifest_build_classifies_known_finding_types_by_code(tmp_path: Path) -> None:
     run_dir = tmp_path / "runs" / "2026-02-13"
     run_dir.mkdir(parents=True)
