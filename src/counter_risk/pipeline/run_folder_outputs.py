@@ -40,9 +40,9 @@ def build_run_folder_readme_content(
         f"Master PPT: {master}",
         f"Distribution PPT: {distribution}",
         "",
-        "1. Open the Master PPT and verify linked chart values are refreshed for the as-of date.",
+        "1. Use the Master PPT only for maintainer edits and final checks inside this run folder.",
         f"2. Confirm the standalone Distribution PPT is present as '{distribution}'.",
-        "3. Send only the Distribution PPT to recipients and retain the Master PPT in the run folder.",
+        "3. Send only the Distribution PPT to recipients; keep the Master PPT maintainer-only.",
     ]
 
     if warning_banner is not None:

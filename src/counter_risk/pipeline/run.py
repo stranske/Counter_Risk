@@ -108,7 +108,9 @@ def reconcile_series_coverage(
 ) -> dict[str, Any]:
     reconciliation_globals = _reconcile_series_coverage.__globals__
     original = reconciliation_globals.get("normalize_counterparty_with_source")
-    reconciliation_globals["normalize_counterparty_with_source"] = normalize_counterparty_with_source
+    reconciliation_globals["normalize_counterparty_with_source"] = (
+        normalize_counterparty_with_source
+    )
     try:
         return _reconcile_series_coverage(
             parsed_data_by_sheet=parsed_data_by_sheet,
@@ -119,6 +121,7 @@ def reconcile_series_coverage(
         )
     finally:
         reconciliation_globals["normalize_counterparty_with_source"] = original
+
 
 if TYPE_CHECKING:
     from counter_risk.outputs.ppt_link_refresh import PptLinkRefreshOutputGenerator
@@ -2064,6 +2067,11 @@ def _write_outputs(
             "Skipping distribution PPT derivation because Master PPT refresh failed: %s",
             target_master_ppt,
         )
+    elif not config.enable_distribution_output:
+        LOGGER.info(
+            "Skipping distribution PPT derivation because Distribution output is disabled: %s",
+            target_distribution_ppt,
+        )
     else:
         chart_replaced_ppt = run_dir / f"{target_master_ppt.stem}_chart_replaced.pptx"
         chart_replacement_applied = _apply_chart_replacement(
@@ -2109,14 +2117,15 @@ def _write_outputs(
         )
         for generator in post_distribution_generators:
             output_paths.extend(generator.generate(context=output_context))
-    static_output_paths = _create_static_distribution(
-        source_pptx=target_master_ppt,
-        run_dir=run_dir,
-        config=config,
-        warnings=warnings,
-    )
-    output_paths.extend(static_output_paths)
-    if refresh_result.status == PptProcessingStatus.SUCCESS:
+    if config.enable_distribution_output:
+        static_output_paths = _create_static_distribution(
+            source_pptx=target_master_ppt,
+            run_dir=run_dir,
+            config=config,
+            warnings=warnings,
+        )
+        output_paths.extend(static_output_paths)
+    if refresh_result.status == PptProcessingStatus.SUCCESS and config.enable_distribution_output:
         warning_banner = _build_limit_warning_banner_for_run_dir(run_dir)
         readme_path = run_dir / "README.txt"
         readme_path.write_text(

@@ -11,7 +11,19 @@ def test_manifest_schema_defines_master_and_distribution_ppt_outputs() -> None:
     assert "master" in ppt_outputs["properties"]
     assert "distribution" in ppt_outputs["properties"]
 
+    assert ppt_outputs["properties"]["master"]["required"] == [
+        "role",
+        "status",
+        "path",
+        "generation_step",
+    ]
     assert ppt_outputs["properties"]["master"]["properties"]["path"]["type"] == "string"
+    assert ppt_outputs["properties"]["master"]["properties"]["status"]["enum"] == [
+        "success",
+        "skipped",
+        "failed",
+    ]
+    assert ppt_outputs["properties"]["master"]["properties"]["generation_step"]["type"] == "string"
     assert ppt_outputs["properties"]["distribution"]["properties"]["path"]["type"] == "string"
 
 

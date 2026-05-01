@@ -13,6 +13,7 @@ from typing import Any
 from counter_risk.config import WorkflowConfig
 from counter_risk.dates import DateResolution
 from counter_risk.pipeline.data_quality import build_data_quality
+from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.warnings import WarningsCollector
 
 __all__ = ["ManifestBuilder", "WarningsCollector"]
@@ -114,6 +115,12 @@ class ManifestBuilder:
             "missing_inputs": resolved_missing_inputs,
             "reconciliation_results": resolved_reconciliation_results,
         }
+        ppt_outputs = self._build_ppt_outputs(
+            output_paths=normalized_output_paths,
+            ppt_status=ppt_status,
+        )
+        if ppt_outputs:
+            manifest["ppt_outputs"] = ppt_outputs
         if concentration_metrics is not None:
             manifest["concentration_metrics"] = concentration_metrics
         if limit_breach_summary is not None:
@@ -145,6 +152,44 @@ class ManifestBuilder:
         if _DATA_QUALITY_SUMMARY_FILENAME in rendered_paths:
             return
         output_paths.append(_DATA_QUALITY_SUMMARY_FILENAME)
+
+    def _build_ppt_outputs(
+        self, *, output_paths: list[Path], ppt_status: str
+    ) -> dict[str, dict[str, str]]:
+        if not self.config.ppt_output_enabled:
+            return {}
+
+        output_path_strings = {path.as_posix() for path in output_paths}
+        output_names = resolve_ppt_output_names(self.as_of_date)
+        master_filename = output_names.master_filename
+        distribution_filename = output_names.distribution_filename
+        ppt_outputs: dict[str, dict[str, str]] = {}
+
+        if master_filename in output_path_strings:
+            ppt_outputs["master"] = {
+                "role": "maintainer_master",
+                "status": "failed" if ppt_status == "failed" else "success",
+                "path": master_filename,
+                "generation_step": "ppt_master",
+            }
+
+        if distribution_filename in output_path_strings:
+            ppt_outputs["distribution"] = {
+                "role": "distribution",
+                "status": "success",
+                "path": distribution_filename,
+                "generation_step": "ppt_distribution",
+            }
+        elif ppt_outputs.get("master", {}).get("status") == "success":
+            ppt_outputs["distribution"] = {
+                "role": "distribution",
+                "status": "skipped",
+                "path": distribution_filename,
+                "generation_step": "ppt_distribution",
+                "skipped_reason": "Distribution output disabled for this run.",
+            }
+
+        return ppt_outputs
 
     def _build_data_quality_summary(self, manifest: Mapping[str, Any]) -> str:
         data_quality = manifest.get("data_quality")
