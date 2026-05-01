@@ -3593,6 +3593,47 @@ def test_run_pipeline_manifest_includes_distribution_static_warning(
     assert manifest["config_snapshot"]["distribution_static"] is True
 
 
+def test_run_pipeline_manifest_includes_pdf_skip_warning_when_com_unavailable(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Full pipeline: export_pdf=True on non-Windows emits manifest warning and still succeeds."""
+    fixtures = Path("tests/fixtures")
+    output_root = tmp_path / "runs"
+
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {output_root}",
+                "export_pdf: true",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Linux")
+
+    run_dir = run_pipeline(config_path)
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    assert (run_dir / "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx").exists()
+    assert (run_dir / "Monthly Counterparty Exposure Report - 2025-12-31.pptx").exists()
+    assert not (run_dir / "Monthly Counterparty Exposure Report - 2025-12-31.pdf").exists()
+    assert (
+        "distribution_pdf requested but PowerPoint COM is unavailable; skipping PDF generation"
+        in manifest["warnings"]
+    )
+
+
 # ---------------------------------------------------------------------------
 # _export_chart_shapes_as_images tests
 # ---------------------------------------------------------------------------
