@@ -104,6 +104,7 @@ class MosersPlugValueStructureMapping:
     section_marker: str
     stop_markers: tuple[str, ...]
     field_mappings: tuple[MosersPlugValueFieldMapping, ...]
+    applicable_variants: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -218,6 +219,7 @@ def get_mosers_plug_values_mapping_requirements() -> MosersPlugValuesMappingRequ
                 section_marker=_CH_TOTALS_MARKER,
                 stop_markers=_CH_TOTALS_STOP_MARKERS,
                 field_mappings=totals_field_mappings,
+                applicable_variants=_PLUG_VALUES_APPLICABLE_VARIANTS,
             ),
             MosersPlugValueStructureMapping(
                 structure_name="cprs_fcm_totals",
@@ -226,6 +228,7 @@ def get_mosers_plug_values_mapping_requirements() -> MosersPlugValuesMappingRequ
                 section_marker=_FCM_TOTALS_MARKER,
                 stop_markers=_FCM_TOTALS_STOP_MARKERS,
                 field_mappings=totals_field_mappings,
+                applicable_variants=("all_programs", "ex_trend"),
             ),
         ),
     )
@@ -244,6 +247,7 @@ def generate_mosers_workbook(raw_nisa_path: str | Path) -> Workbook:
         parser=parse_nisa_all_programs,
         structure=get_mosers_all_programs_output_structure(),
         transformation_scope=get_mosers_all_programs_transformation_scope(),
+        variant="all_programs",
     )
 
 
@@ -255,6 +259,7 @@ def generate_mosers_workbook_ex_trend(raw_nisa_path: str | Path) -> Workbook:
         parser=parse_nisa_ex_trend,
         structure=get_mosers_ex_trend_output_structure(),
         transformation_scope=get_mosers_ex_trend_transformation_scope(),
+        variant="ex_trend",
     )
 
 
@@ -266,6 +271,7 @@ def generate_mosers_workbook_trend(raw_nisa_path: str | Path) -> Workbook:
         parser=parse_nisa_trend,
         structure=get_mosers_trend_output_structure(),
         transformation_scope=get_mosers_trend_transformation_scope(),
+        variant="trend",
     )
 
 
@@ -275,6 +281,7 @@ def _generate_mosers_workbook_from_parser(
     parser: Callable[[str | Path], NisaAllProgramsData],
     structure: MosersAllProgramsOutputStructure | None = None,
     transformation_scope: MosersAllProgramsTransformationScope | None = None,
+    variant: str = "all_programs",
 ) -> Workbook:
     resolved_structure = structure or get_mosers_all_programs_output_structure()
     resolved_transformation_scope = (
@@ -320,13 +327,21 @@ def _generate_mosers_workbook_from_parser(
 
     plug_values_requirements = get_mosers_plug_values_mapping_requirements()
     for structure_mapping in plug_values_requirements.structure_mappings:
-        _write_totals_rows_by_marker(
-            worksheet=workbook[structure_mapping.target_sheet],
-            totals_rows=parsed.totals_rows,
-            section_marker=structure_mapping.section_marker,
-            stop_markers=structure_mapping.stop_markers,
-            field_mappings=structure_mapping.field_mappings,
-        )
+        if variant in structure_mapping.applicable_variants:
+            _write_totals_rows_by_marker(
+                worksheet=workbook[structure_mapping.target_sheet],
+                totals_rows=parsed.totals_rows,
+                section_marker=structure_mapping.section_marker,
+                stop_markers=structure_mapping.stop_markers,
+                field_mappings=structure_mapping.field_mappings,
+            )
+        else:
+            _clear_totals_rows_by_marker(
+                worksheet=workbook[structure_mapping.target_sheet],
+                section_marker=structure_mapping.section_marker,
+                stop_markers=structure_mapping.stop_markers,
+                field_mappings=structure_mapping.field_mappings,
+            )
 
     return workbook
 
@@ -394,6 +409,29 @@ def _write_totals_rows_by_marker(
                 field_mappings=field_mappings,
             )
             continue
+        _clear_totals_row_values(
+            worksheet=worksheet, row_number=row_number, field_mappings=field_mappings
+        )
+
+
+def _clear_totals_rows_by_marker(
+    *,
+    worksheet: Worksheet,
+    section_marker: str,
+    stop_markers: tuple[str, ...],
+    field_mappings: tuple[MosersPlugValueFieldMapping, ...],
+) -> None:
+    section_bounds = _resolve_section_bounds(
+        worksheet=worksheet,
+        section_marker=section_marker,
+        stop_markers=stop_markers,
+    )
+    if section_bounds is None:
+        raise ValueError(
+            f"Unable to resolve section marker {section_marker!r} in sheet {worksheet.title!r}."
+        )
+    start_row, end_row = section_bounds
+    for row_number in range(start_row, end_row + 1):
         _clear_totals_row_values(
             worksheet=worksheet, row_number=row_number, field_mappings=field_mappings
         )

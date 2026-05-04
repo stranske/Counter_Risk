@@ -38,6 +38,7 @@ def test_plug_values_mapping_requirements_define_supported_mosers_structures() -
             mapping.source_rows_name,
             mapping.section_marker,
             mapping.stop_markers,
+            mapping.applicable_variants,
         )
         for mapping in requirements.structure_mappings
     ) == (
@@ -47,6 +48,7 @@ def test_plug_values_mapping_requirements_define_supported_mosers_structures() -
             "totals_rows",
             "Total by Counterparty/Clearing House",
             ("Total Current Exposure", "MOSERS Program", "Notional Breakdown"),
+            ("all_programs", "ex_trend", "trend"),
         ),
         (
             "cprs_fcm_totals",
@@ -54,6 +56,7 @@ def test_plug_values_mapping_requirements_define_supported_mosers_structures() -
             "totals_rows",
             "Total by Counterparty/ FCM",
             ("FUTURES DETAIL",),
+            ("all_programs", "ex_trend"),
         ),
     )
     assert tuple(
@@ -287,11 +290,28 @@ def test_generate_mosers_workbook_variants_apply_plug_values_consistently(
     workbook = generator(fixture_path)
     requirements = get_mosers_plug_values_mapping_requirements()
     first_total = parsed.totals_rows[0]
+    variant = "all_programs"
+    if "Ex Trend" in fixture_path.name:
+        variant = "ex_trend"
+    elif "Trend" in fixture_path.name:
+        variant = "trend"
     try:
         for structure in requirements.structure_mappings:
             worksheet = workbook[structure.target_sheet]
             marker_row = _find_marker_row(worksheet, structure.section_marker)
             first_data_row = marker_row + 1
+            if variant not in structure.applicable_variants:
+                assert _read_totals_row(worksheet, first_data_row) == (
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+                continue
             assert _read_totals_row(worksheet, first_data_row) == (
                 first_total.counterparty,
                 first_total.tips,
