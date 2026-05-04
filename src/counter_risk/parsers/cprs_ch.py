@@ -304,7 +304,9 @@ def _validate_expected_segments(
 
 
 def _expected_segments_for_variant(*, file_path: Path, sheet_name: str) -> set[str]:
-    title = f"{file_path.name} {sheet_name}".lower()
+    title = _normalize_variant_text(f"{file_path.name} {sheet_name}")
+    if "mosers input" in title or "generated mosers" in title:
+        return {"swaps", "repo"}
     if "trend" in title and "ex trend" not in title:
         return {"futures"}
     if "ex trend" in title:
@@ -312,6 +314,10 @@ def _expected_segments_for_variant(*, file_path: Path, sheet_name: str) -> set[s
     if "all" in title:
         return {"swaps", "repo", "futures_cdx"}
     return {"swaps", "repo"}
+
+
+def _normalize_variant_text(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
 
 
 def _find_header_row(rows: dict[int, dict[int, str | None]]) -> int | None:

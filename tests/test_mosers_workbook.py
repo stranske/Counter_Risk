@@ -15,6 +15,8 @@ from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook_trend,
     get_mosers_plug_values_mapping_requirements,
 )
+from counter_risk.parsers.cprs_ch import parse_cprs_ch
+from counter_risk.parsers.cprs_fcm import parse_fcm_totals, parse_futures_detail
 from counter_risk.parsers.nisa import (
     NisaAllProgramsData,
     NisaChRow,
@@ -346,6 +348,69 @@ def test_generate_mosers_workbook_trend_populates_values_from_trend_fixture() ->
         )
     finally:
         workbook.close()
+
+
+@pytest.mark.parametrize(
+    (
+        "raw_input_path",
+        "output_filename",
+        "generator",
+        "expected_ch_segments",
+        "expect_fcm_totals",
+        "expect_futures_detail",
+    ),
+    [
+        (
+            Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx"),
+            "all_programs-mosers-input.xlsx",
+            generate_mosers_workbook,
+            {"swaps", "repo", "futures_cdx"},
+            True,
+            True,
+        ),
+        (
+            Path("tests/fixtures/NISA Monthly Ex Trend - Raw.xlsx"),
+            "ex_trend-mosers-input.xlsx",
+            generate_mosers_workbook_ex_trend,
+            {"swaps", "repo"},
+            True,
+            False,
+        ),
+        (
+            Path("tests/fixtures/NISA Monthly Trend - Raw.xlsx"),
+            "trend-mosers-input.xlsx",
+            generate_mosers_workbook_trend,
+            {"swaps", "repo"},
+            False,
+            True,
+        ),
+    ],
+)
+def test_generated_pipeline_named_workbooks_are_accepted_by_current_parsers(
+    tmp_path: Path,
+    raw_input_path: Path,
+    output_filename: str,
+    generator: Any,
+    expected_ch_segments: set[str],
+    expect_fcm_totals: bool,
+    expect_futures_detail: bool,
+) -> None:
+    pytest.importorskip("pandas")
+    output_path = tmp_path / output_filename
+
+    workbook = generator(raw_input_path)
+    try:
+        workbook.save(output_path)
+    finally:
+        workbook.close()
+
+    ch_rows = parse_cprs_ch(output_path)
+    fcm_totals = parse_fcm_totals(output_path)
+    futures_detail = parse_futures_detail(output_path)
+
+    assert expected_ch_segments.issubset(set(ch_rows["Segment"]))
+    assert fcm_totals.empty is (not expect_fcm_totals)
+    assert futures_detail.empty is (not expect_futures_detail)
 
 
 def test_resolve_cprs_ch_metric_row_bounds_tracks_template_row_shifts() -> None:

@@ -221,12 +221,16 @@ def _locate_futures_detail_section(
 
 
 def _variant_for_path(*, file_path: Path, sheet_name: str) -> str:
-    title = f"{file_path.name} {sheet_name}".lower()
+    title = _normalize_variant_text(f"{file_path.name} {sheet_name}")
     if "ex trend" in title:
         return "ex_trend"
     if "trend" in title:
         return "trend"
     return "all_programs"
+
+
+def _normalize_variant_text(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
 
 
 def _read_fcm_sheet(path: Path) -> tuple[str, dict[int, dict[int, str | None]]]:
