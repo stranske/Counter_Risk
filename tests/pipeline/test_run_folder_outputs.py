@@ -27,6 +27,9 @@ def test_build_run_folder_readme_content_includes_expected_filenames_and_steps()
     assert "\n1. " in content
     assert "\n2. " in content
     assert "\n3. " in content
+    assert "Maintainer-only file (do not send):" in content
+    assert "Recipient file (safe to send):" in content
+    assert "Do not send the Master PPT to recipients." in content
 
 
 def test_build_run_folder_readme_content_has_numbered_steps_in_order() -> None:
@@ -68,3 +71,19 @@ def test_build_run_folder_readme_content_includes_limit_warning_banner_when_prov
     assert "WARNING: Limit Breaches Detected (2)" in content
     assert "Warning banner: 2 configured limit breaches were detected." in content
     assert "Review breach details: limit_breaches.csv" in content
+
+
+def test_build_run_folder_readme_content_prefers_distribution_pdf_when_available() -> None:
+    output_names = resolve_ppt_output_names(date(2026, 1, 31))
+    distribution_pdf = Path(output_names.distribution_filename.replace(".pptx", ".pdf"))
+    content = build_run_folder_readme_content(
+        date(2026, 1, 31),
+        RunFolderReadmePptOutputs(
+            master=Path(output_names.master_filename),
+            distribution=Path(output_names.distribution_filename),
+            distribution_pdf=distribution_pdf,
+        ),
+    )
+
+    assert f"Recipient PDF (preferred when available): {distribution_pdf}" in content
+    assert f"Send this file to recipients: {distribution_pdf}." in content
