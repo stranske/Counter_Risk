@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from openpyxl import load_workbook
+
+import counter_risk.mosers.workbook_generation as workbook_generation
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook,
     get_mosers_all_programs_output_structure,
@@ -69,5 +72,35 @@ def test_all_programs_fixture_generates_using_documented_layout_contract() -> No
             0.0 if total_notional == 0 else parsed.totals_rows[0].notional / total_notional
         )
         assert worksheet[first_alloc_cell].value == expected_allocation
+    finally:
+        workbook.close()
+
+
+def test_all_programs_metric_columns_follow_header_aliases_when_shifted(monkeypatch) -> None:
+    fixture_path = Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx")
+    parsed = parse_nisa_all_programs(fixture_path)
+
+    template = load_workbook("src/counter_risk/mosers/mosers_template.xlsx")
+    worksheet = template["CPRS - CH"]
+
+    worksheet["N5"] = None
+    worksheet["N6"] = None
+    worksheet["D5"] = "Annualized Volatility"
+    worksheet["E5"] = "%"
+
+    monkeypatch.setattr(workbook_generation, "load_mosers_template_workbook", lambda: template)
+
+    workbook = generate_mosers_workbook(fixture_path)
+    try:
+        worksheet = workbook["CPRS - CH"]
+
+        expected_vol = parsed.totals_rows[0].annualized_volatility
+        total_notional = sum(row.notional for row in parsed.totals_rows)
+        expected_alloc = (
+            0.0 if total_notional == 0 else parsed.totals_rows[0].notional / total_notional
+        )
+
+        assert worksheet["D10"].value == expected_vol
+        assert worksheet["E10"].value == expected_alloc
     finally:
         workbook.close()

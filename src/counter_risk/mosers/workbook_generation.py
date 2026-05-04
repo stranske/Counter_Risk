@@ -10,6 +10,7 @@ from typing import Any
 from counter_risk.mosers.template import (
     find_row_containing_text,
     load_mosers_template_workbook,
+    normalize_template_text,
     resolve_marker_bound_range,
 )
 from counter_risk.parsers.nisa import (
@@ -44,6 +45,10 @@ _CH_METRIC_REQUIRED_HEADERS: tuple[tuple[str, ...], ...] = (
     ("Annualized Volatility",),
     ("Allocation %", "%"),
 )
+_CH_METRIC_SOURCE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
+    "annualized_volatility": ("Annualized Volatility",),
+    "allocation_percentage": ("Allocation %", "%"),
+}
 _CH_TOTALS_MARKER = "Total by Counterparty/Clearing House"
 _CH_TOTALS_STOP_MARKERS = ("Total Current Exposure", "MOSERS Program", "Notional Breakdown")
 _FCM_TOTALS_MARKER = "Total by Counterparty/ FCM"
@@ -290,10 +295,24 @@ def _generate_mosers_workbook_from_parser(
     worksheet[resolved_structure.program_name_cell] = first_program
 
     metric_start_row, metric_end_row = _resolve_cprs_ch_metric_row_bounds(worksheet)
+    resolved_metric_columns = _resolve_metric_target_columns(
+        worksheet=worksheet,
+        metrics=tuple(
+            transform.source_metric
+            for transform in resolved_transformation_scope.cprs_ch_transforms
+        ),
+        fallback_columns={
+            transform.source_metric: transform.target_column
+            for transform in resolved_transformation_scope.cprs_ch_transforms
+        },
+    )
     for transform in resolved_transformation_scope.cprs_ch_transforms:
+        target_column = resolved_metric_columns.get(
+            transform.source_metric, transform.target_column
+        )
         _write_vertical_values(
             worksheet=worksheet,
-            column_letter=transform.target_column,
+            column_letter=target_column,
             start_row=metric_start_row,
             end_row=metric_end_row,
             values=_build_totals_metric_values(parsed.totals_rows, transform.source_metric),
@@ -481,3 +500,37 @@ def _validate_metric_headers_present(worksheet: Worksheet) -> None:
             "Unable to locate expected CPRS-CH metric header "
             f"({joined_aliases}) in sheet {worksheet.title!r}."
         )
+
+
+def _resolve_metric_target_columns(
+    *,
+    worksheet: Worksheet,
+    metrics: tuple[str, ...],
+    fallback_columns: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """Resolve metric write columns by matching configured header aliases."""
+
+    from openpyxl.utils.cell import get_column_letter
+    from openpyxl.utils.cell import column_index_from_string
+
+    resolved: dict[str, str] = {}
+    fallback_indexes = {
+        metric: column_index_from_string(column)
+        for metric, column in (fallback_columns or {}).items()
+    }
+    for metric in metrics:
+        for header_alias in _CH_METRIC_SOURCE_HEADER_ALIASES.get(metric, ()):
+            row_number = _find_marker_row(worksheet=worksheet, marker_text=header_alias)
+            if row_number is None:
+                continue
+            for column_number in range(1, int(worksheet.max_column) + 1):
+                value = worksheet.cell(row=row_number, column=column_number).value
+                if normalize_template_text(value) == normalize_template_text(header_alias):
+                    fallback_index = fallback_indexes.get(metric)
+                    if fallback_index is not None and abs(column_number - fallback_index) > 2:
+                        continue
+                    resolved[metric] = get_column_letter(column_number)
+                    break
+            if metric in resolved:
+                break
+    return resolved
