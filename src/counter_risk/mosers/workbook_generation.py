@@ -548,8 +548,7 @@ def _resolve_metric_target_columns(
 ) -> dict[str, str]:
     """Resolve metric write columns by matching configured header aliases."""
 
-    from openpyxl.utils.cell import get_column_letter
-    from openpyxl.utils.cell import column_index_from_string
+    from openpyxl.utils.cell import column_index_from_string, get_column_letter
 
     resolved: dict[str, str] = {}
     fallback_indexes = {
