@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from openpyxl import load_workbook
+import pytest
+
+try:
+    from openpyxl import load_workbook
+except ModuleNotFoundError:
+    pytest.skip("openpyxl is not installed", allow_module_level=True)
 
 import counter_risk.mosers.workbook_generation as workbook_generation
 from counter_risk.mosers.workbook_generation import (

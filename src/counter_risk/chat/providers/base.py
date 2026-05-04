@@ -117,8 +117,6 @@ class LangChainProviderClient:
                 missing_dependencies = missing_provider_dependencies(provider_name)
                 if missing_dependencies:
                     missing_dependency_names.update(missing_dependencies)
-                else:
-                    runtime_ready_provider_seen = True
                 continue
             runtime_ready_provider_seen = True
             try:
