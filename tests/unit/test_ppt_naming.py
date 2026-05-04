@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
 from counter_risk.pipeline.ppt_naming import (
     distribution_ppt_filename,
@@ -39,3 +39,14 @@ def test_resolve_ppt_output_names_is_deterministic_for_same_date() -> None:
     second = resolve_ppt_output_names(as_of_date)
 
     assert first == second
+
+
+def test_ppt_filenames_normalize_datetime_inputs_to_date_only_suffix() -> None:
+    as_of_datetime = datetime(2026, 1, 31, 14, 22, 7)
+
+    names = resolve_ppt_output_names(as_of_datetime)
+
+    assert (
+        names.master_filename == "Monthly Counterparty Exposure Report (Master) - 2026-01-31.pptx"
+    )
+    assert names.distribution_filename == "Monthly Counterparty Exposure Report - 2026-01-31.pptx"

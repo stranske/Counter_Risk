@@ -108,6 +108,7 @@ class WorkflowConfig(BaseModel):
     input_discovery: InputDiscoveryConfig = Field(default_factory=InputDiscoveryConfig)
     reconciliation: ReconciliationConfig = Field(default_factory=ReconciliationConfig)
     distribution_static: bool = False
+    enable_distribution_output: bool = True
     export_pdf: bool = False
     enable_ppt_output: bool = True
     include_concentration_table_in_ppt: bool = False

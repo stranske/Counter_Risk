@@ -108,7 +108,9 @@ def reconcile_series_coverage(
 ) -> dict[str, Any]:
     reconciliation_globals = _reconcile_series_coverage.__globals__
     original = reconciliation_globals.get("normalize_counterparty_with_source")
-    reconciliation_globals["normalize_counterparty_with_source"] = normalize_counterparty_with_source
+    reconciliation_globals["normalize_counterparty_with_source"] = (
+        normalize_counterparty_with_source
+    )
     try:
         return _reconcile_series_coverage(
             parsed_data_by_sheet=parsed_data_by_sheet,
@@ -119,6 +121,7 @@ def reconcile_series_coverage(
         )
     finally:
         reconciliation_globals["normalize_counterparty_with_source"] = original
+
 
 if TYPE_CHECKING:
     from counter_risk.outputs.ppt_link_refresh import PptLinkRefreshOutputGenerator
@@ -218,6 +221,7 @@ class PptProcessingResult:
 
     status: PptProcessingStatus
     error_detail: str | None = None
+    ppt_outputs: dict[str, dict[str, str]] | None = None
 
 
 @dataclass(frozen=True)
@@ -511,6 +515,7 @@ def run_pipeline(
             missing_inputs=missing_inputs,
             reconciliation_results=reconciliation_outcome.get("reconciliation_results"),
             ppt_status=ppt_result.status.value,
+            ppt_outputs=ppt_result.ppt_outputs,
             concentration_metrics=(
                 concentration_metrics_records if concentration_metrics_records else None
             ),
@@ -2044,6 +2049,14 @@ def _write_outputs(
         master=target_master_ppt.relative_to(run_dir),
         distribution=target_distribution_ppt.relative_to(run_dir),
     )
+    manifest_ppt_outputs: dict[str, dict[str, str]] = {
+        "master": {
+            "role": "maintainer_master",
+            "status": "success",
+            "path": target_master_ppt.relative_to(run_dir).as_posix(),
+            "generation_step": "ppt_master",
+        }
+    }
 
     refresh_generators = registry.load(
         output_generators=config.output_generators,
@@ -2054,28 +2067,65 @@ def _write_outputs(
         ),
     )
     refresh_result = PptProcessingResult(status=PptProcessingStatus.SKIPPED)
+    ran_master_refresh = False
     for generator in refresh_generators:
         generator.generate(context=output_context)
         if generator.name == "ppt_link_refresh":
             refresh_result = _to_ppt_processing_result(getattr(generator, "last_result", None))
+            ran_master_refresh = True
+
+    if not ran_master_refresh:
+        try:
+            refresh_result = _refresh_ppt_links(target_master_ppt)
+        except Exception as exc:
+            refresh_result = PptProcessingResult(
+                status=PptProcessingStatus.FAILED,
+                error_detail=str(exc),
+            )
+            warnings.append(
+                "PPT links refresh failed; COM refresh encountered an error"
+                if not refresh_result.error_detail
+                else f"PPT links refresh failed; {refresh_result.error_detail}"
+            )
+            LOGGER.error("Master PPT link refresh failed: %s", exc)
 
     if refresh_result.status == PptProcessingStatus.FAILED:
+        manifest_ppt_outputs["master"]["status"] = "failed"
         LOGGER.warning(
             "Skipping distribution PPT derivation because Master PPT refresh failed: %s",
             target_master_ppt,
         )
+    elif not config.enable_distribution_output:
+        if refresh_result.status == PptProcessingStatus.SKIPPED:
+            manifest_ppt_outputs["master"]["status"] = "skipped"
+            if refresh_result.error_detail:
+                manifest_ppt_outputs["master"]["skipped_reason"] = refresh_result.error_detail
+        manifest_ppt_outputs["distribution"] = {
+            "role": "distribution",
+            "status": "skipped",
+            "path": target_distribution_ppt.relative_to(run_dir).as_posix(),
+            "generation_step": "ppt_distribution",
+            "skipped_reason": "Distribution output disabled for this run.",
+        }
+        LOGGER.info(
+            "Skipping distribution PPT derivation because Distribution output is disabled: %s",
+            target_distribution_ppt,
+        )
     else:
+        if refresh_result.status == PptProcessingStatus.SKIPPED:
+            manifest_ppt_outputs["master"]["status"] = "skipped"
+            if refresh_result.error_detail:
+                manifest_ppt_outputs["master"]["skipped_reason"] = refresh_result.error_detail
         chart_replaced_ppt = run_dir / f"{target_master_ppt.stem}_chart_replaced.pptx"
-        chart_replacement_applied = _apply_chart_replacement(
+        _apply_chart_replacement(
             master_pptx_path=target_master_ppt,
             output_path=chart_replaced_ppt,
             run_dir=run_dir,
             static_mode=config.distribution_static,
             warnings=warnings,
         )
-        distribution_source = chart_replaced_ppt if chart_replacement_applied else target_master_ppt
         _derive_distribution_ppt(
-            master_pptx_path=distribution_source,
+            master_pptx_path=target_master_ppt,
             distribution_pptx_path=target_distribution_ppt,
         )
         try:
@@ -2098,6 +2148,12 @@ def _write_outputs(
                     f"external relationships in: {rel_parts}"
                 )
         output_paths.append(target_distribution_ppt)
+        manifest_ppt_outputs["distribution"] = {
+            "role": "distribution",
+            "status": "success",
+            "path": target_distribution_ppt.relative_to(run_dir).as_posix(),
+            "generation_step": "ppt_distribution",
+        }
         post_distribution_generators = registry.load(
             output_generators=config.output_generators,
             stage="ppt_post_distribution",
@@ -2109,14 +2165,22 @@ def _write_outputs(
         )
         for generator in post_distribution_generators:
             output_paths.extend(generator.generate(context=output_context))
-    static_output_paths = _create_static_distribution(
-        source_pptx=target_master_ppt,
-        run_dir=run_dir,
-        config=config,
-        warnings=warnings,
-    )
-    output_paths.extend(static_output_paths)
-    if refresh_result.status == PptProcessingStatus.SUCCESS:
+    if config.enable_distribution_output:
+        static_output_paths = _create_static_distribution(
+            source_pptx=target_master_ppt,
+            run_dir=run_dir,
+            config=config,
+            warnings=warnings,
+        )
+        output_paths.extend(static_output_paths)
+    if refresh_result.status == PptProcessingStatus.SUCCESS and config.enable_distribution_output:
+        distribution_pdf_path = run_dir / f"{target_distribution_ppt.stem}.pdf"
+        if distribution_pdf_path.exists():
+            readme_ppt_outputs = RunFolderReadmePptOutputs(
+                master=readme_ppt_outputs.master,
+                distribution=readme_ppt_outputs.distribution,
+                distribution_pdf=distribution_pdf_path.relative_to(run_dir),
+            )
         warning_banner = _build_limit_warning_banner_for_run_dir(run_dir)
         readme_path = run_dir / "README.txt"
         readme_path.write_text(
@@ -2130,7 +2194,11 @@ def _write_outputs(
         output_paths.append(readme_path)
 
     LOGGER.info("write_outputs_complete output_count=%s", len(output_paths))
-    return output_paths, refresh_result
+    return output_paths, PptProcessingResult(
+        status=refresh_result.status,
+        error_detail=refresh_result.error_detail,
+        ppt_outputs=manifest_ppt_outputs,
+    )
 
 
 def _apply_chart_replacement(
