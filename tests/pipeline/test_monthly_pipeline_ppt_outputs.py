@@ -11,6 +11,7 @@ import pytest
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.manifest import ManifestBuilder
+from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import PptStandaloneValidationResult
 
 
@@ -19,7 +20,9 @@ def _write_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
     path.write_bytes(payload)
 
 
-def _build_config(tmp_path: Path, *, enable_ppt_output: bool) -> WorkflowConfig:
+def _build_config(
+    tmp_path: Path, *, enable_ppt_output: bool, enable_distribution_output: bool = True
+) -> WorkflowConfig:
     inputs_dir = tmp_path / "inputs"
     files = {
         "all_programs": inputs_dir / "all_programs.xlsx",
@@ -43,6 +46,7 @@ def _build_config(tmp_path: Path, *, enable_ppt_output: bool) -> WorkflowConfig:
         output_root=tmp_path / "ignored-output-root",
         enable_screenshot_replacement=False,
         enable_ppt_output=enable_ppt_output,
+        enable_distribution_output=enable_distribution_output,
     )
 
 
@@ -85,7 +89,7 @@ def test_ppt_enabled_names_produce_exactly_two_expected_pptx_files(
         "_refresh_ppt_links",
         lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
     )
-    run_module._write_outputs(
+    output_paths, ppt_result = run_module._write_outputs(
         run_dir=run_dir,
         config=config,
         as_of_date=date(2025, 12, 31),
@@ -96,6 +100,81 @@ def test_ppt_enabled_names_produce_exactly_two_expected_pptx_files(
         "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx",
         "Monthly Counterparty Exposure Report - 2025-12-31.pptx",
     ]
+
+    manifest = ManifestBuilder(
+        config=config,
+        as_of_date=date(2025, 12, 31),
+        run_date=date(2026, 1, 2),
+    ).build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=ppt_result.status.value,
+    )
+    assert manifest["ppt_outputs"] == {
+        "distribution": {
+            "generation_step": "ppt_distribution",
+            "path": "Monthly Counterparty Exposure Report - 2025-12-31.pptx",
+            "role": "distribution",
+            "status": "success",
+        },
+        "master": {
+            "generation_step": "ppt_master",
+            "path": "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx",
+            "role": "maintainer_master",
+            "status": "success",
+        },
+    }
+
+
+def test_ppt_enabled_run_writes_readme_consistent_with_manifest_entries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    as_of_date = date(2025, 12, 31)
+    output_names = resolve_ppt_output_names(as_of_date)
+
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+    )
+
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=as_of_date,
+        warnings=[],
+    )
+
+    readme_path = run_dir / "README.txt"
+    assert readme_path.exists()
+    readme_content = readme_path.read_text(encoding="utf-8")
+    assert output_names.master_filename in readme_content
+    assert output_names.distribution_filename in readme_content
+
+    manifest = ManifestBuilder(
+        config=config,
+        as_of_date=as_of_date,
+        run_date=date(2026, 1, 2),
+    ).build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=ppt_result.status.value,
+    )
+
+    assert "README.txt" in manifest["output_paths"]
+    assert manifest["ppt_outputs"]["master"]["path"] == output_names.master_filename
+    assert manifest["ppt_outputs"]["distribution"]["path"] == output_names.distribution_filename
 
 
 def test_master_refresh_failure_logs_error_and_skips_distribution_derivation(
@@ -191,6 +270,124 @@ def test_ppt_enabled_order_master_generated_before_distribution(
     assert call_order.count("distribution_derivation") == 1
 
 
+def test_distribution_disabled_keeps_master_and_records_skipped_manifest_entry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(
+        tmp_path,
+        enable_ppt_output=True,
+        enable_distribution_output=False,
+    )
+    as_of_date = date(2025, 12, 31)
+    output_names = resolve_ppt_output_names(as_of_date)
+    calls = {"distribution": 0}
+
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+    )
+
+    def _derive_distribution(*args: object, **kwargs: object) -> None:
+        _ = (args, kwargs)
+        calls["distribution"] += 1
+
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", _derive_distribution)
+
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=as_of_date,
+        warnings=[],
+    )
+
+    assert (run_dir / output_names.master_filename).exists()
+    assert not (run_dir / output_names.distribution_filename).exists()
+    assert not (run_dir / "README.txt").exists()
+    assert calls["distribution"] == 0
+    assert all(Path(path).name != output_names.distribution_filename for path in output_paths)
+
+    manifest = ManifestBuilder(
+        config=config,
+        as_of_date=as_of_date,
+        run_date=date(2026, 1, 2),
+    ).build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=ppt_result.status.value,
+    )
+
+    assert manifest["ppt_outputs"]["master"]["status"] == "success"
+    assert manifest["ppt_outputs"]["distribution"] == {
+        "generation_step": "ppt_distribution",
+        "path": output_names.distribution_filename,
+        "role": "distribution",
+        "skipped_reason": "Distribution output disabled for this run.",
+        "status": "skipped",
+    }
+
+
+def test_master_refresh_skipped_records_master_skipped_and_distribution_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    as_of_date = date(2025, 12, 31)
+    output_names = resolve_ppt_output_names(as_of_date)
+
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(
+            status=run_module.PptProcessingStatus.SKIPPED,
+            error_detail="unsupported platform",
+        ),
+    )
+
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir,
+        config=config,
+        as_of_date=as_of_date,
+        warnings=[],
+    )
+
+    manifest = ManifestBuilder(
+        config=config,
+        as_of_date=as_of_date,
+        run_date=date(2026, 1, 2),
+    ).build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=ppt_result.status.value,
+        ppt_outputs=ppt_result.ppt_outputs,
+    )
+
+    assert manifest["ppt_outputs"]["master"] == {
+        "generation_step": "ppt_master",
+        "path": output_names.master_filename,
+        "role": "maintainer_master",
+        "skipped_reason": "unsupported platform",
+        "status": "skipped",
+    }
+    assert manifest["ppt_outputs"]["distribution"] == {
+        "generation_step": "ppt_distribution",
+        "path": output_names.distribution_filename,
+        "role": "distribution",
+        "status": "success",
+    }
+
+
 def test_no_distribution_without_master_when_master_generation_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -231,3 +428,9 @@ def test_no_distribution_without_master_when_master_generation_fails(
     assert all(Path(path).name != distribution_name for path in manifest["output_paths"])
     assert all(Path(path).name != "README.txt" for path in manifest["output_paths"])
     assert "distribution" not in manifest.get("ppt_outputs", {})
+    assert manifest["ppt_outputs"]["master"] == {
+        "generation_step": "ppt_master",
+        "path": "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx",
+        "role": "maintainer_master",
+        "status": "failed",
+    }

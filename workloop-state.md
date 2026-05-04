@@ -1,5 +1,32 @@
 # Counter_Risk Workloop State
 
+## 2026-05-01T14:12Z - opener PR opened for issue #471
+
+- Automation: `pd-workloop-resume` (codex opener lane).
+- Selected lane: https://github.com/stranske/Counter_Risk/issues/471 (`priority:normal`, `repo-review-approved`).
+- Draft PR: https://github.com/stranske/Counter_Risk/pull/523 (`agent:codex`, branch `codex/issue-471-dual-ppt-deliverables`).
+- Branch: `codex/issue-471-dual-ppt-deliverables` from `origin/main` (`1fde16c`).
+- Selection rationale:
+  - ACTION A succeeded; sentinel active slot was closer-owned trip-planner #1057/#1044 verifier state and treated as informational.
+  - Approved queue inputs remain inactive/stale (`approved-issue-queue.json` has `issues=[]`, `feedback_status=stale`; `repo_review_feedback.json` is dated `2026-04-26`).
+  - Required priority discovery found high-priority implementation issues already linked to open PRs (`Travel-Plan-Permission#1000 -> #1008`, `trip-planner#1048 -> #1061`) and skipped the Workflows auth-expiring ops alert.
+  - Opener cap check found 4/5 live opener-owned issue-linked PRs after closer merged trip-planner #1057: `Counter_Risk#521`, `Counter_Risk#522`, `Travel-Plan-Permission#1008`, and `trip-planner#1061`.
+  - Oldest unlinked supported normal-priority issue was Counter_Risk #471.
+- Implementation:
+  - Added `enable_distribution_output` so runs can intentionally produce only the editable Master deck without deriving Distribution artifacts.
+  - Manifest building now emits `ppt_outputs.master` / `ppt_outputs.distribution` entries with role, status, path, generation step, and skipped reason when Distribution is disabled.
+  - Master refresh failure still suppresses Distribution derivation and omits the Distribution manifest entry.
+  - Run-folder README text now states the maintainer-only vs send-to-recipients distinction in operator language.
+  - Manifest schema and focused tests cover successful both-deliverable runs, Distribution-disabled runs, Master-refresh failure, and PPT output schema fields.
+- Validation:
+  - `python -m pytest tests/pipeline/test_monthly_pipeline_ppt_outputs.py tests/pipeline/test_run_manifest_ppt_entries.py tests/pipeline/test_run_folder_readme.py tests/pipeline/test_manifest_schema.py tests/unit/test_ppt_naming.py --no-cov` -> 24 passed.
+  - `python -m pytest tests/test_ppt_status_reporting.py tests/pipeline/test_run_pipeline.py -k 'ppt or PPT or distribution or manifest' --no-cov` -> 19 passed, 81 deselected.
+  - `python -m ruff check src/counter_risk/config.py src/counter_risk/pipeline/run.py src/counter_risk/pipeline/manifest.py src/counter_risk/pipeline/manifest_schema.py src/counter_risk/pipeline/run_folder_outputs.py tests/pipeline/test_monthly_pipeline_ppt_outputs.py tests/pipeline/test_manifest_schema.py` -> pass.
+  - `python -m black --target-version py312 --check src/counter_risk/config.py src/counter_risk/pipeline/run.py src/counter_risk/pipeline/manifest.py src/counter_risk/pipeline/manifest_schema.py src/counter_risk/pipeline/run_folder_outputs.py tests/pipeline/test_monthly_pipeline_ppt_outputs.py tests/pipeline/test_manifest_schema.py` -> pass.
+- Relay: emitted `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=471 active.source_pr=523 active.next_action=wait_for_keepalive`.
+- Cap state post-PR: 5/5 opener-owned issue-linked PRs (`Counter_Risk#521`, `Counter_Risk#522`, `Counter_Risk#523`, `Travel-Plan-Permission#1008`, `trip-planner#1061`). Next opener round will be cap-blocked unless closer drains.
+- Next action: keepalive owns PR #523; opener should move to the next eligible issue only after the cap drops below 5.
+
 ## 2026-05-01T08:05:33Z - opener PR opened for issue #468
 - Automation: `pd-workloop-resume` (codex opener lane).
 - Selected lane: `https://github.com/stranske/Counter_Risk/issues/468` (`priority:normal`, repo-review-approved).

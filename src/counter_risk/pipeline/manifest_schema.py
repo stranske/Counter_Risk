@@ -7,9 +7,13 @@ from typing import Any
 
 _PPT_OUTPUT_ENTRY_SCHEMA: dict[str, Any] = {
     "type": "object",
-    "required": ["path"],
+    "required": ["role", "status", "path", "generation_step"],
     "properties": {
+        "role": {"type": "string", "enum": ["maintainer_master", "distribution"]},
+        "status": {"type": "string", "enum": ["success", "skipped", "failed"]},
         "path": {"type": "string", "minLength": 1},
+        "generation_step": {"type": "string", "minLength": 1},
+        "skipped_reason": {"type": "string", "minLength": 1},
     },
     "additionalProperties": False,
 }
