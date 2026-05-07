@@ -15,6 +15,9 @@ from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook_trend,
     get_mosers_plug_values_mapping_requirements,
 )
+from counter_risk.parsers import cprs_ch as cprs_ch_parser
+from counter_risk.parsers.cprs_ch import parse_cprs_ch
+from counter_risk.parsers.cprs_fcm import parse_fcm_totals, parse_futures_detail
 from counter_risk.parsers.nisa import (
     NisaAllProgramsData,
     NisaChRow,
@@ -36,6 +39,7 @@ def test_plug_values_mapping_requirements_define_supported_mosers_structures() -
             mapping.source_rows_name,
             mapping.section_marker,
             mapping.stop_markers,
+            mapping.applicable_variants,
         )
         for mapping in requirements.structure_mappings
     ) == (
@@ -45,6 +49,7 @@ def test_plug_values_mapping_requirements_define_supported_mosers_structures() -
             "totals_rows",
             "Total by Counterparty/Clearing House",
             ("Total Current Exposure", "MOSERS Program", "Notional Breakdown"),
+            ("all_programs", "ex_trend", "trend"),
         ),
         (
             "cprs_fcm_totals",
@@ -52,6 +57,7 @@ def test_plug_values_mapping_requirements_define_supported_mosers_structures() -
             "totals_rows",
             "Total by Counterparty/ FCM",
             ("FUTURES DETAIL",),
+            ("all_programs", "ex_trend"),
         ),
     )
     assert tuple(
@@ -285,11 +291,28 @@ def test_generate_mosers_workbook_variants_apply_plug_values_consistently(
     workbook = generator(fixture_path)
     requirements = get_mosers_plug_values_mapping_requirements()
     first_total = parsed.totals_rows[0]
+    variant = "all_programs"
+    if "Ex Trend" in fixture_path.name:
+        variant = "ex_trend"
+    elif "Trend" in fixture_path.name:
+        variant = "trend"
     try:
         for structure in requirements.structure_mappings:
             worksheet = workbook[structure.target_sheet]
             marker_row = _find_marker_row(worksheet, structure.section_marker)
             first_data_row = marker_row + 1
+            if variant not in structure.applicable_variants:
+                assert _read_totals_row(worksheet, first_data_row) == (
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+                continue
             assert _read_totals_row(worksheet, first_data_row) == (
                 first_total.counterparty,
                 first_total.tips,
@@ -346,6 +369,80 @@ def test_generate_mosers_workbook_trend_populates_values_from_trend_fixture() ->
         )
     finally:
         workbook.close()
+
+
+@pytest.mark.parametrize(
+    (
+        "raw_input_path",
+        "output_filename",
+        "generator",
+        "expected_ch_segments",
+        "expect_fcm_totals",
+        "expect_futures_detail",
+    ),
+    [
+        (
+            Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx"),
+            "all_programs-mosers-input.xlsx",
+            generate_mosers_workbook,
+            {"swaps", "repo", "futures_cdx"},
+            True,
+            True,
+        ),
+        (
+            Path("tests/fixtures/NISA Monthly Ex Trend - Raw.xlsx"),
+            "ex_trend-mosers-input.xlsx",
+            generate_mosers_workbook_ex_trend,
+            {"swaps", "repo"},
+            True,
+            False,
+        ),
+        (
+            Path("tests/fixtures/NISA Monthly Trend - Raw.xlsx"),
+            "trend-mosers-input.xlsx",
+            generate_mosers_workbook_trend,
+            {"swaps", "repo"},
+            False,
+            True,
+        ),
+    ],
+)
+def test_generated_pipeline_named_workbooks_are_accepted_by_current_parsers(
+    tmp_path: Path,
+    raw_input_path: Path,
+    output_filename: str,
+    generator: Any,
+    expected_ch_segments: set[str],
+    expect_fcm_totals: bool,
+    expect_futures_detail: bool,
+) -> None:
+    pytest.importorskip("pandas")
+    output_path = tmp_path / output_filename
+
+    workbook = generator(raw_input_path)
+    try:
+        workbook.save(output_path)
+    finally:
+        workbook.close()
+
+    ch_rows = parse_cprs_ch(output_path)
+    fcm_totals = parse_fcm_totals(output_path)
+    futures_detail = parse_futures_detail(output_path)
+
+    assert expected_ch_segments.issubset(set(ch_rows["Segment"]))
+    assert fcm_totals.empty is (not expect_fcm_totals)
+    assert futures_detail.empty is (not expect_futures_detail)
+
+
+def test_cprs_ch_pipeline_variant_expectations_preserve_program_specific_segments() -> None:
+    assert cprs_ch_parser._expected_segments_for_variant(
+        file_path=Path("all_programs-mosers-input.xlsx"),
+        sheet_name="CPRS - CH",
+    ) == {"swaps", "repo", "futures_cdx"}
+    assert cprs_ch_parser._expected_segments_for_variant(
+        file_path=Path("trend-mosers-input.xlsx"),
+        sheet_name="CPRS - CH",
+    ) == {"swaps", "repo"}
 
 
 def test_resolve_cprs_ch_metric_row_bounds_tracks_template_row_shifts() -> None:
@@ -413,6 +510,45 @@ def test_find_marker_row_handles_column_shifts() -> None:
             )
             == marker_row
         )
+    finally:
+        workbook.close()
+
+
+def test_generate_mosers_workbook_handles_shifted_template_rows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fixture_path = Path("tests/fixtures/raw_nisa_all_programs.xlsx")
+    parsed = parse_nisa_all_programs(fixture_path)
+    workbook = workbook_generation_module.load_mosers_template_workbook()
+    try:
+        worksheet = workbook["CPRS - CH"]
+        baseline_start, _ = workbook_generation_module._resolve_cprs_ch_metric_row_bounds(worksheet)
+        worksheet.insert_rows(baseline_start, amount=3)
+
+        monkeypatch.setattr(
+            workbook_generation_module,
+            "load_mosers_template_workbook",
+            lambda: workbook,
+        )
+        generated = generate_mosers_workbook(fixture_path)
+        try:
+            generated_sheet = generated["CPRS - CH"]
+            section_start, _ = _find_metric_section_bounds(generated_sheet)
+            assert (
+                generated_sheet[f"D{section_start}"].value
+                == parsed.totals_rows[0].annualized_volatility
+            )
+            assert generated_sheet[f"E{section_start}"].value == pytest.approx(
+                parsed.totals_rows[0].notional / sum(row.notional for row in parsed.totals_rows)
+            )
+            ch_totals_start = (
+                _find_marker_row(generated_sheet, "Total by Counterparty/Clearing House") + 1
+            )
+            assert (
+                generated_sheet[f"C{ch_totals_start}"].value == parsed.totals_rows[0].counterparty
+            )
+        finally:
+            generated.close()
     finally:
         workbook.close()
 

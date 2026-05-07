@@ -238,6 +238,8 @@ def test_langchain_provider_client_skips_incompatible_model_for_provider(
         return None
 
     monkeypatch.setattr(provider_base, "build_chat_client", _fake_build_chat_client)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
     client = provider_base.LangChainProviderClient(
         provider_chain=("github-models", "openai"),

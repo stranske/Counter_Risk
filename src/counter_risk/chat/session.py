@@ -235,8 +235,7 @@ class ChatSession:
 
         if self.provider == "local" and not _offline_mode_enabled():
             raise ChatSessionError(
-                "Provider 'local' is only available in offline test mode "
-                f"({_OFFLINE_MODE_ENV}=1)."
+                f"Provider 'local' is only available in offline test mode ({_OFFLINE_MODE_ENV}=1)."
             )
         if self.provider != "local" and not provider_env_available(self.provider):
             raise ChatSessionError(
@@ -271,8 +270,7 @@ class ChatSession:
 
         if selected_provider == "local" and not _offline_mode_enabled():
             raise ChatSessionError(
-                "Provider 'local' is only available in offline test mode "
-                f"({_OFFLINE_MODE_ENV}=1)."
+                f"Provider 'local' is only available in offline test mode ({_OFFLINE_MODE_ENV}=1)."
             )
         if selected_provider != "local" and not provider_env_available(selected_provider):
             raise ChatSessionError(
