@@ -17,7 +17,11 @@ from typing import Any
 
 from counter_risk.normalize import (
     canonicalize_name as canonicalize_name,
+)
+from counter_risk.normalize import (
     resolve_clearing_house as resolve_clearing_house,
+)
+from counter_risk.normalize import (
     resolve_counterparty as resolve_counterparty,
 )
 
