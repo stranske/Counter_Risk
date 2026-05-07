@@ -1641,6 +1641,44 @@ def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> No
     assert "risk_rankings.csv skipped" not in "\n".join(warnings)
 
 
+def test_build_risk_proxy_summary_reports_computed_and_skipped_outputs(tmp_path: Path) -> None:
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 100.0,
+                        "AnnualizedVolatility": 0.3,
+                        "NotionalChange": 10.0,
+                    }
+                ]
+            )
+        },
+        "trend": {"totals": _FakeDataFrame(records=[{"counterparty": "B", "Notional": 50.0}])},
+    }
+
+    summary = run_module._build_risk_proxy_summary(
+        parsed_by_variant=parsed_by_variant,
+        output_paths=[tmp_path / "risk_rankings.csv", tmp_path / "risk_top_movers.csv"],
+    )
+
+    assert summary["outputs"] == {
+        "risk_rankings": "risk_rankings.csv",
+        "risk_top_movers": "risk_top_movers.csv",
+    }
+    notional_entry = summary["by_variant"]["all_programs"][
+        "risk_proxy_notional_annualized_volatility"
+    ]
+    assert notional_entry["status"] == "computed"
+    assert notional_entry["formula"] == "Notional * AnnualizedVolatility"
+    assert notional_entry["delta_source_column"] == "NotionalChange"
+    position_entry = summary["by_variant"]["trend"]["risk_proxy_position_usd_vol"]
+    assert position_entry["status"] == "skipped"
+    assert position_entry["missing_columns"] == ["PositionUSD", "Vol"]
+    assert position_entry["top_movers_skipped_reason"] == "proxy inputs unavailable"
+
+
 def test_write_risk_outputs_warns_and_skips_rankings_when_proxy_columns_missing(
     tmp_path: Path,
 ) -> None:
@@ -1856,6 +1894,12 @@ def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
 
     assert (run_dir / "risk_rankings.csv").exists()
     assert (run_dir / "risk_top_movers.csv").exists()
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    notional_summary = manifest["risk_proxy_summary"]["by_variant"]["all_programs"][
+        "risk_proxy_notional_annualized_volatility"
+    ]
+    assert notional_summary["status"] == "computed"
+    assert notional_summary["delta_source_column"] == "NotionalChange"
 
 
 def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(

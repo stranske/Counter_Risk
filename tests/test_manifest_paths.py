@@ -133,6 +133,41 @@ def test_manifest_warnings_are_normalized_to_strings(tmp_path: Path) -> None:
     assert all(isinstance(entry, str) for entry in manifest["warnings"])
 
 
+def test_manifest_build_includes_risk_proxy_summary_when_supplied(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    rankings_path = run_dir / "risk_rankings.csv"
+    rankings_path.write_text("variant,counterparty,proxy_name,proxy_value,rank\n", encoding="utf-8")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    summary = {
+        "outputs": {"risk_rankings": "risk_rankings.csv", "risk_top_movers": None},
+        "by_variant": {
+            "all_programs": {
+                "risk_proxy_notional_annualized_volatility": {
+                    "status": "computed",
+                    "formula": "Notional * AnnualizedVolatility",
+                }
+            }
+        },
+    }
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(rankings_path.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[],
+        risk_proxy_summary=summary,
+    )
+
+    assert manifest["risk_proxy_summary"] == summary
+
+
 def test_to_relative_artifact_path_normalizes_absolute_path_under_run_dir(tmp_path: Path) -> None:
     run_dir = tmp_path / "runs" / "2026-02-13_1"
     run_dir.mkdir(parents=True)
