@@ -15,6 +15,8 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
+from counter_risk.normalize import canonicalize_name
+
 LOGGER = logging.getLogger(__name__)
 
 SHEET_ALL_PROGRAMS_3_YEAR = "All Programs 3 Year"
@@ -177,7 +179,7 @@ def open_ex_llc_3_year_workbook(
 def _normalize_header(value: Any) -> str:
     if value is None:
         return ""
-    return " ".join(str(value).split()).casefold()
+    return canonicalize_name(str(value)).casefold()
 
 
 def _find_header_row(

@@ -195,3 +195,90 @@ def test_load_name_registry_rejects_missing_top_level_entries(tmp_path: Path) ->
 
     with pytest.raises(ValueError, match="Name registry validation failed"):
         load_name_registry(config_path)
+
+
+# ---------------------------------------------------------------------------
+# Punctuation-variant deduplication in aliases
+# ---------------------------------------------------------------------------
+
+
+def test_load_name_registry_rejects_apostrophe_variant_duplicate_within_entry(
+    tmp_path: Path,
+) -> None:
+    """ASCII apostrophe and curly apostrophe in the same entry must be rejected."""
+    config_path = tmp_path / "name_registry.yml"
+    config_path.write_text(
+        "schema_version: 1\n"
+        "entries:\n"
+        "  - canonical_key: goldman_sachs\n"
+        "    display_name: Goldman Sachs\n"
+        "    aliases:\n"
+        "      - Goldman Sachs Int'l\n"
+        '      - "Goldman Sachs Int’l"\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Name registry validation failed"):
+        load_name_registry(config_path)
+
+
+def test_load_name_registry_rejects_apostrophe_variant_duplicate_across_entries(
+    tmp_path: Path,
+) -> None:
+    """Same alias spelled with ASCII vs curly apostrophe across two entries must be rejected."""
+    config_path = tmp_path / "name_registry.yml"
+    config_path.write_text(
+        "schema_version: 1\n"
+        "entries:\n"
+        "  - canonical_key: first_entry\n"
+        "    display_name: First Entry\n"
+        "    aliases:\n"
+        "      - Goldman Sachs Int'l\n"
+        "  - canonical_key: second_entry\n"
+        "    display_name: Second Entry\n"
+        "    aliases:\n"
+        '      - "Goldman Sachs Int’l"\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Name registry validation failed"):
+        load_name_registry(config_path)
+
+
+def test_load_name_registry_rejects_dash_variant_duplicate_within_entry(tmp_path: Path) -> None:
+    """ASCII hyphen and en-dash for the same alias in the same entry must be rejected."""
+    config_path = tmp_path / "name_registry.yml"
+    config_path.write_text(
+        "schema_version: 1\n"
+        "entries:\n"
+        "  - canonical_key: korea_exchange\n"
+        "    display_name: Korea Exchange\n"
+        "    aliases:\n"
+        "      - Korea Exchange-Seoul\n"
+        '      - "Korea Exchange–Seoul"\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Name registry validation failed"):
+        load_name_registry(config_path)
+
+
+def test_load_name_registry_rejects_dash_variant_duplicate_across_entries(tmp_path: Path) -> None:
+    """Same alias spelled with ASCII hyphen vs en-dash across entries must be rejected."""
+    config_path = tmp_path / "name_registry.yml"
+    config_path.write_text(
+        "schema_version: 1\n"
+        "entries:\n"
+        "  - canonical_key: first_entry\n"
+        "    display_name: First Entry\n"
+        "    aliases:\n"
+        "      - Korea Exchange-Seoul\n"
+        "  - canonical_key: second_entry\n"
+        "    display_name: Second Entry\n"
+        "    aliases:\n"
+        '      - "Korea Exchange–Seoul"\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Name registry validation failed"):
+        load_name_registry(config_path)

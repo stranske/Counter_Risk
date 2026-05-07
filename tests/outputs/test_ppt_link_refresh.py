@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from counter_risk.config import WorkflowConfig
 from counter_risk.outputs import (
     OutputContext,
@@ -10,6 +12,8 @@ from counter_risk.outputs import (
     PptLinkRefreshResult,
     PptLinkRefreshStatus,
 )
+from counter_risk.outputs import ppt_link_refresh as ppt_link_refresh_module
+from counter_risk.outputs.ppt_link_refresh import resolve_ppt_link_refresh_result
 
 
 def _minimal_config(tmp_path: Path) -> WorkflowConfig:
@@ -102,3 +106,57 @@ def test_ppt_link_refresh_generator_captures_refresh_exceptions(tmp_path: Path) 
         error_detail="forced refresh failure",
     )
     assert warnings == ["PPT links refresh failed; forced refresh failure"]
+
+
+# ---------------------------------------------------------------------------
+# resolve_ppt_link_refresh_result — canonical key path
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw_status", "expected"),
+    [
+        # Leading/trailing whitespace stripped
+        ("  success  ", PptLinkRefreshStatus.SUCCESS),
+        # Internal whitespace collapsed
+        ("  skipped  ", PptLinkRefreshStatus.SKIPPED),
+        # Already clean
+        ("failed", PptLinkRefreshStatus.FAILED),
+    ],
+)
+def test_resolve_ppt_link_refresh_result_strips_whitespace_from_status(
+    raw_status: str, expected: PptLinkRefreshStatus
+) -> None:
+    class _FakeStatus:
+        value = raw_status
+
+    class _FakeResult:
+        status = _FakeStatus()
+        error_detail = None
+
+    result = resolve_ppt_link_refresh_result(_FakeResult())
+    assert result.status == expected
+
+
+def test_resolve_ppt_link_refresh_result_uses_canonicalize_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    def _fake_canonicalize(value: str) -> str:
+        calls.append(value)
+        return "success"
+
+    monkeypatch.setattr(ppt_link_refresh_module, "canonicalize_name", _fake_canonicalize)
+
+    class _FakeStatus:
+        value = "success"
+
+    class _FakeResult:
+        status = _FakeStatus()
+        error_detail = None
+
+    result = resolve_ppt_link_refresh_result(_FakeResult())
+
+    assert result.status == PptLinkRefreshStatus.SUCCESS
+    assert calls == ["success"]

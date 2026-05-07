@@ -375,3 +375,60 @@ def test_resolve_screenshot_input_mapping_rejects_duplicate_normalized_keys(tmp_
 
     with pytest.raises(ValueError, match="duplicated after normalization"):
         run_module._resolve_screenshot_input_mapping(config)
+
+
+def test_resolve_screenshot_input_mapping_rejects_apostrophe_variant_duplicates(
+    tmp_path: Path,
+) -> None:
+    image_1 = tmp_path / "screenshots" / "slide_1.png"
+    image_2 = tmp_path / "screenshots" / "slide_2.png"
+    _write_placeholder(image_1, payload=b"img-1")
+    _write_placeholder(image_2, payload=b"img-2")
+    # ASCII apostrophe U+0027 and curly right apostrophe U+2019 are the same canonical key
+    ascii_apos_key = "Goldman Sachs Int'l"
+    curly_apos_key = "Goldman Sachs Int’l"
+    config = _build_config(
+        tmp_path=tmp_path,
+        enable_screenshot_replacement=True,
+        screenshot_inputs={ascii_apos_key: image_1, curly_apos_key: image_2},
+    )
+
+    with pytest.raises(ValueError, match="duplicated after normalization"):
+        run_module._resolve_screenshot_input_mapping(config)
+
+
+def test_resolve_screenshot_input_mapping_rejects_dash_variant_duplicates(
+    tmp_path: Path,
+) -> None:
+    image_1 = tmp_path / "screenshots" / "slide_1.png"
+    image_2 = tmp_path / "screenshots" / "slide_2.png"
+    _write_placeholder(image_1, payload=b"img-1")
+    _write_placeholder(image_2, payload=b"img-2")
+    config = _build_config(
+        tmp_path=tmp_path,
+        enable_screenshot_replacement=True,
+        # ASCII hyphen vs en-dash (U+2013) → same canonical key
+        screenshot_inputs={"Ex-Trend": image_1, "Ex–Trend": image_2},
+    )
+
+    with pytest.raises(ValueError, match="duplicated after normalization"):
+        run_module._resolve_screenshot_input_mapping(config)
+
+
+def test_resolve_screenshot_input_mapping_canonicalizes_key_stored_in_mapping(
+    tmp_path: Path,
+) -> None:
+    image = tmp_path / "screenshots" / "slide_1.png"
+    _write_placeholder(image, payload=b"img-1")
+    # Curly apostrophe U+2019 and extra spaces get normalized to canonical form
+    raw_key = "Goldman  Sachs  Int’l"
+    config = _build_config(
+        tmp_path=tmp_path,
+        enable_screenshot_replacement=False,
+        screenshot_inputs={raw_key: image},
+    )
+
+    mapping = run_module._resolve_screenshot_input_mapping(config)
+
+    # Canonical form: ASCII apostrophe, collapsed whitespace
+    assert list(mapping.keys()) == ["Goldman Sachs Int'l"]

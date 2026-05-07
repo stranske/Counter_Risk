@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any
 from zipfile import BadZipFile
 
+from counter_risk.normalize import canonicalize_name
+
 _TARGET_SHEET_NAME = "Exposure Maturity Summary"
 _REQUIRED_HEADERS: tuple[str, ...] = (
     "counterparty",
@@ -87,7 +89,7 @@ def parse_exposure_maturity_schedule(path: Path | str) -> tuple[ExposureMaturity
 
 
 def _normalize_text(value: Any) -> str:
-    return " ".join(str(value or "").split()).strip()
+    return canonicalize_name(str(value or ""))
 
 
 def _coerce_float(value: Any) -> float:

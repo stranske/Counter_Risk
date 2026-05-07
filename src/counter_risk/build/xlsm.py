@@ -104,7 +104,7 @@ def _build_config_sheet_xml() -> str:
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
         '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
         '  <dimension ref="A1:B10"/>',
-        "  <sheetViews><sheetView workbookViewId=\"0\"/></sheetViews>",
+        '  <sheetViews><sheetView workbookViewId="0"/></sheetViews>',
         '  <sheetFormatPr defaultRowHeight="15"/>',
         "  <cols>",
         '    <col min="1" max="1" width="38" customWidth="1"/>',
@@ -131,9 +131,7 @@ def _defined_names_xml() -> str:
         ("RunnerConfig_HistLlc3yr", "Config!$B$9"),
         ("RunnerConfig_MonthlyPptx", "Config!$B$10"),
     ]
-    inner = "\n".join(
-        f'    <definedName name="{name}">{ref}</definedName>' for name, ref in ranges
-    )
+    inner = "\n".join(f'    <definedName name="{name}">{ref}</definedName>' for name, ref in ranges)
     return f"  <definedNames>\n{inner}\n  </definedNames>"
 
 

@@ -82,8 +82,17 @@ def test_generate_mapping_diff_report_ignores_non_name_string_fields(tmp_path: P
         },
     )
 
+    # Metadata values and values from non-name keys should not appear as resolved names.
     assert "run-123" not in report
-    assert "raw='Societe Generale'" not in report
+
+    # The reconciliation 'warnings' list content must not be extracted as a counterparty name;
+    # check that the verbatim warning string is absent from the UNMAPPED section.
+    lines = report.splitlines()
+    nr_start = lines.index("NAME_RESOLUTIONS")
+    pre_nr = "\n".join(lines[:nr_start])
+    assert "raw='Societe Generale'" not in pre_nr
+
+    # The legitimate "Societe Generale" name is still picked up via normalization.
     assert "Societe Generale -> Soc Gen\n" in report
 
 
@@ -192,10 +201,11 @@ def test_generate_mapping_diff_report_sections_use_required_line_formats(tmp_pat
     unmapped_start = lines.index("UNMAPPED")
     fallback_start = lines.index("FALLBACK_MAPPED")
     suggestions_start = lines.index("SUGGESTIONS")
+    name_resolutions_start = lines.index("NAME_RESOLUTIONS")
 
     unmapped_lines = lines[unmapped_start + 1 : fallback_start - 1]
     fallback_lines = lines[fallback_start + 1 : suggestions_start - 1]
-    suggestion_lines = lines[suggestions_start + 1 :]
+    suggestion_lines = lines[suggestions_start + 1 : name_resolutions_start - 1]
 
     assert unmapped_lines == ["UNKNOWN broker"]
     assert fallback_lines == ["Citigroup -> Citibank"]
@@ -220,3 +230,103 @@ def test_collect_mapping_diff_findings_scans_reconciliation_counterparty_fields(
 
     assert findings["unmapped_raw_names"] == ["LCH"]
     assert findings["fallback_mapped"] == {"Citigroup": "Citibank"}
+
+
+def test_collect_mapping_diff_findings_includes_name_resolutions(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    findings = collect_mapping_diff_findings(
+        registry_path,
+        {"normalization": [{"counterparty": "Citigroup"}, {"counterparty": "LCH"}]},
+    )
+
+    resolutions = {entry["raw"]: entry for entry in findings["name_resolutions"]}
+    assert set(resolutions) == {"Citigroup", "LCH"}
+
+    citi = resolutions["Citigroup"]
+    assert citi["display"] == "Citigroup"
+    assert citi["canonical_key"] == "Citigroup"
+    assert citi["mapped"] == "Citibank"
+    assert citi["source"] == "fallback"
+
+    lch = resolutions["LCH"]
+    assert lch["display"] == "LCH"
+    assert lch["canonical_key"] == "LCH"
+    assert lch["mapped"] == "LCH"
+    assert lch["source"] == "unmapped"
+
+
+def test_collect_mapping_diff_findings_name_resolutions_includes_registry_hits(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    findings = collect_mapping_diff_findings(
+        registry_path,
+        {"normalization": [{"counterparty": "Bank of America"}]},
+    )
+
+    resolutions = {entry["raw"]: entry for entry in findings["name_resolutions"]}
+    boa = resolutions["Bank of America"]
+    assert boa["source"] == "registry"
+    assert boa["mapped"] == "Bank of America"
+
+
+def test_collect_mapping_diff_findings_name_resolutions_separates_raw_display_key(
+    tmp_path: Path,
+) -> None:
+    """raw preserves original spacing; display collapses whitespace; key also collapses and normalises punctuation."""
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    # Name with leading spaces and a Unicode en-dash
+    raw = "  Korea Exchange–Seoul  "
+    findings = collect_mapping_diff_findings(
+        registry_path,
+        {"normalization": [raw]},
+    )
+
+    resolutions = {entry["raw"]: entry for entry in findings["name_resolutions"]}
+    entry = resolutions[raw]
+    assert entry["raw"] == raw
+    assert entry["display"] == "Korea Exchange–Seoul"
+    assert entry["canonical_key"] == "Korea Exchange-Seoul"
+
+
+def test_generate_mapping_diff_report_includes_name_resolutions_section(tmp_path: Path) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {"normalization": [{"counterparty": "Citigroup"}, {"counterparty": "Unknown Co"}]},
+    )
+
+    assert "NAME_RESOLUTIONS\n" in report
+    assert "raw='Citigroup'" in report
+    assert "display='Citigroup'" in report
+    assert "key='Citigroup'" in report
+    assert "-> 'Citibank'" in report
+    assert "[fallback]" in report
+    assert "raw='Unknown Co'" in report
+    assert "[unmapped]" in report
+
+
+def test_generate_mapping_diff_report_name_resolutions_sorted_case_insensitive(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    _write_registry(registry_path)
+
+    report = generate_mapping_diff_report(
+        registry_path,
+        {"normalization": ["zeta llc", "aaa holdings"]},
+    )
+
+    lines = report.splitlines()
+    nr_start = lines.index("NAME_RESOLUTIONS")
+    nr_lines = [ln for ln in lines[nr_start + 1 :] if ln]
+    assert nr_lines[0].startswith("raw='aaa holdings'")
+    assert nr_lines[1].startswith("raw='zeta llc'")
