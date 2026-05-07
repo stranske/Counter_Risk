@@ -27,6 +27,7 @@ def _make_minimal_xlsm() -> bytes:
         )
     return buf.getvalue()
 
+
 _FORBIDDEN_RUNNER_ENTRYPOINT_PATTERN = re.compile(
     r"\bpython(?:\.exe)?\b|\bpy(?:\.exe)?\b|\.py\b",
     re.IGNORECASE,
@@ -43,9 +44,7 @@ def _write_fake_repo(root: Path) -> None:
     (root / "release.spec").write_text("# fake\n", encoding="utf-8")
     (root / "config" / "fixture_replay.yml").write_text("name: fixture\n", encoding="utf-8")
     (root / "templates" / "Monthly Counterparty Exposure Report.pptx").write_bytes(b"ppt-template")
-    (root / "assets" / "templates" / "counter_risk_template.xlsm").write_bytes(
-        _make_minimal_xlsm()
-    )
+    (root / "assets" / "templates" / "counter_risk_template.xlsm").write_bytes(_make_minimal_xlsm())
     (root / "tests" / "fixtures" / "fixture.xlsx").write_bytes(b"xlsx")
     (root / "tests" / "fixtures" / "fixture.pptx").write_bytes(b"fixture-ppt")
     (root / "scripts" / "windows" / "request_counter_risk_remote.cmd").write_text(

@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 
+from counter_risk.normalize import canonicalize_name
 from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 
@@ -100,7 +101,7 @@ def resolve_ppt_link_refresh_result(raw_result: object) -> PptLinkRefreshResult:
             "PPT link refresh result must be a bool or object with a 'status' attribute"
         )
 
-    status_text = str(getattr(status_value, "value", status_value)).strip().lower()
+    status_text = canonicalize_name(str(getattr(status_value, "value", status_value))).lower()
     try:
         normalized_status = PptLinkRefreshStatus(status_text)
     except ValueError as exc:

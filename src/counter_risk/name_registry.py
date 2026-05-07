@@ -11,9 +11,17 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 _CANONICAL_KEY_PATTERN = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
 
+# Mirror the same substitutions as normalize.canonicalize_name to keep alias
+# deduplication/collision detection consistent with runtime lookup keys.
+_APOSTROPHE_RE = re.compile(r"[‘’‛ʼ`]")
+_DASH_RE = re.compile(r"[‐‑‒–—―−]")
+
 
 def _normalize_alias_token(value: str) -> str:
-    return " ".join(value.split()).casefold()
+    """Return the canonical match key for an alias (apostrophe + dash + whitespace + casefold)."""
+    text = _APOSTROPHE_RE.sub("'", value)
+    text = _DASH_RE.sub("-", text)
+    return " ".join(text.split()).casefold()
 
 
 class SeriesIncludedFlags(BaseModel):
@@ -54,16 +62,16 @@ class NameRegistryEntry(BaseModel):
         for alias in aliases:
             if not isinstance(alias, str):
                 raise ValueError("aliases entries must be strings.")
-            normalized = " ".join(alias.split())
-            if not normalized:
+            display_form = " ".join(alias.split())
+            if not display_form:
                 raise ValueError("aliases cannot contain blank values.")
-            dedupe_key = normalized.casefold()
+            dedupe_key = _normalize_alias_token(alias)
             if dedupe_key in normalized_seen:
                 raise ValueError(
-                    f"aliases contains duplicate value after normalization: {normalized!r}"
+                    f"aliases contains duplicate value after normalization: {display_form!r}"
                 )
             normalized_seen.add(dedupe_key)
-            normalized_aliases.append(normalized)
+            normalized_aliases.append(display_form)
         return normalized_aliases
 
     @field_validator("display_name")
