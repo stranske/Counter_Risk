@@ -86,10 +86,10 @@ def test_run_folder_readme_created_when_ppt_enabled_and_registered_in_manifest(
     (run_dir / "limit_breaches.csv").write_text(
         "\n".join(
             [
-                "entity_type,entity_name,limit_kind,actual_value,limit_value,breach_amount",
-                "counterparty,a,absolute_notional,10,5,5",
-                "counterparty,b,absolute_notional,11,5,6",
-                "counterparty,c,absolute_notional,12,5,7",
+                "entity_type,entity_name,limit_kind,severity,actual_value,limit_value,breach_amount,notes",
+                "counterparty,a,absolute_notional,warning,10,5,5,",
+                "counterparty,b,absolute_notional,fail,11,5,6,",
+                "counterparty,c,absolute_notional,warning,12,5,7,",
             ]
         )
         + "\n",
@@ -113,6 +113,7 @@ def test_run_folder_readme_created_when_ppt_enabled_and_registered_in_manifest(
     assert "\n2." in content
     assert "\n3." in content
     assert "WARNING: Limit Breaches Detected (3)" in content
+    assert "highest severity: fail" in content
     assert "Review breach details: limit_breaches.csv" in content
 
     manifest = ManifestBuilder(

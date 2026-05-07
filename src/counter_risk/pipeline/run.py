@@ -237,6 +237,7 @@ class LimitBreachEvaluation:
 
     csv_path: Path | None
     breach_count: int
+    max_severity: Literal["warning", "fail"] | None = None
 
 
 ScreenshotReplacer = Callable[[Path, Path, dict[str, Path]], None]
@@ -2008,10 +2009,19 @@ def _compute_and_write_limit_breaches(
     if not breaches_records:
         return LimitBreachEvaluation(csv_path=None, breach_count=0)
 
+    max_severity: Literal["warning", "fail"] = (
+        "fail"
+        if any(str(row.get("severity", "")).casefold() == "fail" for row in breaches_records)
+        else "warning"
+    )
     csv_path = run_dir / "limit_breaches.csv"
     write_limit_breaches_csv(breaches_result, csv_path)
     LOGGER.info("limit_breaches_written path=%s", csv_path)
-    return LimitBreachEvaluation(csv_path=csv_path, breach_count=len(breaches_records))
+    return LimitBreachEvaluation(
+        csv_path=csv_path,
+        breach_count=len(breaches_records),
+        max_severity=max_severity,
+    )
 
 
 def _format_missing_limit_entities_warning(missing_entities: list[dict[str, str]]) -> str:
@@ -2033,8 +2043,10 @@ def _build_limit_breach_summary(
     warning_banner = None
     if has_breaches and report_path is not None:
         plurality = "breach" if limit_breaches.breach_count == 1 else "breaches"
+        severity_prefix = f"{limit_breaches.max_severity} " if limit_breaches.max_severity else ""
         warning_banner = (
-            f"{limit_breaches.breach_count} limit {plurality} detected. Review {report_path}."
+            f"{limit_breaches.breach_count} {severity_prefix}limit {plurality} detected. "
+            f"Review {report_path}."
         )
     return {
         "has_breaches": has_breaches,
@@ -2061,14 +2073,21 @@ def _build_limit_warning_banner_for_run_dir(run_dir: Path) -> RunFolderWarningBa
     if not csv_path.exists():
         return None
 
+    max_severity: Literal["warning", "fail"] = "warning"
     with csv_path.open("r", encoding="utf-8", newline="") as stream:
-        row_count = sum(1 for _ in csv.DictReader(stream))
+        rows = list(csv.DictReader(stream))
+        row_count = len(rows)
+        if any(str(row.get("severity", "")).casefold() == "fail" for row in rows):
+            max_severity = "fail"
     if row_count <= 0:
         return None
 
     plurality = "breach" if row_count == 1 else "breaches"
     title = f"Limit {plurality.capitalize()} Detected ({row_count})"
-    message = f"Warning banner: {row_count} configured limit {plurality} were detected."
+    message = (
+        f"Warning banner: {row_count} configured limit {plurality} were detected "
+        f"(highest severity: {max_severity})."
+    )
     return RunFolderWarningBanner(
         title=title,
         message=message,

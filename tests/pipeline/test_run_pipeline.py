@@ -2103,6 +2103,8 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
                 "    entity_name: citibank",
                 "    limit_value: 250000000",
                 "    limit_kind: absolute_notional",
+                "    severity: fail",
+                "    notes: Single-name risk limit.",
             ]
         )
         + "\n",
@@ -2153,8 +2155,12 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
     limit_breaches_path = run_dir / "limit_breaches.csv"
     assert limit_breaches_path.exists()
     content = limit_breaches_path.read_text(encoding="utf-8")
-    assert "entity_type,entity_name,limit_kind,actual_value,limit_value,breach_amount" in content
-    assert "counterparty,citibank,absolute_notional" in content
+    assert (
+        "entity_type,entity_name,limit_kind,severity,actual_value,limit_value,breach_amount,notes"
+        in content
+    )
+    assert "counterparty,citibank,absolute_notional,fail" in content
+    assert "Single-name risk limit." in content
 
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert "limit_breaches.csv" in manifest["output_paths"]
@@ -2162,6 +2168,7 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
     assert manifest["limit_breach_summary"]["breach_count"] >= 1
     assert manifest["limit_breach_summary"]["report_path"] == "limit_breaches.csv"
     assert "limit_breaches.csv" in manifest["limit_breach_summary"]["warning_banner"]
+    assert "fail limit" in manifest["limit_breach_summary"]["warning_banner"]
     assert any(
         "Limit breach summary:" in warning and "limit_breaches.csv" in warning
         for warning in manifest["warnings"]

@@ -56,6 +56,8 @@ def test_check_limits_detects_absolute_and_percent_breaches_across_entity_types(
                 "entity_name": "Alpha Bank",
                 "limit_value": 100.0,
                 "limit_kind": "absolute_notional",
+                "severity": "fail",
+                "notes": "Single-name cap.",
             },
             {
                 "entity_type": "fcm",
@@ -91,41 +93,51 @@ def test_check_limits_detects_absolute_and_percent_breaches_across_entity_types(
             "entity_type": "clearing_house",
             "entity_name": "cme",
             "limit_kind": "percent_of_total",
+            "severity": "warning",
             "actual_value": pytest.approx(170.0 / 200.0),
             "limit_value": 0.6,
             "breach_amount": pytest.approx((170.0 / 200.0) - 0.6),
+            "notes": None,
         },
         {
             "entity_type": "counterparty",
             "entity_name": "alpha_bank",
             "limit_kind": "absolute_notional",
+            "severity": "fail",
             "actual_value": 120.0,
             "limit_value": 100.0,
             "breach_amount": 20.0,
+            "notes": "Single-name cap.",
         },
         {
             "entity_type": "custom_group",
             "entity_name": "trend_energy",
             "limit_kind": "percent_of_total",
+            "severity": "warning",
             "actual_value": pytest.approx(120.0 / 200.0),
             "limit_value": 0.4,
             "breach_amount": pytest.approx((120.0 / 200.0) - 0.4),
+            "notes": None,
         },
         {
             "entity_type": "fcm",
             "entity_name": "fcm_one",
             "limit_kind": "percent_of_total",
+            "severity": "warning",
             "actual_value": pytest.approx(170.0 / 200.0),
             "limit_value": 0.65,
             "breach_amount": pytest.approx((170.0 / 200.0) - 0.65),
+            "notes": None,
         },
         {
             "entity_type": "segment",
             "entity_name": "treasury",
             "limit_kind": "percent_of_total",
+            "severity": "warning",
             "actual_value": pytest.approx(90.0 / 200.0),
             "limit_value": 0.2,
             "breach_amount": pytest.approx((90.0 / 200.0) - 0.2),
+            "notes": None,
         },
     ]
 
@@ -240,8 +252,11 @@ def test_write_limit_breaches_csv_writes_expected_rows(tmp_path: Path) -> None:
 
     assert out.exists()
     lines = out.read_text(encoding="utf-8").strip().splitlines()
-    assert lines[0] == "entity_type,entity_name,limit_kind,actual_value,limit_value,breach_amount"
-    assert "counterparty,a,absolute_notional,11.0,10.0,1.0" in lines[1:]
+    assert (
+        lines[0]
+        == "entity_type,entity_name,limit_kind,severity,actual_value,limit_value,breach_amount,notes"
+    )
+    assert "counterparty,a,absolute_notional,warning,11.0,10.0,1.0," in lines[1:]
 
 
 def test_find_missing_limit_entities_returns_sorted_missing_targets() -> None:
@@ -279,3 +294,29 @@ def test_find_missing_limit_entities_returns_sorted_missing_targets() -> None:
         {"entity_type": "counterparty", "entity_name": "missing_name"},
         {"entity_type": "fcm", "entity_name": "fcm_missing"},
     ]
+
+
+def test_check_limits_skips_disabled_limits_for_breaches_and_missing_entities() -> None:
+    exposures = [{"counterparty": "A", "notional": 25.0}]
+    limits_cfg = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "counterparty",
+                "entity_name": "A",
+                "limit_value": 10.0,
+                "limit_kind": "absolute_notional",
+                "enabled": False,
+            },
+            {
+                "entity_type": "counterparty",
+                "entity_name": "Missing",
+                "limit_value": 10.0,
+                "limit_kind": "absolute_notional",
+                "enabled": False,
+            },
+        ],
+    }
+
+    assert _as_records(check_limits(exposures, limits_cfg)) == []
+    assert find_missing_limit_entities(exposures, limits_cfg) == []

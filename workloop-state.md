@@ -100,6 +100,32 @@
 - Relay event emitted: `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=476 active.source_pr=572 active.next_action=wait_for_keepalive`.
 - Next action: keepalive owns PR `#572` for CI, review comments, and follow-up commits. Opener is done with this issue and should select another eligible issue only after cap allows.
 
+## 2026-05-07T15:01Z - opener lane materializing issue #477
+
+- Automation: `pd-workloop-resume` (codex opener lane).
+- Selected repo: `stranske/Counter_Risk`.
+- Selected issue: `#477` (`[Agent] [M3] Add limit monitoring framework (config-driven limits, breach flags, and operator warnings)`, `priority:normal`, `repo-review-approved`).
+- Branch: `codex/issue-477-limit-monitoring` from fresh `origin/main` in isolated temp clone `/tmp/counter-risk-477-codex-rdtPz2/repo`.
+- PR: pending creation after push.
+- Selection rationale:
+  - ACTION A succeeded; `active.*` was cross-lane informational and did not gate discovery.
+  - Approved queue has `issues_count=0`; live priority discovery governed selection.
+  - High-priority candidates were skipped because they already had linked open or merged verifier-lane PRs (`Manager-Database#979 -> #999`, `Inv-Man-Intake#379 -> #393`, `Inv-Man-Intake#381 -> #400`).
+  - Cap-health before materialization reported `total_opener_owned=4`, `raw_cap_reached=false`, `normal_cap_reached=false`, and `non_drainable_cap_blocker=false`, leaving one opener slot.
+  - `Counter_Risk#477` was the oldest unlinked supported normal-priority implementation issue; no PR matched issue `#477` immediately before commit.
+- Implementation:
+  - Added `severity` and `enabled` fields to limit config entries, with duplicate-key validation across entity type, normalized entity name, and limit kind.
+  - Disabled limits are excluded from missing-entity checks and breach calculations.
+  - Limit breach CSV rows now include severity and notes, so operator escalation context stays attached to each breach.
+  - Manifest and run-folder warning banners now include the highest breach severity without changing the manifest schema shape.
+  - Added `docs/limit_monitoring.md` and linked it from README.
+- Validation:
+  - `python -m pytest tests/test_limits_config.py tests/compute/test_limits.py tests/pipeline/test_run_pipeline.py::test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist tests/pipeline/test_run_pipeline.py::test_run_pipeline_warns_on_missing_limit_entities_by_default tests/pipeline/test_run_pipeline.py::test_run_pipeline_strict_missing_limit_entities_fails tests/pipeline/test_run_folder_readme.py::test_run_folder_readme_created_when_ppt_enabled_and_registered_in_manifest tests/pipeline/test_run_folder_outputs.py::test_build_run_folder_readme_content_includes_limit_warning_banner_when_provided tests/pipeline/test_manifest_schema.py::test_manifest_schema_defines_limit_breach_summary_shape tests/pipeline/test_manifest_data_quality.py` -> 26 passed.
+  - `python -m ruff check src/counter_risk/limits_config.py src/counter_risk/compute/limits.py src/counter_risk/pipeline/run.py tests/test_limits_config.py tests/compute/test_limits.py tests/pipeline/test_run_pipeline.py tests/pipeline/test_run_folder_readme.py` -> pass.
+  - `python -m black --check src/counter_risk/limits_config.py src/counter_risk/compute/limits.py src/counter_risk/pipeline/run.py tests/test_limits_config.py tests/compute/test_limits.py tests/pipeline/test_run_pipeline.py tests/pipeline/test_run_folder_readme.py` -> pass.
+  - `python -m mypy src/counter_risk/limits_config.py src/counter_risk/compute/limits.py` -> pass.
+- Next action: push branch, open ready PR with `agent:codex`, `agents:keepalive`, and `autofix`, then emit `pr_opened`.
+
 ## 2026-05-01T14:12Z - opener PR opened for issue #471
 
 - Automation: `pd-workloop-resume` (codex opener lane).
