@@ -484,6 +484,136 @@ def test_daily_holdings_repo_cash_flows_into_all_programs_dropin_output(
     assert float(by_counterparty["ASL"]["Notional"]) == pytest.approx(3.0)
 
 
+def test_load_repo_cash_warns_when_total_below_minimum(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={
+            "daily_holdings_pdf": tmp_path / "daily-holdings.pdf",
+            "cash_total_min": 100.0,
+        }
+    )
+    parsed_by_variant = _minimal_parsed_by_variant()
+    warnings: list[str] = []
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0})
+
+    summary = run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert any("below configured minimum" in w for w in warnings)
+    findings = summary.get("reconciliation_findings", [])
+    assert any(f.get("code") == "cash_total_below_minimum" for f in findings)
+    assert all(
+        f.get("severity") == "warn" for f in findings if f.get("code") == "cash_total_below_minimum"
+    )
+
+
+def test_load_repo_cash_strict_raises_when_total_above_maximum(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path, fail_policy="strict").model_copy(
+        update={
+            "daily_holdings_pdf": tmp_path / "daily-holdings.pdf",
+            "cash_total_max": 1.0,
+        }
+    )
+    parsed_by_variant = _minimal_parsed_by_variant()
+    warnings: list[str] = []
+
+    monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 99.0})
+
+    with pytest.raises(ValueError, match="exceeds configured maximum"):
+        run_module._apply_daily_holdings_repo_cash(
+            config=config,
+            parsed_by_variant=parsed_by_variant,
+            warnings=warnings,
+        )
+
+
+def test_load_repo_cash_warns_for_duplicate_counterparty_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    structured_source = tmp_path / "repo_cash.csv"
+    structured_source.write_text(
+        "counterparty,cash_value\nCIBC,5.0\nCIBC,3.0\nASL,2.0\n",
+        encoding="utf-8",
+    )
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={"cash_source_type": "csv", "cash_source_path": structured_source}
+    )
+    parsed_by_variant = _minimal_parsed_by_variant()
+    warnings: list[str] = []
+
+    summary = run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert any("duplicate counterparty names" in w for w in warnings)
+    findings = summary.get("reconciliation_findings", [])
+    assert any(f.get("code") == "duplicate_counterparty_names" for f in findings)
+    assert summary.get("duplicate_counterparty_names") == ["CIBC"]
+
+
+def test_load_repo_cash_warns_for_orphan_override_counterparties(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    structured_source = tmp_path / "repo_cash.csv"
+    structured_source.write_text(
+        "counterparty,cash_value\nCIBC,5.0\n",
+        encoding="utf-8",
+    )
+    overrides_path = tmp_path / "cash_overrides_2025-12-31.csv"
+    overrides_path.write_text(
+        "counterparty,cash_value,note\nUnknownBank,99.0,stale override\n",
+        encoding="utf-8",
+    )
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={
+            "cash_source_type": "csv",
+            "cash_source_path": structured_source,
+            "cash_overrides_csv": overrides_path,
+        }
+    )
+    parsed_by_variant = _minimal_parsed_by_variant()
+    warnings: list[str] = []
+
+    summary = run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert any("not found in base source" in w for w in warnings)
+    findings = summary.get("reconciliation_findings", [])
+    assert any(f.get("code") == "orphan_override_counterparties" for f in findings)
+    assert "UnknownBank" in summary.get("orphan_override_counterparties", [])
+
+
+def test_load_repo_cash_summary_includes_skipped_reason_when_no_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _minimal_workflow_config(tmp_path).model_copy(
+        update={"daily_holdings_pdf": None, "cash_source_type": "none"}
+    )
+    parsed_by_variant = _minimal_parsed_by_variant()
+    warnings: list[str] = []
+
+    summary = run_module._apply_daily_holdings_repo_cash(
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert summary.get("skipped_reason") is not None
+    assert "none" in str(summary["skipped_reason"]).lower()
+
+
 def test_build_missing_inputs_summary_complete_with_single_optional_gap(tmp_path: Path) -> None:
     config = _minimal_workflow_config(tmp_path)
     input_paths = run_module._resolve_input_paths(config)

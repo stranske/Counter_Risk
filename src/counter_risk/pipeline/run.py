@@ -50,6 +50,7 @@ from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGenerat
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
 from counter_risk.parsers.repo_cash_sources import (
+    find_duplicate_counterparty_names,
     load_repo_cash_overrides_csv,
     load_repo_cash_structured_source,
 )
@@ -841,9 +842,12 @@ def _load_repo_cash_by_counterparty(
     summary: dict[str, Any] = {
         "source_type": source_type,
         "source_path": str(source_path) if source_path is not None else None,
+        "skipped_reason": None,
         "overrides_path": None,
         "applied_override_count": 0,
         "override_audit_rows": [],
+        "duplicate_counterparty_names": [],
+        "orphan_override_counterparties": [],
         "counterparty_count": 0,
         "total_cash": 0.0,
         "required_counterparties": [],
@@ -853,12 +857,35 @@ def _load_repo_cash_by_counterparty(
     }
 
     if source_type == "none" or source_path is None:
-        warnings.append("Repo Cash source is not configured (cash_source_type=none).")
+        skipped_reason = "Repo Cash source is not configured (cash_source_type=none)."
+        summary["skipped_reason"] = skipped_reason
+        warnings.append(skipped_reason)
         return {}, "none", summary
 
     if source_type == "pdf":
         repo_cash_by_counterparty = parse_daily_holdings_pdf(source_path)
     else:
+        duplicate_names = find_duplicate_counterparty_names(
+            source_path, source_type=cast(Literal["csv", "xlsx"], source_type)
+        )
+        if duplicate_names:
+            summary["duplicate_counterparty_names"] = duplicate_names
+            finding_message = (
+                "Repo Cash source has duplicate counterparty names after normalization: "
+                f"{', '.join(duplicate_names)}."
+            )
+            summary["reconciliation_findings"].append(
+                {
+                    "code": "duplicate_counterparty_names",
+                    "severity": "fail" if fail_policy == "strict" else "warn",
+                    "message": finding_message,
+                }
+            )
+            _handle_repo_cash_condition(
+                finding_message,
+                warnings=warnings,
+                fail_policy=fail_policy,
+            )
         repo_cash_by_counterparty = load_repo_cash_structured_source(
             source_path,
             source_type=cast(Literal["csv", "xlsx"], source_type),
@@ -873,8 +900,24 @@ def _load_repo_cash_by_counterparty(
     )
     if overrides_path is not None:
         summary["overrides_path"] = str(overrides_path)
+        base_counterparties = set(repo_cash_by_counterparty.keys())
         overrides, audit_rows = load_repo_cash_overrides_csv(overrides_path)
         if overrides:
+            orphan_overrides = sorted(k for k in overrides if k not in base_counterparties)
+            if orphan_overrides:
+                summary["orphan_override_counterparties"] = orphan_overrides
+                finding_message = (
+                    "Override file contains counterparties not found in base source: "
+                    f"{', '.join(orphan_overrides)}."
+                )
+                summary["reconciliation_findings"].append(
+                    {
+                        "code": "orphan_override_counterparties",
+                        "severity": "warn",
+                        "message": finding_message,
+                    }
+                )
+                warnings.append(finding_message)
             repo_cash_by_counterparty.update(overrides)
             summary["applied_override_count"] = len(audit_rows)
             summary["override_audit_rows"] = audit_rows
