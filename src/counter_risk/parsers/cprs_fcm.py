@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 from zipfile import BadZipFile, ZipFile
 
-from counter_risk.normalize import canonicalize_name
+from counter_risk.normalize import canonicalize_name, safe_display_name
 
 _XML_NS = {
     "main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -176,7 +176,7 @@ def parse_futures_detail(path: Path | str) -> Any:  # pandas.DataFrame
 def _locate_totals_section(rows: dict[int, dict[int, str | None]]) -> tuple[int, int] | None:
     marker_row: int | None = None
     for row_number in sorted(rows):
-        row_text = _normalize_text(rows[row_number].get(3)).lower()
+        row_text = _matching_key(rows[row_number].get(3))
         if _TOTALS_SECTION_MARKER in row_text:
             marker_row = row_number
             break
@@ -187,7 +187,7 @@ def _locate_totals_section(rows: dict[int, dict[int, str | None]]) -> tuple[int,
     start_row = marker_row + 1
     end_row = max(rows)
     for row_number in range(start_row, max(rows) + 1):
-        row_text = _normalize_text(rows.get(row_number, {}).get(3)).lower()
+        row_text = _matching_key(rows.get(row_number, {}).get(3))
         if _FUTURES_SECTION_MARKER in row_text or _FUTURES_FOOTER_MARKER in row_text:
             end_row = row_number - 1
             break
@@ -200,7 +200,7 @@ def _locate_futures_detail_section(
 ) -> tuple[int, int] | None:
     marker_row: int | None = None
     for row_number in sorted(rows):
-        row_text = _normalize_text(rows[row_number].get(3)).lower()
+        row_text = _matching_key(rows[row_number].get(3))
         if _FUTURES_SECTION_MARKER in row_text:
             marker_row = row_number
             break
@@ -212,7 +212,7 @@ def _locate_futures_detail_section(
     start_row = header_row + 1
     end_row = max(rows)
     for row_number in range(start_row, max(rows) + 1):
-        row_text = _normalize_text(rows.get(row_number, {}).get(3)).lower()
+        row_text = _matching_key(rows.get(row_number, {}).get(3))
         if _FUTURES_FOOTER_MARKER in row_text:
             end_row = row_number - 1
             break
@@ -246,7 +246,7 @@ def _read_fcm_sheet(path: Path) -> tuple[str, dict[int, dict[int, str | None]]]:
         selected_target: str | None = None
         for sheet in sheets.findall("main:sheet", _XML_NS):
             name = sheet.attrib.get("name", "")
-            normalized_name = _normalize_text(name).lower()
+            normalized_name = _matching_key(name)
             if not any(alias in normalized_name for alias in _FCM_SHEET_ALIASES):
                 continue
 
@@ -355,7 +355,11 @@ def _cell_value(cell_node: ET.Element, shared_strings: list[str]) -> str | None:
 def _normalize_text(value: str | None) -> str:
     if value is None:
         return ""
-    return canonicalize_name(value.replace("\n", " "))
+    return safe_display_name(value.replace("\n", " "))
+
+
+def _matching_key(value: str | None) -> str:
+    return canonicalize_name(_normalize_text(value)).casefold()
 
 
 def _extract_numeric(value: str | None) -> float:

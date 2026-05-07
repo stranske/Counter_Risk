@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import BadZipFile, ZipFile
 
-from counter_risk.normalize import canonicalize_name
+from counter_risk.normalize import canonicalize_name, safe_display_name
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -232,7 +232,11 @@ def _to_dataframe(records: list[dict[str, object]]) -> pd.DataFrame:
 def _normalize_text(value: str | None) -> str:
     if value is None:
         return ""
-    return canonicalize_name(value.replace("\n", " "))
+    return safe_display_name(value.replace("\n", " "))
+
+
+def _matching_key(value: str | None) -> str:
+    return canonicalize_name(_normalize_text(value)).casefold()
 
 
 def _scan_segments(rows: dict[int, dict[int, str | None]]) -> list[SegmentMetadata]:
@@ -260,7 +264,7 @@ def _scan_segments(rows: dict[int, dict[int, str | None]]) -> list[SegmentMetada
 
 
 def _identify_segment(label: str) -> str | None:
-    normalized = _normalize_text(label).lower()
+    normalized = _matching_key(label)
 
     if normalized in _EXPECTED_SEGMENT_PATTERNS["futures_cdx"]:
         return "futures_cdx"
@@ -314,7 +318,7 @@ def _find_header_row(rows: dict[int, dict[int, str | None]]) -> int | None:
     numeric_headers = {"cash", "tips", "treasury", "equity", "commodity", "currency"}
     for row_number in sorted(rows):
         row = rows[row_number]
-        normalized_values = [_normalize_text(value).lower() for value in row.values() if value]
+        normalized_values = [_matching_key(value) for value in row.values() if value]
         has_counterparty = any(
             "counterparty" in value or "clearing house" in value for value in normalized_values
         )
@@ -342,7 +346,8 @@ def _build_column_map(
                 _normalize_text(next_row.get(column_index)),
             )
             if part
-        ).lower()
+        )
+        combined_header = _matching_key(combined_header)
         normalized = combined_header
         if not normalized:
             continue

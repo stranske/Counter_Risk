@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from counter_risk.parser import parse_exposure_row
+from counter_risk.parsers.cprs_ch import _matching_key as _cprs_ch_matching_key
 from counter_risk.parsers.cprs_ch import _normalize_text as _cprs_ch_normalize_text
+from counter_risk.parsers.cprs_fcm import _matching_key as _cprs_fcm_matching_key
 from counter_risk.parsers.cprs_fcm import _normalize_text as _cprs_fcm_normalize_text
 from counter_risk.parsers.exposure_maturity_schedule import (
     _normalize_text as _exposure_normalize_text,
 )
+from counter_risk.parsers.nisa import _matching_key as _nisa_matching_key
 from counter_risk.parsers.nisa import _normalize_text as _nisa_normalize_text
 from counter_risk.writer import build_exposure_record
 from counter_risk.writers.historical_update import _normalize_header
@@ -82,26 +85,30 @@ def test_normalize_header_preserves_existing_none_handling() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Parser matching-key helpers route through canonicalize_name
+# Parser display helpers preserve punctuation while matching keys canonicalize it
 # ---------------------------------------------------------------------------
 
 
-def test_parser_normalize_text_helpers_canonicalize_unicode_punctuation() -> None:
-    # All parser matching-key helpers must resolve apostrophe and dash variants
-    # to the same canonical key as their ASCII spelling.
+def test_parser_normalize_text_helpers_preserve_display_punctuation() -> None:
+    assert _cprs_ch_normalize_text("Goldman Sachs Int’l") == "Goldman Sachs Int’l"
+    assert _cprs_fcm_normalize_text("Korea Exchange–Seoul") == "Korea Exchange–Seoul"
+    assert _nisa_normalize_text("Goldman Sachs Int’l") == "Goldman Sachs Int’l"
+
+
+def test_parser_matching_key_helpers_canonicalize_unicode_punctuation() -> None:
     curly = "Goldman Sachs Int’l"
     ascii_ = "Goldman Sachs Int'l"
 
-    assert _cprs_ch_normalize_text(curly) == _cprs_ch_normalize_text(ascii_)
-    assert _cprs_fcm_normalize_text(curly) == _cprs_fcm_normalize_text(ascii_)
-    assert _nisa_normalize_text(curly) == _nisa_normalize_text(ascii_)
+    assert _cprs_ch_matching_key(curly) == _cprs_ch_matching_key(ascii_)
+    assert _cprs_fcm_matching_key(curly) == _cprs_fcm_matching_key(ascii_)
+    assert _nisa_matching_key(curly) == _nisa_matching_key(ascii_)
     assert _exposure_normalize_text(curly) == _exposure_normalize_text(ascii_)
 
     en_dash = "Korea Exchange–Seoul"
     ascii_dash = "Korea Exchange-Seoul"
-    assert _cprs_ch_normalize_text(en_dash) == _cprs_ch_normalize_text(ascii_dash)
-    assert _cprs_fcm_normalize_text(en_dash) == _cprs_fcm_normalize_text(ascii_dash)
-    assert _nisa_normalize_text(en_dash) == _nisa_normalize_text(ascii_dash)
+    assert _cprs_ch_matching_key(en_dash) == _cprs_ch_matching_key(ascii_dash)
+    assert _cprs_fcm_matching_key(en_dash) == _cprs_fcm_matching_key(ascii_dash)
+    assert _nisa_matching_key(en_dash) == _nisa_matching_key(ascii_dash)
     assert _exposure_normalize_text(en_dash) == _exposure_normalize_text(ascii_dash)
 
 

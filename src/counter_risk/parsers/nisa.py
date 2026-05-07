@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from counter_risk.normalize import canonicalize_name
+from counter_risk.normalize import canonicalize_name, safe_display_name
 
 _TOTALS_MARKER = "total by counterparty/clearing house"
 _TOTALS_STOP_MARKERS = (
@@ -179,7 +179,11 @@ def parse_nisa_all_programs(path: Path | str) -> NisaAllProgramsData:
 
 
 def _normalize_text(value: Any) -> str:
-    return canonicalize_name(str(value or ""))
+    return safe_display_name(str(value or ""))
+
+
+def _matching_key(value: Any) -> str:
+    return canonicalize_name(_normalize_text(value)).casefold()
 
 
 def _coerce_float(value: Any) -> float:
@@ -203,9 +207,7 @@ def _coerce_float(value: Any) -> float:
 
 def _find_totals_marker_row(*, worksheet: Any, counterparty_column: int) -> int | None:
     for row_number in range(1, int(worksheet.max_row) + 1):
-        marker_text = _normalize_text(
-            worksheet.cell(row=row_number, column=counterparty_column).value
-        ).casefold()
+        marker_text = _matching_key(worksheet.cell(row=row_number, column=counterparty_column).value)
         if _TOTALS_MARKER in marker_text:
             return row_number
     return None
@@ -278,7 +280,7 @@ def _build_header_column_map(*, worksheet: Any, header_row: int, max_column: int
 
     for column in range(1, max_column + 1):
         pieces = [
-            _normalize_text(worksheet.cell(row=row_number, column=column).value).casefold()
+            _matching_key(worksheet.cell(row=row_number, column=column).value)
             for row_number in candidate_rows
         ]
         column_text = " ".join(piece for piece in pieces if piece)
@@ -313,9 +315,7 @@ def _find_totals_marker_position(*, worksheet: Any) -> tuple[int, int] | None:
     max_column = int(worksheet.max_column)
     for row_number in range(1, max_row + 1):
         for column_number in range(1, max_column + 1):
-            cell_text = _normalize_text(
-                worksheet.cell(row=row_number, column=column_number).value
-            ).casefold()
+            cell_text = _matching_key(worksheet.cell(row=row_number, column=column_number).value)
             if _TOTALS_MARKER in cell_text:
                 return row_number, column_number
     return None
@@ -339,7 +339,7 @@ def _parse_ch_rows(
 
     for row_number in range(header_row + 1, totals_marker_row):
         segment_text = _normalize_text(worksheet.cell(row=row_number, column=segment_column).value)
-        mapped_segment = _SEGMENT_MAP.get(segment_text.casefold())
+        mapped_segment = _SEGMENT_MAP.get(_matching_key(segment_text))
         if mapped_segment is not None:
             current_segment = mapped_segment
 
@@ -405,9 +405,7 @@ def _detect_segment_column(
     for column in candidates:
         score = 0
         for row_number in range(header_row + 1, totals_marker_row):
-            segment_text = _normalize_text(
-                worksheet.cell(row=row_number, column=column).value
-            ).casefold()
+            segment_text = _matching_key(worksheet.cell(row=row_number, column=column).value)
             if segment_text in _SEGMENT_MAP:
                 score += 1
         if score > best_score:
@@ -425,9 +423,9 @@ def _parse_totals_rows(
     rows: list[NisaTotalsRow] = []
 
     for row_number in range(totals_marker_row + 1, int(worksheet.max_row) + 1):
-        row_label = _normalize_text(
+        row_label = _matching_key(
             worksheet.cell(row=row_number, column=header_columns["counterparty"]).value
-        ).casefold()
+        )
         if any(marker in row_label for marker in _TOTALS_STOP_MARKERS):
             break
 
