@@ -28,7 +28,7 @@ def test_load_name_registry_includes_optional_series_flags() -> None:
     assert ice_euro.series_included.all_programs is True
     assert ice_euro.series_included.ex_trend is True
     assert ice_euro.series_included.trend is False
-    assert ice_euro.series_included.by_segment == {}
+    assert ice_euro.series_included.by_segment == {"trend": {"futures": False}}
 
     bank_of_america = next(
         entry for entry in registry.entries if entry.canonical_key == "bank_of_america"
