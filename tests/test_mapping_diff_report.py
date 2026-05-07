@@ -246,7 +246,7 @@ def test_collect_mapping_diff_findings_includes_name_resolutions(tmp_path: Path)
 
     citi = resolutions["Citigroup"]
     assert citi["display"] == "Citigroup"
-    assert citi["canonical_key"] == "Citigroup"
+    assert citi["canonical_key"] == "Citibank"
     assert citi["mapped"] == "Citibank"
     assert citi["source"] == "fallback"
 
@@ -271,6 +271,7 @@ def test_collect_mapping_diff_findings_name_resolutions_includes_registry_hits(
     resolutions = {entry["raw"]: entry for entry in findings["name_resolutions"]}
     boa = resolutions["Bank of America"]
     assert boa["source"] == "registry"
+    assert boa["canonical_key"] == "bank_of_america"
     assert boa["mapped"] == "Bank of America"
 
 
@@ -307,7 +308,7 @@ def test_generate_mapping_diff_report_includes_name_resolutions_section(tmp_path
     assert "NAME_RESOLUTIONS\n" in report
     assert "raw='Citigroup'" in report
     assert "display='Citigroup'" in report
-    assert "key='Citigroup'" in report
+    assert "key='Citibank'" in report
     assert "-> 'Citibank'" in report
     assert "[fallback]" in report
     assert "raw='Unknown Co'" in report

@@ -25,13 +25,50 @@ def _normalize_alias_token(value: str) -> str:
 
 
 class SeriesIncludedFlags(BaseModel):
-    """Optional per-variant inclusion flags for a canonical series."""
+    """Optional per-variant and per-segment inclusion flags for a canonical series."""
 
     model_config = ConfigDict(extra="forbid")
 
     all_programs: bool = True
     ex_trend: bool = True
     trend: bool = True
+    by_segment: dict[str, dict[str, bool]] = Field(default_factory=dict)
+
+    @field_validator("by_segment")
+    @classmethod
+    def _validate_by_segment(
+        cls, by_segment: dict[str, dict[str, bool]]
+    ) -> dict[str, dict[str, bool]]:
+        normalized: dict[str, dict[str, bool]] = {}
+        for raw_variant, raw_segment_flags in by_segment.items():
+            variant_key = str(raw_variant).strip().casefold()
+            if not variant_key:
+                raise ValueError("series_included.by_segment variant keys cannot be blank.")
+            if variant_key not in {"all_programs", "ex_trend", "trend"}:
+                raise ValueError(
+                    "series_included.by_segment variant keys must be one of: "
+                    "all_programs, ex_trend, trend."
+                )
+            if not isinstance(raw_segment_flags, dict):
+                raise ValueError(
+                    "series_included.by_segment values must be mappings of segment -> boolean."
+                )
+            segment_flags: dict[str, bool] = {}
+            for raw_segment, flag in raw_segment_flags.items():
+                segment_key = str(raw_segment).strip().casefold()
+                if not segment_key:
+                    raise ValueError("series_included.by_segment segment keys cannot be blank.")
+                if segment_key in segment_flags:
+                    raise ValueError(
+                        f"series_included.by_segment duplicate segment key: {segment_key!r}"
+                    )
+                if not isinstance(flag, bool):
+                    raise ValueError(
+                        "series_included.by_segment flags must be boolean true/false values."
+                    )
+                segment_flags[segment_key] = flag
+            normalized[variant_key] = segment_flags
+        return normalized
 
 
 class NameRegistryEntry(BaseModel):

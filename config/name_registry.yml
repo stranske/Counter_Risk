@@ -12,6 +12,7 @@ entries:
       - Citibank
       - Citigroup
     # Optional per-variant include flags. If omitted, defaults to included for all variants.
+    # Optional segment-level overrides can be provided under by_segment[variant][segment].
     series_included:
       all_programs: true
       ex_trend: true
@@ -65,6 +66,9 @@ entries:
       all_programs: true
       ex_trend: true
       trend: false
+      by_segment:
+        trend:
+          futures: false
 
   - canonical_key: eurex
     display_name: EUREX

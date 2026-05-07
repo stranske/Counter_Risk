@@ -1,5 +1,41 @@
 # Counter_Risk Workloop State
 
+## 2026-05-07T21:56:24Z - manual stall recovery for PR #575
+
+- Request: user asked to finish the stalled work so the opener lane no longer stalls on `stranske/Counter_Risk#575`.
+- Live PR state before remediation: `#575` was open, non-draft, correctly routed with `agent:codex`, `agents:keepalive`, `autofix`, and `agent:retry`, but `mergeStateStatus=DIRTY`; repeated opener repairs had dispatched Gate Followups while the keepalive runner jobs continued to skip.
+- Action taken: created isolated worktree `/tmp/counter-risk-575.XhroJq` from `origin/codex/issue-479-counterparty-registry`, merged current `origin/main`, and resolved conflicts in `README.md` and `workloop-state.md` by preserving both issue `#479` registry documentation and the merged issue `#478` data-quality documentation/state.
+- Validation passed after merge recovery:
+  - `python -m pytest tests/test_normalize.py tests/test_mapping_diff_report.py tests/test_name_registry.py tests/pipeline/test_reconcile_series_coverage.py tests/test_normalization_registry_first.py tests/test_gui_runner.py tests/pipeline/test_manifest_data_quality.py tests/pipeline/test_manifest_schema.py tests/test_runner_launch.py::test_data_quality_status_label_maps_color_to_label tests/test_runner_launch.py::test_data_quality_status_label_returns_empty_for_unknown_color -q` (164 passed).
+  - `python -m ruff check src/counter_risk/normalize.py src/counter_risk/reports/mapping_diff.py src/counter_risk/pipeline/reconciliation.py src/counter_risk/gui/runner.py src/counter_risk/pipeline/data_quality.py tests/test_normalize.py tests/test_mapping_diff_report.py tests/test_name_registry.py tests/pipeline/test_reconcile_series_coverage.py tests/test_normalization_registry_first.py tests/test_gui_runner.py tests/pipeline/test_manifest_data_quality.py`.
+- Next action: push the merge recovery to `codex/issue-479-counterparty-registry`; GitHub should recalculate `mergeStateStatus` and run fresh PR checks/keepalive from the updated branch.
+
+## 2026-05-07T18:07:35Z - opener lane PR materialization for issue #479
+
+- Automation: `pd-workloop-resume` (codex opener lane).
+- Source repo: `stranske/Counter_Risk`.
+- Source issue: `#479` (`[Agent] [M1] Add a counterparty mapping registry + maintainers workflow for updating series headers safely`).
+- Branch: `codex/issue-479-counterparty-registry`.
+- PR: `#575` (`https://github.com/stranske/Counter_Risk/pull/575`), ready for review, labels `agent:codex`, `agents:keepalive`, `autofix`.
+- Selection:
+  - ACTION A succeeded from the neutral Code workspace. Treated sentinel `active.*` as cross-lane informational and ran full opener discovery.
+  - `approved-issue-queue.json` has `issues_count=0` and `deeper_review_count=7`; live priority labels governed selection.
+  - Required discovery ran: `repo-review-approved`, live `priority:high` / `priority:normal` / `priority:low`, raw author searches for `codex`, `claude`, and `claude-code`, and cap-health.
+  - Cap-health reported `total_opener_owned=4`, `raw_cap_reached=false`, `normal_cap_reached=false`, and `non_drainable_cap_blocker=false`, leaving one opener slot.
+  - High-priority issues were already linked to open or merged verifier-pending PRs (`Manager-Database#979 -> #999`, `Inv-Man-Intake#379 -> #393`, `Inv-Man-Intake#381 -> #400`). Older normal-priority Counter_Risk issues were already in opener/closer lanes (`#473`, `#474`, `#476`, `#477`, `#478`), so `#479` was the oldest eligible implementation issue.
+- Implementation:
+  - Added registry canonical-key and `series_included` metadata to `NameResolution` while preserving display-name normalization.
+  - Updated mapping diff reporting so `NAME_RESOLUTIONS` surfaces the stable registry key for registry hits and normalized canonical key for fallback/unmapped names.
+  - Reconciliation now honors registry `series_included` flags for variant-specific historical-header expectations, avoiding false missing-header gaps for intentionally excluded variant series.
+  - Added `docs/name_registry.md` with the monthly mapping-diff review/update workflow and linked it from README.
+- Validation passed:
+  - `python -m pytest tests/test_normalize.py tests/test_mapping_diff_report.py tests/test_name_registry.py tests/pipeline/test_reconcile_series_coverage.py tests/test_normalization_registry_first.py` (132 passed).
+  - `python -m ruff check src/counter_risk/normalize.py src/counter_risk/reports/mapping_diff.py src/counter_risk/pipeline/reconciliation.py tests/test_normalize.py tests/test_mapping_diff_report.py tests/pipeline/test_reconcile_series_coverage.py`.
+  - `python -m black --check src/counter_risk/normalize.py src/counter_risk/reports/mapping_diff.py src/counter_risk/pipeline/reconciliation.py tests/test_normalize.py tests/test_mapping_diff_report.py tests/pipeline/test_reconcile_series_coverage.py` (passed with the repo's Python 3.14 target-version warning under Python 3.12).
+  - `python -m mypy src/counter_risk/normalize.py src/counter_risk/reports/mapping_diff.py src/counter_risk/pipeline/reconciliation.py`.
+- Relay event emitted: `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=479 active.source_pr=575 active.next_action=wait_for_keepalive`.
+- Next action: keepalive owns PR `#575` for CI, review comments, and follow-up commits. Opener is done with this issue and should select another eligible issue only after cap allows.
+
 ## 2026-05-07T16:04Z - opener lane issue #478 data-quality PR materializing
 
 - Automation: `pd-workloop-resume` (codex opener lane).

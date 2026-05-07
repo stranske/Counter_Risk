@@ -130,7 +130,7 @@ def collect_mapping_diff_findings(
             all_resolutions[raw_name] = {
                 "raw": raw_name,
                 "display": safe_display_name(raw_name),
-                "canonical_key": canonicalize_name(raw_name),
+                "canonical_key": result.canonical_key or canonicalize_name(raw_name),
                 "mapped": result.canonical_name,
                 "source": result.source,
             }
