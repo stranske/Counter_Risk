@@ -12,10 +12,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts import sync_dev_dependencies
-
-
 def main(argv: Sequence[str] | None = None) -> int:
+    from scripts import sync_dev_dependencies
+
     args = list(argv if argv is not None else sys.argv[1:])
     # Delegate to the repo-specific sync implementation to preserve local rules.
     return sync_dev_dependencies.main(args)
