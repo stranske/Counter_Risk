@@ -99,7 +99,12 @@ def reconcile_series_coverage(
                 for normalized_name, raw_names in normalized_counterparties_in_data.items()
                 if normalized_name not in normalized_historical_series_headers
                 and any(
-                    counterparty_included_for_variant(raw_name, variant) for raw_name in raw_names
+                    counterparty_included_for_variant(
+                        raw_name,
+                        variant,
+                        registry_path=_NAME_REGISTRY_PATH,
+                    )
+                    for raw_name in raw_names
                 )
             },
             key=str.casefold,

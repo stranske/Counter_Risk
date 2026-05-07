@@ -80,6 +80,17 @@ def test_counterparty_included_for_variant_uses_registry_series_flags() -> None:
     assert counterparty_included_for_variant("Unknown House", "trend") is True
 
 
+def test_counterparty_included_for_variant_default_registry_is_cwd_independent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    monkeypatch.chdir(config_dir)
+
+    assert counterparty_included_for_variant("ICE Clear Europe", "trend") is False
+
+
 def test_counterparty_included_for_variant_honors_segment_override(tmp_path: Path) -> None:
     config_dir = tmp_path / "config"
     config_dir.mkdir()

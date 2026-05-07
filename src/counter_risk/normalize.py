@@ -21,6 +21,9 @@ from typing import Literal
 
 from counter_risk.name_registry import NameRegistryConfig, SeriesIncludedFlags, load_name_registry
 
+_DEFAULT_REGISTRY_RELATIVE_PATH = Path("config/name_registry.yml")
+_REPO_DEFAULT_REGISTRY_PATH = Path(__file__).resolve().parents[2] / _DEFAULT_REGISTRY_RELATIVE_PATH
+
 # Apostrophe variants → ASCII apostrophe
 _APOSTROPHE_RE = re.compile(r"[\u2018\u2019\u201b\u02bc`]")
 
@@ -110,6 +113,20 @@ def _normalize_whitespace(name: str) -> str:
     return " ".join(name.split())
 
 
+def _resolve_registry_path(registry_path: str | Path) -> Path:
+    """Resolve the default registry path without depending on the process cwd."""
+
+    path = Path(registry_path)
+    if path.is_absolute():
+        return path
+    if path == _DEFAULT_REGISTRY_RELATIVE_PATH:
+        cwd_candidate = path.resolve()
+        if cwd_candidate.exists():
+            return cwd_candidate
+        return _REPO_DEFAULT_REGISTRY_PATH
+    return path.resolve()
+
+
 @lru_cache(maxsize=8)
 def _load_alias_lookup(registry_path: str) -> dict[str, RegistryNameMatch]:
     try:
@@ -137,12 +154,12 @@ def _build_alias_lookup(registry: NameRegistryConfig) -> dict[str, RegistryNameM
 def resolve_counterparty(
     name: str,
     *,
-    registry_path: str | Path = Path("config/name_registry.yml"),
+    registry_path: str | Path = _DEFAULT_REGISTRY_RELATIVE_PATH,
 ) -> NameResolution:
     """Resolve counterparty name with registry-first semantics."""
 
     normalized = canonicalize_name(name)
-    alias_lookup = _load_alias_lookup(str(Path(registry_path).resolve()))
+    alias_lookup = _load_alias_lookup(str(_resolve_registry_path(registry_path)))
     registry_match = alias_lookup.get(normalized.casefold())
     if registry_match is not None:
         return NameResolution(
@@ -179,7 +196,7 @@ def normalize_counterparty(name: str) -> str:
 def normalize_counterparty_with_source(
     name: str,
     *,
-    registry_path: str | Path = Path("config/name_registry.yml"),
+    registry_path: str | Path = _DEFAULT_REGISTRY_RELATIVE_PATH,
 ) -> NameResolution:
     """Normalize a counterparty name and return full mapping metadata.
 
@@ -196,7 +213,7 @@ def normalize_counterparty_with_source(
 def resolve_clearing_house(
     name: str,
     *,
-    registry_path: str | Path = Path("config/name_registry.yml"),
+    registry_path: str | Path = _DEFAULT_REGISTRY_RELATIVE_PATH,
 ) -> NameResolution:
     """Resolve clearing house name with registry-first semantics.
 
@@ -206,7 +223,7 @@ def resolve_clearing_house(
     """
 
     normalized = canonicalize_name(name)
-    alias_lookup = _load_alias_lookup(str(Path(registry_path).resolve()))
+    alias_lookup = _load_alias_lookup(str(_resolve_registry_path(registry_path)))
     registry_match = alias_lookup.get(normalized.casefold())
     if registry_match is not None:
         return NameResolution(
@@ -245,7 +262,7 @@ def counterparty_included_for_variant(
     variant: str | None,
     segment: str | None = None,
     *,
-    registry_path: str | Path = Path("config/name_registry.yml"),
+    registry_path: str | Path = _DEFAULT_REGISTRY_RELATIVE_PATH,
 ) -> bool:
     """Return whether a registry-mapped counterparty should be expected for *variant*.
 
