@@ -2169,6 +2169,8 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
     breach_row_count = max(0, len(csv_rows) - 1)
     assert breach_row_count >= 1
     assert manifest["limit_breach_summary"]["breach_count"] == breach_row_count
+    assert manifest["limit_breach_summary"]["warning_breach_count"] == 0
+    assert manifest["limit_breach_summary"]["fail_breach_count"] == breach_row_count
     assert manifest["limit_breach_summary"]["report_path"] == "limit_breaches.csv"
     assert "limit_breaches.csv" in manifest["limit_breach_summary"]["warning_banner"]
     assert "fail limit" in manifest["limit_breach_summary"]["warning_banner"]
@@ -2261,6 +2263,8 @@ def test_run_pipeline_limit_breach_summary_uses_warning_severity_when_no_fail_br
     run_dir = run_pipeline(config_path)
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["limit_breach_summary"]["has_breaches"] is True
+    assert manifest["limit_breach_summary"]["warning_breach_count"] == 1
+    assert manifest["limit_breach_summary"]["fail_breach_count"] == 0
     assert "warning limit breach detected" in manifest["limit_breach_summary"]["warning_banner"]
     assert any(
         "Limit breach summary:" in warning and "warning limit breach detected" in warning
@@ -2410,6 +2414,8 @@ def test_run_pipeline_warns_on_missing_limit_entities_by_default(
     assert manifest["limit_breach_summary"] == {
         "has_breaches": False,
         "breach_count": 0,
+        "warning_breach_count": 0,
+        "fail_breach_count": 0,
         "report_path": None,
         "warning_banner": None,
     }

@@ -238,6 +238,8 @@ class LimitBreachEvaluation:
     csv_path: Path | None
     breach_count: int
     max_severity: Literal["warning", "fail"] | None = None
+    warning_breach_count: int = 0
+    fail_breach_count: int = 0
 
 
 ScreenshotReplacer = Callable[[Path, Path, dict[str, Path]], None]
@@ -2009,11 +2011,11 @@ def _compute_and_write_limit_breaches(
     if not breaches_records:
         return LimitBreachEvaluation(csv_path=None, breach_count=0)
 
-    max_severity: Literal["warning", "fail"] = (
-        "fail"
-        if any(str(row.get("severity", "")).casefold() == "fail" for row in breaches_records)
-        else "warning"
+    fail_breach_count = sum(
+        1 for row in breaches_records if str(row.get("severity", "")).casefold() == "fail"
     )
+    warning_breach_count = len(breaches_records) - fail_breach_count
+    max_severity: Literal["warning", "fail"] = "fail" if fail_breach_count > 0 else "warning"
     csv_path = run_dir / "limit_breaches.csv"
     write_limit_breaches_csv(breaches_result, csv_path)
     LOGGER.info("limit_breaches_written path=%s", csv_path)
@@ -2021,6 +2023,8 @@ def _compute_and_write_limit_breaches(
         csv_path=csv_path,
         breach_count=len(breaches_records),
         max_severity=max_severity,
+        warning_breach_count=warning_breach_count,
+        fail_breach_count=fail_breach_count,
     )
 
 
@@ -2051,6 +2055,8 @@ def _build_limit_breach_summary(
     return {
         "has_breaches": has_breaches,
         "breach_count": limit_breaches.breach_count,
+        "warning_breach_count": limit_breaches.warning_breach_count,
+        "fail_breach_count": limit_breaches.fail_breach_count,
         "report_path": report_path,
         "warning_banner": warning_banner,
     }
