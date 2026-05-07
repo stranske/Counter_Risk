@@ -121,7 +121,8 @@ Required inputs (sheet names, columns):
 Output expectations (ranges affected, invariants):
 - Writes status text to `Runner!B7` and result text to `Runner!B8`
 - Writes data quality status (text + fill color) to `Runner!B9` when a
-  `DATA_QUALITY_SUMMARY.txt` is produced; cell stays empty if no summary file
+  `DATA_QUALITY_SUMMARY.txt` is produced; if no summary file is present, the VBA
+  does not modify the existing `Runner!B9` value
 - Uses All Programs config for pipeline invocation
 - Generated workbook includes `CPRS - CH`
 - `CPRS - CH!B5` matches parsed lead counterparty from source
