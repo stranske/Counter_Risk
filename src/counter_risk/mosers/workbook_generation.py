@@ -308,6 +308,7 @@ def _generate_mosers_workbook_from_parser(
             transform.source_metric
             for transform in resolved_transformation_scope.cprs_ch_transforms
         ),
+        section_start_row=metric_start_row,
         fallback_columns={
             transform.source_metric: transform.target_column
             for transform in resolved_transformation_scope.cprs_ch_transforms
@@ -544,6 +545,7 @@ def _resolve_metric_target_columns(
     *,
     worksheet: Worksheet,
     metrics: tuple[str, ...],
+    section_start_row: int | None = None,
     fallback_columns: dict[str, str] | None = None,
 ) -> dict[str, str]:
     """Resolve metric write columns by matching configured header aliases."""
@@ -557,12 +559,29 @@ def _resolve_metric_target_columns(
     }
     for metric in metrics:
         for header_alias in _CH_METRIC_SOURCE_HEADER_ALIASES.get(metric, ()):
-            row_number = _find_marker_row(worksheet=worksheet, marker_text=header_alias)
-            if row_number is None:
+            normalized_alias = normalize_template_text(header_alias)
+            matching_cells: list[tuple[int, int]] = []
+            for row_number in range(1, int(worksheet.max_row) + 1):
+                for column_number in range(1, int(worksheet.max_column) + 1):
+                    value = worksheet.cell(row=row_number, column=column_number).value
+                    if normalize_template_text(value) == normalized_alias:
+                        matching_cells.append((row_number, column_number))
+            if not matching_cells:
                 continue
+
+            if section_start_row is not None:
+                candidates = [cell for cell in matching_cells if cell[0] <= section_start_row]
+                row_number = (
+                    max(candidates, key=lambda cell: cell[0])[0]
+                    if candidates
+                    else matching_cells[0][0]
+                )
+            else:
+                row_number = matching_cells[0][0]
+
             for column_number in range(1, int(worksheet.max_column) + 1):
                 value = worksheet.cell(row=row_number, column=column_number).value
-                if normalize_template_text(value) == normalize_template_text(header_alias):
+                if normalize_template_text(value) == normalized_alias:
                     fallback_index = fallback_indexes.get(metric)
                     if fallback_index is not None and abs(column_number - fallback_index) > 2:
                         continue
