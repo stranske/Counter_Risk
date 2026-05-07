@@ -106,7 +106,7 @@
 - Selected repo: `stranske/Counter_Risk`.
 - Selected issue: `#477` (`[Agent] [M3] Add limit monitoring framework (config-driven limits, breach flags, and operator warnings)`, `priority:normal`, `repo-review-approved`).
 - Branch: `codex/issue-477-limit-monitoring` from fresh `origin/main` in isolated temp clone `/tmp/counter-risk-477-codex-rdtPz2/repo`.
-- PR: pending creation after push.
+- PR: `https://github.com/stranske/Counter_Risk/pull/573` (`OPEN`, non-draft, branch `codex/issue-477-limit-monitoring`, labels `agent:codex`, `agents:keepalive`, `autofix`).
 - Selection rationale:
   - ACTION A succeeded; `active.*` was cross-lane informational and did not gate discovery.
   - Approved queue has `issues_count=0`; live priority discovery governed selection.
@@ -124,7 +124,9 @@
   - `python -m ruff check src/counter_risk/limits_config.py src/counter_risk/compute/limits.py src/counter_risk/pipeline/run.py tests/test_limits_config.py tests/compute/test_limits.py tests/pipeline/test_run_pipeline.py tests/pipeline/test_run_folder_readme.py` -> pass.
   - `python -m black --check src/counter_risk/limits_config.py src/counter_risk/compute/limits.py src/counter_risk/pipeline/run.py tests/test_limits_config.py tests/compute/test_limits.py tests/pipeline/test_run_pipeline.py tests/pipeline/test_run_folder_readme.py` -> pass.
   - `python -m mypy src/counter_risk/limits_config.py src/counter_risk/compute/limits.py` -> pass.
-- Next action: push branch, open ready PR with `agent:codex`, `agents:keepalive`, and `autofix`, then emit `pr_opened`.
+- Relay: emitted `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=477 active.source_pr=573 active.next_action=wait_for_keepalive`.
+- Cap state post-PR: 5/5 opener-owned PRs. Keepalive owns PR #573 now; opener should not fix CI or review comments on this lane.
+- Next action: wait for keepalive.
 
 ## 2026-05-01T14:12Z - opener PR opened for issue #471
 
