@@ -241,7 +241,7 @@ def test_apply_daily_holdings_repo_cash_noop_when_daily_holdings_not_configured(
 
     monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", _unexpected_call)
 
-    run_module._apply_daily_holdings_repo_cash(
+    audit = run_module._apply_daily_holdings_repo_cash(
         config=config,
         parsed_by_variant=parsed_by_variant,
         warnings=warnings,
@@ -249,6 +249,7 @@ def test_apply_daily_holdings_repo_cash_noop_when_daily_holdings_not_configured(
     )
 
     assert any("Repo Cash source is not configured" in warning for warning in warnings)
+    assert audit["status"] == "not_configured"
 
 
 def test_apply_daily_holdings_repo_cash_prefers_structured_source_over_pdf(
@@ -318,7 +319,7 @@ def test_apply_daily_holdings_repo_cash_applies_overrides_from_default_file(
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(run_module, "parse_daily_holdings_pdf", lambda _: {"CIBC": 2.0})
 
-    run_module._apply_daily_holdings_repo_cash(
+    audit = run_module._apply_daily_holdings_repo_cash(
         config=config,
         parsed_by_variant=parsed_by_variant,
         warnings=warnings,
@@ -330,6 +331,25 @@ def test_apply_daily_holdings_repo_cash_applies_overrides_from_default_file(
     assert float(by_counterparty["CIBC"]["Cash"]) == pytest.approx(9.0)
     assert float(by_counterparty["ASL"]["Cash"]) == pytest.approx(3.0)
     assert any(str(overrides_path) in warning for warning in warnings)
+    assert audit["source_type"] == "pdf"
+    assert audit["override_path"] == str(overrides_path)
+    assert audit["override_rows"] == [
+        {
+            "counterparty": "CIBC",
+            "raw_counterparty": "CIBC",
+            "cash_value": "9.0",
+            "note": "manual correction",
+        },
+        {
+            "counterparty": "ASL",
+            "raw_counterparty": "ASL",
+            "cash_value": "3.0",
+            "note": "new row",
+        },
+    ]
+    assert audit["applied_to_variant"] == "all_programs"
+    assert audit["counterparty_count"] == 2
+    assert audit["total_cash"] == pytest.approx(12.0)
 
 
 def test_apply_daily_holdings_repo_cash_resolves_default_overrides_from_config_directory(

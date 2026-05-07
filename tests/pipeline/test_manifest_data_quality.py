@@ -79,6 +79,49 @@ def test_manifest_build_data_quality_defaults_to_info_when_no_warnings(tmp_path:
 
     data_quality = manifest["data_quality"]
     assert data_quality["overall_status"] == "info"
+
+
+def test_manifest_build_records_repo_cash_resolution_audit(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    artifact = run_dir / "output.csv"
+    artifact.write_text("ok\n", encoding="utf-8")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    repo_cash_resolution = {
+        "status": "loaded",
+        "source_type": "csv",
+        "source_path": "inputs/repo_cash.csv",
+        "override_path": "inputs/cash_overrides_2026-02-13.csv",
+        "override_rows": [
+            {
+                "counterparty": "CIBC",
+                "raw_counterparty": "CIBC",
+                "cash_value": "9.0",
+                "note": "desk correction",
+            }
+        ],
+        "counterparty_count": 2,
+        "total_cash": 12.0,
+        "checks": [],
+    }
+
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(artifact.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[],
+        repo_cash_resolution=repo_cash_resolution,
+    )
+
+    assert manifest["repo_cash_resolution"] == repo_cash_resolution
+    data_quality = manifest["data_quality"]
     assert data_quality["counts"]["by_severity"] == {"info": 1, "warn": 0, "fail": 0}
     assert data_quality["findings"][0]["code"] == "NO_FINDINGS"
     assert data_quality["recommended_actions"][0]["severity"] == "info"

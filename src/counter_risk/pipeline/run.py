@@ -361,7 +361,7 @@ def run_pipeline(
             warnings=warnings,
         )
         parsed_by_variant = _parse_inputs(_resolve_input_paths(runtime_config))
-        _apply_daily_holdings_repo_cash(
+        repo_cash_resolution = _apply_daily_holdings_repo_cash(
             config=runtime_config,
             parsed_by_variant=parsed_by_variant,
             warnings=warnings,
@@ -524,6 +524,7 @@ def run_pipeline(
                 concentration_metrics_records if concentration_metrics_records else None
             ),
             limit_breach_summary=limit_breach_summary,
+            repo_cash_resolution=repo_cash_resolution,
         )
         manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)
     except Exception as exc:
@@ -791,15 +792,15 @@ def _apply_daily_holdings_repo_cash(
     warnings: list[str],
     as_of_date: date | None = None,
     config_dir: Path | None = None,
-) -> None:
-    repo_cash_by_counterparty, source_label = _load_repo_cash_by_counterparty(
+) -> dict[str, Any]:
+    repo_cash_by_counterparty, source_label, audit = _load_repo_cash_by_counterparty(
         config=config,
         warnings=warnings,
         as_of_date=as_of_date,
         config_dir=config_dir,
     )
     if not repo_cash_by_counterparty:
-        return
+        return audit
 
     all_programs_sections = parsed_by_variant.get("all_programs")
     if not isinstance(all_programs_sections, dict) or "totals" not in all_programs_sections:
@@ -816,6 +817,10 @@ def _apply_daily_holdings_repo_cash(
         "Applied Repo Cash values to all_programs totals "
         f"for {len(repo_cash_by_counterparty)} counterparties using {source_label}"
     )
+    audit["applied_to_variant"] = "all_programs"
+    audit["counterparty_count"] = len(repo_cash_by_counterparty)
+    audit["total_cash"] = sum(repo_cash_by_counterparty.values())
+    return audit
 
 
 def _load_repo_cash_by_counterparty(
@@ -824,14 +829,24 @@ def _load_repo_cash_by_counterparty(
     warnings: list[str],
     as_of_date: date | None,
     config_dir: Path | None = None,
-) -> tuple[dict[str, float], str]:
+) -> tuple[dict[str, float], str, dict[str, Any]]:
     fail_policy = config.reconciliation.fail_policy
     source_type, source_path = _resolve_repo_cash_source(config)
     source_label = source_type
+    audit: dict[str, Any] = {
+        "source_type": source_type,
+        "source_path": str(source_path) if source_path is not None else None,
+        "override_path": None,
+        "override_rows": [],
+        "checks": [],
+        "counterparty_count": 0,
+        "total_cash": 0.0,
+    }
 
     if source_type == "none" or source_path is None:
         warnings.append("Repo Cash source is not configured (cash_source_type=none).")
-        return {}, "none"
+        audit["status"] = "not_configured"
+        return {}, "none", audit
 
     if source_type == "pdf":
         repo_cash_by_counterparty = parse_daily_holdings_pdf(source_path)
@@ -841,6 +856,8 @@ def _load_repo_cash_by_counterparty(
             source_type=cast(Literal["csv", "xlsx"], source_type),
         )
     source_label = f"{source_type}:{source_path}"
+    audit["status"] = "loaded"
+    audit["source_label"] = source_label
     warnings.append(f"Repo Cash source used: {source_label}")
 
     overrides_path = _resolve_repo_cash_overrides_path(
@@ -850,6 +867,8 @@ def _load_repo_cash_by_counterparty(
     )
     if overrides_path is not None:
         overrides, audit_rows = load_repo_cash_overrides_csv(overrides_path)
+        audit["override_path"] = str(overrides_path)
+        audit["override_rows"] = audit_rows
         if overrides:
             repo_cash_by_counterparty.update(overrides)
             warnings.append(
@@ -873,6 +892,13 @@ def _load_repo_cash_by_counterparty(
         if counterparty not in repo_cash_by_counterparty
     ]
     if missing_required:
+        audit["checks"].append(
+            {
+                "name": "required_counterparties",
+                "status": "fail" if fail_policy == "strict" else "warn",
+                "missing": missing_required,
+            }
+        )
         _handle_repo_cash_condition(
             "Repo Cash source is missing required counterparties: "
             f"{', '.join(missing_required)}.",
@@ -881,13 +907,31 @@ def _load_repo_cash_by_counterparty(
         )
 
     total_cash = sum(repo_cash_by_counterparty.values())
+    audit["counterparty_count"] = len(repo_cash_by_counterparty)
+    audit["total_cash"] = total_cash
     if config.cash_total_min is not None and total_cash < config.cash_total_min:
+        audit["checks"].append(
+            {
+                "name": "cash_total_min",
+                "status": "fail" if fail_policy == "strict" else "warn",
+                "actual": total_cash,
+                "expected_min": config.cash_total_min,
+            }
+        )
         _handle_repo_cash_condition(
             f"Repo Cash total {total_cash:.2f} is below configured minimum {config.cash_total_min:.2f}.",
             warnings=warnings,
             fail_policy=fail_policy,
         )
     if config.cash_total_max is not None and total_cash > config.cash_total_max:
+        audit["checks"].append(
+            {
+                "name": "cash_total_max",
+                "status": "fail" if fail_policy == "strict" else "warn",
+                "actual": total_cash,
+                "expected_max": config.cash_total_max,
+            }
+        )
         _handle_repo_cash_condition(
             f"Repo Cash total {total_cash:.2f} exceeds configured maximum {config.cash_total_max:.2f}.",
             warnings=warnings,
@@ -895,12 +939,18 @@ def _load_repo_cash_by_counterparty(
         )
 
     if not repo_cash_by_counterparty:
+        audit["checks"].append(
+            {
+                "name": "non_empty_source",
+                "status": "fail" if fail_policy == "strict" else "warn",
+            }
+        )
         _handle_repo_cash_condition(
             f"Repo Cash source '{source_label}' did not yield any counterparty values.",
             warnings=warnings,
             fail_policy=fail_policy,
         )
-    return repo_cash_by_counterparty, source_label
+    return repo_cash_by_counterparty, source_label, audit
 
 
 def _resolve_repo_cash_source(config: WorkflowConfig) -> tuple[str, Path | None]:

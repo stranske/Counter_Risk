@@ -70,6 +70,37 @@ def test_load_repo_cash_overrides_csv_returns_mapping_and_audit_rows(tmp_path: P
     assert audit_rows[0]["note"] == "manual correction"
 
 
+def test_load_repo_cash_overrides_csv_requires_note_column(tmp_path: Path) -> None:
+    overrides_path = tmp_path / "cash_overrides_2025-12-31.csv"
+    overrides_path.write_text(
+        "counterparty,cash_value\nCIBC,9.0\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="missing required columns: note"):
+        load_repo_cash_overrides_csv(overrides_path)
+
+
+def test_load_repo_cash_structured_source_rejects_duplicate_counterparty(
+    tmp_path: Path,
+) -> None:
+    source_path = tmp_path / "repo_cash.csv"
+    source_path.write_text(
+        "\n".join(
+            [
+                "counterparty,cash_value",
+                "CIBC,2.0",
+                "CIBC,3.0",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="duplicate counterparty 'CIBC'"):
+        load_repo_cash_structured_source(source_path, source_type="csv")
+
+
 def test_load_repo_cash_structured_source_raises_for_source_type_extension_mismatch(
     tmp_path: Path,
 ) -> None:

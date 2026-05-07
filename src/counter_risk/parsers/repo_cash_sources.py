@@ -10,7 +10,7 @@ from counter_risk.normalize import normalize_counterparty
 
 _COUNTERPARTY_HEADER_ALIASES = ("counterparty", "counterparty_name", "name")
 _CASH_HEADER_ALIASES = ("cash_value", "cash", "repo_cash")
-_OVERRIDES_REQUIRED_HEADERS = ("counterparty", "cash_value")
+_OVERRIDES_REQUIRED_HEADERS = ("counterparty", "cash_value", "note")
 
 
 def load_repo_cash_structured_source(
@@ -53,6 +53,12 @@ def load_repo_cash_overrides_csv(path: Path | str) -> tuple[dict[str, float], li
             continue
         cash_value = _coerce_cash_value(raw_cash_value, path=overrides_path, row_index=row_index)
         canonical_counterparty = normalize_counterparty(raw_counterparty)
+        if canonical_counterparty in overrides:
+            raise ValueError(
+                "Overrides file "
+                f"'{overrides_path}' contains duplicate counterparty "
+                f"{canonical_counterparty!r} at row {row_index}."
+            )
         overrides[canonical_counterparty] = cash_value
         audit_rows.append(
             {
@@ -159,6 +165,11 @@ def _rows_to_repo_cash_mapping(rows: list[dict[str, str]], *, path: Path) -> dic
         if not raw_cash:
             continue
         canonical_counterparty = normalize_counterparty(raw_counterparty)
+        if canonical_counterparty in mapping:
+            raise ValueError(
+                f"Structured cash source '{path}' contains duplicate counterparty "
+                f"{canonical_counterparty!r} at row {row_index}."
+            )
         mapping[canonical_counterparty] = _coerce_cash_value(
             raw_cash, path=path, row_index=row_index
         )
