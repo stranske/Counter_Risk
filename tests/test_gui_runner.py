@@ -16,6 +16,46 @@ from counter_risk.gui.runner import GuiRunState, execute_gui_run, launch_gui
 from counter_risk.runner_launch import resolve_ppt_output_dir
 
 
+def test_load_limit_breach_banner_returns_warning_banner(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / "manifest.json").write_text(
+        json.dumps(
+            {
+                "limit_breach_summary": {
+                    "has_breaches": True,
+                    "breach_count": 2,
+                    "report_path": "limit_breaches.csv",
+                    "warning_banner": "2 fail limit breaches detected. Review limit_breaches.csv.",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert (
+        gui_runner._load_limit_breach_banner(run_dir)
+        == "2 fail limit breaches detected. Review limit_breaches.csv."
+    )
+
+
+def test_load_limit_breach_banner_returns_none_for_missing_or_invalid_manifest(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    assert gui_runner._load_limit_breach_banner(run_dir) is None
+
+    (run_dir / "manifest.json").write_text("{not json", encoding="utf-8")
+    assert gui_runner._load_limit_breach_banner(run_dir) is None
+
+    (run_dir / "manifest.json").write_text(
+        json.dumps({"limit_breach_summary": {"warning_banner": "  "}}),
+        encoding="utf-8",
+    )
+    assert gui_runner._load_limit_breach_banner(run_dir) is None
+
+
 def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> None:
     captured: dict[str, list[str]] = {}
 
