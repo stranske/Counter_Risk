@@ -338,11 +338,11 @@ def test_apply_daily_holdings_repo_cash_counts_distinct_applied_overrides(
     overrides_path = tmp_path / "cash_overrides_2025-12-31.csv"
     overrides_path.write_text(
         "\n".join(
-                [
-                    "counterparty,cash_value,note",
-                    "CIBC,8.0,initial correction",
-                    "CIBC,9.0,latest correction",
-                ]
+            [
+                "counterparty,cash_value,note",
+                "CIBC,8.0,initial correction",
+                "CIBC,9.0,latest correction",
+            ]
         )
         + "\n",
         encoding="utf-8",
