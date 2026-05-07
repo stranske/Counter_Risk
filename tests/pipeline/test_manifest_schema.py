@@ -58,6 +58,44 @@ def test_manifest_schema_defines_limit_breach_summary_shape() -> None:
     assert summary["properties"]["warning_banner"]["type"] == ["string", "null"]
 
 
+def test_manifest_schema_defines_repo_cash_summary_shape() -> None:
+    schema = manifest_schema()
+
+    summary = schema["properties"]["repo_cash_summary"]
+    assert "repo_cash_summary" not in schema["required"]
+    assert summary["required"] == [
+        "source_type",
+        "source_path",
+        "skipped_reason",
+        "overrides_path",
+        "applied_override_count",
+        "raw_override_row_count",
+        "override_audit_rows",
+        "duplicate_counterparty_names",
+        "orphan_override_counterparties",
+        "counterparty_count",
+        "total_cash",
+        "required_counterparties",
+        "missing_required_counterparties",
+        "reconciliation_findings",
+        "fail_policy",
+    ]
+    assert summary["properties"]["source_path"]["type"] == ["string", "null"]
+    assert summary["properties"]["applied_override_count"]["type"] == "integer"
+    assert summary["properties"]["raw_override_row_count"]["type"] == "integer"
+    assert summary["properties"]["override_audit_rows"]["items"]["required"] == [
+        "counterparty",
+        "raw_counterparty",
+        "cash_value",
+        "note",
+    ]
+    assert summary["properties"]["reconciliation_findings"]["items"]["required"] == [
+        "code",
+        "severity",
+        "message",
+    ]
+
+
 def test_manifest_schema_defines_data_quality_shape() -> None:
     schema = manifest_schema()
 

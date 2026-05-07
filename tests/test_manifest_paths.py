@@ -99,6 +99,87 @@ def test_manifest_build_rejects_nonexistent_artifact_paths(tmp_path: Path) -> No
         )
 
 
+def test_manifest_includes_repo_cash_summary_when_provided(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    workbook_path = run_dir / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx"
+    workbook_path.write_bytes(b"hist")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    repo_cash_summary = {
+        "source_type": "csv",
+        "source_path": "inputs/repo_cash_2026-02-13.csv",
+        "overrides_path": "inputs/cash_overrides_2026-02-13.csv",
+        "applied_override_count": 2,
+        "raw_override_row_count": 2,
+        "override_audit_rows": [
+            {
+                "counterparty": "ACME",
+                "raw_counterparty": "ACME Bank",
+                "cash_value": "1000.0",
+                "note": "year-end true-up",
+            }
+        ],
+        "counterparty_count": 5,
+        "total_cash": 12345.67,
+        "required_counterparties": ["ACME", "BARCLAYS"],
+        "missing_required_counterparties": [],
+        "reconciliation_findings": [],
+        "fail_policy": "warn",
+        "applied_to_totals": True,
+    }
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(workbook_path.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[],
+        repo_cash_summary=repo_cash_summary,
+    )
+    manifest_path = builder.write(run_dir=run_dir, manifest=manifest)
+
+    parsed = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert "repo_cash_summary" in parsed
+    summary = parsed["repo_cash_summary"]
+    assert summary["source_type"] == "csv"
+    assert summary["source_path"] == "inputs/repo_cash_2026-02-13.csv"
+    assert summary["applied_override_count"] == 2
+    assert summary["raw_override_row_count"] == 2
+    assert summary["override_audit_rows"][0]["counterparty"] == "ACME"
+    assert summary["counterparty_count"] == 5
+    assert summary["total_cash"] == pytest.approx(12345.67)
+    assert summary["fail_policy"] == "warn"
+    assert summary["applied_to_totals"] is True
+
+
+def test_manifest_omits_repo_cash_summary_when_not_provided(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    workbook_path = run_dir / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx"
+    workbook_path.write_bytes(b"hist")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(workbook_path.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[],
+    )
+
+    assert "repo_cash_summary" not in manifest
+
+
 def test_manifest_warnings_are_normalized_to_strings(tmp_path: Path) -> None:
     run_dir = tmp_path / "runs" / "2026-02-13"
     run_dir.mkdir(parents=True)

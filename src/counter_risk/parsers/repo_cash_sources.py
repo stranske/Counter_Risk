@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
 
@@ -63,6 +64,100 @@ def load_repo_cash_overrides_csv(path: Path | str) -> tuple[dict[str, float], li
             }
         )
     return overrides, audit_rows
+
+
+def load_cash_by_counterparty(
+    *,
+    source_type: Literal["csv", "xlsx", "pdf", "none"] | None,
+    source_path: Path | str | None,
+    overrides_path: Path | str | None = None,
+    pdf_parser: Callable[[Path], dict[str, float]] | None = None,
+) -> tuple[dict[str, float], list[dict[str, str]], str, list[str]]:
+    """Load repo cash indexed by canonical counterparty name.
+
+    Precedence (highest to lowest):
+    - Override file values are applied per-counterparty on top of the base source.
+    - Structured source (CSV/XLSX) or PDF parser provides the base values.
+
+    Returns a 4-tuple:
+      cash_by_counterparty   – final mapping after overrides are applied
+      override_audit_rows    – audit records for each applied override row
+      source_label           – description of the base source used (e.g. ``"csv:/path/file.csv"``)
+      duplicate_counterparty_names – canonical names that appeared >1 time in the base source
+    """
+    resolved_type = (source_type or "").strip().casefold()
+    resolved_source = Path(source_path) if source_path is not None else None
+
+    if resolved_type == "none" or resolved_source is None:
+        return {}, [], "none", []
+
+    effective_type = resolved_type
+    if effective_type not in {"pdf", "csv", "xlsx"}:
+        suffix = resolved_source.suffix.lower()
+        if suffix == ".csv":
+            effective_type = "csv"
+        elif suffix in {".xlsx", ".xlsm"}:
+            effective_type = "xlsx"
+        elif suffix == ".pdf":
+            effective_type = "pdf"
+        else:
+            raise ValueError(f"Cannot determine cash source type for '{resolved_source}'.")
+
+    duplicate_names: list[str] = []
+    if effective_type == "pdf":
+        if pdf_parser is None:
+            from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
+
+            pdf_parser = parse_daily_holdings_pdf
+        repo_cash: dict[str, float] = pdf_parser(resolved_source)
+    else:
+        rows = (
+            _load_csv_rows(resolved_source)
+            if effective_type == "csv"
+            else _load_xlsx_rows(resolved_source)
+        )
+        duplicate_names = _find_duplicate_counterparty_names_in_rows(rows)
+        repo_cash = _rows_to_repo_cash_mapping(rows, path=resolved_source)
+
+    source_label = f"{effective_type}:{resolved_source}"
+    audit_rows: list[dict[str, str]] = []
+
+    if overrides_path is not None:
+        resolved_overrides = Path(overrides_path)
+        overrides, override_audit_rows = load_repo_cash_overrides_csv(resolved_overrides)
+        if overrides:
+            repo_cash.update(overrides)
+            audit_rows = override_audit_rows
+
+    return repo_cash, audit_rows, source_label, duplicate_names
+
+
+def find_duplicate_counterparty_names(
+    path: Path | str,
+    *,
+    source_type: Literal["csv", "xlsx"] | None = None,
+) -> list[str]:
+    """Return canonical counterparty names that appear more than once in a structured source file."""
+    source_path = Path(path)
+    resolved_type = _resolve_source_type(source_path, source_type)
+    rows = _load_csv_rows(source_path) if resolved_type == "csv" else _load_xlsx_rows(source_path)
+    return _find_duplicate_counterparty_names_in_rows(rows)
+
+
+def _find_duplicate_counterparty_names_in_rows(rows: list[dict[str, str]]) -> list[str]:
+    normalized_rows = [{_normalize_header(k): v for k, v in row.items()} for row in rows]
+    header_names = {k for row in normalized_rows for k in row}
+    counterparty_header = _first_matching_header(header_names, _COUNTERPARTY_HEADER_ALIASES)
+    if counterparty_header is None:
+        return []
+    seen: dict[str, int] = {}
+    for row in normalized_rows:
+        raw = str(row.get(counterparty_header, "")).strip()
+        if not raw:
+            continue
+        canonical = normalize_counterparty(raw)
+        seen[canonical] = seen.get(canonical, 0) + 1
+    return sorted(name for name, count in seen.items() if count > 1)
 
 
 def _resolve_source_type(

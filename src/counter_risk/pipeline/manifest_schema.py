@@ -93,6 +93,69 @@ _DATA_QUALITY_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+_REPO_CASH_FINDING_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["code", "severity", "message"],
+    "properties": {
+        "code": {"type": "string", "minLength": 1},
+        "severity": _DATA_QUALITY_SEVERITY_SCHEMA,
+        "message": {"type": "string"},
+    },
+    "additionalProperties": False,
+}
+
+_REPO_CASH_OVERRIDE_ROW_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["counterparty", "raw_counterparty", "cash_value", "note"],
+    "properties": {
+        "counterparty": {"type": "string", "minLength": 1},
+        "raw_counterparty": {"type": "string", "minLength": 1},
+        "cash_value": {"type": "string", "minLength": 1},
+        "note": {"type": "string"},
+    },
+    "additionalProperties": False,
+}
+
+_REPO_CASH_SUMMARY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "source_type",
+        "source_path",
+        "skipped_reason",
+        "overrides_path",
+        "applied_override_count",
+        "raw_override_row_count",
+        "override_audit_rows",
+        "duplicate_counterparty_names",
+        "orphan_override_counterparties",
+        "counterparty_count",
+        "total_cash",
+        "required_counterparties",
+        "missing_required_counterparties",
+        "reconciliation_findings",
+        "fail_policy",
+    ],
+    "properties": {
+        "source_type": {"type": "string"},
+        "source_path": {"type": ["string", "null"]},
+        "skipped_reason": {"type": ["string", "null"]},
+        "overrides_path": {"type": ["string", "null"]},
+        "applied_override_count": {"type": "integer", "minimum": 0},
+        "raw_override_row_count": {"type": "integer", "minimum": 0},
+        "override_audit_rows": {"type": "array", "items": _REPO_CASH_OVERRIDE_ROW_SCHEMA},
+        "duplicate_counterparty_names": {"type": "array", "items": {"type": "string"}},
+        "orphan_override_counterparties": {"type": "array", "items": {"type": "string"}},
+        "counterparty_count": {"type": "integer", "minimum": 0},
+        "total_cash": {"type": "number"},
+        "required_counterparties": {"type": "array", "items": {"type": "string"}},
+        "missing_required_counterparties": {"type": "array", "items": {"type": "string"}},
+        "reconciliation_findings": {"type": "array", "items": _REPO_CASH_FINDING_SCHEMA},
+        "fail_policy": {"type": "string"},
+        "applied_to_totals": {"type": "boolean"},
+    },
+    "additionalProperties": False,
+}
+
 
 def manifest_schema() -> dict[str, Any]:
     """Return the run manifest schema used by pipeline validation."""
@@ -197,6 +260,7 @@ def manifest_schema() -> dict[str, Any]:
                 },
                 "additionalProperties": False,
             },
+            "repo_cash_summary": _REPO_CASH_SUMMARY_SCHEMA,
         },
         "additionalProperties": False,
     }
