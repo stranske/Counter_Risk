@@ -5,7 +5,7 @@ from __future__ import annotations
 import csv
 from collections.abc import Callable
 from pathlib import Path
-from typing import Literal, cast
+from typing import Literal
 
 from counter_risk.normalize import normalize_counterparty
 
