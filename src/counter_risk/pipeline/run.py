@@ -5,12 +5,14 @@ from __future__ import annotations
 import contextlib
 import csv
 import hashlib
+import importlib.util
 import inspect
 import logging
 import math
 import os
 import platform
 import shutil
+import sys
 import tempfile
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
@@ -43,6 +45,7 @@ from counter_risk.normalize import (
     normalize_counterparty_with_source,
 )
 from counter_risk.outputs.base import OutputContext, OutputGenerator
+from counter_risk.outputs.ppt_screenshot import export_ppt_slides_as_png_via_com
 from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
 from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
 from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
@@ -2118,16 +2121,26 @@ def _write_outputs(
             if refresh_result.error_detail:
                 manifest_ppt_outputs["master"]["skipped_reason"] = refresh_result.error_detail
         chart_replaced_ppt = run_dir / f"{target_master_ppt.stem}_chart_replaced.pptx"
-        _apply_chart_replacement(
+        chart_replacement_applied = _apply_chart_replacement(
             master_pptx_path=target_master_ppt,
             output_path=chart_replaced_ppt,
             run_dir=run_dir,
             static_mode=config.distribution_static,
             warnings=warnings,
         )
+        distribution_source_ppt = (
+            chart_replaced_ppt if chart_replacement_applied else target_master_ppt
+        )
         _derive_distribution_ppt(
-            master_pptx_path=target_master_ppt,
+            master_pptx_path=distribution_source_ppt,
             distribution_pptx_path=target_distribution_ppt,
+        )
+        static_output_paths = _create_static_distribution(
+            source_pptx=distribution_source_ppt,
+            run_dir=run_dir,
+            config=config,
+            warnings=warnings,
+            output_path=target_distribution_ppt,
         )
         try:
             distribution_validation = validate_distribution_ppt_standalone(target_distribution_ppt)
@@ -2155,6 +2168,9 @@ def _write_outputs(
             "path": target_distribution_ppt.relative_to(run_dir).as_posix(),
             "generation_step": "ppt_distribution",
         }
+        for static_output_path in static_output_paths:
+            if static_output_path not in output_paths:
+                output_paths.append(static_output_path)
         post_distribution_generators = registry.load(
             output_generators=config.output_generators,
             stage="ppt_post_distribution",
@@ -2166,14 +2182,6 @@ def _write_outputs(
         )
         for generator in post_distribution_generators:
             output_paths.extend(generator.generate(context=output_context))
-    if config.enable_distribution_output:
-        static_output_paths = _create_static_distribution(
-            source_pptx=target_master_ppt,
-            run_dir=run_dir,
-            config=config,
-            warnings=warnings,
-        )
-        output_paths.extend(static_output_paths)
     if refresh_result.status == PptProcessingStatus.SUCCESS and config.enable_distribution_output:
         distribution_pdf_path = run_dir / f"{target_distribution_ppt.stem}.pdf"
         if distribution_pdf_path.exists():
@@ -2470,6 +2478,7 @@ def _create_static_distribution(
     run_dir: Path,
     config: WorkflowConfig,
     warnings: list[str],
+    output_path: Path | None = None,
 ) -> list[Path]:
     """Produce a static distribution copy of the presentation.
 
@@ -2493,8 +2502,11 @@ def _create_static_distribution(
         return []
 
     try:
-        import win32com.client
-    except ImportError:
+        win32com_available = importlib.util.find_spec("win32com.client") is not None
+    except (ImportError, ValueError):
+        win32com_available = "win32com.client" in sys.modules
+
+    if not win32com_available:
         warnings.append(
             "distribution_static requested but win32com is not installed; "
             "no static distribution produced"
@@ -2504,26 +2516,20 @@ def _create_static_distribution(
 
     output_paths: list[Path] = []
     slide_images_dir = run_dir / "_distribution_slides"
-    static_pptx_path = run_dir / f"{source_pptx.stem}_distribution_static.pptx"
-    app = None
-    presentation = None
+    static_pptx_path = output_path or run_dir / f"{source_pptx.stem}_distribution_static.pptx"
     try:
-        app = win32com.client.DispatchEx("PowerPoint.Application")
-        app.Visible = False
-        presentation = app.Presentations.Open(str(source_pptx), WithWindow=False)
-
-        # Preferred: export each slide as a PNG and rebuild the entire deck as
-        # one picture per slide, removing all live chart/OLE objects.
-        slide_images_dir.mkdir(parents=True, exist_ok=True)
-        slide_images = _export_slides_as_images(
-            com_presentation=presentation,
+        slide_images = export_ppt_slides_as_png_via_com(
+            source_pptx=source_pptx,
             slide_images_dir=slide_images_dir,
-            warnings=warnings,
         )
         _rebuild_pptx_from_slide_images(
             source_pptx=source_pptx,
             output_path=static_pptx_path,
             slide_images=slide_images,
+        )
+        scrub_external_relationships_from_pptx(
+            static_pptx_path,
+            scrubbed_pptx_path=static_pptx_path,
         )
         output_paths.append(static_pptx_path)
         LOGGER.info("distribution_static_pptx_complete path=%s", static_pptx_path)
@@ -2531,13 +2537,6 @@ def _create_static_distribution(
     except Exception as exc:
         warnings.append(f"distribution_static generation failed: {exc}")
         LOGGER.exception("distribution_static_failed")
-    finally:
-        if presentation is not None:
-            with contextlib.suppress(Exception):
-                presentation.Close()
-        if app is not None:
-            with contextlib.suppress(Exception):
-                app.Quit()
 
     return output_paths
 
@@ -2575,29 +2574,6 @@ def _export_pptx_to_pdf(*, source_pptx: Path, pdf_path: Path) -> None:
     from counter_risk.outputs.pdf_export import export_pptx_to_pdf_via_com
 
     export_pptx_to_pdf_via_com(source_pptx=source_pptx, pdf_path=pdf_path)
-
-
-def _export_slides_as_images(
-    *,
-    com_presentation: Any,
-    slide_images_dir: Path,
-    warnings: list[str],
-) -> list[Path]:
-    """Export each slide in the COM presentation as a PNG image."""
-    slide_images: list[Path] = []
-    slide_count = int(com_presentation.Slides.Count)
-    for slide_idx in range(1, slide_count + 1):
-        image_path = slide_images_dir / f"slide_{slide_idx:04d}.png"
-        try:
-            com_presentation.Slides[slide_idx].Export(str(image_path), "PNG")
-            slide_images.append(image_path)
-        except Exception as exc:
-            warnings.append(f"distribution_static slide export failed (slide {slide_idx}): {exc}")
-            LOGGER.warning(
-                "distribution_static_slide_export_failed slide=%d exc=%s", slide_idx, exc
-            )
-            raise
-    return slide_images
 
 
 def _export_chart_shapes_as_images(

@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import shutil
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 from counter_risk.config import WorkflowConfig
 from counter_risk.outputs.base import OutputContext, OutputGenerator
@@ -22,6 +24,41 @@ _PptCopier = Callable[[str | Path, str | Path], str]
 
 def _copy_ppt(source: str | Path, destination: str | Path) -> str:
     return shutil.copy2(str(source), str(destination))
+
+
+def export_ppt_slides_as_png_via_com(*, source_pptx: Path, slide_images_dir: Path) -> list[Path]:
+    """Export one PNG image per slide via PowerPoint COM automation."""
+    from counter_risk.integrations.powerpoint_com import initialize_powerpoint_application
+
+    app: Any | None = None
+    presentation: Any | None = None
+    slide_images: list[Path] = []
+    try:
+        app = initialize_powerpoint_application()
+        with suppress(Exception):
+            app.Visible = 0
+        presentation = app.Presentations.Open(str(source_pptx), False, True, False)
+
+        slide_images_dir.mkdir(parents=True, exist_ok=True)
+        slide_count = int(presentation.Slides.Count)
+        for slide_idx in range(1, slide_count + 1):
+            image_path = slide_images_dir / f"slide_{slide_idx:04d}.png"
+            try:
+                presentation.Slides[slide_idx].Export(str(image_path), "PNG")
+            except Exception as exc:
+                raise RuntimeError(
+                    "PowerPoint slide PNG export failed "
+                    f"for slide {slide_idx} to '{image_path}': {exc}"
+                ) from exc
+            slide_images.append(image_path)
+    finally:
+        if presentation is not None:
+            with suppress(Exception):
+                presentation.Close()
+        if app is not None:
+            with suppress(Exception):
+                app.Quit()
+    return slide_images
 
 
 @dataclass(frozen=True)
