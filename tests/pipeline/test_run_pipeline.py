@@ -2393,9 +2393,7 @@ def test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input(
     run_dir = run_pipeline(config_path)
 
     generated_mosers_output = run_dir / "all_programs-mosers-input.xlsx"
-    intermediate_generated_output = run_dir / "_generated" / "all_programs-generated-mosers.xlsx"
     assert generated_mosers_output.exists()
-    assert intermediate_generated_output.exists()
 
     from openpyxl import load_workbook
 
@@ -2452,9 +2450,7 @@ def test_run_pipeline_generates_ex_trend_and_trend_mosers_from_raw_nisa_inputs(
 
     for variant in ("ex_trend", "trend"):
         generated_mosers_output = run_dir / f"{variant}-mosers-input.xlsx"
-        intermediate_generated_output = run_dir / "_generated" / f"{variant}-generated-mosers.xlsx"
         assert generated_mosers_output.exists()
-        assert intermediate_generated_output.exists()
 
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert "raw_nisa_ex_trend_xlsx" in manifest["input_hashes"]
@@ -2532,7 +2528,7 @@ def test_run_pipeline_raw_nisa_generation_produces_parseable_non_vba_workbooks(
         assert "xl/vbaproject.bin" not in archive_members
 
 
-def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
+def test_prepare_runtime_config_generates_raw_nisa_mosers_output_at_pipeline_input_paths(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     run_dir = tmp_path / "run"
@@ -2609,11 +2605,6 @@ def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
         warnings=warnings,
     )
 
-    expected_generated_paths = {
-        "all_programs": run_dir / "_generated" / "all_programs-generated-mosers.xlsx",
-        "ex_trend": run_dir / "_generated" / "ex_trend-generated-mosers.xlsx",
-        "trend": run_dir / "_generated" / "trend-generated-mosers.xlsx",
-    }
     expected_canonical_paths = {
         "all_programs": run_dir / "all_programs-mosers-input.xlsx",
         "ex_trend": run_dir / "ex_trend-mosers-input.xlsx",
@@ -2628,26 +2619,23 @@ def test_prepare_runtime_config_generates_and_copies_raw_nisa_mosers_output(
     assert generated_calls == [
         {
             "raw_nisa_path": expected_raw_paths["all_programs"],
-            "output_path": expected_generated_paths["all_programs"],
+            "output_path": expected_canonical_paths["all_programs"],
             "as_of_date": date(2025, 12, 31),
         },
         {
             "raw_nisa_path": expected_raw_paths["ex_trend"],
-            "output_path": expected_generated_paths["ex_trend"],
+            "output_path": expected_canonical_paths["ex_trend"],
             "as_of_date": date(2025, 12, 31),
         },
         {
             "raw_nisa_path": expected_raw_paths["trend"],
-            "output_path": expected_generated_paths["trend"],
+            "output_path": expected_canonical_paths["trend"],
             "as_of_date": date(2025, 12, 31),
         },
     ]
     for variant in ("all_programs", "ex_trend", "trend"):
-        generated_path = expected_generated_paths[variant]
         canonical_path = expected_canonical_paths[variant]
-        assert generated_path.exists()
         assert canonical_path.exists()
-        assert generated_path.read_bytes() == canonical_path.read_bytes()
 
     assert parser_contract_validation_calls == [
         {

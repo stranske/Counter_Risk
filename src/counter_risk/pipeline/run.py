@@ -1253,16 +1253,14 @@ def _prepare_runtime_config(
     as_of_date: date,
     warnings: list[str],
 ) -> WorkflowConfig:
-    generated_dir = run_dir / "_generated"
     updates: dict[str, Path] = {}
     generation_specs: tuple[
-        tuple[str, Path | None, str, str, str, Callable[..., Path]],
+        tuple[str, Path | None, str, str, Callable[..., Path]],
         ...,
     ] = (
         (
             "all_programs",
             config.raw_nisa_all_programs_xlsx,
-            "all_programs-generated-mosers.xlsx",
             "all_programs-mosers-input.xlsx",
             "Generated All Programs MOSERS workbook from raw NISA input",
             generate_mosers_workbook,
@@ -1270,7 +1268,6 @@ def _prepare_runtime_config(
         (
             "ex_trend",
             config.raw_nisa_ex_trend_xlsx,
-            "ex_trend-generated-mosers.xlsx",
             "ex_trend-mosers-input.xlsx",
             "Generated Ex Trend MOSERS workbook from raw NISA input",
             generate_mosers_workbook_ex_trend,
@@ -1278,7 +1275,6 @@ def _prepare_runtime_config(
         (
             "trend",
             config.raw_nisa_trend_xlsx,
-            "trend-generated-mosers.xlsx",
             "trend-mosers-input.xlsx",
             "Generated Trend MOSERS workbook from raw NISA input",
             generate_mosers_workbook_trend,
@@ -1288,22 +1284,18 @@ def _prepare_runtime_config(
     for (
         variant,
         raw_nisa_path,
-        generated_filename,
         canonical_filename,
         warning,
         generator,
     ) in generation_specs:
         if raw_nisa_path is None:
             continue
-        generated_dir.mkdir(parents=True, exist_ok=True)
-        generated_mosers_path = generated_dir / generated_filename
         canonical_mosers_path = run_dir / canonical_filename
         generator(
             raw_nisa_path=raw_nisa_path,
-            output_path=generated_mosers_path,
+            output_path=canonical_mosers_path,
             as_of_date=as_of_date,
         )
-        shutil.copy2(generated_mosers_path, canonical_mosers_path)
         _validate_milestone_one_parser_contract(
             workbook_path=canonical_mosers_path,
             variant=variant,
