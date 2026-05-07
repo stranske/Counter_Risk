@@ -17,7 +17,10 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency in some en
         allow_module_level=True,
     )
 
-from counter_risk.ppt.pptx_static import _rebuild_pptx_from_slide_images
+from counter_risk.ppt.pptx_static import (
+    SlideImageCountMismatchError,
+    _rebuild_pptx_from_slide_images,
+)
 
 
 def _write_png(path: Path) -> None:
@@ -68,6 +71,9 @@ def test_rebuild_pptx_from_slide_images_outputs_picture_only_slides(tmp_path: Pa
 
     rebuilt = Presentation(str(output))
     assert len(rebuilt.slides) == 2
+    source_prs = Presentation(str(source))
+    assert rebuilt.slide_width == source_prs.slide_width
+    assert rebuilt.slide_height == source_prs.slide_height
     for slide in rebuilt.slides:
         picture_shapes = [
             shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
@@ -75,3 +81,24 @@ def test_rebuild_pptx_from_slide_images_outputs_picture_only_slides(tmp_path: Pa
         chart_shapes = [shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.CHART]
         assert len(picture_shapes) == 1
         assert chart_shapes == []
+
+
+def test_rebuild_pptx_from_slide_images_fails_when_slide_count_mismatch(tmp_path: Path) -> None:
+    source = tmp_path / "source.pptx"
+    output = tmp_path / "rebuilt.pptx"
+
+    source_img = tmp_path / "source.png"
+    _write_png(source_img)
+    _make_source_with_chart(source, source_img)
+
+    slide_image_1 = tmp_path / "slide_0001.png"
+    _write_png(slide_image_1)
+
+    with pytest.raises(SlideImageCountMismatchError, match="image count mismatch"):
+        _rebuild_pptx_from_slide_images(
+            source_pptx=source,
+            slide_images=[slide_image_1],
+            output_path=output,
+        )
+
+    assert not output.exists()

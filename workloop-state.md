@@ -27,6 +27,24 @@
 - Cap state post-PR: 5/5 opener-owned issue-linked PRs (`Counter_Risk#521`, `Counter_Risk#522`, `Counter_Risk#523`, `Travel-Plan-Permission#1008`, `trip-planner#1061`). Next opener round will be cap-blocked unless closer drains.
 - Next action: keepalive owns PR #523; opener should move to the next eligible issue only after the cap drops below 5.
 
+## 2026-05-01T13:09Z - opener PR opened for issue #470
+- Automation: `pd-workloop-resume` (codex opener lane).
+- Selected lane: `https://github.com/stranske/Counter_Risk/issues/470` (`priority:normal`, `repo-review-approved`).
+- Branch: `codex/issue-470-distribution-static` from `origin/main` (`1fde16c`).
+- Selection rationale: ACTION A succeeded and full opener discovery ran. High-priority implementation issues were already linked to open opener PRs, while Workflows #1976 is an operational auth-expiring alert and was skipped. Cap check found 4/5 active opener-owned issue-linked PRs after Counter_Risk #520 merged, leaving one opener slot. The oldest unlinked supported normal-priority implementation issue was Counter_Risk #470.
+- Implementation:
+  - Static distribution mode now rebuilds the canonical Distribution PPT path before post-distribution generators run, so PDF export receives the final static deck when COM export succeeds.
+  - Static rebuild output is scrubbed through `pptx_postprocess` after image-only deck creation.
+  - `scrub_external_relationships_from_pptx` now supports safe in-place scrubbing via a temporary archive.
+- Validation:
+  - `python -m pytest tests/test_pptx_postprocess.py tests/pipeline/test_run_pipeline.py -k 'static_distribution or scrub_external_relationships or distribution_static' --no-cov` -> 11 passed.
+  - `python -m ruff check src/counter_risk/pipeline/run.py src/counter_risk/ppt/pptx_postprocess.py tests/pipeline/test_run_pipeline.py tests/test_pptx_postprocess.py` -> pass.
+  - `python -m black --target-version py312 --check src/counter_risk/pipeline/run.py src/counter_risk/ppt/pptx_postprocess.py tests/pipeline/test_run_pipeline.py tests/test_pptx_postprocess.py` -> pass.
+- Draft PR: `https://github.com/stranske/Counter_Risk/pull/522` (`agent:codex`, branch `codex/issue-470-distribution-static`).
+- Relay: emitted `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=470 active.source_pr=522 active.next_action=wait_for_keepalive`.
+- Cap state post-PR: 5/5 opener-owned issue-linked PRs (Counter_Risk #521/#522; TPP #1008; trip-planner #1057/#1061). Next opener round will hit cap unless closer drains.
+- Next action: keepalive owns PR #522.
+
 ## 2026-05-01T08:05:33Z - opener PR opened for issue #468
 - Automation: `pd-workloop-resume` (codex opener lane).
 - Selected lane: `https://github.com/stranske/Counter_Risk/issues/468` (`priority:normal`, repo-review-approved).

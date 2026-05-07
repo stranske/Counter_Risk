@@ -4,8 +4,11 @@ from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from counter_risk.config import WorkflowConfig
 from counter_risk.outputs import OutputContext, PptScreenshotOutputGenerator
+from counter_risk.outputs.ppt_screenshot import export_ppt_slides_as_png_via_com
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 
 
@@ -118,3 +121,110 @@ def test_ppt_screenshot_generator_copies_source_when_replacement_disabled(tmp_pa
     assert warnings == [
         "PPT screenshots replacement disabled; copied source deck to Master unchanged"
     ]
+
+
+def test_export_ppt_slides_as_png_via_com_exports_all_slides(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_pptx = tmp_path / "source.pptx"
+    source_pptx.write_bytes(b"pptx")
+    slide_images_dir = tmp_path / "slides"
+    png_bytes = (
+        b"\x89PNG\r\n\x1a\n"
+        b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+        b"\x00\x00\x00\rIDATx\x9cc\xf8\xcf\xc0\xf0\x1f\x00\x05\x00\x01\xff\x89\x99=\x1d"
+        b"\x00\x00\x00\x00IEND\xaeB`\x82"
+    )
+
+    class _FakeSlide:
+        def __init__(self, index: int) -> None:
+            self.index = index
+
+        def Export(self, path: str, fmt: str) -> None:  # noqa: N802
+            assert fmt == "PNG"
+            Path(path).write_bytes(png_bytes + bytes(str(self.index), encoding="ascii"))
+
+    class _FakeSlides:
+        def __init__(self) -> None:
+            self.Count = 2
+
+        def __getitem__(self, idx: int) -> _FakeSlide:
+            return _FakeSlide(idx)
+
+    class _FakePresentation:
+        def __init__(self) -> None:
+            self.Slides = _FakeSlides()
+
+        def Close(self) -> None:  # noqa: N802
+            return None
+
+    class _FakePowerPointApplication:
+        def __init__(self) -> None:
+            self.Visible = 1
+            self.Presentations = type(
+                "_Presentations",
+                (),
+                {"Open": staticmethod(lambda *_args, **_kwargs: _FakePresentation())},
+            )
+
+        def Quit(self) -> None:  # noqa: N802
+            return None
+
+    monkeypatch.setattr(
+        "counter_risk.integrations.powerpoint_com.initialize_powerpoint_application",
+        lambda: _FakePowerPointApplication(),
+    )
+
+    exported = export_ppt_slides_as_png_via_com(
+        source_pptx=source_pptx,
+        slide_images_dir=slide_images_dir,
+    )
+
+    assert exported == [slide_images_dir / "slide_0001.png", slide_images_dir / "slide_0002.png"]
+    assert all(path.exists() for path in exported)
+
+
+def test_export_ppt_slides_as_png_via_com_reports_slide_export_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_pptx = tmp_path / "source.pptx"
+    source_pptx.write_bytes(b"pptx")
+    slide_images_dir = tmp_path / "slides"
+
+    class _FailingSlide:
+        def Export(self, _path: str, _fmt: str) -> None:  # noqa: N802
+            raise OSError("COM export failed")
+
+    class _FakeSlides:
+        Count = 1
+
+        def __getitem__(self, _idx: int) -> _FailingSlide:
+            return _FailingSlide()
+
+    class _FakePresentation:
+        Slides = _FakeSlides()
+
+        def Close(self) -> None:  # noqa: N802
+            return None
+
+    class _FakePowerPointApplication:
+        Presentations = type(
+            "_Presentations",
+            (),
+            {"Open": staticmethod(lambda *_args, **_kwargs: _FakePresentation())},
+        )
+
+        def Quit(self) -> None:  # noqa: N802
+            return None
+
+    monkeypatch.setattr(
+        "counter_risk.integrations.powerpoint_com.initialize_powerpoint_application",
+        lambda: _FakePowerPointApplication(),
+    )
+
+    with pytest.raises(RuntimeError, match=r"slide 1.*slide_0001\.png.*COM export failed"):
+        export_ppt_slides_as_png_via_com(
+            source_pptx=source_pptx,
+            slide_images_dir=slide_images_dir,
+        )

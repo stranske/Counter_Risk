@@ -97,6 +97,31 @@ def test_scrub_external_relationships_from_pptx_returns_new_default_scrubbed_cop
     assert list_external_relationship_targets(scrubbed) == set()
 
 
+def test_scrub_external_relationships_from_pptx_supports_in_place_scrub(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.pptx"
+
+    with ZipFile(source, "w") as archive:
+        archive.writestr(
+            "ppt/_rels/presentation.xml.rels",
+            """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">
+  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink\" Target=\"https://example.com\" TargetMode=\"External\"/>
+</Relationships>
+""",
+        )
+        archive.writestr("ppt/presentation.xml", b"<presentation/>")
+
+    scrubbed = scrub_external_relationships_from_pptx(source, scrubbed_pptx_path=source)
+
+    assert scrubbed == source
+    assert source.exists()
+    assert list_external_relationship_targets(source) == set()
+    with ZipFile(source) as archive:
+        assert archive.read("ppt/presentation.xml") == b"<presentation/>"
+
+
 def test_scrub_external_relationships_from_pptx_accepts_str_paths_and_creates_parent_dirs(
     tmp_path: Path,
 ) -> None:

@@ -276,3 +276,31 @@ def test_langchain_provider_client_reports_missing_dependencies_for_provider_cha
 
     with pytest.raises(RuntimeError, match="Install required packages: langchain-openai"):
         client.generate(messages=[{"role": "user", "content": "hello"}], model="gpt-5.2")
+
+
+def test_langchain_provider_client_reports_client_init_failure_when_credentials_exist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        provider_base,
+        "get_provider_model_catalog",
+        lambda: {
+            "github-models": {"gpt-5.2"},
+            "openai": {"gpt-5.2"},
+            "anthropic": set(),
+        },
+    )
+    monkeypatch.setattr(provider_base, "missing_provider_dependencies", lambda _provider: ())
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    monkeypatch.setattr(provider_base, "build_chat_client", lambda **_: None)
+
+    client = provider_base.LangChainProviderClient(
+        provider_chain=("github-models", "openai"),
+        required_env_keys=("GITHUB_TOKEN", "OPENAI_API_KEY"),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="credentials are present but no LangChain client could be initialized",
+    ):
+        client.generate(messages=[{"role": "user", "content": "hello"}], model="gpt-5.2")

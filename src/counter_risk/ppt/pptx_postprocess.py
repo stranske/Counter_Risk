@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import cast
@@ -27,17 +28,38 @@ def scrub_external_relationships_from_pptx(
             f"{source_pptx_path.stem}_scrubbed{source_pptx_path.suffix}"
         )
     )
+    in_place = source_pptx_path.resolve() == destination.resolve()
+    write_destination = destination
+    temp_path: Path | None = None
+    if in_place:
+        with tempfile.NamedTemporaryFile(
+            prefix=f"{source_pptx_path.stem}-scrubbed-",
+            suffix=source_pptx_path.suffix,
+            dir=source_pptx_path.parent,
+            delete=False,
+        ) as temp_file:
+            temp_path = Path(temp_file.name)
+        write_destination = temp_path
 
-    destination.parent.mkdir(parents=True, exist_ok=True)
+    write_destination.parent.mkdir(parents=True, exist_ok=True)
 
-    with ZipFile(source_pptx_path) as source_archive, ZipFile(destination, "w") as output_archive:
-        for item in source_archive.infolist():
-            xml_bytes = source_archive.read(item.filename)
-            if not _is_ppt_relationship_part(item.filename):
-                output_archive.writestr(item, xml_bytes)
-                continue
+    try:
+        with (
+            ZipFile(source_pptx_path) as source_archive,
+            ZipFile(write_destination, "w") as output_archive,
+        ):
+            for item in source_archive.infolist():
+                xml_bytes = source_archive.read(item.filename)
+                if not _is_ppt_relationship_part(item.filename):
+                    output_archive.writestr(item, xml_bytes)
+                    continue
 
-            output_archive.writestr(item, _remove_external_relationship_targets(xml_bytes))
+                output_archive.writestr(item, _remove_external_relationship_targets(xml_bytes))
+        if temp_path is not None:
+            temp_path.replace(destination)
+    finally:
+        if temp_path is not None and temp_path.exists():
+            temp_path.unlink()
 
     return destination
 

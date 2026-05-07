@@ -319,6 +319,31 @@ def test_load_config_accepts_export_pdf_flag(tmp_path: Path) -> None:
     assert config.export_pdf is True
 
 
+def test_load_config_accepts_distribution_static_flag(tmp_path: Path) -> None:
+    config_path = tmp_path / "with_distribution_static.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                "mosers_all_programs_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
+                "mosers_ex_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+                "mosers_trend_xlsx: docs/N__A Data/MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+                "hist_all_programs_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+                "hist_ex_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+                "hist_llc_3yr_xlsx: docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+                "monthly_pptx: docs/Ratings Instructiosns/Monthly Counterparty Exposure Report.pptx",
+                "output_root: runs/test",
+                "distribution_static: true",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+    assert config.distribution_static is True
+
+
 def test_load_config_raises_for_invalid_screenshot_implementation(tmp_path: Path) -> None:
     bad_config = tmp_path / "invalid_screenshot_impl.yml"
     bad_config.write_text(

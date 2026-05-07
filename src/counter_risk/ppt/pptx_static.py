@@ -9,6 +9,10 @@ class PngValidationError(ValueError):
     """Raised when a slide PNG fails static rebuild validation."""
 
 
+class SlideImageCountMismatchError(ValueError):
+    """Raised when the number of slide images does not match source slides."""
+
+
 def _validate_slide_png(png_path: Path) -> None:
     """Validate a slide PNG before inserting it into a rebuilt PPTX."""
 
@@ -47,6 +51,13 @@ def _rebuild_pptx_from_slide_images(
     assert source_prs.slide_height is not None, "source PPT has no slide height"
     slide_width = source_prs.slide_width
     slide_height = source_prs.slide_height
+    source_slide_count = len(source_prs.slides)
+
+    if len(slide_images) != source_slide_count:
+        raise SlideImageCountMismatchError(
+            "Static rebuild image count mismatch for "
+            f"'{source_pptx}': expected {source_slide_count} images, got {len(slide_images)}"
+        )
 
     new_prs = Presentation()
     new_prs.slide_width = slide_width
