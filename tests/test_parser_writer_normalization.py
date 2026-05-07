@@ -5,6 +5,8 @@ from __future__ import annotations
 import pytest
 
 import counter_risk.parsers.cprs_ch as _cprs_ch_module
+import counter_risk.parsers.cprs_fcm as _cprs_fcm_module
+import counter_risk.parsers.nisa as _nisa_module
 import counter_risk.writers.historical_update as _historical_update_module
 from counter_risk.parser import parse_exposure_row
 from counter_risk.parsers.cprs_ch import _extract_text as _cprs_ch_extract_text
@@ -19,6 +21,7 @@ from counter_risk.parsers.nisa import _matching_key as _nisa_matching_key
 from counter_risk.parsers.nisa import _normalize_text as _nisa_normalize_text
 from counter_risk.writer import build_exposure_record
 from counter_risk.writers.historical_update import _normalize_header
+from counter_risk.writers.pptx_screenshots import _normalize_key as _ppt_normalize_key
 
 
 def test_parser_applies_normalization() -> None:
@@ -160,13 +163,41 @@ def test_cprs_ch_matching_key_calls_canonicalize_name(monkeypatch: pytest.Monkey
     assert calls  # canonicalize_name was called at least once
 
 
+def test_cprs_fcm_matching_key_calls_canonicalize_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    """cprs_fcm._matching_key must route through canonicalize_name, not ad hoc logic."""
+    calls: list[str] = []
+    original = _cprs_fcm_module.canonicalize_name
+
+    def _spy(value: str) -> str:
+        calls.append(value)
+        return original(value)
+
+    monkeypatch.setattr(_cprs_fcm_module, "canonicalize_name", _spy)
+    _cprs_fcm_matching_key("Test Name")
+    assert calls  # canonicalize_name was called at least once
+
+
+def test_nisa_matching_key_calls_canonicalize_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    """nisa._matching_key must route through canonicalize_name, not ad hoc logic."""
+    calls: list[str] = []
+    original = _nisa_module.canonicalize_name
+
+    def _spy(value: str) -> str:
+        calls.append(value)
+        return original(value)
+
+    monkeypatch.setattr(_nisa_module, "canonicalize_name", _spy)
+    _nisa_matching_key("Test Name")
+    assert calls  # canonicalize_name was called at least once
+
+
 # ---------------------------------------------------------------------------
 # Cross-path canonical key consistency (AC1)
 # ---------------------------------------------------------------------------
 
 
 def test_all_matching_paths_produce_same_key_for_dash_variants() -> None:
-    """Parser, workbook, and registry paths resolve en-dash and ASCII dash identically."""
+    """Parser, workbook, registry, and PPT paths resolve en-dash and ASCII dash identically."""
     from counter_risk.normalize import canonicalize_name
 
     en_dash_name = "Korea Exchange–Seoul"
@@ -178,22 +209,25 @@ def test_all_matching_paths_produce_same_key_for_dash_variants() -> None:
     workbook_key_ascii = _normalize_header(ascii_name)
     registry_key_en = canonicalize_name(en_dash_name)
     registry_key_ascii = canonicalize_name(ascii_name)
+    ppt_key_en = _ppt_normalize_key(en_dash_name)
+    ppt_key_ascii = _ppt_normalize_key(ascii_name)
 
     assert parser_key_en == parser_key_ascii
     assert workbook_key_en == workbook_key_ascii
     assert registry_key_en == registry_key_ascii
+    assert ppt_key_en == ppt_key_ascii
 
-    # All three paths must agree on the same canonical form
+    # Parser, workbook, and registry must agree on the same canonical form
     assert parser_key_en == workbook_key_en
     assert workbook_key_en == registry_key_en.casefold()
 
 
 def test_all_matching_paths_produce_same_key_for_apostrophe_variants() -> None:
-    """Parser, workbook, and registry paths resolve curly and ASCII apostrophes identically."""
+    """Parser, workbook, registry, and PPT paths resolve curly and ASCII apostrophes identically."""
     from counter_risk.normalize import canonicalize_name
 
     curly = "Goldman Sachs Int’l"
-    ascii_ = "Goldman Sachs Int'l"
+    ascii_ = "Goldman Sachs Int’l"
 
     parser_key_curly = _cprs_ch_matching_key(curly)
     parser_key_ascii = _cprs_ch_matching_key(ascii_)
@@ -201,10 +235,13 @@ def test_all_matching_paths_produce_same_key_for_apostrophe_variants() -> None:
     workbook_key_ascii = _normalize_header(ascii_)
     registry_key_curly = canonicalize_name(curly)
     registry_key_ascii = canonicalize_name(ascii_)
+    ppt_key_curly = _ppt_normalize_key(curly)
+    ppt_key_ascii = _ppt_normalize_key(ascii_)
 
     assert parser_key_curly == parser_key_ascii
     assert workbook_key_curly == workbook_key_ascii
     assert registry_key_curly == registry_key_ascii
+    assert ppt_key_curly == ppt_key_ascii
     assert workbook_key_curly == registry_key_curly.casefold()
 
 
