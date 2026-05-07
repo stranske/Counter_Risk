@@ -64,7 +64,7 @@ def _to_dataframe_or_records(*, records: list[dict[str, Any]], columns: tuple[st
     for column in columns:
         if column not in frame.columns:
             frame[column] = None
-    if "notes" in frame.columns:
+    if "notes" in frame.columns and hasattr(frame, "__getitem__"):
         frame["notes"] = frame["notes"].astype(object).where(frame["notes"].notna(), None)
     return frame.loc[:, list(columns)]
 
