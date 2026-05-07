@@ -207,7 +207,9 @@ def _coerce_float(value: Any) -> float:
 
 def _find_totals_marker_row(*, worksheet: Any, counterparty_column: int) -> int | None:
     for row_number in range(1, int(worksheet.max_row) + 1):
-        marker_text = _matching_key(worksheet.cell(row=row_number, column=counterparty_column).value)
+        marker_text = _matching_key(
+            worksheet.cell(row=row_number, column=counterparty_column).value
+        )
         if _TOTALS_MARKER in marker_text:
             return row_number
     return None

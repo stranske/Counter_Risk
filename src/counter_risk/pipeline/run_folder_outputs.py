@@ -53,11 +53,11 @@ def build_run_folder_readme_content(
         lines.append(f"Recipient PDF (preferred when available): {distribution_pdf}")
     lines.extend(
         [
-        "",
-        "1. Edit only the maintainer Master PPT and keep it inside this run folder.",
-        send_line,
-        "3. Do not send the Master PPT to recipients.",
-    ]
+            "",
+            "1. Edit only the maintainer Master PPT and keep it inside this run folder.",
+            send_line,
+            "3. Do not send the Master PPT to recipients.",
+        ]
     )
 
     if warning_banner is not None:
