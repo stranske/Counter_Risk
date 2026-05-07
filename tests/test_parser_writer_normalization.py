@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any, cast
+
 import pytest
 
 import counter_risk.parsers.cprs_ch as _cprs_ch_module
@@ -138,13 +141,14 @@ def test_parser_normalize_text_helpers_handle_none_and_whitespace() -> None:
 def test_normalize_header_calls_canonicalize_name(monkeypatch: pytest.MonkeyPatch) -> None:
     """_normalize_header must route through canonicalize_name, not ad hoc logic."""
     calls: list[str] = []
-    original = _historical_update_module.canonicalize_name
+    module = cast(Any, _historical_update_module)
+    original = cast(Callable[[str], str], module.canonicalize_name)
 
     def _spy(value: str) -> str:
         calls.append(value)
         return original(value)
 
-    monkeypatch.setattr(_historical_update_module, "canonicalize_name", _spy)
+    monkeypatch.setattr(module, "canonicalize_name", _spy)
     _normalize_header("Some Header")
     assert calls == ["Some Header"]
 
@@ -152,13 +156,14 @@ def test_normalize_header_calls_canonicalize_name(monkeypatch: pytest.MonkeyPatc
 def test_cprs_ch_matching_key_calls_canonicalize_name(monkeypatch: pytest.MonkeyPatch) -> None:
     """_matching_key must route through canonicalize_name, not ad hoc logic."""
     calls: list[str] = []
-    original = _cprs_ch_module.canonicalize_name
+    module = cast(Any, _cprs_ch_module)
+    original = cast(Callable[[str], str], module.canonicalize_name)
 
     def _spy(value: str) -> str:
         calls.append(value)
         return original(value)
 
-    monkeypatch.setattr(_cprs_ch_module, "canonicalize_name", _spy)
+    monkeypatch.setattr(module, "canonicalize_name", _spy)
     _cprs_ch_matching_key("Test Name")
     assert calls  # canonicalize_name was called at least once
 
@@ -166,13 +171,14 @@ def test_cprs_ch_matching_key_calls_canonicalize_name(monkeypatch: pytest.Monkey
 def test_cprs_fcm_matching_key_calls_canonicalize_name(monkeypatch: pytest.MonkeyPatch) -> None:
     """cprs_fcm._matching_key must route through canonicalize_name, not ad hoc logic."""
     calls: list[str] = []
-    original = _cprs_fcm_module.canonicalize_name
+    module = cast(Any, _cprs_fcm_module)
+    original = cast(Callable[[str], str], module.canonicalize_name)
 
     def _spy(value: str) -> str:
         calls.append(value)
         return original(value)
 
-    monkeypatch.setattr(_cprs_fcm_module, "canonicalize_name", _spy)
+    monkeypatch.setattr(module, "canonicalize_name", _spy)
     _cprs_fcm_matching_key("Test Name")
     assert calls  # canonicalize_name was called at least once
 
@@ -180,13 +186,14 @@ def test_cprs_fcm_matching_key_calls_canonicalize_name(monkeypatch: pytest.Monke
 def test_nisa_matching_key_calls_canonicalize_name(monkeypatch: pytest.MonkeyPatch) -> None:
     """nisa._matching_key must route through canonicalize_name, not ad hoc logic."""
     calls: list[str] = []
-    original = _nisa_module.canonicalize_name
+    module = cast(Any, _nisa_module)
+    original = cast(Callable[[str], str], module.canonicalize_name)
 
     def _spy(value: str) -> str:
         calls.append(value)
         return original(value)
 
-    monkeypatch.setattr(_nisa_module, "canonicalize_name", _spy)
+    monkeypatch.setattr(module, "canonicalize_name", _spy)
     _nisa_matching_key("Test Name")
     assert calls  # canonicalize_name was called at least once
 

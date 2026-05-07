@@ -18,6 +18,7 @@ from typing import Any
 from zipfile import BadZipFile, ZipFile
 
 from counter_risk.normalize import canonicalize_name, safe_display_name
+from counter_risk.parsers._variant_text import normalize_variant_text
 
 _XML_NS = {
     "main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -221,7 +222,7 @@ def _locate_futures_detail_section(
 
 
 def _variant_for_path(*, file_path: Path, sheet_name: str) -> str:
-    title = f"{file_path.name} {sheet_name}".lower()
+    title = normalize_variant_text(f"{file_path.name} {sheet_name}")
     if "ex trend" in title:
         return "ex_trend"
     if "trend" in title:
