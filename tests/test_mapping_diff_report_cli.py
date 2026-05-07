@@ -243,3 +243,77 @@ def test_mapping_diff_report_forwards_output_format_parameter(
         "reconciliation": [],
     }
     assert captured_call["output_format"] == "text"
+
+
+def test_mapping_diff_report_forwards_json_payload_sources(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_call: dict[str, object] = {}
+
+    def _fake_generate_mapping_diff_report(
+        registry_path: Path,
+        input_sources: dict[str, object],
+        *,
+        output_format: str = "text",
+    ) -> str:
+        captured_call["registry_path"] = registry_path
+        captured_call["input_sources"] = input_sources
+        captured_call["output_format"] = output_format
+        return "UNMAPPED\n\nFALLBACK_MAPPED\n\nSUGGESTIONS\n"
+
+    monkeypatch.setattr(
+        mapping_diff_report,
+        "generate_mapping_diff_report",
+        _fake_generate_mapping_diff_report,
+    )
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
+    normalization_json = tmp_path / "normalization.json"
+    normalization_json.write_text('{"name": "Unknown House"}\n', encoding="utf-8")
+    reconciliation_json = tmp_path / "reconciliation.json"
+    reconciliation_json.write_text(
+        '{"counterparties_in_data": ["Unknown House"]}\n', encoding="utf-8"
+    )
+
+    exit_code = mapping_diff_report.main(
+        [
+            "--registry",
+            str(registry_path),
+            "--normalization-json",
+            str(normalization_json),
+            "--reconciliation-json",
+            str(reconciliation_json),
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured_call["registry_path"] == registry_path
+    assert captured_call["input_sources"] == {
+        "normalization": {"name": "Unknown House"},
+        "reconciliation": {"counterparties_in_data": ["Unknown House"]},
+    }
+    assert captured_call["output_format"] == "text"
+
+
+def test_mapping_diff_report_invalid_json_exits_nonzero(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
+    invalid_json = tmp_path / "invalid.json"
+    invalid_json.write_text("{not-json}\n", encoding="utf-8")
+
+    exit_code = mapping_diff_report.main(
+        [
+            "--registry",
+            str(registry_path),
+            "--normalization-json",
+            str(invalid_json),
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 1
+    assert captured.err.strip()
