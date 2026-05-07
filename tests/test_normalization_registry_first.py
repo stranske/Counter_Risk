@@ -253,3 +253,86 @@ def test_reconciliation_sources_differ_between_before_and_after_registry(
     assert "fallback" in before_sources
     assert "registry" in after_sources
     assert before_sources != after_sources
+
+
+# ---------------------------------------------------------------------------
+# Punctuation-variant and whitespace lookups through the registry
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_counterparty_matches_apostrophe_variant_alias(tmp_path: Path) -> None:
+    """A curly-apostrophe variant of a registered alias must resolve via the registry."""
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text(
+        "schema_version: 1\n"
+        "entries:\n"
+        "  - canonical_key: goldman_sachs\n"
+        "    display_name: Goldman Sachs\n"
+        "    aliases:\n"
+        "      - Goldman Sachs Int'l\n",
+        encoding="utf-8",
+    )
+
+    # Curly right apostrophe (’) variant should still resolve to Goldman Sachs
+    resolution = resolve_counterparty("Goldman Sachs Int’l", registry_path=registry_path)
+
+    assert resolution.canonical_name == "Goldman Sachs"
+    assert resolution.source == "registry"
+
+
+def test_resolve_counterparty_matches_en_dash_variant_alias(tmp_path: Path) -> None:
+    """An en-dash variant of a registered alias (stored with ASCII hyphen) resolves correctly."""
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text(
+        "schema_version: 1\n"
+        "entries:\n"
+        "  - canonical_key: korea_exchange\n"
+        "    display_name: Korea Exchange\n"
+        "    aliases:\n"
+        "      - Korea Exchange-Seoul\n",
+        encoding="utf-8",
+    )
+
+    # En-dash (–) variant should resolve to Korea Exchange
+    resolution = resolve_counterparty("Korea Exchange–Seoul", registry_path=registry_path)
+
+    assert resolution.canonical_name == "Korea Exchange"
+    assert resolution.source == "registry"
+
+
+def test_resolve_counterparty_matches_alias_with_extra_whitespace(tmp_path: Path) -> None:
+    """Leading/trailing and repeated internal whitespace must not prevent a registry match."""
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text(
+        "schema_version: 1\n"
+        "entries:\n"
+        "  - canonical_key: cme\n"
+        "    display_name: CME\n"
+        "    aliases:\n"
+        "      - CME Clearing House\n",
+        encoding="utf-8",
+    )
+
+    resolution = resolve_counterparty("  CME   Clearing   House  ", registry_path=registry_path)
+
+    assert resolution.canonical_name == "CME"
+    assert resolution.source == "registry"
+
+
+def test_resolve_counterparty_matches_alias_case_insensitively(tmp_path: Path) -> None:
+    """Registry alias lookup is case-insensitive."""
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text(
+        "schema_version: 1\n"
+        "entries:\n"
+        "  - canonical_key: barclays\n"
+        "    display_name: Barclays\n"
+        "    aliases:\n"
+        "      - Barclays Bank PLC\n",
+        encoding="utf-8",
+    )
+
+    resolution = resolve_counterparty("BARCLAYS BANK plc", registry_path=registry_path)
+
+    assert resolution.canonical_name == "Barclays"
+    assert resolution.source == "registry"
