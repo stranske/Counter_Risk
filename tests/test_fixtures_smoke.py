@@ -54,9 +54,9 @@ def test_fixture_workbooks_and_presentations_open() -> None:
         and path.name not in already_validated_fixture_names
     )
     assert fixture_paths, f"No .pptx/.xlsx fixtures found under {fixtures_root}."
-    assert (
-        len(fixture_paths) >= 10
-    ), "Expected representative fixture inventory under tests/fixtures."
+    assert len(fixture_paths) >= 10, (
+        "Expected representative fixture inventory under tests/fixtures."
+    )
 
     workbook_fixtures = [path for path in fixture_paths if path.suffix.lower() == ".xlsx"]
     presentation_fixtures = [path for path in fixture_paths if path.suffix.lower() == ".pptx"]

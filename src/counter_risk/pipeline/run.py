@@ -4161,7 +4161,7 @@ def _write_needs_mapping_updates(
                             variant=variant,
                             sheet=sheet_name,
                         )
-                        lines.append(f'  - segment "{label_value}" ' f'action="{action}"')
+                        lines.append(f'  - segment "{label_value}" action="{action}"')
 
         lines.append("")
 

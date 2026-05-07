@@ -152,8 +152,7 @@ class LangChainProviderClient:
         if self._required_env_keys and not required_env_available:
             missing_env = ", ".join(self._required_env_keys)
             raise RuntimeError(
-                "No provider credentials/configured clients available. "
-                f"Set one of: {missing_env}."
+                f"No provider credentials/configured clients available. Set one of: {missing_env}."
             )
 
         if not runtime_ready_provider_seen and missing_dependency_names:
@@ -172,8 +171,7 @@ class LangChainProviderClient:
                 )
             missing_env = ", ".join(self._required_env_keys)
             raise RuntimeError(
-                "No provider credentials/configured clients available. "
-                f"Set one of: {missing_env}."
+                f"No provider credentials/configured clients available. Set one of: {missing_env}."
             )
 
         chain = ", ".join(self._provider_chain)
