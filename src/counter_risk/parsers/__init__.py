@@ -13,6 +13,8 @@ from counter_risk.parsers.nisa import parse_nisa_all_programs
 from counter_risk.parsers.nisa_ex_trend import parse_nisa_ex_trend
 from counter_risk.parsers.nisa_trend import parse_nisa_trend
 from counter_risk.parsers.repo_cash_sources import (
+    find_duplicate_counterparty_names,
+    load_cash_by_counterparty,
     load_repo_cash_overrides_csv,
     load_repo_cash_structured_source,
 )
@@ -23,6 +25,8 @@ __all__ = [
     "parse_futures_detail",
     "parse_exposure_maturity_schedule",
     "parse_daily_holdings_pdf",
+    "find_duplicate_counterparty_names",
+    "load_cash_by_counterparty",
     "load_repo_cash_overrides_csv",
     "load_repo_cash_structured_source",
     "parse_nisa_all_programs",

@@ -55,6 +55,7 @@ class ManifestBuilder:
         concentration_metrics: list[dict[str, Any]] | None = None,
         risk_proxy_summary: dict[str, Any] | None = None,
         limit_breach_summary: dict[str, Any] | None = None,
+        repo_cash_summary: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         valid_ppt_statuses = {"success", "skipped", "failed"}
         if ppt_status not in valid_ppt_statuses:
@@ -130,6 +131,8 @@ class ManifestBuilder:
             manifest["risk_proxy_summary"] = risk_proxy_summary
         if limit_breach_summary is not None:
             manifest["limit_breach_summary"] = limit_breach_summary
+        if repo_cash_summary is not None:
+            manifest["repo_cash_summary"] = repo_cash_summary
         return manifest
 
     def write(self, *, run_dir: Path, manifest: dict[str, Any]) -> Path:
