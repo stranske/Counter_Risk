@@ -311,7 +311,7 @@ def _validate_expected_segments(
 # heuristic and dropping `futures_cdx` from the expected segments.
 _VARIANT_SEGMENTS: dict[str, frozenset[str]] = {
     "ex_trend": frozenset({"swaps", "repo"}),
-    "trend": frozenset({"futures"}),
+    "trend": frozenset({"swaps", "repo"}),
     "all_programs": frozenset({"swaps", "repo", "futures_cdx"}),
     "mosers_input": frozenset({"swaps", "repo"}),
 }

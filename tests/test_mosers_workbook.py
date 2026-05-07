@@ -15,6 +15,7 @@ from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook_trend,
     get_mosers_plug_values_mapping_requirements,
 )
+from counter_risk.parsers import cprs_ch as cprs_ch_parser
 from counter_risk.parsers.cprs_ch import parse_cprs_ch
 from counter_risk.parsers.cprs_fcm import parse_fcm_totals, parse_futures_detail
 from counter_risk.parsers.nisa import (
@@ -431,6 +432,17 @@ def test_generated_pipeline_named_workbooks_are_accepted_by_current_parsers(
     assert expected_ch_segments.issubset(set(ch_rows["Segment"]))
     assert fcm_totals.empty is (not expect_fcm_totals)
     assert futures_detail.empty is (not expect_futures_detail)
+
+
+def test_cprs_ch_pipeline_variant_expectations_preserve_program_specific_segments() -> None:
+    assert cprs_ch_parser._expected_segments_for_variant(
+        file_path=Path("all_programs-mosers-input.xlsx"),
+        sheet_name="CPRS - CH",
+    ) == {"swaps", "repo", "futures_cdx"}
+    assert cprs_ch_parser._expected_segments_for_variant(
+        file_path=Path("trend-mosers-input.xlsx"),
+        sheet_name="CPRS - CH",
+    ) == {"swaps", "repo"}
 
 
 def test_resolve_cprs_ch_metric_row_bounds_tracks_template_row_shifts() -> None:
