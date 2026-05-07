@@ -53,6 +53,7 @@ class ManifestBuilder:
         ppt_status: str = "success",
         ppt_outputs: dict[str, dict[str, str]] | None = None,
         concentration_metrics: list[dict[str, Any]] | None = None,
+        risk_proxy_summary: dict[str, Any] | None = None,
         limit_breach_summary: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         valid_ppt_statuses = {"success", "skipped", "failed"}
@@ -125,6 +126,8 @@ class ManifestBuilder:
             manifest["ppt_outputs"] = ppt_outputs
         if concentration_metrics is not None:
             manifest["concentration_metrics"] = concentration_metrics
+        if risk_proxy_summary is not None:
+            manifest["risk_proxy_summary"] = risk_proxy_summary
         if limit_breach_summary is not None:
             manifest["limit_breach_summary"] = limit_breach_summary
         return manifest

@@ -13,6 +13,7 @@ A programmatic replacement for the MOSERS spreadsheet workflow used to evaluate 
 - Updated monthly PowerPoint (screenshots replaced + chart links refreshed)
 - A run folder with a manifest (inputs, hashes, warnings, summaries)
 - A `concentration_metrics.csv` with Top 5/Top 10 share and HHI per `(variant, segment)` (see [docs/concentration_metrics.md](docs/concentration_metrics.md))
+- Optional `risk_rankings.csv` and `risk_top_movers.csv` risk proxy outputs when source columns exist (see [docs/risk_proxy_outputs.md](docs/risk_proxy_outputs.md))
 - Optional “distribution” deliverables (static PPT/PDF) that do not prompt for link refresh
 
 ## Output Generator Configuration
