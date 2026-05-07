@@ -1,5 +1,15 @@
 # Counter_Risk Workloop State
 
+## 2026-05-07T21:56:24Z - manual stall recovery for PR #575
+
+- Request: user asked to finish the stalled work so the opener lane no longer stalls on `stranske/Counter_Risk#575`.
+- Live PR state before remediation: `#575` was open, non-draft, correctly routed with `agent:codex`, `agents:keepalive`, `autofix`, and `agent:retry`, but `mergeStateStatus=DIRTY`; repeated opener repairs had dispatched Gate Followups while the keepalive runner jobs continued to skip.
+- Action taken: created isolated worktree `/tmp/counter-risk-575.XhroJq` from `origin/codex/issue-479-counterparty-registry`, merged current `origin/main`, and resolved conflicts in `README.md` and `workloop-state.md` by preserving both issue `#479` registry documentation and the merged issue `#478` data-quality documentation/state.
+- Validation passed after merge recovery:
+  - `python -m pytest tests/test_normalize.py tests/test_mapping_diff_report.py tests/test_name_registry.py tests/pipeline/test_reconcile_series_coverage.py tests/test_normalization_registry_first.py tests/test_gui_runner.py tests/pipeline/test_manifest_data_quality.py tests/pipeline/test_manifest_schema.py tests/test_runner_launch.py::test_data_quality_status_label_maps_color_to_label tests/test_runner_launch.py::test_data_quality_status_label_returns_empty_for_unknown_color -q` (164 passed).
+  - `python -m ruff check src/counter_risk/normalize.py src/counter_risk/reports/mapping_diff.py src/counter_risk/pipeline/reconciliation.py src/counter_risk/gui/runner.py src/counter_risk/pipeline/data_quality.py tests/test_normalize.py tests/test_mapping_diff_report.py tests/test_name_registry.py tests/pipeline/test_reconcile_series_coverage.py tests/test_normalization_registry_first.py tests/test_gui_runner.py tests/pipeline/test_manifest_data_quality.py`.
+- Next action: push the merge recovery to `codex/issue-479-counterparty-registry`; GitHub should recalculate `mergeStateStatus` and run fresh PR checks/keepalive from the updated branch.
+
 ## 2026-05-07T18:07:35Z - opener lane PR materialization for issue #479
 
 - Automation: `pd-workloop-resume` (codex opener lane).
@@ -25,6 +35,21 @@
   - `python -m mypy src/counter_risk/normalize.py src/counter_risk/reports/mapping_diff.py src/counter_risk/pipeline/reconciliation.py`.
 - Relay event emitted: `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=479 active.source_pr=575 active.next_action=wait_for_keepalive`.
 - Next action: keepalive owns PR `#575` for CI, review comments, and follow-up commits. Opener is done with this issue and should select another eligible issue only after cap allows.
+
+## 2026-05-07T16:04Z - opener lane issue #478 data-quality PR materializing
+
+- Automation: `pd-workloop-resume` (codex opener lane).
+- Source repo: `stranske/Counter_Risk`.
+- Source issue: `#478` (`[Agent] [M3] Add a "Data Quality Report" section to manifest + operator-friendly warnings in Runner UI`; labels `priority:normal`, `repo-review-approved`).
+- Branch: `codex/issue-478-data-quality-report` from `origin/main` (`1e5c381`, includes merged PR `#572`).
+- PR: `#574` (`https://github.com/stranske/Counter_Risk/pull/574`), ready for review, non-draft, labels `agent:codex`, `agents:keepalive`, `autofix`.
+- ACTION A: succeeded. Sentinel on entry reported `active.source_repo=stranske/Counter_Risk`, `active.source_issue=1103`, `active.source_pr=572`, and `active.next_action=wait_for_verifier`; treated `active.*` as cross-lane informational per opener policy.
+- Discovery: approved queue currently has `issues_count=0`, `deeper_review_count=7`; live priority searches were used. High-priority issues `Manager-Database#979`, `Inv-Man-Intake#379`, and `Inv-Man-Intake#381` were deduped because they already have PRs (`#999` open, `#393` merged+verify, `#400` merged+verify). Older Counter_Risk normal issues `#473`, `#474`, `#476`, and `#477` were already linked to opener/closer lanes; `#478` had no matching PR.
+- Cap-health before selection: `total_opener_owned=4`, `raw_cap_reached=false`, `normal_cap_reached=false`, `non_drainable_cap_blocker=false`, `drainable_count=1`, `non_drainable_count=3`; one opener slot was available.
+- Implementation: reused the existing data-quality manifest and summary pipeline on `main`; added Tk runner status extraction from `DATA_QUALITY_SUMMARY.txt`, surfaced a stable Data Quality row in the Tk UI, added GUI result tests for yellow status and failure behavior, and added `docs/data_quality.md` plus a README link documenting the shared check integration point.
+- Validation passed before commit: `python -m pytest tests/test_gui_runner.py tests/pipeline/test_manifest_data_quality.py tests/pipeline/test_manifest_schema.py tests/test_runner_launch.py::test_data_quality_status_label_maps_color_to_label tests/test_runner_launch.py::test_data_quality_status_label_returns_empty_for_unknown_color` (24 passed); `python -m ruff check src/counter_risk/gui/runner.py tests/test_gui_runner.py` (pass).
+- Relay event emitted: `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=478 active.source_pr=574 active.next_action=wait_for_keepalive`.
+- Next action: keepalive owns PR `#574` for CI, review comments, and follow-up commits. Opener is done with this issue.
 
 ## 2026-05-07T13:58:14Z - opener lane PR materialization for issue #476
 
