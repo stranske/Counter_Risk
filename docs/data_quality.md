@@ -15,16 +15,18 @@ The status levels are:
 
 New checks should add structured findings through `src/counter_risk/pipeline/data_quality.py` instead of writing a separate warning-only output. Prefer a stable uppercase `code`, one of the shared severity levels, a concise category, and an actionable message.
 
-Use existing categories when possible:
+Use existing categories when possible. The categories currently emitted by `build_data_quality()` (see `_CATEGORY_BY_CODE` and the `pipeline` default) are:
 
-- `input`
-- `mapping`
-- `reconciliation`
-- `limits`
-- `cash`
-- `ppt`
-- `output_generation`
-- `data_validation`
+- `input` — missing required or optional inputs.
+- `mapping` — unmatched mapping entries.
+- `reconciliation` — reconciliation gaps and gap detail.
+- `limits` — limit breaches.
+- `cash` — repo-cash sourcing, overrides, and limit findings.
+- `ppt` — PPT generation status.
+- `output_generation` — output generation skipped or failed.
+- `data_validation` — invalid or missing notionals/descriptions.
+- `date` — missing date header or fallback date resolution.
+- `pipeline` — default category, including the `NO_FINDINGS` placeholder.
 
 If a check already emits a pipeline warning, make sure `build_data_quality()` can classify the warning by code. If the check has richer context, pass that context into `ManifestBuilder.build()` so the manifest and summary can include counts and recommended actions without parsing free text.
 
