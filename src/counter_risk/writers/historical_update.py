@@ -15,7 +15,11 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from counter_risk.normalize import canonicalize_name as canonicalize_name
+from counter_risk.normalize import (
+    canonicalize_name as canonicalize_name,
+    resolve_clearing_house as resolve_clearing_house,
+    resolve_counterparty as resolve_counterparty,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -182,6 +186,19 @@ def _normalize_header(value: Any) -> str:
     return canonicalize_name(str(value)).casefold()
 
 
+def _normalize_series_key(value: Any) -> str:
+    if value is None:
+        return ""
+    text = str(value)
+    if not text.strip():
+        return ""
+    counterparty_resolution = resolve_counterparty(text)
+    if counterparty_resolution.source != "unmapped":
+        return canonicalize_name(counterparty_resolution.canonical_name).casefold()
+    clearing_house_resolution = resolve_clearing_house(text)
+    return canonicalize_name(clearing_house_resolution.canonical_name).casefold()
+
+
 def _find_header_row(
     worksheet: Any,
     *,
@@ -257,7 +274,7 @@ def _build_consolidated_header_map(
         )
         if not stacked_values:
             continue
-        header_map[col_index] = " ".join(stacked_values)
+        header_map[col_index] = _normalize_series_key(" ".join(stacked_values))
     return header_map
 
 
@@ -327,7 +344,7 @@ def _infer_date_from_cprs_ch_header(rollup_data: Mapping[str, Any] | None) -> da
 def _coerce_rollup_data(rollup_data: Mapping[str, Any]) -> dict[str, float]:
     normalized: dict[str, float] = {}
     for raw_key, raw_value in rollup_data.items():
-        key = _normalize_header(raw_key)
+        key = _normalize_series_key(raw_key)
         if not key:
             continue
         try:

@@ -191,6 +191,30 @@ def test_read_wal_sheet_append_location_identifies_header_columns_and_next_row()
     assert append_target.append_row == 5
 
 
+def test_coerce_rollup_data_uses_registry_alias_lookup_before_fallback() -> None:
+    normalized = historical_update._coerce_rollup_data(
+        {
+            "Societe Generale": 5.0,
+            "ICE Clear Europe": 2.0,
+        }
+    )
+
+    assert normalized["soc gen"] == 5.0
+    assert normalized["ice euro"] == 2.0
+
+
+def test_build_consolidated_header_map_uses_registry_alias_lookup() -> None:
+    worksheet = _FakeWorksheet("Totals")
+    worksheet.set_value(1, 1, "Date")
+    worksheet.set_value(1, 2, "Societe Generale")
+    worksheet.set_value(1, 3, "ICE Clear Europe")
+
+    header_map = historical_update._build_consolidated_header_map(worksheet, max_scan_rows=2)
+
+    assert header_map[2] == "soc gen"
+    assert header_map[3] == "ice euro"
+
+
 class _FakeCell:
     def __init__(self, value: Any = None) -> None:
         self.value = value
