@@ -534,15 +534,19 @@ def test_generate_mosers_workbook_handles_shifted_template_rows(
         try:
             generated_sheet = generated["CPRS - CH"]
             section_start, _ = _find_metric_section_bounds(generated_sheet)
-            assert generated_sheet[f"D{section_start}"].value == parsed.totals_rows[0].annualized_volatility
+            assert (
+                generated_sheet[f"D{section_start}"].value
+                == parsed.totals_rows[0].annualized_volatility
+            )
             assert generated_sheet[f"E{section_start}"].value == pytest.approx(
-                parsed.totals_rows[0].notional
-                / sum(row.notional for row in parsed.totals_rows)
+                parsed.totals_rows[0].notional / sum(row.notional for row in parsed.totals_rows)
             )
             ch_totals_start = (
                 _find_marker_row(generated_sheet, "Total by Counterparty/Clearing House") + 1
             )
-            assert generated_sheet[f"C{ch_totals_start}"].value == parsed.totals_rows[0].counterparty
+            assert (
+                generated_sheet[f"C{ch_totals_start}"].value == parsed.totals_rows[0].counterparty
+            )
         finally:
             generated.close()
     finally:
