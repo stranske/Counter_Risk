@@ -38,6 +38,7 @@ from counter_risk.dates import resolve_as_of_date, resolve_run_date
 from counter_risk.formatting import normalize_formatting_profile, resolve_formatting_policy
 from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
+    canonicalize_name,
     normalize_counterparty,
     normalize_counterparty_with_source,
 )
@@ -2341,7 +2342,7 @@ def _resolve_screenshot_input_mapping(config: WorkflowConfig) -> dict[str, Path]
     normalized_pairs: list[tuple[str, Path]] = []
     seen_keys: set[str] = set()
     for raw_key, raw_path in raw_inputs.items():
-        key = str(raw_key).strip()
+        key = canonicalize_name(str(raw_key))
         if not key:
             raise ValueError("Screenshot input keys must be non-empty")
         if key in seen_keys:
