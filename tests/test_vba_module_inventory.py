@@ -23,38 +23,55 @@ def _extract_module_names(workbook_path: Path) -> set[str]:
 
 
 def test_assets_vba_directory_exists() -> None:
-    assert VBA_SOURCE_DIR.is_dir(), "Expected VBA source directory at assets/vba."
+    assert VBA_SOURCE_DIR.is_dir(), (
+        "Expected VBA source directory at assets/vba. "
+        "See docs/macro_spec.md section 'Scope' for the inventory contract."
+    )
 
 
 def test_vba_inventory_scope_is_explicit() -> None:
     """Define verification scope for VBA inventory parity checks."""
 
-    assert WORKBOOKS_WITH_VBA, "Scope must name at least one workbook with embedded VBA."
+    assert WORKBOOKS_WITH_VBA, (
+        "Scope must name at least one workbook with embedded VBA. "
+        "See docs/macro_spec.md section 'Scope'."
+    )
     for workbook_path in WORKBOOKS_WITH_VBA:
-        assert (
-            workbook_path.suffix.lower() == ".xlsm"
-        ), f"VBA inventory scope only includes macro-enabled workbook sources: {workbook_path}"
+        assert workbook_path.suffix.lower() == ".xlsm", (
+            f"VBA inventory scope only includes macro-enabled workbook sources: "
+            f"{workbook_path}. See docs/macro_spec.md section 'Scope'."
+        )
     assert MODULE_SOURCE_EXTENSION == ".bas", "VBA module sources must be stored as .bas files."
     for file_name in ALLOWED_NON_MODULE_FILES:
-        assert (
-            VBA_SOURCE_DIR / file_name
-        ).is_file(), (
-            f"Allowed non-module VBA artifact missing from scope: {VBA_SOURCE_DIR / file_name}"
+        assert (VBA_SOURCE_DIR / file_name).is_file(), (
+            f"Allowed non-module VBA artifact missing from scope: "
+            f"{VBA_SOURCE_DIR / file_name}. See docs/macro_spec.md section 'Scope'."
         )
 
 
 def test_all_embedded_vba_modules_have_bas_sources() -> None:
     discovered_modules: set[str] = set()
     for workbook_path in WORKBOOKS_WITH_VBA:
-        assert workbook_path.is_file(), f"Expected workbook fixture to exist: {workbook_path}"
+        assert workbook_path.is_file(), (
+            f"Expected workbook fixture to exist: {workbook_path}. "
+            "See docs/macro_spec.md section 'Scope' for the macro-enabled "
+            "workbook inventory."
+        )
         discovered_modules.update(_extract_module_names(workbook_path))
 
-    assert discovered_modules, "No VBA modules were discovered in workbook fixtures."
+    assert discovered_modules, (
+        "No VBA modules were discovered in workbook fixtures. "
+        "Re-run scripts/extract_vba_modules.py and update docs/macro_spec.md "
+        "section 'Scope' if the inventory has intentionally changed."
+    )
 
     bas_module_names = {path.stem for path in VBA_SOURCE_DIR.glob(f"*{MODULE_SOURCE_EXTENSION}")}
     missing_modules = sorted(discovered_modules - bas_module_names)
-    assert not missing_modules, "Missing VBA module source files in assets/vba: " + ", ".join(
-        f"{name}{MODULE_SOURCE_EXTENSION}" for name in missing_modules
+    assert not missing_modules, (
+        "Missing VBA module source files in assets/vba: "
+        + ", ".join(f"{name}{MODULE_SOURCE_EXTENSION}" for name in missing_modules)
+        + ". Run `python scripts/extract_vba_modules.py` to regenerate them, then "
+        "review docs/macro_spec.md to confirm the inventory change is intentional."
     )
 
     wrong_extension_files = sorted(
@@ -67,6 +84,7 @@ def test_all_embedded_vba_modules_have_bas_sources() -> None:
     assert not wrong_extension_files, (
         f"VBA modules must be committed with {MODULE_SOURCE_EXTENSION} extensions only: "
         + ", ".join(wrong_extension_files)
+        + ". See docs/macro_spec.md section 'Scope'."
     )
 
     unexpected_non_module_files = sorted(
@@ -76,15 +94,18 @@ def test_all_embedded_vba_modules_have_bas_sources() -> None:
         and path.stem not in discovered_modules
         and path.name not in ALLOWED_NON_MODULE_FILES
     )
-    assert (
-        not unexpected_non_module_files
-    ), "assets/vba contains files outside module inventory scope: " + ", ".join(
-        unexpected_non_module_files
+    assert not unexpected_non_module_files, (
+        "assets/vba contains files outside module inventory scope: "
+        + ", ".join(unexpected_non_module_files)
+        + ". Either remove them or extend ALLOWED_NON_MODULE_FILES "
+        "(and document the addition under docs/macro_spec.md section 'Scope')."
     )
 
     for module_name in sorted(discovered_modules):
         module_path = VBA_SOURCE_DIR / f"{module_name}{MODULE_SOURCE_EXTENSION}"
         source = module_path.read_text(encoding="utf-8")
-        assert (
-            f'Attribute VB_Name = "{module_name}"' in source
-        ), f"{module_path} does not declare the expected VB module name {module_name}."
+        assert f'Attribute VB_Name = "{module_name}"' in source, (
+            f"{module_path} does not declare the expected VB module name {module_name}. "
+            "Re-run scripts/extract_vba_modules.py to refresh, then update "
+            "docs/macro_spec.md if a module was renamed deliberately."
+        )

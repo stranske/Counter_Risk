@@ -51,7 +51,8 @@ def test_macro_spec_doc_lists_required_inputs_and_output_expectations_per_macro(
         )
 
     required_terms = (
-        "Runner!B11:B12",
+        "Runner!B7",
+        "Runner!B8",
         "CPRS - CH!D10:D20",
         "CPRS - CH!E10:E20",
         "CPRS - CH!C10:C20",
@@ -59,7 +60,9 @@ def test_macro_spec_doc_lists_required_inputs_and_output_expectations_per_macro(
     for term in required_terms:
         assert term in content, (
             "docs/macro_spec.md must include range-level output expectations and invariants; "
-            f"missing {term}."
+            f"missing {term}. Cell references must match the constants in "
+            "assets/vba/RunnerLaunch.bas (STATUS_CELL/RESULT_CELL/DQ_STATUS_CELL); "
+            "see section [MS-RUNNER-CELLS]."
         )
 
 
