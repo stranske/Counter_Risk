@@ -6,6 +6,7 @@
 - Source repo: `stranske/Counter_Risk`.
 - Source issue: `#476` (`[Agent] [M3] Add risk-weighted exposure proxies and rankings (Notional×Vol, Position×Vol where available)`).
 - Branch: `codex/issue-476-risk-proxy-manifest-docs`.
+- PR: `#572` (`https://github.com/stranske/Counter_Risk/pull/572`), ready for review, labels `agent:codex`, `agents:keepalive`, `autofix`.
 - Selection:
   - ACTION A succeeded from the neutral Code workspace.
   - Required discovery ran: queue files, `repo-review-approved`, live `priority:high` / `priority:normal` / `priority:low`, raw opener-owned author searches, and cap-health.
@@ -22,7 +23,8 @@
   - `python -m ruff check src/counter_risk/pipeline/manifest.py src/counter_risk/pipeline/run.py tests/pipeline/test_run_pipeline.py tests/test_manifest_paths.py`.
   - `python -m black --check src/counter_risk/pipeline/manifest.py src/counter_risk/pipeline/run.py tests/pipeline/test_run_pipeline.py tests/test_manifest_paths.py`.
   - `python -m mypy src/counter_risk/pipeline/manifest.py src/counter_risk/pipeline/run.py`.
-- Next action: commit, push, open a ready PR with `agent:codex`, `agents:keepalive`, and `autofix`, then emit the `pr_opened` relay event.
+- Relay event emitted: `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=476 active.source_pr=572 active.next_action=wait_for_keepalive`.
+- Next action: keepalive owns PR `#572` for CI, review comments, and follow-up commits. Opener is done with this issue and should select another eligible issue only after cap allows.
 
 ## 2026-05-01T14:12Z - opener PR opened for issue #471
 
