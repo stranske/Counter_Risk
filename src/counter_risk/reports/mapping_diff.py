@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from counter_risk.name_registry import load_name_registry
-from counter_risk.normalize import resolve_counterparty
+from counter_risk.normalize import canonicalize_name, resolve_counterparty, safe_display_name
 
 _NORMALIZATION_NAME_KEYS = {
     "counterparty",
@@ -122,9 +122,18 @@ def collect_mapping_diff_findings(
 
     unmapped_names: dict[str, None] = {}
     fallback_mapped: dict[str, str] = {}
+    all_resolutions: dict[str, dict[str, str]] = {}
 
     for raw_name in _iter_input_names(input_sources):
         result = resolve_counterparty(raw_name, registry_path=registry_path)
+        if raw_name not in all_resolutions:
+            all_resolutions[raw_name] = {
+                "raw": raw_name,
+                "display": safe_display_name(raw_name),
+                "canonical_key": canonicalize_name(raw_name),
+                "mapped": result.canonical_name,
+                "source": result.source,
+            }
         if result.source == "fallback":
             fallback_mapped.setdefault(raw_name, result.canonical_name)
             continue
@@ -136,6 +145,9 @@ def collect_mapping_diff_findings(
         "fallback_mapped": {
             raw_name: fallback_mapped[raw_name] for raw_name in _sorted_raw_names(fallback_mapped)
         },
+        "name_resolutions": [
+            all_resolutions[raw_name] for raw_name in _sorted_raw_names(all_resolutions)
+        ],
     }
 
 
@@ -153,6 +165,7 @@ def generate_mapping_diff_report(
     findings = collect_mapping_diff_findings(registry_path, input_sources)
     unmapped_names = findings["unmapped_raw_names"]
     fallback_mapped = findings["fallback_mapped"]
+    name_resolutions: list[dict[str, str]] = findings.get("name_resolutions", [])
 
     lines: list[str] = ["UNMAPPED"]
     lines.extend(unmapped_names)
@@ -166,5 +179,13 @@ def generate_mapping_diff_report(
     lines.append("SUGGESTIONS")
     for raw_name in _sorted_raw_names(unmapped_names):
         lines.append(f"{raw_name} -> {_title_case_suggestion(raw_name)}")
+    lines.append("")
+
+    lines.append("NAME_RESOLUTIONS")
+    for entry in name_resolutions:
+        lines.append(
+            f"raw={entry['raw']!r} display={entry['display']!r} "
+            f"key={entry['canonical_key']!r} -> {entry['mapped']!r} [{entry['source']}]"
+        )
 
     return "\n".join(lines) + "\n"
