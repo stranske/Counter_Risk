@@ -84,6 +84,10 @@ Source choice and overrides are emitted in run warnings, which are persisted in 
 2. Run `mapping_diff_report`.
 3. Interpret `UNMAPPED`, `FALLBACK_MAPPED`, and `SUGGESTIONS` sections.
 
+See [docs/name_registry.md](docs/name_registry.md) for the full maintainer
+process: schema rules, alias collision behavior, per-variant
+`series_included` flags, validation commands, and a review checklist.
+
 ## Repository automation (high level)
 
 This repo is integrated with the central [stranske/Workflows](https://github.com/stranske/Workflows) library.

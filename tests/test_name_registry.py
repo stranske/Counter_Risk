@@ -282,3 +282,31 @@ def test_load_name_registry_rejects_dash_variant_duplicate_across_entries(tmp_pa
 
     with pytest.raises(ValueError, match="Name registry validation failed"):
         load_name_registry(config_path)
+
+
+def test_is_series_included_defaults_true_when_flags_omitted() -> None:
+    registry = load_name_registry(Path("config/name_registry.yml"))
+
+    for variant in ("all_programs", "ex_trend", "trend"):
+        assert registry.is_series_included("bank_of_america", variant) is True
+
+
+def test_is_series_included_respects_per_variant_flags() -> None:
+    registry = load_name_registry(Path("config/name_registry.yml"))
+
+    assert registry.is_series_included("ice_euro", "all_programs") is True
+    assert registry.is_series_included("ice_euro", "ex_trend") is True
+    assert registry.is_series_included("ice_euro", "trend") is False
+
+
+def test_is_series_included_returns_true_for_unknown_canonical_key() -> None:
+    registry = load_name_registry(Path("config/name_registry.yml"))
+
+    assert registry.is_series_included("not_in_registry", "trend") is True
+
+
+def test_is_series_included_rejects_unknown_variant() -> None:
+    registry = load_name_registry(Path("config/name_registry.yml"))
+
+    with pytest.raises(ValueError, match="Unknown variant"):
+        registry.is_series_included("ice_euro", "unrecognized_variant")  # type: ignore[arg-type]

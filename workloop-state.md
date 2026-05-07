@@ -1,5 +1,35 @@
 # Counter_Risk Workloop State
 
+## 2026-05-07T18:07:00Z - opener lane PR materialization for issue #479
+
+- Automation: `pd-workloop-resume` (claude_code opener lane).
+- Source repo: `stranske/Counter_Risk`.
+- Source issue: `#479` (`[Agent] [M1] Add a counterparty mapping registry + maintainers workflow for updating series headers safely`).
+- Branch: `claude/issue-479-counterparty-name-registry`.
+- Selection: Selected as the oldest unlinked priority:normal issue across the
+  fleet (createdAt 2026-04-26T21:33:46Z). All priority:high were already
+  linked (Inv-Man-Intake#379→#393 MERGED, Inv-Man-Intake#381→#400 MERGED,
+  Manager-Database#979→#999 OPEN). Cap-health at selection: 4/5 opener-owned
+  open (codex: Counter_Risk#574, #573, #526, Manager-Database#999; claude: 0).
+- Implementation:
+  - Added `is_series_included(canonical_key, variant)` API to
+    `NameRegistryConfig` so the existing `series_included` YAML block has a
+    consumer-facing helper. Defaults to `True` for entries without flags or
+    unknown canonical keys; rejects unrecognized variant names.
+  - Added focused tests in `tests/test_name_registry.py` covering default
+    inclusion, per-variant respect (using `ice_euro`'s `trend: false` flag),
+    unknown-canonical-key fallthrough, and unknown-variant rejection.
+  - Added `docs/name_registry.md` documenting the maintainer process: schema,
+    add/edit workflow, validation command, per-variant flags, mapping diff
+    workflow, and review checklist. Linked from README's Name Registry
+    Workflow section.
+- Validation passed:
+  - `python -m pytest tests/test_name_registry.py tests/test_normalization_registry_first.py tests/test_mapping_diff_report.py tests/test_mapping_diff_report_cli.py tests/test_normalize.py --no-cov` -> 103 passed.
+  - `python -m ruff check src/counter_risk/name_registry.py tests/test_name_registry.py` -> All checks passed.
+  - `python -m black --check src/counter_risk/name_registry.py tests/test_name_registry.py` -> 2 files would be left unchanged.
+  - `python -m mypy src/counter_risk/name_registry.py` -> Success: no issues found.
+- Pre-push dedup recheck: `gh pr list --repo stranske/Counter_Risk --search "479"` returned only PR #521 (issue #469 false positive). No PR exists for issue #479. Cap still 4/5.
+
 ## 2026-05-07T13:58:14Z - opener lane PR materialization for issue #476
 
 - Automation: `pd-workloop-resume` (codex opener lane).

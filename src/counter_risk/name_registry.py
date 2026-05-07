@@ -9,6 +9,10 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
+# Variants whose inclusion can be toggled per registry entry.
+SeriesVariant = Literal["all_programs", "ex_trend", "trend"]
+SERIES_VARIANTS: tuple[SeriesVariant, ...] = ("all_programs", "ex_trend", "trend")
+
 _CANONICAL_KEY_PATTERN = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
 
 # Mirror the same substitutions as normalize.canonicalize_name to keep alias
@@ -113,6 +117,24 @@ class NameRegistryConfig(BaseModel):
                         f"{alias!r} maps to both {existing!r} and {entry.canonical_key!r}"
                     )
         return self
+
+    def is_series_included(self, canonical_key: str, variant: SeriesVariant) -> bool:
+        """Return whether ``canonical_key`` participates in ``variant``.
+
+        Entries with no ``series_included`` block default to inclusion in every
+        variant, matching the historical "include unless told otherwise" rule
+        used before per-variant flags existed. Unknown ``canonical_key`` values
+        also default to ``True`` so callers do not silently drop names that the
+        registry has not yet caught up to.
+        """
+        if variant not in SERIES_VARIANTS:
+            raise ValueError(f"Unknown variant {variant!r}; expected one of {SERIES_VARIANTS!r}.")
+        for entry in self.entries:
+            if entry.canonical_key == canonical_key:
+                if entry.series_included is None:
+                    return True
+                return bool(getattr(entry.series_included, variant))
+        return True
 
 
 def _format_registry_validation_error(error: ValidationError) -> str:
