@@ -49,6 +49,7 @@ class GuiRunResult:
     settings_path: Path
     output_dir: Path | None
     data_quality_status: str = ""
+    data_quality_color: str = ""
 
 
 def _normalize_run_mode(raw_mode: str) -> str:
@@ -163,12 +164,18 @@ def execute_gui_run(
         if cleanup_settings_file:
             _cleanup_settings_file(settings_path)
     output_dir = None if dry_run_discovery else _resolve_output_dir(state)
+    data_quality_color = ""
+    data_quality_status = ""
+    if exit_code == 0:
+        data_quality_color = _read_data_quality_status_color(output_dir)
+        data_quality_status = data_quality_status_label(data_quality_color)
     return GuiRunResult(
         exit_code=exit_code,
         cli_args=tuple(cli_args),
         settings_path=settings_path,
         output_dir=output_dir,
-        data_quality_status=_read_data_quality_status(output_dir) if exit_code == 0 else "",
+        data_quality_status=data_quality_status,
+        data_quality_color=data_quality_color,
     )
 
 
@@ -189,11 +196,10 @@ def _default_runner(cli_args: list[str]) -> int:
     return int(main(cli_args))
 
 
-def _read_data_quality_status(output_dir: Path | None) -> str:
+def _read_data_quality_status_color(output_dir: Path | None) -> str:
     if output_dir is None:
         return ""
-    status_color = read_overall_status_color(output_dir / "DATA_QUALITY_SUMMARY.txt")
-    return data_quality_status_label(status_color)
+    return read_overall_status_color(output_dir / "DATA_QUALITY_SUMMARY.txt")
 
 
 def launch_gui(
@@ -253,7 +259,7 @@ def launch_gui(
             if result.exit_code == 0:
                 status_var.set("Complete")
                 result_var.set("Success")
-                quality_var.set(result.data_quality_status)
+                quality_var.set(result.data_quality_status or "UNAVAILABLE - Summary not found")
             else:
                 status_var.set("Error")
                 result_var.set(f"Exit code {result.exit_code}")

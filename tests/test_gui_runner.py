@@ -69,6 +69,7 @@ def test_execute_gui_run_reads_data_quality_status_after_success(tmp_path: Path)
 
     result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
 
+    assert result.data_quality_color == "YELLOW"
     assert result.data_quality_status == "YELLOW - Review warnings"
 
 
@@ -81,6 +82,22 @@ def test_execute_gui_run_leaves_data_quality_status_empty_on_failure(tmp_path: P
     result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
 
     assert result.exit_code == 2
+    assert result.data_quality_color == ""
+    assert result.data_quality_status == ""
+
+
+def test_execute_gui_run_returns_empty_data_quality_when_summary_missing(tmp_path: Path) -> None:
+    def fake_runner(argv: list[str]) -> int:
+        output_dir = Path(argv[argv.index("--output-dir") + 1])
+        output_dir.mkdir(parents=True)
+        return 0
+
+    state = GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs"))
+
+    result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
+
+    assert result.exit_code == 0
+    assert result.data_quality_color == ""
     assert result.data_quality_status == ""
 
 
