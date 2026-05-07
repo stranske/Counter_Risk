@@ -702,6 +702,44 @@ def test_reconcile_series_coverage_canonical_key_by_series_empty_when_no_data() 
     assert result["by_sheet"]["Total"]["canonical_key_by_series"] == {}
 
 
+def test_reconcile_series_coverage_honors_registry_series_included_flags(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "name_registry.yml").write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: ice_euro",
+                "    display_name: ICE Euro",
+                "    aliases:",
+                "      - ICE Clear Europe",
+                "    series_included:",
+                "      all_programs: true",
+                "      ex_trend: true",
+                "      trend: false",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "ICE Clear Europe"}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ()},
+        variant="trend",
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Total"]["missing_from_historical_headers"] == []
+
+
 # ---------------------------------------------------------------------------
 # Clearing house canonicalization in lookup/match operations
 # ---------------------------------------------------------------------------

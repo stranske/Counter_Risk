@@ -6,8 +6,10 @@ import pytest
 
 from counter_risk.normalize import (
     canonicalize_name,
+    counterparty_included_for_variant,
     normalize_clearing_house,
     normalize_counterparty,
+    normalize_counterparty_with_source,
     safe_display_name,
 )
 
@@ -59,6 +61,21 @@ def test_normalize_counterparty_returns_identical_output_across_repeated_calls()
     outputs = [normalize_counterparty(raw_name) for _ in range(100)]
 
     assert all(output == first for output in outputs)
+
+
+def test_normalize_counterparty_with_source_exposes_registry_canonical_key() -> None:
+    resolution = normalize_counterparty_with_source("Bank of America, NA")
+
+    assert resolution.canonical_name == "Bank of America"
+    assert resolution.canonical_key == "bank_of_america"
+    assert resolution.source == "registry"
+
+
+def test_counterparty_included_for_variant_uses_registry_series_flags() -> None:
+    assert counterparty_included_for_variant("ICE Clear Europe", "all_programs") is True
+    assert counterparty_included_for_variant("ICE Clear Europe", "ex_trend") is True
+    assert counterparty_included_for_variant("ICE Clear Europe", "trend") is False
+    assert counterparty_included_for_variant("Unknown House", "trend") is True
 
 
 def test_normalize_clearing_house_unknown_name_is_noop() -> None:

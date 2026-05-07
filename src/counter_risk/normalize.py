@@ -19,7 +19,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from counter_risk.name_registry import NameRegistryConfig, load_name_registry
+from counter_risk.name_registry import NameRegistryConfig, SeriesIncludedFlags, load_name_registry
 
 # Apostrophe variants → ASCII apostrophe
 _APOSTROPHE_RE = re.compile(r"[\u2018\u2019\u201b\u02bc`]")
@@ -35,6 +35,17 @@ class NameResolution:
     raw_name: str
     canonical_name: str
     source: Literal["registry", "fallback", "unmapped"]
+    canonical_key: str | None = None
+    series_included: SeriesIncludedFlags | None = None
+
+
+@dataclass(frozen=True)
+class RegistryNameMatch:
+    """A registry lookup hit with stable machine key and display metadata."""
+
+    canonical_key: str
+    display_name: str
+    series_included: SeriesIncludedFlags | None = None
 
 
 _COUNTERPARTY_FALLBACK_MAPPINGS = {
@@ -100,7 +111,7 @@ def _normalize_whitespace(name: str) -> str:
 
 
 @lru_cache(maxsize=8)
-def _load_alias_lookup(registry_path: str) -> dict[str, str]:
+def _load_alias_lookup(registry_path: str) -> dict[str, RegistryNameMatch]:
     try:
         registry = load_name_registry(Path(registry_path))
     except ValueError:
@@ -108,13 +119,18 @@ def _load_alias_lookup(registry_path: str) -> dict[str, str]:
     return _build_alias_lookup(registry)
 
 
-def _build_alias_lookup(registry: NameRegistryConfig) -> dict[str, str]:
-    lookup: dict[str, str] = {}
+def _build_alias_lookup(registry: NameRegistryConfig) -> dict[str, RegistryNameMatch]:
+    lookup: dict[str, RegistryNameMatch] = {}
     for entry in registry.entries:
-        lookup[canonicalize_name(entry.canonical_key).casefold()] = entry.display_name
-        lookup[canonicalize_name(entry.display_name).casefold()] = entry.display_name
+        match = RegistryNameMatch(
+            canonical_key=entry.canonical_key,
+            display_name=entry.display_name,
+            series_included=entry.series_included,
+        )
+        lookup[canonicalize_name(entry.canonical_key).casefold()] = match
+        lookup[canonicalize_name(entry.display_name).casefold()] = match
         for alias in entry.aliases:
-            lookup[canonicalize_name(alias).casefold()] = entry.display_name
+            lookup[canonicalize_name(alias).casefold()] = match
     return lookup
 
 
@@ -129,13 +145,29 @@ def resolve_counterparty(
     alias_lookup = _load_alias_lookup(str(Path(registry_path).resolve()))
     registry_match = alias_lookup.get(normalized.casefold())
     if registry_match is not None:
-        return NameResolution(raw_name=name, canonical_name=registry_match, source="registry")
+        return NameResolution(
+            raw_name=name,
+            canonical_name=registry_match.display_name,
+            source="registry",
+            canonical_key=registry_match.canonical_key,
+            series_included=registry_match.series_included,
+        )
 
     fallback_match = _COUNTERPARTY_FALLBACK_MAPPINGS.get(normalized)
     if fallback_match is not None:
-        return NameResolution(raw_name=name, canonical_name=fallback_match, source="fallback")
+        return NameResolution(
+            raw_name=name,
+            canonical_name=fallback_match,
+            source="fallback",
+            canonical_key=canonicalize_name(fallback_match),
+        )
 
-    return NameResolution(raw_name=name, canonical_name=normalized, source="unmapped")
+    return NameResolution(
+        raw_name=name,
+        canonical_name=normalized,
+        source="unmapped",
+        canonical_key=normalized,
+    )
 
 
 def normalize_counterparty(name: str) -> str:
@@ -177,16 +209,61 @@ def resolve_clearing_house(
     alias_lookup = _load_alias_lookup(str(Path(registry_path).resolve()))
     registry_match = alias_lookup.get(normalized.casefold())
     if registry_match is not None:
-        return NameResolution(raw_name=name, canonical_name=registry_match, source="registry")
+        return NameResolution(
+            raw_name=name,
+            canonical_name=registry_match.display_name,
+            source="registry",
+            canonical_key=registry_match.canonical_key,
+            series_included=registry_match.series_included,
+        )
 
     fallback_match = _CLEARING_HOUSE_FALLBACK_MAPPINGS.get(normalized)
     if fallback_match is not None:
-        return NameResolution(raw_name=name, canonical_name=fallback_match, source="fallback")
+        return NameResolution(
+            raw_name=name,
+            canonical_name=fallback_match,
+            source="fallback",
+            canonical_key=canonicalize_name(fallback_match),
+        )
 
-    return NameResolution(raw_name=name, canonical_name=normalized, source="fallback")
+    return NameResolution(
+        raw_name=name,
+        canonical_name=normalized,
+        source="fallback",
+        canonical_key=normalized,
+    )
 
 
 def normalize_clearing_house(name: str) -> str:
     """Normalize a clearing house name to the canonical historical workbook label."""
 
     return resolve_clearing_house(name).canonical_name
+
+
+def counterparty_included_for_variant(
+    name: str,
+    variant: str | None,
+    *,
+    registry_path: str | Path = Path("config/name_registry.yml"),
+) -> bool:
+    """Return whether a registry-mapped counterparty should be expected for *variant*.
+
+    Missing registry metadata, fallback mappings, and unknown names are treated
+    as included so existing workbook reconciliation behavior stays conservative.
+    """
+
+    if not variant:
+        return True
+    resolution = resolve_counterparty(name, registry_path=registry_path)
+    flags = resolution.series_included
+    if resolution.source != "registry" or flags is None:
+        return True
+
+    normalized_variant = variant.strip().casefold()
+    if normalized_variant == "all_programs":
+        return flags.all_programs
+    if normalized_variant == "ex_trend":
+        return flags.ex_trend
+    if normalized_variant == "trend":
+        return flags.trend
+    return True

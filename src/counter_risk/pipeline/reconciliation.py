@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 from counter_risk.normalize import (
     canonicalize_name,
+    counterparty_included_for_variant,
     normalize_counterparty,
     normalize_counterparty_with_source,
 )
@@ -90,7 +91,14 @@ def reconcile_series_coverage(
             normalize_counterparty(header) for header in historical_series_headers
         }
         missing_normalized_counterparties = sorted(
-            set(normalized_counterparties_in_data).difference(normalized_historical_series_headers),
+            {
+                normalized_name
+                for normalized_name, raw_names in normalized_counterparties_in_data.items()
+                if normalized_name not in normalized_historical_series_headers
+                and any(
+                    counterparty_included_for_variant(raw_name, variant) for raw_name in raw_names
+                )
+            },
             key=str.casefold,
         )
         missing_counterparty_labels = sorted(
