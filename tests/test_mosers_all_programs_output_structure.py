@@ -81,7 +81,9 @@ def test_all_programs_fixture_generates_using_documented_layout_contract() -> No
         workbook.close()
 
 
-def test_all_programs_metric_columns_follow_header_aliases_when_shifted(monkeypatch) -> None:
+def test_all_programs_metric_columns_follow_header_aliases_when_shifted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     fixture_path = Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx")
     parsed = parse_nisa_all_programs(fixture_path)
 
