@@ -1,5 +1,20 @@
 # Counter_Risk Workloop State
 
+## 2026-05-07T16:04Z - opener lane issue #478 data-quality PR materializing
+
+- Automation: `pd-workloop-resume` (codex opener lane).
+- Source repo: `stranske/Counter_Risk`.
+- Source issue: `#478` (`[Agent] [M3] Add a "Data Quality Report" section to manifest + operator-friendly warnings in Runner UI`; labels `priority:normal`, `repo-review-approved`).
+- Branch: `codex/issue-478-data-quality-report` from `origin/main` (`1e5c381`, includes merged PR `#572`).
+- PR: `#574` (`https://github.com/stranske/Counter_Risk/pull/574`), ready for review, non-draft, labels `agent:codex`, `agents:keepalive`, `autofix`.
+- ACTION A: succeeded. Sentinel on entry reported `active.source_repo=stranske/Counter_Risk`, `active.source_issue=1103`, `active.source_pr=572`, and `active.next_action=wait_for_verifier`; treated `active.*` as cross-lane informational per opener policy.
+- Discovery: approved queue currently has `issues_count=0`, `deeper_review_count=7`; live priority searches were used. High-priority issues `Manager-Database#979`, `Inv-Man-Intake#379`, and `Inv-Man-Intake#381` were deduped because they already have PRs (`#999` open, `#393` merged+verify, `#400` merged+verify). Older Counter_Risk normal issues `#473`, `#474`, `#476`, and `#477` were already linked to opener/closer lanes; `#478` had no matching PR.
+- Cap-health before selection: `total_opener_owned=4`, `raw_cap_reached=false`, `normal_cap_reached=false`, `non_drainable_cap_blocker=false`, `drainable_count=1`, `non_drainable_count=3`; one opener slot was available.
+- Implementation: reused the existing data-quality manifest and summary pipeline on `main`; added Tk runner status extraction from `DATA_QUALITY_SUMMARY.txt`, surfaced a stable Data Quality row in the Tk UI, added GUI result tests for yellow status and failure behavior, and added `docs/data_quality.md` plus a README link documenting the shared check integration point.
+- Validation passed before commit: `python -m pytest tests/test_gui_runner.py tests/pipeline/test_manifest_data_quality.py tests/pipeline/test_manifest_schema.py tests/test_runner_launch.py::test_data_quality_status_label_maps_color_to_label tests/test_runner_launch.py::test_data_quality_status_label_returns_empty_for_unknown_color` (24 passed); `python -m ruff check src/counter_risk/gui/runner.py tests/test_gui_runner.py` (pass).
+- Relay event emitted: `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=478 active.source_pr=574 active.next_action=wait_for_keepalive`.
+- Next action: keepalive owns PR `#574` for CI, review comments, and follow-up commits. Opener is done with this issue.
+
 ## 2026-05-07T13:58:14Z - opener lane PR materialization for issue #476
 
 - Automation: `pd-workloop-resume` (codex opener lane).

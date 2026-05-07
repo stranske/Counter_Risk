@@ -12,7 +12,11 @@ from datetime import date
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from counter_risk.runner_launch import parse_as_of_month
+from counter_risk.runner_launch import (
+    data_quality_status_label,
+    parse_as_of_month,
+    read_overall_status_color,
+)
 from counter_risk.runtime_paths import resolve_runtime_path
 
 if TYPE_CHECKING:
@@ -44,6 +48,8 @@ class GuiRunResult:
     cli_args: tuple[str, ...]
     settings_path: Path
     output_dir: Path | None
+    data_quality_status: str = ""
+    data_quality_color: str = ""
 
 
 def _normalize_run_mode(raw_mode: str) -> str:
@@ -158,11 +164,18 @@ def execute_gui_run(
         if cleanup_settings_file:
             _cleanup_settings_file(settings_path)
     output_dir = None if dry_run_discovery else _resolve_output_dir(state)
+    data_quality_color = ""
+    data_quality_status = ""
+    if exit_code == 0:
+        data_quality_color = _read_data_quality_status_color(output_dir)
+        data_quality_status = data_quality_status_label(data_quality_color)
     return GuiRunResult(
         exit_code=exit_code,
         cli_args=tuple(cli_args),
         settings_path=settings_path,
         output_dir=output_dir,
+        data_quality_status=data_quality_status,
+        data_quality_color=data_quality_color,
     )
 
 
@@ -181,6 +194,12 @@ def _default_runner(cli_args: list[str]) -> int:
     from counter_risk.cli import main
 
     return int(main(cli_args))
+
+
+def _read_data_quality_status_color(output_dir: Path | None) -> str:
+    if output_dir is None:
+        return ""
+    return read_overall_status_color(output_dir / "DATA_QUALITY_SUMMARY.txt")
 
 
 def launch_gui(
@@ -212,6 +231,7 @@ def launch_gui(
     output_root_var = tk.StringVar(value=state.output_root)
     status_var = tk.StringVar(value="Idle")
     result_var = tk.StringVar(value="")
+    quality_var = tk.StringVar(value="")
 
     def _state_from_form() -> GuiRunState:
         return GuiRunState(
@@ -239,12 +259,15 @@ def launch_gui(
             if result.exit_code == 0:
                 status_var.set("Complete")
                 result_var.set("Success")
+                quality_var.set(result.data_quality_status or "UNAVAILABLE - Summary not found")
             else:
                 status_var.set("Error")
                 result_var.set(f"Exit code {result.exit_code}")
+                quality_var.set("")
         except Exception as exc:  # pragma: no cover - UI safety
             status_var.set("Error")
             result_var.set(str(exc))
+            quality_var.set("")
             messagebox.showerror("Counter Risk Runner", str(exc))
 
     def _open_output() -> None:
@@ -329,5 +352,7 @@ def launch_gui(
     ttk.Label(root, textvariable=status_var).grid(row=11, column=1, sticky="w", padx=8, pady=4)
     ttk.Label(root, text="Result").grid(row=12, column=0, sticky="w", padx=8, pady=4)
     ttk.Label(root, textvariable=result_var).grid(row=12, column=1, sticky="w", padx=8, pady=4)
+    ttk.Label(root, text="Data Quality").grid(row=13, column=0, sticky="w", padx=8, pady=4)
+    ttk.Label(root, textvariable=quality_var).grid(row=13, column=1, sticky="w", padx=8, pady=4)
 
     root.mainloop()

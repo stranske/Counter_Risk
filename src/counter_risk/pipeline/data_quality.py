@@ -21,6 +21,17 @@ _SEVERITY_BY_CODE: dict[str, Severity] = {
     "MISSING_NOTIONAL": "warn",
     "INVALID_NOTIONAL": "warn",
     "MISSING_DESCRIPTION": "warn",
+    "MISSING_DATE_HEADER": "fail",
+    "DATE_RESOLUTION_FALLBACK": "warn",
+    "REPO_CASH_SOURCE_NOT_CONFIGURED": "warn",
+    "REPO_CASH_SOURCE_USED": "info",
+    "REPO_CASH_OVERRIDES_APPLIED": "info",
+    "REPO_CASH_OVERRIDES_EMPTY": "warn",
+    "REPO_CASH_LIMIT_BREACH": "warn",
+    "REPO_CASH_MISSING_REQUIRED_COUNTERPARTIES": "warn",
+    "REPO_CASH_APPLIED_TO_TOTALS": "info",
+    "OUTPUT_GENERATION_SKIPPED": "warn",
+    "OUTPUT_GENERATION_FAILED": "fail",
 }
 _CATEGORY_BY_CODE: dict[str, str] = {
     "NO_FINDINGS": "pipeline",
@@ -35,6 +46,17 @@ _CATEGORY_BY_CODE: dict[str, str] = {
     "MISSING_NOTIONAL": "data_validation",
     "INVALID_NOTIONAL": "data_validation",
     "MISSING_DESCRIPTION": "data_validation",
+    "MISSING_DATE_HEADER": "date",
+    "DATE_RESOLUTION_FALLBACK": "date",
+    "REPO_CASH_SOURCE_NOT_CONFIGURED": "cash",
+    "REPO_CASH_SOURCE_USED": "cash",
+    "REPO_CASH_OVERRIDES_APPLIED": "cash",
+    "REPO_CASH_OVERRIDES_EMPTY": "cash",
+    "REPO_CASH_LIMIT_BREACH": "cash",
+    "REPO_CASH_MISSING_REQUIRED_COUNTERPARTIES": "cash",
+    "REPO_CASH_APPLIED_TO_TOTALS": "cash",
+    "OUTPUT_GENERATION_SKIPPED": "output_generation",
+    "OUTPUT_GENERATION_FAILED": "output_generation",
 }
 
 
@@ -426,6 +448,40 @@ def _recommended_action(*, category: str, severity: str) -> str:
 
 
 def _code_from_message(message: str) -> str:
+    message_lower = message.casefold()
+    if "missing a date header" in message_lower:
+        return "MISSING_DATE_HEADER"
+    if "date derivation" in message_lower:
+        return "DATE_RESOLUTION_FALLBACK"
+    if "repo cash source is not configured" in message_lower:
+        return "REPO_CASH_SOURCE_NOT_CONFIGURED"
+    if "repo cash source used:" in message_lower:
+        return "REPO_CASH_SOURCE_USED"
+    if "repo cash overrides applied" in message_lower:
+        return "REPO_CASH_OVERRIDES_APPLIED"
+    if "repo cash overrides file present but empty" in message_lower:
+        return "REPO_CASH_OVERRIDES_EMPTY"
+    if "repo cash total" in message_lower and (
+        "below configured minimum" in message_lower or "exceeds configured maximum" in message_lower
+    ):
+        return "REPO_CASH_LIMIT_BREACH"
+    if "repo cash missing required counterparties" in message_lower:
+        return "REPO_CASH_MISSING_REQUIRED_COUNTERPARTIES"
+    if "applied repo cash values to all_programs totals" in message_lower:
+        return "REPO_CASH_APPLIED_TO_TOTALS"
+    if " skipped" in message_lower and (
+        "change_attribution" in message_lower
+        or "risk_rankings.csv" in message_lower
+        or "risk_top_movers.csv" in message_lower
+        or "historical workbook update skipped" in message_lower
+        or "distribution ppt standalone validation skipped" in message_lower
+    ):
+        return "OUTPUT_GENERATION_SKIPPED"
+    if " generation failed" in message_lower and (
+        "distribution_static" in message_lower or "chart_replacement" in message_lower
+    ):
+        return "OUTPUT_GENERATION_FAILED"
+
     normalized = (
         message.upper().replace(" ", "_").replace("-", "_").replace("/", "_").replace(":", "")
     )
