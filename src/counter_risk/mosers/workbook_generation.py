@@ -10,6 +10,7 @@ from typing import Any
 from counter_risk.mosers.template import (
     find_row_containing_text,
     load_mosers_template_workbook,
+    normalize_template_text,
     resolve_marker_bound_range,
 )
 from counter_risk.parsers.nisa import (
@@ -44,6 +45,10 @@ _CH_METRIC_REQUIRED_HEADERS: tuple[tuple[str, ...], ...] = (
     ("Annualized Volatility",),
     ("Allocation %", "%"),
 )
+_CH_METRIC_SOURCE_HEADER_ALIASES: dict[str, tuple[str, ...]] = {
+    "annualized_volatility": ("Annualized Volatility",),
+    "allocation_percentage": ("Allocation %", "%"),
+}
 _CH_TOTALS_MARKER = "Total by Counterparty/Clearing House"
 _CH_TOTALS_STOP_MARKERS = ("Total Current Exposure", "MOSERS Program", "Notional Breakdown")
 _FCM_TOTALS_MARKER = "Total by Counterparty/ FCM"
@@ -99,6 +104,7 @@ class MosersPlugValueStructureMapping:
     section_marker: str
     stop_markers: tuple[str, ...]
     field_mappings: tuple[MosersPlugValueFieldMapping, ...]
+    applicable_variants: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -213,6 +219,7 @@ def get_mosers_plug_values_mapping_requirements() -> MosersPlugValuesMappingRequ
                 section_marker=_CH_TOTALS_MARKER,
                 stop_markers=_CH_TOTALS_STOP_MARKERS,
                 field_mappings=totals_field_mappings,
+                applicable_variants=_PLUG_VALUES_APPLICABLE_VARIANTS,
             ),
             MosersPlugValueStructureMapping(
                 structure_name="cprs_fcm_totals",
@@ -221,6 +228,7 @@ def get_mosers_plug_values_mapping_requirements() -> MosersPlugValuesMappingRequ
                 section_marker=_FCM_TOTALS_MARKER,
                 stop_markers=_FCM_TOTALS_STOP_MARKERS,
                 field_mappings=totals_field_mappings,
+                applicable_variants=("all_programs", "ex_trend"),
             ),
         ),
     )
@@ -239,6 +247,7 @@ def generate_mosers_workbook(raw_nisa_path: str | Path) -> Workbook:
         parser=parse_nisa_all_programs,
         structure=get_mosers_all_programs_output_structure(),
         transformation_scope=get_mosers_all_programs_transformation_scope(),
+        variant="all_programs",
     )
 
 
@@ -250,6 +259,7 @@ def generate_mosers_workbook_ex_trend(raw_nisa_path: str | Path) -> Workbook:
         parser=parse_nisa_ex_trend,
         structure=get_mosers_ex_trend_output_structure(),
         transformation_scope=get_mosers_ex_trend_transformation_scope(),
+        variant="ex_trend",
     )
 
 
@@ -261,6 +271,7 @@ def generate_mosers_workbook_trend(raw_nisa_path: str | Path) -> Workbook:
         parser=parse_nisa_trend,
         structure=get_mosers_trend_output_structure(),
         transformation_scope=get_mosers_trend_transformation_scope(),
+        variant="trend",
     )
 
 
@@ -270,6 +281,7 @@ def _generate_mosers_workbook_from_parser(
     parser: Callable[[str | Path], NisaAllProgramsData],
     structure: MosersAllProgramsOutputStructure | None = None,
     transformation_scope: MosersAllProgramsTransformationScope | None = None,
+    variant: str = "all_programs",
 ) -> Workbook:
     resolved_structure = structure or get_mosers_all_programs_output_structure()
     resolved_transformation_scope = (
@@ -290,10 +302,25 @@ def _generate_mosers_workbook_from_parser(
     worksheet[resolved_structure.program_name_cell] = first_program
 
     metric_start_row, metric_end_row = _resolve_cprs_ch_metric_row_bounds(worksheet)
+    resolved_metric_columns = _resolve_metric_target_columns(
+        worksheet=worksheet,
+        metrics=tuple(
+            transform.source_metric
+            for transform in resolved_transformation_scope.cprs_ch_transforms
+        ),
+        section_start_row=metric_start_row,
+        fallback_columns={
+            transform.source_metric: transform.target_column
+            for transform in resolved_transformation_scope.cprs_ch_transforms
+        },
+    )
     for transform in resolved_transformation_scope.cprs_ch_transforms:
+        target_column = resolved_metric_columns.get(
+            transform.source_metric, transform.target_column
+        )
         _write_vertical_values(
             worksheet=worksheet,
-            column_letter=transform.target_column,
+            column_letter=target_column,
             start_row=metric_start_row,
             end_row=metric_end_row,
             values=_build_totals_metric_values(parsed.totals_rows, transform.source_metric),
@@ -301,13 +328,21 @@ def _generate_mosers_workbook_from_parser(
 
     plug_values_requirements = get_mosers_plug_values_mapping_requirements()
     for structure_mapping in plug_values_requirements.structure_mappings:
-        _write_totals_rows_by_marker(
-            worksheet=workbook[structure_mapping.target_sheet],
-            totals_rows=parsed.totals_rows,
-            section_marker=structure_mapping.section_marker,
-            stop_markers=structure_mapping.stop_markers,
-            field_mappings=structure_mapping.field_mappings,
-        )
+        if variant in structure_mapping.applicable_variants:
+            _write_totals_rows_by_marker(
+                worksheet=workbook[structure_mapping.target_sheet],
+                totals_rows=parsed.totals_rows,
+                section_marker=structure_mapping.section_marker,
+                stop_markers=structure_mapping.stop_markers,
+                field_mappings=structure_mapping.field_mappings,
+            )
+        else:
+            _clear_totals_rows_by_marker(
+                worksheet=workbook[structure_mapping.target_sheet],
+                section_marker=structure_mapping.section_marker,
+                stop_markers=structure_mapping.stop_markers,
+                field_mappings=structure_mapping.field_mappings,
+            )
 
     return workbook
 
@@ -375,6 +410,29 @@ def _write_totals_rows_by_marker(
                 field_mappings=field_mappings,
             )
             continue
+        _clear_totals_row_values(
+            worksheet=worksheet, row_number=row_number, field_mappings=field_mappings
+        )
+
+
+def _clear_totals_rows_by_marker(
+    *,
+    worksheet: Worksheet,
+    section_marker: str,
+    stop_markers: tuple[str, ...],
+    field_mappings: tuple[MosersPlugValueFieldMapping, ...],
+) -> None:
+    section_bounds = _resolve_section_bounds(
+        worksheet=worksheet,
+        section_marker=section_marker,
+        stop_markers=stop_markers,
+    )
+    if section_bounds is None:
+        raise ValueError(
+            f"Unable to resolve section marker {section_marker!r} in sheet {worksheet.title!r}."
+        )
+    start_row, end_row = section_bounds
+    for row_number in range(start_row, end_row + 1):
         _clear_totals_row_values(
             worksheet=worksheet, row_number=row_number, field_mappings=field_mappings
         )
@@ -481,3 +539,54 @@ def _validate_metric_headers_present(worksheet: Worksheet) -> None:
             "Unable to locate expected CPRS-CH metric header "
             f"({joined_aliases}) in sheet {worksheet.title!r}."
         )
+
+
+def _resolve_metric_target_columns(
+    *,
+    worksheet: Worksheet,
+    metrics: tuple[str, ...],
+    section_start_row: int | None = None,
+    fallback_columns: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """Resolve metric write columns by matching configured header aliases."""
+
+    from openpyxl.utils.cell import column_index_from_string, get_column_letter
+
+    resolved: dict[str, str] = {}
+    fallback_indexes = {
+        metric: column_index_from_string(column)
+        for metric, column in (fallback_columns or {}).items()
+    }
+    for metric in metrics:
+        for header_alias in _CH_METRIC_SOURCE_HEADER_ALIASES.get(metric, ()):
+            normalized_alias = normalize_template_text(header_alias)
+            matching_cells: list[tuple[int, int]] = []
+            for row_number in range(1, int(worksheet.max_row) + 1):
+                for column_number in range(1, int(worksheet.max_column) + 1):
+                    value = worksheet.cell(row=row_number, column=column_number).value
+                    if normalize_template_text(value) == normalized_alias:
+                        matching_cells.append((row_number, column_number))
+            if not matching_cells:
+                continue
+
+            if section_start_row is not None:
+                candidates = [cell for cell in matching_cells if cell[0] <= section_start_row]
+                row_number = (
+                    max(candidates, key=lambda cell: cell[0])[0]
+                    if candidates
+                    else matching_cells[0][0]
+                )
+            else:
+                row_number = matching_cells[0][0]
+
+            for column_number in range(1, int(worksheet.max_column) + 1):
+                value = worksheet.cell(row=row_number, column=column_number).value
+                if normalize_template_text(value) == normalized_alias:
+                    fallback_index = fallback_indexes.get(metric)
+                    if fallback_index is not None and abs(column_number - fallback_index) > 2:
+                        continue
+                    resolved[metric] = get_column_letter(column_number)
+                    break
+            if metric in resolved:
+                break
+    return resolved

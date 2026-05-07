@@ -19,11 +19,7 @@ from counter_risk.pipeline.parsing_types import (
 )
 from counter_risk.reports.mapping_diff import collect_mapping_diff_findings
 
-
-def _resolve_repo_root() -> Path:
-    """Resolve repository root from this module location."""
-
-    return Path(__file__).resolve().parents[3]
+_NAME_REGISTRY_PATH = Path(__file__).resolve().parents[3] / "config" / "name_registry.yml"
 
 
 def reconcile_series_coverage(
@@ -142,7 +138,7 @@ def reconcile_series_coverage(
             expected_segments.difference(parsed_segments), key=str.casefold
         )
         mapping_diff_findings = collect_mapping_diff_findings(
-            _resolve_repo_root() / "config" / "name_registry.yml",
+            _NAME_REGISTRY_PATH,
             {
                 "reconciliation": {
                     "counterparties_in_data": counterparties_in_data,
