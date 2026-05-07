@@ -361,7 +361,7 @@ def run_pipeline(
             warnings=warnings,
         )
         parsed_by_variant = _parse_inputs(_resolve_input_paths(runtime_config))
-        _apply_daily_holdings_repo_cash(
+        repo_cash_summary = _apply_daily_holdings_repo_cash(
             config=runtime_config,
             parsed_by_variant=parsed_by_variant,
             warnings=warnings,
@@ -530,6 +530,7 @@ def run_pipeline(
             ),
             risk_proxy_summary=risk_proxy_summary,
             limit_breach_summary=limit_breach_summary,
+            repo_cash_summary=repo_cash_summary,
         )
         manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)
     except Exception as exc:
@@ -797,15 +798,16 @@ def _apply_daily_holdings_repo_cash(
     warnings: list[str],
     as_of_date: date | None = None,
     config_dir: Path | None = None,
-) -> None:
-    repo_cash_by_counterparty, source_label = _load_repo_cash_by_counterparty(
+) -> dict[str, Any]:
+    repo_cash_by_counterparty, source_label, summary = _load_repo_cash_by_counterparty(
         config=config,
         warnings=warnings,
         as_of_date=as_of_date,
         config_dir=config_dir,
     )
     if not repo_cash_by_counterparty:
-        return
+        summary["applied_to_totals"] = False
+        return summary
 
     all_programs_sections = parsed_by_variant.get("all_programs")
     if not isinstance(all_programs_sections, dict) or "totals" not in all_programs_sections:
@@ -822,6 +824,8 @@ def _apply_daily_holdings_repo_cash(
         "Applied Repo Cash values to all_programs totals "
         f"for {len(repo_cash_by_counterparty)} counterparties using {source_label}"
     )
+    summary["applied_to_totals"] = True
+    return summary
 
 
 def _load_repo_cash_by_counterparty(
@@ -830,14 +834,27 @@ def _load_repo_cash_by_counterparty(
     warnings: list[str],
     as_of_date: date | None,
     config_dir: Path | None = None,
-) -> tuple[dict[str, float], str]:
+) -> tuple[dict[str, float], str, dict[str, Any]]:
     fail_policy = config.reconciliation.fail_policy
     source_type, source_path = _resolve_repo_cash_source(config)
     source_label = source_type
+    summary: dict[str, Any] = {
+        "source_type": source_type,
+        "source_path": str(source_path) if source_path is not None else None,
+        "overrides_path": None,
+        "applied_override_count": 0,
+        "override_audit_rows": [],
+        "counterparty_count": 0,
+        "total_cash": 0.0,
+        "required_counterparties": [],
+        "missing_required_counterparties": [],
+        "reconciliation_findings": [],
+        "fail_policy": fail_policy,
+    }
 
     if source_type == "none" or source_path is None:
         warnings.append("Repo Cash source is not configured (cash_source_type=none).")
-        return {}, "none"
+        return {}, "none", summary
 
     if source_type == "pdf":
         repo_cash_by_counterparty = parse_daily_holdings_pdf(source_path)
@@ -855,9 +872,12 @@ def _load_repo_cash_by_counterparty(
         config_dir=config_dir,
     )
     if overrides_path is not None:
+        summary["overrides_path"] = str(overrides_path)
         overrides, audit_rows = load_repo_cash_overrides_csv(overrides_path)
         if overrides:
             repo_cash_by_counterparty.update(overrides)
+            summary["applied_override_count"] = len(audit_rows)
+            summary["override_audit_rows"] = audit_rows
             warnings.append(
                 "Repo Cash overrides applied from "
                 f"{overrides_path} ({len(audit_rows)} override rows)"
@@ -873,40 +893,86 @@ def _load_repo_cash_by_counterparty(
         },
         key=str.casefold,
     )
+    summary["required_counterparties"] = list(required_counterparties)
     missing_required = [
         counterparty
         for counterparty in required_counterparties
         if counterparty not in repo_cash_by_counterparty
     ]
+    summary["missing_required_counterparties"] = list(missing_required)
     if missing_required:
-        _handle_repo_cash_condition(
+        finding_message = (
             "Repo Cash source is missing required counterparties: "
-            f"{', '.join(missing_required)}.",
+            f"{', '.join(missing_required)}."
+        )
+        summary["reconciliation_findings"].append(
+            {
+                "code": "missing_required_counterparties",
+                "severity": "fail" if fail_policy == "strict" else "warn",
+                "message": finding_message,
+            }
+        )
+        _handle_repo_cash_condition(
+            finding_message,
             warnings=warnings,
             fail_policy=fail_policy,
         )
 
     total_cash = sum(repo_cash_by_counterparty.values())
+    summary["total_cash"] = float(total_cash)
+    summary["counterparty_count"] = len(repo_cash_by_counterparty)
     if config.cash_total_min is not None and total_cash < config.cash_total_min:
+        finding_message = (
+            f"Repo Cash total {total_cash:.2f} is below configured minimum "
+            f"{config.cash_total_min:.2f}."
+        )
+        summary["reconciliation_findings"].append(
+            {
+                "code": "cash_total_below_minimum",
+                "severity": "fail" if fail_policy == "strict" else "warn",
+                "message": finding_message,
+            }
+        )
         _handle_repo_cash_condition(
-            f"Repo Cash total {total_cash:.2f} is below configured minimum {config.cash_total_min:.2f}.",
+            finding_message,
             warnings=warnings,
             fail_policy=fail_policy,
         )
     if config.cash_total_max is not None and total_cash > config.cash_total_max:
+        finding_message = (
+            f"Repo Cash total {total_cash:.2f} exceeds configured maximum "
+            f"{config.cash_total_max:.2f}."
+        )
+        summary["reconciliation_findings"].append(
+            {
+                "code": "cash_total_above_maximum",
+                "severity": "fail" if fail_policy == "strict" else "warn",
+                "message": finding_message,
+            }
+        )
         _handle_repo_cash_condition(
-            f"Repo Cash total {total_cash:.2f} exceeds configured maximum {config.cash_total_max:.2f}.",
+            finding_message,
             warnings=warnings,
             fail_policy=fail_policy,
         )
 
     if not repo_cash_by_counterparty:
+        finding_message = (
+            f"Repo Cash source '{source_label}' did not yield any counterparty values."
+        )
+        summary["reconciliation_findings"].append(
+            {
+                "code": "empty_cash_source",
+                "severity": "fail" if fail_policy == "strict" else "warn",
+                "message": finding_message,
+            }
+        )
         _handle_repo_cash_condition(
-            f"Repo Cash source '{source_label}' did not yield any counterparty values.",
+            finding_message,
             warnings=warnings,
             fail_policy=fail_policy,
         )
-    return repo_cash_by_counterparty, source_label
+    return repo_cash_by_counterparty, source_label, summary
 
 
 def _resolve_repo_cash_source(config: WorkflowConfig) -> tuple[str, Path | None]:
