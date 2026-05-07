@@ -323,12 +323,15 @@ def _detect_variant(*, file_path: Path, sheet_name: str) -> str | None:
     title = normalize_variant_text(f"{file_path.name} {sheet_name}")
     if "ex trend" in title:
         return "ex_trend"
-    if "trend" in title:
-        return "trend"
     if "all" in title:
         return "all_programs"
+    # Generated pipeline artifacts often include both "trend" and
+    # "mosers input" in the filename; prioritize the explicit
+    # mosers-input marker so parser expectations match generated layout.
     if "mosers input" in title or "generated mosers" in title:
         return "mosers_input"
+    if "trend" in title:
+        return "trend"
     return None
 
 
