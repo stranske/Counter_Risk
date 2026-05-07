@@ -1,5 +1,29 @@
 # Counter_Risk Workloop State
 
+## 2026-05-07T13:58:14Z - opener lane PR materialization for issue #476
+
+- Automation: `pd-workloop-resume` (codex opener lane).
+- Source repo: `stranske/Counter_Risk`.
+- Source issue: `#476` (`[Agent] [M3] Add risk-weighted exposure proxies and rankings (Notional×Vol, Position×Vol where available)`).
+- Branch: `codex/issue-476-risk-proxy-manifest-docs`.
+- Selection:
+  - ACTION A succeeded from the neutral Code workspace.
+  - Required discovery ran: queue files, `repo-review-approved`, live `priority:high` / `priority:normal` / `priority:low`, raw opener-owned author searches, and cap-health.
+  - Cap-health reported `total_opener_owned=4`, `raw_cap_reached=false`, `normal_cap_reached=false`, and `non_drainable_cap_blocker=false`, so one opener slot was available.
+  - High-priority issues were skipped because they were already materialized into open or merged verifier-pending PRs (`Manager-Database#977/#979`, `Inv-Man-Intake#379/#381`) or otherwise not opener-actionable.
+  - Normal-priority `Counter_Risk#473` and `#474` already have open PRs (`#526`, `#569`); `#475` was already merged and closed after verifier PASS. `#476` was the oldest supported unmaterialized normal-priority issue.
+- Implementation:
+  - Kept the existing `compute_risk_proxies`, `risk_rankings.csv`, and `risk_top_movers.csv` behavior intact.
+  - Added a structured `risk_proxy_summary` manifest block that reports output file presence and per-variant/per-proxy computed vs skipped state, formulas, required columns, missing columns, mover status, and delta source column.
+  - Added docs for `risk_rankings.csv`, `risk_top_movers.csv`, formulas, mover prerequisites, and missing-data behavior, and linked them from the README.
+  - Added targeted tests for manifest persistence, summary computation, and pipeline manifest output.
+- Validation passed:
+  - `python -m pytest tests/compute/test_rollups.py tests/pipeline/test_run_pipeline.py::test_write_risk_outputs_writes_rankings_and_top_movers tests/pipeline/test_run_pipeline.py::test_build_risk_proxy_summary_reports_computed_and_skipped_outputs tests/pipeline/test_run_pipeline.py::test_write_risk_outputs_warns_and_skips_rankings_when_proxy_columns_missing tests/pipeline/test_run_pipeline.py::test_write_risk_outputs_creates_partial_outputs_when_only_notional_proxy_exists tests/pipeline/test_run_pipeline.py::test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available tests/test_manifest_paths.py::test_manifest_build_includes_risk_proxy_summary_when_supplied tests/test_pipeline_run_outputs.py tests/test_fixtures_smoke.py --no-cov` (38 passed).
+  - `python -m ruff check src/counter_risk/pipeline/manifest.py src/counter_risk/pipeline/run.py tests/pipeline/test_run_pipeline.py tests/test_manifest_paths.py`.
+  - `python -m black --check src/counter_risk/pipeline/manifest.py src/counter_risk/pipeline/run.py tests/pipeline/test_run_pipeline.py tests/test_manifest_paths.py`.
+  - `python -m mypy src/counter_risk/pipeline/manifest.py src/counter_risk/pipeline/run.py`.
+- Next action: commit, push, open a ready PR with `agent:codex`, `agents:keepalive`, and `autofix`, then emit the `pr_opened` relay event.
+
 ## 2026-05-01T14:12Z - opener PR opened for issue #471
 
 - Automation: `pd-workloop-resume` (codex opener lane).

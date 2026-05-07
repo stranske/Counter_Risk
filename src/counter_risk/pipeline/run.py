@@ -393,11 +393,16 @@ def run_pipeline(
     concentration_metrics_records: list[dict[str, Any]] = []
     concentration_metrics_output_paths: list[Path] = []
     change_attribution_output_paths: list[Path] = []
+    risk_proxy_summary: dict[str, Any] = {}
     try:
         risk_output_paths = _write_risk_outputs(
             run_dir=run_dir,
             parsed_by_variant=parsed_by_variant,
             warnings=warnings,
+        )
+        risk_proxy_summary = _build_risk_proxy_summary(
+            parsed_by_variant=parsed_by_variant,
+            output_paths=risk_output_paths,
         )
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=write_risk_outputs run_dir=%s", run_dir)
@@ -523,6 +528,7 @@ def run_pipeline(
             concentration_metrics=(
                 concentration_metrics_records if concentration_metrics_records else None
             ),
+            risk_proxy_summary=risk_proxy_summary,
             limit_breach_summary=limit_breach_summary,
         )
         manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)
@@ -1474,6 +1480,101 @@ def _write_risk_outputs(
         )
 
     return output_paths
+
+
+def _build_risk_proxy_summary(
+    *,
+    parsed_by_variant: dict[str, dict[str, Any]],
+    output_paths: Sequence[Path],
+) -> dict[str, Any]:
+    output_names = {path.name for path in output_paths}
+    summary: dict[str, Any] = {
+        "outputs": {
+            "risk_rankings": ("risk_rankings.csv" if "risk_rankings.csv" in output_names else None),
+            "risk_top_movers": (
+                "risk_top_movers.csv" if "risk_top_movers.csv" in output_names else None
+            ),
+        },
+        "by_variant": {},
+    }
+    by_variant: dict[str, Any] = {}
+
+    for variant, parsed_sections in parsed_by_variant.items():
+        totals_table = parsed_sections.get("totals", [])
+        totals_records = _records(totals_table)
+        columns = _column_names(totals_table)
+        variant_summary = {
+            _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN: _risk_proxy_manifest_entry(
+                columns=columns,
+                records=totals_records,
+                required_columns=("Notional", "AnnualizedVolatility"),
+                formula="Notional * AnnualizedVolatility",
+                delta_candidates=_NOTIONAL_CHANGE_FIELDS_FOR_MOVER_DELTA,
+            ),
+            _RISK_PROXY_POSITION_VOL_COLUMN: _risk_proxy_manifest_entry(
+                columns=columns,
+                records=totals_records,
+                required_columns=("PositionUSD", "Vol"),
+                formula="PositionUSD * Vol",
+                delta_candidates=_POSITION_CHANGE_FIELDS_FOR_MOVER_DELTA,
+            ),
+        }
+        by_variant[variant] = variant_summary
+
+    summary["by_variant"] = by_variant
+    return summary
+
+
+def _risk_proxy_manifest_entry(
+    *,
+    columns: set[str],
+    records: list[dict[str, Any]],
+    required_columns: tuple[str, ...],
+    formula: str,
+    delta_candidates: tuple[str, ...],
+) -> dict[str, Any]:
+    missing_columns = [column for column in required_columns if column not in columns]
+    delta_source_column = _first_available_field(columns=columns, candidates=delta_candidates)
+    if not records:
+        return {
+            "status": "skipped",
+            "formula": formula,
+            "required_columns": list(required_columns),
+            "missing_columns": missing_columns,
+            "skipped_reason": "no totals rows available",
+            "top_movers_status": "skipped",
+            "top_movers_skipped_reason": "no totals rows available",
+            "delta_source_column": None,
+        }
+    if missing_columns:
+        return {
+            "status": "skipped",
+            "formula": formula,
+            "required_columns": list(required_columns),
+            "missing_columns": missing_columns,
+            "skipped_reason": (
+                "missing required proxy input column(s): " + ", ".join(missing_columns)
+            ),
+            "top_movers_status": "skipped",
+            "top_movers_skipped_reason": "proxy inputs unavailable",
+            "delta_source_column": None,
+        }
+
+    top_movers_status = "computed" if delta_source_column is not None else "skipped"
+    entry: dict[str, Any] = {
+        "status": "computed",
+        "formula": formula,
+        "required_columns": list(required_columns),
+        "missing_columns": [],
+        "skipped_reason": None,
+        "top_movers_status": top_movers_status,
+        "delta_source_column": delta_source_column,
+    }
+    if delta_source_column is None:
+        entry["top_movers_skipped_reason"] = "missing prior-period delta column"
+    else:
+        entry["top_movers_skipped_reason"] = None
+    return entry
 
 
 def _write_change_attribution_outputs(
