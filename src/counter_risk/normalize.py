@@ -243,6 +243,7 @@ def normalize_clearing_house(name: str) -> str:
 def counterparty_included_for_variant(
     name: str,
     variant: str | None,
+    segment: str | None = None,
     *,
     registry_path: str | Path = Path("config/name_registry.yml"),
 ) -> bool:
@@ -260,6 +261,11 @@ def counterparty_included_for_variant(
         return True
 
     normalized_variant = variant.strip().casefold()
+    normalized_segment = segment.strip().casefold() if segment else ""
+    segment_rules = flags.by_segment.get(normalized_variant, {})
+    if normalized_segment and normalized_segment in segment_rules:
+        return segment_rules[normalized_segment]
+
     if normalized_variant == "all_programs":
         return flags.all_programs
     if normalized_variant == "ex_trend":

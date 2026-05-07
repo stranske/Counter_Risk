@@ -28,11 +28,68 @@ def test_load_name_registry_includes_optional_series_flags() -> None:
     assert ice_euro.series_included.all_programs is True
     assert ice_euro.series_included.ex_trend is True
     assert ice_euro.series_included.trend is False
+    assert ice_euro.series_included.by_segment == {}
 
     bank_of_america = next(
         entry for entry in registry.entries if entry.canonical_key == "bank_of_america"
     )
     assert bank_of_america.series_included is None
+
+
+def test_load_name_registry_accepts_series_included_by_segment(tmp_path: Path) -> None:
+    config_path = tmp_path / "name_registry.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: ice_euro",
+                "    display_name: ICE Euro",
+                "    aliases:",
+                "      - ICE Clear Europe",
+                "    series_included:",
+                "      trend: true",
+                "      by_segment:",
+                "        trend:",
+                "          futures: false",
+                "          total: true",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    registry = load_name_registry(config_path)
+    flags = registry.entries[0].series_included
+    assert flags is not None
+    assert flags.by_segment == {"trend": {"futures": False, "total": True}}
+
+
+def test_load_name_registry_rejects_series_included_by_segment_invalid_variant(
+    tmp_path: Path,
+) -> None:
+    config_path = tmp_path / "name_registry.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: ice_euro",
+                "    display_name: ICE Euro",
+                "    aliases:",
+                "      - ICE Clear Europe",
+                "    series_included:",
+                "      by_segment:",
+                "        invalid_variant:",
+                "          futures: false",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Name registry validation failed"):
+        load_name_registry(config_path)
 
 
 @pytest.mark.parametrize(

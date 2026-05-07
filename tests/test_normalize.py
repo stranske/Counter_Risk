@@ -78,6 +78,79 @@ def test_counterparty_included_for_variant_uses_registry_series_flags() -> None:
     assert counterparty_included_for_variant("Unknown House", "trend") is True
 
 
+def test_counterparty_included_for_variant_honors_segment_override(tmp_path: Path) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    registry_path = config_dir / "name_registry.yml"
+    registry_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: ice_euro",
+                "    display_name: ICE Euro",
+                "    aliases:",
+                "      - ICE Clear Europe",
+                "    series_included:",
+                "      trend: true",
+                "      by_segment:",
+                "        trend:",
+                "          futures: false",
+                "          total: true",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        counterparty_included_for_variant(
+            "ICE Clear Europe", "trend", "futures", registry_path=registry_path
+        )
+        is False
+    )
+    assert (
+        counterparty_included_for_variant(
+            "ICE Clear Europe", "trend", "total", registry_path=registry_path
+        )
+        is True
+    )
+
+
+def test_counterparty_included_for_variant_segment_uses_variant_default_when_missing(
+    tmp_path: Path,
+) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    registry_path = config_dir / "name_registry.yml"
+    registry_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: ice_euro",
+                "    display_name: ICE Euro",
+                "    aliases:",
+                "      - ICE Clear Europe",
+                "    series_included:",
+                "      trend: false",
+                "      by_segment:",
+                "        trend:",
+                "          futures: true",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        counterparty_included_for_variant(
+            "ICE Clear Europe", "trend", "unknown-segment", registry_path=registry_path
+        )
+        is False
+    )
+
+
 def test_normalize_clearing_house_unknown_name_is_noop() -> None:
     assert normalize_clearing_house("LCH") == "LCH"
 
