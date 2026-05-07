@@ -845,6 +845,7 @@ def _load_repo_cash_by_counterparty(
         "skipped_reason": None,
         "overrides_path": None,
         "applied_override_count": 0,
+        "raw_override_row_count": 0,
         "override_audit_rows": [],
         "duplicate_counterparty_names": [],
         "orphan_override_counterparties": [],
@@ -919,7 +920,8 @@ def _load_repo_cash_by_counterparty(
                 )
                 warnings.append(finding_message)
             repo_cash_by_counterparty.update(overrides)
-            summary["applied_override_count"] = len(audit_rows)
+            summary["applied_override_count"] = len(overrides)
+            summary["raw_override_row_count"] = len(audit_rows)
             summary["override_audit_rows"] = audit_rows
             warnings.append(
                 "Repo Cash overrides applied from "

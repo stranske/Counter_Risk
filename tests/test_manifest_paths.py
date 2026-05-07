@@ -115,6 +115,7 @@ def test_manifest_includes_repo_cash_summary_when_provided(tmp_path: Path) -> No
         "source_path": "inputs/repo_cash_2026-02-13.csv",
         "overrides_path": "inputs/cash_overrides_2026-02-13.csv",
         "applied_override_count": 2,
+        "raw_override_row_count": 2,
         "override_audit_rows": [
             {
                 "counterparty": "ACME",
@@ -148,6 +149,7 @@ def test_manifest_includes_repo_cash_summary_when_provided(tmp_path: Path) -> No
     assert summary["source_type"] == "csv"
     assert summary["source_path"] == "inputs/repo_cash_2026-02-13.csv"
     assert summary["applied_override_count"] == 2
+    assert summary["raw_override_row_count"] == 2
     assert summary["override_audit_rows"][0]["counterparty"] == "ACME"
     assert summary["counterparty_count"] == 5
     assert summary["total_cash"] == pytest.approx(12345.67)
