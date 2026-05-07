@@ -101,6 +101,28 @@ def test_execute_gui_run_returns_empty_data_quality_when_summary_missing(tmp_pat
     assert result.data_quality_status == ""
 
 
+def test_execute_gui_run_returns_empty_status_for_unknown_data_quality_color(
+    tmp_path: Path,
+) -> None:
+    def fake_runner(argv: list[str]) -> int:
+        output_dir = Path(argv[argv.index("--output-dir") + 1])
+        output_dir.mkdir(parents=True)
+        (output_dir / "DATA_QUALITY_SUMMARY.txt").write_text(
+            "Counterparty Risk Data Quality Summary\n\n"
+            "Overall status: custom (BLUE) - Custom state.\n",
+            encoding="utf-8",
+        )
+        return 0
+
+    state = GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs"))
+
+    result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
+
+    assert result.exit_code == 0
+    assert result.data_quality_color == ""
+    assert result.data_quality_status == ""
+
+
 def test_execute_gui_run_resolves_runtime_config_path(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
