@@ -18,7 +18,7 @@ Each `limits` entry has these fields:
 | `enabled` | no | Set `false` to document a staged policy without evaluating it; defaults to `true`. |
 | `notes` | no | Operator-facing policy context included in breach records. |
 
-Duplicate active keys are rejected during config load. A key is the tuple
+Duplicate keys are rejected during config load. A key is the tuple
 `entity_type`, normalized `entity_name`, and `limit_kind`.
 
 ## Outputs

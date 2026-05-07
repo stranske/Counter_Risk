@@ -181,8 +181,8 @@ def check_limits(exposures_df: Any, limits_cfg: Any) -> Any:
     """Evaluate absolute-notional and percentage-of-total limit breaches.
 
     Returns a DataFrame-like table (or list of dict records if pandas is unavailable)
-    with columns: entity_type, entity_name, limit_kind, actual_value, limit_value,
-    and breach_amount.
+    with columns: entity_type, entity_name, limit_kind, severity, actual_value,
+    limit_value, breach_amount, and notes.
     """
 
     rows = _iter_rows(exposures_df, arg_name="exposures_df")

@@ -2074,11 +2074,12 @@ def _build_limit_warning_banner_for_run_dir(run_dir: Path) -> RunFolderWarningBa
         return None
 
     max_severity: Literal["warning", "fail"] = "warning"
+    row_count = 0
     with csv_path.open("r", encoding="utf-8", newline="") as stream:
-        rows = list(csv.DictReader(stream))
-        row_count = len(rows)
-        if any(str(row.get("severity", "")).casefold() == "fail" for row in rows):
-            max_severity = "fail"
+        for row in csv.DictReader(stream):
+            row_count += 1
+            if str(row.get("severity", "")).casefold() == "fail":
+                max_severity = "fail"
     if row_count <= 0:
         return None
 
