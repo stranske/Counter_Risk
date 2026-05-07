@@ -2165,7 +2165,10 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert "limit_breaches.csv" in manifest["output_paths"]
     assert manifest["limit_breach_summary"]["has_breaches"] is True
-    assert manifest["limit_breach_summary"]["breach_count"] >= 1
+    csv_rows = [line for line in content.splitlines() if line.strip()]
+    breach_row_count = max(0, len(csv_rows) - 1)
+    assert breach_row_count >= 1
+    assert manifest["limit_breach_summary"]["breach_count"] == breach_row_count
     assert manifest["limit_breach_summary"]["report_path"] == "limit_breaches.csv"
     assert "limit_breaches.csv" in manifest["limit_breach_summary"]["warning_banner"]
     assert "fail limit" in manifest["limit_breach_summary"]["warning_banner"]
