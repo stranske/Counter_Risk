@@ -118,3 +118,26 @@ def test_load_limits_config_rejects_duplicate_limit_keys(tmp_path: Path) -> None
 
     with pytest.raises(ValueError, match="duplicate limit keys"):
         load_limits_config(config_path)
+
+
+def test_load_limits_config_rejects_duplicate_yaml_keys(tmp_path: Path) -> None:
+    config_path = tmp_path / "limits.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "limits:",
+                "  - entity_type: counterparty",
+                "    entity_name: Citibank",
+                "    limit_value: 100",
+                "    limit_kind: absolute_notional",
+                "    severity: warning",
+                "    severity: fail",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Invalid YAML"):
+        load_limits_config(config_path)

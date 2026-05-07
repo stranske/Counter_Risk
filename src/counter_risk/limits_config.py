@@ -3,10 +3,31 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+
+
+class _NoDuplicateSafeLoader(yaml.SafeLoader):
+    """Safe YAML loader that rejects duplicate keys in mappings."""
+
+
+def _construct_mapping_no_duplicates(
+    loader: _NoDuplicateSafeLoader, node: yaml.nodes.MappingNode, deep: bool = False
+) -> dict[Any, Any]:
+    mapping: dict[Any, Any] = {}
+    for key_node, value_node in node.value:
+        key = cast(Any, loader.construct_object(key_node, deep=deep))  # type: ignore[no-untyped-call]
+        if key in mapping:
+            raise ValueError(f"duplicate key '{key}'")
+        mapping[key] = cast(Any, loader.construct_object(value_node, deep=deep))  # type: ignore[no-untyped-call]
+    return mapping
+
+
+_NoDuplicateSafeLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_mapping_no_duplicates
+)
 
 
 class LimitEntry(BaseModel):
@@ -79,9 +100,11 @@ def load_limits_config(path: str | Path = Path("config/limits.yml")) -> LimitsCo
 
     config_path = Path(path)
     try:
-        raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        raw = yaml.load(config_path.read_text(encoding="utf-8"), Loader=_NoDuplicateSafeLoader)
     except OSError as exc:
         raise ValueError(f"Unable to read limits config file '{config_path}': {exc}") from exc
+    except ValueError as exc:
+        raise ValueError(f"Invalid YAML in limits config file '{config_path}': {exc}") from exc
     except yaml.YAMLError as exc:
         raise ValueError(f"Invalid YAML in limits config file '{config_path}': {exc}") from exc
 
