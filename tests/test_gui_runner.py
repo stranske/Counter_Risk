@@ -54,6 +54,36 @@ def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> 
     assert "--strict-policy" in captured["argv"]
 
 
+def test_execute_gui_run_reads_data_quality_status_after_success(tmp_path: Path) -> None:
+    def fake_runner(argv: list[str]) -> int:
+        output_dir = Path(argv[argv.index("--output-dir") + 1])
+        output_dir.mkdir(parents=True)
+        (output_dir / "DATA_QUALITY_SUMMARY.txt").write_text(
+            "Counterparty Risk Data Quality Summary\n\n"
+            "Overall status: warn (YELLOW) - Review warnings before sending.\n",
+            encoding="utf-8",
+        )
+        return 0
+
+    state = GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs"))
+
+    result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
+
+    assert result.data_quality_status == "YELLOW - Review warnings"
+
+
+def test_execute_gui_run_leaves_data_quality_status_empty_on_failure(tmp_path: Path) -> None:
+    def fake_runner(_argv: list[str]) -> int:
+        return 2
+
+    state = GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs"))
+
+    result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
+
+    assert result.exit_code == 2
+    assert result.data_quality_status == ""
+
+
 def test_execute_gui_run_resolves_runtime_config_path(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
