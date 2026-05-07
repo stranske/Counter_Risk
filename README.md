@@ -12,6 +12,7 @@ A programmatic replacement for the MOSERS spreadsheet workflow used to evaluate 
 - Updated historical Excel workbooks (time series inputs for charts)
 - Updated monthly PowerPoint (screenshots replaced + chart links refreshed)
 - A run folder with a manifest (inputs, hashes, warnings, summaries)
+- A `concentration_metrics.csv` with Top 5/Top 10 share and HHI per `(variant, segment)` (see [docs/concentration_metrics.md](docs/concentration_metrics.md))
 - Optional “distribution” deliverables (static PPT/PDF) that do not prompt for link refresh
 
 ## Output Generator Configuration

@@ -490,6 +490,9 @@ def compute_concentration_metrics(
     When the total notional for a group is zero all three metrics are returned
     as ``0.0``.
 
+    See ``docs/concentration_metrics.md`` for output-field definitions, the HHI
+    scaling reference, and operator interpretation guidance.
+
     Parameters
     ----------
     exposures_df:
