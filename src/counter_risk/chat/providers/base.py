@@ -111,14 +111,19 @@ class LangChainProviderClient:
             provider_models = slot_catalog.get(provider_name, set())
             if provider_models and model not in provider_models:
                 continue
+            # Track dependency-readiness independently of client init: a
+            # provider with deps installed can still fail build_chat_client
+            # for non-dep reasons (e.g. missing credentials), and we must
+            # not blame missing dependencies in that case.
+            missing_dependencies = missing_provider_dependencies(provider_name)
+            if missing_dependencies:
+                missing_dependency_names.update(missing_dependencies)
+            else:
+                runtime_ready_provider_seen = True
             client_info = build_chat_client(provider=provider_name, model=model)
             if client_info is None:
                 attempted_provider_without_client = True
-                missing_dependencies = missing_provider_dependencies(provider_name)
-                if missing_dependencies:
-                    missing_dependency_names.update(missing_dependencies)
                 continue
-            runtime_ready_provider_seen = True
             try:
                 client = cast(_LangChainInvokeClient, client_info.client)
                 response = client.invoke(messages, config=metadata)
