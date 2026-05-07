@@ -17,7 +17,8 @@ from pathlib import Path
 from typing import Any
 from zipfile import BadZipFile, ZipFile
 
-from counter_risk.normalize import canonicalize_name, safe_display_name
+from counter_risk.normalize import canonicalize_name as canonicalize_name
+from counter_risk.normalize import safe_display_name
 
 _XML_NS = {
     "main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",

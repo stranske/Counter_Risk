@@ -15,7 +15,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from counter_risk.normalize import canonicalize_name
+from counter_risk.normalize import canonicalize_name as canonicalize_name
 
 LOGGER = logging.getLogger(__name__)
 

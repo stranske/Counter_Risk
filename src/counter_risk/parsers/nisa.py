@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from counter_risk.normalize import canonicalize_name, safe_display_name
+from counter_risk.normalize import canonicalize_name as canonicalize_name
+from counter_risk.normalize import safe_display_name
 
 _TOTALS_MARKER = "total by counterparty/clearing house"
 _TOTALS_STOP_MARKERS = (

@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import BadZipFile, ZipFile
 
-from counter_risk.normalize import canonicalize_name, safe_display_name
+from counter_risk.normalize import canonicalize_name as canonicalize_name
+from counter_risk.normalize import safe_display_name
 
 if TYPE_CHECKING:
     import pandas as pd
