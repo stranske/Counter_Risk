@@ -239,7 +239,7 @@ def test_write_outputs_successful_run_writes_master_and_optional_distribution(
         "_refresh_ppt_links",
         lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
     )
-    monkeypatch.setattr(run_module, "_apply_chart_replacement", lambda **_kwargs: True)
+    monkeypatch.setattr(run_module, "_apply_chart_replacement", lambda **_kwargs: False)
     monkeypatch.setattr(
         run_module,
         "validate_distribution_ppt_standalone",
@@ -420,7 +420,7 @@ def test_write_outputs_runs_master_refresh_even_when_refresh_generator_is_disabl
     assert (run_dir / output_names.distribution_filename) in output_paths
 
 
-def test_write_outputs_derives_distribution_from_resolved_master_path(
+def test_write_outputs_derives_distribution_from_chart_replaced_path_when_available(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     run_dir = tmp_path / "run"
@@ -431,6 +431,7 @@ def test_write_outputs_derives_distribution_from_resolved_master_path(
     as_of_date = date(2025, 12, 31)
     output_names = resolve_ppt_output_names(as_of_date)
     expected_master_path = run_dir / output_names.master_filename
+    expected_chart_replaced_path = run_dir / f"{expected_master_path.stem}_chart_replaced.pptx"
     observed: dict[str, Path] = {}
 
     monkeypatch.setattr(
@@ -438,7 +439,12 @@ def test_write_outputs_derives_distribution_from_resolved_master_path(
         "_refresh_ppt_links",
         lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
     )
-    monkeypatch.setattr(run_module, "_apply_chart_replacement", lambda **_kwargs: True)
+
+    def _apply_chart_replacement(*, output_path: Path, **_kwargs: object) -> bool:
+        output_path.write_bytes(b"chart-replaced")
+        return True
+
+    monkeypatch.setattr(run_module, "_apply_chart_replacement", _apply_chart_replacement)
 
     def _capture_derive(*, master_pptx_path: Path, distribution_pptx_path: Path) -> None:
         observed["master_pptx_path"] = master_pptx_path
@@ -463,7 +469,7 @@ def test_write_outputs_derives_distribution_from_resolved_master_path(
         warnings=[],
     )
 
-    assert observed["master_pptx_path"] == expected_master_path
+    assert observed["master_pptx_path"] == expected_chart_replaced_path
 
 
 def test_write_outputs_runs_config_registered_generator_without_pipeline_changes(

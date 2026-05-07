@@ -145,9 +145,8 @@ class LangChainProviderClient:
         if last_error is not None:
             raise RuntimeError(f"Provider request failed: {last_error}") from last_error
 
-        if self._required_env_keys and not any(
-            os.environ.get(key) for key in self._required_env_keys
-        ):
+        required_env_available = any(os.environ.get(key) for key in self._required_env_keys)
+        if self._required_env_keys and not required_env_available:
             missing_env = ", ".join(self._required_env_keys)
             raise RuntimeError(
                 "No provider credentials/configured clients available. "
@@ -162,6 +161,12 @@ class LangChainProviderClient:
             )
 
         if self._required_env_keys and attempted_provider_without_client:
+            if required_env_available:
+                chain = ", ".join(self._provider_chain)
+                raise RuntimeError(
+                    "Provider credentials are present but no LangChain client could be "
+                    f"initialized for model {model!r} via provider chain: {chain}."
+                )
             missing_env = ", ".join(self._required_env_keys)
             raise RuntimeError(
                 "No provider credentials/configured clients available. "

@@ -2120,19 +2120,22 @@ def _write_outputs(
             if refresh_result.error_detail:
                 manifest_ppt_outputs["master"]["skipped_reason"] = refresh_result.error_detail
         chart_replaced_ppt = run_dir / f"{target_master_ppt.stem}_chart_replaced.pptx"
-        _apply_chart_replacement(
+        chart_replacement_applied = _apply_chart_replacement(
             master_pptx_path=target_master_ppt,
             output_path=chart_replaced_ppt,
             run_dir=run_dir,
             static_mode=config.distribution_static,
             warnings=warnings,
         )
+        distribution_source_ppt = (
+            chart_replaced_ppt if chart_replacement_applied else target_master_ppt
+        )
         _derive_distribution_ppt(
-            master_pptx_path=target_master_ppt,
+            master_pptx_path=distribution_source_ppt,
             distribution_pptx_path=target_distribution_ppt,
         )
         static_output_paths = _create_static_distribution(
-            source_pptx=target_master_ppt,
+            source_pptx=distribution_source_ppt,
             run_dir=run_dir,
             config=config,
             warnings=warnings,

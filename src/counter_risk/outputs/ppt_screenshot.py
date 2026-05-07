@@ -43,7 +43,13 @@ def export_ppt_slides_as_png_via_com(*, source_pptx: Path, slide_images_dir: Pat
         slide_count = int(presentation.Slides.Count)
         for slide_idx in range(1, slide_count + 1):
             image_path = slide_images_dir / f"slide_{slide_idx:04d}.png"
-            presentation.Slides[slide_idx].Export(str(image_path), "PNG")
+            try:
+                presentation.Slides[slide_idx].Export(str(image_path), "PNG")
+            except Exception as exc:
+                raise RuntimeError(
+                    "PowerPoint slide PNG export failed "
+                    f"for slide {slide_idx} to '{image_path}': {exc}"
+                ) from exc
             slide_images.append(image_path)
     finally:
         if presentation is not None:

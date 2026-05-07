@@ -183,3 +183,48 @@ def test_export_ppt_slides_as_png_via_com_exports_all_slides(
 
     assert exported == [slide_images_dir / "slide_0001.png", slide_images_dir / "slide_0002.png"]
     assert all(path.exists() for path in exported)
+
+
+def test_export_ppt_slides_as_png_via_com_reports_slide_export_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_pptx = tmp_path / "source.pptx"
+    source_pptx.write_bytes(b"pptx")
+    slide_images_dir = tmp_path / "slides"
+
+    class _FailingSlide:
+        def Export(self, _path: str, _fmt: str) -> None:  # noqa: N802
+            raise OSError("COM export failed")
+
+    class _FakeSlides:
+        Count = 1
+
+        def __getitem__(self, _idx: int) -> _FailingSlide:
+            return _FailingSlide()
+
+    class _FakePresentation:
+        Slides = _FakeSlides()
+
+        def Close(self) -> None:  # noqa: N802
+            return None
+
+    class _FakePowerPointApplication:
+        Presentations = type(
+            "_Presentations",
+            (),
+            {"Open": staticmethod(lambda *_args, **_kwargs: _FakePresentation())},
+        )
+
+        def Quit(self) -> None:  # noqa: N802
+            return None
+
+    monkeypatch.setattr(
+        "counter_risk.integrations.powerpoint_com.initialize_powerpoint_application",
+        lambda: _FakePowerPointApplication(),
+    )
+
+    with pytest.raises(RuntimeError, match=r"slide 1.*slide_0001\.png.*COM export failed"):
+        export_ppt_slides_as_png_via_com(
+            source_pptx=source_pptx,
+            slide_images_dir=slide_images_dir,
+        )
