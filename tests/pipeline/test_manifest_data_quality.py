@@ -289,3 +289,44 @@ def test_manifest_build_generates_unique_recommended_actions_by_category_and_sev
         ),
         ("input", "warn", "Review warnings and confirm run artifacts are acceptable."),
     }
+
+
+def test_manifest_build_collects_date_cash_and_output_generation_findings(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    artifact = run_dir / "output.csv"
+    artifact.write_text("ok\n", encoding="utf-8")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(artifact.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[
+            "Sheet 'Total' is missing a date header in column A",
+            "Repo Cash source is not configured (cash_source_type=none).",
+            "Repo Cash source used: csv:/tmp/repo_cash.csv",
+            "Repo Cash total 10.00 exceeds configured maximum 5.00.",
+            "Applied Repo Cash values to all_programs totals for 3 counterparties using csv:/tmp/repo_cash.csv",
+            "change_attribution skipped: no parsed variant data available",
+            "distribution_static generation failed: COM unavailable",
+        ],
+    )
+
+    findings_by_code = {
+        finding["code"]: finding for finding in manifest["data_quality"]["findings"]
+    }
+    assert findings_by_code["MISSING_DATE_HEADER"]["category"] == "date"
+    assert findings_by_code["MISSING_DATE_HEADER"]["severity"] == "fail"
+    assert findings_by_code["REPO_CASH_SOURCE_NOT_CONFIGURED"]["category"] == "cash"
+    assert findings_by_code["REPO_CASH_SOURCE_USED"]["severity"] == "info"
+    assert findings_by_code["REPO_CASH_LIMIT_BREACH"]["severity"] == "warn"
+    assert findings_by_code["REPO_CASH_APPLIED_TO_TOTALS"]["severity"] == "info"
+    assert findings_by_code["OUTPUT_GENERATION_SKIPPED"]["category"] == "output_generation"
+    assert findings_by_code["OUTPUT_GENERATION_FAILED"]["severity"] == "fail"
