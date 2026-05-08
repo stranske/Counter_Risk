@@ -18,6 +18,7 @@ from typing import Any
 from counter_risk.normalize import (
     canonicalize_name as canonicalize_name,
 )
+from counter_risk.name_matching import canonicalize_match_key
 from counter_risk.normalize import (
     resolve_clearing_house as resolve_clearing_house,
 )
@@ -187,7 +188,7 @@ def open_ex_llc_3_year_workbook(
 def _normalize_header(value: Any) -> str:
     if value is None:
         return ""
-    return canonicalize_name(str(value)).casefold()
+    return canonicalize_match_key(str(value))
 
 
 def _normalize_series_key(value: Any) -> str:
@@ -198,9 +199,13 @@ def _normalize_series_key(value: Any) -> str:
         return ""
     counterparty_resolution = resolve_counterparty(text)
     if counterparty_resolution.source != "unmapped":
-        return canonicalize_name(counterparty_resolution.canonical_name).casefold()
+        if counterparty_resolution.canonical_key:
+            return canonicalize_match_key(counterparty_resolution.canonical_key)
+        return canonicalize_match_key(counterparty_resolution.canonical_name)
     clearing_house_resolution = resolve_clearing_house(text)
-    return canonicalize_name(clearing_house_resolution.canonical_name).casefold()
+    if clearing_house_resolution.canonical_key:
+        return canonicalize_match_key(clearing_house_resolution.canonical_key)
+    return canonicalize_match_key(clearing_house_resolution.canonical_name)
 
 
 def _find_header_row(
