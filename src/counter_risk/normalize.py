@@ -19,6 +19,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from counter_risk.name_matching import canonicalize_match_key
 from counter_risk.name_registry import NameRegistryConfig, SeriesIncludedFlags, load_name_registry
 
 _DEFAULT_REGISTRY_RELATIVE_PATH = Path("config/name_registry.yml")
@@ -144,10 +145,10 @@ def _build_alias_lookup(registry: NameRegistryConfig) -> dict[str, RegistryNameM
             display_name=entry.display_name,
             series_included=entry.series_included,
         )
-        lookup[canonicalize_name(entry.canonical_key).casefold()] = match
-        lookup[canonicalize_name(entry.display_name).casefold()] = match
+        lookup[canonicalize_match_key(entry.canonical_key)] = match
+        lookup[canonicalize_match_key(entry.display_name)] = match
         for alias in entry.aliases:
-            lookup[canonicalize_name(alias).casefold()] = match
+            lookup[canonicalize_match_key(alias)] = match
     return lookup
 
 
@@ -160,7 +161,7 @@ def resolve_counterparty(
 
     normalized = canonicalize_name(name)
     alias_lookup = _load_alias_lookup(str(_resolve_registry_path(registry_path)))
-    registry_match = alias_lookup.get(normalized.casefold())
+    registry_match = alias_lookup.get(canonicalize_match_key(normalized))
     if registry_match is not None:
         return NameResolution(
             raw_name=name,
@@ -224,7 +225,7 @@ def resolve_clearing_house(
 
     normalized = canonicalize_name(name)
     alias_lookup = _load_alias_lookup(str(_resolve_registry_path(registry_path)))
-    registry_match = alias_lookup.get(normalized.casefold())
+    registry_match = alias_lookup.get(canonicalize_match_key(normalized))
     if registry_match is not None:
         return NameResolution(
             raw_name=name,

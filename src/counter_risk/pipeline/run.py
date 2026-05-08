@@ -41,8 +41,10 @@ from counter_risk.formatting import normalize_formatting_profile, resolve_format
 from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
     canonicalize_name,
+    normalize_clearing_house,
     normalize_counterparty,
     normalize_counterparty_with_source,
+    resolve_clearing_house,
 )
 from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.outputs.ppt_screenshot import export_ppt_slides_as_png_via_com
@@ -947,8 +949,7 @@ def _load_repo_cash_by_counterparty(
     summary["missing_required_counterparties"] = list(missing_required)
     if missing_required:
         finding_message = (
-            "Repo Cash source is missing required counterparties: "
-            f"{', '.join(missing_required)}."
+            f"Repo Cash source is missing required counterparties: {', '.join(missing_required)}."
         )
         summary["reconciliation_findings"].append(
             {
@@ -3734,7 +3735,7 @@ def _build_parsed_data_by_sheet(
     }
     normalized_headers_by_sheet: dict[str, set[str]] = {
         sheet_name: {
-            normalize_counterparty(header)
+            _normalize_series_label_for_matching(header)
             for header in (
                 str(value).strip()
                 for value in historical_series_headers_by_sheet.get(sheet_name, ())
@@ -3757,7 +3758,7 @@ def _build_parsed_data_by_sheet(
     for record in _records(parsed_sections.get("totals", [])):
         raw_counterparty = str(record.get("counterparty", "")).strip()
         normalized_counterparty = (
-            normalize_counterparty(raw_counterparty) if raw_counterparty else ""
+            _normalize_series_label_for_matching(raw_counterparty) if raw_counterparty else ""
         )
         target_sheet = _sheet_for_series_label(
             normalized_label=normalized_counterparty,
@@ -3771,7 +3772,7 @@ def _build_parsed_data_by_sheet(
     for record in _records(parsed_sections.get("futures", [])):
         raw_clearing_house = str(record.get("clearing_house", "")).strip()
         normalized_clearing_house = (
-            normalize_counterparty(raw_clearing_house) if raw_clearing_house else ""
+            _normalize_series_label_for_matching(raw_clearing_house) if raw_clearing_house else ""
         )
         target_sheet = _sheet_for_series_label(
             normalized_label=normalized_clearing_house,
@@ -3843,14 +3844,22 @@ def _count_rows_for_normalized_label(
     impacted_rows = 0
     for record in _records(parsed_sections.get("totals", [])):
         if (
-            _record_normalized_label(record=record, raw_label_key="counterparty")
+            _record_normalized_label(
+                record=record,
+                raw_label_key="counterparty",
+                normalizer=_normalize_series_label_for_matching,
+            )
             == normalized_label
         ):
             impacted_rows += 1
 
     for record in _records(parsed_sections.get("futures", [])):
         if (
-            _record_normalized_label(record=record, raw_label_key="clearing_house")
+            _record_normalized_label(
+                record=record,
+                raw_label_key="clearing_house",
+                normalizer=_normalize_series_label_for_matching,
+            )
             == normalized_label
         ):
             impacted_rows += 1
@@ -3889,7 +3898,7 @@ def _augment_missing_series_with_impacted_rows(
                         continue
                     count = _count_rows_for_normalized_label(
                         parsed_sections=sheet_parsed,
-                        normalized_label=normalize_counterparty(raw_value),
+                        normalized_label=_normalize_series_label_for_matching(raw_value),
                     )
                     impacted_rows_by_raw[str(raw_name)] = count
                     impacted_rows_total += count
@@ -3907,7 +3916,7 @@ def _augment_missing_series_with_impacted_rows(
                 continue
             count = _count_rows_for_normalized_label(
                 parsed_sections=sheet_parsed,
-                normalized_label=normalize_counterparty(label_value),
+                normalized_label=_normalize_series_label_for_matching(label_value),
             )
             impacted_rows_by_label[str(label)] = count
             impacted_rows_total += count
@@ -3915,15 +3924,32 @@ def _augment_missing_series_with_impacted_rows(
         entry["impacted_rows_by_label"] = impacted_rows_by_label
 
 
-def _record_normalized_label(*, record: Mapping[str, Any], raw_label_key: str) -> str:
+def _record_normalized_label(
+    *,
+    record: Mapping[str, Any],
+    raw_label_key: str,
+    normalizer: Callable[[str], str],
+) -> str:
     normalized_field = str(record.get("normalized_label", "")).strip()
     if normalized_field:
-        return normalize_counterparty(normalized_field)
+        return normalizer(normalized_field)
 
     raw_label = str(record.get(raw_label_key, "")).strip()
     if not raw_label:
         return ""
-    return normalize_counterparty(raw_label)
+    return normalizer(raw_label)
+
+
+def _normalize_series_label_for_matching(raw_label: str) -> str:
+    if not raw_label:
+        return ""
+    counterparty_resolution = normalize_counterparty_with_source(raw_label)
+    if counterparty_resolution.source != "unmapped":
+        return counterparty_resolution.canonical_name
+    clearing_house_resolution = resolve_clearing_house(raw_label)
+    if clearing_house_resolution.source == "registry":
+        return clearing_house_resolution.canonical_name
+    return normalize_clearing_house(raw_label)
 
 
 def _select_fallback_sheet_name(

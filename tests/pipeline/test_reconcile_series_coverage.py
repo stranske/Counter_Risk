@@ -788,4 +788,20 @@ def test_reconcile_clearing_house_endash_canonicalized_before_match() -> None:
 
     assert result["gap_count"] == 0
     assert result["by_sheet"]["Futures"]["clearing_houses_in_data"] == ["ICE-Clear"]
+
+
+def test_reconcile_clearing_house_uses_clearing_house_fallback_for_header_match() -> None:
+    """Futures joins should resolve clearing-house aliases before unmatched fallback behavior."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Futures": {
+                "totals": [],
+                "futures": [{"clearing_house": "ICE Clear US"}],
+            }
+        },
+        historical_series_headers_by_sheet={"Futures": ("ICE",)},
+    )
+
+    assert result["gap_count"] == 0
+    assert result["by_sheet"]["Futures"]["missing_from_historical_headers"] == []
     assert result["by_sheet"]["Futures"]["missing_from_data"] == []
