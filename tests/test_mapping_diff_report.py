@@ -296,6 +296,40 @@ def test_collect_mapping_diff_findings_name_resolutions_separates_raw_display_ke
     assert entry["canonical_key"] == "Korea Exchange-Seoul"
 
 
+def test_collect_mapping_diff_findings_registry_alias_preserves_display_name_with_case_spacing_variant(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "entries:",
+                "  - canonical_key: bank_of_america",
+                "    display_name: Bank of America",
+                "    aliases:",
+                "      - Bank of America, NA",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    raw = "  BANK   OF   AMERICA, na  "
+    findings = collect_mapping_diff_findings(
+        registry_path,
+        {"normalization": [{"counterparty": raw}]},
+    )
+
+    resolutions = {entry["raw"]: entry for entry in findings["name_resolutions"]}
+    entry = resolutions[raw]
+    assert entry["raw"] == raw
+    assert entry["display"] == "BANK OF AMERICA, na"
+    assert entry["canonical_key"] == "bank_of_america"
+    assert entry["mapped"] == "Bank of America"
+    assert entry["source"] == "registry"
+
+
 def test_generate_mapping_diff_report_includes_name_resolutions_section(tmp_path: Path) -> None:
     registry_path = tmp_path / "name_registry.yml"
     _write_registry(registry_path)
