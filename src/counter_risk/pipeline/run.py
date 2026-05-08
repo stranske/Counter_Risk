@@ -949,8 +949,7 @@ def _load_repo_cash_by_counterparty(
     summary["missing_required_counterparties"] = list(missing_required)
     if missing_required:
         finding_message = (
-            "Repo Cash source is missing required counterparties: "
-            f"{', '.join(missing_required)}."
+            f"Repo Cash source is missing required counterparties: {', '.join(missing_required)}."
         )
         summary["reconciliation_findings"].append(
             {
