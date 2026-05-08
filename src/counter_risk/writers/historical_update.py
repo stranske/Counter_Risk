@@ -15,10 +15,8 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from counter_risk.normalize import (
-    canonicalize_name as canonicalize_name,
-)
 from counter_risk.name_matching import canonicalize_match_key
+from counter_risk.normalize import canonicalize_name as canonicalize_name
 from counter_risk.normalize import (
     resolve_clearing_house as resolve_clearing_house,
 )
