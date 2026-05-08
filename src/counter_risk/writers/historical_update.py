@@ -186,7 +186,7 @@ def open_ex_llc_3_year_workbook(
 def _normalize_header(value: Any) -> str:
     if value is None:
         return ""
-    return canonicalize_match_key(str(value))
+    return canonicalize_match_key(canonicalize_name(str(value)))
 
 
 def _normalize_series_key(value: Any) -> str:
