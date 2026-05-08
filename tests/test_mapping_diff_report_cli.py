@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import os
 import stat
 import subprocess
@@ -317,3 +318,154 @@ def test_mapping_diff_report_invalid_json_exits_nonzero(
 
     assert exit_code == 1
     assert captured.err.strip()
+
+
+def test_mapping_diff_report_extracts_monthly_names_from_manifest_json(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_call: dict[str, object] = {}
+
+    def _fake_generate_mapping_diff_report(
+        registry_path: Path,
+        input_sources: dict[str, object],
+        *,
+        output_format: str = "text",
+    ) -> str:
+        captured_call["registry_path"] = registry_path
+        captured_call["input_sources"] = input_sources
+        captured_call["output_format"] = output_format
+        return "UNMAPPED\n\nFALLBACK_MAPPED\n\nSUGGESTIONS\n"
+
+    monkeypatch.setattr(
+        mapping_diff_report,
+        "generate_mapping_diff_report",
+        _fake_generate_mapping_diff_report,
+    )
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "reconciliation_results": {
+                    "by_variant": {
+                        "all_programs": {
+                            "by_sheet": {
+                                "Total": {
+                                    "counterparties_in_data": [
+                                        "Unknown House",
+                                        "Societe Generale",
+                                        "Unknown House",
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = mapping_diff_report.main(
+        [
+            "--registry",
+            str(registry_path),
+            "--manifest-json",
+            str(manifest_path),
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured_call["registry_path"] == registry_path
+    assert captured_call["input_sources"] == {
+        "normalization": ["Societe Generale", "Unknown House"],
+        "reconciliation": ["Societe Generale", "Unknown House"],
+    }
+    assert captured_call["output_format"] == "text"
+
+
+def test_mapping_diff_report_extracts_monthly_names_from_run_dir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured_call: dict[str, object] = {}
+
+    def _fake_generate_mapping_diff_report(
+        registry_path: Path,
+        input_sources: dict[str, object],
+        *,
+        output_format: str = "text",
+    ) -> str:
+        captured_call["registry_path"] = registry_path
+        captured_call["input_sources"] = input_sources
+        captured_call["output_format"] = output_format
+        return "UNMAPPED\n\nFALLBACK_MAPPED\n\nSUGGESTIONS\n"
+
+    monkeypatch.setattr(
+        mapping_diff_report,
+        "generate_mapping_diff_report",
+        _fake_generate_mapping_diff_report,
+    )
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
+    run_dir = tmp_path / "run-2026-01-31"
+    run_dir.mkdir()
+    (run_dir / "manifest.json").write_text(
+        json.dumps(
+            {
+                "reconciliation_results": {
+                    "by_variant": {
+                        "trend": {"by_sheet": {"Total": {"counterparties_in_data": ["Barclays"]}}}
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = mapping_diff_report.main(
+        [
+            "--registry",
+            str(registry_path),
+            "--run-dir",
+            str(run_dir),
+            "--normalization-name",
+            "Manual Name",
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured_call["input_sources"] == {
+        "normalization": ["Manual Name", "Barclays"],
+        "reconciliation": ["Barclays"],
+    }
+
+
+def test_mapping_diff_report_rejects_manifest_json_and_run_dir_together(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    registry_path = tmp_path / "name_registry.yml"
+    registry_path.write_text("schema_version: 1\nentries: []\n", encoding="utf-8")
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text("{}", encoding="utf-8")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / "manifest.json").write_text("{}", encoding="utf-8")
+
+    exit_code = mapping_diff_report.main(
+        [
+            "--registry",
+            str(registry_path),
+            "--manifest-json",
+            str(manifest_path),
+            "--run-dir",
+            str(run_dir),
+        ]
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert "either --manifest-json or --run-dir" in captured.err
