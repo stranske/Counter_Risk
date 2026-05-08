@@ -9,19 +9,14 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
-_CANONICAL_KEY_PATTERN = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
+from counter_risk.name_matching import canonicalize_match_key
 
-# Mirror the same substitutions as normalize.canonicalize_name to keep alias
-# deduplication/collision detection consistent with runtime lookup keys.
-_APOSTROPHE_RE = re.compile(r"[‘’‛ʼ`]")
-_DASH_RE = re.compile(r"[‐‑‒–—―−]")
+_CANONICAL_KEY_PATTERN = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
 
 
 def _normalize_alias_token(value: str) -> str:
     """Return the canonical match key for an alias (apostrophe + dash + whitespace + casefold)."""
-    text = _APOSTROPHE_RE.sub("'", value)
-    text = _DASH_RE.sub("-", text)
-    return " ".join(text.split()).casefold()
+    return canonicalize_match_key(value)
 
 
 class SeriesIncludedFlags(BaseModel):

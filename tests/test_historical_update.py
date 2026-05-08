@@ -199,8 +199,8 @@ def test_coerce_rollup_data_uses_registry_alias_lookup_before_fallback() -> None
         }
     )
 
-    assert normalized["soc gen"] == 5.0
-    assert normalized["ice euro"] == 2.0
+    assert normalized["soc_gen"] == 5.0
+    assert normalized["ice_euro"] == 2.0
 
 
 def test_build_consolidated_header_map_uses_registry_alias_lookup() -> None:
@@ -211,8 +211,8 @@ def test_build_consolidated_header_map_uses_registry_alias_lookup() -> None:
 
     header_map = historical_update._build_consolidated_header_map(worksheet, max_scan_rows=2)
 
-    assert header_map[2] == "soc gen"
-    assert header_map[3] == "ice euro"
+    assert header_map[2] == "soc_gen"
+    assert header_map[3] == "ice_euro"
 
 
 class _FakeCell:

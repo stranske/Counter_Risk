@@ -9,6 +9,7 @@ from typing import Any, Literal
 from counter_risk.normalize import (
     canonicalize_name,
     counterparty_included_for_variant,
+    normalize_clearing_house,
     normalize_counterparty,
     normalize_counterparty_with_source,
 )
@@ -84,7 +85,7 @@ def reconcile_series_coverage(
             {
                 value
                 for value in (
-                    canonicalize_name(str(record.get("clearing_house", "")))
+                    normalize_clearing_house(str(record.get("clearing_house", "")))
                     for record in futures_records
                 )
                 if value
@@ -125,7 +126,7 @@ def reconcile_series_coverage(
             set(counterparties_in_data).union(clearing_houses_in_data), key=str.casefold
         )
         normalized_current_series_labels = set(normalized_counterparties_in_data).union(
-            {normalize_counterparty(clearing_house) for clearing_house in clearing_houses_in_data}
+            {normalize_clearing_house(clearing_house) for clearing_house in clearing_houses_in_data}
         )
         missing_from_historical = sorted(
             set(missing_counterparty_labels).union(missing_clearing_houses), key=str.casefold
@@ -250,7 +251,7 @@ def reconcile_series_coverage(
             for raw in raw_name_set:
                 canonical_key_by_series[raw] = canonical_name
         for ch in clearing_houses_in_data:
-            canonical_key_by_series[ch] = normalize_counterparty(ch)
+            canonical_key_by_series[ch] = normalize_clearing_house(ch)
 
         by_sheet[sheet_name] = {
             "counterparties_in_data": counterparties_in_data,
