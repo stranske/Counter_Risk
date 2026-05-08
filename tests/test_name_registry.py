@@ -106,7 +106,7 @@ def test_name_registry_runbook_documents_safe_update_and_segment_steps() -> None
     ]
 
     for phrase in required_guidance:
-        assert phrase in docs
+        assert phrase in docs, f"Missing name registry runbook guidance: {phrase}"
 
 
 @pytest.mark.parametrize(
