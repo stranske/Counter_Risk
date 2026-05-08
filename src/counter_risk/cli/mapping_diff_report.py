@@ -115,12 +115,25 @@ def _iter_manifest_source_names(payload: Any) -> list[str]:
             if not isinstance(sheet_payload, dict):
                 continue
             source_names = sheet_payload.get("counterparties_in_data")
-            if not isinstance(source_names, list):
-                continue
-            for raw_name in source_names:
-                value = str(raw_name)
-                if value.strip():
-                    names.setdefault(value, None)
+            if isinstance(source_names, list):
+                for raw_name in source_names:
+                    value = str(raw_name)
+                    if value.strip():
+                        names.setdefault(value, None)
+
+            unmapped_source_names = sheet_payload.get("mapping_diff_unmapped_source_names")
+            if isinstance(unmapped_source_names, list):
+                for raw_name in unmapped_source_names:
+                    value = str(raw_name)
+                    if value.strip():
+                        names.setdefault(value, None)
+
+            fallback_mapped = sheet_payload.get("mapping_diff_fallback_mapped")
+            if isinstance(fallback_mapped, dict):
+                for raw_name in fallback_mapped:
+                    value = str(raw_name)
+                    if value.strip():
+                        names.setdefault(value, None)
     return sorted(names, key=str.casefold)
 
 
