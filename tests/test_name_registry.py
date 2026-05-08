@@ -92,6 +92,23 @@ def test_load_name_registry_rejects_series_included_by_segment_invalid_variant(
         load_name_registry(config_path)
 
 
+def test_name_registry_runbook_documents_safe_update_and_segment_steps() -> None:
+    docs = Path("docs/name_registry.md").read_text(encoding="utf-8")
+
+    required_guidance = [
+        "Safe Update Process",
+        "Run the pipeline or mapping diff report first",
+        "Keep `canonical_key` stable",
+        "Use `display_name` for workbook, report, and PowerPoint-facing labels",
+        "series_included.by_segment.<variant>.<segment>",
+        "NAME_RESOLUTIONS",
+        "tests/test_name_registry.py tests/test_normalize.py tests/test_mapping_diff_report.py",
+    ]
+
+    for phrase in required_guidance:
+        assert phrase in docs
+
+
 @pytest.mark.parametrize(
     "canonical_key",
     [

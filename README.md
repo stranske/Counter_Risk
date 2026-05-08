@@ -82,9 +82,17 @@ Source choice and overrides are emitted in run warnings, which are persisted in 
 
 ## Name Registry Workflow
 
-1. Edit `config/name_registry.yml`.
-2. Run `mapping_diff_report`.
-3. Interpret `UNMAPPED`, `FALLBACK_MAPPED`, and `SUGGESTIONS` sections.
+Use [docs/name_registry.md](docs/name_registry.md) as the maintainer runbook.
+The short loop is:
+
+1. Run the mapping diff report before editing the registry.
+2. Edit `config/name_registry.yml` using stable `canonical_key` values,
+   workbook/report-safe `display_name` values, and aliases for source spelling
+   variants.
+3. Use `series_included.by_segment` only for intentional segment-level
+   exclusions.
+4. Re-run the focused registry tests and confirm the diff report resolves the
+   intended names into `NAME_RESOLUTIONS`.
 
 ## Repository automation (high level)
 
