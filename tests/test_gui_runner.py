@@ -13,6 +13,7 @@ import pytest
 
 from counter_risk.gui import runner as gui_runner
 from counter_risk.gui.runner import GuiRunState, execute_gui_run, launch_gui
+from counter_risk.runner_launch import resolve_ppt_output_dir
 
 
 def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> None:
@@ -305,6 +306,22 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     ppt_buttons[0].kwargs["command"]()
 
     assert opened_paths == [Path("runs/2025-12-31_000000")]
+
+
+def test_gui_ppt_folder_target_matches_runner_launch_contract() -> None:
+    state = GuiRunState(as_of_date="2025-12-31", output_root="runs")
+
+    gui_path = gui_runner._resolve_ppt_output_dir(state)
+    runner_launch_path = Path(
+        resolve_ppt_output_dir(repo_root=".", selected_date="2025-12-31", output_root="runs")
+    )
+
+    normalized_runner_launch_path = Path(
+        str(runner_launch_path).replace("\\", "/").removeprefix("./")
+    )
+
+    assert gui_path == Path("runs/2025-12-31_000000")
+    assert gui_path == normalized_runner_launch_path
 
 
 def test_main_gui_non_headless_path_calls_launch_gui(
