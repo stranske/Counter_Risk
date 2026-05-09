@@ -19,7 +19,9 @@
 - Validation passed:
   - `python -m pytest tests/test_runner_launch.py tests/test_gui_runner.py tests/test_pipeline_run_outputs.py tests/pipeline/test_monthly_pipeline_ppt_outputs.py tests/pipeline/test_run_folder_readme.py --no-cov` (74 passed).
   - `python -m ruff check src/counter_risk/runner_launch.py src/counter_risk/gui/runner.py tests/test_runner_launch.py tests/test_gui_runner.py`.
-- Next action: push branch and open a ready-for-review PR with `agent:codex`, `agents:keepalive`, and `autofix`; keepalive owns CI and review follow-up after PR creation.
+- PR: `#578` (`https://github.com/stranske/Counter_Risk/pull/578`), ready for review, non-draft, labels `agent:codex`, `agents:keepalive`, and `autofix`.
+- Relay event emitted: `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=552 active.source_pr=578 active.next_action=wait_for_keepalive`.
+- Next action: keepalive owns PR `#578` for CI, review comments, and follow-up commits. Opener is done with this issue.
 
 ## 2026-05-07T21:56:24Z - manual stall recovery for PR #575
 
