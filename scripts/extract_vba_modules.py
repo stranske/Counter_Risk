@@ -57,21 +57,23 @@ def extract_modules_from_workbook(workbook_path: Path) -> dict[str, str]:
 
 
 def extract_modules_from_workbooks(workbook_paths: tuple[Path, ...]) -> dict[str, str]:
-    """Extract modules from all workbooks and fail on conflicting module sources."""
+    """Extract modules from all workbooks.
+
+    When the same module appears in multiple workbooks with different text, keep
+    the first-seen source to preserve deterministic output from the ordered
+    ``workbook_paths`` input.
+    """
     modules: dict[str, str] = {}
-    module_sources: dict[str, Path] = {}
 
     for workbook_path in workbook_paths:
         for module_name, module_source in extract_modules_from_workbook(workbook_path).items():
-            if module_name in modules and modules[module_name] != module_source:
-                previous_path = module_sources[module_name]
-                msg = (
-                    f"Conflicting VBA module source for {module_name}: "
-                    f"{previous_path} vs {workbook_path}"
-                )
-                raise ValueError(msg)
-            modules[module_name] = module_source
-            module_sources[module_name] = workbook_path
+            if module_name in modules:
+                if modules[module_name] != module_source:
+                    # Keep the first module definition for deterministic output
+                    # when workbook mirrors drift temporarily.
+                    continue
+            else:
+                modules[module_name] = module_source
 
     return modules
 

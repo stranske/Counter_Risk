@@ -103,7 +103,7 @@ Check the output directory you specified in step 3. A successful run produces:
 <output_dir>/
   manifest.json
   DATA_QUALITY_SUMMARY.txt
-  distribution_static/      <- updated PPT outputs
+  *.pptx                    <- updated PPT outputs
   *.xlsx                    <- updated historical workbooks
 ```
 

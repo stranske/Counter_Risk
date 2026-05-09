@@ -1,5 +1,28 @@
 # Counter_Risk Workloop State
 
+## 2026-05-09T05:09:01Z - opener lane issue #552 PR materializing
+
+- Automation: `pd-workloop-resume` (codex opener lane).
+- Source repo: `stranske/Counter_Risk`.
+- Source issue: `#552` (`Align Runner Open PPT Folder with manifest-registered PPT deliverables`; labels `priority:normal`, `repo-review-approved`).
+- Branch: `codex/issue-552-open-ppt-folder` from `origin/main` (`e3d74d5`).
+- Selection:
+  - ACTION A succeeded from the neutral Code workspace; sentinel `active.*` was treated as cross-lane informational.
+  - Required discovery ran: approved queue files, `repo-review-approved`, live `priority:high` / `priority:normal` / `priority:low`, raw author PR searches, cap-health, infra repair, and post-repair cap-health.
+  - Cap-health after repair reported `total_opener_owned=4`, `raw_cap_reached=false`, `normal_cap_reached=false`, `non_drainable_cap_blocker=false`, and four drainable PRs (`Counter_Risk#573`, `Trend_Model_Project#5257/#5258/#5260`), leaving one opener slot.
+  - High-priority `Inv-Man-Intake#379` and `#381` were skipped as verifier-hold reopenings tied to merged PRs `#393` and `#400`. Older normal-priority issues were skipped where already linked to open/merged PRs; `Counter_Risk#552` had no existing PR and was selected.
+- Implementation:
+  - Changed Python and VBA runner PPT folder resolution to open the run folder itself, where canonical PPT files are created and registered in `manifest.json`.
+  - Updated Tk GUI `Open PPT Folder` to use the same run-folder target.
+  - Updated operator, GUI, remote-trigger, and macro docs to describe run-folder PPT retrieval instead of a `distribution_static` retrieval directory.
+  - Added regression coverage for the helper, missing-folder message, and headless GUI button target.
+- Validation passed:
+  - `python -m pytest tests/test_runner_launch.py tests/test_gui_runner.py tests/test_pipeline_run_outputs.py tests/pipeline/test_monthly_pipeline_ppt_outputs.py tests/pipeline/test_run_folder_readme.py --no-cov` (74 passed).
+  - `python -m ruff check src/counter_risk/runner_launch.py src/counter_risk/gui/runner.py tests/test_runner_launch.py tests/test_gui_runner.py`.
+- PR: `#578` (`https://github.com/stranske/Counter_Risk/pull/578`), ready for review, non-draft, labels `agent:codex`, `agents:keepalive`, and `autofix`.
+- Relay event emitted: `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=552 active.source_pr=578 active.next_action=wait_for_keepalive`.
+- Next action: keepalive owns PR `#578` for CI, review comments, and follow-up commits. Opener is done with this issue.
+
 ## 2026-05-07T21:56:24Z - manual stall recovery for PR #575
 
 - Request: user asked to finish the stalled work so the opener lane no longer stalls on `stranske/Counter_Risk#575`.

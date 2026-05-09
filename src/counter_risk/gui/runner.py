@@ -72,6 +72,10 @@ def _resolve_output_dir(state: GuiRunState) -> Path:
     return output_root / f"{month_end.isoformat()}_000000"
 
 
+def _resolve_ppt_output_dir(state: GuiRunState) -> Path:
+    return _resolve_output_dir(state)
+
+
 def _build_settings_payload(state: GuiRunState) -> str:
     payload = {
         "input_root": state.input_root.strip() or "inputs",
@@ -284,7 +288,7 @@ def launch_gui(
 
     def _open_ppt() -> None:
         current = _state_from_form()
-        _open_path(_resolve_output_dir(current) / "distribution_static")
+        _open_path(_resolve_ppt_output_dir(current))
 
     # Form rows
     labels = (
