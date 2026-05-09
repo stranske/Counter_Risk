@@ -16,9 +16,11 @@ _BREACH_COLUMNS = (
     "entity_type",
     "entity_name",
     "limit_kind",
+    "severity",
     "actual_value",
     "limit_value",
     "breach_amount",
+    "notes",
 )
 _ENTITY_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
     "counterparty": ("counterparty", "counterparty_name", "name"),
@@ -61,7 +63,9 @@ def _to_dataframe_or_records(*, records: list[dict[str, Any]], columns: tuple[st
     frame = pd.DataFrame(records) if records else pd.DataFrame(columns=columns)
     for column in columns:
         if column not in frame.columns:
-            frame[column] = 0.0
+            frame[column] = None
+    if "notes" in frame.columns and hasattr(frame, "__getitem__"):
+        frame["notes"] = frame["notes"].astype(object).where(frame["notes"].notna(), None)
     return frame.loc[:, list(columns)]
 
 
@@ -153,6 +157,8 @@ def find_missing_limit_entities(exposures_df: Any, limits_cfg: Any) -> list[dict
 
     missing: list[dict[str, str]] = []
     for limit in limits.limits:
+        if not limit.enabled:
+            continue
         if limit.entity_name in entity_values_by_type[limit.entity_type]:
             continue
         missing.append(
@@ -175,20 +181,21 @@ def check_limits(exposures_df: Any, limits_cfg: Any) -> Any:
     """Evaluate absolute-notional and percentage-of-total limit breaches.
 
     Returns a DataFrame-like table (or list of dict records if pandas is unavailable)
-    with columns: entity_type, entity_name, limit_kind, actual_value, limit_value,
-    and breach_amount.
+    with columns: entity_type, entity_name, limit_kind, severity, actual_value,
+    limit_value, breach_amount, and notes.
     """
 
     rows = _iter_rows(exposures_df, arg_name="exposures_df")
     limits = _coerce_limits(limits_cfg)
 
-    if not rows or not limits.limits:
+    enabled_limits = [limit for limit in limits.limits if limit.enabled]
+    if not rows or not enabled_limits:
         return _to_dataframe_or_records(records=[], columns=_BREACH_COLUMNS)
 
     total_abs_notional = sum(abs(_find_notional(row)) for row in rows)
     records: list[dict[str, Any]] = []
 
-    for limit in limits.limits:
+    for limit in enabled_limits:
         aliases = _ENTITY_COLUMN_ALIASES[limit.entity_type]
         matched_abs_notional = 0.0
         found_match = False
@@ -221,9 +228,11 @@ def check_limits(exposures_df: Any, limits_cfg: Any) -> Any:
                 "entity_type": limit.entity_type,
                 "entity_name": limit.entity_name,
                 "limit_kind": limit.limit_kind,
+                "severity": limit.severity,
                 "actual_value": actual_value,
                 "limit_value": float(limit.limit_value),
                 "breach_amount": breach_amount,
+                "notes": limit.notes,
             }
         )
 

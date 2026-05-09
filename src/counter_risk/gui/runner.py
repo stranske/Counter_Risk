@@ -206,6 +206,26 @@ def _read_data_quality_status_color(output_dir: Path | None) -> str:
     return read_overall_status_color(output_dir / "DATA_QUALITY_SUMMARY.txt")
 
 
+def _load_limit_breach_banner(run_dir: Path) -> str | None:
+    manifest_path = run_dir / "manifest.json"
+    if not manifest_path.exists():
+        return None
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    summary = payload.get("limit_breach_summary")
+    if not isinstance(summary, dict):
+        return None
+    warning_banner = summary.get("warning_banner")
+    if not isinstance(warning_banner, str):
+        return None
+    rendered = warning_banner.strip()
+    return rendered or None
+
+
 def launch_gui(
     *,
     initial_state: GuiRunState | None = None,
@@ -236,6 +256,7 @@ def launch_gui(
     status_var = tk.StringVar(value="Idle")
     result_var = tk.StringVar(value="")
     quality_var = tk.StringVar(value="")
+    limit_banner_var = tk.StringVar(value="None")
 
     def _state_from_form() -> GuiRunState:
         return GuiRunState(
@@ -264,14 +285,18 @@ def launch_gui(
                 status_var.set("Complete")
                 result_var.set("Success")
                 quality_var.set(result.data_quality_status or "UNAVAILABLE - Summary not found")
+                if result.output_dir is not None:
+                    limit_banner_var.set(_load_limit_breach_banner(result.output_dir) or "None")
             else:
                 status_var.set("Error")
                 result_var.set(f"Exit code {result.exit_code}")
                 quality_var.set("")
+                limit_banner_var.set("None")
         except Exception as exc:  # pragma: no cover - UI safety
             status_var.set("Error")
             result_var.set(str(exc))
             quality_var.set("")
+            limit_banner_var.set("None")
             messagebox.showerror("Counter Risk Runner", str(exc))
 
     def _open_output() -> None:
@@ -358,5 +383,9 @@ def launch_gui(
     ttk.Label(root, textvariable=result_var).grid(row=12, column=1, sticky="w", padx=8, pady=4)
     ttk.Label(root, text="Data Quality").grid(row=13, column=0, sticky="w", padx=8, pady=4)
     ttk.Label(root, textvariable=quality_var).grid(row=13, column=1, sticky="w", padx=8, pady=4)
+    ttk.Label(root, text="Limit Breach").grid(row=14, column=0, sticky="w", padx=8, pady=4)
+    ttk.Label(root, textvariable=limit_banner_var).grid(
+        row=14, column=1, sticky="w", padx=8, pady=4
+    )
 
     root.mainloop()

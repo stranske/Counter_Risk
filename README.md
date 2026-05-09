@@ -16,6 +16,7 @@ A programmatic replacement for the MOSERS spreadsheet workflow used to evaluate 
 - A `DATA_QUALITY_SUMMARY.txt` and manifest `data_quality` object for green/yellow/red operator review (see [docs/data_quality.md](docs/data_quality.md))
 - A `concentration_metrics.csv` with Top 5/Top 10 share and HHI per `(variant, segment)` (see [docs/concentration_metrics.md](docs/concentration_metrics.md))
 - Optional `risk_rankings.csv` and `risk_top_movers.csv` risk proxy outputs when source columns exist (see [docs/risk_proxy_outputs.md](docs/risk_proxy_outputs.md))
+- A `limit_breaches.csv` when configured exposure limits are breached (see [docs/limit_monitoring.md](docs/limit_monitoring.md))
 - Optional “distribution” deliverables (static PPT/PDF) that do not prompt for link refresh
 
 ## Output Generator Configuration

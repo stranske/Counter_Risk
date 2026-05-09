@@ -251,10 +251,19 @@ def manifest_schema() -> dict[str, Any]:
             },
             "limit_breach_summary": {
                 "type": "object",
-                "required": ["has_breaches", "breach_count", "report_path", "warning_banner"],
+                "required": [
+                    "has_breaches",
+                    "breach_count",
+                    "warning_breach_count",
+                    "fail_breach_count",
+                    "report_path",
+                    "warning_banner",
+                ],
                 "properties": {
                     "has_breaches": {"type": "boolean"},
                     "breach_count": {"type": "integer", "minimum": 0},
+                    "warning_breach_count": {"type": "integer", "minimum": 0},
+                    "fail_breach_count": {"type": "integer", "minimum": 0},
                     "report_path": {"type": ["string", "null"]},
                     "warning_banner": {"type": ["string", "null"]},
                 },

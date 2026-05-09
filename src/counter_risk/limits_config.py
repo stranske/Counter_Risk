@@ -3,10 +3,31 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+
+
+class _NoDuplicateSafeLoader(yaml.SafeLoader):
+    """Safe YAML loader that rejects duplicate keys in mappings."""
+
+
+def _construct_mapping_no_duplicates(
+    loader: _NoDuplicateSafeLoader, node: yaml.nodes.MappingNode, deep: bool = False
+) -> dict[Any, Any]:
+    mapping: dict[Any, Any] = {}
+    for key_node, value_node in node.value:
+        key = cast(Any, loader.construct_object(key_node, deep=deep))  # type: ignore[no-untyped-call]
+        if key in mapping:
+            raise ValueError(f"duplicate key '{key}'")
+        mapping[key] = cast(Any, loader.construct_object(value_node, deep=deep))  # type: ignore[no-untyped-call]
+    return mapping
+
+
+_NoDuplicateSafeLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_mapping_no_duplicates
+)
 
 
 class LimitEntry(BaseModel):
@@ -18,6 +39,8 @@ class LimitEntry(BaseModel):
     entity_name: str = Field(min_length=1)
     limit_value: float = Field(gt=0)
     limit_kind: Literal["absolute_notional", "percent_of_total"]
+    severity: Literal["warning", "fail"] = "warning"
+    enabled: bool = True
     notes: str | None = None
 
     @field_validator("entity_name")
@@ -48,6 +71,20 @@ class LimitsConfig(BaseModel):
     strict_missing_entities: bool = False
     limits: list[LimitEntry] = Field(min_length=1)
 
+    @model_validator(mode="after")
+    def _validate_unique_limit_keys(self) -> LimitsConfig:
+        seen: set[tuple[str, str, str]] = set()
+        duplicates: list[str] = []
+        for limit in self.limits:
+            key = (limit.entity_type, limit.entity_name, limit.limit_kind)
+            if key in seen:
+                duplicates.append(":".join(key))
+            seen.add(key)
+        if duplicates:
+            duplicate_list = ", ".join(sorted(duplicates))
+            raise ValueError(f"duplicate limit keys are not allowed: {duplicate_list}")
+        return self
+
 
 def _format_limits_validation_error(error: ValidationError) -> str:
     lines = ["Limits config validation failed:"]
@@ -63,9 +100,11 @@ def load_limits_config(path: str | Path = Path("config/limits.yml")) -> LimitsCo
 
     config_path = Path(path)
     try:
-        raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        raw = yaml.load(config_path.read_text(encoding="utf-8"), Loader=_NoDuplicateSafeLoader)
     except OSError as exc:
         raise ValueError(f"Unable to read limits config file '{config_path}': {exc}") from exc
+    except ValueError as exc:
+        raise ValueError(f"Invalid YAML in limits config file '{config_path}': {exc}") from exc
     except yaml.YAMLError as exc:
         raise ValueError(f"Invalid YAML in limits config file '{config_path}': {exc}") from exc
 
