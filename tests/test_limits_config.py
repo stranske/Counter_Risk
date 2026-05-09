@@ -29,10 +29,12 @@ def test_load_limits_config_supports_optional_notes(tmp_path: Path) -> None:
                 "    entity_name: CME FCM",
                 "    limit_value: 50000000",
                 "    limit_kind: absolute_notional",
+                "    severity: fail",
                 "  - entity_type: custom_group",
                 "    entity_name: Trend Energy",
                 "    limit_value: 0.2",
                 "    limit_kind: percent_of_total",
+                "    enabled: false",
                 "    notes: '   Max concentration for trend energy sleeve.   '",
             ]
         )
@@ -46,6 +48,8 @@ def test_load_limits_config_supports_optional_notes(tmp_path: Path) -> None:
     assert config.limits[1].notes == "Max concentration for trend energy sleeve."
     assert config.limits[0].entity_name == "cme_fcm"
     assert config.limits[1].entity_name == "trend_energy"
+    assert config.limits[0].severity == "fail"
+    assert config.limits[1].enabled is False
 
 
 def test_load_limits_config_rejects_missing_required_fields(tmp_path: Path) -> None:
@@ -80,6 +84,7 @@ def test_load_limits_config_rejects_invalid_types_and_values(tmp_path: Path) -> 
                 "    entity_name: citibank",
                 "    limit_value: -10",
                 "    limit_kind: unknown_kind",
+                "    severity: urgent",
             ]
         )
         + "\n",
@@ -87,4 +92,52 @@ def test_load_limits_config_rejects_invalid_types_and_values(tmp_path: Path) -> 
     )
 
     with pytest.raises(ValueError, match="Limits config validation failed"):
+        load_limits_config(config_path)
+
+
+def test_load_limits_config_rejects_duplicate_limit_keys(tmp_path: Path) -> None:
+    config_path = tmp_path / "limits.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "limits:",
+                "  - entity_type: counterparty",
+                "    entity_name: Citibank",
+                "    limit_value: 100",
+                "    limit_kind: absolute_notional",
+                "  - entity_type: counterparty",
+                "    entity_name: citibank",
+                "    limit_value: 200",
+                "    limit_kind: absolute_notional",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="duplicate limit keys"):
+        load_limits_config(config_path)
+
+
+def test_load_limits_config_rejects_duplicate_yaml_keys(tmp_path: Path) -> None:
+    config_path = tmp_path / "limits.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "limits:",
+                "  - entity_type: counterparty",
+                "    entity_name: Citibank",
+                "    limit_value: 100",
+                "    limit_kind: absolute_notional",
+                "    severity: warning",
+                "    severity: fail",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Invalid YAML"):
         load_limits_config(config_path)

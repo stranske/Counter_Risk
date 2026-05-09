@@ -18,16 +18,34 @@ strict_missing_entities: false
 #   Must be > 0.
 # - limit_kind (required string): interpretation of limit_value.
 #   Valid values: absolute_notional | percent_of_total
+# - severity (optional string): operator escalation level.
+#   Valid values: warning | fail
+#   Default: warning
+# - enabled (optional boolean): false keeps the entry documented but excludes
+#   it from missing-entity and breach checks.
+#   Default: true
 # - notes (optional string): operator-facing context for the configured policy.
 limits:
   - entity_type: counterparty
     entity_name: citibank
     limit_value: 250000000
     limit_kind: absolute_notional
+    severity: fail
+    enabled: true
     notes: Committee approved gross notional cap for single counterparty.
 
   - entity_type: clearing_house
     entity_name: cme
     limit_value: 0.35
     limit_kind: percent_of_total
+    severity: warning
+    enabled: true
     notes: Max 35 percent of total exposure at a single clearing house.
+
+  - entity_type: custom_group
+    entity_name: staged_policy_example
+    limit_value: 0.25
+    limit_kind: percent_of_total
+    severity: warning
+    enabled: false
+    notes: Disabled example entry; enable only after risk owners approve the policy.
