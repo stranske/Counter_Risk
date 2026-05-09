@@ -91,8 +91,8 @@ result cell instead of silently succeeding.
 
 Spec ID: `MS-OPEN-PPT`
 
-Opens the static PPT deliverable directory (`distribution_static/`) inside the run
-output directory for the selected reporting month. If the directory is missing, it
+Opens the run output directory for the selected reporting month. That directory
+contains the manifest-registered PPT deliverables. If the directory is missing, it
 reports an error in the result cell instead of silently succeeding.
 
 ## Per-Macro Requirements
@@ -267,8 +267,7 @@ Spec ID: `MS-OPEN-PPT`
 
 Fixture sources:
 - VBA module fixture: `assets/vba/RunnerLaunch.bas`
-- Path resolution exercised against `<run-output-dir>/distribution_static` per
-  `ResolvePPTOutputDir`
+- Path resolution exercised against `<run-output-dir>` per `ResolvePPTOutputDir`
 
 Required inputs (sheet names, columns):
 - Sheet `Runner`

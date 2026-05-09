@@ -43,7 +43,7 @@ This document defines the operator experience for running the monthly counterpar
 5. Click `Run Monthly Process`.
 6. Review completion message and warnings panel.
 7. Click `Open Output Folder` to access produced artifacts.
-8. Use `Open Manifest`, `Open Summary`, and `Open PPT Folder` for post-run review.
+8. Use `Open Manifest`, `Open Summary`, and `Open PPT Folder` for post-run review; the PPT button opens the same run folder where the manifest registers the monthly PPT files.
 
 Formatting profile support currently applies to:
 - Historical workbook append rows.
@@ -150,7 +150,7 @@ Decision rule:
   - `CounterRisk_<as_of_date:YYYY-MM-DD>_<variant>_<run_timestamp:YYYYMMDD_HHMMSS>`
 - Required contents:
   - Updated historical workbooks
-  - Updated monthly PPT outputs
+  - Updated monthly PPT outputs in the run folder
   - `manifest.json`
   - `data_quality_summary.md` (or `.txt`)
 

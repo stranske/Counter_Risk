@@ -216,7 +216,8 @@ def test_execute_gui_run_cleanup_flag_removes_settings_file(tmp_path: Path) -> N
 def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    created: dict[str, object] = {}
+    created: dict[str, object] = {"widgets": []}
+    opened_paths: list[Path] = []
 
     class _FakeStringVar:
         def __init__(self, value: str = "") -> None:
@@ -233,6 +234,9 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
             self.args = args
             self.kwargs = kwargs
             self.grid_calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+            widgets = created["widgets"]
+            assert isinstance(widgets, list)
+            widgets.append(self)
 
         def grid(self, *args: object, **kwargs: object) -> None:
             self.grid_calls.append((args, kwargs))
@@ -275,6 +279,7 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
 
     monkeypatch.setitem(sys.modules, "tkinter", tkinter_module)
     monkeypatch.setitem(sys.modules, "tkinter.ttk", ttk_module)
+    monkeypatch.setattr(gui_runner, "_open_path", lambda path: opened_paths.append(path))
 
     launch_gui(
         initial_state=GuiRunState(as_of_date="2025-12-31"),
@@ -288,6 +293,18 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     assert fake_root.geometry_value == "640x380"
     assert fake_root.mainloop_called is True
     assert (1, 1) in fake_root.column_config_calls
+    widgets = created["widgets"]
+    assert isinstance(widgets, list)
+    ppt_buttons = [
+        widget
+        for widget in widgets
+        if isinstance(widget, _FakeWidget) and widget.kwargs.get("text") == "Open PPT Folder"
+    ]
+    assert len(ppt_buttons) == 1
+
+    ppt_buttons[0].kwargs["command"]()
+
+    assert opened_paths == [Path("runs/2025-12-31_000000")]
 
 
 def test_main_gui_non_headless_path_calls_launch_gui(
