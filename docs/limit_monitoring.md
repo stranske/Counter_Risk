@@ -21,6 +21,28 @@ Each `limits` entry has these fields:
 Duplicate keys are rejected during config load. A key is the tuple
 `entity_type`, normalized `entity_name`, and `limit_kind`.
 
+## Safe Maintainer Update Process
+
+Use this checklist when adding or revising a limit in `config/limits.yml`:
+
+1. Find the canonical entity key used by pipeline outputs and set `entity_name`
+   to that key (for example `citibank`, `cme`, or another normalized name).
+2. Choose the smallest valid scope for `entity_type`:
+   `counterparty`, `fcm`, `clearing_house`, `segment`, or `custom_group`.
+3. Set `limit_kind` to match policy intent:
+   `absolute_notional` for dollar caps, `percent_of_total` for concentration caps.
+4. Set `severity` explicitly (`warning` or `fail`) and include `notes` explaining
+   policy ownership or approval context.
+5. If the limit is staged and not active, set `enabled: false` instead of removing
+   the entry so history remains auditable.
+6. Run validation tests before merging:
+   `pytest tests/test_limits_config.py tests/compute/test_limits.py -m "not slow"`
+7. Run one pipeline fixture test to confirm breach artifacts still render correctly:
+   `pytest tests/pipeline/test_run_pipeline.py::test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist -m "not slow"`
+
+If a run warns that configured entities are missing, either correct `entity_name`
+or intentionally set `strict_missing_entities: true` to fail fast in CI.
+
 ## Outputs
 
 When one or more enabled limits breach, the run folder includes
