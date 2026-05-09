@@ -21,6 +21,7 @@ def _write_workflow_config(
 
     lines = [
         "as_of_date: 2025-12-31",
+        "enable_ppt_output: false",
         f"mosers_all_programs_xlsx: {fixtures_root / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
         f"mosers_ex_trend_xlsx: {ex_trend_path}",
         f"mosers_trend_xlsx: {fixtures_root / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
