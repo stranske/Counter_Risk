@@ -152,7 +152,7 @@ Decision rule:
   - Updated historical workbooks
   - Updated monthly PPT outputs in the run folder
   - `manifest.json`
-  - `data_quality_summary.md` (or `.txt`)
+  - `DATA_QUALITY_SUMMARY.txt`
 
 Example:
 - `CounterRisk_2026-01-31_AllPrograms_20260205_091530`
