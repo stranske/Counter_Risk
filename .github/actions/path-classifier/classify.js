@@ -307,7 +307,12 @@ function writeOutputs(outputs) {
       lines.push(`${key}=${value}`);
     }
   }
-  fs.appendFileSync(outputPath, `${lines.join('\n')}\n`, 'utf8');
+  try {
+    fs.appendFileSync(outputPath, `${lines.join('\n')}\n`, 'utf8');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`::warning::Unable to write outputs to GITHUB_OUTPUT (${outputPath}): ${message}`);
+  }
 }
 
 function main() {

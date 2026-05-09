@@ -18,7 +18,6 @@ SHELL_ERROR_BASE = 7100
 _OPERATOR_ACTION_PREFIX = "Operator action:"
 _DATA_QUALITY_SUMMARY_FILENAME = "DATA_QUALITY_SUMMARY.txt"
 _MANIFEST_FILENAME = "manifest.json"
-_PPT_OUTPUT_DIRNAME = "distribution_static"
 
 
 class RunnerMode(StrEnum):
@@ -127,7 +126,7 @@ def resolve_manifest_path(repo_root: str, selected_date: str, output_root: str =
 
 
 def resolve_ppt_output_dir(repo_root: str, selected_date: str, output_root: str = "runs") -> str:
-    return f"{resolve_output_dir(repo_root, selected_date, output_root)}\\{_PPT_OUTPUT_DIRNAME}"
+    return resolve_output_dir(repo_root, selected_date, output_root)
 
 
 def resolve_config_path(run_mode: RunnerMode) -> str:

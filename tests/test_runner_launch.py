@@ -217,6 +217,9 @@ def test_open_ppt_output_folder_opens_existing_directory() -> None:
     opened_directories: list[str] = []
     ppt_dir = resolve_ppt_output_dir("C:/repo", "2025-06-30")
 
+    assert ppt_dir == resolve_output_dir("C:/repo", "2025-06-30")
+    assert "distribution" + "_static" not in ppt_dir
+
     def open_directory(path: str) -> int:
         opened_directories.append(path)
         return 0
@@ -231,6 +234,24 @@ def test_open_ppt_output_folder_opens_existing_directory() -> None:
     assert status.success is True
     assert status.message == "Success"
     assert opened_directories == [ppt_dir]
+
+
+def test_open_ppt_output_folder_missing_error_reports_run_folder() -> None:
+    opened_directories: list[str] = []
+    ppt_dir = resolve_output_dir("C:/repo", "2025-06-30")
+
+    status = open_ppt_output_folder(
+        repo_root="C:/repo",
+        selected_date="2025-06-30",
+        directory_exists=lambda _: False,
+        open_directory=lambda path: opened_directories.append(path) or 0,
+    )
+
+    assert status.success is False
+    assert status.message == f"PPT output folder not found: {ppt_dir}"
+    assert status.command == ppt_dir
+    assert "distribution" + "_static" not in status.message
+    assert opened_directories == []
 
 
 def test_resolve_settings_path_uses_temp_root_and_expected_filename() -> None:

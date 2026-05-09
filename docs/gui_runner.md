@@ -42,7 +42,7 @@ Buttons:
 - `Open Output Folder`
 - `Open Manifest`
 - `Open Summary`
-- `Open PPT Folder`
+- `Open PPT Folder` opens the run folder that contains the registered PPT outputs.
 
 ## Headless Smoke Mode
 

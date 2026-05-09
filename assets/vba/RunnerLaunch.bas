@@ -12,7 +12,6 @@ Private Const COMPLETE_STATUS As String = "Complete"
 Private Const DQ_STATUS_CELL As String = "B9"
 Private Const SETTINGS_TEMP_FILENAME As String = "counter-risk-runner-settings.json"
 Private Const MANIFEST_FILENAME As String = "manifest.json"
-Private Const PPT_OUTPUT_DIRNAME As String = "distribution_static"
 
 Public Enum RunnerMode
     RunnerModeAllPrograms = 0
@@ -243,7 +242,7 @@ Public Function ResolveManifestPath(ByVal repoRoot As String, ByVal selectedDate
 End Function
 
 Public Function ResolvePPTOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
-    ResolvePPTOutputDir = ResolveOutputDir(repoRoot, selectedDate) & "\" & PPT_OUTPUT_DIRNAME
+    ResolvePPTOutputDir = ResolveOutputDir(repoRoot, selectedDate)
 End Function
 
 Private Function ResolveOutputRootPath(ByVal repoRoot As String, ByVal outputRootSetting As String) As String
