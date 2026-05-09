@@ -20,3 +20,5 @@ def test_limit_monitoring_doc_contains_safe_maintainer_update_process() -> None:
         'pytest tests/test_limits_config.py tests/compute/test_limits.py -m "not slow"' in contents
     )
     assert "test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist" in contents
+    assert "test_run_pipeline_strict_missing_limit_entities_fails" in contents
+    assert "duplicate limit keys are not allowed" in contents

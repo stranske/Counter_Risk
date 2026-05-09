@@ -39,6 +39,24 @@ Use this checklist when adding or revising a limit in `config/limits.yml`:
    `pytest tests/test_limits_config.py tests/compute/test_limits.py -m "not slow"`
 7. Run one pipeline fixture test to confirm breach artifacts still render correctly:
    `pytest tests/pipeline/test_run_pipeline.py::test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist -m "not slow"`
+8. Run strict missing-entity coverage so bad canonical names fail fast in CI:
+   `pytest tests/pipeline/test_run_pipeline.py::test_run_pipeline_strict_missing_limit_entities_fails -m "not slow"`
+
+Practical edit pattern for maintainers:
+
+1. Copy an existing entry in `config/limits.yml`.
+2. Update `entity_type`, `entity_name`, `limit_kind`, and `limit_value`.
+3. Set `severity` and `enabled` intentionally (avoid relying on defaults in policy PRs).
+4. Add or update `notes` with approval context.
+5. Run the three commands above before opening a PR.
+
+Common validation failures and fixes:
+
+- `duplicate limit keys are not allowed`: remove or merge entries that share
+  the same `entity_type`, normalized `entity_name`, and `limit_kind`.
+- `severity` validation errors: use only `warning` or `fail`.
+- missing-entity warnings: correct `entity_name` to match exposure canonical
+  keys, or set `strict_missing_entities: true` when the policy requires fail-fast behavior.
 
 If a run warns that configured entities are missing, either correct `entity_name`
 or intentionally set `strict_missing_entities: true` to fail fast in CI.
