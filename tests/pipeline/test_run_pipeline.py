@@ -1945,6 +1945,90 @@ def test_rank_proxy_rows_breaks_ties_by_canonical_counterparty_key(
     assert [row["counterparty"] for row in rows] == ["Z Display", "A Display"]
 
 
+def test_notional_top_movers_break_ties_by_canonical_counterparty_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Resolution:
+        def __init__(self, canonical_key: str) -> None:
+            self.canonical_key = canonical_key
+            self.canonical_name = canonical_key
+
+    canonical_keys = {
+        "Z Display": "a-canonical",
+        "A Display": "z-canonical",
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "normalize_counterparty_with_source",
+        lambda counterparty: _Resolution(canonical_keys[str(counterparty)]),
+    )
+
+    rows = run_module._mover_rows_for_notional_proxy(
+        variant="all_programs",
+        change_field="NotionalChange",
+        records=[
+            {
+                "counterparty": "A Display",
+                "Notional": 100.0,
+                "AnnualizedVolatility": 0.5,
+                "NotionalChange": 20.0,
+            },
+            {
+                "counterparty": "Z Display",
+                "Notional": 100.0,
+                "AnnualizedVolatility": 0.5,
+                "NotionalChange": 20.0,
+            },
+        ],
+    )
+
+    assert [row["counterparty"] for row in rows] == ["Z Display", "A Display"]
+    assert [row["rank"] for row in rows] == [1, 2]
+
+
+def test_position_top_movers_break_ties_by_canonical_counterparty_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Resolution:
+        def __init__(self, canonical_key: str) -> None:
+            self.canonical_key = canonical_key
+            self.canonical_name = canonical_key
+
+    canonical_keys = {
+        "Z Display": "a-canonical",
+        "A Display": "z-canonical",
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "normalize_counterparty_with_source",
+        lambda counterparty: _Resolution(canonical_keys[str(counterparty)]),
+    )
+
+    rows = run_module._mover_rows_for_position_proxy(
+        variant="all_programs",
+        change_field="PositionUSDChange",
+        records=[
+            {
+                "counterparty": "A Display",
+                "PositionUSD": 100.0,
+                "Vol": 0.25,
+                "PositionUSDChange": -20.0,
+            },
+            {
+                "counterparty": "Z Display",
+                "PositionUSD": 100.0,
+                "Vol": 0.25,
+                "PositionUSDChange": 20.0,
+            },
+        ],
+    )
+
+    assert [row["counterparty"] for row in rows] == ["Z Display", "A Display"]
+    assert [row["rank"] for row in rows] == [1, 2]
+
+
 def test_write_risk_outputs_writes_rankings_in_deterministic_variant_order(tmp_path: Path) -> None:
     warnings: list[str] = []
     parsed_by_variant = {
@@ -2157,6 +2241,9 @@ def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
                         "Notional": 100.0,
                         "AnnualizedVolatility": 0.2,
                         "NotionalChange": 20.0,
+                        "PositionUSD": 200.0,
+                        "Vol": 0.1,
+                        "PositionUSDChange": 40.0,
                     }
                 ]
             ),
