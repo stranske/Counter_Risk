@@ -317,3 +317,22 @@ def test_compute_risk_proxies_calculates_both_proxies_when_all_inputs_exist(
 def test_compute_risk_proxies_requires_dataframe_like_or_iterable_of_mappings() -> None:
     with pytest.raises(TypeError, match="exposures_df must be a pandas-like DataFrame"):
         compute_risk_proxies(1.23)
+
+
+def test_compute_risk_proxies_supports_lowercase_proxy_input_aliases() -> None:
+    records = _as_records(
+        compute_risk_proxies(
+            [
+                {
+                    "counterparty": "A",
+                    "notional": 50.0,
+                    "annualized_volatility": 0.2,
+                    "position_usd": 2000.0,
+                    "vol": 0.1,
+                }
+            ]
+        )
+    )
+
+    assert records[0]["risk_proxy_notional_annualized_volatility"] == pytest.approx(10.0)
+    assert records[0]["risk_proxy_position_usd_vol"] == pytest.approx(200.0)
