@@ -1796,7 +1796,16 @@ def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> No
         for row in ranking_rows
     )
     assert any(
+        row["proxy_name"] == "risk_proxy_notional_annualized_volatility"
+        and row["formula"] == "Notional * AnnualizedVolatility"
+        for row in ranking_rows
+    )
+    assert any(
         row["proxy_name"] == "risk_proxy_position_usd_vol" and row["rank"] == "1"
+        for row in ranking_rows
+    )
+    assert any(
+        row["proxy_name"] == "risk_proxy_position_usd_vol" and row["formula"] == "PositionUSD * Vol"
         for row in ranking_rows
     )
 
@@ -1805,6 +1814,10 @@ def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> No
     assert {row["proxy_name"] for row in mover_rows} == {
         "risk_proxy_notional_annualized_volatility",
         "risk_proxy_position_usd_vol",
+    }
+    assert {row["formula"] for row in mover_rows} == {
+        "Notional * AnnualizedVolatility",
+        "PositionUSD * Vol",
     }
     assert "risk_rankings.csv skipped" not in "\n".join(warnings)
 
@@ -1863,10 +1876,8 @@ def test_write_risk_outputs_warns_and_skips_rankings_when_proxy_columns_missing(
 
     assert output_paths == []
     assert not (tmp_path / "risk_rankings.csv").exists()
-    assert any(
-        "requires Notional and AnnualizedVolatility columns" in warning for warning in warnings
-    )
-    assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+    assert any("missing required columns (AnnualizedVolatility)" in warning for warning in warnings)
+    assert any("missing required columns (PositionUSD, Vol)" in warning for warning in warnings)
     assert any("risk_rankings.csv skipped" in warning for warning in warnings)
 
 
@@ -1900,7 +1911,234 @@ def test_write_risk_outputs_creates_partial_outputs_when_only_notional_proxy_exi
     assert {row["proxy_name"] for row in ranking_rows} == {
         "risk_proxy_notional_annualized_volatility"
     }
-    assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+    assert any("missing required columns (PositionUSD, Vol)" in warning for warning in warnings)
+
+
+def test_rank_proxy_rows_breaks_ties_by_canonical_counterparty_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Resolution:
+        def __init__(self, canonical_key: str) -> None:
+            self.canonical_key = canonical_key
+            self.canonical_name = canonical_key
+
+    canonical_keys = {
+        "Z Display": "a-canonical",
+        "A Display": "z-canonical",
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "normalize_counterparty_with_source",
+        lambda counterparty: _Resolution(canonical_keys[str(counterparty)]),
+    )
+
+    rows = run_module._rank_proxy_rows(
+        variant="all_programs",
+        proxy_column="risk_proxy_notional_annualized_volatility",
+        records=[
+            {"counterparty": "A Display", "risk_proxy_notional_annualized_volatility": 10.0},
+            {"counterparty": "Z Display", "risk_proxy_notional_annualized_volatility": 10.0},
+        ],
+    )
+
+    assert [row["counterparty"] for row in rows] == ["Z Display", "A Display"]
+
+
+def test_notional_top_movers_break_ties_by_canonical_counterparty_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Resolution:
+        def __init__(self, canonical_key: str) -> None:
+            self.canonical_key = canonical_key
+            self.canonical_name = canonical_key
+
+    canonical_keys = {
+        "Z Display": "a-canonical",
+        "A Display": "z-canonical",
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "normalize_counterparty_with_source",
+        lambda counterparty: _Resolution(canonical_keys[str(counterparty)]),
+    )
+
+    rows = run_module._mover_rows_for_notional_proxy(
+        variant="all_programs",
+        change_field="NotionalChange",
+        records=[
+            {
+                "counterparty": "A Display",
+                "Notional": 100.0,
+                "AnnualizedVolatility": 0.5,
+                "NotionalChange": 20.0,
+            },
+            {
+                "counterparty": "Z Display",
+                "Notional": 100.0,
+                "AnnualizedVolatility": 0.5,
+                "NotionalChange": 20.0,
+            },
+        ],
+    )
+
+    assert [row["counterparty"] for row in rows] == ["Z Display", "A Display"]
+    assert [row["rank"] for row in rows] == [1, 2]
+
+
+def test_position_top_movers_break_ties_by_canonical_counterparty_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Resolution:
+        def __init__(self, canonical_key: str) -> None:
+            self.canonical_key = canonical_key
+            self.canonical_name = canonical_key
+
+    canonical_keys = {
+        "Z Display": "a-canonical",
+        "A Display": "z-canonical",
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "normalize_counterparty_with_source",
+        lambda counterparty: _Resolution(canonical_keys[str(counterparty)]),
+    )
+
+    rows = run_module._mover_rows_for_position_proxy(
+        variant="all_programs",
+        change_field="PositionUSDChange",
+        records=[
+            {
+                "counterparty": "A Display",
+                "PositionUSD": 100.0,
+                "Vol": 0.25,
+                "PositionUSDChange": -20.0,
+            },
+            {
+                "counterparty": "Z Display",
+                "PositionUSD": 100.0,
+                "Vol": 0.25,
+                "PositionUSDChange": 20.0,
+            },
+        ],
+    )
+
+    assert [row["counterparty"] for row in rows] == ["Z Display", "A Display"]
+    assert [row["rank"] for row in rows] == [1, 2]
+
+
+def test_write_risk_outputs_writes_rankings_in_deterministic_variant_order(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "trend": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Trend Cpty",
+                        "Notional": 75.0,
+                        "AnnualizedVolatility": 0.2,
+                    }
+                ]
+            )
+        },
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "All Cpty",
+                        "Notional": 100.0,
+                        "AnnualizedVolatility": 0.3,
+                    }
+                ]
+            )
+        },
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert tmp_path / "risk_rankings.csv" in output_paths
+    with (tmp_path / "risk_rankings.csv").open("r", encoding="utf-8", newline="") as stream:
+        ranking_rows = list(csv.DictReader(stream))
+
+    assert [row["variant"] for row in ranking_rows] == ["all_programs", "trend"]
+    assert any("missing required columns (PositionUSD, Vol)" in warning for warning in warnings)
+
+
+def test_write_risk_outputs_warns_when_prior_period_columns_missing(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 120.0,
+                        "AnnualizedVolatility": 0.25,
+                        "PositionUSD": 400.0,
+                        "Vol": 0.4,
+                    }
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert tmp_path / "risk_rankings.csv" in output_paths
+    assert tmp_path / "risk_top_movers.csv" not in output_paths
+    assert any(
+        "missing prior-period notional delta column (one of: NotionalChange, NotionalChangeFromPriorMonth)"
+        in warning
+        for warning in warnings
+    )
+    assert any(
+        "missing prior-period position delta column (one of: PositionUSDChange, PositionChangeFromPriorMonth)"
+        in warning
+        for warning in warnings
+    )
+
+
+def test_write_risk_outputs_skips_movers_when_prior_period_values_invalid(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 120.0,
+                        "AnnualizedVolatility": 0.25,
+                        "NotionalChange": "not-a-number",
+                        "PositionUSD": 400.0,
+                        "Vol": 0.4,
+                        "PositionUSDChange": None,
+                    }
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert tmp_path / "risk_rankings.csv" in output_paths
+    assert tmp_path / "risk_top_movers.csv" not in output_paths
+    assert any(
+        "prior-period notional delta values unavailable or invalid" in warning
+        for warning in warnings
+    )
+    assert any(
+        "prior-period position delta values unavailable or invalid" in warning
+        for warning in warnings
+    )
+    assert any("risk_top_movers.csv skipped" in warning for warning in warnings)
 
 
 def test_write_change_attribution_outputs_writes_markdown_and_csv(tmp_path: Path) -> None:
@@ -2003,6 +2241,9 @@ def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
                         "Notional": 100.0,
                         "AnnualizedVolatility": 0.2,
                         "NotionalChange": 20.0,
+                        "PositionUSD": 200.0,
+                        "Vol": 0.1,
+                        "PositionUSDChange": 40.0,
                     }
                 ]
             ),
@@ -2062,6 +2303,12 @@ def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
 
     assert (run_dir / "risk_rankings.csv").exists()
     assert (run_dir / "risk_top_movers.csv").exists()
+    with (run_dir / "risk_rankings.csv").open("r", encoding="utf-8", newline="") as stream:
+        ranking_rows = list(csv.DictReader(stream))
+    assert {row["formula"] for row in ranking_rows} == {
+        "Notional * AnnualizedVolatility",
+        "PositionUSD * Vol",
+    }
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     notional_summary = manifest["risk_proxy_summary"]["by_variant"]["all_programs"][
         "risk_proxy_notional_annualized_volatility"

@@ -41,6 +41,10 @@ _TOP_CHANGE_COLUMNS = (
 )
 _NOTIONAL_PROXY_COLUMNS = ("Notional", "AnnualizedVolatility")
 _POSITION_PROXY_COLUMNS = ("PositionUSD", "Vol")
+_NOTIONAL_PROXY_NOTIONAL_KEYS = ("Notional", "notional")
+_NOTIONAL_PROXY_VOLATILITY_KEYS = ("AnnualizedVolatility", "annualized_volatility")
+_POSITION_PROXY_USD_KEYS = ("PositionUSD", "position_usd")
+_POSITION_PROXY_VOL_KEYS = ("Vol", "vol")
 _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN = "risk_proxy_notional_annualized_volatility"
 _RISK_PROXY_POSITION_VOL_COLUMN = "risk_proxy_position_usd_vol"
 
@@ -159,6 +163,10 @@ def _column_names_from_rows(table: Any, rows: list[Mapping[str, Any]]) -> tuple[
             seen.add(normalized_key)
             ordered_columns.append(normalized_key)
     return tuple(ordered_columns)
+
+
+def _has_any_column(columns: tuple[str, ...], candidates: tuple[str, ...]) -> bool:
+    return any(candidate in columns for candidate in candidates)
 
 
 def compute_totals(exposures_df: Any) -> Any:
@@ -437,17 +445,26 @@ def compute_risk_proxies(exposures_df: Any) -> Any:
 
     rows = _iter_rows(exposures_df, arg_name="exposures_df")
     columns = _column_names_from_rows(exposures_df, rows)
-    has_notional_proxy_inputs = all(column in columns for column in _NOTIONAL_PROXY_COLUMNS)
-    has_position_proxy_inputs = all(column in columns for column in _POSITION_PROXY_COLUMNS)
+    has_notional_proxy_inputs = _has_any_column(
+        columns, _NOTIONAL_PROXY_NOTIONAL_KEYS
+    ) and _has_any_column(columns, _NOTIONAL_PROXY_VOLATILITY_KEYS)
+    has_position_proxy_inputs = _has_any_column(
+        columns, _POSITION_PROXY_USD_KEYS
+    ) and _has_any_column(columns, _POSITION_PROXY_VOL_KEYS)
 
     proxy_records: list[dict[str, Any]] = []
     for row in rows:
         normalized_row = dict(row)
         if has_notional_proxy_inputs:
-            notional = _find_numeric(row, ("Notional",), field="Notional", default=0.0)
+            notional = _find_numeric(
+                row,
+                _NOTIONAL_PROXY_NOTIONAL_KEYS,
+                field="Notional",
+                default=0.0,
+            )
             annualized_volatility = _find_numeric(
                 row,
-                ("AnnualizedVolatility",),
+                _NOTIONAL_PROXY_VOLATILITY_KEYS,
                 field="AnnualizedVolatility",
                 default=0.0,
             )
@@ -456,8 +473,18 @@ def compute_risk_proxies(exposures_df: Any) -> Any:
             )
 
         if has_position_proxy_inputs:
-            position_usd = _find_numeric(row, ("PositionUSD",), field="PositionUSD", default=0.0)
-            volatility = _find_numeric(row, ("Vol",), field="Vol", default=0.0)
+            position_usd = _find_numeric(
+                row,
+                _POSITION_PROXY_USD_KEYS,
+                field="PositionUSD",
+                default=0.0,
+            )
+            volatility = _find_numeric(
+                row,
+                _POSITION_PROXY_VOL_KEYS,
+                field="Vol",
+                default=0.0,
+            )
             normalized_row[_RISK_PROXY_POSITION_VOL_COLUMN] = position_usd * volatility
 
         proxy_records.append(normalized_row)

@@ -20,8 +20,15 @@ do not always carry volatility, position, or prior-period delta columns.
 | `risk_proxy_notional_annualized_volatility` | `Notional`, `AnnualizedVolatility` | `Notional * AnnualizedVolatility` |
 | `risk_proxy_position_usd_vol` | `PositionUSD`, `Vol` | `PositionUSD * Vol` |
 
-Rankings sort by descending absolute proxy value, then by counterparty name
-case-insensitively. This makes tied rows stable across reruns.
+Rankings sort by descending absolute proxy value, then by canonical
+counterparty key case-insensitively. This makes tied rows stable across reruns
+even when source files use aliases or display-name variants.
+
+Input aliases accepted by `compute_risk_proxies`:
+
+- `AnnualizedVolatility` or `annualized_volatility`
+- `PositionUSD` or `position_usd`
+- `Vol` or `vol`
 
 ## Top movers
 
@@ -36,9 +43,19 @@ absolute delta, rank, and the delta source column used. Missing prior-period
 delta columns skip only the mover output for that proxy; rankings still write
 when current proxy inputs exist.
 
+Mover calculations are:
+
+- `current_proxy_value = current_input * volatility_input`
+- `delta = prior_period_delta_input * volatility_input`
+- `prior_proxy_value = current_proxy_value - delta`
+
 ## Missing data behavior
 
 When required columns are missing, the pipeline records warnings and marks the
 proxy as `skipped` under `manifest["risk_proxy_summary"]["by_variant"]`.
 Missing volatility or position inputs do not fail the run. Missing mover delta
 inputs skip only `risk_top_movers.csv` for the affected proxy.
+
+If no proxy has required current-period inputs, `risk_rankings.csv` is skipped
+with a warning. If proxies are computed but no usable prior-period deltas exist,
+`risk_top_movers.csv` is skipped with a warning.
