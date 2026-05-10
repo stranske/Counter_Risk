@@ -20,8 +20,9 @@ do not always carry volatility, position, or prior-period delta columns.
 | `risk_proxy_notional_annualized_volatility` | `Notional`, `AnnualizedVolatility` | `Notional * AnnualizedVolatility` |
 | `risk_proxy_position_usd_vol` | `PositionUSD`, `Vol` | `PositionUSD * Vol` |
 
-Rankings sort by descending absolute proxy value, then by counterparty name
-case-insensitively. This makes tied rows stable across reruns.
+Rankings sort by descending absolute proxy value, then by canonical
+counterparty key case-insensitively. This makes tied rows stable across reruns
+even when source files use aliases or display-name variants.
 
 ## Top movers
 

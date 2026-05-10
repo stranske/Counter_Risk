@@ -1903,6 +1903,37 @@ def test_write_risk_outputs_creates_partial_outputs_when_only_notional_proxy_exi
     assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
 
 
+def test_rank_proxy_rows_breaks_ties_by_canonical_counterparty_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class _Resolution:
+        def __init__(self, canonical_key: str) -> None:
+            self.canonical_key = canonical_key
+            self.canonical_name = canonical_key
+
+    canonical_keys = {
+        "Z Display": "a-canonical",
+        "A Display": "z-canonical",
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "normalize_counterparty_with_source",
+        lambda counterparty: _Resolution(canonical_keys[str(counterparty)]),
+    )
+
+    rows = run_module._rank_proxy_rows(
+        variant="all_programs",
+        proxy_column="risk_proxy_notional_annualized_volatility",
+        records=[
+            {"counterparty": "A Display", "risk_proxy_notional_annualized_volatility": 10.0},
+            {"counterparty": "Z Display", "risk_proxy_notional_annualized_volatility": 10.0},
+        ],
+    )
+
+    assert [row["counterparty"] for row in rows] == ["Z Display", "A Display"]
+
+
 def test_write_change_attribution_outputs_writes_markdown_and_csv(tmp_path: Path) -> None:
     warnings: list[str] = []
     parsed_by_variant = {

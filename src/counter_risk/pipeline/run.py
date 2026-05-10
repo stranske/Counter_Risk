@@ -1744,7 +1744,7 @@ def _rank_proxy_rows(
         records,
         key=lambda record: (
             -abs(_to_float(record.get(proxy_column))),
-            str(record.get("counterparty", "")).casefold(),
+            _counterparty_canonical_sort_key(record),
         ),
     )
     rows: list[dict[str, Any]] = []
@@ -1759,6 +1759,12 @@ def _rank_proxy_rows(
             }
         )
     return rows
+
+
+def _counterparty_canonical_sort_key(record: Mapping[str, Any]) -> str:
+    counterparty = str(record.get("counterparty", ""))
+    resolution = normalize_counterparty_with_source(counterparty)
+    return str(resolution.canonical_key or resolution.canonical_name).casefold()
 
 
 def _mover_rows_for_notional_proxy(
@@ -1784,7 +1790,9 @@ def _mover_rows_for_notional_proxy(
                 "delta_source_column": change_field,
             }
         )
-    rows.sort(key=lambda row: (-abs(_to_float(row["delta"])), str(row["counterparty"]).casefold()))
+    rows.sort(
+        key=lambda row: (-abs(_to_float(row["delta"])), _counterparty_canonical_sort_key(row))
+    )
     for index, row in enumerate(rows, start=1):
         row["rank"] = index
     return rows
@@ -1813,7 +1821,9 @@ def _mover_rows_for_position_proxy(
                 "delta_source_column": change_field,
             }
         )
-    rows.sort(key=lambda row: (-abs(_to_float(row["delta"])), str(row["counterparty"]).casefold()))
+    rows.sort(
+        key=lambda row: (-abs(_to_float(row["delta"])), _counterparty_canonical_sort_key(row))
+    )
     for index, row in enumerate(rows, start=1):
         row["rank"] = index
     return rows
