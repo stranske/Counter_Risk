@@ -1474,14 +1474,20 @@ def _write_risk_outputs(
         has_notional_vol = "Notional" in columns and "AnnualizedVolatility" in columns
         has_position_vol = "PositionUSD" in columns and "Vol" in columns
         if not has_notional_vol:
+            missing_notional_proxy_columns = [
+                column for column in ("Notional", "AnnualizedVolatility") if column not in columns
+            ]
             warnings.append(
                 "risk proxy notional-volatility skipped for "
-                f"{variant}: requires Notional and AnnualizedVolatility columns"
+                f"{variant}: missing required columns ({', '.join(missing_notional_proxy_columns)})"
             )
         if not has_position_vol:
+            missing_position_proxy_columns = [
+                column for column in ("PositionUSD", "Vol") if column not in columns
+            ]
             warnings.append(
                 "risk proxy position-volatility skipped for "
-                f"{variant}: requires PositionUSD and Vol columns"
+                f"{variant}: missing required columns ({', '.join(missing_position_proxy_columns)})"
             )
         if not has_notional_vol and not has_position_vol:
             continue
@@ -1504,7 +1510,8 @@ def _write_risk_outputs(
                 warnings.append(
                     "risk top movers skipped for "
                     f"{variant} {_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN}: "
-                    "requires a notional prior-month delta column"
+                    "missing prior-period notional delta column "
+                    f"(one of: {', '.join(_NOTIONAL_CHANGE_FIELDS_FOR_MOVER_DELTA)})"
                 )
             else:
                 mover_inputs_available = True
@@ -1531,7 +1538,8 @@ def _write_risk_outputs(
                 warnings.append(
                     "risk top movers skipped for "
                     f"{variant} {_RISK_PROXY_POSITION_VOL_COLUMN}: "
-                    "requires a position prior-month delta column"
+                    "missing prior-period position delta column "
+                    f"(one of: {', '.join(_POSITION_CHANGE_FIELDS_FOR_MOVER_DELTA)})"
                 )
             else:
                 mover_inputs_available = True

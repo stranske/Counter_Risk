@@ -1863,10 +1863,8 @@ def test_write_risk_outputs_warns_and_skips_rankings_when_proxy_columns_missing(
 
     assert output_paths == []
     assert not (tmp_path / "risk_rankings.csv").exists()
-    assert any(
-        "requires Notional and AnnualizedVolatility columns" in warning for warning in warnings
-    )
-    assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+    assert any("missing required columns (AnnualizedVolatility)" in warning for warning in warnings)
+    assert any("missing required columns (PositionUSD, Vol)" in warning for warning in warnings)
     assert any("risk_rankings.csv skipped" in warning for warning in warnings)
 
 
@@ -1900,7 +1898,7 @@ def test_write_risk_outputs_creates_partial_outputs_when_only_notional_proxy_exi
     assert {row["proxy_name"] for row in ranking_rows} == {
         "risk_proxy_notional_annualized_volatility"
     }
-    assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+    assert any("missing required columns (PositionUSD, Vol)" in warning for warning in warnings)
 
 
 def test_rank_proxy_rows_breaks_ties_by_canonical_counterparty_key(
@@ -1970,7 +1968,43 @@ def test_write_risk_outputs_writes_rankings_in_deterministic_variant_order(tmp_p
         ranking_rows = list(csv.DictReader(stream))
 
     assert [row["variant"] for row in ranking_rows] == ["all_programs", "trend"]
-    assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+    assert any("missing required columns (PositionUSD, Vol)" in warning for warning in warnings)
+
+
+def test_write_risk_outputs_warns_when_prior_period_columns_missing(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 120.0,
+                        "AnnualizedVolatility": 0.25,
+                        "PositionUSD": 400.0,
+                        "Vol": 0.4,
+                    }
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert tmp_path / "risk_rankings.csv" in output_paths
+    assert tmp_path / "risk_top_movers.csv" not in output_paths
+    assert any(
+        "missing prior-period notional delta column (one of: NotionalChange, NotionalChangeFromPriorMonth)"
+        in warning
+        for warning in warnings
+    )
+    assert any(
+        "missing prior-period position delta column (one of: PositionUSDChange, PositionChangeFromPriorMonth)"
+        in warning
+        for warning in warnings
+    )
 
 
 def test_write_change_attribution_outputs_writes_markdown_and_csv(tmp_path: Path) -> None:
