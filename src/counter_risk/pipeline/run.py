@@ -1463,7 +1463,8 @@ def _write_risk_outputs(
     ranking_inputs_available = False
     mover_inputs_available = False
 
-    for variant, parsed_sections in parsed_by_variant.items():
+    for variant in sorted(parsed_by_variant, key=str.casefold):
+        parsed_sections = parsed_by_variant[variant]
         totals_table = parsed_sections.get("totals", [])
         totals_records = _records(totals_table)
         if not totals_records:

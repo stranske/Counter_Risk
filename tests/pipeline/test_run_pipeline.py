@@ -1934,6 +1934,45 @@ def test_rank_proxy_rows_breaks_ties_by_canonical_counterparty_key(
     assert [row["counterparty"] for row in rows] == ["Z Display", "A Display"]
 
 
+def test_write_risk_outputs_writes_rankings_in_deterministic_variant_order(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "trend": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Trend Cpty",
+                        "Notional": 75.0,
+                        "AnnualizedVolatility": 0.2,
+                    }
+                ]
+            )
+        },
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "All Cpty",
+                        "Notional": 100.0,
+                        "AnnualizedVolatility": 0.3,
+                    }
+                ]
+            )
+        },
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert tmp_path / "risk_rankings.csv" in output_paths
+    with (tmp_path / "risk_rankings.csv").open("r", encoding="utf-8", newline="") as stream:
+        ranking_rows = list(csv.DictReader(stream))
+
+    assert [row["variant"] for row in ranking_rows] == ["all_programs", "trend"]
+    assert any("requires PositionUSD and Vol columns" in warning for warning in warnings)
+
+
 def test_write_change_attribution_outputs_writes_markdown_and_csv(tmp_path: Path) -> None:
     warnings: list[str] = []
     parsed_by_variant = {
