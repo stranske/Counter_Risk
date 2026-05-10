@@ -1514,14 +1514,20 @@ def _write_risk_outputs(
                     f"(one of: {', '.join(_NOTIONAL_CHANGE_FIELDS_FOR_MOVER_DELTA)})"
                 )
             else:
-                mover_inputs_available = True
-                mover_rows.extend(
-                    _mover_rows_for_notional_proxy(
-                        variant=variant,
-                        records=totals_records,
-                        change_field=change_field,
-                    )
+                proxy_mover_rows = _mover_rows_for_notional_proxy(
+                    variant=variant,
+                    records=totals_records,
+                    change_field=change_field,
                 )
+                if proxy_mover_rows:
+                    mover_inputs_available = True
+                    mover_rows.extend(proxy_mover_rows)
+                else:
+                    warnings.append(
+                        "risk top movers skipped for "
+                        f"{variant} {_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN}: "
+                        "prior-period notional delta values unavailable or invalid"
+                    )
 
         if has_position_vol:
             ranking_rows.extend(
@@ -1542,14 +1548,20 @@ def _write_risk_outputs(
                     f"(one of: {', '.join(_POSITION_CHANGE_FIELDS_FOR_MOVER_DELTA)})"
                 )
             else:
-                mover_inputs_available = True
-                mover_rows.extend(
-                    _mover_rows_for_position_proxy(
-                        variant=variant,
-                        records=totals_records,
-                        change_field=change_field,
-                    )
+                proxy_mover_rows = _mover_rows_for_position_proxy(
+                    variant=variant,
+                    records=totals_records,
+                    change_field=change_field,
                 )
+                if proxy_mover_rows:
+                    mover_inputs_available = True
+                    mover_rows.extend(proxy_mover_rows)
+                else:
+                    warnings.append(
+                        "risk top movers skipped for "
+                        f"{variant} {_RISK_PROXY_POSITION_VOL_COLUMN}: "
+                        "prior-period position delta values unavailable or invalid"
+                    )
 
     output_paths: list[Path] = []
     if ranking_rows:
@@ -1781,16 +1793,19 @@ def _mover_rows_for_notional_proxy(
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for record in records:
-        notional = _to_float(record.get("Notional"))
-        volatility = _to_float(record.get("AnnualizedVolatility"))
-        notional_delta = _to_float(record.get(change_field))
+        counterparty = str(record.get("counterparty", "")).strip()
+        notional = _coerce_float_or_none(record.get("Notional"))
+        volatility = _coerce_float_or_none(record.get("AnnualizedVolatility"))
+        notional_delta = _coerce_float_or_none(record.get(change_field))
+        if not counterparty or notional is None or volatility is None or notional_delta is None:
+            continue
         current_proxy = notional * volatility
         delta_proxy = notional_delta * volatility
         prior_proxy = current_proxy - delta_proxy
         rows.append(
             {
                 "variant": variant,
-                "counterparty": str(record.get("counterparty", "")),
+                "counterparty": counterparty,
                 "proxy_name": _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN,
                 "current_proxy_value": current_proxy,
                 "prior_proxy_value": prior_proxy,
@@ -1812,16 +1827,19 @@ def _mover_rows_for_position_proxy(
 ) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for record in records:
-        position = _to_float(record.get("PositionUSD"))
-        volatility = _to_float(record.get("Vol"))
-        position_delta = _to_float(record.get(change_field))
+        counterparty = str(record.get("counterparty", "")).strip()
+        position = _coerce_float_or_none(record.get("PositionUSD"))
+        volatility = _coerce_float_or_none(record.get("Vol"))
+        position_delta = _coerce_float_or_none(record.get(change_field))
+        if not counterparty or position is None or volatility is None or position_delta is None:
+            continue
         current_proxy = position * volatility
         delta_proxy = position_delta * volatility
         prior_proxy = current_proxy - delta_proxy
         rows.append(
             {
                 "variant": variant,
-                "counterparty": str(record.get("counterparty", "")),
+                "counterparty": counterparty,
                 "proxy_name": _RISK_PROXY_POSITION_VOL_COLUMN,
                 "current_proxy_value": current_proxy,
                 "prior_proxy_value": prior_proxy,
@@ -1847,9 +1865,12 @@ def _first_available_field(*, columns: set[str], candidates: tuple[str, ...]) ->
 
 def _coerce_float_or_none(value: Any) -> float | None:
     try:
-        return float(value)
+        number = float(value)
     except (TypeError, ValueError):
         return None
+    if not math.isfinite(number):
+        return None
+    return number
 
 
 def _write_csv_rows(*, path: Path, fieldnames: tuple[str, ...], rows: list[dict[str, Any]]) -> None:

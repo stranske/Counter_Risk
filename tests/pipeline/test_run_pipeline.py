@@ -2007,6 +2007,43 @@ def test_write_risk_outputs_warns_when_prior_period_columns_missing(tmp_path: Pa
     )
 
 
+def test_write_risk_outputs_skips_movers_when_prior_period_values_invalid(tmp_path: Path) -> None:
+    warnings: list[str] = []
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "A",
+                        "Notional": 120.0,
+                        "AnnualizedVolatility": 0.25,
+                        "NotionalChange": "not-a-number",
+                        "PositionUSD": 400.0,
+                        "Vol": 0.4,
+                        "PositionUSDChange": None,
+                    }
+                ]
+            )
+        }
+    }
+
+    output_paths = run_module._write_risk_outputs(
+        run_dir=tmp_path, parsed_by_variant=parsed_by_variant, warnings=warnings
+    )
+
+    assert tmp_path / "risk_rankings.csv" in output_paths
+    assert tmp_path / "risk_top_movers.csv" not in output_paths
+    assert any(
+        "prior-period notional delta values unavailable or invalid" in warning
+        for warning in warnings
+    )
+    assert any(
+        "prior-period position delta values unavailable or invalid" in warning
+        for warning in warnings
+    )
+    assert any("risk_top_movers.csv skipped" in warning for warning in warnings)
+
+
 def test_write_change_attribution_outputs_writes_markdown_and_csv(tmp_path: Path) -> None:
     warnings: list[str] = []
     parsed_by_variant = {
