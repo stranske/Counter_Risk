@@ -197,6 +197,10 @@ _REQUIRED_INPUT_FIELDS: tuple[str, ...] = (
 )
 _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN = "risk_proxy_notional_annualized_volatility"
 _RISK_PROXY_POSITION_VOL_COLUMN = "risk_proxy_position_usd_vol"
+_RISK_PROXY_FORMULAS: dict[str, str] = {
+    _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN: "Notional * AnnualizedVolatility",
+    _RISK_PROXY_POSITION_VOL_COLUMN: "PositionUSD * Vol",
+}
 _NOTIONAL_CHANGE_FIELDS_FOR_MOVER_DELTA: tuple[str, ...] = (
     "NotionalChange",
     "NotionalChangeFromPriorMonth",
@@ -1572,6 +1576,7 @@ def _write_risk_outputs(
                 "variant",
                 "counterparty",
                 "proxy_name",
+                "formula",
                 "proxy_value",
                 "rank",
             ),
@@ -1592,6 +1597,7 @@ def _write_risk_outputs(
                 "variant",
                 "counterparty",
                 "proxy_name",
+                "formula",
                 "current_proxy_value",
                 "prior_proxy_value",
                 "delta",
@@ -1775,6 +1781,7 @@ def _rank_proxy_rows(
                 "variant": variant,
                 "counterparty": str(record.get("counterparty", "")),
                 "proxy_name": proxy_column,
+                "formula": _RISK_PROXY_FORMULAS.get(proxy_column, ""),
                 "proxy_value": _to_float(record.get(proxy_column)),
                 "rank": index,
             }
@@ -1807,6 +1814,7 @@ def _mover_rows_for_notional_proxy(
                 "variant": variant,
                 "counterparty": counterparty,
                 "proxy_name": _RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN,
+                "formula": _RISK_PROXY_FORMULAS[_RISK_PROXY_NOTIONAL_VOLATILITY_COLUMN],
                 "current_proxy_value": current_proxy,
                 "prior_proxy_value": prior_proxy,
                 "delta": delta_proxy,
@@ -1841,6 +1849,7 @@ def _mover_rows_for_position_proxy(
                 "variant": variant,
                 "counterparty": counterparty,
                 "proxy_name": _RISK_PROXY_POSITION_VOL_COLUMN,
+                "formula": _RISK_PROXY_FORMULAS[_RISK_PROXY_POSITION_VOL_COLUMN],
                 "current_proxy_value": current_proxy,
                 "prior_proxy_value": prior_proxy,
                 "delta": delta_proxy,

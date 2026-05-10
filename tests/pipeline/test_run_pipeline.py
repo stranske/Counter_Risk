@@ -1796,7 +1796,16 @@ def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> No
         for row in ranking_rows
     )
     assert any(
+        row["proxy_name"] == "risk_proxy_notional_annualized_volatility"
+        and row["formula"] == "Notional * AnnualizedVolatility"
+        for row in ranking_rows
+    )
+    assert any(
         row["proxy_name"] == "risk_proxy_position_usd_vol" and row["rank"] == "1"
+        for row in ranking_rows
+    )
+    assert any(
+        row["proxy_name"] == "risk_proxy_position_usd_vol" and row["formula"] == "PositionUSD * Vol"
         for row in ranking_rows
     )
 
@@ -1805,6 +1814,10 @@ def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> No
     assert {row["proxy_name"] for row in mover_rows} == {
         "risk_proxy_notional_annualized_volatility",
         "risk_proxy_position_usd_vol",
+    }
+    assert {row["formula"] for row in mover_rows} == {
+        "Notional * AnnualizedVolatility",
+        "PositionUSD * Vol",
     }
     assert "risk_rankings.csv skipped" not in "\n".join(warnings)
 
@@ -2203,6 +2216,12 @@ def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
 
     assert (run_dir / "risk_rankings.csv").exists()
     assert (run_dir / "risk_top_movers.csv").exists()
+    with (run_dir / "risk_rankings.csv").open("r", encoding="utf-8", newline="") as stream:
+        ranking_rows = list(csv.DictReader(stream))
+    assert {row["formula"] for row in ranking_rows} == {
+        "Notional * AnnualizedVolatility",
+        "PositionUSD * Vol",
+    }
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     notional_summary = manifest["risk_proxy_summary"]["by_variant"]["all_programs"][
         "risk_proxy_notional_annualized_volatility"
