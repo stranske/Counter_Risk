@@ -2,7 +2,7 @@
 #    uv pip compile pyproject.toml --extra dev --universal --output-file requirements-dev.lock
 annotated-types==0.7.0
     # via pydantic
-black==26.1.0
+black==24.10.0
     # via my-project (pyproject.toml)
 click==8.3.1
     # via black
