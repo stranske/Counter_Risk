@@ -97,7 +97,7 @@ packaging==25.0
     #   langchain-core
     #   langsmith
     #   pytest
-pandas==3.0.2
+pandas==2.2.3
     # via my-project (pyproject.toml)
 pathspec==1.0.4
     # via
