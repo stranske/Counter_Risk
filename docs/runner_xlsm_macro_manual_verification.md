@@ -26,17 +26,27 @@ python -m counter_risk.build.xlsm \
    - `Run Ex Trend`
    - `Run Trend`
    - `Open Output Folder`
+   - `Open Summary`
+   - `Open Manifest`
+   - `Open PPT Folder`
 4. Open **Developer > Macros** and verify these macro names exist:
    - `RunAll_Click`
    - `RunExTrend_Click`
    - `RunTrend_Click`
    - `OpenOutputFolder_Click`
+   - `OpenSummary_Click`
+   - `OpenManifest_Click`
+   - `OpenPPTFolder_Click`
 5. Select a valid month in cell `B3` on the `Runner` sheet.
 6. Trigger each run button once (`Run All`, `Run Ex Trend`, `Run Trend`) and verify:
    - Status cell `B7` transitions through launch states and ends at `Complete`.
    - Result cell `B8` reports `Success`.
    - A timestamped folder is created under `runs/`.
 7. Trigger `Open Output Folder` and verify the run folder opens in Windows Explorer.
+8. Trigger each of `Open Summary`, `Open Manifest`, and `Open PPT Folder` after a successful run and verify the target opens in Windows Explorer (or the associated viewer). If the target file or folder is missing, the macro writes an error message to result cell `B8` (`RESULT_CELL`) instead of failing silently:
+   - `Open Summary` (`OpenSummary_Click`, spec `MS-OPEN-SUMMARY`) opens `DATA_QUALITY_SUMMARY.txt` from the resolved run folder.
+   - `Open Manifest` (`OpenManifest_Click`, spec `MS-OPEN-MANIFEST`) opens `manifest.json` from the resolved run folder.
+   - `Open PPT Folder` (`OpenPPTFolder_Click`, spec `MS-OPEN-PPT`) opens the run output folder where PPT artifacts are written.
 
 ## Version Bump Regression Check
 
