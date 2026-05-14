@@ -147,7 +147,10 @@ Decision rule:
 
 - Standard output root: shared drive run-output directory managed by operations.
 - Per-run folder name format:
-  - `CounterRisk_<as_of_date:YYYY-MM-DD>_<variant>_<run_timestamp:YYYYMMDD_HHMMSS>`
+  - Standard runs: `<as_of_date>` (example `runs/2026-01-31`).
+  - With `run_date` configured in YAML: `<as_of_date>__run_<run_date>` (example `runs/2026-01-31__run_2026-02-05`).
+  - Same-date repeat runs append a numeric suffix to the selected pattern (example `runs/2026-01-31_1`).
+- CLI override: passing `--output-dir` skips automatic naming and uses the caller-supplied directory, which must be empty or newly created.
 - Required contents:
   - Updated historical workbooks
   - Updated monthly PPT outputs in the run folder
@@ -155,7 +158,7 @@ Decision rule:
   - `DATA_QUALITY_SUMMARY.txt`
 
 Example:
-- `CounterRisk_2026-01-31_AllPrograms_20260205_091530`
+- `runs/2026-01-31`
 
 ## Non-Repo Update Delivery Mechanism
 
