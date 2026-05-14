@@ -79,7 +79,7 @@ librt==0.11.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 lxml==6.0.2
     # via python-pptx
-mypy==1.19.1
+mypy==2.1.0
     # via my-project (pyproject.toml)
 mypy-extensions==1.1.0
     # via
