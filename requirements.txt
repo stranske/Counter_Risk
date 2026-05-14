@@ -4,8 +4,8 @@ python-pptx==1.0.2
 openpyxl>=3.1,<4
 langchain-openai>=1.0.1,<2
 langchain-anthropic>=1.4.2,<2
-pytest==9.0.2
-pytest-cov==7.0.0
+pytest==9.0.3
+pytest-cov==7.1.0
 pandas>=2.3,<4
 pyinstaller>=6.20.0,<7
 setuptools>=61.0
