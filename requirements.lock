@@ -127,7 +127,7 @@ pydantic-core==2.46.3
     # via pydantic
 pygments==2.19.2
     # via pytest
-pytest==9.0.3
+pytest==8.4.2
     # via
     #   my-project (pyproject.toml)
     #   pytest-cov
