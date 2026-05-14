@@ -25,7 +25,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   click
     #   pytest
     #   tqdm
-coverage==7.13.5
+coverage==7.14.0
     # via pytest-cov
 distro==1.9.0
     # via
@@ -77,7 +77,7 @@ librt==0.8.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 lxml==6.0.2
     # via python-pptx
-mypy==1.20.2
+mypy==2.1.0
     # via my-project (pyproject.toml)
 mypy-extensions==1.1.0
     # via
@@ -153,7 +153,7 @@ requests==2.32.5
     #   tiktoken
 requests-toolbelt==1.0.0
     # via langsmith
-ruff==0.15.12
+ruff==0.15.13
     # via my-project (pyproject.toml)
 six==1.17.0
     # via python-dateutil
