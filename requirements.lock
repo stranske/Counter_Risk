@@ -9,6 +9,8 @@ anyio==4.12.1
     #   anthropic
     #   httpx
     #   openai
+ast-serialize==0.3.0
+    # via mypy
 black==26.3.1
     # via my-project (pyproject.toml)
 certifi==2026.2.25
@@ -73,11 +75,11 @@ langchain-protocol==0.0.14
     # via langchain-core
 langsmith==0.7.9
     # via langchain-core
-librt==0.8.0 ; platform_python_implementation != 'PyPy'
+librt==0.11.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 lxml==6.0.2
     # via python-pptx
-mypy==1.20.2
+mypy==2.1.0
     # via my-project (pyproject.toml)
 mypy-extensions==1.1.0
     # via
