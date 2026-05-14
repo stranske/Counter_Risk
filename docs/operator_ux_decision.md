@@ -146,10 +146,10 @@ Decision rule:
 ## Output Folder Convention and Naming
 
 - Standard output root: shared drive run-output directory managed by operations.
-- Automatic per-run folder naming:
-  - Standard runs use the as-of date directly, for example `runs/2026-01-31`.
-  - Runs with `run_date` configured in YAML use `<as_of_date>__run_<run_date>`, for example `runs/2026-01-31__run_2026-02-05`.
-  - Same-date repeat runs append a numeric suffix to the selected pattern, for example `runs/2026-01-31_1`.
+- Per-run folder name format:
+  - Standard runs: `<as_of_date>` (example `runs/2026-01-31`).
+  - With `run_date` configured in YAML: `<as_of_date>__run_<run_date>` (example `runs/2026-01-31__run_2026-02-05`).
+  - Same-date repeat runs append a numeric suffix to the selected pattern (example `runs/2026-01-31_1`).
 - CLI override: passing `--output-dir` skips automatic naming and uses the caller-supplied directory, which must be empty or newly created.
 - Required contents:
   - Updated historical workbooks
