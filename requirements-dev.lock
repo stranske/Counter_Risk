@@ -2,8 +2,6 @@
 #    uv pip compile pyproject.toml --extra dev --universal --output-file requirements-dev.lock
 annotated-types==0.7.0
     # via pydantic
-ast-serialize==0.3.0
-    # via mypy
 black==26.3.1
     # via my-project (pyproject.toml)
 click==8.3.1
@@ -20,11 +18,11 @@ execnet==2.1.2
     # via pytest-xdist
 iniconfig==2.3.0
     # via pytest
-librt==0.11.0 ; platform_python_implementation != 'PyPy'
+librt==0.8.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 lxml==6.0.2
     # via python-pptx
-mypy==2.1.0
+mypy==1.20.2
     # via my-project (pyproject.toml)
 mypy-extensions==1.1.0
     # via
