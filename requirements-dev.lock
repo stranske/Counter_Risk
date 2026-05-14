@@ -2,7 +2,9 @@
 #    uv pip compile pyproject.toml --extra dev --universal --output-file requirements-dev.lock
 annotated-types==0.7.0
     # via pydantic
-black==26.1.0
+ast-serialize==0.3.0
+    # via mypy
+black==26.3.1
     # via my-project (pyproject.toml)
 click==8.3.1
     # via black
@@ -10,7 +12,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     # via
     #   click
     #   pytest
-coverage==7.13.4
+coverage==7.14.0
     # via pytest-cov
 et-xmlfile==2.0.0
     # via openpyxl
@@ -18,11 +20,11 @@ execnet==2.1.2
     # via pytest-xdist
 iniconfig==2.3.0
     # via pytest
-librt==0.8.0 ; platform_python_implementation != 'PyPy'
+librt==0.11.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 lxml==6.0.2
     # via python-pptx
-mypy==1.19.1
+mypy==2.1.0
     # via my-project (pyproject.toml)
 mypy-extensions==1.1.0
     # via
@@ -56,12 +58,12 @@ pydantic-core==2.18.4
     # via pydantic
 pygments==2.19.2
     # via pytest
-pytest==9.0.2
+pytest==9.0.3
     # via
     #   my-project (pyproject.toml)
     #   pytest-cov
     #   pytest-xdist
-pytest-cov==7.0.0
+pytest-cov==7.1.0
     # via my-project (pyproject.toml)
 pytest-xdist==3.8.0
     # via my-project (pyproject.toml)
@@ -73,13 +75,13 @@ pytokens==0.4.1
     # via black
 pytz==2025.2
     # via pandas
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via my-project (pyproject.toml)
-ruff==0.15.1
+ruff==0.15.13
     # via my-project (pyproject.toml)
 six==1.17.0
     # via python-dateutil
-tomlkit==0.13.3
+tomlkit==0.14.0
     # via my-project (pyproject.toml)
 typing-extensions==4.15.0
     # via
