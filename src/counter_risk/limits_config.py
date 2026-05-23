@@ -18,10 +18,10 @@ def _construct_mapping_no_duplicates(
 ) -> dict[Any, Any]:
     mapping: dict[Any, Any] = {}
     for key_node, value_node in node.value:
-        key = cast(Any, loader.construct_object(key_node, deep=deep))  # type: ignore[no-untyped-call]
+        key = cast(Any, loader.construct_object(key_node, deep=deep))
         if key in mapping:
             raise ValueError(f"duplicate key '{key}'")
-        mapping[key] = cast(Any, loader.construct_object(value_node, deep=deep))  # type: ignore[no-untyped-call]
+        mapping[key] = cast(Any, loader.construct_object(value_node, deep=deep))
     return mapping
 
 
