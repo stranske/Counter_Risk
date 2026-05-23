@@ -8,5 +8,5 @@ pytest==9.0.3
 pytest-cov==7.1.0
 pandas>=2.3,<4
 pyinstaller>=6.20.0,<7
-setuptools>=61.0
+setuptools>=82.0.1
 wheel
