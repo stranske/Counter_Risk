@@ -197,9 +197,9 @@ def build_fleet_records(
 def write_fleet_records(path: Path, records: Iterable[Mapping[str, Any]]) -> Path:
     """Write records as deterministic NDJSON and return the artifact path."""
 
-    path.parent.mkdir(parents=True, exist_ok=True)
     materialized = [dict(record) for record in records]
     validate_fleet_records(materialized)
+    path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         json.dumps(dict(record), sort_keys=True, separators=(",", ":")) for record in materialized
     ]
@@ -255,13 +255,24 @@ def validate_fleet_records(records: Iterable[Mapping[str, Any]]) -> None:
         if missing:
             raise ValueError(f"fleet record {index} missing top-level fields: {', '.join(missing)}")
         if record["schema_version"] != SCHEMA_VERSION:
-            raise ValueError(f"fleet record {index} has invalid schema_version")
+            raise ValueError(
+                f"fleet record {index} has invalid schema_version: "
+                f"expected {SCHEMA_VERSION!r}, got {record['schema_version']!r}"
+            )
         if record["repo"] != REPO:
-            raise ValueError(f"fleet record {index} has invalid repo")
+            raise ValueError(
+                f"fleet record {index} has invalid repo: expected {REPO!r}, got {record['repo']!r}"
+            )
         if record["surface"] != SURFACE:
-            raise ValueError(f"fleet record {index} has invalid surface")
+            raise ValueError(
+                f"fleet record {index} has invalid surface: "
+                f"expected {SURFACE!r}, got {record['surface']!r}"
+            )
         if record["status"] not in ALLOWED_STATUS:
-            raise ValueError(f"fleet record {index} has invalid status")
+            raise ValueError(
+                f"fleet record {index} has invalid status: "
+                f"expected one of {sorted(ALLOWED_STATUS)!r}, got {record['status']!r}"
+            )
         domain = record["domain"]
         if not isinstance(domain, Mapping):
             raise ValueError(f"fleet record {index} domain must be an object")

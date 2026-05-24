@@ -164,6 +164,45 @@ def test_write_fleet_records_emits_deterministic_ndjson(tmp_path: Path) -> None:
     assert json.loads(lines[0]) == records[0]
 
 
+def test_write_fleet_records_rejects_invalid_records_without_creating_directory(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "artifacts" / langsmith_fleet.ARTIFACT_NAME
+    records = [
+        {
+            "schema_version": langsmith_fleet.SCHEMA_VERSION,
+            "repo": "stranske/Counter_Risk",
+            "surface": "risk-reporting",
+            "operation": "data-quality",
+            "run_id": "run-1",
+            "as_of_date": "2025-12-31",
+            "scenario": "monthly-risk-report",
+            "status": "unsupported",
+            "github_issue": "stranske/Counter_Risk#610",
+            "recorded_at": "2026-05-24T00:00:00Z",
+            "error_category": "none",
+            "domain": {
+                "as_of_date": "2025-12-31",
+                "scenario": "monthly-risk-report",
+                "data_quality_status": "success",
+                "risk_proxy_status": "success",
+                "concentration_metric_available": False,
+                "concentration_metric_count": 0,
+                "limit_breach_count": 0,
+                "limit_max_severity": "none",
+                "limit_scope": "all-configured-limits",
+                "report_artifact_count": 0,
+                "report_artifacts": [],
+            },
+        }
+    ]
+
+    with pytest.raises(ValueError, match="expected one of"):
+        langsmith_fleet.write_fleet_records(path, records)
+
+    assert not path.parent.exists()
+
+
 def test_validate_fleet_records_rejects_sensitive_payload_keys() -> None:
     records = langsmith_fleet.build_fleet_records(
         context=langsmith_fleet.FleetRunContext(
