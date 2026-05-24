@@ -198,6 +198,13 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
         concentration_metrics_records=[{"rank": 1}],
         risk_proxy_summary={"status": "available"},
         limit_breach_summary={"breach_count": 1, "max_severity": "fail"},
+        workflow_trace_events=[
+            {"stage": "data-quality-summary", "status": "success", "latency_ms": 12},
+            {"stage": "concentration-metrics", "status": "success", "latency_ms": 25},
+            {"stage": "risk-proxy-outputs", "status": "success", "latency_ms": 14},
+            {"stage": "limit-monitoring", "status": "success", "latency_ms": 8},
+            {"stage": "report-generation", "status": "success", "latency_ms": 30},
+        ],
     )
 
     records = [
@@ -224,6 +231,14 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
     assert all(
         record["domain"]["report_artifacts"] == ["artifact:manifest.json"] for record in records
     )
+    assert all(len(record["domain"]["workflow_trace_events"]) == 5 for record in records)
+    assert {event["stage"] for event in records[0]["domain"]["workflow_trace_events"]} == {
+        "data-quality-summary",
+        "concentration-metrics",
+        "risk-proxy-outputs",
+        "limit-monitoring",
+        "report-generation",
+    }
     assert all(record["error_category"] == "none" for record in records)
     limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
     assert limit_record["domain"]["limit_max_severity"] == "fail"

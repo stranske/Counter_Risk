@@ -44,6 +44,10 @@ def test_build_fleet_records_use_counter_risk_project_and_no_secret_fallback(
         limit_breach_count=2,
         limit_max_severity="warning",
         report_artifacts=["artifact:manifest.json"],
+        workflow_trace_events=[
+            {"stage": "data-quality-summary", "status": "success", "latency_ms": 10},
+            {"stage": "report-generation", "status": "success", "latency_ms": 20},
+        ],
         artifact_ref="artifact:langsmith-fleet.ndjson",
     )
 
@@ -71,6 +75,11 @@ def test_build_fleet_records_use_counter_risk_project_and_no_secret_fallback(
     assert all(record["domain"]["limit_max_severity"] == "warning" for record in records)
     assert all(
         record["domain"]["report_artifacts"] == ["artifact:manifest.json"] for record in records
+    )
+    assert all(len(record["domain"]["workflow_trace_events"]) == 2 for record in records)
+    assert all(
+        record["domain"]["workflow_trace_events"][0]["stage"] == "data-quality-summary"
+        for record in records
     )
     assert all("raw" not in json.dumps(record).lower() for record in records)
     langsmith_fleet.validate_fleet_records(records)

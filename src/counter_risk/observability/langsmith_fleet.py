@@ -121,6 +121,7 @@ def build_fleet_records(
     limit_breach_count: int,
     limit_max_severity: str | None = None,
     report_artifacts: Iterable[str] = (),
+    workflow_trace_events: Iterable[Mapping[str, Any]] = (),
     artifact_ref: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return Workflows-compatible records for the major risk/report stages."""
@@ -131,6 +132,7 @@ def build_fleet_records(
     report_refs = tuple(sorted(str(item) for item in report_artifacts if str(item).strip()))
     resolved_limit_max_severity = limit_max_severity or "none"
     concentration_metric_count = max(0, int(concentration_metric_count))
+    trace_events = _normalize_workflow_trace_events(workflow_trace_events)
     shared_domain = {
         "as_of_date": context.as_of_date,
         "scenario": context.scenario,
@@ -143,6 +145,7 @@ def build_fleet_records(
         "limit_scope": "all-configured-limits",
         "report_artifact_count": len(report_refs),
         "report_artifacts": list(report_refs),
+        "workflow_trace_events": trace_events,
     }
     records = [
         _record(
@@ -201,6 +204,30 @@ def build_fleet_records(
         ),
     ]
     return records
+
+
+def _normalize_workflow_trace_events(
+    events: Iterable[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    for raw in events:
+        stage = str(raw.get("stage") or "").strip()
+        if not stage:
+            continue
+        status = str(raw.get("status") or "").strip() or "unknown"
+        latency_raw = raw.get("latency_ms")
+        try:
+            latency_ms = max(0, int(latency_raw)) if latency_raw is not None else 0
+        except (TypeError, ValueError):
+            latency_ms = 0
+        normalized.append(
+            {
+                "stage": stage,
+                "status": status,
+                "latency_ms": latency_ms,
+            }
+        )
+    return normalized
 
 
 def write_fleet_records(path: Path, records: Iterable[Mapping[str, Any]]) -> Path:
