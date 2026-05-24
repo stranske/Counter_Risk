@@ -93,6 +93,7 @@ def test_read_version_raises_for_missing_source(tmp_path: Path) -> None:
 def test_assemble_release_creates_versioned_bundle_with_executable(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    expected_version = "9.9.9"
     repo_root = tmp_path / "repo"
     _write_fake_repo(repo_root)
     output_dir = tmp_path / "release"
@@ -106,10 +107,10 @@ def test_assemble_release_creates_versioned_bundle_with_executable(
 
     monkeypatch.setattr(release, "_run_pyinstaller", _fake_run_pyinstaller)
 
-    bundle_dir = release.assemble_release("9.9.9", output_dir)
+    bundle_dir = release.assemble_release(expected_version, output_dir)
 
-    assert bundle_dir == output_dir / "9.9.9"
-    assert (bundle_dir / "VERSION").read_text(encoding="utf-8").strip() == "9.9.9"
+    assert bundle_dir == output_dir / expected_version
+    assert (bundle_dir / "VERSION").read_text(encoding="utf-8").strip() == expected_version
     assert (bundle_dir / "config" / "fixture_replay.yml").is_file()
     assert list((bundle_dir / "templates").glob("*.pptx"))
     assert list((bundle_dir / "templates").glob("*.xlsm"))
@@ -123,8 +124,8 @@ def test_assemble_release_creates_versioned_bundle_with_executable(
     assert "How to run" in (bundle_dir / "README_HOW_TO_RUN.md").read_text(encoding="utf-8")
 
     manifest = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "9.9.9"
-    assert manifest["release_name"] == "9.9.9"
+    assert manifest["version"] == expected_version
+    assert manifest["release_name"] == expected_version
     assert manifest["artifacts"]["executable"] == ["bin/counter-risk"]
 
 
@@ -190,11 +191,12 @@ def test_main_accepts_version_and_output_dir(
 def test_run_release_uses_version_file_when_override_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    expected_version = "8.8.8"
     repo_root = tmp_path / "repo"
     _write_fake_repo(repo_root)
     output_dir = tmp_path / "release"
     version_file = tmp_path / "VERSION"
-    version_file.write_text("8.8.8\n", encoding="utf-8")
+    version_file.write_text(f"{expected_version}\n", encoding="utf-8")
 
     monkeypatch.setattr(release, "repository_root", lambda: repo_root)
     monkeypatch.setattr(
@@ -207,10 +209,10 @@ def test_run_release_uses_version_file_when_override_missing(
 
     bundle_dir = release.run_release(version_file=version_file, output_dir=output_dir)
 
-    assert bundle_dir == output_dir / "8.8.8"
-    assert (bundle_dir / "VERSION").read_text(encoding="utf-8").strip() == "8.8.8"
+    assert bundle_dir == output_dir / expected_version
+    assert (bundle_dir / "VERSION").read_text(encoding="utf-8").strip() == expected_version
     manifest = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["version"] == "8.8.8"
+    assert manifest["version"] == expected_version
 
 
 def test_assemble_release_fails_fast_when_release_spec_is_missing(
