@@ -68,7 +68,7 @@ def test_build_langsmith_metadata_sets_tracing_env_defaults(
     payload = runtime.build_langsmith_metadata(operation="counter-risk-chat")
     metadata = cast(dict[str, Any], payload["metadata"])
 
-    assert metadata["langsmith_project"] == runtime.DEFAULT_LANGCHAIN_PROJECT
+    assert metadata["langsmith_project"] == "counter-risk"
     assert metadata["operation"] == "counter-risk-chat"
     assert os.environ[runtime.ENV_LANGCHAIN_TRACING_V2] == "true"
     assert os.environ[runtime.ENV_LANGCHAIN_API_KEY] == "test-key"

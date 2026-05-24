@@ -1,5 +1,29 @@
 # Counter_Risk Workloop State
 
+## 2026-05-24T03:24:30Z - opener lane issue #610 PR materializing
+
+- Automation: `pd-workloop-resume` (codex opener lane).
+- Source repo: `stranske/Counter_Risk`.
+- Source issue: `#610` (`Use repo-specific LangSmith project and trace risk workflows`).
+- Branch: `codex/issue-610-langsmith-risk-workflows` from `origin/main` (`2fa8298`).
+- Selection:
+  - ACTION A succeeded from the neutral Code workspace.
+  - Required priority discovery found only Workflows `#2143`, a credential-expiry ops alert skipped by opener policy; `priority:normal`, `priority:low`, and `repo-review-approved` returned no open implementation issues.
+  - Approved queue files remain stale/empty for the `2026-05-23` review cycle, so live supported-repo issue discovery was used.
+  - Cap-health after infra repair reported one opener-owned PR, Workflows `#2151`, draining with active Gate evidence; raw cap was below 5 and no non-drainable blocker existed.
+  - The supported-repo open issue sweep found the LangSmith child issues created from the May review; `Counter_Risk#610` was selected from the oldest repo-specific implementation group.
+- Implementation:
+  - Added `counter_risk.observability.langsmith_fleet` to build and write Workflows-compatible `langsmith-fleet/v1` NDJSON records for `data-quality`, `risk-proxy`, `limit-monitoring`, and `report-generation`.
+  - Wired monthly pipeline runs to emit `langsmith-fleet.ndjson` in the run folder and include it in manifest output paths.
+  - Defaulted LangSmith project selection to the repo-specific `counter-risk` project when `LANGSMITH_API_KEY` is present, while preserving no-secret pipeline behavior.
+  - Added docs for the fleet artifact and linked them from README.
+- Validation passed:
+  - `python -m pytest tests/observability/test_langsmith_fleet.py tests/test_langchain_runtime.py tests/pipeline/test_run_pipeline.py -q` -> 122 passed in 768.05s.
+  - `python -m pytest tests/observability/test_langsmith_fleet.py tests/test_langchain_runtime.py tests/pipeline/test_run_pipeline.py::test_write_langsmith_fleet_artifact_adds_dashboard_records -q` -> 7 passed.
+  - `python -m ruff check src/counter_risk/observability/langsmith_fleet.py src/counter_risk/chat/providers/langchain_runtime.py src/counter_risk/pipeline/run.py tests/observability/test_langsmith_fleet.py tests/test_langchain_runtime.py tests/pipeline/test_run_pipeline.py` -> pass.
+  - `git diff --check` -> pass.
+- Next action: commit, push, open a ready-for-review PR with `agent:codex`, `agents:keepalive`, and `autofix`, then emit `pr_opened` relay so keepalive owns CI/review follow-up.
+
 ## 2026-05-09T05:09:01Z - opener lane issue #552 PR materializing
 
 - Automation: `pd-workloop-resume` (codex opener lane).

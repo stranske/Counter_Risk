@@ -15,6 +15,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final, cast
 
+from counter_risk.observability.langsmith_fleet import (
+    DEFAULT_PROJECT as DEFAULT_COUNTER_RISK_LANGSMITH_PROJECT,
+)
 from counter_risk.runtime_paths import resolve_runtime_path
 
 ENV_PROVIDER = "LANGCHAIN_PROVIDER"
@@ -37,7 +40,7 @@ GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com"
 DEFAULT_MODEL = "codex-mini-latest"
 
 DEFAULT_SLOT_CONFIG_PATH = "config/llm_slots.json"
-DEFAULT_LANGCHAIN_PROJECT = "workflows-agents"
+DEFAULT_LANGCHAIN_PROJECT = DEFAULT_COUNTER_RISK_LANGSMITH_PROJECT
 
 LANGCHAIN_OPENAI_DIST = "langchain-openai"
 LANGCHAIN_ANTHROPIC_DIST = "langchain-anthropic"

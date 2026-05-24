@@ -184,6 +184,41 @@ def _minimal_workflow_config(
     )
 
 
+def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -> None:
+    run_dir = tmp_path / "2025-12-31"
+    run_dir.mkdir()
+    manifest_path = run_dir / "manifest.json"
+    manifest_path.write_text("{}", encoding="utf-8")
+
+    artifact_path = run_module._write_langsmith_fleet_artifact(
+        run_dir=run_dir,
+        as_of_date=date(2025, 12, 31),
+        output_paths=[manifest_path],
+        warnings=[],
+        concentration_metrics_records=[{"rank": 1}],
+        risk_proxy_summary={"status": "available"},
+        limit_breach_summary={"breach_count": 1, "max_severity": "fail"},
+    )
+
+    records = [
+        json.loads(line)
+        for line in artifact_path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+    assert artifact_path == run_dir / "langsmith-fleet.ndjson"
+    assert len(records) == 4
+    assert {record["operation"] for record in records} == {
+        "data-quality",
+        "risk-proxy",
+        "limit-monitoring",
+        "report-generation",
+    }
+    assert all(record["domain"]["as_of_date"] == "2025-12-31" for record in records)
+    assert all(record["domain"]["scenario"] == "monthly-risk-report" for record in records)
+    assert all(record["domain"]["limit_breach_count"] == 1 for record in records)
+    assert records[-1]["domain"]["report_artifacts"] == ["artifact:manifest.json"]
+
+
 def test_apply_daily_holdings_repo_cash_updates_all_programs_totals(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
