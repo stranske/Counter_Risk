@@ -595,6 +595,8 @@ def _write_langsmith_fleet_artifact(
         trace_id=os.environ.get("LANGSMITH_TRACE_ID"),
         trace_url=os.environ.get("LANGSMITH_TRACE_URL"),
         github_pr=os.environ.get("PR_NUMBER"),
+        latency_ms=_parse_latency_ms_from_env(),
+        error_category=_resolve_error_category_for_fleet(),
     )
     safe_output_refs = [
         f"artifact:{path.relative_to(run_dir).as_posix()}"
@@ -614,6 +616,34 @@ def _write_langsmith_fleet_artifact(
         artifact_ref=f"artifact:{LANGSMITH_FLEET_ARTIFACT_NAME}",
     )
     return write_fleet_records(run_dir / LANGSMITH_FLEET_ARTIFACT_NAME, records)
+
+
+def _parse_latency_ms_from_env() -> int | None:
+    for key in ("LANGSMITH_TRACE_LATENCY_MS", "LANGSMITH_LATENCY_MS", "TRACE_LATENCY_MS"):
+        raw = os.environ.get(key)
+        if raw is None:
+            continue
+        value = raw.strip()
+        if not value:
+            continue
+        try:
+            parsed = int(value)
+        except ValueError:
+            continue
+        if parsed >= 0:
+            return parsed
+    return None
+
+
+def _resolve_error_category_for_fleet() -> str:
+    for key in ("LANGSMITH_ERROR_CATEGORY", "PIPELINE_ERROR_CATEGORY"):
+        raw = os.environ.get(key)
+        if raw is None:
+            continue
+        value = raw.strip()
+        if value:
+            return value
+    return "none"
 
 
 def _limit_summary_max_severity(

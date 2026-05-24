@@ -75,3 +75,19 @@ def test_build_langsmith_metadata_sets_tracing_env_defaults(
     assert os.environ[runtime.ENV_LANGCHAIN_API_KEY] == "test-key"
     assert os.environ[runtime.ENV_LANGCHAIN_PROJECT] == runtime.DEFAULT_LANGCHAIN_PROJECT
     assert os.environ[runtime.ENV_LANGSMITH_PROJECT] == runtime.DEFAULT_LANGCHAIN_PROJECT
+
+
+def test_build_langsmith_metadata_uses_repo_project_override(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(runtime.ENV_LANGSMITH_KEY, "test-key")
+    monkeypatch.setenv("COUNTER_RISK_LANGSMITH_PROJECT", "counter-risk-prod")
+    monkeypatch.delenv(runtime.ENV_LANGCHAIN_PROJECT, raising=False)
+    monkeypatch.delenv(runtime.ENV_LANGSMITH_PROJECT, raising=False)
+
+    payload = runtime.build_langsmith_metadata(operation="counter-risk-chat")
+    metadata = cast(dict[str, Any], payload["metadata"])
+
+    assert metadata["langsmith_project"] == "counter-risk-prod"
+    assert os.environ[runtime.ENV_LANGCHAIN_PROJECT] == "counter-risk-prod"
+    assert os.environ[runtime.ENV_LANGSMITH_PROJECT] == "counter-risk-prod"
