@@ -214,6 +214,8 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
     assert all(record["domain"]["as_of_date"] == "2025-12-31" for record in records)
     assert all(record["domain"]["scenario"] == "monthly-risk-report" for record in records)
     assert all(record["domain"]["limit_breach_count"] == 1 for record in records)
+    assert all(record["domain"]["limit_scope"] == "all-configured-limits" for record in records)
+    assert all(record["error_category"] == "none" for record in records)
     limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
     assert limit_record["domain"]["limit_max_severity"] == "fail"
     assert records[-1]["domain"]["report_artifacts"] == ["artifact:manifest.json"]

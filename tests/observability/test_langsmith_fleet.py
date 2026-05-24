@@ -42,9 +42,12 @@ def test_build_fleet_records_use_counter_risk_project_and_no_secret_fallback(
     assert all(record["repo"] == "stranske/Counter_Risk" for record in records)
     assert all(record["surface"] == "risk-reporting" for record in records)
     assert all(record["github_issue"] == "stranske/Counter_Risk#610" for record in records)
+    assert all(record["error_category"] == "none" for record in records)
     assert all(record["domain"]["as_of_date"] == "2025-12-31" for record in records)
     assert all(record["domain"]["scenario"] == "monthly-risk-report" for record in records)
+    assert all(record["domain"]["limit_scope"] == "all-configured-limits" for record in records)
     assert all("raw" not in json.dumps(record).lower() for record in records)
+    langsmith_fleet.validate_fleet_records(records)
 
 
 def test_build_fleet_records_enable_langsmith_defaults_when_key_exists(
@@ -63,6 +66,8 @@ def test_build_fleet_records_enable_langsmith_defaults_when_key_exists(
             scenario="monthly-risk-report",
             trace_id="trace-123",
             trace_url="https://smith.langchain.com/r/trace-123",
+            latency_ms=1234,
+            error_category="none",
         ),
         data_quality_status="success",
         risk_proxy_status="success",
@@ -73,6 +78,7 @@ def test_build_fleet_records_enable_langsmith_defaults_when_key_exists(
     assert {record["status"] for record in records} == {"success"}
     assert records[0]["trace_id"] == "trace-123"
     assert records[0]["trace_url"] == "https://smith.langchain.com/r/trace-123"
+    assert records[0]["latency_ms"] == 1234
     assert (
         langsmith_fleet.os.environ[langsmith_fleet.ENV_LANGCHAIN_PROJECT]
         == langsmith_fleet.DEFAULT_PROJECT
@@ -96,11 +102,14 @@ def test_write_fleet_records_emits_deterministic_ndjson(tmp_path: Path) -> None:
             "run_id": "run-1",
             "status": "no_secret",
             "github_issue": "stranske/Counter_Risk#610",
+            "recorded_at": "2026-05-24T00:00:00Z",
+            "error_category": "none",
             "domain": {
                 "as_of_date": "2025-12-31",
                 "scenario": "monthly-risk-report",
                 "data_quality_status": "success",
                 "limit_breach_count": 0,
+                "limit_scope": "all-configured-limits",
             },
         }
     ]
@@ -110,3 +119,39 @@ def test_write_fleet_records_emits_deterministic_ndjson(tmp_path: Path) -> None:
     lines = path.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1
     assert json.loads(lines[0]) == records[0]
+
+
+def test_validate_fleet_records_rejects_sensitive_payload_keys() -> None:
+    records = langsmith_fleet.build_fleet_records(
+        context=langsmith_fleet.FleetRunContext(
+            run_id="run-1",
+            as_of_date="2025-12-31",
+            scenario="monthly-risk-report",
+        ),
+        data_quality_status="success",
+        risk_proxy_status="success",
+        concentration_metric_count=1,
+        limit_breach_count=0,
+    )
+    records[0]["domain"]["raw_counterparty_positions"] = [{"name": "Bank A", "notional": 1.0}]
+
+    with pytest.raises(ValueError, match="sensitive field"):
+        langsmith_fleet.validate_fleet_records(records)
+
+
+def test_validate_fleet_records_rejects_non_artifact_report_refs() -> None:
+    records = langsmith_fleet.build_fleet_records(
+        context=langsmith_fleet.FleetRunContext(
+            run_id="run-1",
+            as_of_date="2025-12-31",
+            scenario="monthly-risk-report",
+        ),
+        data_quality_status="success",
+        risk_proxy_status="success",
+        concentration_metric_count=1,
+        limit_breach_count=0,
+        report_artifacts=["manifest.json"],
+    )
+
+    with pytest.raises(ValueError, match="artifact: references"):
+        langsmith_fleet.validate_fleet_records(records)
