@@ -181,3 +181,31 @@ def test_validate_fleet_records_rejects_non_artifact_report_refs() -> None:
 
     with pytest.raises(ValueError, match="artifact: references"):
         langsmith_fleet.validate_fleet_records(records)
+
+
+@pytest.mark.parametrize(
+    "artifact_ref",
+    [
+        "artifact:/etc/passwd",
+        "artifact:\\windows\\path.txt",
+        "artifact:C:/windows/path.txt",
+        "artifact:reports/../manifest.json",
+        "artifact:reports\\manifest.json",
+    ],
+)
+def test_validate_fleet_records_rejects_unsafe_artifact_paths(artifact_ref: str) -> None:
+    records = langsmith_fleet.build_fleet_records(
+        context=langsmith_fleet.FleetRunContext(
+            run_id="run-1",
+            as_of_date="2025-12-31",
+            scenario="monthly-risk-report",
+        ),
+        data_quality_status="success",
+        risk_proxy_status="success",
+        concentration_metric_count=1,
+        limit_breach_count=0,
+        report_artifacts=[artifact_ref],
+    )
+
+    with pytest.raises(ValueError, match="artifact: references"):
+        langsmith_fleet.validate_fleet_records(records)

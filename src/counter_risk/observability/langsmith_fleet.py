@@ -7,7 +7,7 @@ import os
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Final, Literal
 
 SCHEMA_VERSION: Final = "langsmith-fleet/v1"
@@ -285,7 +285,17 @@ def _is_safe_artifact_ref(value: Any) -> bool:
         return False
     if not value.startswith("artifact:"):
         return False
-    return ".." not in value and value.strip() == value and len(value) > len("artifact:")
+    suffix = value.removeprefix("artifact:")
+    if not suffix or suffix.strip() != suffix or "\\" in suffix:
+        return False
+    if suffix.startswith(("/", "\\")):
+        return False
+    path = PurePosixPath(suffix)
+    if path.is_absolute() or not path.parts:
+        return False
+    if path.parts[0].endswith(":"):
+        return False
+    return all(part not in {"", ".", ".."} for part in path.parts)
 
 
 def _validate_no_sensitive_payload(*, index: int, record: Mapping[str, Any]) -> None:
