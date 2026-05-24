@@ -315,7 +315,7 @@ def test_validate_fleet_records_rejects_non_artifact_report_refs() -> None:
         report_artifacts=["manifest.json"],
     )
 
-    with pytest.raises(ValueError, match="artifact: references"):
+    with pytest.raises(ValueError, match="artifact: references or sha256 hashes"):
         langsmith_fleet.validate_fleet_records(records)
 
 
@@ -343,5 +343,52 @@ def test_validate_fleet_records_rejects_unsafe_artifact_paths(artifact_ref: str)
         report_artifacts=[artifact_ref],
     )
 
-    with pytest.raises(ValueError, match="artifact: references"):
+    with pytest.raises(ValueError, match="artifact: references or sha256 hashes"):
+        langsmith_fleet.validate_fleet_records(records)
+
+
+def test_validate_fleet_records_accepts_sha256_report_artifacts() -> None:
+    records = langsmith_fleet.build_fleet_records(
+        context=langsmith_fleet.FleetRunContext(
+            run_id="run-1",
+            as_of_date="2025-12-31",
+            scenario="monthly-risk-report",
+        ),
+        data_quality_status="success",
+        risk_proxy_status="success",
+        concentration_metric_count=1,
+        limit_breach_count=0,
+        report_artifacts=[
+            "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        ],
+        artifact_ref="sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+    )
+
+    langsmith_fleet.validate_fleet_records(records)
+
+
+@pytest.mark.parametrize(
+    "sha_ref",
+    [
+        "sha256:",
+        "sha256:not-hex",
+        "sha256:abc",
+        "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdeg",
+    ],
+)
+def test_validate_fleet_records_rejects_invalid_sha256_refs(sha_ref: str) -> None:
+    records = langsmith_fleet.build_fleet_records(
+        context=langsmith_fleet.FleetRunContext(
+            run_id="run-1",
+            as_of_date="2025-12-31",
+            scenario="monthly-risk-report",
+        ),
+        data_quality_status="success",
+        risk_proxy_status="success",
+        concentration_metric_count=1,
+        limit_breach_count=0,
+        report_artifacts=[sha_ref],
+    )
+
+    with pytest.raises(ValueError, match="artifact: references or sha256 hashes"):
         langsmith_fleet.validate_fleet_records(records)

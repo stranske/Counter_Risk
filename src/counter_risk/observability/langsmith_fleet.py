@@ -348,8 +348,10 @@ def validate_fleet_records(records: Iterable[Mapping[str, Any]]) -> None:
 
 def _validate_artifact_references(*, index: int, record: Mapping[str, Any]) -> None:
     artifact_ref = record.get("artifact_ref")
-    if artifact_ref is not None and not _is_safe_artifact_ref(artifact_ref):
-        raise ValueError(f"fleet record {index} artifact_ref must be an artifact: reference")
+    if artifact_ref is not None and not _is_safe_artifact_or_hash_ref(artifact_ref):
+        raise ValueError(
+            f"fleet record {index} artifact_ref must be an artifact: reference or sha256 hash"
+        )
     domain = record["domain"]
     report_artifacts = domain.get("report_artifacts", [])
     if report_artifacts is None:
@@ -357,9 +359,10 @@ def _validate_artifact_references(*, index: int, record: Mapping[str, Any]) -> N
     if not isinstance(report_artifacts, list):
         raise ValueError(f"fleet record {index} report_artifacts must be a list")
     for artifact in report_artifacts:
-        if not _is_safe_artifact_ref(artifact):
+        if not _is_safe_artifact_or_hash_ref(artifact):
             raise ValueError(
-                f"fleet record {index} report_artifacts must contain artifact: references"
+                "fleet record "
+                f"{index} report_artifacts must contain artifact: references or sha256 hashes"
             )
 
 
@@ -379,6 +382,21 @@ def _is_safe_artifact_ref(value: Any) -> bool:
     if path.parts[0].endswith(":"):
         return False
     return all(part not in {"", ".", ".."} for part in path.parts)
+
+
+def _is_safe_sha256_ref(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    if not value.startswith("sha256:"):
+        return False
+    digest = value.removeprefix("sha256:")
+    if len(digest) != 64:
+        return False
+    return all(char in "0123456789abcdefABCDEF" for char in digest)
+
+
+def _is_safe_artifact_or_hash_ref(value: Any) -> bool:
+    return _is_safe_artifact_ref(value) or _is_safe_sha256_ref(value)
 
 
 def _validate_no_sensitive_payload(*, index: int, record: Mapping[str, Any]) -> None:
