@@ -240,6 +240,16 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
         "report-generation",
     }
     assert all(record["error_category"] == "none" for record in records)
+    assert all(record["provider"] is None for record in records)
+    assert all(record["model"] is None for record in records)
+    assert all(record["trace_id"] is None for record in records)
+    assert all(record["trace_url"] is None for record in records)
+    assert all(record["latency_ms"] is None for record in records)
+    assert all(record["domain"]["shared_metadata"]["run_id"] == "2025-12-31" for record in records)
+    assert all(
+        record["domain"]["shared_metadata"]["status"] in {"success", "no_secret", "skipped"}
+        for record in records
+    )
     limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
     assert limit_record["domain"]["limit_max_severity"] == "fail"
     assert records[-1]["domain"]["report_artifacts"] == ["artifact:manifest.json"]
@@ -277,6 +287,8 @@ def test_write_langsmith_fleet_artifact_captures_shared_context_from_env(
     )
     assert all(record["latency_ms"] == 4321 for record in records)
     assert all(record["error_category"] == "upstream_timeout" for record in records)
+    assert all(record["domain"]["shared_metadata"]["provider"] == "openai" for record in records)
+    assert all(record["domain"]["shared_metadata"]["model"] == "gpt-5" for record in records)
 
 
 def test_write_langsmith_fleet_artifact_derives_limit_severity_from_counts(

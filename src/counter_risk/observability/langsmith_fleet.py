@@ -35,6 +35,11 @@ REQUIRED_TOP_LEVEL_FIELDS: Final = frozenset(
         "recorded_at",
         "domain",
         "error_category",
+        "provider",
+        "model",
+        "trace_id",
+        "trace_url",
+        "latency_ms",
     }
 )
 REQUIRED_DOMAIN_FIELDS: Final = frozenset(
@@ -47,6 +52,7 @@ REQUIRED_DOMAIN_FIELDS: Final = frozenset(
         "limit_breach_count",
         "limit_max_severity",
         "limit_scope",
+        "shared_metadata",
     }
 )
 ALLOWED_STATUS: Final = frozenset({"success", "error", "fallback", "no_secret", "skipped"})
@@ -263,21 +269,31 @@ def _record(
         "status": status,
         "github_issue": GITHUB_ISSUE,
         "recorded_at": recorded_at,
-        "domain": dict(domain),
+        "provider": context.provider,
+        "model": context.model,
+        "trace_id": context.trace_id,
+        "trace_url": context.trace_url,
+        "latency_ms": max(0, int(context.latency_ms)) if context.latency_ms is not None else None,
+        "error_category": context.error_category or "none",
     }
+    domain_with_shared = {
+        **dict(domain),
+        "shared_metadata": {
+            "run_id": context.run_id,
+            "as_of_date": context.as_of_date,
+            "scenario": context.scenario,
+            "provider": context.provider,
+            "model": context.model,
+            "status": status,
+            "trace_id": context.trace_id,
+            "trace_url": context.trace_url,
+            "latency_ms": record["latency_ms"],
+            "error_category": record["error_category"],
+        },
+    }
+    record["domain"] = domain_with_shared
     if context.github_pr:
         record["github_pr"] = context.github_pr
-    if context.provider:
-        record["provider"] = context.provider
-    if context.model:
-        record["model"] = context.model
-    if context.trace_id:
-        record["trace_id"] = context.trace_id
-    if context.trace_url:
-        record["trace_url"] = context.trace_url
-    if context.latency_ms is not None:
-        record["latency_ms"] = max(0, int(context.latency_ms))
-    record["error_category"] = context.error_category or "none"
     if artifact_ref:
         record["artifact_ref"] = artifact_ref
     return record

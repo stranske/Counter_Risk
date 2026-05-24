@@ -64,11 +64,20 @@ def test_build_fleet_records_use_counter_risk_project_and_no_secret_fallback(
     assert all(record["surface"] == "risk-reporting" for record in records)
     assert all(record["github_issue"] == "stranske/Counter_Risk#610" for record in records)
     assert all(record["error_category"] == "none" for record in records)
+    assert all("provider" in record for record in records)
+    assert all("model" in record for record in records)
+    assert all("trace_id" in record for record in records)
+    assert all("trace_url" in record for record in records)
+    assert all("latency_ms" in record for record in records)
     assert all(record["as_of_date"] == "2025-12-31" for record in records)
     assert all(record["scenario"] == "monthly-risk-report" for record in records)
     assert all(record["domain"]["as_of_date"] == "2025-12-31" for record in records)
     assert all(record["domain"]["scenario"] == "monthly-risk-report" for record in records)
     assert all(record["domain"]["risk_proxy_status"] == "success" for record in records)
+    assert all(record["domain"]["shared_metadata"]["run_id"] == "2025-12-31" for record in records)
+    assert all(
+        record["domain"]["shared_metadata"]["error_category"] == "none" for record in records
+    )
     assert all(record["domain"]["concentration_metric_available"] is True for record in records)
     assert all(record["domain"]["concentration_metric_count"] == 3 for record in records)
     assert all(record["domain"]["limit_scope"] == "all-configured-limits" for record in records)
@@ -165,6 +174,11 @@ def test_write_fleet_records_emits_deterministic_ndjson(tmp_path: Path) -> None:
             "status": "no_secret",
             "github_issue": "stranske/Counter_Risk#610",
             "recorded_at": "2026-05-24T00:00:00Z",
+            "provider": None,
+            "model": None,
+            "trace_id": None,
+            "trace_url": None,
+            "latency_ms": None,
             "error_category": "none",
             "domain": {
                 "as_of_date": "2025-12-31",
@@ -178,6 +192,18 @@ def test_write_fleet_records_emits_deterministic_ndjson(tmp_path: Path) -> None:
                 "limit_scope": "all-configured-limits",
                 "report_artifact_count": 0,
                 "report_artifacts": [],
+                "shared_metadata": {
+                    "run_id": "run-1",
+                    "as_of_date": "2025-12-31",
+                    "scenario": "monthly-risk-report",
+                    "provider": None,
+                    "model": None,
+                    "status": "no_secret",
+                    "trace_id": None,
+                    "trace_url": None,
+                    "latency_ms": None,
+                    "error_category": "none",
+                },
             },
         }
     ]
@@ -205,6 +231,11 @@ def test_write_fleet_records_rejects_invalid_records_without_creating_directory(
             "status": "unsupported",
             "github_issue": "stranske/Counter_Risk#610",
             "recorded_at": "2026-05-24T00:00:00Z",
+            "provider": None,
+            "model": None,
+            "trace_id": None,
+            "trace_url": None,
+            "latency_ms": None,
             "error_category": "none",
             "domain": {
                 "as_of_date": "2025-12-31",
@@ -218,6 +249,18 @@ def test_write_fleet_records_rejects_invalid_records_without_creating_directory(
                 "limit_scope": "all-configured-limits",
                 "report_artifact_count": 0,
                 "report_artifacts": [],
+                "shared_metadata": {
+                    "run_id": "run-1",
+                    "as_of_date": "2025-12-31",
+                    "scenario": "monthly-risk-report",
+                    "provider": None,
+                    "model": None,
+                    "status": "no_secret",
+                    "trace_id": None,
+                    "trace_url": None,
+                    "latency_ms": None,
+                    "error_category": "none",
+                },
             },
         }
     ]
