@@ -1,5 +1,48 @@
 # Counter_Risk Workloop State
 
+## 2026-05-24T11:25:00Z - closer addressed PR #630 artifact-ref review blocker
+
+- Automation: `imi-merge-verify-closer` (codex closer lane).
+- Source repo: `stranske/Counter_Risk`.
+- Source issue: `#610`; source PR: `#629` merged with verifier CONCERNS; follow-up PR: `#630`.
+- Batch sweep before this complex lane: no safe terminal actions. `Pension-Data#461/#445` now has durable verifier CONCERNS and remains follow-up debt; `Inv-Man-Intake#454/#438` remains dual-CONCERNS verifier debt; Workflows dependabot PRs excluded as maintenance.
+- Live PR audit:
+  - `#630` is open, non-draft, issue-linked, and in-scope with `agent:codex`, `agents:keepalive`, and `autofix`.
+  - `needs-human` was stale automation fallout from exhausted/cancelled gate attempts, not a product decision. Keepalive later pushed commits `6007117` and `2469dcf`, and current required Python jobs were pending/pass rather than a deterministic code failure.
+  - Copilot review thread `PRRT_kwDORPCqTs6EX8IQ` was unresolved on `_is_safe_artifact_ref()` because `artifact:/...`, drive-like refs, backslashes, and `..` path segments were accepted despite the documented relative artifact contract.
+- Fix applied locally:
+  - Tightened `_is_safe_artifact_ref()` to require a non-empty relative POSIX suffix after `artifact:`, reject absolute paths, backslashes, drive-like first parts, and `.`/`..` path parts.
+  - Added parameterized regression coverage for absolute, backslash, drive-like, and traversal artifact refs.
+- Validation passed:
+  - `python -m pytest tests/observability/test_langsmith_fleet.py tests/pipeline/test_run_pipeline.py::test_write_langsmith_fleet_artifact_adds_dashboard_records tests/pipeline/test_run_pipeline.py::test_write_langsmith_fleet_artifact_derives_limit_severity_from_counts -q` -> 13 passed.
+  - `python -m ruff check src/counter_risk/observability/langsmith_fleet.py tests/observability/test_langsmith_fleet.py tests/pipeline/test_run_pipeline.py` -> passed.
+  - `python -m black --check src/counter_risk/observability/langsmith_fleet.py tests/observability/test_langsmith_fleet.py tests/pipeline/test_run_pipeline.py` -> passed.
+- Next action: push the fix to `codex/issue-610-langsmith-risk-followup`, resolve the Copilot thread, remove stale `needs-human` if current checks/reviews confirm no real human blocker, then recheck mergeability.
+
+## 2026-05-24T11:03:50Z - closer opened verifier follow-up PR #630 for issue #610
+
+- Automation: `imi-merge-verify-closer` (codex closer lane).
+- Source repo: `stranske/Counter_Risk`.
+- Source issue: `#610` (`Use repo-specific LangSmith project and trace risk workflows`), still open pending follow-up merge and durable verifier PASS/disposition.
+- Source PR: `#629`, merged `2026-05-24T05:02:06Z`, labeled `verify:compare`, durable provider comparison dual CONCERNS (`openai` 82%, `anthropic` 82%).
+- Batch sweep before this complex lane: merged `stranske/Pension-Data#461`, applied `verify:compare`, emitted `pr_merged` and `verify_label_applied`, and reopened `Pension-Data#445` because durable verifier PASS has not posted.
+- Verifier audit for `#629/#610`: concerns were materially valid. Current `main` has foundational `langsmith-fleet/v1` records, but lacked an explicit local contract validator before writing NDJSON, durable checks for safe `artifact:` references, explicit `error_category` / `limit_scope` metadata proof, and documentation naming correlatable workflow artifacts.
+- Follow-up PR opened: `#630` (`https://github.com/stranske/Counter_Risk/pull/630`) from branch `codex/issue-610-langsmith-risk-followup`, commit `7100928` (`fix: validate Counter Risk LangSmith fleet records`).
+- Follow-up implementation:
+  - Added `validate_fleet_records()` in `src/counter_risk/observability/langsmith_fleet.py` and call it before writing the NDJSON artifact.
+  - Required top-level and domain fields now cover `error_category` and `limit_scope`; optional `latency_ms` is emitted when supplied.
+  - Added validation for allowed statuses, safe `artifact:` references, and sensitive payload field names.
+  - Added focused tests for validator success, sensitive field rejection, non-artifact report reference rejection, and pipeline insertion metadata.
+  - Updated `docs/langsmith_fleet.md` with the contract subset and artifact correlation surface.
+- Local validation passed:
+  - `python -m pytest tests/observability/test_langsmith_fleet.py tests/pipeline/test_run_pipeline.py::test_write_langsmith_fleet_artifact_adds_dashboard_records tests/pipeline/test_run_pipeline.py::test_write_langsmith_fleet_artifact_derives_limit_severity_from_counts -q` -> 7 passed.
+  - `python -m ruff check src/counter_risk/observability/langsmith_fleet.py tests/observability/test_langsmith_fleet.py tests/pipeline/test_run_pipeline.py` -> passed.
+  - `python -m black --check src/counter_risk/observability/langsmith_fleet.py tests/observability/test_langsmith_fleet.py tests/pipeline/test_run_pipeline.py` -> passed.
+- PR labels: `agent:codex`, `agents:keepalive`, `autofix`.
+- Post-push review: no inline review comments or reviews yet. `gh pr checks` showed stale canceled Gate/Python contexts from the first post-create run plus a newer Python CI run `26359462767` still pending on `typecheck-mypy` and Python 3.12/3.13. Earlier local equivalents passed; no sleep/retry loop run.
+- Relay events emitted this round for this lane: `followup_pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=610 active.source_pr=630 active.next_action=followup_pr_open` and `record-followup stranske/Counter_Risk#610`.
+- Next closer action: recheck `#630` after CI settles. If only stale canceled contexts remain while the newer required run is green, inspect branch protection/check rollup before merging. After merge, apply `verify:compare`; keep `#610` open until durable verifier PASS/disposition.
+
 ## 2026-05-24T03:24:30Z - opener lane issue #610 PR materializing
 
 - Automation: `pd-workloop-resume` (codex opener lane).
