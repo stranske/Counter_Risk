@@ -14,6 +14,7 @@ import platform
 import shutil
 import sys
 import tempfile
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -310,6 +311,18 @@ def run_pipeline(
     """Run the Counter Risk pipeline and return the output run directory."""
 
     LOGGER.info("pipeline_start config_path=%s", config_path)
+    workflow_trace_events: list[dict[str, Any]] = []
+
+    def _record_stage_event(stage: str, *, started_at: float, status: str) -> None:
+        duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+        workflow_trace_events.append(
+            {
+                "stage": stage,
+                "status": status,
+                "latency_ms": duration_ms,
+            }
+        )
+
     try:
         config = load_config(config_path)
     except Exception as exc:
@@ -371,6 +384,7 @@ def run_pipeline(
     resolved_formatting_profile = normalize_formatting_profile(formatting_profile)
     _append_missing_inputs_warnings(missing_inputs=missing_inputs, warnings=warnings)
     runtime_config = config
+    parse_stage_started_at = time.perf_counter()
     try:
         runtime_config = _prepare_runtime_config(
             config=config,
@@ -395,7 +409,13 @@ def run_pipeline(
         )
         if reconciliation_outcome is None:
             reconciliation_outcome = {}
+        _record_stage_event(
+            "data-quality-summary", started_at=parse_stage_started_at, status="success"
+        )
     except Exception as exc:
+        _record_stage_event(
+            "data-quality-summary", started_at=parse_stage_started_at, status="error"
+        )
         LOGGER.exception("pipeline_failed stage=parse_inputs run_dir=%s", run_dir)
         operator_message = _build_parse_stage_operator_message(exc)
         if operator_message:
@@ -412,6 +432,7 @@ def run_pipeline(
     concentration_metrics_output_paths: list[Path] = []
     change_attribution_output_paths: list[Path] = []
     risk_proxy_summary: dict[str, Any] = {}
+    risk_proxy_stage_started_at = time.perf_counter()
     try:
         risk_output_paths = _write_risk_outputs(
             run_dir=run_dir,
@@ -422,10 +443,17 @@ def run_pipeline(
             parsed_by_variant=parsed_by_variant,
             output_paths=risk_output_paths,
         )
+        _record_stage_event(
+            "risk-proxy-outputs", started_at=risk_proxy_stage_started_at, status="success"
+        )
     except Exception as exc:
+        _record_stage_event(
+            "risk-proxy-outputs", started_at=risk_proxy_stage_started_at, status="error"
+        )
         LOGGER.exception("pipeline_failed stage=write_risk_outputs run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during risk output stage") from exc
 
+    concentration_stage_started_at = time.perf_counter()
     try:
         concentration_metrics_records = _compute_and_write_concentration_metrics(
             parsed_by_variant=parsed_by_variant,
@@ -433,7 +461,13 @@ def run_pipeline(
         )
         if concentration_metrics_records:
             concentration_metrics_output_paths = [run_dir / "concentration_metrics.csv"]
+        _record_stage_event(
+            "concentration-metrics", started_at=concentration_stage_started_at, status="success"
+        )
     except Exception as exc:
+        _record_stage_event(
+            "concentration-metrics", started_at=concentration_stage_started_at, status="error"
+        )
         LOGGER.exception("pipeline_failed stage=concentration_metrics run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during concentration metrics stage") from exc
 
@@ -447,13 +481,16 @@ def run_pipeline(
         LOGGER.exception("pipeline_failed stage=change_attribution run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during change attribution stage") from exc
 
+    limit_stage_started_at = time.perf_counter()
     try:
         limit_breaches = _compute_and_write_limit_breaches(
             parsed_by_variant=parsed_by_variant,
             run_dir=run_dir,
             warnings=warnings,
         )
+        _record_stage_event("limit-monitoring", started_at=limit_stage_started_at, status="success")
     except Exception as exc:
+        _record_stage_event("limit-monitoring", started_at=limit_stage_started_at, status="error")
         LOGGER.exception("pipeline_failed stage=limit_breaches run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during limit breach stage") from exc
 
@@ -479,6 +516,7 @@ def run_pipeline(
         LOGGER.exception("pipeline_failed stage=historical_update run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during historical update stage") from exc
 
+    report_stage_started_at = time.perf_counter()
     try:
         output_result = _call_write_outputs(
             run_dir=run_dir,
@@ -488,8 +526,10 @@ def run_pipeline(
             parsed_by_variant=parsed_by_variant,
         )
     except Exception as exc:
+        _record_stage_event("report-generation", started_at=report_stage_started_at, status="error")
         LOGGER.exception("pipeline_failed stage=write_outputs run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during output write stage") from exc
+    _record_stage_event("report-generation", started_at=report_stage_started_at, status="success")
     if isinstance(output_result, tuple):
         output_paths, ppt_result = output_result
     else:
@@ -505,6 +545,7 @@ def run_pipeline(
     if limit_breaches.csv_path is not None:
         output_paths.append(limit_breaches.csv_path)
 
+    artifact_stage_started_at = time.perf_counter()
     try:
         langsmith_fleet_path = _write_langsmith_fleet_artifact(
             run_dir=run_dir,
@@ -514,9 +555,16 @@ def run_pipeline(
             concentration_metrics_records=concentration_metrics_records,
             risk_proxy_summary=risk_proxy_summary,
             limit_breach_summary=limit_breach_summary,
+            workflow_trace_events=workflow_trace_events,
         )
         output_paths.append(langsmith_fleet_path)
+        _record_stage_event(
+            "workflow-trace-artifact", started_at=artifact_stage_started_at, status="success"
+        )
     except Exception as exc:
+        _record_stage_event(
+            "workflow-trace-artifact", started_at=artifact_stage_started_at, status="error"
+        )
         LOGGER.exception("pipeline_failed stage=langsmith_fleet_artifact run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during LangSmith fleet artifact stage") from exc
 
@@ -584,6 +632,7 @@ def _write_langsmith_fleet_artifact(
     concentration_metrics_records: Sequence[Mapping[str, Any]],
     risk_proxy_summary: Mapping[str, Any],
     limit_breach_summary: Mapping[str, Any],
+    workflow_trace_events: Sequence[Mapping[str, Any]] = (),
 ) -> Path:
     run_id = run_dir.name
     context = FleetRunContext(
@@ -612,7 +661,10 @@ def _write_langsmith_fleet_artifact(
         concentration_metric_count=len(concentration_metrics_records),
         limit_breach_count=int(limit_breach_summary.get("breach_count") or 0),
         limit_max_severity=_limit_summary_max_severity(limit_breach_summary),
+        limit_warning_breach_count=int(limit_breach_summary.get("warning_breach_count") or 0),
+        limit_fail_breach_count=int(limit_breach_summary.get("fail_breach_count") or 0),
         report_artifacts=safe_output_refs,
+        workflow_trace_events=workflow_trace_events,
         artifact_ref=f"artifact:{LANGSMITH_FLEET_ARTIFACT_NAME}",
     )
     return write_fleet_records(run_dir / LANGSMITH_FLEET_ARTIFACT_NAME, records)
