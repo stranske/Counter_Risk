@@ -43,7 +43,10 @@ REQUIRED_DOMAIN_FIELDS: Final = frozenset(
         "as_of_date",
         "scenario",
         "data_quality_status",
+        "risk_proxy_status",
+        "concentration_metric_available",
         "limit_breach_count",
+        "limit_max_severity",
         "limit_scope",
     }
 )
@@ -117,12 +120,20 @@ def build_fleet_records(
     base_status: Status = "success" if tracing_enabled else "no_secret"
     recorded_at = context.recorded_at or _utc_timestamp()
     report_refs = tuple(sorted(str(item) for item in report_artifacts if str(item).strip()))
+    resolved_limit_max_severity = limit_max_severity or "none"
+    concentration_metric_count = max(0, int(concentration_metric_count))
     shared_domain = {
         "as_of_date": context.as_of_date,
         "scenario": context.scenario,
         "data_quality_status": data_quality_status,
+        "risk_proxy_status": risk_proxy_status,
+        "concentration_metric_available": concentration_metric_count > 0,
+        "concentration_metric_count": concentration_metric_count,
         "limit_breach_count": int(limit_breach_count),
+        "limit_max_severity": resolved_limit_max_severity,
         "limit_scope": "all-configured-limits",
+        "report_artifact_count": len(report_refs),
+        "report_artifacts": list(report_refs),
     }
     records = [
         _record(
@@ -156,7 +167,6 @@ def build_fleet_records(
             domain={
                 **shared_domain,
                 "stage_status": "success" if concentration_metric_count > 0 else "skipped",
-                "concentration_metric_count": max(0, int(concentration_metric_count)),
             },
             artifact_ref=artifact_ref,
         ),
@@ -167,7 +177,6 @@ def build_fleet_records(
             recorded_at=recorded_at,
             domain={
                 **shared_domain,
-                "limit_max_severity": limit_max_severity or "none",
             },
             artifact_ref=artifact_ref,
         ),
@@ -178,8 +187,6 @@ def build_fleet_records(
             recorded_at=recorded_at,
             domain={
                 **shared_domain,
-                "report_artifact_count": len(report_refs),
-                "report_artifacts": list(report_refs),
             },
             artifact_ref=artifact_ref,
         ),
