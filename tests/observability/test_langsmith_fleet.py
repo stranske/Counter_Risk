@@ -10,6 +10,22 @@ import pytest
 from counter_risk.observability import langsmith_fleet
 
 
+def test_default_project_is_derived_from_repo_slug() -> None:
+    assert langsmith_fleet.DEFAULT_PROJECT == "counter-risk"
+    assert (
+        langsmith_fleet._repo_default_project_name("stranske/Counter_Risk")
+        == langsmith_fleet.DEFAULT_PROJECT
+    )
+
+
+def test_resolve_langsmith_project_name_uses_repo_default_when_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv(langsmith_fleet.ENV_COUNTER_RISK_LANGSMITH_PROJECT, raising=False)
+
+    assert langsmith_fleet.resolve_langsmith_project_name() == langsmith_fleet.DEFAULT_PROJECT
+
+
 def test_build_fleet_records_use_counter_risk_project_and_no_secret_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -15,7 +15,6 @@ REPO: Final = "stranske/Counter_Risk"
 SURFACE: Final = "risk-reporting"
 GITHUB_ISSUE: Final = "stranske/Counter_Risk#610"
 ARTIFACT_NAME: Final = "langsmith-fleet.ndjson"
-DEFAULT_PROJECT: Final = "counter-risk"
 ENV_COUNTER_RISK_LANGSMITH_PROJECT: Final = "COUNTER_RISK_LANGSMITH_PROJECT"
 ENV_LANGSMITH_KEY: Final = "LANGSMITH_API_KEY"
 ENV_LANGCHAIN_PROJECT: Final = "LANGCHAIN_PROJECT"
@@ -63,6 +62,16 @@ SENSITIVE_FIELD_TOKENS: Final = (
 )
 
 Status = Literal["success", "error", "fallback", "no_secret", "skipped"]
+
+
+def _repo_default_project_name(repo: str) -> str:
+    """Return the repo-specific default LangSmith project slug."""
+
+    repo_name = repo.split("/")[-1].strip().lower().replace("_", "-")
+    return repo_name or "counter-risk"
+
+
+DEFAULT_PROJECT: Final = _repo_default_project_name(REPO)
 
 
 @dataclass(frozen=True)
