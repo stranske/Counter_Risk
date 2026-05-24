@@ -22,7 +22,10 @@
   - `python -m pytest tests/observability/test_langsmith_fleet.py tests/test_langchain_runtime.py tests/pipeline/test_run_pipeline.py::test_write_langsmith_fleet_artifact_adds_dashboard_records -q` -> 7 passed.
   - `python -m ruff check src/counter_risk/observability/langsmith_fleet.py src/counter_risk/chat/providers/langchain_runtime.py src/counter_risk/pipeline/run.py tests/observability/test_langsmith_fleet.py tests/test_langchain_runtime.py tests/pipeline/test_run_pipeline.py` -> pass.
   - `git diff --check` -> pass.
-- Next action: commit, push, open a ready-for-review PR with `agent:codex`, `agents:keepalive`, and `autofix`, then emit `pr_opened` relay so keepalive owns CI/review follow-up.
+- PR: `#629` (`https://github.com/stranske/Counter_Risk/pull/629`), ready for review, non-draft, branch `codex/issue-610-langsmith-risk-workflows`, head `34bf252`.
+- Labels: `agent:codex`, `agents:keepalive`, `autofix`.
+- Relay event emitted: `pr_opened active.source_repo=stranske/Counter_Risk active.source_issue=610 active.source_pr=629 active.next_action=wait_for_keepalive`.
+- Next action: keepalive owns PR `#629` for CI, review comments, and follow-up commits. Opener is done with this issue.
 
 ## 2026-05-09T05:09:01Z - opener lane issue #552 PR materializing
 
