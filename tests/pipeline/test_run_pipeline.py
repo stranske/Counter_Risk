@@ -204,10 +204,11 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
         json.loads(line) for line in artifact_path.read_text(encoding="utf-8").splitlines() if line
     ]
     assert artifact_path == run_dir / "langsmith-fleet.ndjson"
-    assert len(records) == 4
+    assert len(records) == 5
     assert {record["operation"] for record in records} == {
         "data-quality",
         "risk-proxy",
+        "concentration-metrics",
         "limit-monitoring",
         "report-generation",
     }

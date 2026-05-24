@@ -34,6 +34,7 @@ def test_build_fleet_records_use_counter_risk_project_and_no_secret_fallback(
     assert {record["operation"] for record in records} == {
         "data-quality",
         "risk-proxy",
+        "concentration-metrics",
         "limit-monitoring",
         "report-generation",
     }

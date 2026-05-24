@@ -142,6 +142,18 @@ def build_fleet_records(
             domain={
                 **shared_domain,
                 "risk_proxy_status": risk_proxy_status,
+                "stage_status": risk_proxy_status,
+            },
+            artifact_ref=artifact_ref,
+        ),
+        _record(
+            context=context,
+            operation="concentration-metrics",
+            status=base_status if concentration_metric_count > 0 else "skipped",
+            recorded_at=recorded_at,
+            domain={
+                **shared_domain,
+                "stage_status": "success" if concentration_metric_count > 0 else "skipped",
                 "concentration_metric_count": max(0, int(concentration_metric_count)),
             },
             artifact_ref=artifact_ref,
