@@ -44,6 +44,8 @@ def test_build_fleet_records_use_counter_risk_project_and_no_secret_fallback(
     assert all(record["surface"] == "risk-reporting" for record in records)
     assert all(record["github_issue"] == "stranske/Counter_Risk#610" for record in records)
     assert all(record["error_category"] == "none" for record in records)
+    assert all(record["as_of_date"] == "2025-12-31" for record in records)
+    assert all(record["scenario"] == "monthly-risk-report" for record in records)
     assert all(record["domain"]["as_of_date"] == "2025-12-31" for record in records)
     assert all(record["domain"]["scenario"] == "monthly-risk-report" for record in records)
     assert all(record["domain"]["limit_scope"] == "all-configured-limits" for record in records)
@@ -126,6 +128,8 @@ def test_write_fleet_records_emits_deterministic_ndjson(tmp_path: Path) -> None:
             "surface": "risk-reporting",
             "operation": "data-quality",
             "run_id": "run-1",
+            "as_of_date": "2025-12-31",
+            "scenario": "monthly-risk-report",
             "status": "no_secret",
             "github_issue": "stranske/Counter_Risk#610",
             "recorded_at": "2026-05-24T00:00:00Z",

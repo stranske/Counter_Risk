@@ -214,12 +214,48 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
     }
     assert all(record["domain"]["as_of_date"] == "2025-12-31" for record in records)
     assert all(record["domain"]["scenario"] == "monthly-risk-report" for record in records)
+    assert all(record["as_of_date"] == "2025-12-31" for record in records)
+    assert all(record["scenario"] == "monthly-risk-report" for record in records)
     assert all(record["domain"]["limit_breach_count"] == 1 for record in records)
     assert all(record["domain"]["limit_scope"] == "all-configured-limits" for record in records)
     assert all(record["error_category"] == "none" for record in records)
     limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
     assert limit_record["domain"]["limit_max_severity"] == "fail"
     assert records[-1]["domain"]["report_artifacts"] == ["artifact:manifest.json"]
+
+
+def test_write_langsmith_fleet_artifact_captures_shared_context_from_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "2025-12-31"
+    run_dir.mkdir()
+    monkeypatch.setenv("LANGCHAIN_PROVIDER", "openai")
+    monkeypatch.setenv("LANGCHAIN_MODEL", "gpt-5")
+    monkeypatch.setenv("LANGSMITH_TRACE_ID", "trace-123")
+    monkeypatch.setenv("LANGSMITH_TRACE_URL", "https://smith.langchain.com/r/trace-123")
+    monkeypatch.setenv("LANGSMITH_TRACE_LATENCY_MS", "4321")
+    monkeypatch.setenv("LANGSMITH_ERROR_CATEGORY", "upstream_timeout")
+
+    artifact_path = run_module._write_langsmith_fleet_artifact(
+        run_dir=run_dir,
+        as_of_date=date(2025, 12, 31),
+        output_paths=[],
+        warnings=[],
+        concentration_metrics_records=[],
+        risk_proxy_summary={},
+        limit_breach_summary={},
+    )
+    records = [
+        json.loads(line) for line in artifact_path.read_text(encoding="utf-8").splitlines() if line
+    ]
+    assert all(record["provider"] == "openai" for record in records)
+    assert all(record["model"] == "gpt-5" for record in records)
+    assert all(record["trace_id"] == "trace-123" for record in records)
+    assert all(
+        record["trace_url"] == "https://smith.langchain.com/r/trace-123" for record in records
+    )
+    assert all(record["latency_ms"] == 4321 for record in records)
+    assert all(record["error_category"] == "upstream_timeout" for record in records)
 
 
 def test_write_langsmith_fleet_artifact_derives_limit_severity_from_counts(
