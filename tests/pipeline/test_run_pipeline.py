@@ -226,6 +226,7 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
     assert all(record["domain"]["limit_breach_count"] == 1 for record in records)
     assert all(record["domain"]["limit_scope"] == "all-configured-limits" for record in records)
     assert all(record["domain"]["risk_proxy_status"] == "success" for record in records)
+    assert all(record["domain"]["risk_proxy_available"] is True for record in records)
     assert all(record["domain"]["concentration_metric_available"] is True for record in records)
     assert all(record["domain"]["concentration_metric_count"] == 1 for record in records)
     assert all(
@@ -252,6 +253,8 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
     )
     limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
     assert limit_record["domain"]["limit_max_severity"] == "fail"
+    assert limit_record["domain"]["limit_warning_breach_count"] == 0
+    assert limit_record["domain"]["limit_fail_breach_count"] == 0
     assert records[-1]["domain"]["report_artifacts"] == ["artifact:manifest.json"]
 
 
@@ -316,6 +319,8 @@ def test_write_langsmith_fleet_artifact_derives_limit_severity_from_counts(
     ]
     limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
     assert limit_record["domain"]["limit_max_severity"] == "fail"
+    assert limit_record["domain"]["limit_warning_breach_count"] == 1
+    assert limit_record["domain"]["limit_fail_breach_count"] == 1
 
 
 def test_apply_daily_holdings_repo_cash_updates_all_programs_totals(

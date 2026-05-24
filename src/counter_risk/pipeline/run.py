@@ -661,6 +661,8 @@ def _write_langsmith_fleet_artifact(
         concentration_metric_count=len(concentration_metrics_records),
         limit_breach_count=int(limit_breach_summary.get("breach_count") or 0),
         limit_max_severity=_limit_summary_max_severity(limit_breach_summary),
+        limit_warning_breach_count=int(limit_breach_summary.get("warning_breach_count") or 0),
+        limit_fail_breach_count=int(limit_breach_summary.get("fail_breach_count") or 0),
         report_artifacts=safe_output_refs,
         workflow_trace_events=workflow_trace_events,
         artifact_ref=f"artifact:{LANGSMITH_FLEET_ARTIFACT_NAME}",

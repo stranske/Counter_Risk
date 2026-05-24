@@ -126,6 +126,8 @@ def build_fleet_records(
     concentration_metric_count: int,
     limit_breach_count: int,
     limit_max_severity: str | None = None,
+    limit_warning_breach_count: int = 0,
+    limit_fail_breach_count: int = 0,
     report_artifacts: Iterable[str] = (),
     workflow_trace_events: Iterable[Mapping[str, Any]] = (),
     artifact_ref: str | None = None,
@@ -138,16 +140,23 @@ def build_fleet_records(
     report_refs = tuple(sorted(str(item) for item in report_artifacts if str(item).strip()))
     resolved_limit_max_severity = limit_max_severity or "none"
     concentration_metric_count = max(0, int(concentration_metric_count))
+    limit_breach_count = max(0, int(limit_breach_count))
+    limit_warning_breach_count = max(0, int(limit_warning_breach_count))
+    limit_fail_breach_count = max(0, int(limit_fail_breach_count))
     trace_events = _normalize_workflow_trace_events(workflow_trace_events)
     shared_domain = {
         "as_of_date": context.as_of_date,
         "scenario": context.scenario,
         "data_quality_status": data_quality_status,
+        "data_quality_warning_present": data_quality_status != "success",
         "risk_proxy_status": risk_proxy_status,
+        "risk_proxy_available": risk_proxy_status != "skipped",
         "concentration_metric_available": concentration_metric_count > 0,
         "concentration_metric_count": concentration_metric_count,
-        "limit_breach_count": int(limit_breach_count),
+        "limit_breach_count": limit_breach_count,
         "limit_max_severity": resolved_limit_max_severity,
+        "limit_warning_breach_count": limit_warning_breach_count,
+        "limit_fail_breach_count": limit_fail_breach_count,
         "limit_scope": "all-configured-limits",
         "report_artifact_count": len(report_refs),
         "report_artifacts": list(report_refs),

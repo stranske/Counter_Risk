@@ -74,6 +74,8 @@ def test_build_fleet_records_use_counter_risk_project_and_no_secret_fallback(
     assert all(record["domain"]["as_of_date"] == "2025-12-31" for record in records)
     assert all(record["domain"]["scenario"] == "monthly-risk-report" for record in records)
     assert all(record["domain"]["risk_proxy_status"] == "success" for record in records)
+    assert all(record["domain"]["risk_proxy_available"] is True for record in records)
+    assert all(record["domain"]["data_quality_warning_present"] is False for record in records)
     assert all(record["domain"]["shared_metadata"]["run_id"] == "2025-12-31" for record in records)
     assert all(
         record["domain"]["shared_metadata"]["error_category"] == "none" for record in records
@@ -82,6 +84,8 @@ def test_build_fleet_records_use_counter_risk_project_and_no_secret_fallback(
     assert all(record["domain"]["concentration_metric_count"] == 3 for record in records)
     assert all(record["domain"]["limit_scope"] == "all-configured-limits" for record in records)
     assert all(record["domain"]["limit_max_severity"] == "warning" for record in records)
+    assert all(record["domain"]["limit_warning_breach_count"] == 0 for record in records)
+    assert all(record["domain"]["limit_fail_breach_count"] == 0 for record in records)
     assert all(
         record["domain"]["report_artifacts"] == ["artifact:manifest.json"] for record in records
     )
@@ -184,11 +188,15 @@ def test_write_fleet_records_emits_deterministic_ndjson(tmp_path: Path) -> None:
                 "as_of_date": "2025-12-31",
                 "scenario": "monthly-risk-report",
                 "data_quality_status": "success",
+                "data_quality_warning_present": False,
                 "risk_proxy_status": "success",
+                "risk_proxy_available": True,
                 "concentration_metric_available": False,
                 "concentration_metric_count": 0,
                 "limit_breach_count": 0,
                 "limit_max_severity": "none",
+                "limit_warning_breach_count": 0,
+                "limit_fail_breach_count": 0,
                 "limit_scope": "all-configured-limits",
                 "report_artifact_count": 0,
                 "report_artifacts": [],
@@ -241,11 +249,15 @@ def test_write_fleet_records_rejects_invalid_records_without_creating_directory(
                 "as_of_date": "2025-12-31",
                 "scenario": "monthly-risk-report",
                 "data_quality_status": "success",
+                "data_quality_warning_present": False,
                 "risk_proxy_status": "success",
+                "risk_proxy_available": True,
                 "concentration_metric_available": False,
                 "concentration_metric_count": 0,
                 "limit_breach_count": 0,
                 "limit_max_severity": "none",
+                "limit_warning_breach_count": 0,
+                "limit_fail_breach_count": 0,
                 "limit_scope": "all-configured-limits",
                 "report_artifact_count": 0,
                 "report_artifacts": [],
