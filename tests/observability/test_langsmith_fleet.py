@@ -91,6 +91,31 @@ def test_build_fleet_records_enable_langsmith_defaults_when_key_exists(
     assert langsmith_fleet.os.environ[langsmith_fleet.ENV_LANGCHAIN_API_KEY] == "test-key"
 
 
+def test_build_fleet_records_uses_repo_project_override_when_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(langsmith_fleet.ENV_LANGSMITH_KEY, "test-key")
+    monkeypatch.setenv(langsmith_fleet.ENV_COUNTER_RISK_LANGSMITH_PROJECT, "counter-risk-prod")
+    monkeypatch.delenv(langsmith_fleet.ENV_LANGCHAIN_PROJECT, raising=False)
+    monkeypatch.delenv(langsmith_fleet.ENV_LANGSMITH_PROJECT, raising=False)
+
+    records = langsmith_fleet.build_fleet_records(
+        context=langsmith_fleet.FleetRunContext(
+            run_id="run-2",
+            as_of_date="2025-12-31",
+            scenario="monthly-risk-report",
+        ),
+        data_quality_status="success",
+        risk_proxy_status="success",
+        concentration_metric_count=1,
+        limit_breach_count=0,
+    )
+
+    assert {record["status"] for record in records} == {"success"}
+    assert langsmith_fleet.os.environ[langsmith_fleet.ENV_LANGCHAIN_PROJECT] == "counter-risk-prod"
+    assert langsmith_fleet.os.environ[langsmith_fleet.ENV_LANGSMITH_PROJECT] == "counter-risk-prod"
+
+
 def test_write_fleet_records_emits_deterministic_ndjson(tmp_path: Path) -> None:
     path = tmp_path / langsmith_fleet.ARTIFACT_NAME
     records = [

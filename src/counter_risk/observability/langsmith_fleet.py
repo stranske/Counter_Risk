@@ -16,6 +16,7 @@ SURFACE: Final = "risk-reporting"
 GITHUB_ISSUE: Final = "stranske/Counter_Risk#610"
 ARTIFACT_NAME: Final = "langsmith-fleet.ndjson"
 DEFAULT_PROJECT: Final = "counter-risk"
+ENV_COUNTER_RISK_LANGSMITH_PROJECT: Final = "COUNTER_RISK_LANGSMITH_PROJECT"
 ENV_LANGSMITH_KEY: Final = "LANGSMITH_API_KEY"
 ENV_LANGCHAIN_PROJECT: Final = "LANGCHAIN_PROJECT"
 ENV_LANGSMITH_PROJECT: Final = "LANGSMITH_PROJECT"
@@ -82,11 +83,19 @@ def ensure_langsmith_project_defaults() -> bool:
     api_key = os.environ.get(ENV_LANGSMITH_KEY)
     if not api_key:
         return False
+    project = resolve_langsmith_project_name()
     os.environ.setdefault(ENV_LANGCHAIN_TRACING_V2, "true")
-    os.environ.setdefault(ENV_LANGCHAIN_PROJECT, DEFAULT_PROJECT)
-    os.environ.setdefault(ENV_LANGSMITH_PROJECT, DEFAULT_PROJECT)
+    os.environ.setdefault(ENV_LANGCHAIN_PROJECT, project)
+    os.environ.setdefault(ENV_LANGSMITH_PROJECT, project)
     os.environ.setdefault(ENV_LANGCHAIN_API_KEY, api_key)
     return True
+
+
+def resolve_langsmith_project_name() -> str:
+    """Return repo-specific LangSmith project name with optional env override."""
+
+    configured = os.environ.get(ENV_COUNTER_RISK_LANGSMITH_PROJECT, "").strip()
+    return configured or DEFAULT_PROJECT
 
 
 def build_fleet_records(

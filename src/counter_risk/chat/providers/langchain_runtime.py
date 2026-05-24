@@ -18,6 +18,7 @@ from typing import Final, cast
 from counter_risk.observability.langsmith_fleet import (
     DEFAULT_PROJECT as DEFAULT_COUNTER_RISK_LANGSMITH_PROJECT,
 )
+from counter_risk.observability.langsmith_fleet import resolve_langsmith_project_name
 from counter_risk.runtime_paths import resolve_runtime_path
 
 ENV_PROVIDER = "LANGCHAIN_PROVIDER"
@@ -407,9 +408,10 @@ def _ensure_langsmith_tracing_env() -> bool:
     api_key = os.environ.get(ENV_LANGSMITH_KEY)
     if not api_key:
         return False
+    project = resolve_langsmith_project_name()
     os.environ.setdefault(ENV_LANGCHAIN_TRACING_V2, "true")
-    os.environ.setdefault(ENV_LANGCHAIN_PROJECT, DEFAULT_LANGCHAIN_PROJECT)
-    os.environ.setdefault(ENV_LANGSMITH_PROJECT, DEFAULT_LANGCHAIN_PROJECT)
+    os.environ.setdefault(ENV_LANGCHAIN_PROJECT, project)
+    os.environ.setdefault(ENV_LANGSMITH_PROJECT, project)
     os.environ.setdefault(ENV_LANGCHAIN_API_KEY, api_key)
     os.environ.setdefault(ENV_LANGSMITH_KEY, api_key)
     return True
