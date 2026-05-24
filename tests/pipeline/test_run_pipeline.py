@@ -214,6 +214,8 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
     assert all(record["domain"]["as_of_date"] == "2025-12-31" for record in records)
     assert all(record["domain"]["scenario"] == "monthly-risk-report" for record in records)
     assert all(record["domain"]["limit_breach_count"] == 1 for record in records)
+    assert all(record["error_category"] == "none" for record in records)
+    assert all("latency_ms" not in record for record in records)
     limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
     assert limit_record["domain"]["limit_max_severity"] == "fail"
     assert records[-1]["domain"]["report_artifacts"] == ["artifact:manifest.json"]
@@ -237,11 +239,13 @@ def test_write_langsmith_fleet_artifact_derives_limit_severity_from_counts(
             "warning_breach_count": 1,
             "fail_breach_count": 1,
         },
+        latency_ms=777,
     )
 
     records = [
         json.loads(line) for line in artifact_path.read_text(encoding="utf-8").splitlines() if line
     ]
+    assert all(record["latency_ms"] == 777 for record in records)
     limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
     assert limit_record["domain"]["limit_max_severity"] == "fail"
 

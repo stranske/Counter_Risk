@@ -36,6 +36,8 @@ class FleetRunContext:
     model: str | None = None
     trace_id: str | None = None
     trace_url: str | None = None
+    latency_ms: int | None = None
+    error_category: str | None = None
     recorded_at: str | None = None
     github_pr: str | None = None
 
@@ -166,6 +168,10 @@ def _record(
         record["trace_id"] = context.trace_id
     if context.trace_url:
         record["trace_url"] = context.trace_url
+    if context.latency_ms is not None:
+        record["latency_ms"] = int(context.latency_ms)
+    if context.error_category:
+        record["error_category"] = context.error_category
     if artifact_ref:
         record["artifact_ref"] = artifact_ref
     return record

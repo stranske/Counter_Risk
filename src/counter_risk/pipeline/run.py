@@ -14,6 +14,7 @@ import platform
 import shutil
 import sys
 import tempfile
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -309,6 +310,7 @@ def run_pipeline(
 ) -> Path:
     """Run the Counter Risk pipeline and return the output run directory."""
 
+    pipeline_started_at = time.perf_counter()
     LOGGER.info("pipeline_start config_path=%s", config_path)
     try:
         config = load_config(config_path)
@@ -514,6 +516,8 @@ def run_pipeline(
             concentration_metrics_records=concentration_metrics_records,
             risk_proxy_summary=risk_proxy_summary,
             limit_breach_summary=limit_breach_summary,
+            latency_ms=int((time.perf_counter() - pipeline_started_at) * 1000),
+            error_category="none",
         )
         output_paths.append(langsmith_fleet_path)
     except Exception as exc:
@@ -584,6 +588,8 @@ def _write_langsmith_fleet_artifact(
     concentration_metrics_records: Sequence[Mapping[str, Any]],
     risk_proxy_summary: Mapping[str, Any],
     limit_breach_summary: Mapping[str, Any],
+    latency_ms: int | None = None,
+    error_category: str | None = None,
 ) -> Path:
     run_id = run_dir.name
     context = FleetRunContext(
@@ -594,6 +600,8 @@ def _write_langsmith_fleet_artifact(
         model=os.environ.get("LANGCHAIN_MODEL"),
         trace_id=os.environ.get("LANGSMITH_TRACE_ID"),
         trace_url=os.environ.get("LANGSMITH_TRACE_URL"),
+        latency_ms=latency_ms,
+        error_category=error_category or "none",
         github_pr=os.environ.get("PR_NUMBER"),
     )
     safe_output_refs = [

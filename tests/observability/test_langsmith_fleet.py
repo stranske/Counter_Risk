@@ -63,6 +63,8 @@ def test_build_fleet_records_enable_langsmith_defaults_when_key_exists(
             scenario="monthly-risk-report",
             trace_id="trace-123",
             trace_url="https://smith.langchain.com/r/trace-123",
+            latency_ms=1234,
+            error_category="none",
         ),
         data_quality_status="success",
         risk_proxy_status="success",
@@ -73,6 +75,8 @@ def test_build_fleet_records_enable_langsmith_defaults_when_key_exists(
     assert {record["status"] for record in records} == {"success"}
     assert records[0]["trace_id"] == "trace-123"
     assert records[0]["trace_url"] == "https://smith.langchain.com/r/trace-123"
+    assert records[0]["latency_ms"] == 1234
+    assert records[0]["error_category"] == "none"
     assert (
         langsmith_fleet.os.environ[langsmith_fleet.ENV_LANGCHAIN_PROJECT]
         == langsmith_fleet.DEFAULT_PROJECT
