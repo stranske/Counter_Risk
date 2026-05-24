@@ -201,9 +201,7 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
     )
 
     records = [
-        json.loads(line)
-        for line in artifact_path.read_text(encoding="utf-8").splitlines()
-        if line
+        json.loads(line) for line in artifact_path.read_text(encoding="utf-8").splitlines() if line
     ]
     assert artifact_path == run_dir / "langsmith-fleet.ndjson"
     assert len(records) == 4
@@ -216,7 +214,36 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
     assert all(record["domain"]["as_of_date"] == "2025-12-31" for record in records)
     assert all(record["domain"]["scenario"] == "monthly-risk-report" for record in records)
     assert all(record["domain"]["limit_breach_count"] == 1 for record in records)
+    limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
+    assert limit_record["domain"]["limit_max_severity"] == "fail"
     assert records[-1]["domain"]["report_artifacts"] == ["artifact:manifest.json"]
+
+
+def test_write_langsmith_fleet_artifact_derives_limit_severity_from_counts(
+    tmp_path: Path,
+) -> None:
+    run_dir = tmp_path / "2025-12-31"
+    run_dir.mkdir()
+
+    artifact_path = run_module._write_langsmith_fleet_artifact(
+        run_dir=run_dir,
+        as_of_date=date(2025, 12, 31),
+        output_paths=[],
+        warnings=[],
+        concentration_metrics_records=[],
+        risk_proxy_summary={},
+        limit_breach_summary={
+            "breach_count": 2,
+            "warning_breach_count": 1,
+            "fail_breach_count": 1,
+        },
+    )
+
+    records = [
+        json.loads(line) for line in artifact_path.read_text(encoding="utf-8").splitlines() if line
+    ]
+    limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
+    assert limit_record["domain"]["limit_max_severity"] == "fail"
 
 
 def test_apply_daily_holdings_repo_cash_updates_all_programs_totals(
@@ -2451,6 +2478,7 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
     breach_row_count = max(0, len(csv_rows) - 1)
     assert breach_row_count >= 1
     assert manifest["limit_breach_summary"]["breach_count"] == breach_row_count
+    assert manifest["limit_breach_summary"]["max_severity"] == "fail"
     assert manifest["limit_breach_summary"]["warning_breach_count"] == 0
     assert manifest["limit_breach_summary"]["fail_breach_count"] == breach_row_count
     assert manifest["limit_breach_summary"]["report_path"] == "limit_breaches.csv"
@@ -2545,6 +2573,7 @@ def test_run_pipeline_limit_breach_summary_uses_warning_severity_when_no_fail_br
     run_dir = run_pipeline(config_path)
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["limit_breach_summary"]["has_breaches"] is True
+    assert manifest["limit_breach_summary"]["max_severity"] == "warning"
     assert manifest["limit_breach_summary"]["warning_breach_count"] == 1
     assert manifest["limit_breach_summary"]["fail_breach_count"] == 0
     assert "warning limit breach detected" in manifest["limit_breach_summary"]["warning_banner"]
@@ -2696,6 +2725,7 @@ def test_run_pipeline_warns_on_missing_limit_entities_by_default(
     assert manifest["limit_breach_summary"] == {
         "has_breaches": False,
         "breach_count": 0,
+        "max_severity": None,
         "warning_breach_count": 0,
         "fail_breach_count": 0,
         "report_path": None,

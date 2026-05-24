@@ -609,11 +609,24 @@ def _write_langsmith_fleet_artifact(
         risk_proxy_status=risk_proxy_status,
         concentration_metric_count=len(concentration_metrics_records),
         limit_breach_count=int(limit_breach_summary.get("breach_count") or 0),
-        limit_max_severity=cast(str | None, limit_breach_summary.get("max_severity")),
+        limit_max_severity=_limit_summary_max_severity(limit_breach_summary),
         report_artifacts=safe_output_refs,
         artifact_ref=f"artifact:{LANGSMITH_FLEET_ARTIFACT_NAME}",
     )
     return write_fleet_records(run_dir / LANGSMITH_FLEET_ARTIFACT_NAME, records)
+
+
+def _limit_summary_max_severity(
+    limit_breach_summary: Mapping[str, Any],
+) -> Literal["warning", "fail"] | None:
+    explicit = limit_breach_summary.get("max_severity")
+    if explicit in {"warning", "fail"}:
+        return cast(Literal["warning", "fail"], explicit)
+    if int(limit_breach_summary.get("fail_breach_count") or 0) > 0:
+        return "fail"
+    if int(limit_breach_summary.get("warning_breach_count") or 0) > 0:
+        return "warning"
+    return None
 
 
 def _is_relative_to(path: Path, parent: Path) -> bool:
@@ -2176,6 +2189,7 @@ def _build_limit_breach_summary(
     return {
         "has_breaches": has_breaches,
         "breach_count": limit_breaches.breach_count,
+        "max_severity": limit_breaches.max_severity,
         "warning_breach_count": limit_breaches.warning_breach_count,
         "fail_breach_count": limit_breaches.fail_breach_count,
         "report_path": report_path,
