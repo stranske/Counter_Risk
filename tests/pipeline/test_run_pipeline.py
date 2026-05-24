@@ -184,9 +184,12 @@ def _minimal_workflow_config(
     )
 
 
-def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -> None:
+def test_write_langsmith_fleet_artifact_adds_dashboard_records(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     run_dir = tmp_path / "2025-12-31"
     run_dir.mkdir()
+    monkeypatch.delenv("LANGSMITH_API_KEY", raising=False)
     manifest_path = run_dir / "manifest.json"
     manifest_path.write_text("{}", encoding="utf-8")
 
@@ -225,6 +228,7 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
         record["domain"]["report_artifacts"] == ["artifact:manifest.json"] for record in records
     )
     assert all(record["error_category"] == "none" for record in records)
+    assert all(record["status"] == "no_secret" for record in records)
     limit_record = next(record for record in records if record["operation"] == "limit-monitoring")
     assert limit_record["domain"]["limit_max_severity"] == "fail"
     assert records[-1]["domain"]["report_artifacts"] == ["artifact:manifest.json"]
@@ -235,6 +239,7 @@ def test_write_langsmith_fleet_artifact_captures_shared_context_from_env(
 ) -> None:
     run_dir = tmp_path / "2025-12-31"
     run_dir.mkdir()
+    monkeypatch.setenv("LANGSMITH_API_KEY", "test-key")
     monkeypatch.setenv("LANGCHAIN_PROVIDER", "openai")
     monkeypatch.setenv("LANGCHAIN_MODEL", "gpt-5")
     monkeypatch.setenv("LANGSMITH_TRACE_ID", "trace-123")
@@ -262,6 +267,34 @@ def test_write_langsmith_fleet_artifact_captures_shared_context_from_env(
     )
     assert all(record["latency_ms"] == 4321 for record in records)
     assert all(record["error_category"] == "upstream_timeout" for record in records)
+    assert {record["status"] for record in records} == {"success", "skipped"}
+
+
+def test_write_langsmith_fleet_artifact_derives_trace_url_from_trace_id(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_dir = tmp_path / "2025-12-31"
+    run_dir.mkdir()
+    monkeypatch.setenv("LANGSMITH_API_KEY", "test-key")
+    monkeypatch.setenv("LANGSMITH_TRACE_ID", "trace-abc123")
+    monkeypatch.delenv("LANGSMITH_TRACE_URL", raising=False)
+
+    artifact_path = run_module._write_langsmith_fleet_artifact(
+        run_dir=run_dir,
+        as_of_date=date(2025, 12, 31),
+        output_paths=[],
+        warnings=[],
+        concentration_metrics_records=[],
+        risk_proxy_summary={},
+        limit_breach_summary={},
+    )
+    records = [
+        json.loads(line) for line in artifact_path.read_text(encoding="utf-8").splitlines() if line
+    ]
+    assert all(record["trace_id"] == "trace-abc123" for record in records)
+    assert all(
+        record["trace_url"] == "https://smith.langchain.com/r/trace-abc123" for record in records
+    )
 
 
 def test_write_langsmith_fleet_artifact_derives_limit_severity_from_counts(

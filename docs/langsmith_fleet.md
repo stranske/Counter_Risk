@@ -11,12 +11,14 @@ Each run emits one record for each risk-reporting operation:
 
 - `data-quality`
 - `risk-proxy`
+- `concentration-metrics`
 - `limit-monitoring`
 - `report-generation`
 
 The shared fields include repo, surface, operation, run ID, status, owning issue,
-recorded timestamp, and `error_category`. If runtime code supplies trace latency,
-records also include `latency_ms`. The domain block includes:
+as-of date, scenario, and `error_category`. When available, records also include
+provider/model (`provider`, `model`), trace correlation (`trace_id`, `trace_url`),
+and trace latency (`latency_ms`). The domain block includes:
 
 - `as_of_date`
 - `scenario`
@@ -41,7 +43,10 @@ status `no_secret`; the pipeline still succeeds and no network call is required.
 
 Operators can correlate records with LangSmith by setting `LANGSMITH_TRACE_ID`
 or `LANGSMITH_TRACE_URL` in runtimes that already know the trace reference. The
-pipeline records correlate these workflow artifacts by relative artifact
+pipeline derives `trace_url` from `trace_id` when only the ID is available.
+The same run can be correlated with chat traces from `chat_logs.ndjson` using
+shared trace identifiers and run metadata.
+The pipeline records correlate these workflow artifacts by relative artifact
 reference:
 
 - `DATA_QUALITY_SUMMARY.txt` for data-quality warnings and fallbacks

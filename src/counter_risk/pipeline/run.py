@@ -586,14 +586,19 @@ def _write_langsmith_fleet_artifact(
     limit_breach_summary: Mapping[str, Any],
 ) -> Path:
     run_id = run_dir.name
+    trace_id = os.environ.get("LANGSMITH_TRACE_ID")
+    trace_url = _resolve_trace_url_for_fleet(
+        trace_id=trace_id,
+        trace_url=os.environ.get("LANGSMITH_TRACE_URL"),
+    )
     context = FleetRunContext(
         run_id=run_id,
         as_of_date=as_of_date.isoformat(),
         scenario="monthly-risk-report",
         provider=os.environ.get("LANGCHAIN_PROVIDER"),
         model=os.environ.get("LANGCHAIN_MODEL"),
-        trace_id=os.environ.get("LANGSMITH_TRACE_ID"),
-        trace_url=os.environ.get("LANGSMITH_TRACE_URL"),
+        trace_id=trace_id,
+        trace_url=trace_url,
         github_pr=os.environ.get("PR_NUMBER"),
         latency_ms=_parse_latency_ms_from_env(),
         error_category=_resolve_error_category_for_fleet(),
@@ -632,6 +637,18 @@ def _parse_latency_ms_from_env() -> int | None:
             continue
         if parsed >= 0:
             return parsed
+    return None
+
+
+def _resolve_trace_url_for_fleet(*, trace_id: str | None, trace_url: str | None) -> str | None:
+    if trace_url:
+        normalized = trace_url.strip()
+        if normalized:
+            return normalized
+    if trace_id:
+        normalized_trace_id = trace_id.strip()
+        if normalized_trace_id:
+            return f"https://smith.langchain.com/r/{normalized_trace_id}"
     return None
 
 
