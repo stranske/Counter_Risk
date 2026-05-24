@@ -54,6 +54,7 @@ def test_manifest_schema_defines_limit_breach_summary_shape() -> None:
     assert summary["required"] == [
         "has_breaches",
         "breach_count",
+        "max_severity",
         "warning_breach_count",
         "fail_breach_count",
         "report_path",
@@ -61,6 +62,7 @@ def test_manifest_schema_defines_limit_breach_summary_shape() -> None:
     ]
     assert summary["properties"]["has_breaches"]["type"] == "boolean"
     assert summary["properties"]["breach_count"]["type"] == "integer"
+    assert summary["properties"]["max_severity"]["type"] == ["string", "null"]
     assert summary["properties"]["warning_breach_count"]["type"] == "integer"
     assert summary["properties"]["fail_breach_count"]["type"] == "integer"
     assert summary["properties"]["report_path"]["type"] == ["string", "null"]

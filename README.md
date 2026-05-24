@@ -166,6 +166,8 @@ The run-context chat assistant now uses LangChain-backed providers (instead of s
   (`transcript`, `full`, `off`).
 - See [docs/chat_logging.md](docs/chat_logging.md) for mode behavior, payload fields, and
   LangSmith trace linkage.
+- See [docs/langsmith_fleet.md](docs/langsmith_fleet.md) for the
+  dashboard-safe `langsmith-fleet.ndjson` artifact emitted by monthly risk runs.
 
 ## Workflow Run Command
 

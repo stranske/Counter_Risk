@@ -15,6 +15,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final, cast
 
+from counter_risk.observability.langsmith_fleet import (
+    DEFAULT_PROJECT as DEFAULT_COUNTER_RISK_LANGSMITH_PROJECT,
+)
 from counter_risk.runtime_paths import resolve_runtime_path
 
 ENV_PROVIDER = "LANGCHAIN_PROVIDER"
@@ -28,6 +31,7 @@ ENV_LANGSMITH_KEY = "LANGSMITH_API_KEY"
 ENV_LANGCHAIN_TRACING_V2 = "LANGCHAIN_TRACING_V2"
 ENV_LANGCHAIN_API_KEY = "LANGCHAIN_API_KEY"
 ENV_LANGCHAIN_PROJECT = "LANGCHAIN_PROJECT"
+ENV_LANGSMITH_PROJECT = "LANGSMITH_PROJECT"
 
 PROVIDER_OPENAI = "openai"
 PROVIDER_ANTHROPIC = "anthropic"
@@ -37,7 +41,7 @@ GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com"
 DEFAULT_MODEL = "codex-mini-latest"
 
 DEFAULT_SLOT_CONFIG_PATH = "config/llm_slots.json"
-DEFAULT_LANGCHAIN_PROJECT = "workflows-agents"
+DEFAULT_LANGCHAIN_PROJECT = DEFAULT_COUNTER_RISK_LANGSMITH_PROJECT
 
 LANGCHAIN_OPENAI_DIST = "langchain-openai"
 LANGCHAIN_ANTHROPIC_DIST = "langchain-anthropic"
@@ -405,6 +409,7 @@ def _ensure_langsmith_tracing_env() -> bool:
         return False
     os.environ.setdefault(ENV_LANGCHAIN_TRACING_V2, "true")
     os.environ.setdefault(ENV_LANGCHAIN_PROJECT, DEFAULT_LANGCHAIN_PROJECT)
+    os.environ.setdefault(ENV_LANGSMITH_PROJECT, DEFAULT_LANGCHAIN_PROJECT)
     os.environ.setdefault(ENV_LANGCHAIN_API_KEY, api_key)
     os.environ.setdefault(ENV_LANGSMITH_KEY, api_key)
     return True

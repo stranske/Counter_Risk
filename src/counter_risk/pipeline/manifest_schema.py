@@ -254,6 +254,7 @@ def manifest_schema() -> dict[str, Any]:
                 "required": [
                     "has_breaches",
                     "breach_count",
+                    "max_severity",
                     "warning_breach_count",
                     "fail_breach_count",
                     "report_path",
@@ -262,6 +263,7 @@ def manifest_schema() -> dict[str, Any]:
                 "properties": {
                     "has_breaches": {"type": "boolean"},
                     "breach_count": {"type": "integer", "minimum": 0},
+                    "max_severity": {"type": ["string", "null"], "enum": ["warning", "fail", None]},
                     "warning_breach_count": {"type": "integer", "minimum": 0},
                     "fail_breach_count": {"type": "integer", "minimum": 0},
                     "report_path": {"type": ["string", "null"]},
