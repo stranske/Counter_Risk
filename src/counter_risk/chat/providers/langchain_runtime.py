@@ -31,6 +31,7 @@ ENV_LANGSMITH_KEY = "LANGSMITH_API_KEY"
 ENV_LANGCHAIN_TRACING_V2 = "LANGCHAIN_TRACING_V2"
 ENV_LANGCHAIN_API_KEY = "LANGCHAIN_API_KEY"
 ENV_LANGCHAIN_PROJECT = "LANGCHAIN_PROJECT"
+ENV_LANGSMITH_PROJECT = "LANGSMITH_PROJECT"
 
 PROVIDER_OPENAI = "openai"
 PROVIDER_ANTHROPIC = "anthropic"
@@ -408,6 +409,7 @@ def _ensure_langsmith_tracing_env() -> bool:
         return False
     os.environ.setdefault(ENV_LANGCHAIN_TRACING_V2, "true")
     os.environ.setdefault(ENV_LANGCHAIN_PROJECT, DEFAULT_LANGCHAIN_PROJECT)
+    os.environ.setdefault(ENV_LANGSMITH_PROJECT, DEFAULT_LANGCHAIN_PROJECT)
     os.environ.setdefault(ENV_LANGCHAIN_API_KEY, api_key)
     os.environ.setdefault(ENV_LANGSMITH_KEY, api_key)
     return True

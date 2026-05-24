@@ -54,6 +54,7 @@ def test_build_fleet_records_enable_langsmith_defaults_when_key_exists(
     monkeypatch.delenv(langsmith_fleet.ENV_LANGCHAIN_TRACING_V2, raising=False)
     monkeypatch.delenv(langsmith_fleet.ENV_LANGCHAIN_API_KEY, raising=False)
     monkeypatch.delenv(langsmith_fleet.ENV_LANGCHAIN_PROJECT, raising=False)
+    monkeypatch.delenv(langsmith_fleet.ENV_LANGSMITH_PROJECT, raising=False)
 
     records = langsmith_fleet.build_fleet_records(
         context=langsmith_fleet.FleetRunContext(
@@ -74,6 +75,10 @@ def test_build_fleet_records_enable_langsmith_defaults_when_key_exists(
     assert records[0]["trace_url"] == "https://smith.langchain.com/r/trace-123"
     assert (
         langsmith_fleet.os.environ[langsmith_fleet.ENV_LANGCHAIN_PROJECT]
+        == langsmith_fleet.DEFAULT_PROJECT
+    )
+    assert (
+        langsmith_fleet.os.environ[langsmith_fleet.ENV_LANGSMITH_PROJECT]
         == langsmith_fleet.DEFAULT_PROJECT
     )
     assert langsmith_fleet.os.environ[langsmith_fleet.ENV_LANGCHAIN_TRACING_V2] == "true"
@@ -105,4 +110,3 @@ def test_write_fleet_records_emits_deterministic_ndjson(tmp_path: Path) -> None:
     lines = path.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1
     assert json.loads(lines[0]) == records[0]
-

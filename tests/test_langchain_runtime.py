@@ -64,6 +64,7 @@ def test_build_langsmith_metadata_sets_tracing_env_defaults(
     monkeypatch.delenv(runtime.ENV_LANGCHAIN_TRACING_V2, raising=False)
     monkeypatch.delenv(runtime.ENV_LANGCHAIN_API_KEY, raising=False)
     monkeypatch.delenv(runtime.ENV_LANGCHAIN_PROJECT, raising=False)
+    monkeypatch.delenv(runtime.ENV_LANGSMITH_PROJECT, raising=False)
 
     payload = runtime.build_langsmith_metadata(operation="counter-risk-chat")
     metadata = cast(dict[str, Any], payload["metadata"])
@@ -73,3 +74,4 @@ def test_build_langsmith_metadata_sets_tracing_env_defaults(
     assert os.environ[runtime.ENV_LANGCHAIN_TRACING_V2] == "true"
     assert os.environ[runtime.ENV_LANGCHAIN_API_KEY] == "test-key"
     assert os.environ[runtime.ENV_LANGCHAIN_PROJECT] == runtime.DEFAULT_LANGCHAIN_PROJECT
+    assert os.environ[runtime.ENV_LANGSMITH_PROJECT] == runtime.DEFAULT_LANGCHAIN_PROJECT

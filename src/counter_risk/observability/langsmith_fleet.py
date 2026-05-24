@@ -18,6 +18,7 @@ ARTIFACT_NAME: Final = "langsmith-fleet.ndjson"
 DEFAULT_PROJECT: Final = "counter-risk"
 ENV_LANGSMITH_KEY: Final = "LANGSMITH_API_KEY"
 ENV_LANGCHAIN_PROJECT: Final = "LANGCHAIN_PROJECT"
+ENV_LANGSMITH_PROJECT: Final = "LANGSMITH_PROJECT"
 ENV_LANGCHAIN_TRACING_V2: Final = "LANGCHAIN_TRACING_V2"
 ENV_LANGCHAIN_API_KEY: Final = "LANGCHAIN_API_KEY"
 
@@ -47,6 +48,7 @@ def ensure_langsmith_project_defaults() -> bool:
         return False
     os.environ.setdefault(ENV_LANGCHAIN_TRACING_V2, "true")
     os.environ.setdefault(ENV_LANGCHAIN_PROJECT, DEFAULT_PROJECT)
+    os.environ.setdefault(ENV_LANGSMITH_PROJECT, DEFAULT_PROJECT)
     os.environ.setdefault(ENV_LANGCHAIN_API_KEY, api_key)
     return True
 
@@ -171,4 +173,3 @@ def _record(
 
 def _utc_timestamp() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
