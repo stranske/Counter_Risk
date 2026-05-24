@@ -49,6 +49,29 @@ reference:
 - `limit_breaches.csv` and `manifest.json` for limit breach counts/severity
 - generated workbook and presentation files for report-generation status
 
+## Chat And Risk Correlation Runbook
+
+Inspect chat and risk workflow traces together using this sequence:
+
+1. Open the run folder and read `langsmith-fleet.ndjson` for the `run_id`,
+   `as_of_date`, `scenario`, `trace_id`, and `trace_url`.
+2. Use `trace_url` (or search by `trace_id`) in LangSmith and filter to project
+   `counter-risk` (or the configured `COUNTER_RISK_LANGSMITH_PROJECT`).
+3. Compare the NDJSON `domain.workflow_trace_events` stages with LangSmith run
+   spans for:
+   - `data-quality-summary`
+   - `risk-proxy-outputs`
+   - `concentration-metrics`
+   - `limit-monitoring`
+   - `report-generation`
+   - chat/explanation calls tied to the same run context
+4. Validate artifacts without exposing sensitive payloads:
+   - keep `artifact:<relative-path>` references as-is, or
+   - compare `sha256:<digest>` values when hash-only references are emitted.
+5. Confirm limit and quality outcomes from `domain` fields (`data_quality_status`,
+   `limit_breach_count`, `limit_max_severity`, `risk_proxy_status`) and then open
+   the referenced run artifacts for operator follow-up.
+
 ## Validation
 
 For focused local validation, run:

@@ -15,7 +15,6 @@ REPO: Final = "stranske/Counter_Risk"
 SURFACE: Final = "risk-reporting"
 GITHUB_ISSUE: Final = "stranske/Counter_Risk#610"
 ARTIFACT_NAME: Final = "langsmith-fleet.ndjson"
-DEFAULT_PROJECT: Final = "counter-risk"
 ENV_COUNTER_RISK_LANGSMITH_PROJECT: Final = "COUNTER_RISK_LANGSMITH_PROJECT"
 ENV_LANGSMITH_KEY: Final = "LANGSMITH_API_KEY"
 ENV_LANGCHAIN_PROJECT: Final = "LANGCHAIN_PROJECT"
@@ -36,6 +35,11 @@ REQUIRED_TOP_LEVEL_FIELDS: Final = frozenset(
         "recorded_at",
         "domain",
         "error_category",
+        "provider",
+        "model",
+        "trace_id",
+        "trace_url",
+        "latency_ms",
     }
 )
 REQUIRED_DOMAIN_FIELDS: Final = frozenset(
@@ -48,6 +52,7 @@ REQUIRED_DOMAIN_FIELDS: Final = frozenset(
         "limit_breach_count",
         "limit_max_severity",
         "limit_scope",
+        "shared_metadata",
     }
 )
 ALLOWED_STATUS: Final = frozenset({"success", "error", "fallback", "no_secret", "skipped"})
@@ -63,6 +68,16 @@ SENSITIVE_FIELD_TOKENS: Final = (
 )
 
 Status = Literal["success", "error", "fallback", "no_secret", "skipped"]
+
+
+def _repo_default_project_name(repo: str) -> str:
+    """Return the repo-specific default LangSmith project slug."""
+
+    repo_name = repo.split("/")[-1].strip().lower().replace("_", "-")
+    return repo_name or "counter-risk"
+
+
+DEFAULT_PROJECT: Final = _repo_default_project_name(REPO)
 
 
 @dataclass(frozen=True)
@@ -111,7 +126,10 @@ def build_fleet_records(
     concentration_metric_count: int,
     limit_breach_count: int,
     limit_max_severity: str | None = None,
+    limit_warning_breach_count: int = 0,
+    limit_fail_breach_count: int = 0,
     report_artifacts: Iterable[str] = (),
+    workflow_trace_events: Iterable[Mapping[str, Any]] = (),
     artifact_ref: str | None = None,
 ) -> list[dict[str, Any]]:
     """Return Workflows-compatible records for the major risk/report stages."""
@@ -122,18 +140,27 @@ def build_fleet_records(
     report_refs = tuple(sorted(str(item) for item in report_artifacts if str(item).strip()))
     resolved_limit_max_severity = limit_max_severity or "none"
     concentration_metric_count = max(0, int(concentration_metric_count))
+    limit_breach_count = max(0, int(limit_breach_count))
+    limit_warning_breach_count = max(0, int(limit_warning_breach_count))
+    limit_fail_breach_count = max(0, int(limit_fail_breach_count))
+    trace_events = _normalize_workflow_trace_events(workflow_trace_events)
     shared_domain = {
         "as_of_date": context.as_of_date,
         "scenario": context.scenario,
         "data_quality_status": data_quality_status,
+        "data_quality_warning_present": data_quality_status != "success",
         "risk_proxy_status": risk_proxy_status,
+        "risk_proxy_available": risk_proxy_status != "skipped",
         "concentration_metric_available": concentration_metric_count > 0,
         "concentration_metric_count": concentration_metric_count,
-        "limit_breach_count": int(limit_breach_count),
+        "limit_breach_count": limit_breach_count,
         "limit_max_severity": resolved_limit_max_severity,
+        "limit_warning_breach_count": limit_warning_breach_count,
+        "limit_fail_breach_count": limit_fail_breach_count,
         "limit_scope": "all-configured-limits",
         "report_artifact_count": len(report_refs),
         "report_artifacts": list(report_refs),
+        "workflow_trace_events": trace_events,
     }
     records = [
         _record(
@@ -194,12 +221,36 @@ def build_fleet_records(
     return records
 
 
+def _normalize_workflow_trace_events(
+    events: Iterable[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    for raw in events:
+        stage = str(raw.get("stage") or "").strip()
+        if not stage:
+            continue
+        status = str(raw.get("status") or "").strip() or "unknown"
+        latency_raw = raw.get("latency_ms")
+        try:
+            latency_ms = max(0, int(latency_raw)) if latency_raw is not None else 0
+        except (TypeError, ValueError):
+            latency_ms = 0
+        normalized.append(
+            {
+                "stage": stage,
+                "status": status,
+                "latency_ms": latency_ms,
+            }
+        )
+    return normalized
+
+
 def write_fleet_records(path: Path, records: Iterable[Mapping[str, Any]]) -> Path:
     """Write records as deterministic NDJSON and return the artifact path."""
 
-    path.parent.mkdir(parents=True, exist_ok=True)
     materialized = [dict(record) for record in records]
     validate_fleet_records(materialized)
+    path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         json.dumps(dict(record), sort_keys=True, separators=(",", ":")) for record in materialized
     ]
@@ -227,21 +278,31 @@ def _record(
         "status": status,
         "github_issue": GITHUB_ISSUE,
         "recorded_at": recorded_at,
-        "domain": dict(domain),
+        "provider": context.provider,
+        "model": context.model,
+        "trace_id": context.trace_id,
+        "trace_url": context.trace_url,
+        "latency_ms": max(0, int(context.latency_ms)) if context.latency_ms is not None else None,
+        "error_category": context.error_category or "none",
     }
+    domain_with_shared = {
+        **dict(domain),
+        "shared_metadata": {
+            "run_id": context.run_id,
+            "as_of_date": context.as_of_date,
+            "scenario": context.scenario,
+            "provider": context.provider,
+            "model": context.model,
+            "status": status,
+            "trace_id": context.trace_id,
+            "trace_url": context.trace_url,
+            "latency_ms": record["latency_ms"],
+            "error_category": record["error_category"],
+        },
+    }
+    record["domain"] = domain_with_shared
     if context.github_pr:
         record["github_pr"] = context.github_pr
-    if context.provider:
-        record["provider"] = context.provider
-    if context.model:
-        record["model"] = context.model
-    if context.trace_id:
-        record["trace_id"] = context.trace_id
-    if context.trace_url:
-        record["trace_url"] = context.trace_url
-    if context.latency_ms is not None:
-        record["latency_ms"] = max(0, int(context.latency_ms))
-    record["error_category"] = context.error_category or "none"
     if artifact_ref:
         record["artifact_ref"] = artifact_ref
     return record
@@ -255,13 +316,24 @@ def validate_fleet_records(records: Iterable[Mapping[str, Any]]) -> None:
         if missing:
             raise ValueError(f"fleet record {index} missing top-level fields: {', '.join(missing)}")
         if record["schema_version"] != SCHEMA_VERSION:
-            raise ValueError(f"fleet record {index} has invalid schema_version")
+            raise ValueError(
+                f"fleet record {index} has invalid schema_version: "
+                f"expected {SCHEMA_VERSION!r}, got {record['schema_version']!r}"
+            )
         if record["repo"] != REPO:
-            raise ValueError(f"fleet record {index} has invalid repo")
+            raise ValueError(
+                f"fleet record {index} has invalid repo: expected {REPO!r}, got {record['repo']!r}"
+            )
         if record["surface"] != SURFACE:
-            raise ValueError(f"fleet record {index} has invalid surface")
+            raise ValueError(
+                f"fleet record {index} has invalid surface: "
+                f"expected {SURFACE!r}, got {record['surface']!r}"
+            )
         if record["status"] not in ALLOWED_STATUS:
-            raise ValueError(f"fleet record {index} has invalid status")
+            raise ValueError(
+                f"fleet record {index} has invalid status: "
+                f"expected one of {sorted(ALLOWED_STATUS)!r}, got {record['status']!r}"
+            )
         domain = record["domain"]
         if not isinstance(domain, Mapping):
             raise ValueError(f"fleet record {index} domain must be an object")
@@ -276,8 +348,10 @@ def validate_fleet_records(records: Iterable[Mapping[str, Any]]) -> None:
 
 def _validate_artifact_references(*, index: int, record: Mapping[str, Any]) -> None:
     artifact_ref = record.get("artifact_ref")
-    if artifact_ref is not None and not _is_safe_artifact_ref(artifact_ref):
-        raise ValueError(f"fleet record {index} artifact_ref must be an artifact: reference")
+    if artifact_ref is not None and not _is_safe_artifact_or_hash_ref(artifact_ref):
+        raise ValueError(
+            f"fleet record {index} artifact_ref must be an artifact: reference or sha256 hash"
+        )
     domain = record["domain"]
     report_artifacts = domain.get("report_artifacts", [])
     if report_artifacts is None:
@@ -285,9 +359,10 @@ def _validate_artifact_references(*, index: int, record: Mapping[str, Any]) -> N
     if not isinstance(report_artifacts, list):
         raise ValueError(f"fleet record {index} report_artifacts must be a list")
     for artifact in report_artifacts:
-        if not _is_safe_artifact_ref(artifact):
+        if not _is_safe_artifact_or_hash_ref(artifact):
             raise ValueError(
-                f"fleet record {index} report_artifacts must contain artifact: references"
+                "fleet record "
+                f"{index} report_artifacts must contain artifact: references or sha256 hashes"
             )
 
 
@@ -307,6 +382,21 @@ def _is_safe_artifact_ref(value: Any) -> bool:
     if path.parts[0].endswith(":"):
         return False
     return all(part not in {"", ".", ".."} for part in path.parts)
+
+
+def _is_safe_sha256_ref(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    if not value.startswith("sha256:"):
+        return False
+    digest = value.removeprefix("sha256:")
+    if len(digest) != 64:
+        return False
+    return all(char in "0123456789abcdefABCDEF" for char in digest)
+
+
+def _is_safe_artifact_or_hash_ref(value: Any) -> bool:
+    return _is_safe_artifact_ref(value) or _is_safe_sha256_ref(value)
 
 
 def _validate_no_sensitive_payload(*, index: int, record: Mapping[str, Any]) -> None:

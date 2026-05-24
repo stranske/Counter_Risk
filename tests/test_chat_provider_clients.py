@@ -151,6 +151,39 @@ def test_langchain_provider_client_populates_trace_metadata_from_response(
     assert response_metadata["trace_url"] == "https://smith.langchain.com/r/trace-123"
 
 
+def test_extract_trace_metadata_preserves_explicit_trace_id_over_response_id() -> None:
+    response = SimpleNamespace(
+        id="response-id-should-not-win",
+        response_metadata={
+            "trace_id": "trace-123",
+            "trace_url": "https://smith.langchain.com/r/trace-123",
+        },
+    )
+
+    trace_id, trace_url = provider_base._extract_trace_metadata(response)
+
+    assert trace_id == "trace-123"
+    assert trace_url == "https://smith.langchain.com/r/trace-123"
+
+
+def test_extract_trace_metadata_prefers_response_metadata_over_additional_kwargs() -> None:
+    response = SimpleNamespace(
+        response_metadata={
+            "trace_id": "trace-from-response-metadata",
+            "trace_url": "https://smith.langchain.com/r/response-metadata-trace",
+        },
+        additional_kwargs={
+            "trace_id": "trace-from-additional-kwargs",
+            "trace_url": "https://smith.langchain.com/r/additional-kwargs-trace",
+        },
+    )
+
+    trace_id, trace_url = provider_base._extract_trace_metadata(response)
+
+    assert trace_id == "trace-from-response-metadata"
+    assert trace_url == "https://smith.langchain.com/r/response-metadata-trace"
+
+
 def test_langchain_provider_client_retries_next_provider_after_invoke_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
