@@ -46,6 +46,14 @@ from counter_risk.normalize import (
     normalize_counterparty_with_source,
     resolve_clearing_house,
 )
+from counter_risk.observability.langsmith_fleet import (
+    ARTIFACT_NAME as LANGSMITH_FLEET_ARTIFACT_NAME,
+)
+from counter_risk.observability.langsmith_fleet import (
+    FleetRunContext,
+    build_fleet_records,
+    write_fleet_records,
+)
 from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.outputs.ppt_screenshot import export_ppt_slides_as_png_via_com
 from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
@@ -497,6 +505,21 @@ def run_pipeline(
     if limit_breaches.csv_path is not None:
         output_paths.append(limit_breaches.csv_path)
 
+    try:
+        langsmith_fleet_path = _write_langsmith_fleet_artifact(
+            run_dir=run_dir,
+            as_of_date=as_of_date,
+            output_paths=output_paths,
+            warnings=warnings,
+            concentration_metrics_records=concentration_metrics_records,
+            risk_proxy_summary=risk_proxy_summary,
+            limit_breach_summary=limit_breach_summary,
+        )
+        output_paths.append(langsmith_fleet_path)
+    except Exception as exc:
+        LOGGER.exception("pipeline_failed stage=langsmith_fleet_artifact run_dir=%s", run_dir)
+        raise RuntimeError("Pipeline failed during LangSmith fleet artifact stage") from exc
+
     if runtime_config.include_concentration_table_in_ppt and concentration_metrics_records:
         dist_ppt_path = run_dir / resolve_ppt_output_names(as_of_date).distribution_filename
         if dist_ppt_path.exists():
@@ -550,6 +573,68 @@ def run_pipeline(
     LOGGER.info("pipeline_complete run_dir=%s manifest=%s", run_dir, manifest_path)
 
     return run_dir
+
+
+def _write_langsmith_fleet_artifact(
+    *,
+    run_dir: Path,
+    as_of_date: date,
+    output_paths: Sequence[Path],
+    warnings: Sequence[str],
+    concentration_metrics_records: Sequence[Mapping[str, Any]],
+    risk_proxy_summary: Mapping[str, Any],
+    limit_breach_summary: Mapping[str, Any],
+) -> Path:
+    run_id = run_dir.name
+    context = FleetRunContext(
+        run_id=run_id,
+        as_of_date=as_of_date.isoformat(),
+        scenario="monthly-risk-report",
+        provider=os.environ.get("LANGCHAIN_PROVIDER"),
+        model=os.environ.get("LANGCHAIN_MODEL"),
+        trace_id=os.environ.get("LANGSMITH_TRACE_ID"),
+        trace_url=os.environ.get("LANGSMITH_TRACE_URL"),
+        github_pr=os.environ.get("PR_NUMBER"),
+    )
+    safe_output_refs = [
+        f"artifact:{path.relative_to(run_dir).as_posix()}"
+        for path in output_paths
+        if _is_relative_to(path, run_dir)
+    ]
+    risk_proxy_status = "success" if risk_proxy_summary else "skipped"
+    data_quality_status = "warning" if warnings else "success"
+    records = build_fleet_records(
+        context=context,
+        data_quality_status=data_quality_status,
+        risk_proxy_status=risk_proxy_status,
+        concentration_metric_count=len(concentration_metrics_records),
+        limit_breach_count=int(limit_breach_summary.get("breach_count") or 0),
+        limit_max_severity=_limit_summary_max_severity(limit_breach_summary),
+        report_artifacts=safe_output_refs,
+        artifact_ref=f"artifact:{LANGSMITH_FLEET_ARTIFACT_NAME}",
+    )
+    return write_fleet_records(run_dir / LANGSMITH_FLEET_ARTIFACT_NAME, records)
+
+
+def _limit_summary_max_severity(
+    limit_breach_summary: Mapping[str, Any],
+) -> Literal["warning", "fail"] | None:
+    explicit = limit_breach_summary.get("max_severity")
+    if explicit in {"warning", "fail"}:
+        return cast(Literal["warning", "fail"], explicit)
+    if int(limit_breach_summary.get("fail_breach_count") or 0) > 0:
+        return "fail"
+    if int(limit_breach_summary.get("warning_breach_count") or 0) > 0:
+        return "warning"
+    return None
+
+
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True
 
 
 def _call_write_outputs(
@@ -2104,6 +2189,7 @@ def _build_limit_breach_summary(
     return {
         "has_breaches": has_breaches,
         "breach_count": limit_breaches.breach_count,
+        "max_severity": limit_breaches.max_severity,
         "warning_breach_count": limit_breaches.warning_breach_count,
         "fail_breach_count": limit_breaches.fail_breach_count,
         "report_path": report_path,

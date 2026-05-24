@@ -104,6 +104,7 @@ def test_pipeline_writes_outputs_only_to_repo_root_runs_date_dir(
         run_dir / "current-month.xlsx",
         run_dir / "current-month.pptx",
         run_dir / "DATA_QUALITY_SUMMARY.txt",
+        run_dir / "langsmith-fleet.ndjson",
     }
     for output_path in produced_paths:
         assert output_path.exists()
