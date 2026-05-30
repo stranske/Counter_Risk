@@ -51,6 +51,10 @@ Repository = "https://github.com/stranske/Template"
 
 [project.scripts]
 mapping_diff_report = "counter_risk.cli.mapping_diff_report:main"
+# `counter-risk` is the documented operator/maintainer entry point (README "run"/"gui").
+# The GUI is exposed via the existing `counter-risk gui` subcommand, so no separate
+# `counter-risk-gui` script is declared (single CLI, single console script).
+counter-risk = "counter_risk.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
