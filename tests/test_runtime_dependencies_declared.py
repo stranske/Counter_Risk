@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import importlib.util
+import importlib
 import tomllib
 from pathlib import Path
-
 
 _RUNTIME_IMPORTS = {
     "pandas": "pandas",
@@ -31,11 +31,12 @@ def test_runtime_imports_are_project_dependencies() -> None:
         _dependency_name(requirement) for requirement in project["dependencies"]
     }
 
-    missing_imports = [
-        module_name
-        for module_name in _RUNTIME_IMPORTS.values()
-        if importlib.util.find_spec(module_name) is None
-    ]
+    missing_imports = []
+    for module_name in _RUNTIME_IMPORTS.values():
+        if importlib.util.find_spec(module_name) is None:
+            missing_imports.append(module_name)
+            continue
+        importlib.import_module(module_name)
     missing_declarations = [
         distribution
         for distribution in _RUNTIME_IMPORTS
@@ -45,7 +46,8 @@ def test_runtime_imports_are_project_dependencies() -> None:
     assert not missing_imports, "Runtime import modules are unavailable: " + ", ".join(
         missing_imports
     )
-    assert not missing_declarations, (
-        "Runtime imports must be declared in [project.dependencies], not only extras: "
-        + ", ".join(missing_declarations)
+    assert (
+        not missing_declarations
+    ), "Runtime imports must be declared in [project.dependencies], not only extras: " + ", ".join(
+        missing_declarations
     )
