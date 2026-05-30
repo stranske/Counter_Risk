@@ -218,6 +218,23 @@ _POSITION_CHANGE_FIELDS_FOR_MOVER_DELTA: tuple[str, ...] = (
     "PositionUSDChange",
     "PositionChangeFromPriorMonth",
 )
+_WORKFLOW_CONFIG_PATH_FIELDS: tuple[str, ...] = (
+    "mosers_all_programs_xlsx",
+    "raw_nisa_all_programs_xlsx",
+    "daily_holdings_pdf",
+    "cash_source_path",
+    "cash_overrides_csv",
+    "dropin_all_programs_template_xlsx",
+    "mosers_ex_trend_xlsx",
+    "raw_nisa_ex_trend_xlsx",
+    "mosers_trend_xlsx",
+    "raw_nisa_trend_xlsx",
+    "hist_all_programs_3yr_xlsx",
+    "hist_ex_llc_3yr_xlsx",
+    "hist_llc_3yr_xlsx",
+    "monthly_pptx",
+    "output_root",
+)
 
 
 @dataclass(frozen=True)
@@ -275,7 +292,9 @@ def run_pipeline_with_config(
     config_dir.mkdir(parents=True, exist_ok=True)
     temp_parent = Path(tempfile.gettempdir()) / "counter-risk-runtime"
     temp_parent.mkdir(parents=True, exist_ok=True)
-    serialized = config.model_dump(mode="json")
+    serialized = _resolve_runtime_config_paths(config=config, config_dir=config_dir).model_dump(
+        mode="json"
+    )
     with tempfile.NamedTemporaryFile(
         mode="w",
         encoding="utf-8",
@@ -300,6 +319,35 @@ def run_pipeline_with_config(
             os.chdir(original_working_directory)
         with contextlib.suppress(OSError):
             temp_config_path.unlink()
+
+
+def _resolve_runtime_config_paths(*, config: WorkflowConfig, config_dir: Path) -> WorkflowConfig:
+    resolved_updates: dict[str, Any] = {}
+    base_dir = config_dir.resolve()
+
+    for field_name in _WORKFLOW_CONFIG_PATH_FIELDS:
+        field_value = getattr(config, field_name, None)
+        if isinstance(field_value, Path) and not field_value.is_absolute():
+            resolved_updates[field_name] = (base_dir / field_value).resolve()
+
+    if config.screenshot_inputs:
+        resolved_updates["screenshot_inputs"] = {
+            key: path if path.is_absolute() else (base_dir / path).resolve()
+            for key, path in config.screenshot_inputs.items()
+        }
+
+    if config.input_discovery.directory_roots:
+        resolved_directory_roots = {
+            key: path if path.is_absolute() else (base_dir / path).resolve()
+            for key, path in config.input_discovery.directory_roots.items()
+        }
+        resolved_updates["input_discovery"] = config.input_discovery.model_copy(
+            update={"directory_roots": resolved_directory_roots}
+        )
+
+    if not resolved_updates:
+        return config
+    return config.model_copy(update=resolved_updates)
 
 
 def run_pipeline(
