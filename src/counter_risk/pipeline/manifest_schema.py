@@ -5,6 +5,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+# Contract version stamped onto every manifest via ``ManifestBuilder.build``.
+# Bump this (and the schema below) when the manifest contract changes in a way
+# consumers must branch on. Kept beside the schema so the version and the shape
+# it describes evolve together.
+MANIFEST_SCHEMA_VERSION = "counter-risk-manifest/v1"
+
 _PPT_OUTPUT_ENTRY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": ["role", "status", "path", "generation_step"],
@@ -196,6 +202,23 @@ _RISK_PROXY_SUMMARY_SCHEMA: dict[str, Any] = {
     "additionalProperties": True,
 }
 
+# ``provenance`` block emitted unconditionally by ``ManifestBuilder._build_provenance``
+# (``src/counter_risk/pipeline/manifest.py``). Ties a run to the exact code that
+# produced it. ``git_sha`` is nullable because best-effort resolution must still
+# succeed outside a git checkout (installed wheel, archived source).
+_PROVENANCE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["tool", "tool_version", "git_sha", "python_version", "platform"],
+    "properties": {
+        "tool": {"type": "string", "minLength": 1},
+        "tool_version": {"type": "string", "minLength": 1},
+        "git_sha": {"type": ["string", "null"]},
+        "python_version": {"type": "string", "minLength": 1},
+        "platform": {"type": "string", "minLength": 1},
+    },
+    "additionalProperties": False,
+}
+
 
 def manifest_schema() -> dict[str, Any]:
     """Return the run manifest schema used by pipeline validation."""
@@ -203,6 +226,7 @@ def manifest_schema() -> dict[str, Any]:
     return {
         "type": "object",
         "required": [
+            "manifest_schema_version",
             "as_of_date",
             "run_date",
             "run_dir",
@@ -217,8 +241,11 @@ def manifest_schema() -> dict[str, Any]:
             "unmatched_mappings",
             "missing_inputs",
             "reconciliation_results",
+            "provenance",
         ],
         "properties": {
+            "manifest_schema_version": {"type": "string", "minLength": 1},
+            "provenance": _PROVENANCE_SCHEMA,
             "as_of_date": {"type": "string"},
             "run_date": {"type": "string"},
             "run_dir": {"type": "string"},
