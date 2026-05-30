@@ -20,7 +20,9 @@ def top_exposure_evidence(
 ) -> Evidence:
     """Build evidence for a top exposure row using the manifest input key namespace."""
 
-    source_id = "mosers_all_programs_xlsx" if variant == "all_programs" else f"mosers_{variant}_xlsx"
+    source_id = (
+        "mosers_all_programs_xlsx" if variant == "all_programs" else f"mosers_{variant}_xlsx"
+    )
     source_sheet = str(sheet).strip() if sheet is not None and str(sheet).strip() else None
     source_row = int(row) if isinstance(row, int) and row > 0 else None
     return {

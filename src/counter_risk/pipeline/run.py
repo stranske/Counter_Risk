@@ -2810,9 +2810,27 @@ def _apply_chart_replacement(
     except RuntimeError as exc:
         if static_mode and "full-deck static rebuild" in str(exc):
             warnings.append(
-                "chart_replacement confidence check failed; deferring to full-deck static rebuild"
+                "chart_replacement confidence check failed; triggering full-deck static rebuild"
             )
-            LOGGER.info("chart_replacement_deferred_to_static_rebuild: %s", exc)
+            LOGGER.info("chart_replacement_triggering_static_rebuild: %s", exc)
+            try:
+                slide_images = [
+                    fallback_slide_images[index] for index in sorted(fallback_slide_images.keys())
+                ]
+                _rebuild_pptx_from_slide_images(
+                    source_pptx=master_pptx_path,
+                    output_path=output_path,
+                    slide_images=slide_images,
+                )
+                LOGGER.info("chart_replacement_static_rebuild_complete output=%s", output_path)
+                return True
+            except Exception as rebuild_exc:
+                LOGGER.warning(
+                    "chart_replacement_static_rebuild_failed original=%s rebuild=%s",
+                    exc,
+                    rebuild_exc,
+                )
+                warnings.append(f"chart_replacement static rebuild failed: {rebuild_exc}")
         else:
             LOGGER.warning("chart_replacement_failed exc=%s", exc)
             warnings.append(f"chart_replacement failed: {exc}")

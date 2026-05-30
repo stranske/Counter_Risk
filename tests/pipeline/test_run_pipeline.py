@@ -4943,7 +4943,7 @@ def test_apply_chart_replacement_returns_false_on_com_failure(
 def test_apply_chart_replacement_defers_to_full_deck_static_rebuild_on_low_confidence(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """In static mode, low-confidence matching defers to full-deck static rebuild."""
+    """In static mode, low-confidence matching triggers immediate static rebuild."""
     monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Windows")
 
     class _FakeShape:
@@ -5002,6 +5002,20 @@ def test_apply_chart_replacement_defers_to_full_deck_static_rebuild_on_low_confi
         )
 
     monkeypatch.setattr(run_module, "_rebuild_pptx_replacing_charts", _raise_full_deck_rebuild)
+    rebuilt: dict[str, Any] = {}
+
+    def _rebuild_from_slides(
+        *,
+        source_pptx: Path,
+        output_path: Path,
+        slide_images: list[Path],
+    ) -> None:
+        rebuilt["source"] = source_pptx
+        rebuilt["output"] = output_path
+        rebuilt["slide_images"] = slide_images
+        output_path.write_bytes(b"rebuilt")
+
+    monkeypatch.setattr(run_module, "_rebuild_pptx_from_slide_images", _rebuild_from_slides)
 
     warnings: list[str] = []
     result = run_module._apply_chart_replacement(
@@ -5012,5 +5026,9 @@ def test_apply_chart_replacement_defers_to_full_deck_static_rebuild_on_low_confi
         warnings=warnings,
     )
 
-    assert result is False
-    assert any("deferring to full-deck static rebuild" in w for w in warnings)
+    assert result is True
+    assert output.exists()
+    assert rebuilt["source"] == source
+    assert rebuilt["output"] == output
+    assert rebuilt["slide_images"] == [tmp_path / "_chart_images" / "fallback_slide_0001.png"]
+    assert any("triggering full-deck static rebuild" in w for w in warnings)
