@@ -886,9 +886,7 @@ def _is_placeholder_checklist_text(text: str) -> bool:
         return True
     if re.fullmatch(r"[-_*]{3,}", stripped):
         return True
-    if re.fullmatch(r"_+\s*filed from.+_+", stripped, flags=re.IGNORECASE):
-        return True
-    return False
+    return re.fullmatch(r"_+\s*filed from.+_+", stripped, flags=re.IGNORECASE) is not None
 
 
 def _parse_checklist(lines: list[str]) -> list[str]:
