@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 import json
+import platform as platform_module
 import posixpath
+import subprocess
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+import counter_risk
 from counter_risk.config import WorkflowConfig
 from counter_risk.dates import DateResolution
 from counter_risk.pipeline.data_quality import build_data_quality
-from counter_risk.pipeline.manifest_schema import validate_manifest
+from counter_risk.pipeline.manifest_schema import MANIFEST_SCHEMA_VERSION, validate_manifest
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.warnings import WarningsCollector
 
@@ -96,6 +99,8 @@ class ManifestBuilder:
             }
         )
         manifest: dict[str, Any] = {
+            "manifest_schema_version": MANIFEST_SCHEMA_VERSION,
+            "provenance": self._build_provenance(),
             "as_of_date": self.as_of_date.isoformat(),
             "run_date": self.run_date.isoformat(),
             "date_resolution": self._build_date_resolution_block(),
@@ -135,6 +140,45 @@ class ManifestBuilder:
         if repo_cash_summary is not None:
             manifest["repo_cash_summary"] = repo_cash_summary
         return manifest
+
+    def _build_provenance(self) -> dict[str, Any]:
+        """Capture the producing tool's identity so a run can be tied to its code.
+
+        Side-effect free: ``git_sha`` resolution is best-effort and returns
+        ``None`` (never raises) when the source is not a git checkout, so a run
+        from an installed wheel or archived tree still succeeds.
+        """
+        return {
+            "tool": "counter-risk",
+            "tool_version": counter_risk.__version__,
+            "git_sha": self._resolve_git_sha(),
+            "python_version": platform_module.python_version(),
+            "platform": platform_module.platform(),
+        }
+
+    @staticmethod
+    def _resolve_git_sha() -> str | None:
+        """Return the current commit SHA, or ``None`` if it cannot be determined.
+
+        Runs ``git rev-parse HEAD`` against the package's source tree. Any
+        failure (git absent, not a checkout, non-zero exit, timeout) is swallowed
+        so manifest construction never depends on a git environment.
+        """
+        repo_dir = Path(__file__).resolve().parent
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(repo_dir), "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return None
+        if result.returncode != 0:
+            return None
+        sha = result.stdout.strip()
+        return sha or None
 
     def write(self, *, run_dir: Path, manifest: dict[str, Any]) -> Path:
         summary_path = run_dir / _DATA_QUALITY_SUMMARY_FILENAME

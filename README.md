@@ -11,7 +11,7 @@ A programmatic replacement for the MOSERS spreadsheet workflow used to evaluate 
 
 - Updated historical Excel workbooks (time series inputs for charts)
 - Updated monthly PowerPoint (screenshots replaced + chart links refreshed)
-- A run folder with a manifest (inputs, hashes, warnings, summaries)
+- A run folder with a manifest (inputs, hashes, warnings, summaries). The manifest carries a top-level `manifest_schema_version` (currently `"counter-risk-manifest/v1"`) so the contract can evolve safely, and a `provenance` block tying the run to the exact code that produced it: `tool`, `tool_version`, `git_sha` (best-effort; `null` outside a git checkout), `python_version`, and `platform`.
 - Registry-backed counterparty and clearing-house name matching (see [docs/name_registry.md](docs/name_registry.md))
 - A `DATA_QUALITY_SUMMARY.txt` and manifest `data_quality` object for green/yellow/red operator review (see [docs/data_quality.md](docs/data_quality.md))
 - A `concentration_metrics.csv` with Top 5/Top 10 share and HHI per `(variant, segment)` (see [docs/concentration_metrics.md](docs/concentration_metrics.md))
