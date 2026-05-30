@@ -71,13 +71,29 @@ def _materialize_source_checkout_config(*, config_path: Path, output_dir: Path) 
 def _fixture_sources(config: WorkflowConfig) -> dict[str, Path]:
     sources = {
         "mosers_all_programs_xlsx": config.mosers_all_programs_xlsx,
+        "raw_nisa_all_programs_xlsx": config.raw_nisa_all_programs_xlsx,
         "mosers_ex_trend_xlsx": config.mosers_ex_trend_xlsx,
+        "raw_nisa_ex_trend_xlsx": config.raw_nisa_ex_trend_xlsx,
         "mosers_trend_xlsx": config.mosers_trend_xlsx,
+        "raw_nisa_trend_xlsx": config.raw_nisa_trend_xlsx,
+        "daily_holdings_pdf": config.daily_holdings_pdf,
+        "cash_source_path": config.cash_source_path,
+        "cash_overrides_csv": config.cash_overrides_csv,
+        "dropin_all_programs_template_xlsx": config.dropin_all_programs_template_xlsx,
         "hist_all_programs_3yr_xlsx": config.hist_all_programs_3yr_xlsx,
         "hist_ex_llc_3yr_xlsx": config.hist_ex_llc_3yr_xlsx,
         "hist_llc_3yr_xlsx": config.hist_llc_3yr_xlsx,
         "monthly_pptx": config.monthly_pptx,
     }
+    sources.update(
+        {f"screenshot_inputs.{key}": value for key, value in config.screenshot_inputs.items()}
+    )
+    sources.update(
+        {
+            f"input_discovery.directory_roots.{key}": value
+            for key, value in config.input_discovery.directory_roots.items()
+        }
+    )
     return {key: value for key, value in sources.items() if value is not None}
 
 
@@ -122,6 +138,40 @@ def _write_data_quality_summary(
     return summary_path
 
 
+def _artifact_relative_path(path_text: str, *, run_dir: Path) -> str:
+    path = Path(path_text)
+    if not path.is_absolute():
+        return path.as_posix()
+    repo_root = _repo_root()
+    fixture_root = repo_root / "tests" / "fixtures"
+    try:
+        return path.resolve().relative_to(run_dir.resolve()).as_posix()
+    except ValueError:
+        pass
+    try:
+        return (
+            Path("tests") / "fixtures" / path.resolve().relative_to(fixture_root.resolve())
+        ).as_posix()
+    except ValueError:
+        pass
+    try:
+        return path.resolve().relative_to(repo_root.resolve()).as_posix()
+    except ValueError:
+        return path.name
+
+
+def _normalize_manifest_paths(value: object, *, run_dir: Path) -> object:
+    if isinstance(value, str):
+        return _artifact_relative_path(value, run_dir=run_dir)
+    if isinstance(value, list):
+        return [_normalize_manifest_paths(item, run_dir=run_dir) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _normalize_manifest_paths(item, run_dir=run_dir) for key, item in value.items()
+        }
+    return value
+
+
 def build_demo_artifact(*, config_path: Path, output_dir: Path) -> Path:
     """Build a browser-downloadable synthetic fixture artifact folder."""
 
@@ -141,6 +191,8 @@ def build_demo_artifact(*, config_path: Path, output_dir: Path) -> Path:
 
     manifest_path = run_dir / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest = _normalize_manifest_paths(manifest, run_dir=run_dir)
+    assert isinstance(manifest, dict)
     manifest["data_zone"] = "synthetic-fixtures-only"
     manifest["chat_offline_mode"] = os.environ[_OFFLINE_ENV_VAR]
     manifest["data_quality_summary"] = summary_path.name
