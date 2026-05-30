@@ -18,7 +18,7 @@ from counter_risk.dates import DateResolution
 from counter_risk.pipeline.data_quality import build_data_quality
 from counter_risk.pipeline.manifest_schema import MANIFEST_SCHEMA_VERSION, validate_manifest
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
-from counter_risk.pipeline.warnings import WarningsCollector
+from counter_risk.pipeline.warnings import WarningsCollector, _is_blank_warning_value
 
 __all__ = ["ManifestBuilder", "WarningsCollector"]
 
@@ -75,6 +75,7 @@ class ManifestBuilder:
         self._validate_artifact_paths_exist(run_dir=run_dir, relative_paths=normalized_output_paths)
         config_snapshot = self._serialize_config_snapshot(self.config)
         normalized_warnings = self._normalize_warnings(warnings)
+        normalized_warnings_structured = self._normalize_warnings_structured(warnings)
         resolved_unmatched_mappings = (
             unmatched_mappings if unmatched_mappings is not None else {"count": 0, "by_variant": {}}
         )
@@ -112,6 +113,7 @@ class ManifestBuilder:
             "top_exposures": top_exposures,
             "top_changes_per_variant": top_changes_per_variant,
             "warnings": normalized_warnings,
+            "warnings_structured": normalized_warnings_structured,
             "data_quality": build_data_quality(
                 warnings,
                 unmatched_mappings=resolved_unmatched_mappings,
@@ -469,6 +471,45 @@ class ManifestBuilder:
             return None
         rendered = str(warning).strip()
         return rendered if rendered else None
+
+    def _normalize_warnings_structured(self, warnings: list[Any]) -> list[dict[str, Any]]:
+        normalized_structured: list[dict[str, Any]] = []
+        for warning in warnings:
+            normalized = self._normalize_warning_structured(warning)
+            if normalized is not None:
+                normalized_structured.append(normalized)
+        return normalized_structured
+
+    def _normalize_warning_structured(self, warning: Any) -> dict[str, Any] | None:
+        """Render a single warning as a structured object preserving discrete fields.
+
+        Mirrors :meth:`_normalize_warning` for the human ``message`` while keeping the
+        machine-readable ``code``, ``row_idx``, and any source extras as discrete keys
+        (dropping only ``None``/blank values, matching ``_is_blank_warning_value``).
+        Returns ``None`` for empty entries so the structured array stays in lockstep
+        with the legacy string array.
+        """
+        if warning is None:
+            return None
+        if isinstance(warning, Mapping):
+            message = str(warning.get("message", "")).strip()
+            extras = {
+                key: value
+                for key, value in warning.items()
+                if key != "message" and not _is_blank_warning_value(value)
+            }
+            if message:
+                return {"message": message, **extras}
+            # No discrete message: fall back to the legacy rendered string so the
+            # required ``message`` field stays populated, while still preserving extras.
+            rendered = self._normalize_warning(warning)
+            if rendered is None:
+                return None
+            return {"message": rendered, **extras}
+        rendered = self._normalize_warning(warning)
+        if rendered is None:
+            return None
+        return {"message": rendered}
 
     def _normalize_output_paths(self, *, run_dir: Path, output_paths: list[Path]) -> list[Path]:
         normalized_paths: list[Path] = []
