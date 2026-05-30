@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Counter Risk Browser Demo (Fixture Replay)</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f6f8;
+        --card: #ffffff;
+        --ink: #172026;
+        --accent: #0f766e;
+        --muted: #5b6770;
+        --border: #d2d9df;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        font: 16px/1.5 "IBM Plex Sans", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: radial-gradient(circle at top left, #e4f7f4, var(--bg) 45%);
+      }
+      .card {
+        max-width: 980px;
+        margin: 0 auto;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 10px 28px rgba(23, 32, 38, 0.08);
+        padding: 1.5rem;
+      }
+      h1 {
+        margin-top: 0;
+      }
+      code {
+        background: #eef2f5;
+        border-radius: 4px;
+        padding: 0.08rem 0.3rem;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      pre {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #0b1220;
+        color: #d7e2f0;
+        padding: 1rem;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>Counter Risk Fixture Replay (Offline Browser Demo)</h1>
+      <p class="muted">
+        This page is a static browser entry for the synthetic demo path. It is intentionally
+        fixture-only and no-egress.
+      </p>
+      <ul>
+        <li>Inputs: bundled files under <code>tests/fixtures/</code> only</li>
+        <li>Pipeline helper: <code>counter_risk.web_demo.run_web_demo_pipeline</code></li>
+        <li>Entry API used by the helper: <code>run_pipeline_with_config(...)</code></li>
+        <li>Chat boundary: <code>COUNTER_RISK_CHAT_OFFLINE_MODE=1</code></li>
+      </ul>
+      <p>
+        The CI/browser artifact path emits <code>manifest.json</code> and
+        <code>DATA_QUALITY_SUMMARY.txt</code>. Render these files in-browser after download.
+      </p>
+      <pre id="status">Ready: fixture-only browser demo contract loaded.</pre>
+    </main>
+  </body>
+</html>
