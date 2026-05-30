@@ -58,13 +58,18 @@ from counter_risk.observability.langsmith_fleet import (
 from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.outputs.ppt_screenshot import export_ppt_slides_as_png_via_com
 from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
-from counter_risk.parsers import parse_fcm_totals, parse_futures_detail
+from counter_risk.parsers import (
+    parse_fcm_totals,
+    parse_fcm_totals_with_evidence,
+    parse_futures_detail,
+)
 from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
 from counter_risk.parsers.repo_cash_sources import (
     find_duplicate_counterparty_names,
     load_repo_cash_overrides_csv,
     load_repo_cash_structured_source,
 )
+from counter_risk.pipeline.evidence import top_exposure_evidence
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
     UnmappedCounterpartyError,
@@ -1560,10 +1565,11 @@ def _parse_inputs(input_paths: dict[str, Path]) -> dict[str, dict[str, Any]]:
     parsed: dict[str, dict[str, Any]] = {}
     for variant, workbook_path in variants:
         LOGGER.info("parse_start variant=%s file=%s", variant, workbook_path)
-        totals_df = parse_fcm_totals(workbook_path)
+        totals_df, totals_evidence = parse_fcm_totals_with_evidence(workbook_path)
         futures_df = parse_futures_detail(workbook_path)
         parsed[variant] = {
             "totals": totals_df,
+            "totals_evidence": totals_evidence,
             "futures": futures_df,
         }
         LOGGER.info(
@@ -1633,6 +1639,7 @@ def _compute_metrics(
     for variant, parsed in parsed_by_variant.items():
         totals_df = parsed["totals"]
         totals_records = _records(totals_df)
+        totals_evidence = cast(dict[str, Mapping[str, Any]], parsed.get("totals_evidence", {}))
 
         if not totals_records:
             top_exposures[variant] = []
@@ -1648,6 +1655,16 @@ def _compute_metrics(
             {
                 "counterparty": str(record.get("counterparty", "")),
                 "notional": float(record.get("Notional", 0.0) or 0.0),
+                "evidence": top_exposure_evidence(
+                    variant=variant,
+                    sheet=totals_evidence.get(str(record.get("counterparty", "")), {}).get("sheet"),
+                    row=totals_evidence.get(str(record.get("counterparty", "")), {}).get("row"),
+                    method=str(
+                        totals_evidence.get(str(record.get("counterparty", "")), {}).get(
+                            "method", "nisa_parser"
+                        )
+                    ),
+                ),
             }
             for record in sorted_exposures[:5]
         ]
@@ -2792,6 +2809,9 @@ def _apply_chart_replacement(
         return True
     except RuntimeError as exc:
         if static_mode and "full-deck static rebuild" in str(exc):
+            warnings.append(
+                "chart_replacement confidence check failed; deferring to full-deck static rebuild"
+            )
             LOGGER.info("chart_replacement_deferred_to_static_rebuild: %s", exc)
         else:
             LOGGER.warning("chart_replacement_failed exc=%s", exc)

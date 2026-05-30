@@ -110,3 +110,55 @@ def test_pdf_export_generator_raises_when_export_fails(tmp_path: Path) -> None:
 
     with pytest.raises(RuntimeError, match="PDF export failed: boom export"):
         generator.generate(context=context)
+
+
+def test_pdf_export_generator_logs_failure_with_underlying_exception_message(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    context = _output_context(tmp_path, export_pdf=True)
+    source_pptx = context.run_dir / "distribution.pptx"
+    warnings: list[str] = []
+
+    def _failing_export(_source: Path, _output: Path) -> None:
+        raise RuntimeError("boom export")
+
+    generator = PDFExportGenerator(
+        source_pptx=source_pptx,
+        warnings=warnings,
+        com_availability_checker=lambda: True,
+        pptx_to_pdf_exporter=_failing_export,
+    )
+
+    with caplog.at_level("ERROR"), pytest.raises(
+        RuntimeError, match="PDF export failed: boom export"
+    ):
+        generator.generate(context=context)
+
+    assert "PDF export failed: boom export" in caplog.text
+
+
+def test_pdf_export_generator_logs_disabled_skip(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    context = _output_context(tmp_path, export_pdf=False)
+    source_pptx = context.run_dir / "distribution.pptx"
+    warnings: list[str] = []
+    called = False
+
+    def _exporter(_source: Path, _output: Path) -> None:
+        nonlocal called
+        called = True
+
+    generator = PDFExportGenerator(
+        source_pptx=source_pptx,
+        warnings=warnings,
+        com_availability_checker=lambda: True,
+        pptx_to_pdf_exporter=_exporter,
+    )
+
+    with caplog.at_level("WARNING"):
+        generated = generator.generate(context=context)
+
+    assert generated == ()
+    assert called is False
+    assert "distribution_pdf_skipped reason=export_pdf_disabled" in caplog.text

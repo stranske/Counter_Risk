@@ -229,9 +229,9 @@ Complete these in order. Mark checkbox done ONLY after implementation is verifie
   - [ ] Implement focused slice for: Create tests/test_pdf_export.py with a test that mocks PDF export to raise an exception (verify: tests pass)
   - [ ] Validate focused slice for: Create tests/test_pdf_export.py with a test that mocks PDF export to raise an exception (verify: tests pass)
   - [ ] Create tests/test_pdf_export.py with verifies the exception is propagated (verify: tests pass)
-  - [ ] Define scope for: Add a test case that verifies the logged error message contains both PDF export failed (verify: confirm completion in repo)
-  - [ ] Implement focused slice for: Add a test case that verifies the logged error message contains both PDF export failed (verify: confirm completion in repo)
-  - [ ] Validate focused slice for: Add a test case that verifies the logged error message contains both PDF export failed (verify: confirm completion in repo) the underlying exception message (verify: confirm completion in repo)
+  - [x] Define scope for: Add a test case that verifies the logged error message contains both PDF export failed (verify: confirm completion in repo)
+  - [x] Implement focused slice for: Add a test case that verifies the logged error message contains both PDF export failed (verify: confirm completion in repo)
+  - [x] Validate focused slice for: Add a test case that verifies the logged error message contains both PDF export failed (verify: confirm completion in repo) the underlying exception message (verify: confirm completion in repo)
 - [ ] Remove blanket exception suppression (e.g., `contextlib.suppress(Exception)` / `except: pass`) in COM cleanup code in `src/**/com_automation*.py`, replace with targeted exception handling that logs unexpected cleanup failures (and optionally re-raises in debug/test mode), and add `tests/test_com_cleanup.py` to verify cleanup exceptions are not silently swallowed.
   - [ ] Identify (verify: confirm completion in repo) remove all instances of contextlib.suppress(Exception) (verify: confirm completion in repo) bare except clauses from COM cleanup code in src/**/com_automation*.py (verify: confirm completion in repo)
   - [ ] Define scope for: Replace removed exception suppression with targeted exception handling that catches specific expected exception types during COM cleanup (verify: confirm completion in repo)
