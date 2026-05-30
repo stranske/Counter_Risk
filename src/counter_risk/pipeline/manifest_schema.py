@@ -256,6 +256,19 @@ def manifest_schema() -> dict[str, Any]:
             "top_exposures": {"type": "object"},
             "top_changes_per_variant": {"type": "object"},
             "warnings": {"type": "array", "items": {"type": "string"}},
+            "warnings_structured": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["message"],
+                    "properties": {
+                        "message": {"type": "string"},
+                        "code": {"type": "string"},
+                        "row_idx": {"type": "integer"},
+                    },
+                    "additionalProperties": True,
+                },
+            },
             "data_quality": _DATA_QUALITY_SCHEMA,
             "unmatched_mappings": {
                 "type": "object",
