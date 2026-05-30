@@ -4938,3 +4938,79 @@ def test_apply_chart_replacement_returns_false_on_com_failure(
     )
     assert result is False
     assert any("chart_replacement COM session failed" in w for w in warnings)
+
+
+def test_apply_chart_replacement_defers_to_full_deck_static_rebuild_on_low_confidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """In static mode, low-confidence matching defers to full-deck static rebuild."""
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Windows")
+
+    class _FakeShape:
+        Type = 7
+        HasChart = False
+        Id = 1
+        Name = "Chart 1"
+
+    class _Slide:
+        Shapes = [_FakeShape()]
+
+        def Export(self, path: str, fmt: str) -> None:  # noqa: N802
+            Path(path).write_bytes(b"fake-slide-png")
+
+    class _SlideList:
+        Count = 1
+
+        def __getitem__(self, idx: int) -> Any:
+            return _Slide()
+
+    class _FakePres:
+        Slides = _SlideList()
+
+        def Close(self) -> None:  # noqa: N802
+            pass
+
+    class _FakeApp:
+        Visible = False
+        Presentations = types.SimpleNamespace(Open=lambda *a, **kw: _FakePres())
+
+        def Quit(self) -> None:  # noqa: N802
+            pass
+
+    fake_client = types.SimpleNamespace(DispatchEx=lambda *a, **kw: _FakeApp())
+    fake_win32com = types.ModuleType("win32com")
+    cast(Any, fake_win32com).client = fake_client
+    monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+
+    source = tmp_path / "master.pptx"
+    source.write_bytes(b"fake")
+    output = tmp_path / "out.pptx"
+    chart_image = tmp_path / "chart.png"
+    chart_image.write_bytes(b"fake-chart-png")
+
+    monkeypatch.setattr(
+        run_module,
+        "_export_chart_shapes_as_images",
+        lambda **_kwargs: {(1, "Chart 1"): chart_image},
+    )
+
+    def _raise_full_deck_rebuild(**_kwargs: Any) -> None:
+        raise RuntimeError(
+            "Chart replacement confidence check failed; full-deck static rebuild required "
+            "for slide(s): 1"
+        )
+
+    monkeypatch.setattr(run_module, "_rebuild_pptx_replacing_charts", _raise_full_deck_rebuild)
+
+    warnings: list[str] = []
+    result = run_module._apply_chart_replacement(
+        master_pptx_path=source,
+        output_path=output,
+        run_dir=tmp_path,
+        static_mode=True,
+        warnings=warnings,
+    )
+
+    assert result is False
+    assert any("deferring to full-deck static rebuild" in w for w in warnings)

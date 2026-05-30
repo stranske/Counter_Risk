@@ -2809,6 +2809,9 @@ def _apply_chart_replacement(
         return True
     except RuntimeError as exc:
         if static_mode and "full-deck static rebuild" in str(exc):
+            warnings.append(
+                "chart_replacement confidence check failed; deferring to full-deck static rebuild"
+            )
             LOGGER.info("chart_replacement_deferred_to_static_rebuild: %s", exc)
         else:
             LOGGER.warning("chart_replacement_failed exc=%s", exc)
