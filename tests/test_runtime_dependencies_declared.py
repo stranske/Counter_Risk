@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import importlib.util
 import importlib
+import importlib.util
 import tomllib
 from pathlib import Path
 
