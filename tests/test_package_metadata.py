@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import pkgutil
 import tomllib
 from pathlib import Path
-
-from setuptools import find_packages
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -37,7 +36,7 @@ def test_project_metadata_is_counter_risk_specific() -> None:
 
 
 def test_placeholder_package_is_not_shipped() -> None:
-    packages = find_packages(where=str(REPO_ROOT / "src"))
+    packages = {module.name for module in pkgutil.iter_modules([str(REPO_ROOT / "src")])}
 
     assert "counter_risk" in packages
     assert "my_project" not in packages
