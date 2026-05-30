@@ -2591,6 +2591,13 @@ def _write_outputs(
 
     if refresh_result.status == PptProcessingStatus.FAILED:
         manifest_ppt_outputs["master"]["status"] = "failed"
+        manifest_ppt_outputs["distribution"] = {
+            "role": "distribution",
+            "status": "skipped",
+            "path": target_distribution_ppt.relative_to(run_dir).as_posix(),
+            "generation_step": "ppt_distribution",
+            "skipped_reason": "Master PPT refresh failed; distribution PPT derivation skipped.",
+        }
         LOGGER.warning(
             "Skipping distribution PPT derivation because Master PPT refresh failed: %s",
             target_master_ppt,
