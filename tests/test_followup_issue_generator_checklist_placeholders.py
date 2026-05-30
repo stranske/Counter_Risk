@@ -13,3 +13,8 @@ def test_parse_checklist_drops_filed_from_placeholder() -> None:
         "- [ ] Add focused regression test",
     ]
     assert followup_issue_generator._parse_checklist(lines) == ["Add focused regression test"]
+
+
+def test_parse_checklist_drops_not_provided_placeholder() -> None:
+    lines = ["- [ ] _Not provided._", "- [ ] Add focused regression test"]
+    assert followup_issue_generator._parse_checklist(lines) == ["Add focused regression test"]

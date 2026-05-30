@@ -14,3 +14,9 @@ def test_normalize_checklist_lines_drops_filed_from_placeholder() -> None:
     ]
     normalized = issue_formatter._normalize_checklist_lines(lines)
     assert normalized == ["- [ ] Add focused regression test"]
+
+
+def test_normalize_checklist_lines_drops_not_provided_placeholder() -> None:
+    lines = ["- [ ] _Not provided._", "- [ ] Add focused regression test"]
+    normalized = issue_formatter._normalize_checklist_lines(lines)
+    assert normalized == ["- [ ] Add focused regression test"]

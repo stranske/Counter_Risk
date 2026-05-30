@@ -153,6 +153,8 @@ def _is_placeholder_checklist_text(text: str) -> bool:
     stripped = text.strip()
     if not stripped:
         return True
+    if re.fullmatch(r"_+\s*not provided\.?\s*_+", stripped, flags=re.IGNORECASE):
+        return True
     if stripped == "---":
         return True
     if re.fullmatch(r"[-_*]{3,}", stripped):
