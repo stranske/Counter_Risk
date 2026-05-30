@@ -1,5 +1,13 @@
 # Counter_Risk workloop state
 
+## 2026-05-30T20:32Z - closer (codex) resolved PR #662 review threads
+
+- **Lane:** closer / complex review-thread recovery from neutral Code workspace. Target: [#662](https://github.com/stranske/Counter_Risk/pull/662) for issue [#651](https://github.com/stranske/Counter_Risk/issues/651), branch `codex/issue-651-evidence-provenance`.
+- **Audit:** PR was non-draft, issue-linked, `MERGEABLE`, and in scope. Three unresolved Copilot review threads were actionable: avoid a third CPRS-FCM workbook parse for evidence, replace substring-based LangSmith record assertions with structural checks, and parse NDJSON before asserting local evidence keys are not exported.
+- **Fix pushed:** commit `9638168` adds `parse_fcm_totals_with_evidence()` so totals and evidence reuse one parsed totals record set; updates `_parse_inputs()` to call it; changes `test_top_exposure_evidence.py` to recursively check key absence; and changes `test_run_pipeline.py` to parse `langsmith-fleet.ndjson` before checking exported keys.
+- **Validation:** `python -m pytest tests/pipeline/test_top_exposure_evidence.py tests/pipeline/test_run_pipeline.py::test_run_pipeline_writes_expected_outputs_and_manifest -q` -> 3 passed. `python -m ruff check ...` -> passed. `python -m ruff format --check ...` -> passed.
+- **Current state:** evidence comment posted on #662 (`pull/662#issuecomment-4584571266`) and all three review threads resolved. Remote head is `9638168`; `mergeable=MERGEABLE`, `mergeStateStatus=UNSTABLE` because fresh post-push Gate/Backplane/PR meta checks are in progress. Next closer: re-check checks; if green and no new threads, merge #662, apply `verify:compare`, and reopen #651 for verifier sequencing.
+
 ## 2026-05-30T20:14Z - opener (codex) materialized issue #651
 
 - **Lane:** opener (Codex) from neutral Code workspace.
