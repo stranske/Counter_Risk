@@ -4,6 +4,7 @@ from counter_risk.parsers.cprs_ch import parse_cprs_ch
 from counter_risk.parsers.cprs_fcm import (
     parse_fcm_total_evidence,
     parse_fcm_totals,
+    parse_fcm_totals_with_evidence,
     parse_futures_detail,
 )
 from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
@@ -24,6 +25,7 @@ __all__ = [
     "parse_cprs_ch",
     "parse_fcm_total_evidence",
     "parse_fcm_totals",
+    "parse_fcm_totals_with_evidence",
     "parse_futures_detail",
     "parse_exposure_maturity_schedule",
     "parse_daily_holdings_pdf",

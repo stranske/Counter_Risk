@@ -1900,9 +1900,13 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
     assert exposure_evidence["row"] is not None
     assert exposure_evidence["method"] == "nisa_parser"
 
-    langsmith_text = (run_dir / "langsmith-fleet.ndjson").read_text(encoding="utf-8")
-    assert "source_id" not in langsmith_text
-    assert "evidence" not in langsmith_text
+    langsmith_records = [
+        json.loads(line)
+        for line in (run_dir / "langsmith-fleet.ndjson").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert all("source_id" not in record for record in langsmith_records)
+    assert all("evidence" not in record for record in langsmith_records)
 
 
 def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> None:

@@ -88,11 +88,27 @@ def parse_fcm_totals(path: Path | str) -> Any:  # pandas.DataFrame
     )
 
 
+def parse_fcm_totals_with_evidence(
+    path: Path | str,
+) -> tuple[Any, dict[str, FcmTotalEvidence]]:  # pandas.DataFrame
+    """Parse totals and evidence from one workbook read."""
+    records = _parse_fcm_total_records(path)
+    return (
+        _to_dataframe(records=records, columns=_TOTAL_COLUMNS, dtypes=_TOTAL_DTYPES),
+        _fcm_total_evidence_from_records(records),
+    )
+
+
 def parse_fcm_total_evidence(path: Path | str) -> dict[str, FcmTotalEvidence]:
     """Return source-location evidence keyed by parsed counterparty."""
+    return _fcm_total_evidence_from_records(_parse_fcm_total_records(path))
 
+
+def _fcm_total_evidence_from_records(
+    records: list[dict[str, object]],
+) -> dict[str, FcmTotalEvidence]:
     evidence: dict[str, FcmTotalEvidence] = {}
-    for record in _parse_fcm_total_records(path):
+    for record in records:
         row = record["source_row"]
         evidence[str(record["counterparty"])] = {
             "counterparty": str(record["counterparty"]),

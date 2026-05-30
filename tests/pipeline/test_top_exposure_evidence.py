@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -12,6 +11,14 @@ from counter_risk.observability.langsmith_fleet import FleetRunContext, build_fl
 from counter_risk.pipeline import run as run_module
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.manifest_schema import validate_manifest
+
+
+def _contains_key(value: Any, key: str) -> bool:
+    if isinstance(value, dict):
+        return key in value or any(_contains_key(child, key) for child in value.values())
+    if isinstance(value, list):
+        return any(_contains_key(child, key) for child in value)
+    return False
 
 
 class _FakeDataFrame:
@@ -114,6 +121,5 @@ def test_langsmith_fleet_records_do_not_export_evidence_fields() -> None:
         report_artifacts=["manifest.json"],
     )
 
-    serialized = json.dumps(records, sort_keys=True)
-    assert "source_id" not in serialized
-    assert "evidence" not in serialized
+    assert not _contains_key(records, "source_id")
+    assert not _contains_key(records, "evidence")

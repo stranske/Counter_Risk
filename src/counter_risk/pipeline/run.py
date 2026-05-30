@@ -58,7 +58,11 @@ from counter_risk.observability.langsmith_fleet import (
 from counter_risk.outputs.base import OutputContext, OutputGenerator
 from counter_risk.outputs.ppt_screenshot import export_ppt_slides_as_png_via_com
 from counter_risk.outputs.registry import OutputGeneratorRegistry, OutputGeneratorRegistryContext
-from counter_risk.parsers import parse_fcm_total_evidence, parse_fcm_totals, parse_futures_detail
+from counter_risk.parsers import (
+    parse_fcm_totals,
+    parse_fcm_totals_with_evidence,
+    parse_futures_detail,
+)
 from counter_risk.parsers.daily_holdings_pdf import parse_daily_holdings_pdf
 from counter_risk.parsers.repo_cash_sources import (
     find_duplicate_counterparty_names,
@@ -1561,11 +1565,11 @@ def _parse_inputs(input_paths: dict[str, Path]) -> dict[str, dict[str, Any]]:
     parsed: dict[str, dict[str, Any]] = {}
     for variant, workbook_path in variants:
         LOGGER.info("parse_start variant=%s file=%s", variant, workbook_path)
-        totals_df = parse_fcm_totals(workbook_path)
+        totals_df, totals_evidence = parse_fcm_totals_with_evidence(workbook_path)
         futures_df = parse_futures_detail(workbook_path)
         parsed[variant] = {
             "totals": totals_df,
-            "totals_evidence": parse_fcm_total_evidence(workbook_path),
+            "totals_evidence": totals_evidence,
             "futures": futures_df,
         }
         LOGGER.info(
@@ -1653,9 +1657,7 @@ def _compute_metrics(
                 "notional": float(record.get("Notional", 0.0) or 0.0),
                 "evidence": top_exposure_evidence(
                     variant=variant,
-                    sheet=totals_evidence.get(str(record.get("counterparty", "")), {}).get(
-                        "sheet"
-                    ),
+                    sheet=totals_evidence.get(str(record.get("counterparty", "")), {}).get("sheet"),
                     row=totals_evidence.get(str(record.get("counterparty", "")), {}).get("row"),
                     method=str(
                         totals_evidence.get(str(record.get("counterparty", "")), {}).get(
