@@ -156,6 +156,46 @@ _REPO_CASH_SUMMARY_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+# A single date-resolution entry as emitted by ``DateResolution.to_manifest_entry``
+# (``src/counter_risk/dates.py``) and the unresolved fallback in
+# ``ManifestBuilder._render_date_resolution_entry``. ``details`` is an open-ended
+# provenance map (e.g. ``{"config_field": "as_of_date"}``), so it stays untyped.
+_DATE_RESOLUTION_ENTRY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["value", "source", "details"],
+    "properties": {
+        "value": {"type": "string"},
+        "source": {"type": "string"},
+        "details": {"type": "object"},
+    },
+    "additionalProperties": False,
+}
+
+# ``date_resolution`` block emitted unconditionally by ``ManifestBuilder.build``
+# (``src/counter_risk/pipeline/manifest.py``).
+_DATE_RESOLUTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["as_of_date", "run_date"],
+    "properties": {
+        "as_of_date": _DATE_RESOLUTION_ENTRY_SCHEMA,
+        "run_date": _DATE_RESOLUTION_ENTRY_SCHEMA,
+    },
+    "additionalProperties": False,
+}
+
+# ``risk_proxy_summary`` block emitted conditionally by ``ManifestBuilder.build``
+# (sourced from ``_build_risk_proxy_summary`` in ``src/counter_risk/pipeline/run.py``).
+# The per-variant payload is open-ended, so the inner objects stay permissive.
+_RISK_PROXY_SUMMARY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["outputs", "by_variant"],
+    "properties": {
+        "outputs": {"type": "object"},
+        "by_variant": {"type": "object"},
+    },
+    "additionalProperties": True,
+}
+
 
 def manifest_schema() -> dict[str, Any]:
     """Return the run manifest schema used by pipeline validation."""
@@ -272,6 +312,8 @@ def manifest_schema() -> dict[str, Any]:
                 "additionalProperties": False,
             },
             "repo_cash_summary": _REPO_CASH_SUMMARY_SCHEMA,
+            "date_resolution": _DATE_RESOLUTION_SCHEMA,
+            "risk_proxy_summary": _RISK_PROXY_SUMMARY_SCHEMA,
         },
         "additionalProperties": False,
     }
@@ -356,4 +398,104 @@ def validate_manifest_data_quality(manifest: Mapping[str, Any]) -> tuple[bool, s
                 f"Manifest data_quality recommended_actions[{index}] must include non-empty action.",
             )
 
+    return True, None
+
+
+def _matches_type(value: Any, type_name: str) -> bool:
+    """Return True when ``value`` matches a single JSON Schema ``type`` name."""
+
+    if type_name == "object":
+        return isinstance(value, Mapping)
+    if type_name == "array":
+        return isinstance(value, list)
+    if type_name == "string":
+        return isinstance(value, str)
+    if type_name == "integer":
+        # JSON integers are not booleans, even though ``bool`` subclasses ``int``.
+        return isinstance(value, int) and not isinstance(value, bool)
+    if type_name == "number":
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+    if type_name == "boolean":
+        return isinstance(value, bool)
+    if type_name == "null":
+        return value is None
+    # Unknown type keyword: be permissive rather than reject valid runs.
+    return True
+
+
+def _check_node(value: Any, schema: Mapping[str, Any], path: str) -> str | None:
+    """Validate ``value`` against ``schema`` at ``path``.
+
+    Returns a deterministic, human-readable reason on the first failure, or
+    ``None`` when the node (and its descendants) conform. Supports the subset of
+    JSON Schema the manifest schema actually uses: ``type`` (including union
+    types like ``["string", "null"]``), ``required``, ``enum``, ``minimum``,
+    ``minLength``, ``minItems``, nested ``properties``, array ``items``, and
+    ``additionalProperties`` (``False``/``True``).
+    """
+
+    expected_type = schema.get("type")
+    if expected_type is not None:
+        type_names = expected_type if isinstance(expected_type, list) else [expected_type]
+        if not any(_matches_type(value, name) for name in type_names):
+            rendered = " or ".join(str(name) for name in type_names)
+            return f"{path} must be of type {rendered}, got {type(value).__name__}"
+
+    if "enum" in schema and value not in schema["enum"]:
+        allowed = ", ".join(repr(option) for option in schema["enum"])
+        return f"{path} must be one of: {allowed}"
+
+    if (
+        "minimum" in schema
+        and isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and value < schema["minimum"]
+    ):
+        return f"{path} must be >= {schema['minimum']}"
+
+    if "minLength" in schema and isinstance(value, str) and len(value) < schema["minLength"]:
+        return f"{path} must have at least {schema['minLength']} character(s)"
+
+    if "minItems" in schema and isinstance(value, list) and len(value) < schema["minItems"]:
+        return f"{path} must have at least {schema['minItems']} item(s)"
+
+    if isinstance(value, Mapping):
+        for required_key in schema.get("required", []):
+            if required_key not in value:
+                return f"{path} is missing required key '{required_key}'"
+
+        properties = schema.get("properties", {})
+        additional = schema.get("additionalProperties", True)
+        for key, child_value in value.items():
+            if key in properties:
+                child_path = f"{path}.{key}" if path else str(key)
+                reason = _check_node(child_value, properties[key], child_path)
+                if reason is not None:
+                    return reason
+            elif additional is False:
+                return f"{path} contains unexpected key '{key}' (additionalProperties is false)"
+
+    if isinstance(value, list):
+        items_schema = schema.get("items")
+        if isinstance(items_schema, Mapping):
+            for index, item in enumerate(value):
+                reason = _check_node(item, items_schema, f"{path}[{index}]")
+                if reason is not None:
+                    return reason
+
+    return None
+
+
+def validate_manifest(manifest: Mapping[str, Any]) -> tuple[bool, str | None]:
+    """Validate a full run manifest against :func:`manifest_schema`.
+
+    Returns ``(True, None)`` when ``manifest`` conforms, or ``(False, reason)``
+    with a deterministic human-readable explanation of the first violation
+    (type mismatch, missing required key, bad enum value, or an unknown
+    top-level/nested key rejected by ``additionalProperties: False``).
+    """
+
+    reason = _check_node(manifest, manifest_schema(), "manifest")
+    if reason is not None:
+        return False, reason
     return True, None

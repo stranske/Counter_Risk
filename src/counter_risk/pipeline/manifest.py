@@ -13,6 +13,7 @@ from typing import Any
 from counter_risk.config import WorkflowConfig
 from counter_risk.dates import DateResolution
 from counter_risk.pipeline.data_quality import build_data_quality
+from counter_risk.pipeline.manifest_schema import validate_manifest
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.warnings import WarningsCollector
 
@@ -144,6 +145,9 @@ class ManifestBuilder:
                 encoding="utf-8",
             )
             self._register_summary_artifact(manifest)
+            is_valid, reason = validate_manifest(manifest)
+            if not is_valid:
+                raise ValueError(f"Manifest failed schema validation: {reason}")
             path.write_text(
                 json.dumps(manifest, sort_keys=True, indent=2) + "\n",
                 encoding="utf-8",
