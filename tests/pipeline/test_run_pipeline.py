@@ -1891,6 +1891,19 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
         assert variant in manifest["top_exposures"]
         assert variant in manifest["top_changes_per_variant"]
 
+    all_programs_exposures = manifest["top_exposures"]["all_programs"]
+    assert all_programs_exposures
+    exposure_evidence = all_programs_exposures[0]["evidence"]
+    assert exposure_evidence["source_id"] in manifest["input_hashes"]
+    assert exposure_evidence["source_id"] == "mosers_all_programs_xlsx"
+    assert exposure_evidence["sheet"]
+    assert exposure_evidence["row"] is not None
+    assert exposure_evidence["method"] == "nisa_parser"
+
+    langsmith_text = (run_dir / "langsmith-fleet.ndjson").read_text(encoding="utf-8")
+    assert "source_id" not in langsmith_text
+    assert "evidence" not in langsmith_text
+
 
 def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> None:
     warnings: list[str] = []

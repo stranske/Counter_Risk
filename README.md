@@ -119,6 +119,14 @@ Use these maintainer commands from the repository root:
 - `make format` runs `ruff format src/ tests/`
 - `make test` runs `pytest -m "not slow"`
 
+## Manifest Evidence
+
+`manifest.json` includes an `evidence` object on each `top_exposures` entry.
+The `source_id` uses the same key namespace as `input_hashes` (for example,
+`mosers_all_programs_xlsx`), and the `sheet` and `row` fields point to the
+workbook location used to produce the exposure fact. Evidence remains local to
+the manifest and is not exported in LangSmith fleet records.
+
 ## Slow Test Strategy
 
 Some tests are too expensive for PR feedback, so they are tagged with the

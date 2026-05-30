@@ -219,6 +219,38 @@ _PROVENANCE_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+_EVIDENCE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["source_id", "sheet", "row", "method", "confidence"],
+    "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "sheet": {"type": ["string", "null"]},
+        "row": {"type": ["integer", "null"], "minimum": 1},
+        "method": {"type": "string", "minLength": 1},
+        "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    },
+    "additionalProperties": False,
+}
+
+_TOP_EXPOSURE_ENTRY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["counterparty", "notional", "evidence"],
+    "properties": {
+        "counterparty": {"type": "string"},
+        "notional": {"type": "number"},
+        "evidence": _EVIDENCE_SCHEMA,
+    },
+    "additionalProperties": False,
+}
+
+_TOP_EXPOSURES_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": {
+        "type": "array",
+        "items": _TOP_EXPOSURE_ENTRY_SCHEMA,
+    },
+}
+
 
 def manifest_schema() -> dict[str, Any]:
     """Return the run manifest schema used by pipeline validation."""
@@ -253,7 +285,7 @@ def manifest_schema() -> dict[str, Any]:
             "input_hashes": {"type": "object"},
             "output_paths": {"type": "array", "items": {"type": "string"}},
             "ppt_status": {"type": "string", "enum": ["success", "skipped", "failed"]},
-            "top_exposures": {"type": "object"},
+            "top_exposures": _TOP_EXPOSURES_SCHEMA,
             "top_changes_per_variant": {"type": "object"},
             "warnings": {"type": "array", "items": {"type": "string"}},
             "data_quality": _DATA_QUALITY_SCHEMA,
