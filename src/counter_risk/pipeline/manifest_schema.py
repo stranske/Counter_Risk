@@ -431,7 +431,10 @@ def _check_node(value: Any, schema: Mapping[str, Any], path: str) -> str | None:
     JSON Schema the manifest schema actually uses: ``type`` (including union
     types like ``["string", "null"]``), ``required``, ``enum``, ``minimum``,
     ``minLength``, ``minItems``, nested ``properties``, array ``items``, and
-    ``additionalProperties`` (``False``/``True``).
+    ``additionalProperties`` in all three forms the manifest schema relies on:
+    ``False`` (reject unknown keys), ``True`` (accept any), and the schema-object
+    form (validate every non-``properties`` key's value against that sub-schema,
+    e.g. the ``by_category`` / ``by_variant`` maps).
     """
 
     expected_type = schema.get("type")
@@ -474,6 +477,14 @@ def _check_node(value: Any, schema: Mapping[str, Any], path: str) -> str | None:
                     return reason
             elif additional is False:
                 return f"{path} contains unexpected key '{key}' (additionalProperties is false)"
+            elif isinstance(additional, Mapping):
+                # Schema-object form: every key not covered by ``properties`` must
+                # validate against the ``additionalProperties`` sub-schema (e.g. the
+                # ``by_category`` / ``by_variant`` maps in ``manifest_schema()``).
+                child_path = f"{path}.{key}" if path else str(key)
+                reason = _check_node(child_value, additional, child_path)
+                if reason is not None:
+                    return reason
 
     if isinstance(value, list):
         items_schema = schema.get("items")
@@ -491,8 +502,10 @@ def validate_manifest(manifest: Mapping[str, Any]) -> tuple[bool, str | None]:
 
     Returns ``(True, None)`` when ``manifest`` conforms, or ``(False, reason)``
     with a deterministic human-readable explanation of the first violation
-    (type mismatch, missing required key, bad enum value, or an unknown
-    top-level/nested key rejected by ``additionalProperties: False``).
+    (type mismatch, missing required key, bad enum value, an unknown
+    top-level/nested key rejected by ``additionalProperties: False``, or a value
+    under an ``additionalProperties`` schema-object map that violates that
+    sub-schema).
     """
 
     reason = _check_node(manifest, manifest_schema(), "manifest")

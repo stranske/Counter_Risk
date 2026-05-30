@@ -139,15 +139,17 @@ class ManifestBuilder:
     def write(self, *, run_dir: Path, manifest: dict[str, Any]) -> Path:
         summary_path = run_dir / _DATA_QUALITY_SUMMARY_FILENAME
         path = run_dir / "manifest.json"
+        # Build the summary text and register its artifact in-memory, then validate
+        # the manifest *before* touching disk. Writing the summary first meant a
+        # schema-validation failure left a partially-written run directory; validating
+        # up front keeps the failure path side-effect free.
+        summary_text = self._build_data_quality_summary(manifest)
+        self._register_summary_artifact(manifest)
+        is_valid, reason = validate_manifest(manifest)
+        if not is_valid:
+            raise ValueError(f"Manifest failed schema validation: {reason}")
         try:
-            summary_path.write_text(
-                self._build_data_quality_summary(manifest),
-                encoding="utf-8",
-            )
-            self._register_summary_artifact(manifest)
-            is_valid, reason = validate_manifest(manifest)
-            if not is_valid:
-                raise ValueError(f"Manifest failed schema validation: {reason}")
+            summary_path.write_text(summary_text, encoding="utf-8")
             path.write_text(
                 json.dumps(manifest, sort_keys=True, indent=2) + "\n",
                 encoding="utf-8",

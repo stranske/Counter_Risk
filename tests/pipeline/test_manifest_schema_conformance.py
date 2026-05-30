@@ -101,3 +101,42 @@ def test_write_raises_on_unknown_key(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="Manifest failed schema validation"):
         builder.write(run_dir=run_dir, manifest=manifest)
+
+
+def test_validate_manifest_enforces_additional_properties_subschema(tmp_path: Path) -> None:
+    """Values under an ``additionalProperties`` schema-object map are validated.
+
+    ``unmatched_mappings.by_variant`` declares
+    ``additionalProperties: {"type": "array", ...}``; a non-array value must be
+    rejected. Previously only the ``additionalProperties: False`` form was
+    enforced, so schema-object maps (``by_variant`` / ``by_category``) silently
+    accepted any value, defeating the point of gating the full manifest.
+    """
+
+    _builder, _run_dir, manifest = _build_manifest(tmp_path)
+    manifest["unmatched_mappings"]["by_variant"]["all_programs"] = "not-an-array"
+
+    is_valid, reason = validate_manifest(manifest)
+    assert is_valid is False
+    assert reason is not None
+    assert "by_variant.all_programs" in reason
+    assert "array" in reason
+
+
+def test_write_validation_failure_leaves_no_partial_output(tmp_path: Path) -> None:
+    """A schema-validation failure in ``write`` must not persist partial files.
+
+    Regression guard: the data-quality summary used to be written to disk before
+    the manifest was validated, so a failing manifest left a stray
+    ``DATA_QUALITY_SUMMARY.txt`` in the run directory. Validation now happens
+    before any write, so the failure path is side-effect free.
+    """
+
+    builder, run_dir, manifest = _build_manifest(tmp_path)
+    manifest["__unknown__"] = 1
+
+    with pytest.raises(ValueError, match="Manifest failed schema validation"):
+        builder.write(run_dir=run_dir, manifest=manifest)
+
+    assert not (run_dir / "DATA_QUALITY_SUMMARY.txt").exists()
+    assert not (run_dir / "manifest.json").exists()
