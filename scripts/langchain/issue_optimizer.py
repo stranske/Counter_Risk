@@ -450,6 +450,19 @@ def _resolve_section(label: str) -> str | None:
     return None
 
 
+def _is_placeholder_checklist_text(text: str) -> bool:
+    stripped = text.strip()
+    if not stripped:
+        return True
+    if re.fullmatch(r"_+\s*not provided\.?\s*_+", stripped, flags=re.IGNORECASE):
+        return True
+    if stripped == "---":
+        return True
+    if re.fullmatch(r"[-_*]{3,}", stripped):
+        return True
+    return re.fullmatch(r"_+\s*filed from.+_+", stripped, flags=re.IGNORECASE) is not None
+
+
 def _parse_sections(body: str) -> dict[str, list[str]]:
     sections: dict[str, list[str]] = {key: [] for key in SECTION_TITLES}
     current: str | None = None
@@ -503,7 +516,7 @@ def _parse_checklist(lines: list[str]) -> list[str]:
             continue
         if LIST_ITEM_REGEX.match(stripped):
             value = _strip_checkbox(line)
-            if value:
+            if value and not _is_placeholder_checklist_text(value):
                 items.append(value)
     return items
 
