@@ -1438,11 +1438,17 @@ function buildTaskAppendix(sections, checkboxCounts, state = {}, options = {}) {
   const lines = [];
   const filteredTasks = filterPlaceholderChecklistLines(sections?.tasks || '');
   const filteredAcceptance = filterPlaceholderChecklistLines(sections?.acceptance || '');
+  const actionableTaskItems = extractChecklistItems(filteredTasks).filter((item) =>
+    isActionableChecklistItemText(item.text)
+  );
+  const displayTotal = actionableTaskItems.length;
+  const displayChecked = actionableTaskItems.filter((item) => item.checked).length;
+  const displayUnchecked = Math.max(0, displayTotal - displayChecked);
 
   lines.push('---');
   lines.push('## PR Tasks and Acceptance Criteria');
   lines.push('');
-  lines.push(`**Progress:** ${checkboxCounts.checked}/${checkboxCounts.total} tasks complete, ${checkboxCounts.unchecked} remaining`);
+  lines.push(`**Progress:** ${displayChecked}/${displayTotal} tasks complete, ${displayUnchecked} remaining`);
   lines.push('');
 
   // Add reconciliation reminder if the previous iteration made changes but didn't check off tasks

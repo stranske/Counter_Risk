@@ -18,3 +18,16 @@ test('buildTaskAppendix ignores placeholder checklist items for suggested task s
   assert.doesNotMatch(appendix, /- ---/);
   assert.doesNotMatch(appendix, /- _Filed from the/);
 });
+
+test('buildTaskAppendix progress excludes placeholder unchecked task items', () => {
+  const sections = {
+    scope: '_Scope section missing from source issue._',
+    tasks: ['- [x] Ship feature', '- [ ] ---', '- [ ] _Filed from the 2026-05-29 design-vs-implementation + blueprint review (upgraded issue set)._'].join('\n'),
+    acceptance: '- [ ] Validate released output',
+  };
+  const checkboxCounts = { total: 12, checked: 9, unchecked: 3 };
+
+  const appendix = buildTaskAppendix(sections, checkboxCounts, {});
+
+  assert.match(appendix, /\*\*Progress:\*\* 1\/1 tasks complete, 0 remaining/);
+});
