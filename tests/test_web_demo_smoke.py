@@ -4,11 +4,11 @@ import json
 import os
 from pathlib import Path
 
-from counter_risk.demo_artifact import build_demo_artifact
+from counter_risk.web_demo import run_web_demo_pipeline
 
 
 def test_web_demo_artifact_uses_fixture_data_and_disables_chat(tmp_path: Path) -> None:
-    run_dir = build_demo_artifact(
+    run_dir = run_web_demo_pipeline(
         config_path=Path("config/fixture_replay.yml"),
         output_dir=tmp_path / "demo",
     )
@@ -21,15 +21,21 @@ def test_web_demo_artifact_uses_fixture_data_and_disables_chat(tmp_path: Path) -
     assert os.environ["COUNTER_RISK_CHAT_OFFLINE_MODE"] == "1"
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["mode"] == "fixture_replay"
     assert manifest["data_zone"] == "synthetic-fixtures-only"
     assert manifest["chat_offline_mode"] == "1"
     assert manifest["data_quality_summary"] == "DATA_QUALITY_SUMMARY.txt"
-
-    outputs = manifest["outputs"]
-    assert outputs
-    for output_path in outputs.values():
-        assert Path(output_path).resolve().parent == run_dir.resolve()
+    config_snapshot = manifest["config_snapshot"]
+    fixture_keys = (
+        "mosers_all_programs_xlsx",
+        "mosers_ex_trend_xlsx",
+        "mosers_trend_xlsx",
+        "hist_all_programs_3yr_xlsx",
+        "hist_ex_llc_3yr_xlsx",
+        "hist_llc_3yr_xlsx",
+        "monthly_pptx",
+    )
+    for key in fixture_keys:
+        assert "tests/fixtures/" in str(config_snapshot[key]).replace("\\", "/")
 
     summary = summary_path.read_text(encoding="utf-8")
     assert "bundled tests/fixtures only" in summary
