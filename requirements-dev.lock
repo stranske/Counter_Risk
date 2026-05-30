@@ -5,7 +5,7 @@ annotated-types==0.7.0
 ast-serialize==0.3.0
     # via mypy
 black==26.3.1
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 click==8.3.1
     # via black
 colorama==0.4.6 ; sys_platform == 'win32'
@@ -25,7 +25,7 @@ librt==0.11.0 ; platform_python_implementation != 'PyPy'
 lxml==6.0.2
     # via python-pptx
 mypy==2.1.0
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 mypy-extensions==1.1.0
     # via
     #   black
@@ -33,13 +33,13 @@ mypy-extensions==1.1.0
 numpy==2.4.2
     # via pandas
 openpyxl==3.1.5
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 packaging==25.0
     # via
     #   black
     #   pytest
 pandas==2.3.0
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 pathspec==1.0.4
     # via
     #   black
@@ -53,36 +53,36 @@ pluggy==1.6.0
     #   pytest
     #   pytest-cov
 pydantic==2.7.4
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 pydantic-core==2.18.4
     # via pydantic
 pygments==2.19.2
     # via pytest
 pytest==9.0.3
     # via
-    #   my-project (pyproject.toml)
+    #   counter-risk (pyproject.toml)
     #   pytest-cov
     #   pytest-xdist
 pytest-cov==7.1.0
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 pytest-xdist==3.8.0
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via pandas
 python-pptx==1.0.2
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 pytokens==0.4.1
     # via black
 pytz==2025.2
     # via pandas
 pyyaml==6.0.3
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 ruff==0.15.13
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 six==1.17.0
     # via python-dateutil
 tomlkit==0.14.0
-    # via my-project (pyproject.toml)
+    # via counter-risk (pyproject.toml)
 typing-extensions==4.15.0
     # via
     #   mypy
