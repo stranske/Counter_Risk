@@ -138,3 +138,21 @@ def test_parse_trend_variant_maps_swaps_to_futures(fake_pandas: None) -> None:
 def test_parse_cprs_ch_missing_file_raises() -> None:
     with pytest.raises(FileNotFoundError):
         parse_cprs_ch(Path("tests/fixtures/does-not-exist.xlsx"))
+
+
+def test_parse_cprs_ch_raises_clear_error_when_pandas_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delitem(sys.modules, "pandas", raising=False)
+
+    real_import = __import__
+
+    def _import_without_pandas(name: str, *args: Any, **kwargs: Any) -> Any:
+        if name == "pandas":
+            raise ModuleNotFoundError("No module named 'pandas'")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr("builtins.__import__", _import_without_pandas)
+
+    with pytest.raises(ModuleNotFoundError, match="requires pandas"):
+        parse_cprs_ch(_fixture(_ALL_PROGRAMS_FIXTURE))

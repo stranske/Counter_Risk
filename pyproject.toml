@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=82.0.1", "wheel"]
+requires = ["setuptools>=75.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -26,6 +26,7 @@ dependencies = [
     "PyYAML>=6.0.3,<7",
     "python-pptx==1.0.2",
     "openpyxl>=3.1.5,<4",
+    "pandas>=2.3,<4",
     "langchain-openai>=1.1.14,<2",
     "langchain-anthropic>=1.4.2,<2",
 ]
@@ -36,7 +37,7 @@ dev = [
     "pytest==9.0.3",
     "pytest-cov==7.1.0",
     "pytest-xdist==3.8.0",
-    "pandas>=2.2.3,<3",
+    "pandas>=2.3,<4",
     "black==26.3.1",
     "ruff>=0.15.13",
     "mypy==2.1.0",
