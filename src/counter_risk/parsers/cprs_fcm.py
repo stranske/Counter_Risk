@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 from zipfile import BadZipFile, ZipFile
 
 from counter_risk.normalize import canonicalize_name, safe_display_name
@@ -72,8 +72,54 @@ _FUTURES_DTYPES: dict[str, str] = {
 }
 
 
+class FcmTotalEvidence(TypedDict):
+    """Workbook source location for a parsed totals row."""
+
+    counterparty: str
+    sheet: str
+    row: int
+    method: str
+
+
 def parse_fcm_totals(path: Path | str) -> Any:  # pandas.DataFrame
     """Parse totals-by-counterparty section from the CPRS-FCM worksheet."""
+    return _to_dataframe(
+        records=_parse_fcm_total_records(path), columns=_TOTAL_COLUMNS, dtypes=_TOTAL_DTYPES
+    )
+
+
+def parse_fcm_totals_with_evidence(
+    path: Path | str,
+) -> tuple[Any, dict[str, FcmTotalEvidence]]:  # pandas.DataFrame
+    """Parse totals and evidence from one workbook read."""
+    records = _parse_fcm_total_records(path)
+    return (
+        _to_dataframe(records=records, columns=_TOTAL_COLUMNS, dtypes=_TOTAL_DTYPES),
+        _fcm_total_evidence_from_records(records),
+    )
+
+
+def parse_fcm_total_evidence(path: Path | str) -> dict[str, FcmTotalEvidence]:
+    """Return source-location evidence keyed by parsed counterparty."""
+    return _fcm_total_evidence_from_records(_parse_fcm_total_records(path))
+
+
+def _fcm_total_evidence_from_records(
+    records: list[dict[str, object]],
+) -> dict[str, FcmTotalEvidence]:
+    evidence: dict[str, FcmTotalEvidence] = {}
+    for record in records:
+        row = record["source_row"]
+        evidence[str(record["counterparty"])] = {
+            "counterparty": str(record["counterparty"]),
+            "sheet": str(record["source_sheet"]),
+            "row": row if isinstance(row, int) else int(str(row)),
+            "method": "nisa_parser",
+        }
+    return evidence
+
+
+def _parse_fcm_total_records(path: Path | str) -> list[dict[str, object]]:
     file_path = Path(path)
     if not file_path.exists():
         raise FileNotFoundError(f"CPRS-FCM file not found: {file_path}")
@@ -84,11 +130,11 @@ def parse_fcm_totals(path: Path | str) -> Any:  # pandas.DataFrame
         raise ValueError(f"Malformed CPRS-FCM workbook structure: {file_path}") from exc
 
     if _variant_for_path(file_path=file_path, sheet_name=sheet_name) == "trend":
-        return _to_dataframe(records=[], columns=_TOTAL_COLUMNS, dtypes=_TOTAL_DTYPES)
+        return []
 
     boundaries = _locate_totals_section(rows)
     if boundaries is None:
-        return _to_dataframe(records=[], columns=_TOTAL_COLUMNS, dtypes=_TOTAL_DTYPES)
+        return []
 
     start_row, end_row = boundaries
     records: list[dict[str, object]] = []
@@ -119,10 +165,12 @@ def parse_fcm_totals(path: Path | str) -> Any:  # pandas.DataFrame
                 "Currency": _extract_numeric(row.get(9)),
                 "Notional": notional_value,
                 "NotionalChange": _extract_numeric(row.get(12)),
+                "source_sheet": sheet_name,
+                "source_row": row_number,
             }
         )
 
-    return _to_dataframe(records=records, columns=_TOTAL_COLUMNS, dtypes=_TOTAL_DTYPES)
+    return records
 
 
 def parse_futures_detail(path: Path | str) -> Any:  # pandas.DataFrame

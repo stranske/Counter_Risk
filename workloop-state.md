@@ -1,5 +1,24 @@
 # Counter_Risk workloop state
 
+## 2026-05-30T20:32Z - closer (codex) resolved PR #662 review threads
+
+- **Lane:** closer / complex review-thread recovery from neutral Code workspace. Target: [#662](https://github.com/stranske/Counter_Risk/pull/662) for issue [#651](https://github.com/stranske/Counter_Risk/issues/651), branch `codex/issue-651-evidence-provenance`.
+- **Audit:** PR was non-draft, issue-linked, `MERGEABLE`, and in scope. Three unresolved Copilot review threads were actionable: avoid a third CPRS-FCM workbook parse for evidence, replace substring-based LangSmith record assertions with structural checks, and parse NDJSON before asserting local evidence keys are not exported.
+- **Fix pushed:** commit `9638168` adds `parse_fcm_totals_with_evidence()` so totals and evidence reuse one parsed totals record set; updates `_parse_inputs()` to call it; changes `test_top_exposure_evidence.py` to recursively check key absence; and changes `test_run_pipeline.py` to parse `langsmith-fleet.ndjson` before checking exported keys.
+- **Validation:** `python -m pytest tests/pipeline/test_top_exposure_evidence.py tests/pipeline/test_run_pipeline.py::test_run_pipeline_writes_expected_outputs_and_manifest -q` -> 3 passed. `python -m ruff check ...` -> passed. `python -m ruff format --check ...` -> passed.
+- **Current state:** evidence comment posted on #662 (`pull/662#issuecomment-4584571266`) and all three review threads resolved. Remote head is `9638168`; `mergeable=MERGEABLE`, `mergeStateStatus=UNSTABLE` because fresh post-push Gate/Backplane/PR meta checks are in progress. Next closer: re-check checks; if green and no new threads, merge #662, apply `verify:compare`, and reopen #651 for verifier sequencing.
+
+## 2026-05-30T20:14Z - opener (codex) materialized issue #651
+
+- **Lane:** opener (Codex) from neutral Code workspace.
+- **Issue:** stranske/Counter_Risk#651 (priority:normal, repo-review-approved) - attach Evidence provenance to extracted `top_exposures` facts.
+- **Branch/PR:** `codex/issue-651-evidence-provenance`; PR #662 opened ready-for-review, non-draft, with `agent:codex`, `agents:keepalive`, `autofix`, `priority:normal`, and `repo-review-approved`.
+- **Cap/drain preflight:** raw cap was below 5. Repaired stale blocker labels on Workflows#2190; Counter_Risk#661, Workflows#2190, Workflows#2192/#662 were draining or freshly waiting on CI, while Trend_Model_Project#5353 remained a scoped product/scope blocker.
+- **Change:** added typed manifest Evidence for top exposures, exported CPRS-FCM totals source evidence without changing the public parser DataFrame columns, threaded evidence into `_compute_metrics`, tightened the manifest schema, and documented that evidence remains local to `manifest.json` and out of LangSmith fleet records.
+- **Validation:** `python -m pytest tests/pipeline/test_top_exposure_evidence.py tests/pipeline/test_manifest_schema_conformance.py tests/pipeline/test_manifest_provenance.py -q`; parser/MOSERS smoke for NISA parsers and MOSERS workbook parseability; `python -m pytest tests/pipeline/test_run_pipeline.py::test_run_pipeline_writes_expected_outputs_and_manifest -q`; targeted `ruff check` on touched files.
+- **Post-open routing:** `pr_opened` relay fired for #662. Initial cap-health lagged on dispatch evidence, so `opener-repair-infra-stalls.py` added `agent:retry` and dispatched Gate Followups. Fresh cap-health saw #662 as draining/fresh async work.
+- **Next action:** wait_for_keepalive; keepalive owns CI/review, closer owns merge and verifier/source issue closure.
+
 ## 2026-05-30T19:12Z - opener (codex) materialized issue #646
 
 - **Lane:** opener (Codex) from neutral Code workspace.

@@ -1891,6 +1891,23 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
         assert variant in manifest["top_exposures"]
         assert variant in manifest["top_changes_per_variant"]
 
+    all_programs_exposures = manifest["top_exposures"]["all_programs"]
+    assert all_programs_exposures
+    exposure_evidence = all_programs_exposures[0]["evidence"]
+    assert exposure_evidence["source_id"] in manifest["input_hashes"]
+    assert exposure_evidence["source_id"] == "mosers_all_programs_xlsx"
+    assert exposure_evidence["sheet"]
+    assert exposure_evidence["row"] is not None
+    assert exposure_evidence["method"] == "nisa_parser"
+
+    langsmith_records = [
+        json.loads(line)
+        for line in (run_dir / "langsmith-fleet.ndjson").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert all("source_id" not in record for record in langsmith_records)
+    assert all("evidence" not in record for record in langsmith_records)
+
 
 def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> None:
     warnings: list[str] = []
@@ -4921,3 +4938,79 @@ def test_apply_chart_replacement_returns_false_on_com_failure(
     )
     assert result is False
     assert any("chart_replacement COM session failed" in w for w in warnings)
+
+
+def test_apply_chart_replacement_defers_to_full_deck_static_rebuild_on_low_confidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """In static mode, low-confidence matching defers to full-deck static rebuild."""
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Windows")
+
+    class _FakeShape:
+        Type = 7
+        HasChart = False
+        Id = 1
+        Name = "Chart 1"
+
+    class _Slide:
+        Shapes = [_FakeShape()]
+
+        def Export(self, path: str, fmt: str) -> None:  # noqa: N802
+            Path(path).write_bytes(b"fake-slide-png")
+
+    class _SlideList:
+        Count = 1
+
+        def __getitem__(self, idx: int) -> Any:
+            return _Slide()
+
+    class _FakePres:
+        Slides = _SlideList()
+
+        def Close(self) -> None:  # noqa: N802
+            pass
+
+    class _FakeApp:
+        Visible = False
+        Presentations = types.SimpleNamespace(Open=lambda *a, **kw: _FakePres())
+
+        def Quit(self) -> None:  # noqa: N802
+            pass
+
+    fake_client = types.SimpleNamespace(DispatchEx=lambda *a, **kw: _FakeApp())
+    fake_win32com = types.ModuleType("win32com")
+    cast(Any, fake_win32com).client = fake_client
+    monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+
+    source = tmp_path / "master.pptx"
+    source.write_bytes(b"fake")
+    output = tmp_path / "out.pptx"
+    chart_image = tmp_path / "chart.png"
+    chart_image.write_bytes(b"fake-chart-png")
+
+    monkeypatch.setattr(
+        run_module,
+        "_export_chart_shapes_as_images",
+        lambda **_kwargs: {(1, "Chart 1"): chart_image},
+    )
+
+    def _raise_full_deck_rebuild(**_kwargs: Any) -> None:
+        raise RuntimeError(
+            "Chart replacement confidence check failed; full-deck static rebuild required "
+            "for slide(s): 1"
+        )
+
+    monkeypatch.setattr(run_module, "_rebuild_pptx_replacing_charts", _raise_full_deck_rebuild)
+
+    warnings: list[str] = []
+    result = run_module._apply_chart_replacement(
+        master_pptx_path=source,
+        output_path=output,
+        run_dir=tmp_path,
+        static_mode=True,
+        warnings=warnings,
+    )
+
+    assert result is False
+    assert any("deferring to full-deck static rebuild" in w for w in warnings)
