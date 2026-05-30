@@ -39,11 +39,11 @@ def test_console_script_entry_point_help_exits_zero() -> None:
     from counter_risk.cli import main
 
     try:
-        main(["--help"])
+        exit_code = main(["--help"])
     except SystemExit as exc:  # argparse --help raises SystemExit(0)
         assert exc.code in (0, None)
     else:  # main returned normally
-        pass
+        assert exit_code == 0
 
 
 def test_cli_help_exits_zero() -> None:
