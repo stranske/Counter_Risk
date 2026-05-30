@@ -1,5 +1,15 @@
 # Counter_Risk workloop state
 
+## 2026-05-30T19:12Z - opener (codex) materialized issue #646
+
+- **Lane:** opener (Codex) from neutral Code workspace.
+- **Issue:** stranske/Counter_Risk#646 (priority:normal, repo-review-approved) — replace template placeholder package metadata and remove the stray `src/my_project` package.
+- **Branch:** `codex/issue-646-package-metadata`; worktree `/Users/teacher/.codex/automations/pd-workloop-resume/worktrees/counter-risk-646-package-metadata`.
+- **Cap/drain preflight:** raw opener cap was 4 (<5). Pension-Data#491, Workflows#2190, and Workflows#2192 were draining with fresh Gate/keepalive evidence; Trend_Model_Project#5353 remained a scoped non-repairable product/scope blocker. Workflows#2159 was dispositioned as already code-supported on `main` but Template still drifted, so targeted maint-68 sync run `26692356766` was dispatched for `stranske/Template`.
+- **Change:** set project metadata to `counter-risk`, Counter_Risk URLs, and non-placeholder author/description; removed `src/my_project`, its placeholder test, and the `my_project` first-party Ruff entry; refreshed lock-file provenance comments; added `tests/test_package_metadata.py`.
+- **Validation:** `python -m pytest tests/test_package_metadata.py tests/test_dependency_version_alignment.py tests/test_cli.py -q` (6 passed); `python -m ruff check pyproject.toml tests/test_package_metadata.py tests/__init__.py`; `/tmp/counter-risk-646-venv/bin/python -m pip install --no-deps .` followed by import smoke (`counter_risk` imports, `my_project` raises `ModuleNotFoundError`, dist name `counter-risk`, top_level.txt only `counter_risk`).
+- **Next action:** open ready-for-review PR and hand off to keepalive; closer owns post-merge verifier/source issue closure.
+
 ## 2026-05-30T06:14Z - opener (codex) quick-recovered PR #654 lint failure
 
 - **Lane:** opener quick-recovery during cap-drain sweep; raw opener cap reached after Inv-Man-Intake#481 opened.
