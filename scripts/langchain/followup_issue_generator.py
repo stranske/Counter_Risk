@@ -74,6 +74,10 @@ SECTION_TITLES = {
 
 LIST_ITEM_REGEX = re.compile(r"^\s*([-*+]|\d+[.)]|[A-Za-z][.)])\s+(.*)$")
 CHECKBOX_REGEX = re.compile(r"^\[([ xX])\]\s*(.*)$")
+_CHECKLIST_PLACEHOLDER_PATTERN = re.compile(
+    r"^_(?:not provided\.|filed from the .* \(upgraded issue set\)\.)_$",
+    re.IGNORECASE,
+)
 MISSING_CONCERNS_MESSAGE = (
     "Verification output did not include extractable concerns; "
     "re-run verification to capture verifier-context.md and verifier-diff-summary.md."
@@ -878,6 +882,14 @@ def _strip_checkbox(line: str, list_match: re.Match[str] | None = None) -> str:
 
 def _parse_checklist(lines: list[str]) -> list[str]:
     """Extract checklist items from lines, handling both checkbox and plain list formats."""
+    def _keep_checklist_value(value: str) -> bool:
+        cleaned = value.strip()
+        if len(cleaned) <= 3:
+            return False
+        if cleaned == "---":
+            return False
+        return _CHECKLIST_PLACEHOLDER_PATTERN.fullmatch(cleaned) is None
+
     items: list[str] = []
     for line in lines:
         stripped = line.strip()
@@ -887,7 +899,7 @@ def _parse_checklist(lines: list[str]) -> list[str]:
         checkbox_match = CHECKBOX_REGEX.match(stripped)
         if checkbox_match:
             value = checkbox_match.group(2).strip()
-            if value and len(value) > 3:
+            if _keep_checklist_value(value):
                 items.append(value)
             continue
         # Then try list item (with optional checkbox inside)
@@ -895,7 +907,7 @@ def _parse_checklist(lines: list[str]) -> list[str]:
         if list_match:
             # Pass the match to avoid re-matching in _strip_checkbox
             value = _strip_checkbox(line, list_match)
-            if value and len(value) > 3:
+            if _keep_checklist_value(value):
                 items.append(value)
     return items
 

@@ -147,6 +147,10 @@ SECTION_TITLES = {
 
 LIST_ITEM_REGEX = re.compile(r"^(\s*)([-*+]|\d+[.)]|[A-Za-z][.)])\s+(.*)$")
 CHECKBOX_REGEX = re.compile(r"^\[([ xX])\]\s*(.*)$")
+_CHECKLIST_PLACEHOLDER_PATTERN = re.compile(
+    r"^_(?:not provided\.|filed from the .* \(upgraded issue set\)\.)_$",
+    re.IGNORECASE,
+)
 
 
 def _context_token_budget() -> int:
@@ -244,6 +248,13 @@ def _normalize_non_action_lines(lines: list[str]) -> list[str]:
 def _normalize_checklist_lines(lines: list[str]) -> list[str]:
     cleaned: list[str] = []
     in_fence = False
+
+    def _is_placeholder(value: str) -> bool:
+        text = value.strip()
+        if not text or text == "---":
+            return True
+        return _CHECKLIST_PLACEHOLDER_PATTERN.fullmatch(text) is not None
+
     for raw in lines:
         stripped = raw.strip()
         if stripped.startswith("```"):
@@ -262,12 +273,15 @@ def _normalize_checklist_lines(lines: list[str]) -> list[str]:
             if checkbox:
                 mark = "x" if checkbox.group(1).lower() == "x" else " "
                 text = checkbox.group(2).strip()
-                if text:
+                if text and not _is_placeholder(text):
                     cleaned.append(f"{indent}- [{mark}] {text}")
                 continue
-            cleaned.append(f"{indent}- [ ] {remainder.strip()}")
+            text = remainder.strip()
+            if not _is_placeholder(text):
+                cleaned.append(f"{indent}- [ ] {text}")
         else:
-            cleaned.append(f"- [ ] {stripped}")
+            if not _is_placeholder(stripped):
+                cleaned.append(f"- [ ] {stripped}")
     return cleaned
 
 
