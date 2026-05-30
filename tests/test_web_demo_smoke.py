@@ -11,6 +11,8 @@ import yaml
 
 from counter_risk.web_demo import run_web_demo_pipeline
 
+_BLOCKED_CHAT_RUNTIME = "counter_risk.chat.providers.langchain_runtime"
+
 
 def _assert_no_absolute_paths(value: object) -> None:
     if isinstance(value, str):
@@ -48,6 +50,7 @@ def test_web_demo_import_does_not_load_chat_runtime() -> None:
 
 
 def test_web_demo_artifact_uses_fixture_data_and_disables_chat(tmp_path: Path) -> None:
+    assert _BLOCKED_CHAT_RUNTIME not in sys.modules
     run_dir = run_web_demo_pipeline(
         config_path=Path("config/fixture_replay.yml"),
         output_dir=tmp_path / "demo",
@@ -59,6 +62,7 @@ def test_web_demo_artifact_uses_fixture_data_and_disables_chat(tmp_path: Path) -
     assert manifest_path.is_file()
     assert summary_path.is_file()
     assert os.environ["COUNTER_RISK_CHAT_OFFLINE_MODE"] == "1"
+    assert _BLOCKED_CHAT_RUNTIME not in sys.modules
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["data_zone"] == "synthetic-fixtures-only"
