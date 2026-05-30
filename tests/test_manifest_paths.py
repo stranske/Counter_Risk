@@ -113,6 +113,7 @@ def test_manifest_includes_repo_cash_summary_when_provided(tmp_path: Path) -> No
     repo_cash_summary = {
         "source_type": "csv",
         "source_path": "inputs/repo_cash_2026-02-13.csv",
+        "skipped_reason": None,
         "overrides_path": "inputs/cash_overrides_2026-02-13.csv",
         "applied_override_count": 2,
         "raw_override_row_count": 2,
@@ -124,6 +125,8 @@ def test_manifest_includes_repo_cash_summary_when_provided(tmp_path: Path) -> No
                 "note": "year-end true-up",
             }
         ],
+        "duplicate_counterparty_names": [],
+        "orphan_override_counterparties": [],
         "counterparty_count": 5,
         "total_cash": 12345.67,
         "required_counterparties": ["ACME", "BARCLAYS"],
