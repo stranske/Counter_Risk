@@ -196,7 +196,7 @@ def _load_parquet_table(path: Path) -> list[dict[str, Any]]:
     except (ImportError, ModuleNotFoundError) as exc:
         raise RunContextError(
             f"Parquet table found but pandas is unavailable: {path}. "
-            "Install pandas support with `pip install .[pandas]`."
+            "Install project runtime dependencies with `pip install .`."
         ) from exc
 
     parse_error_types = _pandas_parquet_parse_error_types(pd)
