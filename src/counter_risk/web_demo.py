@@ -97,11 +97,24 @@ def _assert_fixture_only(config: WorkflowConfig, *, config_path: Path) -> list[P
     return resolved_sources
 
 
-def _assert_chat_runtime_not_loaded() -> None:
-    # Browser demo must remain no-egress: do not load LangChain-backed chat providers.
-    blocked = "counter_risk.chat.providers.langchain_runtime"
-    if blocked in sys.modules:
-        raise RuntimeError(f"Unexpected chat provider module loaded: {blocked}")
+_BLOCKED_CHAT_RUNTIME = "counter_risk.chat.providers.langchain_runtime"
+
+
+def _chat_runtime_loaded() -> bool:
+    return _BLOCKED_CHAT_RUNTIME in sys.modules
+
+
+def _assert_chat_runtime_not_newly_loaded(*, loaded_before: bool) -> None:
+    # Browser demo must remain no-egress: running the demo must not pull in the
+    # LangChain-backed chat runtime. Only the demo *itself* loading the module is
+    # a violation. A module already imported earlier in the process (e.g. sibling
+    # tests sharing a pytest-xdist worker) is not a demo-introduced egress path,
+    # so we compare against the pre-run state instead of a global sys.modules
+    # snapshot.
+    if not loaded_before and _chat_runtime_loaded():
+        raise RuntimeError(
+            f"Web demo unexpectedly loaded chat provider module: {_BLOCKED_CHAT_RUNTIME}"
+        )
 
 
 def _write_data_quality_summary(
@@ -133,7 +146,7 @@ def run_web_demo_pipeline(*, config_path: Path, output_dir: Path) -> Path:
     """Run the fixture-only web demo pipeline and annotate the run manifest."""
 
     os.environ[_OFFLINE_ENV_VAR] = "1"
-    _assert_chat_runtime_not_loaded()
+    chat_runtime_loaded_before = _chat_runtime_loaded()
     demo_config_path = _materialize_web_demo_config(config_path=config_path, output_dir=output_dir)
     config = load_config(demo_config_path)
     fixture_sources = _assert_fixture_only(config, config_path=demo_config_path)
@@ -142,6 +155,7 @@ def run_web_demo_pipeline(*, config_path: Path, output_dir: Path) -> Path:
         config_dir=demo_config_path.parent,
         output_dir=output_dir,
     )
+    _assert_chat_runtime_not_newly_loaded(loaded_before=chat_runtime_loaded_before)
     summary_path = _write_data_quality_summary(
         run_dir=run_dir,
         config_path=config_path.resolve(),
