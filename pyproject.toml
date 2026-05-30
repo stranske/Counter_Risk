@@ -108,7 +108,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["counter_risk", "tools"]
+known-first-party = ["counter_risk"]
 
 [tool.mypy]
 python_version = "3.12"
