@@ -1,0 +1,51 @@
+name: Synthetic Browser Demo Artifact
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo-artifact:
+    name: Build fixture-only demo artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: python -m pip install -e .
+
+      - name: Build synthetic fixture demo
+        env:
+          COUNTER_RISK_CHAT_OFFLINE_MODE: "1"
+        run: |
+          python -m counter_risk.demo_artifact \
+            --config config/fixture_replay.yml \
+            --output-dir runs/demo
+
+      - name: Verify demo contents
+        run: |
+          test -f runs/demo/manifest.json
+          test -f runs/demo/DATA_QUALITY_SUMMARY.txt
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path("runs/demo/manifest.json").read_text())
+          assert manifest["data_zone"] == "synthetic-fixtures-only"
+          assert manifest["chat_offline_mode"] == "1"
+          PY
+
+      - name: Upload browser demo artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: counter-risk-synthetic-browser-demo
+          path: runs/demo/
+          if-no-files-found: error
