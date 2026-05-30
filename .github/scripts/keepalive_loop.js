@@ -1269,6 +1269,12 @@ function isPlaceholderChecklistItem(text) {
   if (!normalized) {
     return true;
   }
+  if (normalized === '---') {
+    return true;
+  }
+  if (normalized.startsWith('filed from the ') && normalized.includes('design-vs-implementation')) {
+    return true;
+  }
   if (normalized.includes('section missing from source issue')) {
     return true;
   }
@@ -1283,6 +1289,20 @@ function isPlaceholderChecklistItem(text) {
 
 function isActionableChecklistItemText(text) {
   return !isStatusMetricChecklistItem(text) && !isPlaceholderChecklistItem(text);
+}
+
+function filterPlaceholderChecklistLines(markdown) {
+  const source = String(markdown || '');
+  const checkboxRegex = /^(\s*)(?:[-*]|\d+\.)\s*\[( |x|X)\]\s*(.+?)\s*$/;
+  const lines = source.split('\n');
+  const filtered = lines.filter((line) => {
+    const item = line.match(checkboxRegex);
+    if (!item) {
+      return true;
+    }
+    return isActionableChecklistItemText(item[2] || '');
+  });
+  return filtered.join('\n').trim();
 }
 
 function toActionableChecklistCounts(markdown) {
@@ -1416,6 +1436,8 @@ function validateScopeCompliance(filesChanged, scopePatterns) {
  */
 function buildTaskAppendix(sections, checkboxCounts, state = {}, options = {}) {
   const lines = [];
+  const filteredTasks = filterPlaceholderChecklistLines(sections?.tasks || '');
+  const filteredAcceptance = filterPlaceholderChecklistLines(sections?.acceptance || '');
 
   lines.push('---');
   lines.push('## PR Tasks and Acceptance Criteria');
@@ -1445,24 +1467,24 @@ function buildTaskAppendix(sections, checkboxCounts, state = {}, options = {}) {
     lines.push('');
   }
 
-  if (sections?.tasks) {
+  if (filteredTasks) {
     lines.push('### Tasks');
     lines.push('Complete these in order. Mark checkbox done ONLY after implementation is verified:');
     lines.push('');
-    lines.push(sections.tasks);
+    lines.push(filteredTasks);
     lines.push('');
   }
 
-  if (sections?.acceptance) {
+  if (filteredAcceptance) {
     lines.push('### Acceptance Criteria');
     lines.push('The PR is complete when ALL of these are satisfied:');
     lines.push('');
-    lines.push(sections.acceptance);
+    lines.push(filteredAcceptance);
     lines.push('');
   }
 
   const attemptedTasks = normaliseAttemptedTasks(state?.attempted_tasks);
-  const candidateSource = sections?.tasks || sections?.acceptance || '';
+  const candidateSource = [filteredTasks, filteredAcceptance].filter(Boolean).join('\n');
   const taskItems = extractChecklistItems(candidateSource).filter((item) =>
     isActionableChecklistItemText(item.text)
   );
