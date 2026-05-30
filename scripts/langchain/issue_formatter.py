@@ -149,6 +149,19 @@ LIST_ITEM_REGEX = re.compile(r"^(\s*)([-*+]|\d+[.)]|[A-Za-z][.)])\s+(.*)$")
 CHECKBOX_REGEX = re.compile(r"^\[([ xX])\]\s*(.*)$")
 
 
+def _is_placeholder_checklist_text(text: str) -> bool:
+    stripped = text.strip()
+    if not stripped:
+        return True
+    if re.fullmatch(r"_+\s*not provided\.?\s*_+", stripped, flags=re.IGNORECASE):
+        return True
+    if stripped == "---":
+        return True
+    if re.fullmatch(r"[-_*]{3,}", stripped):
+        return True
+    return re.fullmatch(r"_+\s*filed from.+_+", stripped, flags=re.IGNORECASE) is not None
+
+
 def _context_token_budget() -> int:
     raw = os.environ.get("ISSUE_PR_CONTEXT_TOKEN_BUDGET", "")
     return int(raw) if raw.isdigit() and int(raw) > 0 else 4000
@@ -262,11 +275,16 @@ def _normalize_checklist_lines(lines: list[str]) -> list[str]:
             if checkbox:
                 mark = "x" if checkbox.group(1).lower() == "x" else " "
                 text = checkbox.group(2).strip()
-                if text:
+                if text and not _is_placeholder_checklist_text(text):
                     cleaned.append(f"{indent}- [{mark}] {text}")
                 continue
-            cleaned.append(f"{indent}- [ ] {remainder.strip()}")
+            normalized = remainder.strip()
+            if _is_placeholder_checklist_text(normalized):
+                continue
+            cleaned.append(f"{indent}- [ ] {normalized}")
         else:
+            if _is_placeholder_checklist_text(stripped):
+                continue
             cleaned.append(f"- [ ] {stripped}")
     return cleaned
 

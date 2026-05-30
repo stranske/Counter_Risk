@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+from builtins import __import__ as _builtin_import
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -144,6 +145,27 @@ def test_load_parquet_table_pyarrow_io_error_message(
         _load_parquet_table(parquet_path)
 
     assert "Check file path and permissions" in str(exc_info.value)
+
+
+def test_load_parquet_table_missing_pandas_mentions_pip_install_dot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parquet_path = tmp_path / "missing-pandas.parquet"
+    parquet_path.write_bytes(b"broken")
+
+    def fake_import(name: str, *args: object, **kwargs: object) -> object:
+        if name == "pandas":
+            raise ModuleNotFoundError("No module named 'pandas'")
+        return _builtin_import(name, *args, **kwargs)
+
+    monkeypatch.setattr("builtins.__import__", fake_import)
+
+    with pytest.raises(RunContextError, match="pandas is unavailable") as exc_info:
+        _load_parquet_table(parquet_path)
+
+    message = str(exc_info.value)
+    assert "pip install ." in message
+    assert ".[pandas]" not in message
 
 
 def test_load_chat_logs_returns_empty_when_directory_missing(tmp_path: Path) -> None:
