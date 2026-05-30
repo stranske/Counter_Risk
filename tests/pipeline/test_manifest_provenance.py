@@ -12,6 +12,7 @@ builder emits real values and the schema accepts them.
 from __future__ import annotations
 
 import platform as platform_module
+import subprocess
 from datetime import date
 from pathlib import Path
 
@@ -82,9 +83,15 @@ def test_manifest_provenance_is_populated_with_real_values(tmp_path: Path) -> No
     assert provenance["tool_version"] == counter_risk.__version__
     assert provenance["python_version"] == platform_module.python_version()
     assert provenance["platform"] == platform_module.platform()
-    # git_sha is best-effort: a 40-char hex SHA inside a checkout, else None.
+    # git_sha is best-effort: a hex object ID inside a checkout, else None. The
+    # length is not pinned to SHA-1 (40 chars) because SHA-256 repositories
+    # report a 64-char object ID, and the schema only promises a string-or-null.
     git_sha = provenance["git_sha"]
-    assert git_sha is None or (isinstance(git_sha, str) and len(git_sha) == 40)
+    assert git_sha is None or (
+        isinstance(git_sha, str)
+        and len(git_sha) in (40, 64)
+        and all(c in "0123456789abcdef" for c in git_sha)
+    )
     # Exactly the five contract keys, no extras.
     assert set(provenance) == {
         "tool",
@@ -137,3 +144,45 @@ def test_schema_rejects_non_string_git_sha(tmp_path: Path) -> None:
     assert is_valid is False
     assert reason is not None
     assert "git_sha" in reason
+
+
+def test_resolve_git_sha_returns_none_when_git_binary_absent(monkeypatch) -> None:
+    """Best-effort contract: an OSError (git not installed) is swallowed -> None.
+
+    Without this, runs from an installed wheel or archived source tree where
+    ``git`` is unavailable would raise instead of degrading to ``git_sha=None``.
+    """
+
+    def _raise_oserror(*_args, **_kwargs):
+        raise FileNotFoundError("git binary not on PATH")
+
+    monkeypatch.setattr("counter_risk.pipeline.manifest.subprocess.run", _raise_oserror)
+
+    assert ManifestBuilder._resolve_git_sha() is None
+
+
+def test_resolve_git_sha_returns_none_on_timeout(monkeypatch) -> None:
+    """A subprocess timeout is swallowed -> None (the contract never raises)."""
+
+    def _raise_timeout(*_args, **_kwargs):
+        raise subprocess.TimeoutExpired(cmd="git", timeout=5)
+
+    monkeypatch.setattr("counter_risk.pipeline.manifest.subprocess.run", _raise_timeout)
+
+    assert ManifestBuilder._resolve_git_sha() is None
+
+
+def test_resolve_git_sha_returns_none_on_nonzero_exit(monkeypatch) -> None:
+    """A non-checkout (non-zero ``git`` exit) yields ``None``, not a blank SHA."""
+
+    def _nonzero(*_args, **_kwargs):
+        return subprocess.CompletedProcess(
+            args=["git", "rev-parse", "HEAD"],
+            returncode=128,
+            stdout="",
+            stderr="fatal: not a git repository",
+        )
+
+    monkeypatch.setattr("counter_risk.pipeline.manifest.subprocess.run", _nonzero)
+
+    assert ManifestBuilder._resolve_git_sha() is None
