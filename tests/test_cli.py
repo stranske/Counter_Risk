@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import tomllib
+from argparse import ArgumentParser, _SubParsersAction
 from pathlib import Path
 
 
@@ -63,3 +64,35 @@ def test_cli_help_exits_zero() -> None:
 
     assert result.returncode == 0
     assert "usage:" in result.stdout.lower()
+
+
+def test_formatting_profile_help_describes_real_scope() -> None:
+    src_path = str(Path("src").resolve())
+    if src_path not in sys.path:
+        sys.path.insert(0, src_path)
+
+    from counter_risk.cli import build_parser
+
+    parser = build_parser()
+    run_parser = _subparser(parser, "run")
+    help_text = _argument_help(run_parser, "--formatting-profile")
+
+    assert "Reserved" not in help_text
+    assert "stored for follow-on workflows" not in help_text
+    assert "historical" in help_text.lower()
+    assert "PNG" in help_text
+    assert "renderer" in help_text.lower()
+
+
+def _subparser(parser: ArgumentParser, name: str) -> ArgumentParser:
+    for action in parser._actions:
+        if isinstance(action, _SubParsersAction):
+            return action.choices[name]
+    raise AssertionError(f"subparser not found: {name}")
+
+
+def _argument_help(parser: ArgumentParser, option: str) -> str:
+    for action in parser._actions:
+        if option in action.option_strings:
+            return str(action.help)
+    raise AssertionError(f"option not found: {option}")
