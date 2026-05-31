@@ -61,9 +61,7 @@ GROUP_BY = ["variant", "segment"]
 def _matches(row: dict[str, Any], counterparty: str | None, segment: str | None) -> bool:
     if counterparty is not None and row.get("counterparty") != counterparty:
         return False
-    if segment is not None and row.get("segment") != segment:
-        return False
-    return True
+    return not (segment is not None and row.get("segment") != segment)
 
 
 def apply_patch(

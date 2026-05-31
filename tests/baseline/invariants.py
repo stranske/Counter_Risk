@@ -51,7 +51,9 @@ def _group_stats(rows: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
     return stats
 
 
-def check_scenario(scenario: dict[str, Any], base_rows: list[dict[str, Any]]) -> list[InvariantResult]:
+def check_scenario(
+    scenario: dict[str, Any], base_rows: list[dict[str, Any]]
+) -> list[InvariantResult]:
     """Run every invariant against one scenario's metrics."""
     rows = adapter.apply_patch(base_rows, scenario.get("patch"))
     metrics = adapter.run_scenario(scenario, base_rows)
@@ -85,9 +87,11 @@ def check_scenario(scenario: dict[str, Any], base_rows: list[dict[str, Any]]) ->
 
         if total <= 0:
             # Zero-total group: all three are 0.0 by definition.
-            add(f"{prefix}.zero_total_all_zero",
+            add(
+                f"{prefix}.zero_total_all_zero",
                 abs(top5) <= _EPS and abs(top10) <= _EPS and abs(hhi) <= _EPS,
-                f"top5={top5} top10={top10} hhi={hhi}")
+                f"top5={top5} top10={top10} hhi={hhi}",
+            )
         else:
             # HHI floor: with N positive-notional entities, hhi >= 1/N
             # (equality iff perfectly even). Use positive count since zero-notional
@@ -103,9 +107,7 @@ def check_scenario(scenario: dict[str, Any], base_rows: list[dict[str, Any]]) ->
                 # A single positive-notional entity owns the whole group.
                 add(
                     f"{prefix}.single_entity_all_one",
-                    abs(top5 - 1.0) <= _EPS
-                    and abs(top10 - 1.0) <= _EPS
-                    and abs(hhi - 1.0) <= _EPS,
+                    abs(top5 - 1.0) <= _EPS and abs(top10 - 1.0) <= _EPS and abs(hhi - 1.0) <= _EPS,
                     f"top5={top5} top10={top10} hhi={hhi}",
                 )
 
