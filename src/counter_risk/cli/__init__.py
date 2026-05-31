@@ -105,7 +105,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--formatting-profile",
         type=str,
         default=None,
-        help="Reserved runtime formatting profile selector (stored for follow-on workflows).",
+        help=(
+            "Numeric formatting profile (default, currency, accounting, plain) applied "
+            "to historical append rows and CPRS-CH/CPRS-FCM table PNG renderers."
+        ),
     )
     run_parser.add_argument(
         "--settings",
