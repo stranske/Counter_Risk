@@ -9,6 +9,8 @@ anyio==4.12.1
     #   anthropic
     #   httpx
     #   openai
+app-baseline-kit @ git+https://github.com/stranske/Workflows.git@13f94883220bbfb0ca69a4666fb44a49e0ae8172#subdirectory=packages/app-baseline-kit
+    # via counter-risk (pyproject.toml)
 ast-serialize==0.3.0
     # via mypy
 black==26.3.1
@@ -86,7 +88,9 @@ mypy-extensions==1.1.0
     #   black
     #   mypy
 numpy==2.4.2
-    # via pandas
+    # via
+    #   counter-risk (pyproject.toml)
+    #   pandas
 openai==2.32.0
     # via langchain-openai
 openpyxl==3.1.5
@@ -130,10 +134,19 @@ pygments==2.19.2
 pytest==9.0.3
     # via
     #   counter-risk (pyproject.toml)
+    #   app-baseline-kit
     #   pytest-cov
+    #   pytest-datadir
+    #   pytest-regressions
     #   pytest-xdist
 pytest-cov==7.1.0
     # via counter-risk (pyproject.toml)
+pytest-datadir==1.8.0
+    # via pytest-regressions
+pytest-regressions==2.11.0
+    # via
+    #   counter-risk (pyproject.toml)
+    #   app-baseline-kit
 pytest-xdist==3.8.0
     # via counter-risk (pyproject.toml)
 python-dateutil==2.9.0.post0
@@ -142,10 +155,14 @@ python-pptx==1.0.2
     # via counter-risk (pyproject.toml)
 pytokens==0.4.1
     # via black
+pytz==2026.2
+    # via pandas
 pyyaml==6.0.3
     # via
     #   counter-risk (pyproject.toml)
+    #   app-baseline-kit
     #   langchain-core
+    #   pytest-regressions
 regex==2026.2.28
     # via tiktoken
 requests==2.32.5
@@ -187,7 +204,7 @@ typing-extensions==4.15.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic
-tzdata==2025.3 ; sys_platform == 'emscripten' or sys_platform == 'win32'
+tzdata==2025.3
     # via pandas
 urllib3==2.6.3
     # via requests

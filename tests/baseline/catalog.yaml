@@ -1,0 +1,132 @@
+# Counter_Risk scenario catalog -- concentration-metrics deterministic compute.
+#
+# Surface: counter_risk.compute.rollups.compute_concentration_metrics
+#   exposure rows -> per (variant, segment) group: top5_share, top10_share, hhi.
+#
+# Same shape as the TMP / trip-planner kits. Here a "scenario" is the BASE
+# exposure table with an optional `patch` applied (see adapter.apply_patch for
+# the patch DSL). Directional checks compare a variant scenario to `base` on a
+# named flat metric key "<variant>.<segment>.<metric>".
+
+# ---------------------------------------------------------------------------
+# Base exposure table.
+#
+# One pipeline variant ("all_programs"). Segments:
+#   * total    -- 6 counterparties, deliberately uneven so top5_share < 1.0
+#                 (6 entities means the 6th sits outside the top-5 window) and
+#                 HHI is comfortably inside (1/N, 1). This is the segment the
+#                 directional variants perturb.
+#   * treasury -- 3 counterparties (fewer than 5 -> top5/top10 == 1.0 always).
+#   * equity   -- 2 counterparties.
+# Notionals chosen so every group total is non-trivial and hand-checkable.
+# ---------------------------------------------------------------------------
+base:
+  exposures:
+    # total: 6 names, total notional = 1000
+    - {variant: all_programs, segment: total, counterparty: cp_a, notional: 400.0}
+    - {variant: all_programs, segment: total, counterparty: cp_b, notional: 250.0}
+    - {variant: all_programs, segment: total, counterparty: cp_c, notional: 150.0}
+    - {variant: all_programs, segment: total, counterparty: cp_d, notional: 100.0}
+    - {variant: all_programs, segment: total, counterparty: cp_e, notional: 60.0}
+    - {variant: all_programs, segment: total, counterparty: cp_f, notional: 40.0}
+    # treasury: 3 names, total = 200
+    - {variant: all_programs, segment: treasury, counterparty: cp_a, notional: 120.0}
+    - {variant: all_programs, segment: treasury, counterparty: cp_b, notional: 50.0}
+    - {variant: all_programs, segment: treasury, counterparty: cp_c, notional: 30.0}
+    # equity: 2 names, total = 100
+    - {variant: all_programs, segment: equity, counterparty: cp_a, notional: 70.0}
+    - {variant: all_programs, segment: equity, counterparty: cp_b, notional: 30.0}
+
+# ---------------------------------------------------------------------------
+# Scenarios (each = base + optional patch). `base` itself is implicit but we
+# also list it so golden/invariant tests parametrize over it explicitly.
+# ---------------------------------------------------------------------------
+scenarios:
+  - id: base
+    patch: []
+
+  # Pile additional mass onto the already-largest counterparty in `total`.
+  # Pure mass shift onto one name -> HHI up, top5_share up.
+  - id: more_concentrated
+    patch:
+      - {op: set_notional, segment: total, counterparty: cp_a, value: 2000.0}
+
+  # Add several small counterparties to `total`, spreading mass out. This pushes
+  # the group past 10 names, so the top-5 AND top-10 windows now exclude real
+  # mass -> HHI down, top5_share down, top10_share down (drops below 1.0).
+  - id: more_dispersed
+    patch:
+      - {op: add_row, variant: all_programs, segment: total, counterparty: cp_g, notional: 150.0}
+      - {op: add_row, variant: all_programs, segment: total, counterparty: cp_h, notional: 150.0}
+      - {op: add_row, variant: all_programs, segment: total, counterparty: cp_i, notional: 150.0}
+      - {op: add_row, variant: all_programs, segment: total, counterparty: cp_j, notional: 150.0}
+      - {op: add_row, variant: all_programs, segment: total, counterparty: cp_k, notional: 150.0}
+
+  # Collapse `total` to a single counterparty -> top5 = top10 = hhi = 1.0.
+  - id: single_entity
+    patch:
+      - {op: keep_only, segment: total, counterparty: cp_a}
+
+  # Zero every notional in `total` -> top5 = top10 = hhi = 0.0.
+  - id: zero_total
+    patch:
+      - {op: zero_segment, segment: total}
+
+# ---------------------------------------------------------------------------
+# Directional checks: variant vs control (base) on a flat metric key.
+# direction is from baseline_kit.DIRECTIONS (left=variant, right=control).
+# Each is grounded in the surface economics, not boilerplate.
+# ---------------------------------------------------------------------------
+directionals:
+  # Concentrating mass raises HHI.
+  - id: concentrated_raises_hhi
+    scenario: more_concentrated
+    control: base
+    metric: all_programs.total.hhi
+    direction: increase
+    enforce: true
+  # ...and raises the top-5 share.
+  - id: concentrated_raises_top5
+    scenario: more_concentrated
+    control: base
+    metric: all_programs.total.top5_share
+    direction: increase
+    enforce: true
+  # Dispersing mass lowers HHI.
+  - id: dispersed_lowers_hhi
+    scenario: more_dispersed
+    control: base
+    metric: all_programs.total.hhi
+    direction: decrease
+    enforce: true
+  # Dispersing across more names lowers the top-5 share of total.
+  - id: dispersed_lowers_top5
+    scenario: more_dispersed
+    control: base
+    metric: all_programs.total.top5_share
+    direction: decrease
+    enforce: true
+  # Dispersing past 10 names drops top-10 share below 1.0 (real mass now sits
+  # outside the top-10 window). In the base, total has 6 names so top10 == 1.0.
+  - id: dispersed_lowers_top10
+    scenario: more_dispersed
+    control: base
+    metric: all_programs.total.top10_share
+    direction: decrease
+    enforce: true
+  # Collapsing to one name maximizes HHI relative to the diversified base.
+  - id: single_entity_raises_hhi
+    scenario: single_entity
+    control: base
+    metric: all_programs.total.hhi
+    direction: increase
+    enforce: true
+
+# ---------------------------------------------------------------------------
+# Coverage manifest: every metric the surface produces must be exercised by a
+# directional check on at least one segment. Keys are flat metric keys.
+# ---------------------------------------------------------------------------
+priority_metrics:
+  - all_programs.total.hhi
+  - all_programs.total.top5_share
+  - all_programs.total.top10_share
