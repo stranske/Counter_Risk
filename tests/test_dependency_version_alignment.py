@@ -46,6 +46,11 @@ def _load_lock_versions(path: Path) -> dict[str, str]:
 def test_all_pyproject_dependencies_are_in_lock() -> None:
     pyproject = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
     project = pyproject.get("project", {})
+    uv_config = pyproject.get("tool", {}).get("uv", {}).get("pip", {})
+    no_emit_packages = {
+        str(name).strip().lower().replace("_", "-")
+        for name in uv_config.get("no-emit-package", [])
+    }
 
     declared = set()
     for entry in project.get("dependencies", []):
@@ -71,6 +76,8 @@ def test_all_pyproject_dependencies_are_in_lock() -> None:
 
     missing = []
     for dependency in sorted(declared):
+        if dependency in no_emit_packages:
+            continue
         normalised = dependency.replace("-", "_")
         if dependency not in lock_versions and normalised not in lock_versions:
             missing.append(dependency)
