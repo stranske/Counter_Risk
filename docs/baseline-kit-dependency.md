@@ -1,0 +1,3 @@
+# app-baseline-kit dependency
+
+Counter_Risk uses **Pattern A** (the fleet default). `app-baseline-kit` is declared unpinned `@main` in `pyproject.toml` `[project.optional-dependencies].dev` and excluded from `requirements.lock` via `[tool.uv.pip] no-emit-package = ["app-baseline-kit"]` (added in commit ec6b22b, refining the initial 6c2fd1b baseline_kit landing). The no-emit directive prevents the lock from freezing a commit SHA that would conflict with the unpinned pyproject URL the moment Workflows `main` advances. At test time the reusable CI installs via `pip install -e .[dev]`, resolving the package straight from `@main`; the dependency-alignment test was updated to skip no-emit packages. No change needed.
