@@ -74,6 +74,14 @@ SECTION_TITLES = {
 
 LIST_ITEM_REGEX = re.compile(r"^\s*([-*+]|\d+[.)]|[A-Za-z][.)])\s+(.*)$")
 CHECKBOX_REGEX = re.compile(r"^\[([ xX])\]\s*(.*)$")
+CHECKLIST_PLACEHOLDER_REGEXES = (
+    re.compile(r"^[-*_`~\s]*not provided\.?[-*_`~\s]*$", re.IGNORECASE),
+    re.compile(
+        r"^[-*_`~\s]*filed from the .* design-vs-implementation \+ blueprint review"
+        r" \(upgraded issue set\)\.?\s*[-*_`~\s]*$",
+        re.IGNORECASE,
+    ),
+)
 MISSING_CONCERNS_MESSAGE = (
     "Verification output did not include extractable concerns; "
     "re-run verification to capture verifier-context.md and verifier-diff-summary.md."
@@ -876,21 +884,14 @@ def _strip_checkbox(line: str, list_match: re.Match[str] | None = None) -> str:
     return content
 
 
-def _is_placeholder_checklist_text(text: str) -> bool:
-    stripped = text.strip()
-    if not stripped:
-        return True
-    if re.fullmatch(r"_+\s*not provided\.?\s*_+", stripped, flags=re.IGNORECASE):
-        return True
-    if stripped == "---":
-        return True
-    if re.fullmatch(r"[-_*]{3,}", stripped):
-        return True
-    return re.fullmatch(r"_+\s*filed from.+_+", stripped, flags=re.IGNORECASE) is not None
-
-
 def _parse_checklist(lines: list[str]) -> list[str]:
     """Extract checklist items from lines, handling both checkbox and plain list formats."""
+    def is_placeholder(value: str) -> bool:
+        candidate = value.strip()
+        if candidate in {"---", "<details>", "</details>"}:
+            return True
+        return any(pattern.match(candidate) for pattern in CHECKLIST_PLACEHOLDER_REGEXES)
+
     items: list[str] = []
     for line in lines:
         stripped = line.strip()
@@ -900,7 +901,7 @@ def _parse_checklist(lines: list[str]) -> list[str]:
         checkbox_match = CHECKBOX_REGEX.match(stripped)
         if checkbox_match:
             value = checkbox_match.group(2).strip()
-            if value and len(value) > 3 and not _is_placeholder_checklist_text(value):
+            if value and len(value) > 3 and not is_placeholder(value):
                 items.append(value)
             continue
         # Then try list item (with optional checkbox inside)
@@ -908,7 +909,7 @@ def _parse_checklist(lines: list[str]) -> list[str]:
         if list_match:
             # Pass the match to avoid re-matching in _strip_checkbox
             value = _strip_checkbox(line, list_match)
-            if value and len(value) > 3 and not _is_placeholder_checklist_text(value):
+            if value and len(value) > 3 and not is_placeholder(value):
                 items.append(value)
     return items
 

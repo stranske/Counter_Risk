@@ -1269,12 +1269,6 @@ function isPlaceholderChecklistItem(text) {
   if (!normalized) {
     return true;
   }
-  if (normalized === '---') {
-    return true;
-  }
-  if (normalized.startsWith('filed from the ') && normalized.includes('design-vs-implementation')) {
-    return true;
-  }
   if (normalized.includes('section missing from source issue')) {
     return true;
   }
@@ -1289,20 +1283,6 @@ function isPlaceholderChecklistItem(text) {
 
 function isActionableChecklistItemText(text) {
   return !isStatusMetricChecklistItem(text) && !isPlaceholderChecklistItem(text);
-}
-
-function filterPlaceholderChecklistLines(markdown) {
-  const source = String(markdown || '');
-  const checkboxRegex = /^(\s*)(?:[-*]|\d+\.)\s*\[( |x|X)\]\s*(.+?)\s*$/;
-  const lines = source.split('\n');
-  const filtered = lines.filter((line) => {
-    const item = line.match(checkboxRegex);
-    if (!item) {
-      return true;
-    }
-    return isActionableChecklistItemText(item[2] || '');
-  });
-  return filtered.join('\n').trim();
 }
 
 function toActionableChecklistCounts(markdown) {
@@ -1436,19 +1416,11 @@ function validateScopeCompliance(filesChanged, scopePatterns) {
  */
 function buildTaskAppendix(sections, checkboxCounts, state = {}, options = {}) {
   const lines = [];
-  const filteredTasks = filterPlaceholderChecklistLines(sections?.tasks || '');
-  const filteredAcceptance = filterPlaceholderChecklistLines(sections?.acceptance || '');
-  const actionableTaskItems = extractChecklistItems(filteredTasks).filter((item) =>
-    isActionableChecklistItemText(item.text)
-  );
-  const displayTotal = actionableTaskItems.length;
-  const displayChecked = actionableTaskItems.filter((item) => item.checked).length;
-  const displayUnchecked = Math.max(0, displayTotal - displayChecked);
 
   lines.push('---');
   lines.push('## PR Tasks and Acceptance Criteria');
   lines.push('');
-  lines.push(`**Progress:** ${displayChecked}/${displayTotal} tasks complete, ${displayUnchecked} remaining`);
+  lines.push(`**Progress:** ${checkboxCounts.checked}/${checkboxCounts.total} tasks complete, ${checkboxCounts.unchecked} remaining`);
   lines.push('');
 
   // Add reconciliation reminder if the previous iteration made changes but didn't check off tasks
@@ -1473,24 +1445,24 @@ function buildTaskAppendix(sections, checkboxCounts, state = {}, options = {}) {
     lines.push('');
   }
 
-  if (filteredTasks) {
+  if (sections?.tasks) {
     lines.push('### Tasks');
     lines.push('Complete these in order. Mark checkbox done ONLY after implementation is verified:');
     lines.push('');
-    lines.push(filteredTasks);
+    lines.push(sections.tasks);
     lines.push('');
   }
 
-  if (filteredAcceptance) {
+  if (sections?.acceptance) {
     lines.push('### Acceptance Criteria');
     lines.push('The PR is complete when ALL of these are satisfied:');
     lines.push('');
-    lines.push(filteredAcceptance);
+    lines.push(sections.acceptance);
     lines.push('');
   }
 
   const attemptedTasks = normaliseAttemptedTasks(state?.attempted_tasks);
-  const candidateSource = [filteredTasks, filteredAcceptance].filter(Boolean).join('\n');
+  const candidateSource = sections?.tasks || sections?.acceptance || '';
   const taskItems = extractChecklistItems(candidateSource).filter((item) =>
     isActionableChecklistItemText(item.text)
   );

@@ -133,26 +133,6 @@ Issue: "Add user authentication"
 
 ---
 
-### 5. Browser-Only Synthetic Demo Artifact
-
-**Use Case:** A no-install evaluator needs to inspect a pipeline run folder from a browser without sending proprietary data outside the organization.
-
-**Steps:**
-1. Open the `Synthetic Browser Demo Artifact` workflow in GitHub Actions
-2. Select `Run workflow`
-3. Download the `counter-risk-synthetic-browser-demo` artifact from the completed run
-4. Open `DATA_QUALITY_SUMMARY.txt` and `manifest.json` from the downloaded folder
-
-**What Happens:**
-- The workflow replays only bundled synthetic fixtures from `tests/fixtures/`
-- The artifact contains `manifest.json`, `DATA_QUALITY_SUMMARY.txt`, and copied fixture run inputs
-- Chat/LLM behavior is disabled with `COUNTER_RISK_CHAT_OFFLINE_MODE=1`
-- No real or proprietary counterparty data is uploaded to an external service
-
-**Important:** This path is for synthetic fixture review only. For real data, use an internal browser-accessible host or another in-perimeter environment.
-
----
-
 ## Label Reference
 
 ### User-Applied Labels (Triggers)
