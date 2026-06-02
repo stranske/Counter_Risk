@@ -53,7 +53,6 @@ REUSE_MARKER_WORKFLOWS = (
     "issue_formatter",
     "issue_optimizer",
 )
-CHECKLIST_PLACEHOLDER_REGEX = re.compile(r"^_?\s*not provided\.?\s*_?$", re.IGNORECASE)
 
 
 def _with_reuse_marker(formatted: str) -> str:
@@ -242,17 +241,22 @@ def _normalize_non_action_lines(lines: list[str]) -> list[str]:
     return cleaned
 
 
-def _normalize_checklist_lines(lines: list[str]) -> list[str]:
-    def is_placeholder(value: str) -> bool:
-        normalized = value.strip()
-        if not normalized:
-            return True
-        if normalized == "---":
-            return True
-        if CHECKLIST_PLACEHOLDER_REGEX.match(normalized):
-            return True
-        return normalized.strip("_").lower().startswith("filed from the ")
+def _is_placeholder_checklist_text(text: str) -> bool:
+    stripped = text.strip()
+    normalized = stripped.strip("_").strip()
+    return normalized in {
+        "",
+        "---",
+        "Not provided.",
+    } or (
+        stripped.startswith("_")
+        and stripped.endswith("_")
+        and normalized.startswith("Filed from ")
+        and " review" in normalized
+    )
 
+
+def _normalize_checklist_lines(lines: list[str]) -> list[str]:
     cleaned: list[str] = []
     in_fence = False
     for raw in lines:
@@ -273,14 +277,14 @@ def _normalize_checklist_lines(lines: list[str]) -> list[str]:
             if checkbox:
                 mark = "x" if checkbox.group(1).lower() == "x" else " "
                 text = checkbox.group(2).strip()
-                if text and not is_placeholder(text):
+                if text and not _is_placeholder_checklist_text(text):
                     cleaned.append(f"{indent}- [{mark}] {text}")
                 continue
             text = remainder.strip()
-            if not is_placeholder(text):
+            if not _is_placeholder_checklist_text(text):
                 cleaned.append(f"{indent}- [ ] {text}")
         else:
-            if not is_placeholder(stripped):
+            if not _is_placeholder_checklist_text(stripped):
                 cleaned.append(f"- [ ] {stripped}")
     return cleaned
 
