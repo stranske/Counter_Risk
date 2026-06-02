@@ -74,14 +74,7 @@ SECTION_TITLES = {
 
 LIST_ITEM_REGEX = re.compile(r"^\s*([-*+]|\d+[.)]|[A-Za-z][.)])\s+(.*)$")
 CHECKBOX_REGEX = re.compile(r"^\[([ xX])\]\s*(.*)$")
-CHECKLIST_PLACEHOLDER_REGEXES = (
-    re.compile(r"^[-*_`~\s]*not provided\.?[-*_`~\s]*$", re.IGNORECASE),
-    re.compile(
-        r"^[-*_`~\s]*filed from the .* design-vs-implementation \+ blueprint review"
-        r" \(upgraded issue set\)\.?\s*[-*_`~\s]*$",
-        re.IGNORECASE,
-    ),
-)
+CHECKLIST_PLACEHOLDER_REGEX = re.compile(r"^_?\s*not provided\.?\s*_?$", re.IGNORECASE)
 MISSING_CONCERNS_MESSAGE = (
     "Verification output did not include extractable concerns; "
     "re-run verification to capture verifier-context.md and verifier-diff-summary.md."
@@ -887,10 +880,14 @@ def _strip_checkbox(line: str, list_match: re.Match[str] | None = None) -> str:
 def _parse_checklist(lines: list[str]) -> list[str]:
     """Extract checklist items from lines, handling both checkbox and plain list formats."""
     def is_placeholder(value: str) -> bool:
-        candidate = value.strip()
-        if candidate in {"---", "<details>", "</details>"}:
+        normalized = value.strip()
+        if not normalized:
             return True
-        return any(pattern.match(candidate) for pattern in CHECKLIST_PLACEHOLDER_REGEXES)
+        if normalized == "---":
+            return True
+        if CHECKLIST_PLACEHOLDER_REGEX.match(normalized):
+            return True
+        return normalized.strip("_").lower().startswith("filed from the ")
 
     items: list[str] = []
     for line in lines:

@@ -418,14 +418,16 @@ def _find_existing_issue(
             raise RuntimeError("gh issue list failed")
 
         try:
-            existing_issues = (
-                json.loads(search_result.stdout) if search_result.stdout.strip() else []
-            )
+            raw_issues = json.loads(search_result.stdout) if search_result.stdout.strip() else []
         except json.JSONDecodeError as exc:
             print("Failed to parse gh issue list output as JSON.", file=sys.stderr)
             if search_result.stderr.strip():
                 print(search_result.stderr.strip(), file=sys.stderr)
             raise RuntimeError("gh issue list returned invalid JSON") from exc
+
+        existing_issues: list[dict[str, Any]] = [
+            issue for issue in raw_issues if isinstance(issue, dict)
+        ]
 
         for issue in existing_issues:
             if issue.get("title") == title:
