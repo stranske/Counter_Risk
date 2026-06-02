@@ -53,7 +53,6 @@ REUSE_MARKER_WORKFLOWS = (
     "issue_formatter",
     "issue_optimizer",
 )
-CHECKLIST_PLACEHOLDER_REGEX = re.compile(r"^_?\s*not provided\.?\s*_?$", re.IGNORECASE)
 
 
 def _with_reuse_marker(formatted: str) -> str:
@@ -243,16 +242,6 @@ def _normalize_non_action_lines(lines: list[str]) -> list[str]:
 
 
 def _normalize_checklist_lines(lines: list[str]) -> list[str]:
-    def is_placeholder(value: str) -> bool:
-        normalized = value.strip()
-        if not normalized:
-            return True
-        if normalized == "---":
-            return True
-        if CHECKLIST_PLACEHOLDER_REGEX.match(normalized):
-            return True
-        return normalized.strip("_").lower().startswith("filed from the ")
-
     cleaned: list[str] = []
     in_fence = False
     for raw in lines:
@@ -273,15 +262,12 @@ def _normalize_checklist_lines(lines: list[str]) -> list[str]:
             if checkbox:
                 mark = "x" if checkbox.group(1).lower() == "x" else " "
                 text = checkbox.group(2).strip()
-                if text and not is_placeholder(text):
+                if text:
                     cleaned.append(f"{indent}- [{mark}] {text}")
                 continue
-            text = remainder.strip()
-            if not is_placeholder(text):
-                cleaned.append(f"{indent}- [ ] {text}")
+            cleaned.append(f"{indent}- [ ] {remainder.strip()}")
         else:
-            if not is_placeholder(stripped):
-                cleaned.append(f"- [ ] {stripped}")
+            cleaned.append(f"- [ ] {stripped}")
     return cleaned
 
 
