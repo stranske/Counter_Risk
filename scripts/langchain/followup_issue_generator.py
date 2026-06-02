@@ -37,6 +37,11 @@ from scripts.langchain.issue_pr_context import estimate_tokens
 from scripts.langchain.verifier_config import EVAL_FOLLOW_UP_BUDGET_TOKENS
 
 try:
+    from scripts.langchain.checklist_utils import is_placeholder_checklist_text
+except ImportError:  # pragma: no cover - fallback for direct invocation
+    from checklist_utils import is_placeholder_checklist_text
+
+try:
     from scripts.langchain.injection_guard import check_prompt_injection
 except ImportError:  # pragma: no cover - fallback for direct invocation
     from injection_guard import check_prompt_injection
@@ -74,7 +79,6 @@ SECTION_TITLES = {
 
 LIST_ITEM_REGEX = re.compile(r"^\s*([-*+]|\d+[.)]|[A-Za-z][.)])\s+(.*)$")
 CHECKBOX_REGEX = re.compile(r"^\[([ xX])\]\s*(.*)$")
-CHECKLIST_PLACEHOLDER_REGEX = re.compile(r"^_?\s*not provided\.?\s*_?$", re.IGNORECASE)
 MISSING_CONCERNS_MESSAGE = (
     "Verification output did not include extractable concerns; "
     "re-run verification to capture verifier-context.md and verifier-diff-summary.md."
@@ -879,16 +883,6 @@ def _strip_checkbox(line: str, list_match: re.Match[str] | None = None) -> str:
 
 def _parse_checklist(lines: list[str]) -> list[str]:
     """Extract checklist items from lines, handling both checkbox and plain list formats."""
-    def is_placeholder(value: str) -> bool:
-        normalized = value.strip()
-        if not normalized:
-            return True
-        if normalized == "---":
-            return True
-        if CHECKLIST_PLACEHOLDER_REGEX.match(normalized):
-            return True
-        return normalized.strip("_").lower().startswith("filed from the ")
-
     items: list[str] = []
     for line in lines:
         stripped = line.strip()
@@ -898,7 +892,7 @@ def _parse_checklist(lines: list[str]) -> list[str]:
         checkbox_match = CHECKBOX_REGEX.match(stripped)
         if checkbox_match:
             value = checkbox_match.group(2).strip()
-            if value and len(value) > 3 and not is_placeholder(value):
+            if value and len(value) > 3 and not is_placeholder_checklist_text(value):
                 items.append(value)
             continue
         # Then try list item (with optional checkbox inside)
@@ -906,7 +900,7 @@ def _parse_checklist(lines: list[str]) -> list[str]:
         if list_match:
             # Pass the match to avoid re-matching in _strip_checkbox
             value = _strip_checkbox(line, list_match)
-            if value and len(value) > 3 and not is_placeholder(value):
+            if value and len(value) > 3 and not is_placeholder_checklist_text(value):
                 items.append(value)
     return items
 
@@ -1634,6 +1628,8 @@ def _generate_without_llm(
         original_issue,
         verification_data,
     )
+    if not acceptance_criteria:
+        acceptance_criteria = [_fallback_followup_acceptance_criterion(pr_number)]
 
     # Build body
     body_parts = [
@@ -1986,6 +1982,13 @@ def _select_followup_acceptance_criteria(
     if filtered:
         return filtered[:limit]
     return criteria[:limit]
+
+
+def _fallback_followup_acceptance_criterion(pr_number: int) -> str:
+    return (
+        f"Verification concerns from PR #{pr_number} are addressed and follow-up "
+        "verification passes."
+    )
 
 
 def main() -> int:
