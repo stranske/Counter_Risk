@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from scripts.langchain.checklist_utils import is_placeholder_checklist_text
     from scripts.langchain.injection_guard import check_prompt_injection
     from scripts.langchain.issue_pr_context import (
         ContextOptions,
@@ -28,6 +29,7 @@ try:
     )
     from scripts.langchain.trace_utils import TraceInfo, invoke_with_trace
 except ImportError:  # pragma: no cover - fallback for direct invocation
+    from checklist_utils import is_placeholder_checklist_text
     from injection_guard import check_prompt_injection
     from issue_pr_context import (
         ContextOptions,
@@ -53,7 +55,6 @@ REUSE_MARKER_WORKFLOWS = (
     "issue_formatter",
     "issue_optimizer",
 )
-CHECKLIST_PLACEHOLDER_REGEX = re.compile(r"^_?\s*not provided\.?\s*_?$", re.IGNORECASE)
 
 
 def _with_reuse_marker(formatted: str) -> str:
@@ -243,16 +244,6 @@ def _normalize_non_action_lines(lines: list[str]) -> list[str]:
 
 
 def _normalize_checklist_lines(lines: list[str]) -> list[str]:
-    def is_placeholder(value: str) -> bool:
-        normalized = value.strip()
-        if not normalized:
-            return True
-        if normalized == "---":
-            return True
-        if CHECKLIST_PLACEHOLDER_REGEX.match(normalized):
-            return True
-        return normalized.strip("_").lower().startswith("filed from the ")
-
     cleaned: list[str] = []
     in_fence = False
     for raw in lines:
@@ -273,14 +264,14 @@ def _normalize_checklist_lines(lines: list[str]) -> list[str]:
             if checkbox:
                 mark = "x" if checkbox.group(1).lower() == "x" else " "
                 text = checkbox.group(2).strip()
-                if text and not is_placeholder(text):
+                if text and not is_placeholder_checklist_text(text):
                     cleaned.append(f"{indent}- [{mark}] {text}")
                 continue
             text = remainder.strip()
-            if not is_placeholder(text):
+            if not is_placeholder_checklist_text(text):
                 cleaned.append(f"{indent}- [ ] {text}")
         else:
-            if not is_placeholder(stripped):
+            if not is_placeholder_checklist_text(stripped):
                 cleaned.append(f"- [ ] {stripped}")
     return cleaned
 
