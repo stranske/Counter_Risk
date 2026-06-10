@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
@@ -117,6 +117,12 @@ def _default_directory_exists(path: str) -> bool:
     return Path(path).is_dir()
 
 
+def _run_folder_candidates(base_name: str) -> Iterator[str]:
+    yield base_name
+    for index in range(1, 10_000):
+        yield f"{base_name}_{index}"
+
+
 def resolve_output_dir(
     repo_root: str,
     selected_date: str,
@@ -126,7 +132,7 @@ def resolve_output_dir(
     output_root_path = resolve_output_root(repo_root, output_root)
     base_name = _run_folder_name(selected_date)
     exists = directory_exists or _default_directory_exists
-    for candidate_name in (base_name, *(f"{base_name}_{index}" for index in range(1, 10_000))):
+    for candidate_name in _run_folder_candidates(base_name):
         candidate = f"{output_root_path}\\{candidate_name}"
         if not exists(candidate):
             return candidate
@@ -144,7 +150,7 @@ def resolve_existing_output_dir(
     base_name = _run_folder_name(selected_date)
     exists = directory_exists or _default_directory_exists
     latest_existing: str | None = None
-    for candidate_name in (base_name, *(f"{base_name}_{index}" for index in range(1, 10_000))):
+    for candidate_name in _run_folder_candidates(base_name):
         candidate = f"{output_root_path}\\{candidate_name}"
         if exists(candidate):
             latest_existing = candidate
@@ -257,7 +263,9 @@ def open_output_folder(
     directory_exists: Callable[[str], bool],
     open_directory: Callable[[str], int],
 ) -> LaunchStatus:
-    output_dir = resolve_existing_output_dir(repo_root, selected_date, directory_exists=directory_exists)
+    output_dir = resolve_existing_output_dir(
+        repo_root, selected_date, directory_exists=directory_exists
+    )
     if not directory_exists(output_dir):
         return LaunchStatus(
             success=False,
@@ -394,7 +402,9 @@ def open_ppt_output_folder(
     directory_exists: Callable[[str], bool],
     open_directory: Callable[[str], int],
 ) -> LaunchStatus:
-    ppt_dir = resolve_existing_output_dir(repo_root, selected_date, directory_exists=directory_exists)
+    ppt_dir = resolve_existing_output_dir(
+        repo_root, selected_date, directory_exists=directory_exists
+    )
     if not directory_exists(ppt_dir):
         return LaunchStatus(
             success=False,

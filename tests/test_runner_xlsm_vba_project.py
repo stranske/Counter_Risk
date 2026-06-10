@@ -59,14 +59,12 @@ def test_runner_workbook_embeds_required_runnerlaunch_markers() -> None:
     assert "Public Function ResolveOutputDir" in vba_text
 
     assert "ResolveRepoRoot()" in vba_text
-    assert "RUN_FOLDER_FORMAT As String" in vba_text
+    assert f'RUN_FOLDER_FORMAT As String = "{WINDOWS_RUN_FOLDER_FORMAT_LITERAL}"' in vba_text
+    assert "Public Function ResolveExistingOutputDir" in vba_text
+    assert WINDOWS_RUN_FOLDER_FORMAT_REGEX.search(vba_text) is not None
 
     assert 'PRE_LAUNCH_STATUS As String = "Launching..."' in vba_text
     assert 'POST_LAUNCH_STATUS As String = "Finished"' in vba_text
     assert 'COMPLETE_STATUS As String = "Complete"' in vba_text
 
     assert 'ResolveOutputDir("."' not in vba_text
-    assert (
-        WINDOWS_RUN_FOLDER_FORMAT_REGEX.search(vba_text) is not None
-        or "Format$(parsedDate, RUN_FOLDER_FORMAT)" in vba_text
-    )
