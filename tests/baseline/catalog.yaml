@@ -72,6 +72,16 @@ scenarios:
     patch:
       - {op: zero_segment, segment: total}
 
+  # Concentrate the Treasury segment onto its largest counterparty.
+  - id: treasury_concentrated
+    patch:
+      - {op: set_notional, segment: treasury, counterparty: cp_a, value: 1000.0}
+
+  # Concentrate the Equity segment onto its largest counterparty.
+  - id: equity_concentrated
+    patch:
+      - {op: set_notional, segment: equity, counterparty: cp_a, value: 900.0}
+
 # ---------------------------------------------------------------------------
 # Directional checks: variant vs control (base) on a flat metric key.
 # direction is from baseline_kit.DIRECTIONS (left=variant, right=control).
@@ -121,6 +131,20 @@ directionals:
     metric: all_programs.total.hhi
     direction: increase
     enforce: true
+  # Concentrating Treasury mass raises Treasury HHI.
+  - id: treasury_concentrated_raises_hhi
+    scenario: treasury_concentrated
+    control: base
+    metric: all_programs.treasury.hhi
+    direction: increase
+    enforce: true
+  # Concentrating Equity mass raises Equity HHI.
+  - id: equity_concentrated_raises_hhi
+    scenario: equity_concentrated
+    control: base
+    metric: all_programs.equity.hhi
+    direction: increase
+    enforce: true
 
 # ---------------------------------------------------------------------------
 # Coverage manifest: every metric the surface produces must be exercised by a
@@ -130,3 +154,5 @@ priority_metrics:
   - all_programs.total.hhi
   - all_programs.total.top5_share
   - all_programs.total.top10_share
+  - all_programs.treasury.hhi
+  - all_programs.equity.hhi
