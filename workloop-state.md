@@ -13,6 +13,17 @@
 - **Post-open evidence:** `pr_opened` relay fired for #704. Cap-health at 2026-06-10T20:11:26Z classified #704 as `draining` with an active Gate run after the latest branch update; raw opener cap remained below 5.
 - **Next action:** wait_for_keepalive; keepalive owns CI/review, closer owns merge and verifier/source issue closure.
 
+## 2026-06-10T22:06Z - opener (codex) materialized issue #705
+
+- **Lane:** opener (Codex) from neutral Code workspace.
+- **Issue:** stranske/Counter_Risk#705 (priority:normal, repo-review-approved) - add directional baseline checks for treasury and equity concentration metric segments.
+- **Branch:** `codex/issue-705-directional-segment-baselines`; worktree `/Users/teacher/.codex/automations/pd-workloop-resume/worktrees/counter-risk-705-directional`.
+- **Cap/drain preflight:** raw opener cap below 5. Repaired stale blocker labels on existing opener-owned PR #704; post-repair cap-health classified #704 as draining with fresh Gate/keepalive evidence.
+- **Change:** added treasury/equity concentrated scenarios, enforced HHI directional checks, extended priority metrics with `all_programs.treasury.hhi` and `all_programs.equity.hhi`, and refreshed `docs/reports/baseline-coverage.md` from 3/9 (33.3%) to 5/9 (55.6%).
+- **Validation:** `pytest tests/baseline/test_directional.py tests/baseline/test_coverage_manifest.py::test_priority_metrics_covered tests/baseline/test_coverage_manifest.py::test_emit_coverage_report -q` passed (10 passed). `BASELINE_REFRESH_REPORT=1 pytest tests/baseline/test_coverage_manifest.py::test_emit_coverage_report -q` passed. `rg "enforce: true" tests/baseline/catalog.yaml | wc -l` returned 8. `git diff --check` passed.
+- **Deliberate break:** temporarily changed `treasury_concentrated_raises_hhi` direction to `decrease`; `pytest 'tests/baseline/test_directional.py::test_directional[treasury_concentrated_raises_hhi]' -q` failed with `Economically wrong direction -- treasury_concentrated_raises_hhi: all_programs.treasury.hhi variant=0.860254 decrease control=0.445 -> False`. Reverted before final validation.
+- **Next action:** commit/push branch, open ready-for-review PR with `agent:codex`, `agents:keepalive`, `autofix`, `repo-review-approved`, and `priority:normal`; then wait_for_keepalive.
+
 ## 2026-05-30T20:32Z - closer (codex) resolved PR #662 review threads
 
 - **Lane:** closer / complex review-thread recovery from neutral Code workspace. Target: [#662](https://github.com/stranske/Counter_Risk/pull/662) for issue [#651](https://github.com/stranske/Counter_Risk/issues/651), branch `codex/issue-651-evidence-provenance`.
