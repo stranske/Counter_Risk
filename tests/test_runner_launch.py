@@ -64,7 +64,7 @@ def test_build_command_all_mode_for_distinct_dates(
 
     assert '--config "config\\all_programs.yml"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
-    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}_000000"' in command
+    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
     assert '--settings "' in command
 
 
@@ -84,7 +84,7 @@ def test_build_command_ex_trend_mode_for_distinct_dates(
 
     assert '--config "config\\ex_trend.yml"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
-    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}_000000"' in command
+    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
     assert '--settings "' in command
 
 
@@ -104,7 +104,7 @@ def test_build_command_trend_mode_for_distinct_dates(
 
     assert '--config "config\\trend.yml"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
-    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}_000000"' in command
+    assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
     assert '--settings "' in command
 
 
@@ -124,7 +124,7 @@ def test_open_output_folder_returns_missing_directory_error_without_open_call(
 
     assert status.success is False
     assert "Directory not found" in status.message
-    assert "C:\\repo\\runs\\2025-05-31_000000" in status.message
+    assert "C:\\repo\\runs\\2025-05-31" in status.message
     assert opened_directories == []
 
 
@@ -267,7 +267,19 @@ def test_resolve_output_root_supports_relative_and_absolute_values() -> None:
 
 def test_resolve_output_dir_uses_configured_output_root() -> None:
     resolved = resolve_output_dir("C:/repo", "2025-06-30", output_root="C:/shared/runs")
-    assert resolved == "C:\\shared\\runs\\2025-06-30_000000"
+    assert resolved == "C:\\shared\\runs\\2025-06-30"
+
+
+def test_resolve_output_dir_uses_repeat_suffix_when_base_exists() -> None:
+    existing = {"C:\\repo\\runs\\2025-06-30"}
+
+    resolved = resolve_output_dir(
+        "C:/repo",
+        "2025-06-30",
+        directory_exists=lambda path: path in existing,
+    )
+
+    assert resolved == "C:\\repo\\runs\\2025-06-30_1"
 
 
 def test_build_runner_settings_payload_serializes_expected_fields() -> None:
@@ -322,12 +334,12 @@ def test_build_discovery_dry_run_command_includes_mode_config_and_as_of_date(
 def test_build_discovery_run_command_includes_discover_flag_and_output_dir(
     mode: RunnerMode, expected_config: str
 ) -> None:
-    command = build_discovery_run_command(mode, "2025-02-15", "C:\\repo\\runs\\2025-02-28_000000")
+    command = build_discovery_run_command(mode, "2025-02-15", "C:\\repo\\runs\\2025-02-28")
 
     assert "run --discover" in command
     assert expected_config in command
     assert '--as-of-month "2025-02-28"' in command
-    assert '--output-dir "C:\\repo\\runs\\2025-02-28_000000"' in command
+    assert '--output-dir "C:\\repo\\runs\\2025-02-28"' in command
     assert '--settings "' in command
 
 

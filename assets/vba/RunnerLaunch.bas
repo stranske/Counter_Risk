@@ -5,7 +5,7 @@ Private Const RUNNER_SHEET_NAME As String = "Runner"
 Private Const STATUS_CELL As String = "B7"
 Private Const RESULT_CELL As String = "B8"
 Private Const SHELL_ERROR_BASE As Long = vbObjectError + 7100
-Private Const RUN_FOLDER_FORMAT As String = "yyyy-mm-dd_hhnnss"
+Private Const RUN_FOLDER_FORMAT As String = "yyyy-mm-dd"
 Private Const PRE_LAUNCH_STATUS As String = "Launching..."
 Private Const POST_LAUNCH_STATUS As String = "Finished"
 Private Const COMPLETE_STATUS As String = "Complete"
@@ -49,7 +49,7 @@ Public Sub OpenOutputFolder_Click()
     Dim status As LaunchStatus
 
     selectedDate = ReadSelectedDate()
-    resolvedPath = ResolveOutputDir(ResolveRepoRoot(), selectedDate)
+    resolvedPath = ResolveExistingOutputDir(ResolveRepoRoot(), selectedDate)
     missingDirectoryMessage = "Directory not found" & " " & resolvedPath
     If Dir$(resolvedPath, vbDirectory) = "" Then
         Set fileSystem = CreateObject("Scripting.FileSystemObject")
@@ -226,23 +226,76 @@ End Function
 Public Function ResolveOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
     Dim parsedDate As Date
     Dim configuredOutputRoot As String
+    Dim outputRoot As String
+    Dim baseName As String
+    Dim suffixIndex As Long
+    Dim candidate As String
 
     parsedDate = ParseAsOfMonth(selectedDate)
     configuredOutputRoot = ReadSettingValue("RunnerSetting_OutputRoot", "runs")
+    outputRoot = ResolveOutputRootPath(repoRoot, configuredOutputRoot)
+    baseName = Format$(parsedDate, RUN_FOLDER_FORMAT)
 
-    ResolveOutputDir = ResolveOutputRootPath(repoRoot, configuredOutputRoot) & "\" & Format$(parsedDate, RUN_FOLDER_FORMAT)
+    For suffixIndex = 0 To 9999
+        candidate = outputRoot & "\" & BuildRunFolderName(baseName, suffixIndex)
+        If Not DirectoryExists(candidate) Then
+            ResolveOutputDir = candidate
+            Exit Function
+        End If
+    Next suffixIndex
+
+    Err.Raise vbObjectError + 7004, "RunnerLaunch.ResolveOutputDir", _
+              "Unable to resolve unique output directory for " & baseName
+End Function
+
+Public Function ResolveExistingOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
+    Dim parsedDate As Date
+    Dim configuredOutputRoot As String
+    Dim outputRoot As String
+    Dim baseName As String
+    Dim suffixIndex As Long
+    Dim candidate As String
+    Dim latestExisting As String
+
+    parsedDate = ParseAsOfMonth(selectedDate)
+    configuredOutputRoot = ReadSettingValue("RunnerSetting_OutputRoot", "runs")
+    outputRoot = ResolveOutputRootPath(repoRoot, configuredOutputRoot)
+    baseName = Format$(parsedDate, RUN_FOLDER_FORMAT)
+
+    For suffixIndex = 0 To 9999
+        candidate = outputRoot & "\" & BuildRunFolderName(baseName, suffixIndex)
+        If DirectoryExists(candidate) Then
+            latestExisting = candidate
+        Else
+            Exit For
+        End If
+    Next suffixIndex
+
+    If LenB(latestExisting) > 0 Then
+        ResolveExistingOutputDir = latestExisting
+    Else
+        ResolveExistingOutputDir = outputRoot & "\" & baseName
+    End If
 End Function
 
 Public Function ResolveDataQualitySummaryPath(ByVal repoRoot As String, ByVal selectedDate As String) As String
-    ResolveDataQualitySummaryPath = ResolveOutputDir(repoRoot, selectedDate) & "\DATA_QUALITY_SUMMARY.txt"
+    ResolveDataQualitySummaryPath = ResolveExistingOutputDir(repoRoot, selectedDate) & "\DATA_QUALITY_SUMMARY.txt"
 End Function
 
 Public Function ResolveManifestPath(ByVal repoRoot As String, ByVal selectedDate As String) As String
-    ResolveManifestPath = ResolveOutputDir(repoRoot, selectedDate) & "\" & MANIFEST_FILENAME
+    ResolveManifestPath = ResolveExistingOutputDir(repoRoot, selectedDate) & "\" & MANIFEST_FILENAME
 End Function
 
 Public Function ResolvePPTOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
-    ResolvePPTOutputDir = ResolveOutputDir(repoRoot, selectedDate)
+    ResolvePPTOutputDir = ResolveExistingOutputDir(repoRoot, selectedDate)
+End Function
+
+Private Function BuildRunFolderName(ByVal baseName As String, ByVal suffixIndex As Long) As String
+    If suffixIndex = 0 Then
+        BuildRunFolderName = baseName
+    Else
+        BuildRunFolderName = baseName & "_" & CStr(suffixIndex)
+    End If
 End Function
 
 Private Function ResolveOutputRootPath(ByVal repoRoot As String, ByVal outputRootSetting As String) As String

@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
@@ -101,18 +101,62 @@ def normalize_path_separators(raw_path: str) -> str:
 
 def resolve_output_root(repo_root: str, output_root: str = "runs") -> str:
     normalized_output_root = normalize_path_separators(output_root or "runs")
-    if normalized_output_root.startswith("\\\\"):
+    if normalized_output_root.startswith("\\"):
         return normalized_output_root
     if len(normalized_output_root) >= 2 and normalized_output_root[1] == ":":
         return normalized_output_root
     return f"{normalize_path_separators(repo_root)}\\{normalized_output_root}"
 
 
-def resolve_output_dir(repo_root: str, selected_date: str, output_root: str = "runs") -> str:
+def _run_folder_name(selected_date: str) -> str:
     parsed_date = parse_as_of_month(selected_date)
-    # Mirror RunnerLaunch.bas: Format$(parsedDate, "yyyy-mm-dd_hhnnss") on a date-only value.
-    # VBA dates carry a midnight time component by default, so the time segment is deterministic.
-    return f"{resolve_output_root(repo_root, output_root)}\\{parsed_date.isoformat()}_000000"
+    return parsed_date.isoformat()
+
+
+def _default_directory_exists(path: str) -> bool:
+    return Path(path).is_dir()
+
+
+def _run_folder_candidates(base_name: str) -> Iterator[str]:
+    yield base_name
+    for index in range(1, 10_000):
+        yield f"{base_name}_{index}"
+
+
+def resolve_output_dir(
+    repo_root: str,
+    selected_date: str,
+    output_root: str = "runs",
+    directory_exists: Callable[[str], bool] | None = None,
+) -> str:
+    output_root_path = resolve_output_root(repo_root, output_root)
+    base_name = _run_folder_name(selected_date)
+    exists = directory_exists or _default_directory_exists
+    for candidate_name in _run_folder_candidates(base_name):
+        candidate = f"{output_root_path}\\{candidate_name}"
+        if not exists(candidate):
+            return candidate
+    msg = f"Unable to resolve unique output directory for {base_name}"
+    raise RuntimeError(msg)
+
+
+def resolve_existing_output_dir(
+    repo_root: str,
+    selected_date: str,
+    output_root: str = "runs",
+    directory_exists: Callable[[str], bool] | None = None,
+) -> str:
+    output_root_path = resolve_output_root(repo_root, output_root)
+    base_name = _run_folder_name(selected_date)
+    exists = directory_exists or _default_directory_exists
+    latest_existing: str | None = None
+    for candidate_name in _run_folder_candidates(base_name):
+        candidate = f"{output_root_path}\\{candidate_name}"
+        if exists(candidate):
+            latest_existing = candidate
+            continue
+        break
+    return latest_existing or f"{output_root_path}\\{base_name}"
 
 
 def resolve_data_quality_summary_path(
@@ -219,7 +263,9 @@ def open_output_folder(
     directory_exists: Callable[[str], bool],
     open_directory: Callable[[str], int],
 ) -> LaunchStatus:
-    output_dir = resolve_output_dir(repo_root, selected_date)
+    output_dir = resolve_existing_output_dir(
+        repo_root, selected_date, directory_exists=directory_exists
+    )
     if not directory_exists(output_dir):
         return LaunchStatus(
             success=False,
@@ -265,7 +311,9 @@ def open_data_quality_summary(
     file_exists: Callable[[str], bool],
     open_file: Callable[[str], int],
 ) -> LaunchStatus:
-    summary_path = resolve_data_quality_summary_path(repo_root, selected_date)
+    summary_path = (
+        f"{resolve_existing_output_dir(repo_root, selected_date)}\\{_DATA_QUALITY_SUMMARY_FILENAME}"
+    )
     if not file_exists(summary_path):
         return LaunchStatus(
             success=False,
@@ -311,7 +359,7 @@ def open_manifest(
     file_exists: Callable[[str], bool],
     open_file: Callable[[str], int],
 ) -> LaunchStatus:
-    manifest_path = resolve_manifest_path(repo_root, selected_date)
+    manifest_path = f"{resolve_existing_output_dir(repo_root, selected_date)}\\{_MANIFEST_FILENAME}"
     if not file_exists(manifest_path):
         return LaunchStatus(
             success=False,
@@ -354,7 +402,9 @@ def open_ppt_output_folder(
     directory_exists: Callable[[str], bool],
     open_directory: Callable[[str], int],
 ) -> LaunchStatus:
-    ppt_dir = resolve_ppt_output_dir(repo_root, selected_date)
+    ppt_dir = resolve_existing_output_dir(
+        repo_root, selected_date, directory_exists=directory_exists
+    )
     if not directory_exists(ppt_dir):
         return LaunchStatus(
             success=False,
