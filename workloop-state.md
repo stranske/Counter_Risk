@@ -4,12 +4,14 @@
 
 - **Lane:** opener (Codex) from neutral Code workspace.
 - **Issue:** stranske/Counter_Risk#703 (priority:normal, repo-review-approved) - align Runner and GUI output folders with the pipeline repeat-run contract.
-- **Branch:** `codex/issue-703-output-dir-contract`; worktree `/Users/teacher/.codex/automations/pd-workloop-resume/worktrees/counter-risk-703-output-dir`.
+- **Branch/PR:** `codex/issue-703-output-dir-contract`; PR #704 opened ready-for-review, non-draft, with `agent:codex`, `agents:keepalive`, `autofix`, `priority:normal`, and `repo-review-approved`.
+- **Worktree:** `/Users/teacher/.codex/automations/pd-workloop-resume/worktrees/counter-risk-703-output-dir`.
 - **Cap/drain preflight:** repaired `stranske/trip-planner#1368` by adding `agents:keepalive`/`agent:retry` and dispatching Gate Followups. Post-repair cap-health classified it as `draining` with fresh Gate evidence; raw opener cap remained below 5.
 - **Change:** replaced fixed `_000000` launcher output paths with repeat-run-safe date folders (`YYYY-MM-DD`, then `_1`, `_2`, ...), kept GUI post-run buttons pointed at the actual completed run directory, updated VBA parity source, and refreshed operator/GUI/macro docs.
 - **Validation:** `UV_CACHE_DIR=/tmp/uv-cache-pd-workloop uv run pytest tests/test_runner_launch.py tests/test_gui_runner.py tests/test_pipeline_run_dir.py::test_run_directory_creation_same_date_repeat_run_uses_unique_directory_suffix tests/test_runner_vba_module.py tests/test_runner_xlsm_vba_project.py -q` passed (70 passed). `git diff --check` passed. `rg "_000000" src/counter_risk/runner_launch.py src/counter_risk/gui/runner.py` returned no matches.
 - **Deliberate break:** temporarily changed `_run_folder_name()` back to `f"{parsed_date.isoformat()}_000000"`; `pytest tests/test_gui_runner.py::test_execute_gui_run_same_date_does_not_produce_fixed_000000_path -q` failed because the result path was `2025-12-31_000000` instead of `2025-12-31_1`. Reverted and reran focused tests green.
-- **Next action:** commit, push, open ready-for-review PR with `agent:codex`, `agents:keepalive`, and `autofix`; keepalive owns CI/review after PR open.
+- **Post-open evidence:** `pr_opened` relay fired for #704. Cap-health at 2026-06-10T20:11:26Z classified #704 as `draining` with an active Gate run after the latest branch update; raw opener cap remained below 5.
+- **Next action:** wait_for_keepalive; keepalive owns CI/review, closer owns merge and verifier/source issue closure.
 
 ## 2026-05-30T20:32Z - closer (codex) resolved PR #662 review threads
 
