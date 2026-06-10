@@ -211,14 +211,14 @@ Spec ID: `MS-OPEN-OUTPUT`
 Fixture sources:
 - VBA module fixture: `assets/vba/RunnerLaunch.bas`
 - Path resolution exercised against the run output directory under
-  `<OutputRoot>/<yyyy-mm-dd_hhnnss>` per `ResolveOutputDir`
+  `<OutputRoot>/<yyyy-mm-dd[_N]>` per `ResolveExistingOutputDir`
 
 Required inputs (sheet names, columns):
 - Sheet `Runner`
 - Cell `B3` selected month text (`MM/YYYY`) for output folder resolution
 
 Output expectations (ranges affected, invariants):
-- Resolves output path using selected month and repository root
+- Resolves the latest existing output path using selected month and repository root
 - Attempts to open the folder path
 - If path missing, writes an error to `Runner!B8` instead of silent success
 - Does not mutate MOSERS workbook ranges

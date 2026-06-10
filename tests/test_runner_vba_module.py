@@ -24,8 +24,8 @@ def test_runner_vba_module_constructs_arguments_from_date_and_mode() -> None:
     assert "ResolveOutputRootPath(repoRoot, configuredOutputRoot)" in module_source
     assert "Private Function ResolveOutputRootPath" in module_source
     assert "Private Function IsAbsoluteWindowsPath" in module_source
-    assert "Format$(parsedDate, RUN_FOLDER_FORMAT)" in module_source
-    assert 'RUN_FOLDER_FORMAT As String = "yyyy-mm-dd_hhnnss"' in module_source
+    assert "BuildRunFolderName(baseName, suffixIndex)" in module_source
+    assert 'RUN_FOLDER_FORMAT As String = "yyyy-mm-dd"' in module_source
     assert '" --as-of-date " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd"))' in module_source
     assert '" --settings " & QuoteArg(settingsPath)' in module_source
 
@@ -91,7 +91,7 @@ def test_runner_vba_open_output_folder_checks_directory_and_reports_missing_path
     module_source = _module_source()
 
     assert "Public Sub OpenOutputFolder_Click()" in module_source
-    assert "resolvedPath = ResolveOutputDir(ResolveRepoRoot(), selectedDate)" in module_source
+    assert "resolvedPath = ResolveExistingOutputDir(ResolveRepoRoot(), selectedDate)" in module_source
     assert 'missingDirectoryMessage = "Directory not found" & " " & resolvedPath' in module_source
     assert 'missingDirectoryMessage = "Directory not found" & resolvedPath' not in module_source
     assert 'If Dir$(resolvedPath, vbDirectory) = "" Then' in module_source
@@ -159,7 +159,7 @@ def test_runner_vba_open_summary_checks_file_and_uses_resolved_summary_path() ->
     assert "If Not FileExists(summaryPath) Then" in module_source
     assert "status = OpenFile(summaryPath)" in module_source
     assert (
-        'ResolveDataQualitySummaryPath = ResolveOutputDir(repoRoot, selectedDate) & "\\DATA_QUALITY_SUMMARY.txt"'
+        'ResolveDataQualitySummaryPath = ResolveExistingOutputDir(repoRoot, selectedDate) & "\\DATA_QUALITY_SUMMARY.txt"'
         in module_source
     )
     assert "ResolveManifestPath" in module_source

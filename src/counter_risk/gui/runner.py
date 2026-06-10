@@ -16,6 +16,8 @@ from counter_risk.runner_launch import (
     data_quality_status_label,
     parse_as_of_month,
     read_overall_status_color,
+    resolve_existing_output_dir,
+    resolve_output_dir,
 )
 from counter_risk.runtime_paths import resolve_runtime_path
 
@@ -67,9 +69,25 @@ def _resolve_config_path(state: GuiRunState) -> Path:
 
 
 def _resolve_output_dir(state: GuiRunState) -> Path:
-    month_end = parse_as_of_month(state.as_of_date)
-    output_root = Path(state.output_root.strip() or "runs")
-    return output_root / f"{month_end.isoformat()}_000000"
+    return Path(
+        resolve_output_dir(
+            repo_root=".",
+            selected_date=state.as_of_date,
+            output_root=state.output_root.strip() or "runs",
+            directory_exists=lambda raw_path: Path(raw_path.replace("\\", "/")).is_dir(),
+        ).replace("\\", "/")
+    )
+
+
+def _resolve_existing_output_dir(state: GuiRunState) -> Path:
+    return Path(
+        resolve_existing_output_dir(
+            repo_root=".",
+            selected_date=state.as_of_date,
+            output_root=state.output_root.strip() or "runs",
+            directory_exists=lambda raw_path: Path(raw_path.replace("\\", "/")).is_dir(),
+        ).replace("\\", "/")
+    )
 
 
 def _resolve_ppt_output_dir(state: GuiRunState) -> Path:
@@ -162,12 +180,16 @@ def execute_gui_run(
         settings_path=settings_path,
         dry_run_discovery=dry_run_discovery,
     )
+    output_dir = (
+        None
+        if dry_run_discovery
+        else Path(cli_args[cli_args.index("--output-dir") + 1])
+    )
     try:
         exit_code = int(runner(cli_args))
     finally:
         if cleanup_settings_file:
             _cleanup_settings_file(settings_path)
-    output_dir = None if dry_run_discovery else _resolve_output_dir(state)
     data_quality_color = ""
     data_quality_status = ""
     if exit_code == 0:
@@ -257,6 +279,7 @@ def launch_gui(
     result_var = tk.StringVar(value="")
     quality_var = tk.StringVar(value="")
     limit_banner_var = tk.StringVar(value="None")
+    last_output_dir: Path | None = None
 
     def _state_from_form() -> GuiRunState:
         return GuiRunState(
@@ -271,6 +294,7 @@ def launch_gui(
         )
 
     def _run(dry_run_discovery: bool = False) -> None:
+        nonlocal last_output_dir
         try:
             current = _state_from_form()
             status_var.set("Running...")
@@ -286,6 +310,7 @@ def launch_gui(
                 result_var.set("Success")
                 quality_var.set(result.data_quality_status or "UNAVAILABLE - Summary not found")
                 if result.output_dir is not None:
+                    last_output_dir = result.output_dir
                     limit_banner_var.set(_load_limit_breach_banner(result.output_dir) or "None")
             else:
                 status_var.set("Error")
@@ -301,19 +326,19 @@ def launch_gui(
 
     def _open_output() -> None:
         current = _state_from_form()
-        _open_path(_resolve_output_dir(current))
+        _open_path(last_output_dir or _resolve_existing_output_dir(current))
 
     def _open_manifest() -> None:
         current = _state_from_form()
-        _open_path(_resolve_output_dir(current) / "manifest.json")
+        _open_path((last_output_dir or _resolve_existing_output_dir(current)) / "manifest.json")
 
     def _open_summary() -> None:
         current = _state_from_form()
-        _open_path(_resolve_output_dir(current) / "DATA_QUALITY_SUMMARY.txt")
+        _open_path((last_output_dir or _resolve_existing_output_dir(current)) / "DATA_QUALITY_SUMMARY.txt")
 
     def _open_ppt() -> None:
         current = _state_from_form()
-        _open_path(_resolve_ppt_output_dir(current))
+        _open_path(last_output_dir or _resolve_existing_output_dir(current))
 
     # Form rows
     labels = (
