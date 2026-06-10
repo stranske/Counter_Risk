@@ -1,5 +1,14 @@
 # Counter_Risk workloop state
 
+## 2026-06-10T22:31Z - closer (codex) rebased PR #706 and cleared stale human blocker
+
+- **Lane:** closer / complex needs-human audit from neutral Code workspace.
+- **PR:** #706 (`codex/issue-705-directional-segment-baselines`) for source issue #705.
+- **Audit:** PR was non-draft, issue-linked, review-thread clear, and latest checks were green before rebase. The `needs-human` label traced to stale automation around a cancelled Gate run and exhausted autofix attempts; the later Gate/Gate Followups evidence was successful and no concrete human decision remained.
+- **Action:** rebased the PR branch onto current `origin/main` after PR #704 merged. Resolved the only conflict in `workloop-state.md` by keeping both the #703 and #705 entries. Planned remote cleanup: remove stale `needs-human` after push.
+- **Validation:** `python -m pytest tests/baseline/test_directional.py tests/baseline/test_coverage_manifest.py::test_priority_metrics_covered tests/baseline/test_coverage_manifest.py::test_emit_coverage_report -q` passed (10 passed). `BASELINE_REFRESH_REPORT=1 python -m pytest tests/baseline/test_coverage_manifest.py::test_emit_coverage_report -q` passed. `git diff --check origin/main...HEAD` passed.
+- **Next action:** wait for fresh post-rebase CI on #706. If checks stay green and no new review threads appear, merge #706, apply `verify:compare`, and reopen #705 for verifier sequencing.
+
 ## 2026-06-10T20:09:49Z - opener (codex) materialized issue #703
 
 - **Lane:** opener (Codex) from neutral Code workspace.
