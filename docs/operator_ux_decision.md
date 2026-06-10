@@ -53,7 +53,7 @@ Formatting profile support currently applies to:
 
 The Excel runner should execute workflow mode, not fixture replay:
 
-`counter-risk run --config <config/<variant>.yml> --as-of-date <YYYY-MM-DD> --output-dir <runs/<timestamp>> --settings <temp/counter-risk-runner-settings.json>`
+`counter-risk run --config <config/<variant>.yml> --as-of-date <YYYY-MM-DD> --output-dir <runs/<as_of_date[_N]>> --settings <temp/counter-risk-runner-settings.json>`
 
 Notes:
 
@@ -150,7 +150,8 @@ Decision rule:
   - Standard runs: `<as_of_date>` (example `runs/2026-01-31`).
   - With `run_date` configured in YAML: `<as_of_date>__run_<run_date>` (example `runs/2026-01-31__run_2026-02-05`).
   - Same-date repeat runs append a numeric suffix to the selected pattern (example `runs/2026-01-31_1`).
-- CLI override: passing `--output-dir` skips automatic naming and uses the caller-supplied directory, which must be empty or newly created.
+- Runner launchers preselect the next empty folder using the same suffix convention and pass it through `--output-dir`; direct CLI callers may omit `--output-dir` to let the pipeline choose the folder automatically.
+- CLI override: passing `--output-dir` uses the caller-supplied directory, which must be empty or newly created.
 - Required contents:
   - Updated historical workbooks
   - Updated monthly PPT outputs in the run folder

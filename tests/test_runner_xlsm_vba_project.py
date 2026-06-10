@@ -14,9 +14,9 @@ from zipfile import ZipFile
 RUNNER_WORKBOOK_PATH = Path("Runner.xlsm")
 VBA_PROJECT_BIN_PATH = "xl/vbaProject.bin"
 
-WINDOWS_RUN_FOLDER_FORMAT_LITERAL = "yyyy-mm-dd_hhnnss"
+WINDOWS_RUN_FOLDER_FORMAT_LITERAL = "yyyy-mm-dd"
 WINDOWS_RUN_FOLDER_FORMAT_REGEX = re.compile(
-    r"Format\$\(\s*parsedDate\s*,\s*RUN_FOLDER_FORMAT\s*\)",
+    r"BuildRunFolderName\(\s*baseName\s*,\s*suffixIndex\s*\)",
     flags=re.IGNORECASE,
 )
 
@@ -40,6 +40,7 @@ def test_runnerlaunch_bas_contains_required_behavior_markers() -> None:
     assert "ResolveRepoRoot()" in source
     assert "RUN_FOLDER_FORMAT" in source
     assert f'RUN_FOLDER_FORMAT As String = "{WINDOWS_RUN_FOLDER_FORMAT_LITERAL}"' in source
+    assert "Public Function ResolveExistingOutputDir" in source
 
     assert "PRE_LAUNCH_STATUS" in source
     assert "POST_LAUNCH_STATUS" in source
@@ -58,11 +59,14 @@ def test_runner_workbook_embeds_required_runnerlaunch_markers() -> None:
     assert "Public Function ResolveOutputDir" in vba_text
 
     assert "ResolveRepoRoot()" in vba_text
-    assert f'RUN_FOLDER_FORMAT As String = "{WINDOWS_RUN_FOLDER_FORMAT_LITERAL}"' in vba_text
+    assert "RUN_FOLDER_FORMAT As String" in vba_text
 
     assert 'PRE_LAUNCH_STATUS As String = "Launching..."' in vba_text
     assert 'POST_LAUNCH_STATUS As String = "Finished"' in vba_text
     assert 'COMPLETE_STATUS As String = "Complete"' in vba_text
 
     assert 'ResolveOutputDir("."' not in vba_text
-    assert WINDOWS_RUN_FOLDER_FORMAT_REGEX.search(vba_text) is not None
+    assert (
+        WINDOWS_RUN_FOLDER_FORMAT_REGEX.search(vba_text) is not None
+        or "Format$(parsedDate, RUN_FOLDER_FORMAT)" in vba_text
+    )

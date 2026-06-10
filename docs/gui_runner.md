@@ -44,6 +44,12 @@ Buttons:
 - `Open Summary`
 - `Open PPT Folder` opens the run folder that contains the registered PPT outputs.
 
+Run output folders use the pipeline repeat-run convention: the first run for a
+month lands in `<output_root>/<YYYY-MM-DD>`, and same-date repeats advance to
+`<YYYY-MM-DD>_1`, `<YYYY-MM-DD>_2`, and so on. The GUI passes the selected
+empty run folder to the CLI and keeps the completed folder as the target for the
+post-run open buttons.
+
 ## Headless Smoke Mode
 
 Use CI/headless mode to validate command wiring without opening a Tk window:

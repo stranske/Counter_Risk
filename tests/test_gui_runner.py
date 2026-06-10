@@ -75,7 +75,7 @@ def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> 
     result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
 
     assert result.exit_code == 0
-    assert result.output_dir == Path(tmp_path / "runs" / "2025-12-31_000000")
+    assert result.output_dir == Path(tmp_path / "runs" / "2025-12-31")
     assert result.settings_path.parent == tmp_path
     assert result.settings_path.name.startswith("counter-risk-runner-settings-")
     assert result.settings_path.suffix == ".json"
@@ -93,6 +93,23 @@ def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> 
     assert "--output-dir" in captured["argv"]
     assert "--settings" in captured["argv"]
     assert "--strict-policy" in captured["argv"]
+
+
+def test_execute_gui_run_same_date_does_not_produce_fixed_000000_path(tmp_path: Path) -> None:
+    existing_run = tmp_path / "runs" / "2025-12-31"
+    existing_run.mkdir(parents=True)
+
+    def fake_runner(argv: list[str]) -> int:
+        output_dir = Path(argv[argv.index("--output-dir") + 1])
+        output_dir.mkdir(parents=True)
+        return 0
+
+    state = GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs"))
+
+    result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
+
+    assert result.output_dir == Path(tmp_path / "runs" / "2025-12-31_1")
+    assert "_000000" not in str(result.output_dir)
 
 
 def test_execute_gui_run_reads_data_quality_status_after_success(tmp_path: Path) -> None:
@@ -345,7 +362,7 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
 
     ppt_buttons[0].kwargs["command"]()
 
-    assert opened_paths == [Path("runs/2025-12-31_000000")]
+    assert opened_paths == [Path("runs/2025-12-31")]
 
 
 def test_gui_ppt_folder_target_matches_runner_launch_contract() -> None:
@@ -360,7 +377,7 @@ def test_gui_ppt_folder_target_matches_runner_launch_contract() -> None:
         str(runner_launch_path).replace("\\", "/").removeprefix("./")
     )
 
-    assert gui_path == Path("runs/2025-12-31_000000")
+    assert gui_path == Path("runs/2025-12-31")
     assert gui_path == normalized_runner_launch_path
 
 
