@@ -26,3 +26,4 @@ dist/
 # Keep source package named "build" tracked.
 !src/counter_risk/build/
 !src/counter_risk/build/*.py
+workloop-state.md
