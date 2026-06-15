@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Literal
@@ -19,8 +20,22 @@ from counter_risk.pipeline.parsing_types import (
     UnmappedCounterpartyError,
 )
 from counter_risk.reports.mapping_diff import collect_mapping_diff_findings
+from counter_risk.runtime_paths import resolve_runtime_path
 
-_NAME_REGISTRY_PATH = Path(__file__).resolve().parents[3] / "config" / "name_registry.yml"
+
+def _name_registry_path() -> Path:
+    """Resolve the bundled name registry for both source and frozen runtimes.
+
+    Resolved lazily (not at import time) so that ``sys.frozen`` and the bundle
+    roots are evaluated when the file is actually loaded during a run. In a
+    PyInstaller build the source-tree ``parents[3]`` layout does not exist, so
+    search the bundle roots; in source mode keep the historical repo-relative
+    location (which does not depend on the process working directory).
+    """
+
+    if getattr(sys, "frozen", False):
+        return resolve_runtime_path("config/name_registry.yml")
+    return Path(__file__).resolve().parents[3] / "config" / "name_registry.yml"
 
 
 def reconcile_series_coverage(
@@ -103,7 +118,7 @@ def reconcile_series_coverage(
                     counterparty_included_for_variant(
                         raw_name,
                         variant,
-                        registry_path=_NAME_REGISTRY_PATH,
+                        registry_path=_name_registry_path(),
                     )
                     for raw_name in raw_names
                 )
@@ -144,7 +159,7 @@ def reconcile_series_coverage(
             expected_segments.difference(parsed_segments), key=str.casefold
         )
         mapping_diff_findings = collect_mapping_diff_findings(
-            _NAME_REGISTRY_PATH,
+            _name_registry_path(),
             {
                 "reconciliation": {
                     "counterparties_in_data": counterparties_in_data,
