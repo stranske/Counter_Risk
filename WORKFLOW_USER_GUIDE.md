@@ -779,20 +779,6 @@ The Workflows repository includes maintenance workflows that handle sync, update
 
 ---
 
-### `maint-73-refresh-reusable-tags.yml` - Legacy Tag Refresh Notice
-**Purpose:** Historical maintenance workflow for floating-tag management
-
-**Trigger:** Manual dispatch only (deprecated notice workflow)
-
-**What It Does:**
-- Records that first-party consumers now standardize on `@main`
-- Leaves any historical floating-tag maintenance to explicit migration work
-- Does not change the current first-party consumer default
-
-**Use When:** Only when you need a manual reminder of the deprecated floating-tag policy during an audit or migration review
-
----
-
 ### `maint-52-sync-dev-versions.yml` - Sync Dev Versions
 **Purpose:** Updates development environment versions
 
@@ -857,33 +843,29 @@ The Workflows repository includes maintenance workflows that handle sync, update
 
 ---
 
-### `maint-dependabot-auto-label.yml` - Label Dependabot PRs
-**Purpose:** Auto-labels Dependabot PRs by category
+### `maint-auto-label-dep-prs.yml` - Label dependency PRs
+**Purpose:** Auto-labels dependency-bot PRs with `agents:allow-change`
 
-**Trigger:** When Dependabot opens PR
+**Trigger:** When Dependabot or Renovate opens a PR
 
 **Labels Applied:**
-- `dependencies` (all)
-- `python` for Python packages
-- `github-actions` for action updates
-- `security` for security updates
+- `agents:allow-change` (so protected-workflow changes can be reviewed without manual label work)
 
 **Use When:** Automatic, no action needed
 
 ---
 
-### `maint-dependabot-auto-lock.yml` - Lock Dependabot PRs
-**Purpose:** Prevents auto-merge for major version updates
+### `maint-auto-lock-deps.yml` - Auto-lock dependency PRs
+**Purpose:** Keeps `requirements.lock` in sync on dependency-bot PRs
 
-**Trigger:** When Dependabot PR is major version
+**Trigger:** A `dependabot[bot]`/`renovate[bot]` PR changes a lock input (`pyproject.toml`, `requirements.txt`, `tools/requirements-llm.txt`)
 
 **What It Does:**
-- Detects major version bumps
-- Adds `do-not-merge` label
-- Comments with review request
-- Requires manual review
+- Re-runs the `uv pip compile` command recorded in the lock header
+- Commits the refreshed `requirements.lock` back to the PR branch if it changed
+- Workflows-local backstop to the fleet Renovate pip-compile manager
 
-**Use When:** Automatic protection
+**Use When:** Automatic, no action needed
 
 ---
 
