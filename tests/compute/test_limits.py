@@ -142,6 +142,41 @@ def test_check_limits_detects_absolute_and_percent_breaches_across_entity_types(
     ]
 
 
+def test_percent_of_total_scopes_denominator_to_matching_granularity() -> None:
+    exposures = [
+        {"counterparty": "Alpha", "notional": 600.0},
+        {"counterparty": "Beta", "notional": 400.0},
+        {"clearing_house": "CME", "segment": "Rates", "notional": 40.0},
+        {"clearing_house": "ICE", "segment": "Credit", "notional": 60.0},
+    ]
+    limits_cfg = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "clearing_house",
+                "entity_name": "CME",
+                "limit_value": 0.35,
+                "limit_kind": "percent_of_total",
+            }
+        ],
+    }
+
+    rows = _as_records(check_limits(exposures, limits_cfg))
+
+    assert rows == [
+        {
+            "entity_type": "clearing_house",
+            "entity_name": "cme",
+            "limit_kind": "percent_of_total",
+            "severity": "warning",
+            "actual_value": pytest.approx(0.4),
+            "limit_value": 0.35,
+            "breach_amount": pytest.approx(0.05),
+            "notes": None,
+        }
+    ]
+
+
 def test_check_limits_is_deterministic_for_reversed_rows() -> None:
     exposures = [
         {"counterparty": "A", "notional": 10.0},

@@ -23,11 +23,14 @@ def test_reconcile_series_coverage_requires_parsed_data_input_parameter() -> Non
     params = signature(reconcile_series_coverage).parameters
     parsed_data_param = params["parsed_data_by_sheet"]
     historical_headers_param = params["historical_series_headers_by_sheet"]
+    resolver_param = params["counterparty_resolver"]
 
     assert parsed_data_param.kind is Parameter.KEYWORD_ONLY
     assert parsed_data_param.default is Parameter.empty
     assert historical_headers_param.kind is Parameter.KEYWORD_ONLY
     assert historical_headers_param.default is Parameter.empty
+    assert resolver_param.kind is Parameter.KEYWORD_ONLY
+    assert resolver_param.default is not Parameter.empty
 
 
 def test_reconcile_series_coverage_accepts_historical_headers_parameter() -> None:
@@ -62,6 +65,33 @@ def test_reconcile_series_coverage_accepts_historical_headers_parameter() -> Non
         "missing_series": [],
         "missing_segments": [],
     }
+
+
+def test_reconcile_series_coverage_accepts_counterparty_resolver_injection() -> None:
+    class _Resolution:
+        canonical_name = "Injected Bank"
+        canonical_key = "injected_bank"
+        source = "test"
+
+    captured: list[str] = []
+
+    def _resolver(raw_name: str) -> _Resolution:
+        captured.append(raw_name)
+        return _Resolution()
+
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "Raw Bank"}], "futures": []}
+        },
+        historical_series_headers_by_sheet={"Total": ("Injected Bank",)},
+        counterparty_resolver=_resolver,
+    )
+
+    assert captured == ["Raw Bank"]
+    assert result["by_sheet"]["Total"]["normalized_counterparties_in_data"] == [
+        "Injected Bank"
+    ]
+    assert result["by_sheet"]["Total"]["missing_normalized_counterparties"] == []
 
 
 def test_reconcile_series_coverage_extracts_counterparties_and_clearing_houses() -> None:

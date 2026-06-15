@@ -12,6 +12,9 @@ from pydantic import ValidationError
 from counter_risk.limits_config import LimitEntry, LimitsConfig
 
 _NOTIONAL_KEYS = ("notional", "Notional", "exposure", "total", "amount")
+_LIMIT_GRANULARITY_KEY = "_limit_granularity"
+_COUNTERPARTY_GRANULARITY = "counterparty_total"
+_FUTURES_GRANULARITY = "futures_dimension"
 _BREACH_COLUMNS = (
     "entity_type",
     "entity_name",
@@ -28,6 +31,13 @@ _ENTITY_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
     "clearing_house": ("clearing_house", "clearinghouse", "ch"),
     "segment": ("segment", "asset_class", "class"),
     "custom_group": ("custom_group", "custom_group_name", "group", "group_name"),
+}
+_ENTITY_GRANULARITY: dict[str, str] = {
+    "counterparty": _COUNTERPARTY_GRANULARITY,
+    "fcm": _FUTURES_GRANULARITY,
+    "clearing_house": _FUTURES_GRANULARITY,
+    "segment": _FUTURES_GRANULARITY,
+    "custom_group": _FUTURES_GRANULARITY,
 }
 
 
@@ -78,6 +88,10 @@ def _normalize_entity_key(value: object) -> str:
     return "_".join(str(value).strip().split()).casefold()
 
 
+def _exposure_magnitude(notional: float) -> float:
+    return abs(float(notional))
+
+
 def _find_notional(row: Mapping[str, Any]) -> float:
     for key in _NOTIONAL_KEYS:
         if key not in row:
@@ -94,6 +108,14 @@ def _find_notional(row: Mapping[str, Any]) -> float:
     )
 
 
+def _row_granularity(row: Mapping[str, Any]) -> str | None:
+    value = row.get(_LIMIT_GRANULARITY_KEY)
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
 def _find_entity_name(row: Mapping[str, Any], aliases: tuple[str, ...]) -> str | None:
     for key in aliases:
         if key not in row:
@@ -105,6 +127,33 @@ def _find_entity_name(row: Mapping[str, Any], aliases: tuple[str, ...]) -> str |
         if text:
             return text
     return None
+
+
+def _denominator_rows_for_entity_type(
+    rows: list[Mapping[str, Any]],
+    *,
+    entity_type: str,
+) -> list[Mapping[str, Any]]:
+    tagged_rows = [row for row in rows if _row_granularity(row) is not None]
+    if tagged_rows:
+        target_granularity = _ENTITY_GRANULARITY[entity_type]
+        return [
+            row for row in rows if _row_granularity(row) == target_granularity
+        ]
+
+    aliases = _ENTITY_COLUMN_ALIASES[entity_type]
+    return [row for row in rows if _find_entity_name(row, aliases) is not None]
+
+
+def _denominator_abs_notional(
+    rows: list[Mapping[str, Any]],
+    *,
+    entity_type: str,
+) -> float:
+    return sum(
+        _exposure_magnitude(_find_notional(row))
+        for row in _denominator_rows_for_entity_type(rows, entity_type=entity_type)
+    )
 
 
 def _coerce_limits(limits_cfg: Any) -> LimitsConfig:
@@ -192,7 +241,10 @@ def check_limits(exposures_df: Any, limits_cfg: Any) -> Any:
     if not rows or not enabled_limits:
         return _to_dataframe_or_records(records=[], columns=_BREACH_COLUMNS)
 
-    total_abs_notional = sum(abs(_find_notional(row)) for row in rows)
+    denominator_by_entity_type = {
+        entity_type: _denominator_abs_notional(rows, entity_type=entity_type)
+        for entity_type in _ENTITY_COLUMN_ALIASES
+    }
     records: list[dict[str, Any]] = []
 
     for limit in enabled_limits:
@@ -207,7 +259,7 @@ def check_limits(exposures_df: Any, limits_cfg: Any) -> Any:
             if _normalize_entity_key(entity_name) != limit.entity_name:
                 continue
             found_match = True
-            matched_abs_notional += abs(_find_notional(row))
+            matched_abs_notional += _exposure_magnitude(_find_notional(row))
 
         if not found_match:
             continue
@@ -215,6 +267,7 @@ def check_limits(exposures_df: Any, limits_cfg: Any) -> Any:
         if limit.limit_kind == "absolute_notional":
             actual_value = matched_abs_notional
         else:
+            total_abs_notional = denominator_by_entity_type[limit.entity_type]
             actual_value = (
                 0.0 if total_abs_notional == 0.0 else matched_abs_notional / total_abs_notional
             )

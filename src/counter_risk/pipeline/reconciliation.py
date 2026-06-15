@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, Literal
 
@@ -47,6 +47,7 @@ def reconcile_series_coverage(
         Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
     ) = None,
     fail_policy: Literal["warn", "strict"] = "warn",
+    counterparty_resolver: Callable[[str], Any] = normalize_counterparty_with_source,
 ) -> dict[str, Any]:
     """Reconcile parsed series labels against historical workbook headers per sheet."""
     _validate_reconciliation_parsed_data_by_sheet(parsed_data_by_sheet=parsed_data_by_sheet)
@@ -92,7 +93,10 @@ def reconcile_series_coverage(
         (
             normalized_counterparties_in_data,
             counterparty_sources_by_raw_name,
-        ) = _counterparty_resolution_maps_from_records(totals_records)
+        ) = _counterparty_resolution_maps_from_records(
+            totals_records,
+            counterparty_resolver=counterparty_resolver,
+        )
         raw_counterparties_by_normalized = _raw_counterparties_by_normalized_from_parsed_data(
             parsed_sections
         )
@@ -363,6 +367,8 @@ def _extract_segments_from_records(parsed_sections: Mapping[str, Any]) -> set[st
 
 def _counterparty_resolution_maps_from_records(
     totals_records: list[dict[str, Any]],
+    *,
+    counterparty_resolver: Callable[[str], Any] = normalize_counterparty_with_source,
 ) -> tuple[dict[str, set[str]], dict[str, str]]:
     normalized_to_raw: dict[str, set[str]] = {}
     sources_by_raw_name: dict[str, str] = {}
@@ -370,7 +376,7 @@ def _counterparty_resolution_maps_from_records(
         raw_name = str(record.get("counterparty", "")).strip()
         if not raw_name:
             continue
-        resolution = normalize_counterparty_with_source(raw_name)
+        resolution = counterparty_resolver(raw_name)
         normalized_to_raw.setdefault(resolution.canonical_name, set()).add(raw_name)
         sources_by_raw_name[raw_name] = resolution.source
     return normalized_to_raw, sources_by_raw_name
