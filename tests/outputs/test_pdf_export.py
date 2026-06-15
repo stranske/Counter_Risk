@@ -129,8 +129,9 @@ def test_pdf_export_generator_logs_failure_with_underlying_exception_message(
         pptx_to_pdf_exporter=_failing_export,
     )
 
-    with caplog.at_level("ERROR"), pytest.raises(
-        RuntimeError, match="PDF export failed: boom export"
+    with (
+        caplog.at_level("ERROR"),
+        pytest.raises(RuntimeError, match="PDF export failed: boom export"),
     ):
         generator.generate(context=context)
 
