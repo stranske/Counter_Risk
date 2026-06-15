@@ -90,6 +90,13 @@ markers = [
 [tool.coverage.run]
 source = ["src"]
 branch = true
+# Use CPython 3.12+'s sys.monitoring backend instead of the default C-trace
+# (sys.settrace) backend. settrace tracing over the numeric/pandas-heavy code
+# made the coverage-enabled CI run (`push` to main) ~6x slower than the
+# no-coverage PR run (~39m vs ~6m for the same ~1300 tests). sysmon produces
+# identical line+branch coverage with a fraction of the overhead. Requires
+# coverage>=7.4 and Python>=3.12 (this repo's CI matrix is 3.12/3.13).
+core = "sysmon"
 
 [tool.coverage.report]
 exclude_lines = [
