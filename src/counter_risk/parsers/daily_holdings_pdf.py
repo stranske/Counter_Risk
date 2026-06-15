@@ -222,20 +222,18 @@ def _match_counterparty(text: str) -> str | None:
     return None
 
 
+from counter_risk.parsers._xlsx_reader import coerce_accounting_float
+
+
 def _parse_amount(raw: str) -> float | None:
     text = raw.strip()
     if not text:
         return None
 
-    negative = text.startswith("(") and text.endswith(")")
-    normalized = text.replace("$", "").replace(",", "").replace("(", "").replace(")", "")
-
     try:
-        value = float(normalized)
+        return coerce_accounting_float(text, strip_percent=False)
     except ValueError:
         return None
-
-    return -value if negative else value
 
 
 __all__ = [

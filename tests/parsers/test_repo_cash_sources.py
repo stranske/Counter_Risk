@@ -265,3 +265,16 @@ def test_find_duplicate_counterparty_names_empty_when_no_duplicates(tmp_path: Pa
     duplicates = find_duplicate_counterparty_names(source_path)
 
     assert duplicates == []
+
+
+def test_load_repo_cash_with_utf8_bom(tmp_path: Path) -> None:
+    source_path = tmp_path / "source_bom.csv"
+    source_path.write_text(
+        "counterparty,cash_value\nCIBC,1.0\nASL,2.0\n",
+        encoding="utf-8-sig",
+    )
+
+    values = load_repo_cash_structured_source(source_path, source_type="csv")
+    assert values["CIBC"] == 1.0
+    assert values["ASL"] == 2.0
+

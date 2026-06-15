@@ -19,6 +19,20 @@ from zipfile import BadZipFile, ZipFile
 
 from counter_risk.normalize import canonicalize_name, safe_display_name
 from counter_risk.parsers._variant_text import normalize_variant_text
+from counter_risk.parsers._xlsx_reader import (
+    resolve_sheet_target,
+    load_shared_strings,
+    read_sheet_rows,
+    coerce_accounting_float,
+)
+
+
+class CprsFcmError(ValueError):
+    """Base exception for CPRS-FCM parser errors."""
+
+
+class CprsFcmColumnsMissingError(CprsFcmError):
+    """Exception raised when required column headers are missing in the CPRS-FCM sheet."""
 
 _XML_NS = {
     "main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -137,10 +151,15 @@ def _parse_fcm_total_records(path: Path | str) -> list[dict[str, object]]:
         return []
 
     start_row, end_row = boundaries
+    header_row_number = _find_totals_header_row(rows)
+    if header_row_number is None:
+        raise CprsFcmColumnsMissingError("Unable to locate CPRS-FCM totals header row")
+    column_map = _build_totals_column_map(rows, header_row_number)
+
     records: list[dict[str, object]] = []
     for row_number in range(start_row, end_row + 1):
         row = rows.get(row_number, {})
-        counterparty = _normalize_text(row.get(3))
+        counterparty = _normalize_text(row.get(column_map["counterparty"]))
         if not counterparty:
             continue
 
@@ -150,21 +169,24 @@ def _parse_fcm_total_records(path: Path | str) -> list[dict[str, object]]:
         if _FUTURES_SECTION_MARKER in lowered:
             continue
 
-        notional_value = _extract_numeric(row.get(11))
-        category_values = [_extract_numeric(row.get(index)) for index in (5, 6, 7, 8, 9)]
+        notional_value = _extract_numeric(row.get(column_map["Notional"]))
+        category_values = [
+            _extract_numeric(row.get(column_map[key]))
+            for key in ("TIPS", "Treasury", "Equity", "Commodity", "Currency")
+        ]
         if notional_value == 0.0 and all(value == 0.0 for value in category_values):
             continue
 
         records.append(
             {
                 "counterparty": counterparty,
-                "TIPS": _extract_numeric(row.get(5)),
-                "Treasury": _extract_numeric(row.get(6)),
-                "Equity": _extract_numeric(row.get(7)),
-                "Commodity": _extract_numeric(row.get(8)),
-                "Currency": _extract_numeric(row.get(9)),
+                "TIPS": _extract_numeric(row.get(column_map["TIPS"])),
+                "Treasury": _extract_numeric(row.get(column_map["Treasury"])),
+                "Equity": _extract_numeric(row.get(column_map["Equity"])),
+                "Commodity": _extract_numeric(row.get(column_map["Commodity"])),
+                "Currency": _extract_numeric(row.get(column_map["Currency"])),
                 "Notional": notional_value,
-                "NotionalChange": _extract_numeric(row.get(12)),
+                "NotionalChange": _extract_numeric(row.get(column_map["NotionalChange"])),
                 "source_sheet": sheet_name,
                 "source_row": row_number,
             }
@@ -192,16 +214,19 @@ def parse_futures_detail(path: Path | str) -> Any:  # pandas.DataFrame
         return _to_dataframe(records=[], columns=_FUTURES_COLUMNS, dtypes=_FUTURES_DTYPES)
 
     start_row, end_row = boundaries
+    header_row_number = start_row - 1
+    column_map = _build_futures_column_map(rows, header_row_number)
+
     records: list[dict[str, object]] = []
     for row_number in range(start_row, end_row + 1):
         row = rows.get(row_number, {})
-        account = _normalize_text(row.get(3))
-        description = _normalize_text(row.get(5))
-        position_class = _normalize_text(row.get(7))
-        fcm = _normalize_text(row.get(8))
-        clearing_house = _normalize_text(row.get(9))
+        account = _normalize_text(row.get(column_map["account"]))
+        description = _normalize_text(row.get(column_map["description"]))
+        position_class = _normalize_text(row.get(column_map["class"]))
+        fcm = _normalize_text(row.get(column_map["fcm"]))
+        clearing_house = _normalize_text(row.get(column_map["clearing_house"]))
 
-        if not account and not description and not _normalize_text(row.get(12)):
+        if not account and not description and not _normalize_text(row.get(column_map["notional"])):
             continue
 
         # Skip header-like rows if detected in malformed ranges.
@@ -215,7 +240,7 @@ def parse_futures_detail(path: Path | str) -> Any:  # pandas.DataFrame
                 "class": position_class,
                 "fcm": fcm,
                 "clearing_house": clearing_house,
-                "notional": _extract_numeric(row.get(12)),
+                "notional": _extract_numeric(row.get(column_map["notional"])),
             }
         )
 
@@ -225,8 +250,9 @@ def parse_futures_detail(path: Path | str) -> Any:  # pandas.DataFrame
 def _locate_totals_section(rows: dict[int, dict[int, str | None]]) -> tuple[int, int] | None:
     marker_row: int | None = None
     for row_number in sorted(rows):
-        row_text = _matching_key(rows[row_number].get(3))
-        if _TOTALS_SECTION_MARKER in row_text:
+        row = rows[row_number]
+        row_texts = [_matching_key(val) for val in row.values() if val]
+        if any(_TOTALS_SECTION_MARKER in t for t in row_texts):
             marker_row = row_number
             break
 
@@ -236,8 +262,9 @@ def _locate_totals_section(rows: dict[int, dict[int, str | None]]) -> tuple[int,
     start_row = marker_row + 1
     end_row = max(rows)
     for row_number in range(start_row, max(rows) + 1):
-        row_text = _matching_key(rows.get(row_number, {}).get(3))
-        if _FUTURES_SECTION_MARKER in row_text or _FUTURES_FOOTER_MARKER in row_text:
+        row = rows.get(row_number, {})
+        row_texts = [_matching_key(val) for val in row.values() if val]
+        if any(_FUTURES_SECTION_MARKER in t or _FUTURES_FOOTER_MARKER in t for t in row_texts):
             end_row = row_number - 1
             break
 
@@ -249,8 +276,9 @@ def _locate_futures_detail_section(
 ) -> tuple[int, int] | None:
     marker_row: int | None = None
     for row_number in sorted(rows):
-        row_text = _matching_key(rows[row_number].get(3))
-        if _FUTURES_SECTION_MARKER in row_text:
+        row = rows[row_number]
+        row_texts = [_matching_key(val) for val in row.values() if val]
+        if any(_FUTURES_SECTION_MARKER in t for t in row_texts):
             marker_row = row_number
             break
 
@@ -261,8 +289,9 @@ def _locate_futures_detail_section(
     start_row = header_row + 1
     end_row = max(rows)
     for row_number in range(start_row, max(rows) + 1):
-        row_text = _matching_key(rows.get(row_number, {}).get(3))
-        if _FUTURES_FOOTER_MARKER in row_text:
+        row = rows.get(row_number, {})
+        row_texts = [_matching_key(val) for val in row.values() if val]
+        if any(_FUTURES_FOOTER_MARKER in t for t in row_texts):
             end_row = row_number - 1
             break
 
@@ -280,125 +309,19 @@ def _variant_for_path(*, file_path: Path, sheet_name: str) -> str:
 
 def _read_fcm_sheet(path: Path) -> tuple[str, dict[int, dict[int, str | None]]]:
     with ZipFile(path) as workbook_zip:
-        workbook_xml = ET.fromstring(workbook_zip.read("xl/workbook.xml"))
-        rels_xml = ET.fromstring(workbook_zip.read("xl/_rels/workbook.xml.rels"))
-        sheets = workbook_xml.find("main:sheets", _XML_NS)
-        if sheets is None:
-            raise ValueError("Workbook contains no sheets")
-
-        relationship_map = {
-            relationship.attrib["Id"]: relationship.attrib["Target"]
-            for relationship in rels_xml.findall("pkg:Relationship", _XML_NS)
-        }
-
-        selected_name = ""
-        selected_target: str | None = None
-        for sheet in sheets.findall("main:sheet", _XML_NS):
-            name = sheet.attrib.get("name", "")
-            normalized_name = _matching_key(name)
-            if not any(alias in normalized_name for alias in _FCM_SHEET_ALIASES):
-                continue
-
-            relationship_id = sheet.attrib.get(
-                "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
+        try:
+            selected_name, sheet_path = resolve_sheet_target(
+                workbook_zip,
+                lambda name: any(alias in _matching_key(name) for alias in _FCM_SHEET_ALIASES),
             )
-            if relationship_id is None:
-                continue
-            target = relationship_map.get(relationship_id)
-            if target is None:
-                continue
+        except ValueError as exc:
+            raise ValueError("Unable to locate CPRS-FCM worksheet") from exc
 
-            selected_name = name
-            selected_target = target
-            break
-
-        if selected_target is None:
-            raise ValueError("Unable to locate CPRS-FCM worksheet")
-
-        sheet_path = (
-            f"xl/{selected_target}" if not selected_target.startswith("/") else selected_target[1:]
-        )
-        shared_strings = _load_shared_strings(workbook_zip)
+        shared_strings = load_shared_strings(workbook_zip)
         sheet_xml = ET.fromstring(workbook_zip.read(sheet_path))
-        rows = _read_sheet_rows(sheet_xml, shared_strings)
+        rows = read_sheet_rows(sheet_xml, shared_strings)
 
     return selected_name, rows
-
-
-def _load_shared_strings(workbook_zip: ZipFile) -> list[str]:
-    if "xl/sharedStrings.xml" not in workbook_zip.namelist():
-        return []
-
-    shared_strings_xml = ET.fromstring(workbook_zip.read("xl/sharedStrings.xml"))
-    output: list[str] = []
-
-    for string_item in shared_strings_xml.findall("main:si", _XML_NS):
-        text_nodes = string_item.findall(".//main:t", _XML_NS)
-        output.append("".join(node.text or "" for node in text_nodes))
-
-    return output
-
-
-def _read_sheet_rows(
-    sheet_xml: ET.Element, shared_strings: list[str]
-) -> dict[int, dict[int, str | None]]:
-    row_map: dict[int, dict[int, str | None]] = {}
-
-    for row_node in sheet_xml.findall(".//main:sheetData/main:row", _XML_NS):
-        row_number_text = row_node.attrib.get("r")
-        if row_number_text is None:
-            continue
-
-        row_number = int(row_number_text)
-        cells: dict[int, str | None] = {}
-
-        for cell_node in row_node.findall("main:c", _XML_NS):
-            reference = cell_node.attrib.get("r")
-            if reference is None:
-                continue
-
-            column_index = _column_index_from_reference(reference)
-            cells[column_index] = _cell_value(cell_node, shared_strings)
-
-        row_map[row_number] = cells
-
-    return row_map
-
-
-def _column_index_from_reference(reference: str) -> int:
-    letters = "".join(character for character in reference if character.isalpha()).upper()
-    if not letters:
-        raise ValueError(f"Invalid cell reference: {reference}")
-
-    index = 0
-    for character in letters:
-        index = (index * 26) + (ord(character) - ord("A") + 1)
-    return index
-
-
-def _cell_value(cell_node: ET.Element, shared_strings: list[str]) -> str | None:
-    cell_type = cell_node.attrib.get("t")
-    value_node = cell_node.find("main:v", _XML_NS)
-
-    if cell_type == "inlineStr":
-        inline_text_node = cell_node.find("main:is/main:t", _XML_NS)
-        return inline_text_node.text if inline_text_node is not None else None
-
-    if value_node is None:
-        return None
-
-    raw_value = value_node.text
-    if raw_value is None:
-        return None
-
-    if cell_type == "s":
-        index = int(raw_value)
-        return shared_strings[index] if index < len(shared_strings) else None
-
-    if cell_type == "b":
-        return "TRUE" if raw_value == "1" else "FALSE"
-
-    return raw_value
 
 
 def _normalize_text(value: str | None) -> str:
@@ -412,20 +335,113 @@ def _matching_key(value: str | None) -> str:
 
 
 def _extract_numeric(value: str | None) -> float:
-    text = _normalize_text(value)
-    if not text:
-        return 0.0
+    return coerce_accounting_float(value, strip_percent=True)
 
-    cleaned = text.replace(",", "").replace("$", "").replace("%", "")
-    if cleaned in {"", "-", "--", "N/A", "n/a"}:
-        return 0.0
-    if cleaned.startswith("(") and cleaned.endswith(")"):
-        cleaned = f"-{cleaned[1:-1]}"
 
-    try:
-        return float(cleaned)
-    except ValueError as exc:
-        raise ValueError(f"Unable to parse numeric value: {text}") from exc
+_TOTALS_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
+    "counterparty": ("counterparty", "counterparty/ fcm", "counterparty/fcm", "fcm"),
+    "TIPS": ("tips",),
+    "Treasury": ("treasury",),
+    "Equity": ("equity",),
+    "Commodity": ("commodity",),
+    "Currency": ("currency",),
+    "Notional": ("notional", "total notional"),
+    "NotionalChange": ("notional change from prior month", "notional change"),
+}
+
+_FUTURES_COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
+    "account": ("account",),
+    "description": ("description",),
+    "class": ("class",),
+    "fcm": ("fcm",),
+    "clearing_house": ("clearing house", "clearing_house"),
+    "notional": ("notional",),
+}
+
+
+def _header_matches_alias(canonical_name: str, normalized_header: str, alias: str) -> bool:
+    if canonical_name == "Notional":
+        if normalized_header == alias:
+            return True
+        return normalized_header.endswith(alias) and "change" not in normalized_header
+    return normalized_header == alias or alias in normalized_header
+
+
+def _find_totals_header_row(rows: dict[int, dict[int, str | None]]) -> int | None:
+    for row_number in sorted(rows):
+        row = rows[row_number]
+        for val in row.values():
+            if val:
+                norm = _matching_key(val)
+                if (
+                    "counterparty/" in norm
+                    or "counterparty /" in norm
+                    or ("counterparty" in norm and "fcm" in norm)
+                ):
+                    return row_number
+    return None
+
+
+def _build_totals_column_map(
+    rows: dict[int, dict[int, str | None]], header_row_number: int
+) -> dict[str, int]:
+    header_row = rows.get(header_row_number, {})
+    next_row = rows.get(header_row_number + 1, {})
+    column_map: dict[str, int] = {}
+    all_columns = sorted(set(header_row) | set(next_row))
+    for column_index in all_columns:
+        combined_header = " ".join(
+            part
+            for part in (
+                _normalize_text(header_row.get(column_index)),
+                _normalize_text(next_row.get(column_index)),
+            )
+            if part
+        )
+        combined_header = _matching_key(combined_header)
+        normalized = combined_header
+        if not normalized:
+            continue
+
+        for canonical_name, aliases in _TOTALS_COLUMN_ALIASES.items():
+            if canonical_name in column_map:
+                continue
+            if any(_header_matches_alias(canonical_name, normalized, alias) for alias in aliases):
+                column_map[canonical_name] = column_index
+                break
+
+    missing_headers = [col for col in _TOTALS_COLUMN_ALIASES if col not in column_map]
+    if missing_headers:
+        raise CprsFcmColumnsMissingError(
+            f"Missing required columns in FCM totals: {', '.join(missing_headers)}"
+        )
+
+    return column_map
+
+
+def _build_futures_column_map(
+    rows: dict[int, dict[int, str | None]], header_row_number: int
+) -> dict[str, int]:
+    header_row = rows.get(header_row_number, {})
+    column_map: dict[str, int] = {}
+    for column_index, val in header_row.items():
+        if not val:
+            continue
+        normalized = _matching_key(val)
+        for canonical_name, aliases in _FUTURES_COLUMN_ALIASES.items():
+            if canonical_name in column_map:
+                continue
+            if any(alias == normalized or alias in normalized for alias in aliases):
+                column_map[canonical_name] = column_index
+                break
+
+    missing_headers = [col for col in _FUTURES_COLUMN_ALIASES if col not in column_map]
+    if missing_headers:
+        raise CprsFcmColumnsMissingError(
+            f"Missing required columns in FCM futures detail: {', '.join(missing_headers)}"
+        )
+
+    return column_map
 
 
 def _to_dataframe(
@@ -446,3 +462,4 @@ def _to_dataframe(
 
     df = df.loc[:, list(columns)]
     return df.astype(dtypes)
+

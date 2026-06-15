@@ -11,6 +11,12 @@ from zipfile import BadZipFile, ZipFile
 
 from counter_risk.normalize import canonicalize_name, safe_display_name
 from counter_risk.parsers._variant_text import normalize_variant_text
+from counter_risk.parsers._xlsx_reader import (
+    resolve_sheet_target,
+    load_shared_strings,
+    read_sheet_rows,
+    coerce_accounting_float,
+)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -405,135 +411,18 @@ def _extract_text(row: dict[int, str | None], column_index: int) -> str:
 def _extract_numeric(row: dict[int, str | None], column_index: int | None) -> float:
     if column_index is None:
         return 0.0
-
-    raw_value = row.get(column_index)
-    if raw_value is None:
-        return 0.0
-
-    text = _normalize_text(raw_value)
-    if not text:
-        return 0.0
-
-    cleaned = text.replace(",", "").replace("$", "").replace("%", "")
-    if cleaned in {"", "-", "--", "N/A", "n/a"}:
-        return 0.0
-
-    if cleaned.startswith("(") and cleaned.endswith(")"):
-        cleaned = f"-{cleaned[1:-1]}"
-
-    try:
-        return float(cleaned)
-    except ValueError as exc:
-        raise ValueError(f"Unable to parse numeric value: {text}") from exc
+    return coerce_accounting_float(row.get(column_index), strip_percent=True)
 
 
 def _read_first_sheet(path: Path) -> tuple[str, dict[int, dict[int, str | None]]]:
     with ZipFile(path) as workbook_zip:
-        workbook_xml = ET.fromstring(workbook_zip.read("xl/workbook.xml"))
-        rels_xml = ET.fromstring(workbook_zip.read("xl/_rels/workbook.xml.rels"))
+        try:
+            sheet_name, sheet_path = resolve_sheet_target(workbook_zip, lambda name: True)
+        except ValueError as exc:
+            raise ValueError("Workbook contains no sheets") from exc
 
-        sheets = workbook_xml.find("main:sheets", _XML_NS)
-        if sheets is None or len(list(sheets)) == 0:
-            raise ValueError("Workbook contains no sheets")
-
-        first_sheet = list(sheets)[0]
-        sheet_name = first_sheet.attrib.get("name", "")
-        relationship_id = first_sheet.attrib.get(
-            "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
-        )
-        if relationship_id is None:
-            raise ValueError("Workbook sheet is missing relationship id")
-
-        relationship_map = {
-            relationship.attrib["Id"]: relationship.attrib["Target"]
-            for relationship in rels_xml.findall("pkg:Relationship", _XML_NS)
-        }
-
-        target = relationship_map.get(relationship_id)
-        if target is None:
-            raise ValueError("Workbook sheet relationship target not found")
-
-        sheet_path = f"xl/{target}" if not target.startswith("/") else target[1:]
-
-        shared_strings = _load_shared_strings(workbook_zip)
+        shared_strings = load_shared_strings(workbook_zip)
         sheet_xml = ET.fromstring(workbook_zip.read(sheet_path))
-        rows = _read_sheet_rows(sheet_xml, shared_strings)
+        rows = read_sheet_rows(sheet_xml, shared_strings)
 
     return sheet_name, rows
-
-
-def _load_shared_strings(workbook_zip: ZipFile) -> list[str]:
-    if "xl/sharedStrings.xml" not in workbook_zip.namelist():
-        return []
-
-    shared_strings_xml = ET.fromstring(workbook_zip.read("xl/sharedStrings.xml"))
-    output: list[str] = []
-
-    for string_item in shared_strings_xml.findall("main:si", _XML_NS):
-        text_nodes = string_item.findall(".//main:t", _XML_NS)
-        output.append("".join(node.text or "" for node in text_nodes))
-
-    return output
-
-
-def _read_sheet_rows(
-    sheet_xml: ET.Element, shared_strings: list[str]
-) -> dict[int, dict[int, str | None]]:
-    row_map: dict[int, dict[int, str | None]] = {}
-
-    for row_node in sheet_xml.findall(".//main:sheetData/main:row", _XML_NS):
-        row_number_text = row_node.attrib.get("r")
-        if row_number_text is None:
-            continue
-
-        row_number = int(row_number_text)
-        cells: dict[int, str | None] = {}
-
-        for cell_node in row_node.findall("main:c", _XML_NS):
-            reference = cell_node.attrib.get("r")
-            if reference is None:
-                continue
-
-            column_index = _column_index_from_reference(reference)
-            cells[column_index] = _cell_value(cell_node, shared_strings)
-
-        row_map[row_number] = cells
-
-    return row_map
-
-
-def _cell_value(cell_node: ET.Element, shared_strings: list[str]) -> str | None:
-    cell_type = cell_node.attrib.get("t")
-    value_node = cell_node.find("main:v", _XML_NS)
-
-    if cell_type == "inlineStr":
-        inline_text_node = cell_node.find("main:is/main:t", _XML_NS)
-        return inline_text_node.text if inline_text_node is not None else None
-
-    if value_node is None:
-        return None
-
-    raw_value = value_node.text
-    if raw_value is None:
-        return None
-
-    if cell_type == "s":
-        index = int(raw_value)
-        return shared_strings[index] if index < len(shared_strings) else None
-
-    if cell_type == "b":
-        return "TRUE" if raw_value == "1" else "FALSE"
-
-    return raw_value
-
-
-def _column_index_from_reference(reference: str) -> int:
-    letters = "".join(character for character in reference if character.isalpha()).upper()
-    if not letters:
-        raise ValueError(f"Invalid cell reference: {reference}")
-
-    index = 0
-    for character in letters:
-        index = (index * 26) + (ord(character) - ord("A") + 1)
-
-    return index

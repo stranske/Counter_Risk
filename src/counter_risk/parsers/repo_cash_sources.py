@@ -183,7 +183,7 @@ def _resolve_source_type(
 
 
 def _load_csv_rows(path: Path) -> list[dict[str, str]]:
-    with path.open("r", encoding="utf-8", newline="") as handle:
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         rows: list[dict[str, str]] = []
         for row in reader:
