@@ -48,8 +48,7 @@ def test_all_pyproject_dependencies_are_in_lock() -> None:
     project = pyproject.get("project", {})
     uv_config = pyproject.get("tool", {}).get("uv", {}).get("pip", {})
     no_emit_packages = {
-        str(name).strip().lower().replace("_", "-")
-        for name in uv_config.get("no-emit-package", [])
+        str(name).strip().lower().replace("_", "-") for name in uv_config.get("no-emit-package", [])
     }
 
     declared = set()

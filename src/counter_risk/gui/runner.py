@@ -180,11 +180,7 @@ def execute_gui_run(
         settings_path=settings_path,
         dry_run_discovery=dry_run_discovery,
     )
-    output_dir = (
-        None
-        if dry_run_discovery
-        else Path(cli_args[cli_args.index("--output-dir") + 1])
-    )
+    output_dir = None if dry_run_discovery else Path(cli_args[cli_args.index("--output-dir") + 1])
     try:
         exit_code = int(runner(cli_args))
     finally:
@@ -334,7 +330,9 @@ def launch_gui(
 
     def _open_summary() -> None:
         current = _state_from_form()
-        _open_path((last_output_dir or _resolve_existing_output_dir(current)) / "DATA_QUALITY_SUMMARY.txt")
+        _open_path(
+            (last_output_dir or _resolve_existing_output_dir(current)) / "DATA_QUALITY_SUMMARY.txt"
+        )
 
     def _open_ppt() -> None:
         current = _state_from_form()
