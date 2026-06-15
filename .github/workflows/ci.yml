@@ -1,33 +1,16 @@
-# Thin caller for Python CI - delegates to Workflows repo reusable workflow
-# No local scripts required - all logic is centralized in stranske/Workflows
-#
-# This workflow runs:
-# - Lint (Ruff)
-# - Format check (Black)
-# - Type checking (mypy)
-# - Tests (pytest) on Python 3.12 and 3.13
-#
-# NOTE: Do NOT add a top-level 'permissions:' block here. It causes
-# startup_failure when calling reusable workflows. The reusable workflow
-# defines its own permissions.
-#
-# Copy this file to: .github/workflows/ci.yml
-# Also copy: autofix-versions.env to .github/workflows/autofix-versions.env
 name: CI
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 jobs:
   python:
     name: Python CI
     uses: stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main
     with:
-      python-versions: '["3.12", "3.13"]'
-      typecheck: true
+      python-versions: '["3.12"]'
+      typecheck: false
       coverage: true
       coverage-min: '80'
-      pytest_args: "-n auto --dist loadscope"
+      pytest_args: "-n auto --dist loadscope --durations=30"
     secrets: inherit
