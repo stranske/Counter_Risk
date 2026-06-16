@@ -12,7 +12,7 @@ from pptx.slide import Slide
 
 from counter_risk.normalize import canonicalize_name
 
-_SECTION_TITLE_SUBSTRINGS: dict[str, tuple[str, ...]] = {
+_SECTION_TITLE_ALIASES: dict[str, tuple[str, ...]] = {
     "allprograms": ("allprograms",),
     "extrend": ("extrend", "excludingtrend"),
     "trend": ("trend",),
@@ -54,15 +54,15 @@ def _picture_geometry(picture: BaseShape) -> tuple[int, int, int, int]:
 
 def _canonical_section_key(section: str) -> str:
     normalized = _normalize_key(section)
-    for canonical_key, title_substrings in _SECTION_TITLE_SUBSTRINGS.items():
-        if normalized == canonical_key or normalized in title_substrings:
+    for canonical_key, title_aliases in _SECTION_TITLE_ALIASES.items():
+        if normalized == canonical_key or normalized in title_aliases:
             return canonical_key
     return normalized
 
 
 def _section_matches_title(section_key: str, normalized_title: str) -> bool:
-    for title_substring in _SECTION_TITLE_SUBSTRINGS.get(section_key, (section_key,)):
-        if title_substring in normalized_title:
+    for title_alias in _SECTION_TITLE_ALIASES.get(section_key, (section_key,)):
+        if title_alias == normalized_title:
             return True
     return False
 

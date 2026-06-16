@@ -18,12 +18,16 @@ from counter_risk.mosers.workbook_generation import (
 )
 
 
+class _WorksheetLike(Protocol):
+    def __setitem__(self, key: str, value: object) -> None: ...
+
+
 class _WorkbookLike(Protocol):
     def save(self, filename: str | Path) -> None: ...
 
     def close(self) -> None: ...
 
-    def __getitem__(self, key: str) -> object: ...
+    def __getitem__(self, key: str) -> _WorksheetLike: ...
 
 
 _CPRS_CH_SHEET = "CPRS - CH"

@@ -56,7 +56,7 @@ def load_yaml_model[M: BaseModel](
         try:
             raw = loader.get_single_data()
         finally:
-            loader.dispose()
+            cast(Any, loader).dispose()
     except OSError as exc:
         raise ValueError(f"Unable to read {kind} file '{config_path}': {exc}") from exc
     except ValueError as exc:

@@ -13,7 +13,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from counter_risk.io.discover import (
     DiscoveryMatch,
@@ -278,7 +278,7 @@ def _load_limit_breach_banner(run_dir: Path) -> str | None:
 class _DiscoveryPromptBridge:
     """Marshal discovery selection prompts onto the Tk main thread."""
 
-    def __init__(self, root: object, tk_module: object) -> None:
+    def __init__(self, root: object, tk_module: Any) -> None:
         self._root = root
         self._tk = tk_module
 
@@ -286,14 +286,15 @@ class _DiscoveryPromptBridge:
         if threading.current_thread() is threading.main_thread():
             return self._choose_match(input_name, matches)
 
-        result_holder: dict[str, DiscoveryMatch | BaseException] = {}
+        value_holder: dict[str, DiscoveryMatch] = {}
+        error_holder: dict[str, BaseException] = {}
         done = threading.Event()
 
         def _prompt_on_main_thread() -> None:
             try:
-                result_holder["value"] = self._choose_match(input_name, matches)
+                value_holder["value"] = self._choose_match(input_name, matches)
             except BaseException as exc:
-                result_holder["error"] = exc
+                error_holder["error"] = exc
             finally:
                 done.set()
 
@@ -304,10 +305,10 @@ class _DiscoveryPromptBridge:
             )
         after(0, _prompt_on_main_thread)
         done.wait()
-        error = result_holder.get("error")
+        error = error_holder.get("error")
         if error is not None:
             raise error
-        chosen = result_holder.get("value")
+        chosen = value_holder.get("value")
         if chosen is None:
             raise DiscoverySelectionRequiredError(
                 f"Discovery selection for '{input_name}' did not return a choice."
@@ -359,7 +360,7 @@ class _DiscoveryPromptBridge:
         self._tk.Button(button_row, text="Cancel", command=_cancel).pack(side="right", padx=(0, 8))
 
         dialog.wait_window()
-        choice = selected_index.get()
+        choice = cast(int, selected_index.get())
         if choice < 1 or choice > len(matches):
             raise DiscoverySelectionRequiredError(
                 f"Discovery selection canceled for '{input_name}'."
@@ -579,6 +580,15 @@ def launch_gui(
             target_var.set(selected)
             _refresh_path_feedback()
 
+    def _browse_command(target_var: tk.StringVar) -> Callable[[], None]:
+        def _command() -> None:
+            _browse_directory(target_var)
+
+        return _command
+
+    def _run_dry_discovery() -> None:
+        _run(True)
+
     # Form rows
     labels = (
         ("As-Of Date (YYYY-MM-DD)", as_of_var, "entry"),
@@ -620,7 +630,7 @@ def launch_gui(
             ttk.Button(
                 path_row,
                 text="Browse…",
-                command=lambda target=var: _browse_directory(target),
+                command=_browse_command(var),
             ).grid(row=0, column=1, padx=(8, 0))
         else:
             ttk.Entry(root, textvariable=var, width=42).grid(
@@ -635,7 +645,11 @@ def launch_gui(
 
     run_button = ttk.Button(root, text="Run", command=_run)
     run_button.grid(row=8, column=0, padx=8, pady=8, sticky="ew")
-    dry_run_button = ttk.Button(root, text="Dry-Run Discovery", command=lambda: _run(True))
+    dry_run_button = ttk.Button(
+        root,
+        text="Dry-Run Discovery",
+        command=_run_dry_discovery,
+    )
     dry_run_button.grid(row=8, column=1, padx=8, pady=8, sticky="ew")
 
     ttk.Label(root, textvariable=path_feedback_var).grid(
