@@ -6,7 +6,8 @@ Branch: **`audit-fixes`** → PR https://github.com/stranske/Counter_Risk/pull/7
 once the name-registry regression was understood — see below).
 
 ## Test & lint state (final)
-- Broad suite (`-m "not slow and not release"`, parallel): **1333 passed, 1 failed, 1 skipped**.
+
+- Broad suite (`-m "not slow and not release"`, parallel): **1,329 passed, 1 failed, 1 skipped**.
 - The 1 failure — `tests/test_pptx_replacement_workflow.py::test_replacement_workflow_near_match_slide_remains_unchanged`
   — **also fails on `main`** (image-hash mismatch; environment-dependent rendering on macOS/Pillow). It is
   **pre-existing**, not introduced by these changes.
@@ -14,6 +15,7 @@ once the name-registry regression was understood — see below).
 - The heavyweight `slow`/`release` tests were verified piecewise per lane, not in this broad run.
 
 ## Commits
+
 | Commit | Audit items | What |
 |--------|-------------|------|
 | `cc8b73c` | #1 | Frozen-build config resolution via `resolve_runtime_path` |
@@ -25,9 +27,11 @@ once the name-registry regression was understood — see below).
 | `f482538` | (regression fix) | Reconciliation name_registry resolves to absolute repo path in source mode; lint |
 
 ## BLOCKERs: all 7 addressed
-#1 frozen-config · #2 denominator · #3 fail→RED · #4 HHI · #6 xlsm buttons · #7 GUI-crash · #13 fail→halt
+
+Items: #1 frozen-config · #2 denominator · #3 fail→RED · #4 HHI · #6 xlsm buttons · #7 GUI-crash · #13 fail→halt
 
 ## Follow-up: previously-deferred MINORs (now done) — commit `2bab544`
+
 - **#22** unify YAML loaders into `counter_risk.yaml_utils.load_yaml_model` (config/limits/name-registry).
   Initially reverted because it appeared to break 5 limit tests — but that was a **confound**: the failures
   were the name-registry CWD bug (`f482538`), not the loader. With that fixed, the shared loader applies
@@ -36,11 +40,13 @@ once the name-registry regression was understood — see below).
 - **#25** removed dead `WorkflowConfig.enable_llm_logging`.
 
 ## Verification notes / caveats
+
 - **#6 Runner.xlsm**: verified valid OOXML, `openpyxl.load_workbook(keep_vba=True)` succeeds, `vbaProject.bin` byte-identical, 45 runner/VBA tests pass. Two labels ("Dry-Run Discovery", "Ask about this run") have no existing VBA handler so get no button. **Final click-test requires opening in desktop Excel on Windows** (cannot be verified from macOS/headless).
 - **#17 as_of_date** stamped to `CPRS - CH` A3/B3 in the MOSERS workbook.
 - The `_resolve_repo_root` / `resolve_runtime_path` source-vs-frozen split is subtle: source mode must use absolute repo-tree paths (the pipeline chdirs into run folders). See `f482538`.
 
 ## How this was built
+
 Orchestrated across local agents (codex = correctness core; gemini = parsers/dedup; claude = packaging;
 cursor = UI; codex = xlsm), each in scoped lanes, verified independently before commit. UI + xlsm lanes ran in an
 isolated git worktree (`/tmp/cr-audit-work`) to immunize against the machine's autonomous agent fleet, which twice

@@ -52,7 +52,11 @@ def load_yaml_model[M: BaseModel](
         _NoDuplicateSafeLoader if reject_duplicate_keys else yaml.SafeLoader
     )
     try:
-        raw = yaml.load(config_path.read_text(encoding="utf-8"), Loader=loader_cls)
+        loader = loader_cls(config_path.read_text(encoding="utf-8"))
+        try:
+            raw = loader.get_single_data()
+        finally:
+            loader.dispose()
     except OSError as exc:
         raise ValueError(f"Unable to read {kind} file '{config_path}': {exc}") from exc
     except ValueError as exc:
