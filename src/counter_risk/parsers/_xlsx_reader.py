@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from typing import Any
 from zipfile import ZipFile
+
 from counter_risk.normalize import canonicalize_name
 
 _XML_NS = {

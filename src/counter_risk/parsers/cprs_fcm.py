@@ -20,10 +20,10 @@ from zipfile import BadZipFile, ZipFile
 from counter_risk.normalize import canonicalize_name, safe_display_name
 from counter_risk.parsers._variant_text import normalize_variant_text
 from counter_risk.parsers._xlsx_reader import (
-    resolve_sheet_target,
+    coerce_accounting_float,
     load_shared_strings,
     read_sheet_rows,
-    coerce_accounting_float,
+    resolve_sheet_target,
 )
 
 
