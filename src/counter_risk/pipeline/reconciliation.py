@@ -20,22 +20,27 @@ from counter_risk.pipeline.parsing_types import (
     UnmappedCounterpartyError,
 )
 from counter_risk.reports.mapping_diff import collect_mapping_diff_findings
-from counter_risk.runtime_paths import resolve_runtime_path
+from counter_risk.runtime_paths import RuntimePathResolutionError, resolve_runtime_path
+
+_REPO_NAME_REGISTRY_PATH = Path(__file__).resolve().parents[3] / "config" / "name_registry.yml"
 
 
 def _name_registry_path() -> Path:
     """Resolve the bundled name registry for both source and frozen runtimes.
 
     Resolved lazily (not at import time) so that ``sys.frozen`` and the bundle
-    roots are evaluated when the file is actually loaded during a run. In a
-    PyInstaller build the source-tree ``parents[3]`` layout does not exist, so
-    search the bundle roots; in source mode keep the historical repo-relative
-    location (which does not depend on the process working directory).
+    roots are evaluated when the file is actually loaded during a run. In source
+    mode this returns the absolute repo-tree path (independent of the process
+    cwd, which the pipeline may change to a run folder); only a frozen build
+    searches the bundle roots.
     """
 
     if getattr(sys, "frozen", False):
-        return resolve_runtime_path("config/name_registry.yml")
-    return Path(__file__).resolve().parents[3] / "config" / "name_registry.yml"
+        try:
+            return resolve_runtime_path("config/name_registry.yml")
+        except RuntimePathResolutionError:
+            return _REPO_NAME_REGISTRY_PATH
+    return _REPO_NAME_REGISTRY_PATH
 
 
 def reconcile_series_coverage(

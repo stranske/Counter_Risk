@@ -8,6 +8,7 @@ from typing import Any
 from zipfile import BadZipFile
 
 from counter_risk.normalize import canonicalize_name
+from counter_risk.parsers._xlsx_reader import coerce_accounting_float
 
 _TARGET_SHEET_NAME = "Exposure Maturity Summary"
 _REQUIRED_HEADERS: tuple[str, ...] = (
@@ -87,8 +88,6 @@ def parse_exposure_maturity_schedule(path: Path | str) -> tuple[ExposureMaturity
         raise ValueError("Exposure maturity workbook parser produced no rows")
     return tuple(rows)
 
-
-from counter_risk.parsers._xlsx_reader import coerce_accounting_float
 
 def _normalize_text(value: Any) -> str:
     return canonicalize_name(str(value or ""))

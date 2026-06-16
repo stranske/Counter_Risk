@@ -8,6 +8,7 @@ from typing import Any
 
 from counter_risk.normalize import canonicalize_name as canonicalize_name
 from counter_risk.normalize import safe_display_name
+from counter_risk.parsers._xlsx_reader import coerce_accounting_float
 
 _TOTALS_MARKER = "total by counterparty/clearing house"
 _TOTALS_STOP_MARKERS = (
@@ -185,9 +186,6 @@ def _normalize_text(value: Any) -> str:
 
 def _matching_key(value: Any) -> str:
     return canonicalize_name(_normalize_text(value)).casefold()
-
-
-from counter_risk.parsers._xlsx_reader import coerce_accounting_float
 
 
 def _coerce_float(value: Any) -> float:

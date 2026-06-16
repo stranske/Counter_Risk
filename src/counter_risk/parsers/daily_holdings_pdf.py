@@ -9,6 +9,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from counter_risk.normalize import canonicalize_name
+from counter_risk.parsers._xlsx_reader import coerce_accounting_float
 
 _log = logging.getLogger(__name__)
 
@@ -220,9 +221,6 @@ def _match_counterparty(text: str) -> str | None:
             if re.search(pattern, lowered):
                 return canonical_name
     return None
-
-
-from counter_risk.parsers._xlsx_reader import coerce_accounting_float
 
 
 def _parse_amount(raw: str) -> float | None:
