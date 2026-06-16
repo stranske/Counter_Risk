@@ -66,6 +66,9 @@ def test_release_spec_defines_analysis_exe_and_collect() -> None:
     assert bundled_targets == {"templates", "config"}
 
     assert captures["exe_kwargs"]["name"] == "counter-risk"
+    assert (
+        captures["exe_kwargs"]["upx"] is False
+    ), "UPX must be disabled to avoid SmartScreen false-positives"
 
     collect_args = captures["collect_args"]
     assert collect_args[0] == "fake-exe"
@@ -73,6 +76,7 @@ def test_release_spec_defines_analysis_exe_and_collect() -> None:
     assert collect_args[2] == ["fake-zip"]
     assert collect_args[3] == ["fake-data"]
     assert captures["collect_kwargs"]["name"] == "counter-risk"
+    assert captures["collect_kwargs"]["upx"] is False, "UPX must be disabled in COLLECT too"
 
 
 @pytest.mark.release

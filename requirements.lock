@@ -155,6 +155,8 @@ pytokens==0.4.1
     # via black
 pytz==2026.2
     # via pandas
+pywin32==306 ; sys_platform == 'win32'
+    # via counter-risk (pyproject.toml)
 pyyaml==6.0.3
     # via
     #   counter-risk (pyproject.toml)

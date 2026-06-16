@@ -356,3 +356,15 @@ def test_load_name_registry_rejects_dash_variant_duplicate_across_entries(tmp_pa
 
     with pytest.raises(ValueError, match="Name registry validation failed"):
         load_name_registry(config_path)
+
+
+def test_load_name_registry_rejects_duplicate_top_level_keys(tmp_path: Path) -> None:
+    """#22: name registry now rejects duplicate YAML keys via the shared loader."""
+
+    config_path = tmp_path / "nr.yml"
+    config_path.write_text(
+        "schema_version: 1\nschema_version: 1\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate key"):
+        load_name_registry(config_path)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from datetime import date, datetime
 from pathlib import Path
 
@@ -28,6 +29,8 @@ def calculate_wal(exposure_summary_path: Path | str, px_date: date | datetime | 
     filtered_rows = [row for row in rows if not _is_return_swap(row)]
 
     total_exposure = sum(row.current_exposure for row in filtered_rows)
+    if not math.isfinite(total_exposure):
+        raise ValueError("Total exposure is not finite")
     if total_exposure == 0:
         return 0.0
 

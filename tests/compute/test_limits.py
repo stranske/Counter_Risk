@@ -8,6 +8,9 @@ from typing import Any, cast
 import pytest
 
 from counter_risk.compute.limits import (
+    _COUNTERPARTY_GRANULARITY,
+    _FUTURES_GRANULARITY,
+    _LIMIT_GRANULARITY_KEY,
     check_limits,
     find_missing_limit_entities,
     write_limit_breaches_csv,
@@ -139,6 +142,59 @@ def test_check_limits_detects_absolute_and_percent_breaches_across_entity_types(
             "breach_amount": pytest.approx((90.0 / 200.0) - 0.2),
             "notes": None,
         },
+    ]
+
+
+def test_percent_of_total_scopes_denominator_to_matching_granularity() -> None:
+    exposures = [
+        {
+            _LIMIT_GRANULARITY_KEY: _COUNTERPARTY_GRANULARITY,
+            "counterparty": "Alpha",
+            "notional": 600.0,
+        },
+        {
+            _LIMIT_GRANULARITY_KEY: _COUNTERPARTY_GRANULARITY,
+            "counterparty": "Beta",
+            "notional": 400.0,
+        },
+        {
+            _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
+            "clearing_house": "CME",
+            "segment": "Rates",
+            "notional": 40.0,
+        },
+        {
+            _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
+            "clearing_house": "ICE",
+            "segment": "Credit",
+            "notional": 60.0,
+        },
+    ]
+    limits_cfg = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "clearing_house",
+                "entity_name": "CME",
+                "limit_value": 0.35,
+                "limit_kind": "percent_of_total",
+            }
+        ],
+    }
+
+    rows = _as_records(check_limits(exposures, limits_cfg))
+
+    assert rows == [
+        {
+            "entity_type": "clearing_house",
+            "entity_name": "cme",
+            "limit_kind": "percent_of_total",
+            "severity": "warning",
+            "actual_value": pytest.approx(0.4),
+            "limit_value": 0.35,
+            "breach_amount": pytest.approx(0.05),
+            "notes": None,
+        }
     ]
 
 

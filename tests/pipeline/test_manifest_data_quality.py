@@ -141,6 +141,44 @@ def test_manifest_build_collects_data_quality_from_validation_context(tmp_path: 
     assert data_quality["counts"]["by_category"]["limits"]["warn"] >= 1
 
 
+def test_manifest_build_marks_fail_limit_breaches_red(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "2026-02-13"
+    run_dir.mkdir(parents=True)
+    artifact = run_dir / "output.csv"
+    artifact.write_text("ok\n", encoding="utf-8")
+
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={"monthly_pptx": "abc123"},
+        output_paths=[Path(artifact.name)],
+        top_exposures={"all_programs": []},
+        top_changes_per_variant={"all_programs": []},
+        warnings=[],
+        limit_breach_summary={
+            "has_breaches": True,
+            "breach_count": 2,
+            "max_severity": "fail",
+            "warning_breach_count": 1,
+            "fail_breach_count": 1,
+            "report_path": "limit_breaches.csv",
+            "warning_banner": "2 fail limit breaches detected. Review limit_breaches.csv.",
+        },
+    )
+
+    data_quality = manifest["data_quality"]
+    limit_findings = [
+        finding for finding in data_quality["findings"] if finding["code"] == "LIMIT_BREACHES"
+    ]
+    assert data_quality["overall_status"] == "fail"
+    assert data_quality["counts"]["by_category"]["limits"]["fail"] == 1
+    assert any(finding["severity"] == "fail" for finding in limit_findings)
+
+
 def test_manifest_build_includes_reconciliation_gap_detail_findings(tmp_path: Path) -> None:
     run_dir = tmp_path / "runs" / "2026-02-13"
     run_dir.mkdir(parents=True)

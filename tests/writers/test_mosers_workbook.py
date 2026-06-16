@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -31,6 +32,30 @@ def test_generate_mosers_workbook_creates_new_file_with_required_sheets(tmp_path
     try:
         assert "CPRS - CH" in workbook.sheetnames
         assert "CPRS - FCM" in workbook.sheetnames
+    finally:
+        workbook.close()
+
+
+def test_generate_mosers_workbook_stamps_as_of_date_into_cprs_ch_header(tmp_path: Path) -> None:
+    destination = tmp_path / "MOSERS Generated - All Programs.xlsx"
+    as_of = date(2025, 12, 31)
+
+    output_path = generate_mosers_workbook(
+        raw_nisa_path=Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx"),
+        output_path=destination,
+        as_of_date=as_of,
+    )
+
+    from openpyxl import load_workbook
+
+    workbook = load_workbook(output_path, read_only=True, data_only=True)
+    try:
+        worksheet = workbook["CPRS - CH"]
+        assert worksheet["A3"].value == "CPRS CH Header Date"
+        stamped = worksheet["B3"].value
+        if hasattr(stamped, "date"):
+            stamped = stamped.date()
+        assert stamped == as_of
     finally:
         workbook.close()
 

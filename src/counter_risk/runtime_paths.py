@@ -66,3 +66,19 @@ def resolve_runtime_path(path: str | Path) -> Path:
         f"Searched roots: {searched_roots}. "
         f"Searched locations: {searched_locations}"
     )
+
+
+def resolve_default_output_root() -> Path:
+    """Return the default ``runs/`` output root for source and frozen builds.
+
+    In a frozen build the output directory is placed next to the executable
+    rather than relative to the process CWD (which, for a double-clicked
+    operator ``.exe``, may be anywhere). In source mode it keeps the existing
+    CWD-relative ``runs/`` default.
+    """
+
+    if getattr(sys, "frozen", False):
+        executable = getattr(sys, "executable", None)
+        if executable:
+            return Path(executable).resolve().parent / "runs"
+    return Path("runs")

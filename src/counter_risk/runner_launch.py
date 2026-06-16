@@ -83,6 +83,19 @@ def format_launch_error_for_runner(status: LaunchStatus) -> str:
     return f"Error {status.error_code}: {guidance}"
 
 
+def format_gui_run_failure(*, exit_code: int, message: str, command: str = "") -> str:
+    """Format a GUI run failure using the shared operator-facing error mapping."""
+
+    status = LaunchStatus(
+        success=False,
+        error_code=exit_code,
+        message=message,
+        command=command,
+        exit_code=exit_code,
+    )
+    return format_launch_error_for_runner(status)
+
+
 def parse_as_of_month(selected_date: str) -> date:
     parsed_date = date.fromisoformat(selected_date)
     if parsed_date.month == 12:

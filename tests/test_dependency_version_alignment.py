@@ -10,6 +10,10 @@ _OPERATORS = ("==", ">=", "<=", "~=", "!=", ">", "<", "===")
 
 def _split_spec(raw: str) -> str:
     entry = raw.strip().strip(",").strip('"')
+    # Strip environment marker ("; sys_platform == ...") before operator search so
+    # that "==" inside the marker isn't confused with a version-pin operator.
+    if ";" in entry:
+        entry = entry.split(";", 1)[0].strip()
     # Direct references ("name @ git+https://...") declare the package name before
     # the " @ "; there is no version operator to split on.
     if " @ " in entry:

@@ -9,6 +9,7 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any, cast
 
+from counter_risk.compute.limits import _exposure_magnitude
 from counter_risk.normalize import normalize_counterparty
 
 _COUNTERPARTY_KEYS = ("counterparty", "counterparty_name", "name")
@@ -50,6 +51,7 @@ _RISK_PROXY_POSITION_VOL_COLUMN = "risk_proxy_position_usd_vol"
 
 _CONCENTRATION_GROUP_COLUMNS = ("variant", "segment")
 _CONCENTRATION_METRIC_COLUMNS = ("top5_share", "top10_share", "hhi")
+_NEAR_ZERO_EXPOSURE_TOTAL = 1e-12
 
 _REPO_CASH_OUTPUT_COLUMNS = (
     "counterparty",
@@ -381,7 +383,7 @@ def top_exposures(exposures_df: Any, n: int = 10) -> Any:
 
     normalized_rows.sort(
         key=lambda item: (
-            -abs(float(item["notional"])),
+            -_exposure_magnitude(float(item["notional"])),
             str(item["counterparty"]).casefold(),
             str(item["asset_class"]).casefold(),
         )
@@ -506,16 +508,16 @@ def compute_concentration_metrics(
 
     For each combination of *group_by* values the function computes:
 
-    * **top5_share** – sum of the five largest entity notionals divided by the
-      total group notional.  When the group has fewer than five entities, all
+    * **top5_share** – sum of the five largest entity notional magnitudes
+      divided by the total group notional magnitude.  When the group has fewer than five entities, all
       entities are summed (i.e. top5_share == 1.0).
     * **top10_share** – same as above using ten entities.
     * **hhi** – Herfindahl-Hirschman Index: sum of squared market-share
       fractions for every entity in the group.  Ranges from 1/N (perfectly
       dispersed) to 1.0 (fully concentrated in one entity).
 
-    When the total notional for a group is zero all three metrics are returned
-    as ``0.0``.
+    When the total notional magnitude for a group is near zero all three
+    metrics are returned as ``0.0``.
 
     See ``docs/concentration_metrics.md`` for output-field definitions, the HHI
     scaling reference, and operator interpretation guidance.
@@ -573,10 +575,10 @@ def compute_concentration_metrics(
 
     records: list[dict[str, Any]] = []
     for key in group_key_order:
-        notionals = sorted(groups[key], reverse=True)
+        notionals = sorted((_exposure_magnitude(value) for value in groups[key]), reverse=True)
         total = sum(notionals)
 
-        if total == 0.0:
+        if total <= _NEAR_ZERO_EXPOSURE_TOTAL:
             top5_share = 0.0
             top10_share = 0.0
             hhi = 0.0

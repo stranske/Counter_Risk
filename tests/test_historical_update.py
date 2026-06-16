@@ -139,6 +139,25 @@ def test_find_header_row_scans_through_row_twelve_even_when_sheet_max_row_is_low
     assert header_row == 12
 
 
+def test_append_to_sheet_uses_header_row_plus_one_when_sheet_has_no_dated_rows() -> None:
+    sheet_name = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
+    sheet = _FakeWorksheet(sheet_name)
+    sheet.set_value(8, 1, "Date")
+    for offset, name in enumerate(historical_update.SERIES_BY_SHEET[sheet_name], start=2):
+        sheet.set_value(8, offset, name)
+    workbook = _FakeWorkbook({sheet_name: sheet})
+
+    historical_update._append_to_sheet(
+        workbook=workbook,
+        sheet_name=sheet_name,
+        rollup_data={"Total": 42.0},
+        resolved_date=date(2026, 1, 31),
+    )
+
+    assert historical_update._get_cell_value_no_create(sheet, row=9, column=1) == date(2026, 1, 31)
+    assert historical_update._get_cell_value_no_create(sheet, row=13, column=1) is None
+
+
 def test_append_to_sheet_raises_date_monotonicity_error_on_equal_append_date() -> None:
     sheet_name = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
     sheet = _build_sheet(sheet_name, historical_update.SERIES_BY_SHEET[sheet_name])

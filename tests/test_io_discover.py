@@ -5,16 +5,22 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from counter_risk.config import InputDiscoveryConfig
 from counter_risk.io.discover import (
     DiscoveryMatch,
     DiscoveryResult,
+    DiscoverySelectionRequiredError,
     discover_daily_holdings_pdf_files,
     discover_exposure_summary_files,
     discover_input_candidates,
     discover_raw_nisa_monthly_files,
     discover_templates_and_historical_files,
+    non_interactive_discovery_prompt,
+    reset_discovery_selection_prompt,
     resolve_discovery_selections,
+    set_discovery_selection_prompt,
 )
 
 
@@ -215,3 +221,60 @@ def test_resolve_discovery_selections_omits_inputs_with_no_matches() -> None:
     selected = resolve_discovery_selections(result)
 
     assert selected == {}
+
+
+def test_non_interactive_discovery_prompt_raises_without_stdin(tmp_path: Path) -> None:
+    file_a = tmp_path / "Report.pptx"
+    file_b = tmp_path / "Report - v2.pptx"
+    file_a.write_text("x", encoding="utf-8")
+    file_b.write_text("x", encoding="utf-8")
+
+    matches = (
+        DiscoveryMatch(
+            input_name="monthly_pptx",
+            path=file_a,
+            root_name="template_inputs",
+            pattern="Report*.pptx",
+        ),
+        DiscoveryMatch(
+            input_name="monthly_pptx",
+            path=file_b,
+            root_name="template_inputs",
+            pattern="Report*.pptx",
+        ),
+    )
+    result = DiscoveryResult(matches_by_input={"monthly_pptx": matches})
+
+    with pytest.raises(DiscoverySelectionRequiredError, match="Multiple files match"):
+        resolve_discovery_selections(result, prompt_fn=non_interactive_discovery_prompt)
+
+
+def test_active_discovery_prompt_is_used_when_no_prompt_fn_provided(tmp_path: Path) -> None:
+    file_a = tmp_path / "Report.pptx"
+    file_b = tmp_path / "Report - v2.pptx"
+    file_a.write_text("x", encoding="utf-8")
+    file_b.write_text("x", encoding="utf-8")
+
+    matches = (
+        DiscoveryMatch(
+            input_name="monthly_pptx",
+            path=file_a,
+            root_name="template_inputs",
+            pattern="Report*.pptx",
+        ),
+        DiscoveryMatch(
+            input_name="monthly_pptx",
+            path=file_b,
+            root_name="template_inputs",
+            pattern="Report*.pptx",
+        ),
+    )
+    result = DiscoveryResult(matches_by_input={"monthly_pptx": matches})
+
+    token = set_discovery_selection_prompt(lambda _name, candidates: candidates[0])
+    try:
+        selected = resolve_discovery_selections(result)
+    finally:
+        reset_discovery_selection_prompt(token)
+
+    assert selected == {"monthly_pptx": file_a}

@@ -167,6 +167,81 @@ def _minimal_parsed_by_variant() -> dict[str, dict[str, _FakeDataFrame]]:
     }
 
 
+def _use_limit_config_path(monkeypatch: pytest.MonkeyPatch, limits_path: Path) -> None:
+    original_resolve_runtime_path = run_module.resolve_runtime_path
+
+    def _resolve_runtime_path(path: str | Path) -> Path:
+        path_obj = Path(path)
+        if path_obj.as_posix().lstrip("./").endswith("config/limits.yml"):
+            return limits_path
+        return original_resolve_runtime_path(path)
+
+    monkeypatch.setattr(run_module, "resolve_runtime_path", _resolve_runtime_path)
+
+
+def test_limit_exposure_rows_scope_clearing_house_percent_to_futures_rows() -> None:
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[
+                    {
+                        "counterparty": "Alpha",
+                        "Notional": 600.0,
+                        "NotionalChange": 0.0,
+                    },
+                    {
+                        "counterparty": "Beta",
+                        "Notional": 400.0,
+                        "NotionalChange": 0.0,
+                    },
+                ]
+            ),
+            "futures": _FakeDataFrame(
+                records=[
+                    {
+                        "account": "acct-1",
+                        "description": "desc",
+                        "class": "Rates",
+                        "fcm": "fcm-a",
+                        "clearing_house": "CME",
+                        "notional": 40.0,
+                    },
+                    {
+                        "account": "acct-2",
+                        "description": "desc",
+                        "class": "Credit",
+                        "fcm": "fcm-b",
+                        "clearing_house": "ICE",
+                        "notional": 60.0,
+                    },
+                ]
+            ),
+        }
+    }
+    exposure_rows = run_module._build_limit_exposure_rows(parsed_by_variant)
+
+    breaches = run_module.check_limits(
+        exposure_rows,
+        {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": "clearing_house",
+                    "entity_name": "CME",
+                    "limit_value": 0.35,
+                    "limit_kind": "percent_of_total",
+                }
+            ],
+        },
+    )
+    records = breaches.to_dict(orient="records") if hasattr(breaches, "to_dict") else breaches
+
+    assert len(records) == 1
+    assert records[0]["entity_type"] == "clearing_house"
+    assert records[0]["entity_name"] == "cme"
+    assert records[0]["actual_value"] == pytest.approx(0.4)
+
+
 def _minimal_workflow_config(
     tmp_path: Path, *, fail_policy: Literal["warn", "strict"] = "warn"
 ) -> WorkflowConfig:
@@ -2513,6 +2588,7 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
         + "\n",
         encoding="utf-8",
     )
+    _use_limit_config_path(monkeypatch, limits_path)
 
     totals = _FakeDataFrame(
         records=[
@@ -2553,7 +2629,10 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
         ),
     )
 
-    run_dir = run_pipeline(config_path)
+    with pytest.raises(RuntimeError, match="Fail-severity limit breach"):
+        run_pipeline(config_path)
+
+    run_dir = tmp_path / "runs" / "2025-12-31"
 
     limit_breaches_path = run_dir / "limit_breaches.csv"
     assert limit_breaches_path.exists()
@@ -2582,6 +2661,10 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
         "Limit breach summary:" in warning and "limit_breaches.csv" in warning
         for warning in manifest["warnings"]
     )
+    assert manifest["data_quality"]["overall_status"] == "fail"
+    summary_text = (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text(encoding="utf-8")
+    assert "Overall status: FAIL (RED)" in summary_text
+    assert "Do not send" in summary_text
 
 
 def test_run_pipeline_limit_breach_summary_uses_warning_severity_when_no_fail_breaches(
@@ -2624,6 +2707,7 @@ def test_run_pipeline_limit_breach_summary_uses_warning_severity_when_no_fail_br
         + "\n",
         encoding="utf-8",
     )
+    _use_limit_config_path(monkeypatch, limits_path)
 
     totals = _FakeDataFrame(
         records=[
@@ -2714,6 +2798,7 @@ def test_run_pipeline_invalid_limits_config_fails_during_limit_breach_stage(
         + "\n",
         encoding="utf-8",
     )
+    _use_limit_config_path(monkeypatch, limits_path)
 
     parsed = _minimal_parsed_by_variant()
     monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
@@ -2772,6 +2857,7 @@ def test_run_pipeline_warns_on_missing_limit_entities_by_default(
         + "\n",
         encoding="utf-8",
     )
+    _use_limit_config_path(monkeypatch, limits_path)
 
     totals = _FakeDataFrame(
         records=[
@@ -2874,6 +2960,7 @@ def test_run_pipeline_strict_missing_limit_entities_fails(
         + "\n",
         encoding="utf-8",
     )
+    _use_limit_config_path(monkeypatch, limits_path)
 
     totals = _FakeDataFrame(
         records=[

@@ -9,6 +9,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from counter_risk.normalize import canonicalize_name
+from counter_risk.parsers._xlsx_reader import coerce_accounting_float
 
 _log = logging.getLogger(__name__)
 
@@ -227,15 +228,10 @@ def _parse_amount(raw: str) -> float | None:
     if not text:
         return None
 
-    negative = text.startswith("(") and text.endswith(")")
-    normalized = text.replace("$", "").replace(",", "").replace("(", "").replace(")", "")
-
     try:
-        value = float(normalized)
+        return coerce_accounting_float(text, strip_percent=False)
     except ValueError:
         return None
-
-    return -value if negative else value
 
 
 __all__ = [

@@ -5,33 +5,12 @@ from __future__ import annotations
 import contextlib
 import sys
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Literal
 
-import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from counter_risk.runtime_paths import RuntimePathResolutionError, resolve_runtime_path
-
-
-class _NoDuplicateSafeLoader(yaml.SafeLoader):
-    """Safe YAML loader that rejects duplicate keys in mappings."""
-
-
-def _construct_mapping_no_duplicates(
-    loader: _NoDuplicateSafeLoader, node: yaml.nodes.MappingNode, deep: bool = False
-) -> dict[Any, Any]:
-    mapping: dict[Any, Any] = {}
-    for key_node, value_node in node.value:
-        key = cast(Any, loader.construct_object(key_node, deep=deep))
-        if key in mapping:
-            raise ValueError(f"duplicate key '{key}'")
-        mapping[key] = cast(Any, loader.construct_object(value_node, deep=deep))
-    return mapping
-
-
-_NoDuplicateSafeLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_mapping_no_duplicates
-)
+from counter_risk.yaml_utils import load_yaml_model
 
 
 class LimitEntry(BaseModel):
@@ -90,15 +69,6 @@ class LimitsConfig(BaseModel):
         return self
 
 
-def _format_limits_validation_error(error: ValidationError) -> str:
-    lines = ["Limits config validation failed:"]
-    for issue in error.errors():
-        location = ".".join(str(part) for part in issue.get("loc", ()))
-        message = issue.get("msg", "Invalid value")
-        lines.append(f"- {location}: {message}")
-    return "\n".join(lines)
-
-
 def load_limits_config(path: str | Path = Path("config/limits.yml")) -> LimitsConfig:
     """Load and validate a limits YAML configuration file from disk."""
 
@@ -109,22 +79,4 @@ def load_limits_config(path: str | Path = Path("config/limits.yml")) -> LimitsCo
     if not config_path.is_absolute() and getattr(sys, "frozen", False):
         with contextlib.suppress(RuntimePathResolutionError):
             config_path = resolve_runtime_path(config_path)
-    try:
-        raw = yaml.load(config_path.read_text(encoding="utf-8"), Loader=_NoDuplicateSafeLoader)
-    except OSError as exc:
-        raise ValueError(f"Unable to read limits config file '{config_path}': {exc}") from exc
-    except ValueError as exc:
-        raise ValueError(f"Invalid YAML in limits config file '{config_path}': {exc}") from exc
-    except yaml.YAMLError as exc:
-        raise ValueError(f"Invalid YAML in limits config file '{config_path}': {exc}") from exc
-
-    data: Any = raw if raw is not None else {}
-    if not isinstance(data, dict):
-        raise ValueError(
-            f"Limits config file '{config_path}' must contain a top-level mapping/object."
-        )
-
-    try:
-        return LimitsConfig.model_validate(data)
-    except ValidationError as exc:
-        raise ValueError(_format_limits_validation_error(exc)) from exc
+    return load_yaml_model(config_path, LimitsConfig, kind="Limits config")
