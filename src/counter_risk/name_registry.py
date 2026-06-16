@@ -6,13 +6,13 @@ import contextlib
 import re
 import sys
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
-import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from counter_risk.name_matching import canonicalize_match_key
 from counter_risk.runtime_paths import RuntimePathResolutionError, resolve_runtime_path
+from counter_risk.yaml_utils import load_yaml_model
 
 _CANONICAL_KEY_PATTERN = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
 
@@ -150,15 +150,6 @@ class NameRegistryConfig(BaseModel):
         return self
 
 
-def _format_registry_validation_error(error: ValidationError) -> str:
-    lines = ["Name registry validation failed:"]
-    for issue in error.errors():
-        location = ".".join(str(part) for part in issue.get("loc", ()))
-        message = issue.get("msg", "Invalid value")
-        lines.append(f"- {location}: {message}")
-    return "\n".join(lines)
-
-
 def load_name_registry(path: str | Path = Path("config/name_registry.yml")) -> NameRegistryConfig:
     """Load and validate a name registry YAML file from disk."""
 
@@ -169,20 +160,4 @@ def load_name_registry(path: str | Path = Path("config/name_registry.yml")) -> N
     if not config_path.is_absolute() and getattr(sys, "frozen", False):
         with contextlib.suppress(RuntimePathResolutionError):
             config_path = resolve_runtime_path(config_path)
-    try:
-        raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    except OSError as exc:
-        raise ValueError(f"Unable to read name registry file '{config_path}': {exc}") from exc
-    except yaml.YAMLError as exc:
-        raise ValueError(f"Invalid YAML in name registry file '{config_path}': {exc}") from exc
-
-    data: Any = raw if raw is not None else {}
-    if not isinstance(data, dict):
-        raise ValueError(
-            f"Name registry file '{config_path}' must contain a top-level mapping/object."
-        )
-
-    try:
-        return NameRegistryConfig.model_validate(data)
-    except ValidationError as exc:
-        raise ValueError(_format_registry_validation_error(exc)) from exc
+    return load_yaml_model(config_path, NameRegistryConfig, kind="Name registry")
