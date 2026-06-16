@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import re
 import sys
 from pathlib import Path
@@ -11,7 +10,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from counter_risk.name_matching import canonicalize_match_key
-from counter_risk.runtime_paths import RuntimePathResolutionError, resolve_runtime_path
+from counter_risk.runtime_paths import resolve_runtime_path
 from counter_risk.yaml_utils import load_yaml_model
 
 _CANONICAL_KEY_PATTERN = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
@@ -158,6 +157,5 @@ def load_name_registry(path: str | Path = Path("config/name_registry.yml")) -> N
     # resolved against the bundle roots; in source mode resolve_runtime_path
     # returns the path unchanged, preserving existing behavior.
     if not config_path.is_absolute() and getattr(sys, "frozen", False):
-        with contextlib.suppress(RuntimePathResolutionError):
-            config_path = resolve_runtime_path(config_path)
+        config_path = resolve_runtime_path(config_path)
     return load_yaml_model(config_path, NameRegistryConfig, kind="Name registry")

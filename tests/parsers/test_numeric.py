@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import xml.etree.ElementTree as ET
+
 import pytest
 
-from counter_risk.parsers._xlsx_reader import coerce_accounting_float
+from counter_risk.parsers._xlsx_reader import cell_value, coerce_accounting_float
 
 
 def test_coerce_accounting_float_basics() -> None:
@@ -52,8 +54,29 @@ def test_coerce_accounting_float_non_finite_rejection() -> None:
 
 
 def test_coerce_accounting_float_us_locale_assumption() -> None:
-    # European decimals "1.234,56" should either raise ValueError or parse incorrectly
-    # (since the commas are stripped and dot is treated as decimal, it might yield 1234.56)
-    # We document that US locale is assumed: commas are stripped, dots are decimals.
-    # In "1.234,56", commas are stripped -> "1.23456" -> 1.23456 (incorrect, not 1234.56)
-    assert coerce_accounting_float("1.234,56") == pytest.approx(1.23456)
+    with pytest.raises(ValueError, match="Unsupported mixed-separator numeric format"):
+        coerce_accounting_float("1.234,56")
+
+
+def test_cell_value_concatenates_rich_inline_strings() -> None:
+    cell = ET.fromstring(
+        """
+        <c xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" t="inlineStr">
+          <is><r><t>Alpha</t></r><r><t> Beta</t></r></is>
+        </c>
+        """
+    )
+
+    assert cell_value(cell, []) == "Alpha Beta"
+
+
+def test_cell_value_rejects_negative_shared_string_indexes() -> None:
+    cell = ET.fromstring(
+        """
+        <c xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" t="s">
+          <v>-1</v>
+        </c>
+        """
+    )
+
+    assert cell_value(cell, ["should-not-wrap"]) is None

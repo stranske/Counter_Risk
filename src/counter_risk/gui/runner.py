@@ -464,12 +464,11 @@ def launch_gui(
             "Counter Risk Runner", result.error_message or f"Exit code {result.exit_code}"
         )
 
-    def _run_worker(*, dry_run_discovery: bool) -> None:
+    def _run_worker(*, dry_run_discovery: bool, state_snapshot: GuiRunState) -> None:
         prompt_token = set_discovery_selection_prompt(discovery_prompt_bridge)
         try:
-            current = _state_from_form()
             result = execute_gui_run(
-                state=current,
+                state=state_snapshot,
                 runner=run_counter_risk,
                 dry_run_discovery=dry_run_discovery,
                 cleanup_settings_file=True,
@@ -517,7 +516,10 @@ def launch_gui(
         limit_banner_var.set("None")
         worker = threading.Thread(
             target=_run_worker,
-            kwargs={"dry_run_discovery": dry_run_discovery},
+            kwargs={
+                "dry_run_discovery": dry_run_discovery,
+                "state_snapshot": current,
+            },
             daemon=True,
         )
         worker.start()

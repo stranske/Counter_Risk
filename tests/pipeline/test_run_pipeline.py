@@ -168,10 +168,13 @@ def _minimal_parsed_by_variant() -> dict[str, dict[str, _FakeDataFrame]]:
 
 
 def _use_limit_config_path(monkeypatch: pytest.MonkeyPatch, limits_path: Path) -> None:
+    original_resolve_runtime_path = run_module.resolve_runtime_path
+
     def _resolve_runtime_path(path: str | Path) -> Path:
-        if Path(path) == Path("config/limits.yml"):
+        path_obj = Path(path)
+        if path_obj.as_posix().lstrip("./").endswith("config/limits.yml"):
             return limits_path
-        return Path(path)
+        return original_resolve_runtime_path(path)
 
     monkeypatch.setattr(run_module, "resolve_runtime_path", _resolve_runtime_path)
 

@@ -186,15 +186,18 @@ def replace_screenshot_pictures(
 
     missing = sorted(set(normalized_targets) - matched_sections)
     if missing:
-        if geometry_mismatches:
+        missing_set = set(missing)
+        unresolved_geometry = sorted(geometry_mismatches & missing_set)
+        unresolved_missing_pictures = sorted(missing_picture_sections & missing_set)
+        if unresolved_geometry:
             raise ValueError(
                 "slide title matched but picture geometry did not match the template for sections: "
-                + ", ".join(sorted(geometry_mismatches))
+                + ", ".join(unresolved_geometry)
             )
-        if missing_picture_sections:
+        if unresolved_missing_pictures:
             raise ValueError(
                 "matched slide has no picture shapes for sections: "
-                + ", ".join(sorted(missing_picture_sections))
+                + ", ".join(unresolved_missing_pictures)
             )
         raise ValueError("no matching slide title found for sections: " + ", ".join(missing))
 

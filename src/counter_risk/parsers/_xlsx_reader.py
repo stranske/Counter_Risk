@@ -64,8 +64,10 @@ def cell_value(cell_node: ET.Element, shared_strings: list[str]) -> str | None:
     value_node = cell_node.find("main:v", _XML_NS)
 
     if cell_type == "inlineStr":
-        inline_text_node = cell_node.find("main:is/main:t", _XML_NS)
-        return inline_text_node.text if inline_text_node is not None else None
+        inline_text_nodes = cell_node.findall("main:is//main:t", _XML_NS)
+        if not inline_text_nodes:
+            return None
+        return "".join(node.text or "" for node in inline_text_nodes)
 
     if value_node is None:
         return None
@@ -76,7 +78,9 @@ def cell_value(cell_node: ET.Element, shared_strings: list[str]) -> str | None:
 
     if cell_type == "s":
         index = int(raw_value)
-        return shared_strings[index] if index < len(shared_strings) else None
+        if index < 0 or index >= len(shared_strings):
+            return None
+        return shared_strings[index]
 
     if cell_type == "b":
         return "TRUE" if raw_value == "1" else "FALSE"
@@ -160,6 +164,9 @@ def coerce_accounting_float(value: Any, *, strip_percent: bool = True) -> float:
     # Handle parenthesized negative values, e.g. "(123.45)" -> "-123.45"
     if text.startswith("(") and text.endswith(")"):
         text = f"-{text[1:-1]}"
+
+    if "." in text and "," in text and text.rfind(",") > text.rfind("."):
+        raise ValueError(f"Unsupported mixed-separator numeric format: {value!r}")
 
     # Strip currency symbols and separators
     cleaned = text.replace(",", "").replace("$", "")

@@ -104,7 +104,7 @@ def test_calculate_wal_nan_exposure_fails(tmp_path: Path) -> None:
         tmp_path / "nan_exposure_str.xlsx",
         rows=[("Alpha", "Interest Rate Swap", "NaN", 2.0)],
     )
-    with pytest.raises(ValueError, match="Non-finite|Unable to parse"):
+    with pytest.raises(ValueError, match="not finite|Non-finite|Unable to parse"):
         calculate_wal(workbook1, "2026-01-31")
 
     # Test string "nan"
@@ -112,7 +112,7 @@ def test_calculate_wal_nan_exposure_fails(tmp_path: Path) -> None:
         tmp_path / "nan_exposure_lc.xlsx",
         rows=[("Alpha", "Interest Rate Swap", "nan", 2.0)],
     )
-    with pytest.raises(ValueError, match="Non-finite|Unable to parse"):
+    with pytest.raises(ValueError, match="not finite|Non-finite|Unable to parse"):
         calculate_wal(workbook2, "2026-01-31")
 
     # Test string "inf"
@@ -120,7 +120,7 @@ def test_calculate_wal_nan_exposure_fails(tmp_path: Path) -> None:
         tmp_path / "inf_exposure.xlsx",
         rows=[("Alpha", "Interest Rate Swap", "inf", 2.0)],
     )
-    with pytest.raises(ValueError, match="Non-finite|Unable to parse"):
+    with pytest.raises(ValueError, match="not finite|Non-finite|Unable to parse"):
         calculate_wal(workbook3, "2026-01-31")
 
 

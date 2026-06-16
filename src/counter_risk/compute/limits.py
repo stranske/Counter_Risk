@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import math
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
@@ -89,7 +90,10 @@ def _normalize_entity_key(value: object) -> str:
 
 
 def _exposure_magnitude(notional: float) -> float:
-    return abs(float(notional))
+    value = float(notional)
+    if not math.isfinite(value):
+        raise ValueError("exposures_df notional values must be finite")
+    return abs(value)
 
 
 def _find_notional(row: Mapping[str, Any]) -> float:
@@ -135,7 +139,7 @@ def _denominator_rows_for_entity_type(
     entity_type: str,
 ) -> list[Mapping[str, Any]]:
     tagged_rows = [row for row in rows if _row_granularity(row) is not None]
-    if tagged_rows:
+    if tagged_rows and len(tagged_rows) == len(rows):
         target_granularity = _ENTITY_GRANULARITY[entity_type]
         return [row for row in rows if _row_granularity(row) == target_granularity]
 

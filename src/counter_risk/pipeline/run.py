@@ -669,7 +669,7 @@ def run_pipeline(
         LOGGER.exception("pipeline_failed stage=manifest_write run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during manifest generation stage") from exc
 
-    _raise_for_fail_limit_breaches(limit_breach_summary)
+    _raise_for_fail_limit_breaches(limit_breach_summary, run_dir=run_dir)
 
     LOGGER.info("pipeline_complete run_dir=%s manifest=%s", run_dir, manifest_path)
 
@@ -2364,7 +2364,9 @@ def _append_limit_breach_warning_to_manifest_warnings(
     warnings.append(f"Limit breach summary: {warning_banner.strip()}")
 
 
-def _raise_for_fail_limit_breaches(limit_breach_summary: Mapping[str, Any]) -> None:
+def _raise_for_fail_limit_breaches(
+    limit_breach_summary: Mapping[str, Any], *, run_dir: Path
+) -> None:
     try:
         fail_breach_count = int(limit_breach_summary.get("fail_breach_count") or 0)
     except (TypeError, ValueError):
@@ -2374,9 +2376,10 @@ def _raise_for_fail_limit_breaches(limit_breach_summary: Mapping[str, Any]) -> N
 
     plurality = "breach" if fail_breach_count == 1 else "breaches"
     report_path = limit_breach_summary.get("report_path")
-    report_detail = (
-        f" Review {report_path}." if isinstance(report_path, str) and report_path else ""
-    )
+    if isinstance(report_path, str) and report_path:
+        report_detail = f" Review {(run_dir / report_path).resolve()}."
+    else:
+        report_detail = ""
     raise RuntimeError(
         f"Fail-severity limit {plurality} detected: {fail_breach_count}.{report_detail}"
     )
