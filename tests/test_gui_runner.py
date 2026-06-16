@@ -13,6 +13,15 @@ import pytest
 
 from counter_risk.gui import runner as gui_runner
 from counter_risk.gui.runner import GuiRunState, execute_gui_run, launch_gui
+from counter_risk.io.discover import (
+    DiscoveryMatch,
+    DiscoveryResult,
+    DiscoverySelectionRequiredError,
+    non_interactive_discovery_prompt,
+    resolve_discovery_selections,
+    set_discovery_selection_prompt,
+    reset_discovery_selection_prompt,
+)
 from counter_risk.runner_launch import resolve_ppt_output_dir
 
 
@@ -133,6 +142,7 @@ def test_execute_gui_run_reads_data_quality_status_after_success(tmp_path: Path)
 
 def test_execute_gui_run_leaves_data_quality_status_empty_on_failure(tmp_path: Path) -> None:
     def fake_runner(_argv: list[str]) -> int:
+        print("input validation failed: missing required input")
         return 2
 
     state = GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs"))
@@ -142,6 +152,8 @@ def test_execute_gui_run_leaves_data_quality_status_empty_on_failure(tmp_path: P
     assert result.exit_code == 2
     assert result.data_quality_color == ""
     assert result.data_quality_status == ""
+    assert "Operator action:" in result.error_message
+    assert "verify required input files" in result.error_message
 
 
 def test_execute_gui_run_returns_empty_data_quality_when_summary_missing(tmp_path: Path) -> None:
@@ -271,6 +283,71 @@ def test_execute_gui_run_cleanup_flag_removes_settings_file(tmp_path: Path) -> N
     assert result.settings_path.exists() is False
 
 
+def test_validate_path_roots_requires_existing_directories(tmp_path: Path) -> None:
+    inputs = tmp_path / "inputs"
+    runs = tmp_path / "runs"
+    inputs.mkdir()
+    runs.mkdir()
+
+    valid_state = GuiRunState(
+        as_of_date="2025-12-31",
+        input_root=str(inputs),
+        output_root=str(runs),
+    )
+    assert gui_runner._validate_path_roots(valid_state) == (True, "")
+
+    missing_state = GuiRunState(
+        as_of_date="2025-12-31",
+        input_root=str(tmp_path / "missing-inputs"),
+        output_root=str(runs),
+    )
+    valid, message = gui_runner._validate_path_roots(missing_state)
+    assert valid is False
+    assert "Input Root not found" in message
+
+
+def test_headless_discover_resolution_never_calls_stdin_input(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    input_calls: list[str] = []
+
+    def _fail_if_called(_prompt: str = "") -> str:
+        input_calls.append(_prompt)
+        raise AssertionError("stdin input() must not be called in GUI/headless discovery")
+
+    monkeypatch.setattr("builtins.input", _fail_if_called)
+
+    file_a = tmp_path / "Report.pptx"
+    file_b = tmp_path / "Report - v2.pptx"
+    file_a.write_text("x", encoding="utf-8")
+    file_b.write_text("x", encoding="utf-8")
+    matches = (
+        DiscoveryMatch(
+            input_name="monthly_pptx",
+            path=file_a,
+            root_name="template_inputs",
+            pattern="Report*.pptx",
+        ),
+        DiscoveryMatch(
+            input_name="monthly_pptx",
+            path=file_b,
+            root_name="template_inputs",
+            pattern="Report*.pptx",
+        ),
+    )
+    result = DiscoveryResult(matches_by_input={"monthly_pptx": matches})
+
+    token = set_discovery_selection_prompt(non_interactive_discovery_prompt)
+    try:
+        with pytest.raises(DiscoverySelectionRequiredError):
+            resolve_discovery_selections(result)
+    finally:
+        reset_discovery_selection_prompt(token)
+
+    assert input_calls == []
+
+
 def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -280,12 +357,18 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     class _FakeStringVar:
         def __init__(self, value: str = "") -> None:
             self._value = value
+            self._traces: list[Callable[[], None]] = []
 
         def get(self) -> str:
             return self._value
 
         def set(self, value: str) -> None:
             self._value = value
+            for callback in self._traces:
+                callback()
+
+        def trace_add(self, _mode: str, callback: Callable[..., None]) -> None:
+            self._traces.append(lambda: callback())
 
     class _FakeWidget:
         def __init__(self, *args: object, **kwargs: object) -> None:
@@ -298,6 +381,9 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
 
         def grid(self, *args: object, **kwargs: object) -> None:
             self.grid_calls.append((args, kwargs))
+
+        def configure(self, **kwargs: object) -> None:
+            self.kwargs.update(kwargs)
 
     class _FakeTk:
         def __init__(self) -> None:
@@ -320,24 +406,43 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
         def columnconfigure(self, column: int, weight: int) -> None:
             self.column_config_calls.append((column, weight))
 
+        def after(self, _delay_ms: int, callback: Callable[[], None]) -> None:
+            callback()
+
         def mainloop(self) -> None:
             self.mainloop_called = True
 
+    class _FakeFrame(_FakeWidget):
+        def columnconfigure(self, column: int, weight: int) -> None:
+            self.column_config_calls = getattr(self, "column_config_calls", [])
+            self.column_config_calls.append((column, weight))
+
     tkinter_module: Any = ModuleType("tkinter")
     tkinter_module.Tk = _FakeTk
+    tkinter_module.Toplevel = _FakeWidget
+    tkinter_module.Frame = _FakeFrame
+    tkinter_module.Label = _FakeWidget
+    tkinter_module.Listbox = _FakeWidget
+    tkinter_module.Button = _FakeWidget
+    tkinter_module.IntVar = _FakeStringVar
     tkinter_module.StringVar = _FakeStringVar
     tkinter_module.messagebox = SimpleNamespace(showerror=lambda *_args, **_kwargs: None)
+    tkinter_module.filedialog = SimpleNamespace(askdirectory=lambda **_kwargs: "")
 
     ttk_module: Any = ModuleType("tkinter.ttk")
     ttk_module.Label = _FakeWidget
     ttk_module.Combobox = _FakeWidget
     ttk_module.Entry = _FakeWidget
     ttk_module.Button = _FakeWidget
+    ttk_module.Frame = _FakeFrame
     tkinter_module.ttk = ttk_module
 
     monkeypatch.setitem(sys.modules, "tkinter", tkinter_module)
     monkeypatch.setitem(sys.modules, "tkinter.ttk", ttk_module)
+    monkeypatch.setitem(sys.modules, "tkinter.filedialog", tkinter_module.filedialog)
+    monkeypatch.setitem(sys.modules, "tkinter.messagebox", tkinter_module.messagebox)
     monkeypatch.setattr(gui_runner, "_open_path", lambda path: opened_paths.append(path))
+    monkeypatch.setattr(gui_runner, "_validate_path_roots", lambda _state: (True, ""))
 
     launch_gui(
         initial_state=GuiRunState(as_of_date="2025-12-31"),
@@ -348,7 +453,7 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     assert fake_root is not None
     assert isinstance(fake_root, _FakeTk)
     assert fake_root.title_value == "Counter Risk Runner"
-    assert fake_root.geometry_value == "640x380"
+    assert fake_root.geometry_value == "640x420"
     assert fake_root.mainloop_called is True
     assert (1, 1) in fake_root.column_config_calls
     widgets = created["widgets"]

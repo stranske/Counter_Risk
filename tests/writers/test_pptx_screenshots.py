@@ -132,6 +132,32 @@ def test_replace_screenshot_pictures_raises_when_section_not_found(tmp_path: Pat
         )
 
 
+def test_replace_screenshot_pictures_reports_geometry_mismatch(tmp_path: Path) -> None:
+    source = tmp_path / "input.pptx"
+    output = tmp_path / "output.pptx"
+    base_image = tmp_path / "base.png"
+    replacement = tmp_path / "replacement.png"
+
+    _write_png(base_image, _RED_PNG)
+    _write_png(replacement, _BLUE_PNG)
+    _make_sample_pptx(source, base_image)
+
+    presentation = Presentation(str(source))
+    all_programs_slide = presentation.slides[0]
+    picture = next(
+        shape for shape in all_programs_slide.shapes if shape.shape_type == 13
+    )
+    picture.top = picture.top + 250_000
+    presentation.save(str(source))
+
+    with pytest.raises(ValueError, match="picture geometry did not match"):
+        replace_screenshot_pictures(
+            source,
+            {"All Programs": replacement},
+            output,
+        )
+
+
 def test_normalize_key_uses_canonicalize_name(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[str] = []
 

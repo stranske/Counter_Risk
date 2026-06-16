@@ -557,7 +557,7 @@ def _append_to_sheet(
 
     last_row = _find_last_dated_row(worksheet, header_row=header_row, date_column=date_column)
     if last_row is None:
-        target_row = HEADER_SCAN_ROWS + 1
+        target_row = header_row + 1
     else:
         last_date = _coerce_cell_date(worksheet.cell(row=last_row, column=date_column).value)
         if last_date is None:

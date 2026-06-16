@@ -14,6 +14,7 @@ from counter_risk.runner_launch import (
     build_discovery_run_command,
     build_runner_settings_payload,
     data_quality_status_label,
+    format_gui_run_failure,
     format_launch_error_for_runner,
     map_runner_error_to_operator_message,
     open_data_quality_summary,
@@ -434,3 +435,17 @@ def test_data_quality_status_label_maps_color_to_label(color: str, expected_labe
 def test_data_quality_status_label_returns_empty_for_unknown_color() -> None:
     assert data_quality_status_label("PURPLE") == ""
     assert data_quality_status_label("") == ""
+
+
+def test_format_gui_run_failure_maps_validation_errors() -> None:
+    from counter_risk.runner_launch import format_gui_run_failure
+
+    message = format_gui_run_failure(
+        exit_code=2,
+        message="input validation failed: missing required input",
+        command="run --config config/all_programs.yml",
+    )
+
+    assert message.startswith("Error 2:")
+    assert "Operator action:" in message
+    assert "verify required input files" in message

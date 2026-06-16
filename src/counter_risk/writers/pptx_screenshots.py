@@ -23,6 +23,7 @@ _EXPECTED_PICTURE_GEOMETRY_BY_SECTION: dict[str, tuple[tuple[int, int, int, int]
     "extrend": ((0, 1304636, 9144000, 5172364),),
     "trend": ((0, 2031298, 9144000, 2795403),),
 }
+_EMU_GEOMETRY_TOLERANCE = 50_000
 
 
 def _normalize_key(value: str) -> str:
@@ -66,6 +67,15 @@ def _section_matches_title(section_key: str, normalized_title: str) -> bool:
     return False
 
 
+def _geometry_within_tolerance(
+    actual: tuple[int, int, int, int],
+    expected: tuple[int, int, int, int],
+    *,
+    tolerance: int = _EMU_GEOMETRY_TOLERANCE,
+) -> bool:
+    return all(abs(actual_value - expected_value) <= tolerance for actual_value, expected_value in zip(actual, expected, strict=True))
+
+
 def _slide_matches_expected_picture_geometry(slide: Slide, section_key: str) -> bool:
     expected_geometry = _EXPECTED_PICTURE_GEOMETRY_BY_SECTION.get(section_key)
     if expected_geometry is None:
@@ -76,7 +86,10 @@ def _slide_matches_expected_picture_geometry(slide: Slide, section_key: str) -> 
         return False
 
     actual_geometry = tuple(_picture_geometry(picture) for picture in pictures)
-    return actual_geometry == expected_geometry
+    return all(
+        _geometry_within_tolerance(actual, expected)
+        for actual, expected in zip(actual_geometry, expected_geometry, strict=True)
+    )
 
 
 def _resolve_image_path(value: Path | str) -> Path:
@@ -132,6 +145,8 @@ def replace_screenshot_pictures(
 
     presentation = Presentation(str(source))
     matched_sections: set[str] = set()
+    geometry_mismatches: set[str] = set()
+    missing_picture_sections: set[str] = set()
 
     for slide in presentation.slides:
         title_key = _normalize_key(_slide_title(slide))
@@ -149,9 +164,11 @@ def replace_screenshot_pictures(
 
         pictures = _picture_shapes(slide)
         if not pictures:
-            raise ValueError(f"matched slide has no picture shapes for section '{matched_target}'")
+            missing_picture_sections.add(matched_target)
+            continue
 
         if not _slide_matches_expected_picture_geometry(slide, matched_target):
+            geometry_mismatches.add(matched_target)
             continue
         replacement = normalized_targets[matched_target]
         for picture in list(pictures):
@@ -166,6 +183,16 @@ def replace_screenshot_pictures(
 
     missing = sorted(set(normalized_targets) - matched_sections)
     if missing:
+        if geometry_mismatches:
+            raise ValueError(
+                "slide title matched but picture geometry did not match the template for sections: "
+                + ", ".join(sorted(geometry_mismatches))
+            )
+        if missing_picture_sections:
+            raise ValueError(
+                "matched slide has no picture shapes for sections: "
+                + ", ".join(sorted(missing_picture_sections))
+            )
         raise ValueError("no matching slide title found for sections: " + ", ".join(missing))
 
     destination.parent.mkdir(parents=True, exist_ok=True)
