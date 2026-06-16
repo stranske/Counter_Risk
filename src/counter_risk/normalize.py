@@ -14,6 +14,7 @@ normalize_clearing_house - Map a clearing house raw name to its workbook label.
 from __future__ import annotations
 
 import re
+import sys
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -21,6 +22,7 @@ from typing import Literal
 
 from counter_risk.name_matching import canonicalize_match_key
 from counter_risk.name_registry import NameRegistryConfig, SeriesIncludedFlags, load_name_registry
+from counter_risk.runtime_paths import RuntimePathResolutionError, resolve_runtime_path
 
 _DEFAULT_REGISTRY_RELATIVE_PATH = Path("config/name_registry.yml")
 _REPO_DEFAULT_REGISTRY_PATH = Path(__file__).resolve().parents[2] / _DEFAULT_REGISTRY_RELATIVE_PATH
@@ -121,6 +123,13 @@ def _resolve_registry_path(registry_path: str | Path) -> Path:
     if path.is_absolute():
         return path
     if path == _DEFAULT_REGISTRY_RELATIVE_PATH:
+        if getattr(sys, "frozen", False):
+            # In a frozen build the source-tree fallback below does not exist;
+            # search the bundle roots instead.
+            try:
+                return resolve_runtime_path(_DEFAULT_REGISTRY_RELATIVE_PATH)
+            except RuntimePathResolutionError:
+                return _REPO_DEFAULT_REGISTRY_PATH
         cwd_candidate = path.resolve()
         if cwd_candidate.exists():
             return cwd_candidate

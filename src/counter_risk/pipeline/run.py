@@ -101,6 +101,7 @@ from counter_risk.reports import (
     write_change_attribution_csv,
     write_change_attribution_markdown,
 )
+from counter_risk.runtime_paths import resolve_runtime_path
 from counter_risk.writers import (
     fill_dropin_template,
     generate_mosers_workbook,
@@ -2262,7 +2263,13 @@ def _compute_and_write_limit_breaches(
 ) -> LimitBreachEvaluation:
     """Compute limit breaches and write limit_breaches.csv when breaches exist."""
 
-    limits_path = _resolve_repo_root() / "config" / "limits.yml"
+    # In a frozen PyInstaller build the source-tree repo-root layout does not
+    # exist, so search the bundle roots; in source mode keep resolving relative
+    # to the repository root (which tests monkeypatch via _resolve_repo_root).
+    if getattr(sys, "frozen", False):
+        limits_path = resolve_runtime_path("config/limits.yml")
+    else:
+        limits_path = _resolve_repo_root() / "config" / "limits.yml"
     if not limits_path.exists():
         LOGGER.info("limit_breaches_skipped missing_limits_config path=%s", limits_path)
         return LimitBreachEvaluation(csv_path=None, breach_count=0)
