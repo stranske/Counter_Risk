@@ -2374,7 +2374,9 @@ def _raise_for_fail_limit_breaches(limit_breach_summary: Mapping[str, Any]) -> N
 
     plurality = "breach" if fail_breach_count == 1 else "breaches"
     report_path = limit_breach_summary.get("report_path")
-    report_detail = f" Review {report_path}." if isinstance(report_path, str) and report_path else ""
+    report_detail = (
+        f" Review {report_path}." if isinstance(report_path, str) and report_path else ""
+    )
     raise RuntimeError(
         f"Fail-severity limit {plurality} detected: {fail_breach_count}.{report_detail}"
     )
