@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import re
+import sys
 from pathlib import Path
 from typing import Any, Literal
 
@@ -10,6 +12,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from counter_risk.name_matching import canonicalize_match_key
+from counter_risk.runtime_paths import RuntimePathResolutionError, resolve_runtime_path
 
 _CANONICAL_KEY_PATTERN = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
 
@@ -160,6 +163,12 @@ def load_name_registry(path: str | Path = Path("config/name_registry.yml")) -> N
     """Load and validate a name registry YAML file from disk."""
 
     config_path = Path(path)
+    # In a frozen PyInstaller build a relative default like "config/..." is
+    # resolved against the bundle roots; in source mode resolve_runtime_path
+    # returns the path unchanged, preserving existing behavior.
+    if not config_path.is_absolute() and getattr(sys, "frozen", False):
+        with contextlib.suppress(RuntimePathResolutionError):
+            config_path = resolve_runtime_path(config_path)
     try:
         raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     except OSError as exc:

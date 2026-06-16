@@ -82,3 +82,25 @@ def test_limit_breach_resolution_finds_bundled_limits_config(
     assert "limit_breaches_skipped" not in caplog.text
     # Sanity check the bundled file the run path now resolves is loadable.
     load_limits_config(frozen_bundle / "config" / "limits.yml")
+
+
+def test_load_name_registry_default_resolves_from_bundle_root(
+    frozen_bundle: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Run from a directory with no config/ so a bare relative default could only
+    # succeed by resolving against the bundle root, not the process cwd.
+    monkeypatch.chdir(tmp_path)
+
+    registry = load_name_registry()
+
+    assert registry.entries
+
+
+def test_load_limits_config_default_resolves_from_bundle_root(
+    frozen_bundle: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    config = load_limits_config()
+
+    assert config.schema_version == 1

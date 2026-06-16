@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import contextlib
+import sys
 from pathlib import Path
 from typing import Any, Literal, cast
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+
+from counter_risk.runtime_paths import RuntimePathResolutionError, resolve_runtime_path
 
 
 class _NoDuplicateSafeLoader(yaml.SafeLoader):
@@ -99,6 +103,12 @@ def load_limits_config(path: str | Path = Path("config/limits.yml")) -> LimitsCo
     """Load and validate a limits YAML configuration file from disk."""
 
     config_path = Path(path)
+    # In a frozen PyInstaller build a relative default like "config/..." is
+    # resolved against the bundle roots; in source mode resolve_runtime_path
+    # returns the path unchanged, preserving existing behavior.
+    if not config_path.is_absolute() and getattr(sys, "frozen", False):
+        with contextlib.suppress(RuntimePathResolutionError):
+            config_path = resolve_runtime_path(config_path)
     try:
         raw = yaml.load(config_path.read_text(encoding="utf-8"), Loader=_NoDuplicateSafeLoader)
     except OSError as exc:
