@@ -532,3 +532,15 @@ def test_load_config_rejects_input_discovery_with_non_list_patterns(tmp_path: Pa
 
     with pytest.raises(ValueError, match="Configuration validation failed"):
         load_config(config_path)
+
+
+def test_load_config_rejects_duplicate_top_level_keys(tmp_path: Path) -> None:
+    """#22: config now rejects duplicate YAML keys (shared loader), like limits did."""
+
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "as_of_date: 2025-12-31\nas_of_date: 2025-11-30\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="duplicate key"):
+        load_config(config_path)

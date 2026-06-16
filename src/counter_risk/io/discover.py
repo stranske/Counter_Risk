@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Iterable
+from contextvars import ContextVar, Token
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -254,6 +255,47 @@ def _prompt_user_selection_stdin(
 
 SelectionPromptFn = Callable[[str, tuple[DiscoveryMatch, ...]], DiscoveryMatch]
 
+_active_discovery_prompt: ContextVar[SelectionPromptFn | None] = ContextVar(
+    "active_discovery_prompt",
+    default=None,
+)
+
+
+class DiscoverySelectionRequiredError(RuntimeError):
+    """Raised when discovery needs operator input but no prompt is available."""
+
+
+def set_discovery_selection_prompt(
+    prompt_fn: SelectionPromptFn | None,
+) -> Token[SelectionPromptFn | None]:
+    """Install a thread-local discovery prompt callback for the current context."""
+
+    return _active_discovery_prompt.set(prompt_fn)
+
+
+def reset_discovery_selection_prompt(token: Token[SelectionPromptFn | None]) -> None:
+    """Restore the discovery prompt callback installed by *token*."""
+
+    _active_discovery_prompt.reset(token)
+
+
+def get_discovery_selection_prompt() -> SelectionPromptFn | None:
+    """Return the active discovery prompt callback, if any."""
+
+    return _active_discovery_prompt.get()
+
+
+def non_interactive_discovery_prompt(
+    input_name: str,
+    matches: tuple[DiscoveryMatch, ...],
+) -> DiscoveryMatch:
+    """Fail fast when multiple discovery matches require operator selection."""
+
+    _ = matches
+    raise DiscoverySelectionRequiredError(
+        f"Multiple files match '{input_name}'. Choose one in the GUI or rerun with manual paths."
+    )
+
 
 def resolve_discovery_selections(
     result: DiscoveryResult,
@@ -267,6 +309,8 @@ def resolve_discovery_selections(
     - 0 matches → omitted from output (caller decides if that is an error)
     """
 
+    if prompt_fn is None:
+        prompt_fn = get_discovery_selection_prompt()
     if prompt_fn is None:
         prompt_fn = _prompt_user_selection_stdin
 

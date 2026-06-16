@@ -168,6 +168,40 @@ def test_hhi_bounds() -> None:
     assert hhi <= 1.0 + _TOL
 
 
+def test_concentration_metrics_use_absolute_magnitude_for_mixed_sign_notionals() -> None:
+    data = [
+        {"variant": "v", "segment": "s", "counterparty": "Long Large", "notional": 100.0},
+        {"variant": "v", "segment": "s", "counterparty": "Short Large", "notional": -90.0},
+        {"variant": "v", "segment": "s", "counterparty": "Long Mid", "notional": 80.0},
+        {"variant": "v", "segment": "s", "counterparty": "Long Small", "notional": 70.0},
+        {"variant": "v", "segment": "s", "counterparty": "Short Small", "notional": -60.0},
+        {"variant": "v", "segment": "s", "counterparty": "Tiny", "notional": 1.0},
+    ]
+
+    rows = _as_records(compute_concentration_metrics(data))
+
+    total_magnitude = 401.0
+    expected_top5 = (100.0 + 90.0 + 80.0 + 70.0 + 60.0) / total_magnitude
+    expected_hhi = sum((value / total_magnitude) ** 2 for value in (100, 90, 80, 70, 60, 1))
+    assert rows[0]["top5_share"] == pytest.approx(expected_top5, abs=_TOL)
+    assert rows[0]["top10_share"] == pytest.approx(1.0, abs=_TOL)
+    assert rows[0]["hhi"] == pytest.approx(expected_hhi, abs=_TOL)
+    assert 0.0 <= rows[0]["hhi"] <= 1.0
+
+
+def test_concentration_metrics_treat_near_zero_magnitude_total_as_zero() -> None:
+    data = [
+        {"variant": "v", "segment": "s", "counterparty": "A", "notional": 1e-15},
+        {"variant": "v", "segment": "s", "counterparty": "B", "notional": -2e-15},
+    ]
+
+    rows = _as_records(compute_concentration_metrics(data))
+
+    assert rows[0]["top5_share"] == pytest.approx(0.0, abs=_TOL)
+    assert rows[0]["top10_share"] == pytest.approx(0.0, abs=_TOL)
+    assert rows[0]["hhi"] == pytest.approx(0.0, abs=_TOL)
+
+
 # ---------------------------------------------------------------------------
 # Grouping tests
 # ---------------------------------------------------------------------------

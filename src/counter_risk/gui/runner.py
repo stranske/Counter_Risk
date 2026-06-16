@@ -2,18 +2,28 @@
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import threading
+from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
+from counter_risk.io.discover import (
+    DiscoveryMatch,
+    DiscoverySelectionRequiredError,
+    reset_discovery_selection_prompt,
+    set_discovery_selection_prompt,
+)
 from counter_risk.runner_launch import (
     data_quality_status_label,
+    format_gui_run_failure,
     parse_as_of_month,
     read_overall_status_color,
     resolve_existing_output_dir,
@@ -52,6 +62,7 @@ class GuiRunResult:
     output_dir: Path | None
     data_quality_status: str = ""
     data_quality_color: str = ""
+    error_message: str = ""
 
 
 def _normalize_run_mode(raw_mode: str) -> str:
@@ -163,6 +174,16 @@ def _build_cli_args(
     return cli_args
 
 
+def _validate_path_roots(state: GuiRunState) -> tuple[bool, str]:
+    input_root = Path(state.input_root.strip() or "inputs")
+    output_root = Path(state.output_root.strip() or "runs")
+    if not input_root.is_dir():
+        return False, f"Input Root not found: {input_root}"
+    if not output_root.is_dir():
+        return False, f"Output Root not found: {output_root}"
+    return True, ""
+
+
 def execute_gui_run(
     *,
     state: GuiRunState,
@@ -181,11 +202,20 @@ def execute_gui_run(
         dry_run_discovery=dry_run_discovery,
     )
     output_dir = None if dry_run_discovery else Path(cli_args[cli_args.index("--output-dir") + 1])
+    captured_output = io.StringIO()
+    error_message = ""
     try:
-        exit_code = int(runner(cli_args))
+        with redirect_stdout(captured_output), redirect_stderr(captured_output):
+            exit_code = int(runner(cli_args))
     finally:
         if cleanup_settings_file:
             _cleanup_settings_file(settings_path)
+    if exit_code != 0:
+        error_message = format_gui_run_failure(
+            exit_code=exit_code,
+            message=captured_output.getvalue().strip() or f"Process exited with code {exit_code}",
+            command=" ".join(cli_args),
+        )
     data_quality_color = ""
     data_quality_status = ""
     if exit_code == 0:
@@ -198,6 +228,7 @@ def execute_gui_run(
         output_dir=output_dir,
         data_quality_status=data_quality_status,
         data_quality_color=data_quality_color,
+        error_message=error_message,
     )
 
 
@@ -244,6 +275,99 @@ def _load_limit_breach_banner(run_dir: Path) -> str | None:
     return rendered or None
 
 
+class _DiscoveryPromptBridge:
+    """Marshal discovery selection prompts onto the Tk main thread."""
+
+    def __init__(self, root: object, tk_module: Any) -> None:
+        self._root = root
+        self._tk = tk_module
+
+    def __call__(self, input_name: str, matches: tuple[DiscoveryMatch, ...]) -> DiscoveryMatch:
+        if threading.current_thread() is threading.main_thread():
+            return self._choose_match(input_name, matches)
+
+        value_holder: dict[str, DiscoveryMatch] = {}
+        error_holder: dict[str, BaseException] = {}
+        done = threading.Event()
+
+        def _prompt_on_main_thread() -> None:
+            try:
+                value_holder["value"] = self._choose_match(input_name, matches)
+            except BaseException as exc:
+                error_holder["error"] = exc
+            finally:
+                done.set()
+
+        after = getattr(self._root, "after", None)
+        if after is None:
+            raise DiscoverySelectionRequiredError(
+                f"Multiple files match '{input_name}', but the GUI is unavailable for selection."
+            )
+        after(0, _prompt_on_main_thread)
+        done.wait()
+        error = error_holder.get("error")
+        if error is not None:
+            raise error
+        chosen = value_holder.get("value")
+        if chosen is None:
+            raise DiscoverySelectionRequiredError(
+                f"Discovery selection for '{input_name}' did not return a choice."
+            )
+        return chosen
+
+    def _choose_match(
+        self,
+        input_name: str,
+        matches: tuple[DiscoveryMatch, ...],
+    ) -> DiscoveryMatch:
+        if len(matches) == 1:
+            return matches[0]
+
+        dialog = self._tk.Toplevel(self._root)
+        dialog.title("Select Input File")
+        dialog.transient(self._root)
+        dialog.grab_set()
+
+        selected_index = self._tk.IntVar(value=1)
+        self._tk.Label(
+            dialog,
+            text=f"Multiple matches found for '{input_name}'. Choose one:",
+            anchor="w",
+            justify="left",
+        ).pack(fill="x", padx=12, pady=(12, 4))
+
+        listbox = self._tk.Listbox(
+            dialog, width=72, height=min(len(matches), 8), exportselection=False
+        )
+        for index, match in enumerate(matches, start=1):
+            listbox.insert("end", f"[{index}] {match.path}")
+        listbox.selection_set(0)
+        listbox.pack(fill="both", expand=True, padx=12, pady=4)
+
+        def _accept() -> None:
+            selection = listbox.curselection()
+            if selection:
+                selected_index.set(selection[0] + 1)
+            dialog.destroy()
+
+        def _cancel() -> None:
+            selected_index.set(0)
+            dialog.destroy()
+
+        button_row = self._tk.Frame(dialog)
+        button_row.pack(fill="x", padx=12, pady=(4, 12))
+        self._tk.Button(button_row, text="Use Selected", command=_accept).pack(side="right")
+        self._tk.Button(button_row, text="Cancel", command=_cancel).pack(side="right", padx=(0, 8))
+
+        dialog.wait_window()
+        choice = cast(int, selected_index.get())
+        if choice < 1 or choice > len(matches):
+            raise DiscoverySelectionRequiredError(
+                f"Discovery selection canceled for '{input_name}'."
+            )
+        return matches[choice - 1]
+
+
 def launch_gui(
     *,
     initial_state: GuiRunState | None = None,
@@ -251,7 +375,7 @@ def launch_gui(
 ) -> None:
     try:
         import tkinter as tk
-        from tkinter import messagebox, ttk
+        from tkinter import filedialog, messagebox, ttk
     except Exception as exc:  # pragma: no cover - environment-dependent
         msg = "Tkinter is unavailable; use `counter-risk run` or `counter-risk gui --headless`."
         raise RuntimeError(msg) from exc
@@ -262,7 +386,7 @@ def launch_gui(
 
     root = tk.Tk()
     root.title("Counter Risk Runner")
-    root.geometry("640x380")
+    root.geometry("640x420")
 
     as_of_var = tk.StringVar(value=state.as_of_date)
     mode_var = tk.StringVar(value=_normalize_run_mode(state.run_mode))
@@ -275,7 +399,10 @@ def launch_gui(
     result_var = tk.StringVar(value="")
     quality_var = tk.StringVar(value="")
     limit_banner_var = tk.StringVar(value="None")
+    path_feedback_var = tk.StringVar(value="")
     last_output_dir: Path | None = None
+    run_in_progress = False
+    discovery_prompt_bridge = _DiscoveryPromptBridge(root, tk)
 
     def _state_from_form() -> GuiRunState:
         return GuiRunState(
@@ -289,88 +416,224 @@ def launch_gui(
             config_path=None,
         )
 
-    def _run(dry_run_discovery: bool = False) -> None:
+    def _set_running(active: bool) -> None:
+        nonlocal run_in_progress
+        run_in_progress = active
+        run_state = "disabled" if active else "normal"
+        run_button.configure(state=run_state)
+        dry_run_button.configure(state=run_state)
+        if active:
+            status_var.set("Running… this can take a few minutes")
+        _refresh_path_feedback()
+
+    def _refresh_path_feedback() -> None:
+        current = _state_from_form()
+        valid, message = _validate_path_roots(current)
+        if run_in_progress:
+            path_feedback_var.set("Run in progress…")
+            return
+        if valid:
+            path_feedback_var.set("Paths look good.")
+            run_button.configure(state="normal")
+            dry_run_button.configure(state="normal")
+            return
+        path_feedback_var.set(message)
+        run_button.configure(state="disabled")
+        dry_run_button.configure(state="disabled")
+
+    def _show_operator_error(title: str, message: str) -> None:
+        result_var.set(message)
+        messagebox.showerror(title, message)
+
+    def _apply_run_result(result: GuiRunResult) -> None:
         nonlocal last_output_dir
+        if result.exit_code == 0:
+            status_var.set("Complete")
+            result_var.set("Success")
+            quality_var.set(result.data_quality_status or "UNAVAILABLE - Summary not found")
+            if result.output_dir is not None:
+                last_output_dir = result.output_dir
+                limit_banner_var.set(_load_limit_breach_banner(result.output_dir) or "None")
+            return
+
+        status_var.set("Error")
+        result_var.set(result.error_message or f"Exit code {result.exit_code}")
+        quality_var.set("")
+        limit_banner_var.set("None")
+        _show_operator_error(
+            "Counter Risk Runner", result.error_message or f"Exit code {result.exit_code}"
+        )
+
+    def _run_worker(*, dry_run_discovery: bool, state_snapshot: GuiRunState) -> None:
+        prompt_token = set_discovery_selection_prompt(discovery_prompt_bridge)
         try:
-            current = _state_from_form()
-            status_var.set("Running...")
-            root.update_idletasks()
             result = execute_gui_run(
-                state=current,
+                state=state_snapshot,
                 runner=run_counter_risk,
                 dry_run_discovery=dry_run_discovery,
                 cleanup_settings_file=True,
             )
-            if result.exit_code == 0:
-                status_var.set("Complete")
-                result_var.set("Success")
-                quality_var.set(result.data_quality_status or "UNAVAILABLE - Summary not found")
-                if result.output_dir is not None:
-                    last_output_dir = result.output_dir
-                    limit_banner_var.set(_load_limit_breach_banner(result.output_dir) or "None")
-            else:
-                status_var.set("Error")
-                result_var.set(f"Exit code {result.exit_code}")
-                quality_var.set("")
-                limit_banner_var.set("None")
+        except DiscoverySelectionRequiredError as exc:
+            result = GuiRunResult(
+                exit_code=1,
+                cli_args=(),
+                settings_path=Path("."),
+                output_dir=None,
+                error_message=str(exc),
+            )
         except Exception as exc:  # pragma: no cover - UI safety
+            result = GuiRunResult(
+                exit_code=1,
+                cli_args=(),
+                settings_path=Path("."),
+                output_dir=None,
+                error_message=format_gui_run_failure(
+                    exit_code=1,
+                    message=str(exc),
+                ),
+            )
+        finally:
+            reset_discovery_selection_prompt(prompt_token)
+
+        def _finish() -> None:
+            _set_running(False)
+            _apply_run_result(result)
+
+        root.after(0, _finish)
+
+    def _run(dry_run_discovery: bool = False) -> None:
+        current = _state_from_form()
+        valid, message = _validate_path_roots(current)
+        if not valid:
             status_var.set("Error")
-            result_var.set(str(exc))
-            quality_var.set("")
-            limit_banner_var.set("None")
-            messagebox.showerror("Counter Risk Runner", str(exc))
+            path_feedback_var.set(message)
+            _show_operator_error("Counter Risk Runner", message)
+            return
+
+        _set_running(True)
+        result_var.set("")
+        quality_var.set("")
+        limit_banner_var.set("None")
+        worker = threading.Thread(
+            target=_run_worker,
+            kwargs={
+                "dry_run_discovery": dry_run_discovery,
+                "state_snapshot": current,
+            },
+            daemon=True,
+        )
+        worker.start()
+
+    def _resolve_output_dir_for_open() -> Path:
+        current = _state_from_form()
+        return last_output_dir or _resolve_existing_output_dir(current)
+
+    def _open_with_feedback(label: str, path: Path) -> None:
+        try:
+            if not _open_path(path):
+                message = f"{label} not found: {path}"
+                _show_operator_error("Counter Risk Runner", message)
+        except Exception as exc:  # pragma: no cover - UI safety
+            message = format_gui_run_failure(exit_code=1, message=str(exc))
+            _show_operator_error("Counter Risk Runner", message)
 
     def _open_output() -> None:
-        current = _state_from_form()
-        _open_path(last_output_dir or _resolve_existing_output_dir(current))
+        try:
+            _open_with_feedback("Output folder", _resolve_output_dir_for_open())
+        except Exception as exc:  # pragma: no cover - UI safety
+            _show_operator_error(
+                "Counter Risk Runner",
+                format_gui_run_failure(exit_code=1, message=str(exc)),
+            )
 
     def _open_manifest() -> None:
-        current = _state_from_form()
-        _open_path((last_output_dir or _resolve_existing_output_dir(current)) / "manifest.json")
+        try:
+            _open_with_feedback("Manifest", _resolve_output_dir_for_open() / "manifest.json")
+        except Exception as exc:  # pragma: no cover - UI safety
+            _show_operator_error(
+                "Counter Risk Runner",
+                format_gui_run_failure(exit_code=1, message=str(exc)),
+            )
 
     def _open_summary() -> None:
-        current = _state_from_form()
-        _open_path(
-            (last_output_dir or _resolve_existing_output_dir(current)) / "DATA_QUALITY_SUMMARY.txt"
-        )
+        try:
+            _open_with_feedback(
+                "Data quality summary",
+                _resolve_output_dir_for_open() / "DATA_QUALITY_SUMMARY.txt",
+            )
+        except Exception as exc:  # pragma: no cover - UI safety
+            _show_operator_error(
+                "Counter Risk Runner",
+                format_gui_run_failure(exit_code=1, message=str(exc)),
+            )
 
     def _open_ppt() -> None:
-        current = _state_from_form()
-        _open_path(last_output_dir or _resolve_existing_output_dir(current))
+        try:
+            _open_with_feedback("PPT output folder", _resolve_output_dir_for_open())
+        except Exception as exc:  # pragma: no cover - UI safety
+            _show_operator_error(
+                "Counter Risk Runner",
+                format_gui_run_failure(exit_code=1, message=str(exc)),
+            )
+
+    def _browse_directory(target_var: tk.StringVar) -> None:
+        selected = filedialog.askdirectory(initialdir=target_var.get() or ".")
+        if selected:
+            target_var.set(selected)
+            _refresh_path_feedback()
+
+    def _browse_command(target_var: tk.StringVar) -> Callable[[], None]:
+        def _command() -> None:
+            _browse_directory(target_var)
+
+        return _command
+
+    def _run_dry_discovery() -> None:
+        _run(True)
 
     # Form rows
     labels = (
-        ("As-Of Date (YYYY-MM-DD)", as_of_var),
-        ("Mode", mode_var),
-        ("Discovery Mode", discovery_var),
-        ("Strict Policy", strict_var),
-        ("Formatting Profile", format_var),
-        ("Input Root", input_root_var),
-        ("Output Root", output_root_var),
+        ("As-Of Date (YYYY-MM-DD)", as_of_var, "entry"),
+        ("Mode", mode_var, "mode"),
+        ("Discovery Mode", discovery_var, "discovery"),
+        ("Strict Policy", strict_var, "strict"),
+        ("Formatting Profile", format_var, "entry"),
+        ("Input Root", input_root_var, "input_root"),
+        ("Output Root", output_root_var, "output_root"),
     )
-    for row_index, (label, var) in enumerate(labels):
+    for row_index, (label, var, field_kind) in enumerate(labels):
         ttk.Label(root, text=label).grid(row=row_index, column=0, sticky="w", padx=8, pady=4)
-        if label == "Mode":
+        if field_kind == "mode":
             ttk.Combobox(
                 root,
                 textvariable=var,
                 state="readonly",
                 values=("all", "ex_trend", "trend"),
             ).grid(row=row_index, column=1, sticky="ew", padx=8, pady=4)
-        elif label == "Discovery Mode":
+        elif field_kind == "discovery":
             ttk.Combobox(
                 root,
                 textvariable=var,
                 state="readonly",
                 values=("manual", "discover"),
             ).grid(row=row_index, column=1, sticky="ew", padx=8, pady=4)
-        elif label == "Strict Policy":
+        elif field_kind == "strict":
             ttk.Combobox(
                 root,
                 textvariable=var,
                 state="readonly",
                 values=("warn", "strict"),
             ).grid(row=row_index, column=1, sticky="ew", padx=8, pady=4)
+        elif field_kind in {"input_root", "output_root"}:
+            path_row = ttk.Frame(root)
+            path_row.grid(row=row_index, column=1, sticky="ew", padx=8, pady=4)
+            path_row.columnconfigure(0, weight=1)
+            ttk.Entry(path_row, textvariable=var).grid(row=0, column=0, sticky="ew")
+            ttk.Button(
+                path_row,
+                text="Browse…",
+                command=_browse_command(var),
+            ).grid(row=0, column=1, padx=(8, 0))
         else:
             ttk.Entry(root, textvariable=var, width=42).grid(
                 row=row_index,
@@ -382,33 +645,45 @@ def launch_gui(
 
     root.columnconfigure(1, weight=1)
 
-    ttk.Button(root, text="Run", command=_run).grid(row=8, column=0, padx=8, pady=8, sticky="ew")
-    ttk.Button(root, text="Dry-Run Discovery", command=lambda: _run(True)).grid(
-        row=8, column=1, padx=8, pady=8, sticky="ew"
+    run_button = ttk.Button(root, text="Run", command=_run)
+    run_button.grid(row=8, column=0, padx=8, pady=8, sticky="ew")
+    dry_run_button = ttk.Button(
+        root,
+        text="Dry-Run Discovery",
+        command=_run_dry_discovery,
+    )
+    dry_run_button.grid(row=8, column=1, padx=8, pady=8, sticky="ew")
+
+    ttk.Label(root, textvariable=path_feedback_var).grid(
+        row=9, column=0, columnspan=2, sticky="w", padx=8, pady=(0, 4)
     )
 
     ttk.Button(root, text="Open Output Folder", command=_open_output).grid(
-        row=9, column=0, padx=8, pady=4, sticky="ew"
-    )
-    ttk.Button(root, text="Open Manifest", command=_open_manifest).grid(
-        row=9, column=1, padx=8, pady=4, sticky="ew"
-    )
-    ttk.Button(root, text="Open Summary", command=_open_summary).grid(
         row=10, column=0, padx=8, pady=4, sticky="ew"
     )
-    ttk.Button(root, text="Open PPT Folder", command=_open_ppt).grid(
+    ttk.Button(root, text="Open Manifest", command=_open_manifest).grid(
         row=10, column=1, padx=8, pady=4, sticky="ew"
     )
-
-    ttk.Label(root, text="Status").grid(row=11, column=0, sticky="w", padx=8, pady=4)
-    ttk.Label(root, textvariable=status_var).grid(row=11, column=1, sticky="w", padx=8, pady=4)
-    ttk.Label(root, text="Result").grid(row=12, column=0, sticky="w", padx=8, pady=4)
-    ttk.Label(root, textvariable=result_var).grid(row=12, column=1, sticky="w", padx=8, pady=4)
-    ttk.Label(root, text="Data Quality").grid(row=13, column=0, sticky="w", padx=8, pady=4)
-    ttk.Label(root, textvariable=quality_var).grid(row=13, column=1, sticky="w", padx=8, pady=4)
-    ttk.Label(root, text="Limit Breach").grid(row=14, column=0, sticky="w", padx=8, pady=4)
-    ttk.Label(root, textvariable=limit_banner_var).grid(
-        row=14, column=1, sticky="w", padx=8, pady=4
+    ttk.Button(root, text="Open Summary", command=_open_summary).grid(
+        row=11, column=0, padx=8, pady=4, sticky="ew"
     )
+    ttk.Button(root, text="Open PPT Folder", command=_open_ppt).grid(
+        row=11, column=1, padx=8, pady=4, sticky="ew"
+    )
+
+    ttk.Label(root, text="Status").grid(row=12, column=0, sticky="w", padx=8, pady=4)
+    ttk.Label(root, textvariable=status_var).grid(row=12, column=1, sticky="w", padx=8, pady=4)
+    ttk.Label(root, text="Result").grid(row=13, column=0, sticky="w", padx=8, pady=4)
+    ttk.Label(root, textvariable=result_var).grid(row=13, column=1, sticky="w", padx=8, pady=4)
+    ttk.Label(root, text="Data Quality").grid(row=14, column=0, sticky="w", padx=8, pady=4)
+    ttk.Label(root, textvariable=quality_var).grid(row=14, column=1, sticky="w", padx=8, pady=4)
+    ttk.Label(root, text="Limit Breach").grid(row=15, column=0, sticky="w", padx=8, pady=4)
+    ttk.Label(root, textvariable=limit_banner_var).grid(
+        row=15, column=1, sticky="w", padx=8, pady=4
+    )
+
+    for trace_name in (input_root_var, output_root_var):
+        trace_name.trace_add("write", lambda *_args: _refresh_path_feedback())
+    _refresh_path_feedback()
 
     root.mainloop()

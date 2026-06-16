@@ -46,7 +46,14 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    # UPX disabled: UPX-packed exes trigger false-positive SmartScreen/AV alerts
+    # on Windows operator machines, especially when the exe is unsigned.
+    # After building, sign with Authenticode via:
+    #   signtool sign /fd sha256 /tr http://timestamp.digicert.com /td sha256 \
+    #       /f <cert.pfx> /p <password> dist\counter-risk\counter-risk.exe
+    # Without a code-signing cert, instruct operators: Windows protected your PC
+    # → click "More info" → "Run anyway".
+    upx=False,
     contents_directory=".",
     console=True,
     disable_windowed_traceback=False,
@@ -62,7 +69,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name="counter-risk",
 )

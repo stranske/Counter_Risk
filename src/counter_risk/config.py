@@ -6,8 +6,10 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Literal
 
-import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from counter_risk.runtime_paths import resolve_default_output_root
+from counter_risk.yaml_utils import load_yaml_model
 
 
 class ReconciliationConfig(BaseModel):
@@ -115,8 +117,7 @@ class WorkflowConfig(BaseModel):
     output_generators: tuple[OutputGeneratorConfig, ...] = Field(
         default_factory=_default_output_generators
     )
-    enable_llm_logging: bool = False
-    output_root: Path = Path("runs")
+    output_root: Path = Field(default_factory=resolve_default_output_root)
 
     @property
     def ppt_output_enabled(self) -> bool:
@@ -167,33 +168,7 @@ class WorkflowConfig(BaseModel):
         return value
 
 
-def _format_validation_error(error: ValidationError) -> str:
-    lines = ["Configuration validation failed:"]
-    for issue in error.errors():
-        location = ".".join(str(part) for part in issue.get("loc", ()))
-        message = issue.get("msg", "Invalid value")
-        lines.append(f"- {location}: {message}")
-    return "\n".join(lines)
-
-
 def load_config(path: str | Path) -> WorkflowConfig:
     """Load a YAML workflow configuration file from disk."""
 
-    config_path = Path(path)
-    try:
-        raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    except OSError as exc:
-        raise ValueError(f"Unable to read config file '{config_path}': {exc}") from exc
-    except yaml.YAMLError as exc:
-        raise ValueError(f"Invalid YAML in config file '{config_path}': {exc}") from exc
-
-    data: Any = raw if raw is not None else {}
-    if not isinstance(data, dict):
-        raise ValueError(
-            f"Configuration file '{config_path}' must contain a top-level mapping/object."
-        )
-
-    try:
-        return WorkflowConfig.model_validate(data)
-    except ValidationError as exc:
-        raise ValueError(_format_validation_error(exc)) from exc
+    return load_yaml_model(path, WorkflowConfig, kind="Configuration")

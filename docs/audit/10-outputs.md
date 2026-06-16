@@ -1,0 +1,59 @@
+# Outputs Subsystem Audit
+
+Summary line: The outputs subsystem is well-structured, well-typed, and platform-safe (COM is correctly Windows-gated with graceful fallbacks), but it carries a few real correctness/usability traps — most notably a silently-ignored `as_of_date`, a confusing screenshot-replacement failure mode tied to hardcoded slide geometry, and a dead `OutputContext.warnings` channel — plus a moderate amount of mechanical duplication across the three reporting "variants."
+
+## Summary
+
+Files reviewed: `outputs/*.py`, `writers/*.py`, `ppt/*.py`, `renderers/table_png.py`, `reports/*.py`, `mosers/*.py`, `integrations/powerpoint_com.py`, plus the pipeline wiring in `pipeline/run.py`.
+
+Overall code quality is high: dependency-injected callables make generators testable; COM access is guarded behind `sys.platform`/`importlib.util.find_spec` with manual-refresh fallbacks and a pure-Python PNG encoder for deterministic output; the registry/Protocol design is clean. The issues below are concentrated in (a) a few behavioral traps and (b) repetitive per-variant scaffolding that can be condensed without behavior change.
+
+Severity counts: BLOCKER 0, MAJOR 3, MINOR 5.
+
+## Code Quality Findings
+
+### [MAJOR] Screenshot replacement gives a misleading error when slide geometry drifts
+`src/counter_risk/writers/pptx_screenshots.py:154-169` (python-pptx backend). When a slide *title* matches a section but the picture geometry does not equal the hardcoded EMU tuples in `_EXPECTED_PICTURE_GEOMETRY_BY_SECTION` (`pptx_screenshots.py:21-25`), the slide is silently `continue`d and the section is never added to `matched_sections`. The function then raises `"no matching slide title found for sections: ..."` even though the title *was* found and only the geometry mismatched. For a local operator whose master deck was nudged/resized even slightly, this produces a confusing, hard-to-diagnose failure. The per-section absolute geometry (e.g. `(0, 811705, 9144000, 5817695)`) is also extremely brittle to any template edit. Recommendation: distinguish "title matched but geometry mismatch" from "title not found" in the error, and/or relax exact-EMU matching to a tolerance.
+
+### [MAJOR] `OutputContext.warnings` is a dead channel that looks canonical
+`src/counter_risk/outputs/base.py:22` defines `warnings: tuple[str, ...]` on the immutable run context, but no generator ever reads `context.warnings`. Every generator instead appends to its own injected `self.warnings: list[str]` (`ppt_screenshot.py:95`, `ppt_link_refresh.py:77,79`, `pdf_export.py:63`, `historical_workbook.py:57`). The result is two parallel warning surfaces where only one is live. A maintainer reasonably assumes the context field is the warnings sink and may wire new warnings into a list that is never surfaced. Recommendation: remove `OutputContext.warnings`, or route all generator warnings through it and drop the per-generator `warnings` constructor args.
+
+### [MAJOR] `as_of_date` accepted by MOSERS writers and silently discarded
+`src/counter_risk/writers/mosers_workbook.py:74-89`: `_generate_and_save_mosers_workbook` takes `as_of_date` and immediately does `_ = as_of_date`, discarding it. The pipeline explicitly passes a real value (`pipeline/run.py:1522-1526`, `as_of_date=as_of_date`). No date cell is written to the generated workbook (the in-memory generator in `mosers/workbook_generation.py` never references a date; downstream the historical update *infers* the date from the CPRS-CH header). The net effect is correct today only because nothing depends on the writer honoring the argument — but the API actively lies to its caller. Recommendation: either drop the parameter from the public signature (and the call site) or have the writer stamp the date into the workbook. Borderline BLOCKER if any future caller relies on it; flagged MAJOR because no current output is wrong.
+
+### [MINOR] FCM PNG renderer reuses the CH layout wholesale, including a "Cash" column
+`src/counter_risk/renderers/table_png.py:204-219`: `render_cprs_fcm_png` delegates to `_render_cprs_table_png` with `layout=_CPRS_CH_LAYOUT` and `min_rows_by_variant=_CPRS_MIN_ROWS_BY_VARIANT` — identical to `render_cprs_ch_png`. The module header claims to cover "CPRS-CH/CPRS-FCM table output," and the CH layout includes a `Cash` column (`table_png.py:64`) plus CH-specific minimum-row expectations. Tests (`tests/test_table_png.py`) explicitly assert both functions "route through shared internal helper," so this is intentional today, but the FCM function is effectively a no-op alias that will silently render FCM data with CH semantics if the two ever diverge. Recommendation: collapse to a single public renderer, or give FCM its own `_TableLayout`/min-rows so the distinction is real and not a latent trap.
+
+### [MINOR] `overflow_policy`/`underflow_policy` are declared but never read
+`src/counter_risk/mosers/workbook_generation.py:84-86` declares `overflow_policy="truncate_to_layout"` and `underflow_policy="clear_remaining_cells"` on `MosersAllProgramsTransformationScope` (set identically in all three `get_mosers_*_transformation_scope()` factories, lines 140-142, 167-169, 194-196). The actual truncate/clear behavior is hardcoded in `_write_vertical_values` (`workbook_generation.py:367-380`) and the totals writers; the policy fields are never consulted. They read as configuration but are inert documentation. Recommendation: drop the fields or actually branch on them.
+
+### [MINOR] Inconsistent empty-sheet append row between the two append paths
+`src/counter_risk/writers/historical_update.py:559-560`: in `_append_to_sheet`, when the worksheet has no dated rows, `target_row = HEADER_SCAN_ROWS + 1` (a fixed `12 + 1 = 13`) — unrelated to the actual discovered `header_row`. The WAL path (`append_wal_row` via `read_wal_sheet_append_location`, line 452) correctly uses `header_row + 1`. For a freshly-templated 3-Year sheet whose real header sits above row 12, this writes the first data row into the wrong place. Recommendation: use `header_row + 1` consistently.
+
+### [MINOR] `_write_vertical_values` can IndexError if a metric yields fewer-than-zero slots is fine, but values list is unbounded-trusted
+`src/counter_risk/mosers/workbook_generation.py:367-380` reads `values[index]` only for `index < len(values)`, so overflow is safe, but there is no validation that `len(values)` exceeding `total_slots` is the intended truncation (silently drops counterparties beyond the template's fixed range). Combined with the inert `overflow_policy` above, an oversized counterparty list is silently truncated with no warning. Recommendation: emit a warning when `len(values) > total_slots`.
+
+### [MINOR] `replace_screenshot_pictures` relies on private python-pptx internals
+`src/counter_risk/writers/pptx_screenshots.py:89-107` (`_swap_picture_image_part`) uses `picture._element`, `picture.part._rel_ref_count`, and `picture.part.drop_rel` — all private API. This is documented in the docstring and is a reasonable trade-off (no public in-place swap exists), but it is a maintenance liability across python-pptx upgrades. The `zip` backend (`ppt/replace_screenshots.py`) is the more robust path. Recommendation: prefer the zip backend as default (it already is — `config.py:106` defaults to `"zip"`) and keep this one clearly marked as best-effort.
+
+## Duplication / Simplification Opportunities
+
+1. **Three near-identical MOSERS structure/scope factories.** `get_mosers_all_programs_output_structure` / `_ex_trend_` / `_trend_` (`mosers/workbook_generation.py:118-182`) are byte-for-byte identical, and the three `get_mosers_*_transformation_scope()` functions (lines 131-196) differ in nothing at all. These six functions could be one parameterized factory (or two constants) without behavior change. The only real per-variant differences live in the parser and the `applicable_variants` gating inside `get_mosers_plug_values_mapping_requirements` (lines 230-232).
+
+2. **Three `append_row_*` wrappers around one helper.** `append_row_all_programs` / `_ex_trend` / `_trend` (`writers/historical_update.py:625-673`) differ only by the `sheet_name` constant passed to `_append_row`. A single function taking the sheet name (or a small dict) would remove ~50 lines. The current shape is fine for explicit public API but is pure boilerplate.
+
+3. **Three `generate_mosers_workbook*` writer wrappers + three in-memory generators.** `writers/mosers_workbook.py:26-71` and `mosers/workbook_generation.py:237-275` each have a per-variant trampoline that only swaps the parser/structure/scope. `_generate_mosers_workbook_from_parser` (line 278) already parameterizes everything; the three public entry points exist mainly for naming. Acceptable as a stable API surface, but the writer-layer trampolines (`mosers_workbook.py`) add a second redundant layer on top of the already-parameterized core.
+
+4. **Repeated openpyxl lazy-import + "install dev deps" RuntimeError block** appears verbatim 3x: `historical_update.py:172-177`, `:600-605`, `:688-694`, and again in `mosers/template.py:30-33` and `dropin_templates.py:384-389`. Extract a single `_load_openpyxl()` helper.
+
+5. **Repeated `_as_path` / `_validate_workbook_path` helpers** exist in parallel in `historical_update.py:123-137`, `dropin_templates.py:72-91`, and `powerpoint_com.py:31-35` with slightly different validation. A shared path-validation utility would reduce drift (note they already diverge subtly, e.g. suffix checks).
+
+6. **COM open/close try/finally scaffolding duplicated** across `pdf_export.export_pptx_to_pdf_via_com` (`outputs/pdf_export.py:22-40`), `ppt_screenshot.export_ppt_slides_as_png_via_com` (`outputs/ppt_screenshot.py:29-61`), and `powerpoint_com.py:200-219,259-275`. A single context manager (`with open_presentation(path) as prs:`) handling `Visible=0`, open, and guaranteed `Close()`/`Quit()` cleanup would consolidate four copies of the same fragile teardown logic.
+
+## Notable Strengths
+
+- **Platform safety is exemplary.** `powerpoint_com.py:145-166` gates COM behind both `sys.platform == "win32"` and `importlib.util.find_spec("win32com.client")`, raising typed `PowerPointComUnavailableError`. `refresh_links_and_save` (line 222) degrades gracefully on non-Windows by copying the deck and writing `NEEDS_LINK_REFRESH.txt` with explicit manual steps. `PDFExportGenerator` (`pdf_export.py:58-67`) checks availability and warns/skips rather than crashing. Local macOS development and Windows production both work cleanly.
+- **Deterministic, dependency-free PNG rendering.** `renderers/table_png.py` ships its own pure-Python PNG encoder and 5x7 bitmap font specifically so screenshot bytes are byte-stable across machines (`table_png.py:1-8, 547-619`). This is the right call for reproducible diffs and is thoroughly documented.
+- **Testable generator design.** Every generator injects its collaborators as typed callables (e.g. `ppt_screenshot.py:69-74`, `historical_workbook.py:17-21`, `pdf_export.py:50-51`), and the registry (`outputs/registry.py`) validates that the configured name matches the implementation name (lines 56-61). Clean separation of wiring from logic.
+- **Defensive PPTX parsing.** `ppt/replace_screenshots.py` resolves blip→rels→media paths with explicit `posixpath.normpath` checks that reject non-`ppt/media/` targets (line 146), and `pptx_postprocess.py` scrubs external relationships via a safe in-place temp-file swap (lines 34-62). XML/zip errors are consistently caught and re-raised as typed errors.
+- **WAL append preserves and validates existing cells.** `append_wal_row` snapshots formulas/values/number-formats before writing and re-validates them afterward (`historical_update.py:463-503, 742`), guarding against accidental corruption of the chart-linked workbook — exactly the right paranoia for an operator-facing deliverable.

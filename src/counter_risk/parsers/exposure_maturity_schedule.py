@@ -8,6 +8,7 @@ from typing import Any
 from zipfile import BadZipFile
 
 from counter_risk.normalize import canonicalize_name
+from counter_risk.parsers._xlsx_reader import coerce_accounting_float
 
 _TARGET_SHEET_NAME = "Exposure Maturity Summary"
 _REQUIRED_HEADERS: tuple[str, ...] = (
@@ -93,22 +94,7 @@ def _normalize_text(value: Any) -> str:
 
 
 def _coerce_float(value: Any) -> float:
-    if value is None:
-        return 0.0
-    if isinstance(value, (int, float)):
-        return float(value)
-
-    text = _normalize_text(value)
-    if not text or text in {"-", "--", "N/A", "n/a"}:
-        return 0.0
-    if text.startswith("(") and text.endswith(")"):
-        text = f"-{text[1:-1]}"
-
-    cleaned = text.replace(",", "").replace("$", "")
-    try:
-        return float(cleaned)
-    except ValueError as exc:
-        raise ValueError(f"Unable to parse numeric cell value: {value!r}") from exc
+    return coerce_accounting_float(value, strip_percent=False)
 
 
 def _build_header_map(worksheet: Any, *, header_row: int) -> dict[str, int]:

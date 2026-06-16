@@ -225,11 +225,24 @@ def _collect_validation_findings(
     has_breaches = bool(limit_breach_summary.get("has_breaches"))
     breach_count = _safe_int(limit_breach_summary.get("breach_count", 0))
     if has_breaches and breach_count > 0:
+        fail_breach_count = _safe_int(limit_breach_summary.get("fail_breach_count", 0))
+        max_severity = str(limit_breach_summary.get("max_severity", "")).strip().casefold()
+        severity = "fail" if fail_breach_count > 0 or max_severity == "fail" else None
+        fail_detail = (
+            f" including {fail_breach_count} fail-severity"
+            f" breach{'es' if fail_breach_count != 1 else ''}"
+            if severity == "fail" and fail_breach_count > 0
+            else ""
+        )
         findings.append(
             _make_finding(
                 category="limits",
                 code="LIMIT_BREACHES",
-                message=f"Detected {breach_count} limit breach{'es' if breach_count != 1 else ''}.",
+                message=(
+                    f"Detected {breach_count} limit breach"
+                    f"{'es' if breach_count != 1 else ''}{fail_detail}."
+                ),
+                severity=severity,
             )
         )
 
@@ -383,10 +396,18 @@ def _derive_overall_status(counts: dict[str, Any]) -> str:
     return "info"
 
 
-def _make_finding(*, category: str, code: str, message: str) -> dict[str, str]:
+def _make_finding(
+    *,
+    category: str,
+    code: str,
+    message: str,
+    severity: str | None = None,
+) -> dict[str, str]:
     return {
         "category": category,
-        "severity": _classify_severity(message=message, code=code),
+        "severity": (
+            severity if severity in _SEVERITIES else _classify_severity(message=message, code=code)
+        ),
         "code": code,
         "message": message,
     }

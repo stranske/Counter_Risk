@@ -27,6 +27,9 @@ import yaml
 
 from counter_risk.compute import compute_risk_proxies
 from counter_risk.compute.limits import (
+    _COUNTERPARTY_GRANULARITY,
+    _FUTURES_GRANULARITY,
+    _LIMIT_GRANULARITY_KEY,
     check_limits,
     find_missing_limit_entities,
     write_limit_breaches_csv,
@@ -127,22 +130,16 @@ def reconcile_series_coverage(
         Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
     ) = None,
     fail_policy: Literal["warn", "strict"] = "warn",
+    counterparty_resolver: Callable[[str], Any] = normalize_counterparty_with_source,
 ) -> dict[str, Any]:
-    reconciliation_globals = _reconcile_series_coverage.__globals__
-    original = reconciliation_globals.get("normalize_counterparty_with_source")
-    reconciliation_globals["normalize_counterparty_with_source"] = (
-        normalize_counterparty_with_source
+    return _reconcile_series_coverage(
+        parsed_data_by_sheet=parsed_data_by_sheet,
+        historical_series_headers_by_sheet=historical_series_headers_by_sheet,
+        variant=variant,
+        expected_segments_by_variant=expected_segments_by_variant,
+        fail_policy=fail_policy,
+        counterparty_resolver=counterparty_resolver,
     )
-    try:
-        return _reconcile_series_coverage(
-            parsed_data_by_sheet=parsed_data_by_sheet,
-            historical_series_headers_by_sheet=historical_series_headers_by_sheet,
-            variant=variant,
-            expected_segments_by_variant=expected_segments_by_variant,
-            fail_policy=fail_policy,
-        )
-    finally:
-        reconciliation_globals["normalize_counterparty_with_source"] = original
 
 
 if TYPE_CHECKING:
@@ -671,6 +668,8 @@ def run_pipeline(
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=manifest_write run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during manifest generation stage") from exc
+
+    _raise_for_fail_limit_breaches(limit_breach_summary, run_dir=run_dir)
 
     LOGGER.info("pipeline_complete run_dir=%s manifest=%s", run_dir, manifest_path)
 
@@ -2220,6 +2219,7 @@ def _build_limit_exposure_rows(
                 notional = 0.0
             rows.append(
                 {
+                    _LIMIT_GRANULARITY_KEY: _COUNTERPARTY_GRANULARITY,
                     "variant": variant,
                     "counterparty": counterparty,
                     "notional": notional,
@@ -2234,6 +2234,7 @@ def _build_limit_exposure_rows(
                 notional = 0.0
 
             exposure_row: dict[str, Any] = {
+                _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
                 "variant": variant,
                 "notional": notional,
             }
@@ -2361,6 +2362,27 @@ def _append_limit_breach_warning_to_manifest_warnings(
     if not has_breaches or not isinstance(warning_banner, str) or not warning_banner.strip():
         return
     warnings.append(f"Limit breach summary: {warning_banner.strip()}")
+
+
+def _raise_for_fail_limit_breaches(
+    limit_breach_summary: Mapping[str, Any], *, run_dir: Path
+) -> None:
+    try:
+        fail_breach_count = int(limit_breach_summary.get("fail_breach_count") or 0)
+    except (TypeError, ValueError):
+        fail_breach_count = 0
+    if fail_breach_count <= 0:
+        return
+
+    plurality = "breach" if fail_breach_count == 1 else "breaches"
+    report_path = limit_breach_summary.get("report_path")
+    if isinstance(report_path, str) and report_path:
+        report_detail = f" Review {(run_dir / report_path).resolve()}."
+    else:
+        report_detail = ""
+    raise RuntimeError(
+        f"Fail-severity limit {plurality} detected: {fail_breach_count}.{report_detail}"
+    )
 
 
 def _build_limit_warning_banner_for_run_dir(run_dir: Path) -> RunFolderWarningBanner | None:

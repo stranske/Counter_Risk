@@ -232,10 +232,6 @@ def test_reconciliation_sources_differ_between_before_and_after_registry(
             captured_sources.append(resolution.source)
             return resolution
 
-        monkeypatch.setattr(
-            "counter_risk.pipeline.run.normalize_counterparty_with_source",
-            _capture_source,
-        )
         reconcile_series_coverage(
             parsed_data_by_sheet={
                 "Total": {
@@ -244,6 +240,7 @@ def test_reconciliation_sources_differ_between_before_and_after_registry(
                 }
             },
             historical_series_headers_by_sheet={"Total": ("Soc Gen Inc",)},
+            counterparty_resolver=_capture_source,
         )
         return captured_sources
 

@@ -38,6 +38,7 @@ dependencies = [
     "pandas>=2.3,<4",
     "langchain-openai>=1.1.14,<2",
     "langchain-anthropic>=1.4.2,<2",
+    "pywin32>=306; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]

@@ -7,7 +7,11 @@ from pathlib import Path
 
 import pytest
 
-from counter_risk.runtime_paths import RuntimePathResolutionError, resolve_runtime_path
+from counter_risk.runtime_paths import (
+    RuntimePathResolutionError,
+    resolve_default_output_root,
+    resolve_runtime_path,
+)
 
 
 def test_resolve_runtime_path_keeps_relative_path_when_not_frozen() -> None:
@@ -118,3 +122,18 @@ def test_resolve_runtime_path_raises_when_frozen_has_no_bundle_roots(
     message = str(excinfo.value)
     assert "No bundle roots were discovered" in message
     assert "COUNTER_RISK_BUNDLE_ROOT" in message
+
+
+def test_default_output_root_is_cwd_relative_when_not_frozen(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(sys, "frozen", False, raising=False)
+    assert resolve_default_output_root() == Path("runs")
+
+
+def test_default_output_root_sits_next_to_executable_when_frozen(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "dist" / "counter-risk"), raising=False)
+    assert resolve_default_output_root() == (tmp_path / "dist" / "runs")
