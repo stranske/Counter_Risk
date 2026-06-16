@@ -1,9 +1,12 @@
 # Counter_Risk audit-fix implementation — summary
 
-Branch: **`audit-fixes`** (local only, NOT pushed). Base: `main`. 7 commits.
+Branch: **`audit-fixes`** → PR https://github.com/stranske/Counter_Risk/pull/732. Base: `main`.
+
+**All 27 audit items now implemented** (the 3 initially-deferred MINORs were completed in a follow-up
+once the name-registry regression was understood — see below).
 
 ## Test & lint state (final)
-- Broad suite (`-m "not slow and not release"`, parallel): **1329 passed, 1 failed, 1 skipped**.
+- Broad suite (`-m "not slow and not release"`, parallel): **1333 passed, 1 failed, 1 skipped**.
 - The 1 failure — `tests/test_pptx_replacement_workflow.py::test_replacement_workflow_near_match_slide_remains_unchanged`
   — **also fails on `main`** (image-hash mismatch; environment-dependent rendering on macOS/Pillow). It is
   **pre-existing**, not introduced by these changes.
@@ -24,9 +27,13 @@ Branch: **`audit-fixes`** (local only, NOT pushed). Base: `main`. 7 commits.
 ## BLOCKERs: all 7 addressed
 #1 frozen-config · #2 denominator · #3 fail→RED · #4 HHI · #6 xlsm buttons · #7 GUI-crash · #13 fail→halt
 
-## Deferred (documented, low value/high risk)
-- **#22** unify YAML loaders — reverted: byte-faithful refactor that reproducibly broke 5 limit tests; MINOR dedup, not worth the regression.
-- **#24 output_root frozen default** and **#25 remove `enable_llm_logging`** — coupled to the reverted config.py refactor; dropped with #22. Both MINOR.
+## Follow-up: previously-deferred MINORs (now done) — commit `2bab544`
+- **#22** unify YAML loaders into `counter_risk.yaml_utils.load_yaml_model` (config/limits/name-registry).
+  Initially reverted because it appeared to break 5 limit tests — but that was a **confound**: the failures
+  were the name-registry CWD bug (`f482538`), not the loader. With that fixed, the shared loader applies
+  cleanly and now gives consistent duplicate-key rejection across all three configs (added regression tests).
+- **#24** `output_root` defaults via `resolve_default_output_root` (next to the exe when frozen).
+- **#25** removed dead `WorkflowConfig.enable_llm_logging`.
 
 ## Verification notes / caveats
 - **#6 Runner.xlsm**: verified valid OOXML, `openpyxl.load_workbook(keep_vba=True)` succeeds, `vbaProject.bin` byte-identical, 45 runner/VBA tests pass. Two labels ("Dry-Run Discovery", "Ask about this run") have no existing VBA handler so get no button. **Final click-test requires opening in desktop Excel on Windows** (cannot be verified from macOS/headless).
