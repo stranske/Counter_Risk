@@ -89,7 +89,14 @@ markers = [
 
 [tool.coverage.run]
 source = ["src"]
-branch = true
+# Line coverage only (branch coverage dropped) so coverage can use CPython
+# 3.12+'s sys.monitoring backend below. The default C-trace (sys.settrace)
+# backend roughly doubled the coverage-enabled main-push CI run over the
+# numeric/pandas-heavy + full-pipeline tests; sysmon cuts that overhead, but
+# in coverage 7.14 sysmon cannot measure branches (it silently falls back to
+# C-trace when branch=true). Trade-off accepted: faster CI, line-only metric.
+branch = false
+core = "sysmon"
 
 [tool.coverage.report]
 exclude_lines = [
