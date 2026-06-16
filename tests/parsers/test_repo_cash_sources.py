@@ -277,4 +277,3 @@ def test_load_repo_cash_with_utf8_bom(tmp_path: Path) -> None:
     values = load_repo_cash_structured_source(source_path, source_type="csv")
     assert values["CIBC"] == 1.0
     assert values["ASL"] == 2.0
-

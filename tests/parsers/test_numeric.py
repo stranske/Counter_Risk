@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-import math
 
 from counter_risk.parsers._xlsx_reader import coerce_accounting_float
 

@@ -137,7 +137,9 @@ def _cell_coordinates(cell_ref: str) -> tuple[int, int]:
 
 
 def _runner_sheet_xml(validation_formula: str) -> str:
-    action_cells = "\n      ".join(_inline_str_cell(cell_ref, caption) for cell_ref, caption in _ACTION_CELLS)
+    action_cells = "\n      ".join(
+        _inline_str_cell(cell_ref, caption) for cell_ref, caption in _ACTION_CELLS
+    )
     return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -247,9 +249,7 @@ def _settings_sheet_xml() -> str:
 
 def _config_sheet_xml() -> str:
     rows = [
-        '<row r="1">'
-        + _inline_str_cell("A1", "Counter Risk - File Path Configuration")
-        + "</row>",
+        '<row r="1">' + _inline_str_cell("A1", "Counter Risk - File Path Configuration") + "</row>",
         '<row r="2">'
         + _inline_str_cell(
             "A2", "Enter full Windows paths in column B. Leave blank to use config/*.yml defaults."

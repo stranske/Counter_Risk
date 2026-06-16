@@ -34,6 +34,7 @@ class CprsFcmError(ValueError):
 class CprsFcmColumnsMissingError(CprsFcmError):
     """Exception raised when required column headers are missing in the CPRS-FCM sheet."""
 
+
 _XML_NS = {
     "main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
     "pkg": "http://schemas.openxmlformats.org/package/2006/relationships",
@@ -462,4 +463,3 @@ def _to_dataframe(
 
     df = df.loc[:, list(columns)]
     return df.astype(dtypes)
-

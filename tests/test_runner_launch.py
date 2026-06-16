@@ -438,7 +438,6 @@ def test_data_quality_status_label_returns_empty_for_unknown_color() -> None:
 
 
 def test_format_gui_run_failure_maps_validation_errors() -> None:
-    from counter_risk.runner_launch import format_gui_run_failure
 
     message = format_gui_run_failure(
         exit_code=2,

@@ -335,7 +335,9 @@ class _DiscoveryPromptBridge:
             justify="left",
         ).pack(fill="x", padx=12, pady=(12, 4))
 
-        listbox = self._tk.Listbox(dialog, width=72, height=min(len(matches), 8), exportselection=False)
+        listbox = self._tk.Listbox(
+            dialog, width=72, height=min(len(matches), 8), exportselection=False
+        )
         for index, match in enumerate(matches, start=1):
             listbox.insert("end", f"[{index}] {match.path}")
         listbox.selection_set(0)
@@ -457,7 +459,9 @@ def launch_gui(
         result_var.set(result.error_message or f"Exit code {result.exit_code}")
         quality_var.set("")
         limit_banner_var.set("None")
-        _show_operator_error("Counter Risk Runner", result.error_message or f"Exit code {result.exit_code}")
+        _show_operator_error(
+            "Counter Risk Runner", result.error_message or f"Exit code {result.exit_code}"
+        )
 
     def _run_worker(*, dry_run_discovery: bool) -> None:
         prompt_token = set_discovery_selection_prompt(discovery_prompt_bridge)

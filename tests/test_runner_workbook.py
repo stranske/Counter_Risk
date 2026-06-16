@@ -24,7 +24,9 @@ X14_NS = "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main"
 
 CTRL_PROP_CONTENT_TYPE = "application/vnd.ms-excel.controlproperties+xml"
 CTRL_PROP_REL_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/ctrlProp"
-VML_DRAWING_REL_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing"
+VML_DRAWING_REL_TYPE = (
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing"
+)
 
 NAMESPACES = {
     "ss": SPREADSHEET_NS,
@@ -180,7 +182,9 @@ def test_runner_workbook_has_required_ooxml_structure_and_content_types() -> Non
             == "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"
         )
         for *_, ctrl_prop_name in EXPECTED_RUNNER_BUTTONS.values():
-            assert override_content_types[f"/xl/ctrlProps/{ctrl_prop_name}"] == CTRL_PROP_CONTENT_TYPE
+            assert (
+                override_content_types[f"/xl/ctrlProps/{ctrl_prop_name}"] == CTRL_PROP_CONTENT_TYPE
+            )
 
         with zip_file.open("xl/vbaProject.bin") as handle:
             vba_project = handle.read()
@@ -343,9 +347,13 @@ def test_runner_workbook_contains_run_controls() -> None:
         assert len(vml_shapes) == len(EXPECTED_RUNNER_BUTTONS)
         vml_shape_by_id = {shape.attrib["id"]: shape for shape in vml_shapes}
 
-        for cell_ref, (caption, macro, shape_id, relationship_id, ctrl_prop_name) in (
-            EXPECTED_RUNNER_BUTTONS.items()
-        ):
+        for cell_ref, (
+            caption,
+            macro,
+            shape_id,
+            relationship_id,
+            ctrl_prop_name,
+        ) in EXPECTED_RUNNER_BUTTONS.items():
             control = controls_by_caption[caption]
             assert control.attrib["shapeId"] == str(shape_id)
             assert control.attrib[f"{{{RELATIONSHIP_NS}}}id"] == relationship_id

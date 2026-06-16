@@ -64,6 +64,6 @@ def test_pywin32_declared_as_windows_only_dependency() -> None:
     assert pywin32_entries, "pywin32 must be listed in [project.dependencies]"
 
     entry = pywin32_entries[0].lower()
-    assert "sys_platform" in entry and "win32" in entry, (
-        f"pywin32 entry must carry a sys_platform == 'win32' marker; got: {pywin32_entries[0]!r}"
-    )
+    assert (
+        "sys_platform" in entry and "win32" in entry
+    ), f"pywin32 entry must carry a sys_platform == 'win32' marker; got: {pywin32_entries[0]!r}"

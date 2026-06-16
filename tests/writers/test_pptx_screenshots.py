@@ -144,9 +144,7 @@ def test_replace_screenshot_pictures_reports_geometry_mismatch(tmp_path: Path) -
 
     presentation = Presentation(str(source))
     all_programs_slide = presentation.slides[0]
-    picture = next(
-        shape for shape in all_programs_slide.shapes if shape.shape_type == 13
-    )
+    picture = next(shape for shape in all_programs_slide.shapes if shape.shape_type == 13)
     picture.top = picture.top + 250_000
     presentation.save(str(source))
 

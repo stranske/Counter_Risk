@@ -18,9 +18,9 @@ from counter_risk.io.discover import (
     discover_raw_nisa_monthly_files,
     discover_templates_and_historical_files,
     non_interactive_discovery_prompt,
+    reset_discovery_selection_prompt,
     resolve_discovery_selections,
     set_discovery_selection_prompt,
-    reset_discovery_selection_prompt,
 )
 
 

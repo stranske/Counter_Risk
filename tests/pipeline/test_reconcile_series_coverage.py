@@ -80,17 +80,13 @@ def test_reconcile_series_coverage_accepts_counterparty_resolver_injection() -> 
         return _Resolution()
 
     result = reconcile_series_coverage(
-        parsed_data_by_sheet={
-            "Total": {"totals": [{"counterparty": "Raw Bank"}], "futures": []}
-        },
+        parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "Raw Bank"}], "futures": []}},
         historical_series_headers_by_sheet={"Total": ("Injected Bank",)},
         counterparty_resolver=_resolver,
     )
 
     assert captured == ["Raw Bank"]
-    assert result["by_sheet"]["Total"]["normalized_counterparties_in_data"] == [
-        "Injected Bank"
-    ]
+    assert result["by_sheet"]["Total"]["normalized_counterparties_in_data"] == ["Injected Bank"]
     assert result["by_sheet"]["Total"]["missing_normalized_counterparties"] == []
 
 

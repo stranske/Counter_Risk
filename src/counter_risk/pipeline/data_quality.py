@@ -405,8 +405,8 @@ def _make_finding(
 ) -> dict[str, str]:
     return {
         "category": category,
-        "severity": severity if severity in _SEVERITIES else _classify_severity(
-            message=message, code=code
+        "severity": (
+            severity if severity in _SEVERITIES else _classify_severity(message=message, code=code)
         ),
         "code": code,
         "message": message,

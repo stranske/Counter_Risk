@@ -73,7 +73,10 @@ def _geometry_within_tolerance(
     *,
     tolerance: int = _EMU_GEOMETRY_TOLERANCE,
 ) -> bool:
-    return all(abs(actual_value - expected_value) <= tolerance for actual_value, expected_value in zip(actual, expected, strict=True))
+    return all(
+        abs(actual_value - expected_value) <= tolerance
+        for actual_value, expected_value in zip(actual, expected, strict=True)
+    )
 
 
 def _slide_matches_expected_picture_geometry(slide: Slide, section_key: str) -> bool:

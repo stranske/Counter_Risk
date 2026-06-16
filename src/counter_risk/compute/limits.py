@@ -137,9 +137,7 @@ def _denominator_rows_for_entity_type(
     tagged_rows = [row for row in rows if _row_granularity(row) is not None]
     if tagged_rows:
         target_granularity = _ENTITY_GRANULARITY[entity_type]
-        return [
-            row for row in rows if _row_granularity(row) == target_granularity
-        ]
+        return [row for row in rows if _row_granularity(row) == target_granularity]
 
     aliases = _ENTITY_COLUMN_ALIASES[entity_type]
     return [row for row in rows if _find_entity_name(row, aliases) is not None]

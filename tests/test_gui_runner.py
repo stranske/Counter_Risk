@@ -18,9 +18,9 @@ from counter_risk.io.discover import (
     DiscoveryResult,
     DiscoverySelectionRequiredError,
     non_interactive_discovery_prompt,
+    reset_discovery_selection_prompt,
     resolve_discovery_selections,
     set_discovery_selection_prompt,
-    reset_discovery_selection_prompt,
 )
 from counter_risk.runner_launch import resolve_ppt_output_dir
 

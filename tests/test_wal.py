@@ -124,7 +124,6 @@ def test_calculate_wal_nan_exposure_fails(tmp_path: Path) -> None:
         calculate_wal(workbook3, "2026-01-31")
 
 
-
 def _create_exposure_summary_workbook(
     path: Path, rows: list[tuple[Any, Any, Any, Any]], *, header_row: int = 1
 ) -> Path:

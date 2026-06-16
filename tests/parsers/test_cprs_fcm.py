@@ -205,14 +205,14 @@ def test_parse_fcm_with_shifted_columns(tmp_path: Path) -> None:
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "CPRS - FCM"
-    
+
     # Write totals header shifted right by 1 (starts at column 4)
     sheet.cell(row=4, column=4).value = "Position"
     sheet.cell(row=5, column=4).value = "Counterparty/ FCM"
     sheet.cell(row=5, column=7).value = "Nominal"
     sheet.cell(row=5, column=12).value = "12/31 Total"
     sheet.cell(row=5, column=13).value = "Notional change"
-    
+
     sheet.cell(row=6, column=6).value = "TIPS"
     sheet.cell(row=6, column=7).value = "Treasury"
     sheet.cell(row=6, column=8).value = "Equity"
@@ -220,17 +220,19 @@ def test_parse_fcm_with_shifted_columns(tmp_path: Path) -> None:
     sheet.cell(row=6, column=10).value = "Currency"
     sheet.cell(row=6, column=12).value = "Notional"
     sheet.cell(row=6, column=13).value = "from prior month"
-    
+
     # Data row
     sheet.cell(row=12, column=3).value = "Futures"
     sheet.cell(row=12, column=4).value = "Morgan Stanley"
     sheet.cell(row=12, column=6).value = "10.0"
     sheet.cell(row=12, column=7).value = "20.0"
     sheet.cell(row=12, column=12).value = "100.0"
-    
+
     # Section marker
-    sheet.cell(row=10, column=4).value = "Total by Counterparty/ FCM (This is not the legal obligation exposure)"
-    
+    sheet.cell(row=10, column=4).value = (
+        "Total by Counterparty/ FCM (This is not the legal obligation exposure)"
+    )
+
     # Futures Detail header
     sheet.cell(row=23, column=4).value = "FUTURES DETAIL"
     sheet.cell(row=24, column=4).value = "Account"
@@ -239,7 +241,7 @@ def test_parse_fcm_with_shifted_columns(tmp_path: Path) -> None:
     sheet.cell(row=24, column=9).value = "FCM"
     sheet.cell(row=24, column=10).value = "Clearing House"
     sheet.cell(row=24, column=13).value = "Notional"
-    
+
     # Futures Detail data row
     sheet.cell(row=25, column=4).value = "Acct1"
     sheet.cell(row=25, column=6).value = "WTI CRUDE"
@@ -247,13 +249,13 @@ def test_parse_fcm_with_shifted_columns(tmp_path: Path) -> None:
     sheet.cell(row=25, column=9).value = "Morgan Stanley"
     sheet.cell(row=25, column=10).value = "CME"
     sheet.cell(row=25, column=13).value = "50.0"
-    
+
     # Footer marker
     sheet.cell(row=26, column=4).value = "risk exclusive of the trend positions"
-    
+
     workbook.save(workbook_path)
     workbook.close()
-    
+
     df_totals = parse_fcm_totals(workbook_path)
     assert not df_totals.empty
     assert df_totals.iloc[0]["counterparty"] == "Morgan Stanley"
@@ -266,4 +268,3 @@ def test_parse_fcm_with_shifted_columns(tmp_path: Path) -> None:
     assert df_detail.iloc[0]["account"] == "Acct1"
     assert df_detail.iloc[0]["description"] == "WTI CRUDE"
     assert df_detail.iloc[0]["notional"] == 50.0
-
