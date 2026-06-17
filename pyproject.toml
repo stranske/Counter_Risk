@@ -44,7 +44,7 @@ dependencies = [
 [project.optional-dependencies]
 app = []
 dev = [
-    "pytest==9.0.3",
+    "pytest==9.1.0",
     "pytest-cov==7.1.0",
     "pytest-xdist==3.8.0",
     "pandas>=2.3,<4",
@@ -55,7 +55,7 @@ dev = [
     "pytest-regressions==2.11.0",
     "numpy>=2.0,<3",
     "black>=26.5.1",
-    "ruff>=0.15.14",
+    "ruff==0.15.17",
     "mypy==2.1.0",
     "types-PyYAML==6.0.12.20260518",
     # Required by scripts/sync_test_dependencies.py when --fix is needed in CI
