@@ -279,10 +279,7 @@ ScreenshotReplacer = Callable[[Path, Path, dict[str, Path]], None]
 
 
 def _date_resolution_fallback_warning(source: str) -> str:
-    return (
-        "date derivation fallback: as_of_date inferred from workbook headers "
-        f"(source={source})"
-    )
+    return f"date derivation fallback: as_of_date inferred from workbook headers (source={source})"
 
 
 def run_pipeline_with_config(
