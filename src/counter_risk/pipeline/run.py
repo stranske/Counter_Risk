@@ -40,7 +40,7 @@ from counter_risk.compute.rollups import (
     write_concentration_metrics_csv,
 )
 from counter_risk.config import WorkflowConfig, load_config
-from counter_risk.dates import resolve_as_of_date, resolve_run_date
+from counter_risk.dates import AS_OF_SOURCE_CONFIG, resolve_as_of_date, resolve_run_date
 from counter_risk.formatting import normalize_formatting_profile, resolve_formatting_policy
 from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
@@ -278,6 +278,13 @@ class LimitBreachEvaluation:
 ScreenshotReplacer = Callable[[Path, Path, dict[str, Path]], None]
 
 
+def _date_resolution_fallback_warning(source: str) -> str:
+    return (
+        "date derivation fallback: as_of_date inferred from workbook headers "
+        f"(source={source})"
+    )
+
+
 def run_pipeline_with_config(
     config: WorkflowConfig,
     *,
@@ -432,6 +439,8 @@ def run_pipeline(
         raise RuntimeError("Pipeline failed during run directory setup stage") from exc
 
     warnings: list[str] = []
+    if as_of_date_resolution.source != AS_OF_SOURCE_CONFIG:
+        warnings.append(_date_resolution_fallback_warning(as_of_date_resolution.source))
     resolved_formatting_profile = normalize_formatting_profile(formatting_profile)
     _append_missing_inputs_warnings(missing_inputs=missing_inputs, warnings=warnings)
     runtime_config = config
