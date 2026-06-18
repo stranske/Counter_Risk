@@ -55,7 +55,7 @@ dev = [
     "pytest-regressions==2.11.0",
     "numpy>=2.0,<3",
     "black>=26.5.1",
-    "ruff==0.15.17",
+    "ruff==0.15.18",
     "mypy==2.1.0",
     "types-PyYAML==6.0.12.20260518",
     # Required by scripts/sync_test_dependencies.py when --fix is needed in CI
