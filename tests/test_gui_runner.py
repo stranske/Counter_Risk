@@ -323,7 +323,22 @@ def test_gui_runner_input_guidance(tmp_path: Path) -> None:
     assert f"Input Root not found: {missing_inputs}" in message
     assert "Browse..." in message
     assert "select this month's input folder" in message
-    assert "source workbooks or exports" in message
+    assert "exposure, collateral, counterparty, and policy/reference files" in message
+
+
+def test_gui_runner_default_input_root_shows_getting_started_hint(tmp_path: Path) -> None:
+    runs = tmp_path / "runs"
+    runs.mkdir()
+
+    valid, message = gui_runner._validate_path_roots(
+        GuiRunState(as_of_date="2025-12-31", input_root="inputs", output_root=str(runs))
+    )
+
+    assert valid is False
+    assert message.startswith("Getting started:")
+    assert "Input Root not found" not in message
+    assert "Browse..." in message
+    assert "exposure, collateral, counterparty, and policy/reference files" in message
 
 
 def test_gui_runner_field_help() -> None:
