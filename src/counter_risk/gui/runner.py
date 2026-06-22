@@ -196,21 +196,42 @@ def _build_cli_args(
 
 
 def _validate_path_roots(state: GuiRunState) -> tuple[bool, str]:
-    input_root = Path(state.input_root.strip() or "inputs")
+    raw_input_root = state.input_root.strip()
+    input_root = Path(raw_input_root or "inputs")
     output_root = Path(state.output_root.strip() or "runs")
     if not input_root.is_dir():
+        if _is_default_input_root(raw_input_root, input_root):
+            return False, _format_getting_started_input_root_message()
         return False, _format_missing_input_root_message(input_root)
     if not output_root.is_dir():
         return False, f"Output Root not found: {output_root}"
     return True, ""
 
 
+def _is_default_input_root(raw_input_root: str, input_root: Path) -> bool:
+    return raw_input_root in {"", "inputs"} and input_root == Path("inputs")
+
+
+def _input_root_layout_hint() -> str:
+    return (
+        "Expected inputs include this month's Counter Risk source workbooks or exports, "
+        "with exposure, collateral, counterparty, and policy/reference files in the "
+        "normal runner input layout."
+    )
+
+
+def _format_getting_started_input_root_message() -> str:
+    return (
+        "Getting started: use Browse... to select this month's input folder before running. "
+        f"{_input_root_layout_hint()}"
+    )
+
+
 def _format_missing_input_root_message(input_root: Path) -> str:
     return (
         f"Input Root not found: {input_root}\n"
         "Use Browse... to select this month's input folder. "
-        "The folder should contain the Counter Risk source workbooks or exports "
-        "for the selected as-of month, using the normal input layout processed by the runner."
+        f"{_input_root_layout_hint()}"
     )
 
 
