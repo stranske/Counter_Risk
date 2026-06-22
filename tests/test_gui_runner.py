@@ -306,6 +306,26 @@ def test_validate_path_roots_requires_existing_directories(tmp_path: Path) -> No
     assert "Input Root not found" in message
 
 
+def test_gui_runner_input_guidance(tmp_path: Path) -> None:
+    runs = tmp_path / "runs"
+    runs.mkdir()
+    missing_inputs = tmp_path / "missing-inputs"
+
+    valid, message = gui_runner._validate_path_roots(
+        GuiRunState(
+            as_of_date="2025-12-31",
+            input_root=str(missing_inputs),
+            output_root=str(runs),
+        )
+    )
+
+    assert valid is False
+    assert f"Input Root not found: {missing_inputs}" in message
+    assert "Browse..." in message
+    assert "select this month's input folder" in message
+    assert "source workbooks or exports" in message
+
+
 def test_headless_discover_resolution_never_calls_stdin_input(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

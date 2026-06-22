@@ -178,10 +178,19 @@ def _validate_path_roots(state: GuiRunState) -> tuple[bool, str]:
     input_root = Path(state.input_root.strip() or "inputs")
     output_root = Path(state.output_root.strip() or "runs")
     if not input_root.is_dir():
-        return False, f"Input Root not found: {input_root}"
+        return False, _format_missing_input_root_message(input_root)
     if not output_root.is_dir():
         return False, f"Output Root not found: {output_root}"
     return True, ""
+
+
+def _format_missing_input_root_message(input_root: Path) -> str:
+    return (
+        f"Input Root not found: {input_root}\n"
+        "Use Browse... to select this month's input folder. "
+        "The folder should contain the Counter Risk source workbooks or exports "
+        "for the selected as-of month, using the normal input layout processed by the runner."
+    )
 
 
 def execute_gui_run(
