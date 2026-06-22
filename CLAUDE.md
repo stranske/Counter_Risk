@@ -93,6 +93,19 @@ If yes:
 - `stranske/Workflows/docs/keepalive/Agents.md`
 - `stranske/Travel-Plan-Permission` as a reference consumer
 
+<!-- BEGIN orch-playbook -->
+<!-- exported by repo_knowledge.py; owner: Orchestrator; freshness owner: keepalive -->
+
+## Orchestrator Repo Playbook (stranske/Counter_Risk)
+
+- Summary: Counter_Risk has repo-specific formatting expectations.
+
+### Known Gotchas
+
+- Use Black for formatting checks; do not substitute ruff format unless the repo config explicitly changes. (tasks: mechanical, implement, testgen)
+
+<!-- END orch-playbook -->
+
 ## Claude-Specific Note
 
 Keep this file materially aligned with `AGENTS.md`. Differences between the two should only be agent-specific execution notes, not different repository rules.

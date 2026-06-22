@@ -97,10 +97,15 @@ If yes:
 
 This file is the agent-generic contract. Keep it materially aligned with `CLAUDE.md`; differences between the two should only be agent-specific execution notes, not different repository rules.
 
-<!-- ORCHESTRATOR_REPO_KNOWLEDGE_START -->
+<!-- BEGIN orch-playbook -->
 <!-- exported by repo_knowledge.py; owner: Orchestrator; freshness owner: keepalive -->
+
 ## Orchestrator Repo Playbook (stranske/Counter_Risk)
+
 - Summary: Counter_Risk has repo-specific formatting expectations.
+
 ### Known Gotchas
+
 - Use Black for formatting checks; do not substitute ruff format unless the repo config explicitly changes. (tasks: mechanical, implement, testgen)
-<!-- ORCHESTRATOR_REPO_KNOWLEDGE_END -->
+
+<!-- END orch-playbook -->
