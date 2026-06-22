@@ -326,6 +326,19 @@ def test_gui_runner_input_guidance(tmp_path: Path) -> None:
     assert "source workbooks or exports" in message
 
 
+def test_gui_runner_field_help() -> None:
+    field_help = gui_runner.get_gui_field_help()
+
+    required_fields = ("Mode", "Discovery Mode", "Strict Policy", "Formatting Profile")
+    for field in required_fields:
+        assert field_help[field].strip()
+
+    assert "routine monthly run" in field_help["Mode"]
+    assert "searches the selected input folder" in field_help["Discovery Mode"]
+    assert "stops when a required policy check fails" in field_help["Strict Policy"]
+    assert "PowerPoint" in field_help["Formatting Profile"]
+
+
 def test_headless_discover_resolution_never_calls_stdin_input(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

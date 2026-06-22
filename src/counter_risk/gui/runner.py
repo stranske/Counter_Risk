@@ -40,6 +40,27 @@ _RUN_MODE_TO_CONFIG: dict[str, str] = {
     "trend": "config/trend.yml",
 }
 
+_GUI_FIELD_HELP: dict[str, str] = {
+    "Mode": "Use All for the routine monthly run; Ex-Trend and Trend run only those report groups.",
+    "Discovery Mode": (
+        "Manual uses the normal saved input layout. Discover searches the selected input folder "
+        "for matching files when names vary."
+    ),
+    "Strict Policy": (
+        "Warn lets the run finish while flagging policy issues. Strict stops when a required "
+        "policy check fails."
+    ),
+    "Formatting Profile": (
+        "Use default for standard Counter Risk output. Other profiles apply known historical "
+        "PowerPoint and PNG formatting variants."
+    ),
+}
+
+
+def get_gui_field_help() -> dict[str, str]:
+    """Return operator-facing help text for non-obvious GUI fields."""
+    return dict(_GUI_FIELD_HELP)
+
 
 @dataclass(frozen=True)
 class GuiRunState:
@@ -610,6 +631,7 @@ def launch_gui(
         ("Input Root", input_root_var, "input_root"),
         ("Output Root", output_root_var, "output_root"),
     )
+    field_help = get_gui_field_help()
     for row_index, (label, var, field_kind) in enumerate(labels):
         ttk.Label(root, text=label).grid(row=row_index, column=0, sticky="w", padx=8, pady=4)
         if field_kind == "mode":
@@ -649,6 +671,14 @@ def launch_gui(
                 column=1,
                 sticky="ew",
                 padx=8,
+                pady=4,
+            )
+        if label in field_help:
+            ttk.Label(root, text=field_help[label], wraplength=240).grid(
+                row=row_index,
+                column=2,
+                sticky="w",
+                padx=(0, 8),
                 pady=4,
             )
 
