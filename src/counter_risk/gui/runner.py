@@ -41,6 +41,10 @@ _RUN_MODE_TO_CONFIG: dict[str, str] = {
 }
 
 _GUI_FIELD_HELP: dict[str, str] = {
+    "As-Of Date (YYYY-MM-DD)": (
+        "Reporting as-of date (YYYY-MM-DD); defaults to today. Change for restatements "
+        "or off-cycle runs."
+    ),
     "Mode": "Use All for the routine monthly run; Ex-Trend and Trend run only those report groups.",
     "Discovery Mode": (
         "Manual uses the normal saved input layout. Discover searches the selected input folder "
@@ -54,6 +58,11 @@ _GUI_FIELD_HELP: dict[str, str] = {
         "Use default for standard Counter Risk output. Other profiles apply known historical "
         "PowerPoint and PNG formatting variants."
     ),
+    "Input Root": (
+        "Folder containing this month's Counter Risk source workbooks/exports; use Browse... "
+        "to select it."
+    ),
+    "Output Root": "Existing folder where run reports and logs are written.",
 }
 
 
@@ -446,11 +455,12 @@ def launch_gui(
     format_var = tk.StringVar(value=state.formatting_profile)
     input_root_var = tk.StringVar(value=state.input_root)
     output_root_var = tk.StringVar(value=state.output_root)
-    status_var = tk.StringVar(value="Idle")
+    status_var = tk.StringVar(value="Ready")
     result_var = tk.StringVar(value="")
     quality_var = tk.StringVar(value="")
     limit_banner_var = tk.StringVar(value="None")
     path_feedback_var = tk.StringVar(value="")
+    input_root_hint_var = tk.StringVar(value="")
     last_output_dir: Path | None = None
     run_in_progress = False
     discovery_prompt_bridge = _DiscoveryPromptBridge(root, tk)
@@ -474,14 +484,24 @@ def launch_gui(
         run_button.configure(state=run_state)
         dry_run_button.configure(state=run_state)
         if active:
-            status_var.set("Running… this can take a few minutes")
+            status_var.set("Running... this can take a few minutes")
         _refresh_path_feedback()
 
     def _refresh_path_feedback() -> None:
         current = _state_from_form()
         valid, message = _validate_path_roots(current)
+        raw_input_root = current.input_root.strip()
+        input_root = Path(raw_input_root or "inputs")
+        show_launch_hint = (
+            not input_root.is_dir()
+            and _is_default_input_root(raw_input_root, input_root)
+            and not run_in_progress
+        )
+        input_root_hint_var.set(
+            _format_getting_started_input_root_message() if show_launch_hint else ""
+        )
         if run_in_progress:
-            path_feedback_var.set("Run in progress…")
+            path_feedback_var.set("Run in progress...")
             return
         if valid:
             path_feedback_var.set("Paths look good.")
@@ -499,7 +519,7 @@ def launch_gui(
     def _apply_run_result(result: GuiRunResult) -> None:
         nonlocal last_output_dir
         if result.exit_code == 0:
-            status_var.set("Complete")
+            status_var.set("Completed OK")
             result_var.set("Success")
             quality_var.set(result.data_quality_status or "UNAVAILABLE - Summary not found")
             if result.output_dir is not None:
@@ -507,7 +527,7 @@ def launch_gui(
                 limit_banner_var.set(_load_limit_breach_banner(result.output_dir) or "None")
             return
 
-        status_var.set("Error")
+        status_var.set("Failed - see message")
         result_var.set(result.error_message or f"Exit code {result.exit_code}")
         quality_var.set("")
         limit_banner_var.set("None")
@@ -686,6 +706,14 @@ def launch_gui(
                 text="Browse…",
                 command=_browse_command(var),
             ).grid(row=0, column=1, padx=(8, 0))
+            if field_kind == "input_root":
+                ttk.Label(path_row, textvariable=input_root_hint_var, wraplength=320).grid(
+                    row=1,
+                    column=0,
+                    columnspan=2,
+                    sticky="w",
+                    pady=(4, 0),
+                )
         else:
             ttk.Entry(root, textvariable=var, width=42).grid(
                 row=row_index,
@@ -731,7 +759,7 @@ def launch_gui(
         row=11, column=1, padx=8, pady=4, sticky="ew"
     )
 
-    ttk.Label(root, text="Status").grid(row=12, column=0, sticky="w", padx=8, pady=4)
+    ttk.Label(root, text="Run Status").grid(row=12, column=0, sticky="w", padx=8, pady=4)
     ttk.Label(root, textvariable=status_var).grid(row=12, column=1, sticky="w", padx=8, pady=4)
     ttk.Label(root, text="Result").grid(row=13, column=0, sticky="w", padx=8, pady=4)
     ttk.Label(root, textvariable=result_var).grid(row=13, column=1, sticky="w", padx=8, pady=4)
