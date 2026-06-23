@@ -7,10 +7,10 @@ tasks:
     title: Add a small adopter utility (e.g. `theme.py`) that puts `design-system/`
       on `sys.path`, imports `ds_streamlit`, exposes `apply_ds_theme()` -> `ds_streamlit.inject_theme()`,
       and aliases the import if the app already defines `apply_theme`
-    status: doing
+    status: done
     started_at: '2026-06-23T16:08:17Z'
-    finished_at: null
-    commit: ''
+    finished_at: '2026-06-23T16:08:31Z'
+    commit: 6b397934656995b85bb0b8e4a8141b881d82ce44
     notes: []
   - id: task-02
     title: 'Create a new theme.py utility module in the appropriate directory (verify:
