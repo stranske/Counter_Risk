@@ -344,7 +344,15 @@ def test_gui_runner_default_input_root_shows_getting_started_hint(tmp_path: Path
 def test_gui_runner_field_help() -> None:
     field_help = gui_runner.get_gui_field_help()
 
-    required_fields = ("Mode", "Discovery Mode", "Strict Policy", "Formatting Profile")
+    required_fields = (
+        "As-Of Date (YYYY-MM-DD)",
+        "Mode",
+        "Discovery Mode",
+        "Strict Policy",
+        "Formatting Profile",
+        "Input Root",
+        "Output Root",
+    )
     for field in required_fields:
         assert field_help[field].strip()
 
@@ -352,6 +360,9 @@ def test_gui_runner_field_help() -> None:
     assert "searches the selected input folder" in field_help["Discovery Mode"]
     assert "stops when a required policy check fails" in field_help["Strict Policy"]
     assert "PowerPoint" in field_help["Formatting Profile"]
+    assert "Reporting as-of date" in field_help["As-Of Date (YYYY-MM-DD)"]
+    assert "Browse..." in field_help["Input Root"]
+    assert "run reports and logs" in field_help["Output Root"]
 
 
 def test_headless_discover_resolution_never_calls_stdin_input(
@@ -512,6 +523,12 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
         if isinstance(widget, _FakeWidget) and widget.kwargs.get("text") == "Open PPT Folder"
     ]
     assert len(ppt_buttons) == 1
+    status_labels = [
+        widget
+        for widget in widgets
+        if isinstance(widget, _FakeWidget) and widget.kwargs.get("text") == "Run Status"
+    ]
+    assert len(status_labels) == 1
 
     ppt_buttons[0].kwargs["command"]()
 
