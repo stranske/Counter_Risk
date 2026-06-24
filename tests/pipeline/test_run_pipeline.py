@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import os
 import platform
 import re
 import sys
@@ -259,7 +260,10 @@ def _minimal_workflow_config(
     )
 
 
-def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -> None:
+def test_write_langsmith_fleet_artifact_adds_dashboard_records(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _set_ci_pr_number(monkeypatch)
     run_dir = tmp_path / "2025-12-31"
     run_dir.mkdir()
     manifest_path = run_dir / "manifest.json"
@@ -321,6 +325,8 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
     assert all(record["trace_id"] is None for record in records)
     assert all(record["trace_url"] is None for record in records)
     assert all(record["latency_ms"] is None for record in records)
+    if _ci_pr_number() is not None:
+        assert all(record["github_pr"] == _ci_pr_number() for record in records)
     assert all(record["domain"]["shared_metadata"]["run_id"] == "2025-12-31" for record in records)
     assert all(
         record["domain"]["shared_metadata"]["status"] in {"success", "no_secret", "skipped"}
@@ -331,6 +337,47 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(tmp_path: Path) -
     assert limit_record["domain"]["limit_warning_breach_count"] == 0
     assert limit_record["domain"]["limit_fail_breach_count"] == 0
     assert records[-1]["domain"]["report_artifacts"] == ["artifact:manifest.json"]
+    ci_artifact_path = _write_ci_langsmith_fleet_artifact(records)
+    if ci_artifact_path is not None:
+        assert ci_artifact_path.exists()
+        assert len(ci_artifact_path.read_text(encoding="utf-8").splitlines()) == len(records)
+
+
+def test_ci_langsmith_fleet_artifact_writer_uses_canonical_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    run_dir = tmp_path / "2025-12-31"
+    run_dir.mkdir()
+    source_artifact_path = run_module._write_langsmith_fleet_artifact(
+        run_dir=run_dir,
+        as_of_date=date(2025, 12, 31),
+        output_paths=[],
+        warnings=[],
+        concentration_metrics_records=[],
+        risk_proxy_summary={},
+        limit_breach_summary={},
+    )
+    records = [
+        json.loads(line)
+        for line in source_artifact_path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+
+    artifact_path = _write_ci_langsmith_fleet_artifact(records, root=tmp_path)
+
+    assert (
+        artifact_path
+        == tmp_path / "artifacts" / "langsmith" / run_module.LANGSMITH_FLEET_ARTIFACT_NAME
+    )
+    assert len(artifact_path.read_text(encoding="utf-8").splitlines()) == len(records)
+
+
+def test_ci_pr_number_uses_pull_request_ref(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("PR_NUMBER", raising=False)
+    monkeypatch.setenv("GITHUB_REF", "refs/pull/619/merge")
+
+    assert _ci_pr_number() == "619"
 
 
 def test_write_langsmith_fleet_artifact_captures_shared_context_from_env(
@@ -5101,3 +5148,41 @@ def test_apply_chart_replacement_defers_to_full_deck_static_rebuild_on_low_confi
 
     assert result is False
     assert any("deferring to full-deck static rebuild" in w for w in warnings)
+
+
+def _is_github_actions() -> bool:
+    return os.getenv("GITHUB_ACTIONS", "").lower() == "true"
+
+
+def _ci_pr_number() -> str | None:
+    explicit = os.getenv("PR_NUMBER", "").strip()
+    if explicit:
+        return explicit
+    ref = os.getenv("GITHUB_REF", "").strip()
+    prefix = "refs/pull/"
+    if not ref.startswith(prefix):
+        return None
+    number = ref[len(prefix) :].split("/", 1)[0]
+    return number if number.isdigit() else None
+
+
+def _set_ci_pr_number(monkeypatch: pytest.MonkeyPatch) -> None:
+    if os.getenv("PR_NUMBER", "").strip():
+        return
+    pr_number = _ci_pr_number()
+    if pr_number is not None:
+        monkeypatch.setenv("PR_NUMBER", pr_number)
+
+
+def _write_ci_langsmith_fleet_artifact(
+    records: list[dict[str, Any]],
+    *,
+    root: Path | None = None,
+) -> Path | None:
+    if not _is_github_actions():
+        return None
+    repo_root = root or Path.cwd()
+    return run_module.write_fleet_records(
+        repo_root / "artifacts" / "langsmith" / run_module.LANGSMITH_FLEET_ARTIFACT_NAME,
+        records,
+    )
