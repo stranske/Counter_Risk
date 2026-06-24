@@ -263,7 +263,7 @@ def _minimal_workflow_config(
 def test_write_langsmith_fleet_artifact_adds_dashboard_records(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    _set_ci_pr_number(monkeypatch)
+    monkeypatch.setenv("PR_NUMBER", "802")
     run_dir = tmp_path / "2025-12-31"
     run_dir.mkdir()
     manifest_path = run_dir / "manifest.json"
@@ -325,8 +325,7 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(
     assert all(record["trace_id"] is None for record in records)
     assert all(record["trace_url"] is None for record in records)
     assert all(record["latency_ms"] is None for record in records)
-    if _ci_pr_number() is not None:
-        assert all(record["github_pr"] == _ci_pr_number() for record in records)
+    assert all(record["github_pr"] == "802" for record in records)
     assert all(record["domain"]["shared_metadata"]["run_id"] == "2025-12-31" for record in records)
     assert all(
         record["domain"]["shared_metadata"]["status"] in {"success", "no_secret", "skipped"}
@@ -337,7 +336,7 @@ def test_write_langsmith_fleet_artifact_adds_dashboard_records(
     assert limit_record["domain"]["limit_warning_breach_count"] == 0
     assert limit_record["domain"]["limit_fail_breach_count"] == 0
     assert records[-1]["domain"]["report_artifacts"] == ["artifact:manifest.json"]
-    ci_artifact_path = _write_ci_langsmith_fleet_artifact(records)
+    ci_artifact_path = _write_ci_langsmith_fleet_artifact(records, root=tmp_path)
     if ci_artifact_path is not None:
         assert ci_artifact_path.exists()
         assert len(ci_artifact_path.read_text(encoding="utf-8").splitlines()) == len(records)
