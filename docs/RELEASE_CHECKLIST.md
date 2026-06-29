@@ -30,6 +30,7 @@ This creates `release/<version>/...` including:
 - The bundled executable
 - `counter_risk_runner.xlsm` built from `assets/templates/counter_risk_template.xlsm`
   with version metadata injected
+- `run_counter_risk_gui.cmd` for double-click GUI launch
 - Remote trigger scripts and documentation
 - Config, templates, fixtures, and metadata files
 
@@ -43,6 +44,7 @@ test -f "${BUNDLE_DIR}/manifest.json"
 test -d "${BUNDLE_DIR}/templates"
 test -f "${BUNDLE_DIR}/config/fixture_replay.yml"
 test -f "${BUNDLE_DIR}/run_counter_risk.cmd"
+test -f "${BUNDLE_DIR}/run_counter_risk_gui.cmd"
 test -f "${BUNDLE_DIR}/counter_risk_runner.xlsm"
 test -f "${BUNDLE_DIR}/request_counter_risk_remote.cmd"
 test -f "${BUNDLE_DIR}/process_counter_risk_remote.cmd"
@@ -118,6 +120,7 @@ scripts/verify_release_workflow_dispatch.sh release.yml <branch-or-tag>
 
 - `bin/counter-risk` (or `bin/counter-risk.exe` on Windows)
 - `counter_risk_runner.xlsm` — operator Excel entrypoint (versioned)
+- `run_counter_risk_gui.cmd` — double-click macro-free GUI launcher
 - `run_counter_risk.cmd` — fallback CLI launcher
 - `request_counter_risk_remote.cmd` — remote request submission script
 - `process_counter_risk_remote.cmd` — remote request worker script
