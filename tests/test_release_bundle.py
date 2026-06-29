@@ -56,6 +56,9 @@ def _write_fake_repo(root: Path) -> None:
     (root / "docs" / "remote_trigger_testing.md").write_text(
         "# Remote Trigger Testing\n", encoding="utf-8"
     )
+    (root / "run_counter_risk_gui.cmd").write_text(
+        "@echo off\necho gui\n", encoding="utf-8"
+    )
 
 
 def _create_fake_built_executable(root: Path, executable_name: str) -> Path:
@@ -116,6 +119,7 @@ def test_assemble_release_creates_versioned_bundle_with_executable(
     assert list((bundle_dir / "templates").glob("*.xlsm"))
     assert list((bundle_dir / "fixtures").glob("*.xlsx"))
     assert (bundle_dir / "bin" / "counter-risk").is_file()
+    assert (bundle_dir / "run_counter_risk_gui.cmd").is_file()
     runner_text = (bundle_dir / "run_counter_risk.cmd").read_text(encoding="utf-8")
     assert _FORBIDDEN_RUNNER_ENTRYPOINT_PATTERN.search(runner_text) is None
     assert "%~dp0" in runner_text
@@ -127,6 +131,7 @@ def test_assemble_release_creates_versioned_bundle_with_executable(
     assert manifest["version"] == expected_version
     assert manifest["release_name"] == expected_version
     assert manifest["artifacts"]["executable"] == ["bin/counter-risk"]
+    assert manifest["artifacts"]["gui_launcher"] == ["run_counter_risk_gui.cmd"]
 
 
 def test_create_runner_file_directly_invokes_packaged_executable_only(tmp_path: Path) -> None:
@@ -485,9 +490,11 @@ def test_assemble_release_includes_runner_xlsm_and_remote_scripts(
     assert (bundle_dir / "request_counter_risk_remote.cmd").is_file()
     assert (bundle_dir / "process_counter_risk_remote.cmd").is_file()
     assert (bundle_dir / "remote_trigger_testing.md").is_file()
+    assert (bundle_dir / "run_counter_risk_gui.cmd").is_file()
 
     manifest = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["artifacts"]["runner_xlsm"] == ["counter_risk_runner.xlsm"]
+    assert manifest["artifacts"]["gui_launcher"] == ["run_counter_risk_gui.cmd"]
     assert "request_counter_risk_remote.cmd" in manifest["artifacts"]["remote_scripts"][0]
     assert "process_counter_risk_remote.cmd" in manifest["artifacts"]["remote_scripts"][1]
 

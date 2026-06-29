@@ -142,6 +142,16 @@ def _copy_remote_scripts(root: Path, bundle_dir: Path) -> list[Path]:
     return copied
 
 
+def _copy_gui_launcher(root: Path, bundle_dir: Path) -> list[Path]:
+    src = root / "run_counter_risk_gui.cmd"
+    if not src.is_file():
+        LOGGER.warning("GUI launcher not found at '%s'; skipping.", src)
+        return []
+    dst = bundle_dir / "run_counter_risk_gui.cmd"
+    shutil.copy2(src, dst)
+    return [dst]
+
+
 def _create_runner_file(bundle_dir: Path) -> Path:
     runner_path = bundle_dir / "run_counter_risk.cmd"
     runner_path.write_text(
@@ -290,6 +300,9 @@ def _write_readme(bundle_dir: Path, version: str) -> Path:
                 "3. Open counter_risk_runner.xlsm and enable macros.",
                 "4. Select the as-of date and mode, then click Run.",
                 "",
+                "## GUI launcher",
+                "Double-click run_counter_risk_gui.cmd to open the macro-free GUI.",
+                "",
                 "## Fallback launcher",
                 "Double-click run_counter_risk.cmd to run via the command line.",
                 "",
@@ -366,6 +379,7 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
 
     runner_file = _create_runner_file(bundle_dir)
     copied["runner"] = [runner_file]
+    copied["gui_launcher"] = _copy_gui_launcher(root, bundle_dir)
 
     copied["remote_scripts"] = _copy_remote_scripts(root, bundle_dir)
     copied["remote_trigger_doc"] = _copy_remote_trigger_doc(root, bundle_dir)
