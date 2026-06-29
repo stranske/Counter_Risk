@@ -67,6 +67,7 @@ jobs:
             "${BUNDLE}/manifest.json" \
             "${BUNDLE}/counter_risk_runner.xlsm" \
             "${BUNDLE}/run_counter_risk.cmd" \
+            "${BUNDLE}/run_counter_risk_gui.cmd" \
             "${BUNDLE}/request_counter_risk_remote.cmd" \
             "${BUNDLE}/process_counter_risk_remote.cmd" \
             "${BUNDLE}/remote_trigger_testing.md" \
