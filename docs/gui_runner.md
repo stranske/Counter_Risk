@@ -21,6 +21,10 @@ fall back to `Runner.xlsm`.
 
 ## Launch
 
+Packaged Windows releases include `run_counter_risk_gui.cmd` at the release/root folder.
+Double-click it to open the GUI; if startup fails, the command window stays open so
+the visible error can be copied into a support request.
+
 ```bash
 counter-risk gui
 ```
