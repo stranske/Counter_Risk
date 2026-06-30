@@ -26,12 +26,7 @@ if exist "%~dp0counter-risk.exe" (
     goto :after_run
 )
 
-if exist "%~dp0.venv\Scripts\counter-risk.exe" (
-    call :run_and_log "%~dp0.venv\Scripts\counter-risk.exe" gui
-    goto :after_run
-)
-
-rem Prefer the source tree next to this launcher before any stale global install.
+rem Prefer the source tree next to this launcher before any stale venv or global install.
 if exist "%~dp0src\counter_risk\cli\__init__.py" (
     set "PYTHONPATH=%~dp0src;%PYTHONPATH%"
     if exist "%~dp0.venv\Scripts\python.exe" (
@@ -55,6 +50,11 @@ if exist "%~dp0src\counter_risk\cli\__init__.py" (
     )
 )
 
+if exist "%~dp0.venv\Scripts\counter-risk.exe" (
+    call :run_and_log "%~dp0.venv\Scripts\counter-risk.exe" gui
+    goto :after_run
+)
+
 where counter-risk >nul 2>nul
 if not errorlevel 1 (
     call :run_and_log counter-risk gui
@@ -75,7 +75,7 @@ goto :failure
 echo Command: %*
 >>"%COUNTER_RISK_LAUNCHER_LOG%" echo.
 >>"%COUNTER_RISK_LAUNCHER_LOG%" echo Command: %*
-%* 1>>"%COUNTER_RISK_LAUNCHER_LOG%" 2>>&1
+%* 1>>"%COUNTER_RISK_LAUNCHER_LOG%" 2>&1
 set "COUNTER_RISK_EXIT=%ERRORLEVEL%"
 >>"%COUNTER_RISK_LAUNCHER_LOG%" echo Exit code: %COUNTER_RISK_EXIT%
 exit /b 0
