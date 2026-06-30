@@ -6,10 +6,6 @@
 
 pr_body.md merge=ours
 
-# Windows command scripts need CRLF for cmd.exe label/call parsing.
-*.bat text eol=crlf
-*.cmd text eol=crlf
-
 # CI autofix history is append-only and branch-specific
 ci/autofix/history.json merge=ours linguist-generated
 
