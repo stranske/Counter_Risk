@@ -6,7 +6,10 @@ import logging
 import math
 import re
 from collections import defaultdict
+from collections.abc import Sequence
 from pathlib import Path
+
+from stranske_pdf_extract.providers.text_baseline import TextBaselineProvider
 
 from counter_risk.normalize import canonicalize_name
 from counter_risk.parsers._xlsx_reader import coerce_accounting_float
@@ -79,91 +82,32 @@ def expected_repo_counterparties() -> tuple[str, ...]:
 
 
 def _extract_text(path: Path) -> str:
-    pdfplumber_text = _extract_text_with_pdfplumber(path)
-    if pdfplumber_text:
-        return pdfplumber_text
-
-    pypdf_text = _extract_text_with_pypdf(path)
-    if pypdf_text:
-        return pypdf_text
-
-    ocr_text = _extract_text_with_ocr(path)
-    if ocr_text:
-        return ocr_text
-
-    # Test fixtures may be sanitized text files with .pdf extension.
-    raw = path.read_bytes()
-    return raw.decode("utf-8", errors="ignore")
+    output = TextBaselineProvider(ocr_extract=_tesseract_ocr_extract).extract_modalities(
+        path.name,
+        path.read_bytes(),
+    )
+    return "\n".join(block.text for block in output.text_blocks if block.text.strip())
 
 
-def _extract_text_with_pdfplumber(path: Path) -> str:
-    try:
-        import pdfplumber
-    except ImportError:
-        _log.debug("pdfplumber not installed, skipping")
-        return ""
-
-    lines: list[str] = []
-    try:
-        with pdfplumber.open(path) as pdf:
-            for page in pdf.pages:
-                page_text = page.extract_text() or ""
-                if page_text:
-                    lines.append(page_text)
-                for table in page.extract_tables() or []:
-                    for row in table:
-                        if not row:
-                            continue
-                        pieces = [str(cell).strip() for cell in row if cell not in (None, "")]
-                        if pieces:
-                            lines.append(" ".join(pieces))
-    except Exception:
-        _log.warning("pdfplumber failed to extract text from %s", path, exc_info=True)
-        return ""
-
-    return "\n".join(lines)
-
-
-def _extract_text_with_pypdf(path: Path) -> str:
-    try:
-        from pypdf import PdfReader
-    except ImportError:
-        _log.debug("pypdf not installed, skipping")
-        return ""
-
-    lines: list[str] = []
-    try:
-        reader = PdfReader(str(path))
-        for page in reader.pages:
-            page_text = page.extract_text() or ""
-            if page_text:
-                lines.append(page_text)
-    except Exception:
-        _log.warning("pypdf failed to extract text from %s", path, exc_info=True)
-        return ""
-
-    return "\n".join(lines)
-
-
-def _extract_text_with_ocr(path: Path) -> str:
+def _tesseract_ocr_extract(content: bytes) -> Sequence[str]:
     try:
         import pytesseract
-        from pdf2image import convert_from_path
+        from pdf2image import convert_from_bytes
     except ImportError:
         _log.debug("pytesseract/pdf2image not installed, skipping OCR")
-        return ""
+        return ()
 
     lines: list[str] = []
     try:
-        for image in convert_from_path(str(path)):
+        for image in convert_from_bytes(content):
             text = pytesseract.image_to_string(image) or ""
             if text:
                 lines.append(text)
     except Exception:
-        _log.warning("OCR extraction failed for %s", path, exc_info=True)
-        return ""
+        _log.warning("OCR extraction failed", exc_info=True)
+        return ()
 
-    return "\n".join(lines)
+    return tuple(lines)
 
 
 def _extract_repo_cash_values(text: str) -> dict[str, float]:
