@@ -38,6 +38,7 @@ dependencies = [
     "pandas>=2.3,<4",
     "langchain-openai>=1.1.14,<2",
     "langchain-anthropic>=1.4.2,<2",
+    "stranske-pdf-extract[baseline,ocr] @ git+https://github.com/stranske/Workflows.git@a0ee3aa25c08d4eeb8e96dc6c8d7791930cd2d9a#subdirectory=packages/stranske_pdf_extract",
     "pywin32>=306; sys_platform == 'win32'",
 ]
 
@@ -195,6 +196,13 @@ module = [
     "pdf2image",
     "pdfplumber",
     "pytesseract",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "stranske_pdf_extract",
+    "stranske_pdf_extract.*",
 ]
 ignore_missing_imports = true
 
