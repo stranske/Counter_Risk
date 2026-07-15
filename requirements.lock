@@ -31,7 +31,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   click
     #   pytest
     #   tqdm
-coverage==7.15.0
+coverage==7.15.1
     # via pytest-cov
 cryptography==49.0.0
     # via pdfminer-six
