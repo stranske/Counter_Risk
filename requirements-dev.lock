@@ -10,7 +10,7 @@ anyio==4.14.1
     #   httpx
     #   langsmith
     #   openai
-ast-serialize==0.3.0
+ast-serialize==0.6.0
     # via mypy
 black==26.5.1
     # via counter-risk (pyproject.toml)
@@ -83,7 +83,7 @@ langchain-protocol==0.0.18
     # via langchain-core
 langsmith==0.9.8
     # via langchain-core
-librt==0.11.0 ; platform_python_implementation != 'PyPy'
+librt==0.13.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 lxml==6.0.2
     # via python-pptx
