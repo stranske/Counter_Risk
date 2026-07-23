@@ -10,7 +10,7 @@ anyio==4.14.1
     #   httpx
     #   langsmith
     #   openai
-ast-serialize==0.3.0
+ast-serialize==0.6.0
     # via mypy
 black==26.5.1
     # via counter-risk (pyproject.toml)
@@ -32,7 +32,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   click
     #   pytest
     #   tqdm
-coverage==7.14.0
+coverage==7.15.2
     # via pytest-cov
 cryptography==49.0.0
     # via pdfminer-six
@@ -83,11 +83,11 @@ langchain-protocol==0.0.18
     # via langchain-core
 langsmith==0.9.8
     # via langchain-core
-librt==0.11.0 ; platform_python_implementation != 'PyPy'
+librt==0.13.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 lxml==6.0.2
     # via python-pptx
-mypy==2.1.0
+mypy==2.3.0
     # via counter-risk (pyproject.toml)
 mypy-extensions==1.1.0
     # via
@@ -198,7 +198,7 @@ requests==2.34.2
     #   tiktoken
 requests-toolbelt==1.0.0
     # via langsmith
-ruff==0.15.20
+ruff==0.15.22
     # via counter-risk (pyproject.toml)
 six==1.17.0
     # via python-dateutil
