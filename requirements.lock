@@ -214,7 +214,7 @@ tomlkit==0.14.0
     # via counter-risk (pyproject.toml)
 tqdm==4.67.3
     # via openai
-types-pyyaml==6.0.12.20260518
+types-pyyaml==6.0.12.20260724
     # via counter-risk (pyproject.toml)
 typing-extensions==4.15.0
     # via
