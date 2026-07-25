@@ -10,10 +10,10 @@ set "COUNTER_RISK_EXIT=1"
 set "COUNTER_RISK_LAUNCHER_LOG=%TEMP%\counter-risk-gui-launcher.log"
 
 >"%COUNTER_RISK_LAUNCHER_LOG%" echo Counter Risk GUI launcher started at %DATE% %TIME%
->>"%COUNTER_RISK_LAUNCHER_LOG%" echo Launcher folder: %CD%
+>>"%COUNTER_RISK_LAUNCHER_LOG%" echo Launcher folder: "%CD%"
 
 echo Starting Counter Risk GUI...
-echo Launcher log: %COUNTER_RISK_LAUNCHER_LOG%
+echo Launcher log: "%COUNTER_RISK_LAUNCHER_LOG%"
 echo.
 
 if exist "%~dp0dist\counter-risk\counter-risk.exe" (
@@ -87,7 +87,7 @@ if "%COUNTER_RISK_EXIT%"=="0" goto :success
 echo.
 echo Counter Risk GUI did not start or exited with error code %COUNTER_RISK_EXIT%.
 echo The launcher wrote details to:
-echo   %COUNTER_RISK_LAUNCHER_LOG%
+echo   "%COUNTER_RISK_LAUNCHER_LOG%"
 echo.
 echo Last launcher log lines:
 type "%COUNTER_RISK_LAUNCHER_LOG%"
@@ -100,7 +100,7 @@ exit /b %COUNTER_RISK_EXIT%
 :success
 echo.
 echo Counter Risk GUI closed normally.
-echo Launcher log: %COUNTER_RISK_LAUNCHER_LOG%
+echo Launcher log: "%COUNTER_RISK_LAUNCHER_LOG%"
 echo.
 if /i not "%COUNTER_RISK_NO_PAUSE%"=="1" pause
 exit /b 0
