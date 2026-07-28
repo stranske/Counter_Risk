@@ -62,6 +62,7 @@ SERIES_BY_SHEET: dict[str, tuple[str, ...]] = {
     ),
 }
 
+HISTORICAL_ROLLING_WINDOW_MONTHS = 36
 DATE_HEADER_CANDIDATES: tuple[str, ...] = ("date", "as of date", "as-of date")
 WAL_HEADER_CANDIDATES: tuple[str, ...] = ("wal", "wal tips repo", "weighted average life")
 HEADER_SCAN_ROWS = 12
@@ -95,6 +96,10 @@ class AppendDateResolutionError(AppendDateError):
 
 class DateMonotonicityError(AppendDateError):
     """Raised when append date is not newer than the latest existing row date."""
+
+
+class DateGapError(AppendDateError):
+    """Raised when an append would skip one or more calendar months."""
 
 
 @dataclass(frozen=True)
@@ -387,6 +392,29 @@ def _get_numeric_series_columns(
     }
 
 
+def _month_index(value: date) -> int:
+    return value.year * 12 + value.month
+
+
+def _assert_no_month_gap(*, last_date: date, append_date: date, context: str) -> None:
+    """Raise ``DateGapError`` if *append_date* would skip one or more calendar months.
+
+    Guards against silently chaining a run off a workbook that is missing an
+    intervening month (e.g. appending May directly onto March), which would
+    otherwise pass the monotonicity check (May > March) and corrupt every
+    downstream trend chart with an undetected gap.
+    """
+
+    skipped_months = _month_index(append_date) - _month_index(last_date) - 1
+    if skipped_months > 0:
+        raise DateGapError(
+            f"Append would skip {skipped_months} month(s) in {context}: "
+            f"last_row_date={last_date.isoformat()} append_date={append_date.isoformat()}. "
+            "Run the pipeline for the missing month(s) first, in chronological order, "
+            "before appending this one."
+        )
+
+
 def _coerce_cell_date(value: Any) -> date | None:
     if value is None:
         return None
@@ -502,6 +530,31 @@ def _validate_preserved_wal_cells(
             )
 
 
+def _trim_wal_sheet_to_rolling_window(
+    worksheet: Any,
+    *,
+    header_row: int,
+    date_column: int,
+    window_months: int = HISTORICAL_ROLLING_WINDOW_MONTHS,
+) -> None:
+    """Keep only the most recent *window_months* dated rows on the WAL sheet.
+
+    The counterparty sheets are trimmed to a 36-month rolling window on every
+    append, but the WAL sheet was not, so it grew unbounded (41 rows reaching back
+    to 2022-12 against the human workbook's 36). That makes the WAL chart's date
+    axis span a different range from every other chart in the deck.
+    """
+    max_row = int(getattr(worksheet, "max_row", header_row))
+    dated_rows = [
+        row_index
+        for row_index in range(header_row + 1, max_row + 1)
+        if worksheet.cell(row=row_index, column=date_column).value is not None
+    ]
+    excess = len(dated_rows) - window_months
+    if excess > 0:
+        worksheet.delete_rows(dated_rows[0], excess)
+
+
 def _copy_row_cell_presentation(
     worksheet: Any, *, source_row: int, target_row: int, columns: tuple[int, ...]
 ) -> None:
@@ -569,6 +622,9 @@ def _append_to_sheet(
                 "Append date must be newer than the last row date: "
                 f"append_date={resolved_date.isoformat()} last_row_date={last_date.isoformat()}"
             )
+        _assert_no_month_gap(
+            last_date=last_date, append_date=resolved_date, context=f"sheet {sheet_name!r}"
+        )
         target_row = last_row + 1
 
     worksheet.cell(row=target_row, column=date_column).value = resolved_date
@@ -726,6 +782,9 @@ def append_wal_row(
                     "Append date must be newer than the last row date: "
                     f"append_date={px_date.isoformat()} last_row_date={last_date.isoformat()}"
                 )
+            _assert_no_month_gap(
+                last_date=last_date, append_date=px_date, context=f"WAL sheet {wal_sheet_name!r}"
+            )
             _copy_row_cell_presentation(
                 worksheet,
                 source_row=append_target.last_dated_row,
@@ -733,13 +792,20 @@ def append_wal_row(
                 columns=tuple(range(1, preserve_through_column + 1)),
             )
 
-        worksheet.cell(row=append_target.append_row, column=append_target.date_column).value = (
-            px_date
-        )
+        worksheet.cell(
+            row=append_target.append_row, column=append_target.date_column
+        ).value = px_date
         worksheet.cell(row=append_target.append_row, column=append_target.wal_column).value = float(
             wal_value
         )
         _validate_preserved_wal_cells(worksheet, preserve_snapshots)
+        # Trim AFTER validating preserved cells: deleting leading rows shifts every
+        # row index the snapshot was taken against.
+        _trim_wal_sheet_to_rolling_window(
+            worksheet,
+            header_row=append_target.header_row,
+            date_column=append_target.date_column,
+        )
         workbook.save(path)
     finally:
         if workbook is not None:
@@ -750,6 +816,7 @@ def append_wal_row(
 __all__ = [
     "AppendDateError",
     "AppendDateResolutionError",
+    "DateGapError",
     "DateMonotonicityError",
     "HistoricalUpdateError",
     "SHEET_ALL_PROGRAMS_3_YEAR",

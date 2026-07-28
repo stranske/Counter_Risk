@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import calendar
 import csv
 import hashlib
 import json
@@ -86,6 +87,16 @@ class _FakeCell:
     def __init__(self, value: Any = None) -> None:
         self.value = value
         self.number_format = "0"
+        # Minimal openpyxl Cell surface touched by appended-row presentation
+        # copying. has_style is False because a bare fake genuinely carries no
+        # style, so the copy is skipped here; the copy itself is covered against a
+        # real openpyxl worksheet in
+        # test_copy_row_presentation_carries_formats_to_appended_row.
+        self.has_style = False
+        self.font = None
+        self.fill = None
+        self.border = None
+        self.alignment = None
 
 
 class _FakeWorksheet:
@@ -105,6 +116,16 @@ class _FakeWorksheet:
 
     def set_value(self, row: int, column: int, value: Any) -> None:
         self.cell(row=row, column=column).value = value
+
+    def delete_rows(self, idx: int, amount: int = 1) -> None:
+        remaining: dict[tuple[int, int], _FakeCell] = {}
+        for (row, column), cell in self._cells.items():
+            if row < idx:
+                remaining[(row, column)] = cell
+            elif row >= idx + amount:
+                remaining[(row - amount, column)] = cell
+        self._cells = remaining
+        self.max_row = max(self.max_row - amount, 0)
 
 
 class _FakeWorkbook:
@@ -161,11 +182,30 @@ def _minimal_parsed_by_variant() -> dict[str, dict[str, _FakeDataFrame]]:
             }
         ]
     )
+    cprs_ch = _FakeDataFrame(
+        records=[{"Segment": "totals", "Counterparty": "Counterparty A", "Notional": 1.0}]
+    )
     return {
-        "all_programs": {"totals": totals, "futures": futures},
-        "ex_trend": {"totals": totals, "futures": futures},
-        "trend": {"totals": totals, "futures": futures},
+        "all_programs": {"totals": totals, "futures": futures, "cprs_ch": cprs_ch},
+        "ex_trend": {"totals": totals, "futures": futures, "cprs_ch": cprs_ch},
+        "trend": {"totals": totals, "futures": futures, "cprs_ch": cprs_ch},
     }
+
+
+def _with_cprs_ch(parsed: dict[str, Any]) -> dict[str, Any]:
+    """Fill in the minimal CPRS-CH section that parsing now requires.
+
+    Every variant's parsed payload must carry a ``cprs_ch`` section -- the
+    historical append and the reconciliation checks both read it. These tests
+    predate that contract and stub only totals/futures, so add a one-row section
+    here instead of restating it in each payload.
+    """
+    for sections in parsed.values():
+        sections.setdefault(
+            "cprs_ch",
+            _FakeDataFrame(records=[{"Segment": "totals", "Counterparty": "A", "Notional": 1.0}]),
+        )
+    return parsed
 
 
 def _use_limit_config_path(monkeypatch: pytest.MonkeyPatch, limits_path: Path) -> None:
@@ -1641,9 +1681,14 @@ def test_evaluate_cprs_ch_totals_reconciliation_passes_when_totals_match() -> No
     assert "message" not in result
 
 
-def test_run_reconciliation_checks_records_cprs_ch_totals_mismatch(
+def test_run_reconciliation_checks_records_cprs_ch_totals_mismatch_as_informational(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """A same-name CH-vs-FCM total mismatch is not a reconciliation gap: verified
+    directly against the real historical workbook that the CH-tab figure is the
+    one that has always matched the actual historical/reporting record (e.g.
+    Morgan Stanley diverges from its own FCM-tab total by real, large, recurring
+    amounts every month). It's surfaced for visibility, not counted as a gap."""
     config = _minimal_workflow_config(tmp_path)
     warnings: list[str] = []
     parsed_by_variant = {
@@ -1673,17 +1718,19 @@ def test_run_reconciliation_checks_records_cprs_ch_totals_mismatch(
         warnings=warnings,
     )
 
-    assert outcome["reconciliation_results"]["status"] == "failed"
-    assert outcome["reconciliation_results"]["total_gap_count"] == 1
+    assert outcome["reconciliation_results"]["status"] == "passed"
+    assert outcome["reconciliation_results"]["total_gap_count"] == 0
     all_programs_result = outcome["reconciliation_results"]["by_variant"]["all_programs"]
-    assert all_programs_result["cprs_ch_totals_check"]["status"] == "failed"
+    assert all_programs_result["cprs_ch_totals_check"]["status"] == "informational"
     assert all_programs_result["cprs_ch_totals_check"]["absolute_difference"] == 25.0
-    assert any("CPRS-CH totals mismatch" in warning for warning in warnings)
+    assert any("CPRS-CH total differs" in warning for warning in warnings)
 
 
-def test_run_reconciliation_checks_strict_raises_on_cprs_ch_totals_mismatch(
+def test_run_reconciliation_checks_strict_does_not_raise_for_totals_informational_mismatch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Strict mode must not raise on a CH-vs-FCM totals difference alone -- it is
+    informational, not a gap (see the test above)."""
     config = _minimal_workflow_config(tmp_path, fail_policy="strict")
     warnings: list[str] = []
     parsed_by_variant = {
@@ -1706,18 +1753,28 @@ def test_run_reconciliation_checks_strict_raises_on_cprs_ch_totals_mismatch(
         lambda _: {"Sheet A": ("Counterparty A",)},
     )
 
-    with pytest.raises(ValueError, match="Reconciliation strict mode failed"):
-        run_module._run_reconciliation_checks(
-            run_dir=tmp_path,
-            config=config,
-            parsed_by_variant=parsed_by_variant,
-            warnings=warnings,
-        )
+    outcome = run_module._run_reconciliation_checks(
+        run_dir=tmp_path,
+        config=config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warnings,
+    )
+
+    assert outcome["reconciliation_results"]["total_gap_count"] == 0
+    all_programs_result = outcome["reconciliation_results"]["by_variant"]["all_programs"]
+    assert all_programs_result["cprs_ch_totals_check"]["status"] == "informational"
 
 
 def test_run_reconciliation_checks_strict_mode_fails_for_fail_data_quality_findings(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """A genuine series-coverage gap -- a series that HAD a position last month
+    (Counterparty Z, populated in the prior workbook row) and is missing from this
+    month's parsed data, i.e. a real month-over-month drop -- must still drive fail
+    severity and a strict-mode raise. Uses matching totals/cprs_ch Notional amounts
+    so this is isolated from the CH-vs-FCM totals check, which is informational-only
+    (see the tests above) and must not be the thing masking or driving this
+    behavior."""
     parsed_by_variant = {
         "all_programs": {
             "totals": _FakeDataFrame(
@@ -1725,7 +1782,7 @@ def test_run_reconciliation_checks_strict_mode_fails_for_fail_data_quality_findi
             ),
             "futures": _FakeDataFrame(records=[]),
             "cprs_ch": _FakeDataFrame(
-                records=[{"Counterparty": "Counterparty A", "Notional": 12.0}]
+                records=[{"Counterparty": "Counterparty A", "Notional": 10.0}]
             ),
         },
         "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
@@ -1735,7 +1792,13 @@ def test_run_reconciliation_checks_strict_mode_fails_for_fail_data_quality_findi
     monkeypatch.setattr(
         run_module,
         "_extract_historical_series_headers_by_sheet",
-        lambda _: {"Sheet A": ("Counterparty A",)},
+        lambda _: {"Total": ("Counterparty A", "Counterparty Z")},
+    )
+    # Counterparty Z had a real position last month -> its absence now is a drop.
+    monkeypatch.setattr(
+        run_module,
+        "_extract_prior_populated_series_by_sheet",
+        lambda _: {"Total": ("Counterparty Z",)},
     )
 
     warn_config = _minimal_workflow_config(tmp_path, fail_policy="warn")
@@ -1771,6 +1834,73 @@ def test_run_reconciliation_checks_strict_mode_fails_for_fail_data_quality_findi
         )
 
 
+def test_run_reconciliation_checks_dormant_series_is_informational_not_a_gap(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A historical-header series that had NO position last month and is still
+    absent this month (dormant, not a drop) must be reported informationally and
+    must not drive fail severity or a strict-mode raise."""
+    parsed_by_variant = {
+        "all_programs": {
+            "totals": _FakeDataFrame(
+                records=[{"counterparty": "Counterparty A", "Notional": 10.0}]
+            ),
+            "futures": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 10.0}]
+            ),
+        },
+        "ex_trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+        "trend": {"totals": _FakeDataFrame(records=[]), "futures": _FakeDataFrame(records=[])},
+    }
+
+    monkeypatch.setattr(
+        run_module,
+        "_extract_historical_series_headers_by_sheet",
+        lambda _: {"Total": ("Counterparty A", "Counterparty Z")},
+    )
+    # Counterparty Z was already dormant last month (not populated) -> not a drop.
+    monkeypatch.setattr(
+        run_module,
+        "_extract_prior_populated_series_by_sheet",
+        lambda _: {"Total": ("Counterparty A",)},
+    )
+
+    warn_config = _minimal_workflow_config(tmp_path, fail_policy="warn")
+    warn_run_dir = tmp_path / "warn-mode"
+    warn_run_dir.mkdir()
+    warn_warnings: list[str] = []
+    warn_outcome = run_module._run_reconciliation_checks(
+        run_dir=warn_run_dir,
+        config=warn_config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=warn_warnings,
+    )
+    assert warn_outcome["reconciliation_results"]["total_gap_count"] == 0
+    data_quality = build_data_quality(
+        warn_warnings,
+        unmatched_mappings=warn_outcome["unmatched_mappings"],
+        reconciliation_results=warn_outcome["reconciliation_results"],
+    )
+    assert data_quality["overall_status"] != "fail"
+    assert not any(finding["code"] == "RECONCILIATION_GAPS" for finding in data_quality["findings"])
+    assert any(
+        finding["code"] == "RECONCILIATION_DORMANT_SERIES" and finding["severity"] == "info"
+        for finding in data_quality["findings"]
+    )
+
+    strict_config = _minimal_workflow_config(tmp_path, fail_policy="strict")
+    strict_run_dir = tmp_path / "strict-mode"
+    strict_run_dir.mkdir()
+    # Dormant-only: strict mode must NOT raise.
+    run_module._run_reconciliation_checks(
+        run_dir=strict_run_dir,
+        config=strict_config,
+        parsed_by_variant=parsed_by_variant,
+        warnings=[],
+    )
+
+
 def test_evaluate_cprs_ch_totals_reconciliation_uses_mosers_program_row_when_cprs_rows_absent() -> (
     None
 ):
@@ -1795,6 +1925,62 @@ def test_evaluate_cprs_ch_totals_reconciliation_uses_mosers_program_row_when_cpr
 
     assert result["status"] == "passed"
     assert result["expected_total_source"] == "cprs_ch_mosers_program_row"
+
+
+def test_evaluate_cprs_ch_totals_reconciliation_excludes_ch_only_clearing_houses() -> None:
+    """Regression test for a real incident: the CH tab's rollup is a superset of
+    the FCM tab's -- it also includes clearing houses reached directly (not via
+    an FCM), which the FCM tab structurally never lists. Comparing unfiltered
+    totals produced a real false-positive mismatch, whose size traced entirely to
+    those clearing-house-direct rows that the FCM tab has no row for at all.
+    Restricting the CH-side sum to counterparties the FCM totals actually
+    cover must make same-value counterparties net out to a clean pass."""
+    result = run_module._evaluate_cprs_ch_totals_reconciliation(
+        parsed_sections={
+            "totals": _FakeDataFrame(
+                records=[
+                    {"counterparty": "Barclays", "Notional": 60.0},
+                    {"counterparty": "Citibank", "Notional": 40.0},
+                ]
+            ),
+            "cprs_ch": _FakeDataFrame(
+                records=[
+                    {"Counterparty": "Barclays", "Notional": 60.0},
+                    {"Counterparty": "Citibank", "Notional": 40.0},
+                    {"Counterparty": "CME Clearing House", "Notional": 500.0},
+                ]
+            ),
+        },
+        variant="all_programs",
+        mosers_workbook_path=None,
+    )
+
+    assert result["status"] == "passed"
+    assert result["mosers_cprs_ch_total_notional"] == 100.0
+    assert result["computed_total_notional"] == 100.0
+
+
+def test_evaluate_cprs_ch_totals_reconciliation_skips_when_fcm_totals_section_absent() -> None:
+    """Regression test for a real incident: the Trend variant's CPRS-FCM sheet has
+    no "Total by Counterparty/FCM" section by design (cprs_fcm.py documents this:
+    "Trend: futures detail present, totals absent/minimal"). Treating that
+    structurally-empty totals table as a real zero produced a guaranteed
+    false-positive FAIL every month, comparing a real non-zero CH total against
+    an FCM total that was never present to begin with."""
+    result = run_module._evaluate_cprs_ch_totals_reconciliation(
+        parsed_sections={
+            "totals": _FakeDataFrame(records=[]),
+            "cprs_ch": _FakeDataFrame(
+                records=[{"Counterparty": "Counterparty A", "Notional": 153_080_581.45}]
+            ),
+        },
+        variant="trend",
+        mosers_workbook_path=None,
+    )
+
+    assert result["status"] == "skipped"
+    assert "absent" in result["message"]
+    assert "computed_total_notional" not in result
 
 
 def test_evaluate_class_breakdown_sanity_passes_for_consistent_rows() -> None:
@@ -2559,7 +2745,9 @@ def test_run_pipeline_writes_risk_outputs_when_proxy_inputs_available(
         },
     }
 
-    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed_by_variant)
+    monkeypatch.setattr(
+        "counter_risk.pipeline.run._parse_inputs", lambda _: _with_cprs_ch(parsed_by_variant)
+    )
     monkeypatch.setattr(
         "counter_risk.pipeline.run._run_reconciliation_checks",
         lambda *, run_dir, config, parsed_by_variant, warnings: None,
@@ -2662,7 +2850,7 @@ def test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist(
         "ex_trend": {"totals": totals, "futures": futures},
         "trend": {"totals": totals, "futures": futures},
     }
-    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: _with_cprs_ch(parsed))
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
         lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
@@ -2781,7 +2969,7 @@ def test_run_pipeline_limit_breach_summary_uses_warning_severity_when_no_fail_br
         "ex_trend": {"totals": totals, "futures": futures},
         "trend": {"totals": totals, "futures": futures},
     }
-    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: _with_cprs_ch(parsed))
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
         lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
@@ -2847,7 +3035,7 @@ def test_run_pipeline_invalid_limits_config_fails_during_limit_breach_stage(
     _use_limit_config_path(monkeypatch, limits_path)
 
     parsed = _minimal_parsed_by_variant()
-    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: _with_cprs_ch(parsed))
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
         lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
@@ -2931,7 +3119,7 @@ def test_run_pipeline_warns_on_missing_limit_entities_by_default(
         "ex_trend": {"totals": totals, "futures": futures},
         "trend": {"totals": totals, "futures": futures},
     }
-    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: _with_cprs_ch(parsed))
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
         lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
@@ -3034,7 +3222,7 @@ def test_run_pipeline_strict_missing_limit_entities_fails(
         "ex_trend": {"totals": totals, "futures": futures},
         "trend": {"totals": totals, "futures": futures},
     }
-    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: parsed)
+    monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", lambda _: _with_cprs_ch(parsed))
     monkeypatch.setattr(
         "counter_risk.pipeline.run._update_historical_outputs",
         lambda *, run_dir, config, parsed_by_variant, as_of_date, formatting_profile, warnings: [],
@@ -3479,7 +3667,10 @@ def test_run_pipeline_wraps_parse_validation_errors(
     }
 
     def _bad_parse(_: dict[str, Path]) -> dict[str, dict[str, Any]]:
-        return malformed
+        # This test targets the missing-required-COLUMNS error, so the payload must
+        # still satisfy the missing-SECTIONS check -- otherwise that fires first and
+        # masks the failure under test.
+        return _with_cprs_ch(malformed)
 
     monkeypatch.setattr("counter_risk.pipeline.run._parse_inputs", _bad_parse)
 
@@ -4055,13 +4246,13 @@ def test_merge_historical_workbook_prefers_configured_total_sheet(
     decoy.set_value(1, 1, "Date")
     decoy.set_value(1, 2, "Wrong")
     decoy.set_value(1, 3, "Wrong")
-    decoy.set_value(2, 1, "2025-12-31")
+    decoy.set_value(2, 1, "2026-01-31")
 
     target = _FakeWorksheet("Total")
     target.set_value(1, 1, "Date")
     target.set_value(1, 2, "Barclays")
     target.set_value(1, 3, "Citibank")
-    target.set_value(2, 1, "2025-12-31")
+    target.set_value(2, 1, "2026-01-31")
 
     workbook = _FakeWorkbook({"A Decoy": decoy, "Total": target})
     monkeypatch.setitem(
@@ -4072,19 +4263,23 @@ def test_merge_historical_workbook_prefers_configured_total_sheet(
         workbook_path=workbook_path,
         variant="all_programs",
         as_of_date=date(2026, 2, 13),
-        totals_records=[{"Notional": 10.0, "counterparty": "A"}],
+        cprs_ch_records=[{"Notional": 10.0, "Counterparty": "Barclays"}],
         warnings=[],
     )
 
     assert target.cell(row=3, column=1).value == date(2026, 2, 13)
     assert target.cell(row=3, column=2).value == pytest.approx(10.0)
-    assert target.cell(row=3, column=3).value == 1
+    assert target.cell(row=3, column=3).value == pytest.approx(0.0)
     assert decoy.cell(row=3, column=1).value is None
 
 
-def test_merge_historical_workbook_uses_deterministic_fallback_sheet_when_preferred_missing(
+def test_merge_historical_workbook_skips_cleanly_for_variant_with_no_sheet_mapping(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """An unrecognized variant has no entry in
+    ``_HISTORICAL_SHEET_SPECS_BY_VARIANT`` — the update is skipped with a warning
+    rather than guessing at a fallback sheet (there is no more "preferred sheet
+    with alphabetical fallback" concept; sheets are addressed by exact name)."""
     workbook_path = tmp_path / "hist.xlsx"
     workbook_path.write_bytes(b"fixture")
 
@@ -4094,32 +4289,178 @@ def test_merge_historical_workbook_uses_deterministic_fallback_sheet_when_prefer
     alpha.set_value(1, 3, "Series B")
     alpha.set_value(2, 1, "2025-12-31")
 
-    zulu = _FakeWorksheet("Zulu")
-    zulu.set_value(1, 1, "Date")
-    zulu.set_value(1, 2, "Series A")
-    zulu.set_value(1, 3, "Series B")
-    zulu.set_value(2, 1, "2025-12-31")
+    workbook = _FakeWorkbook({"Alpha": alpha})
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook)
+    )
 
-    workbook = _FakeWorkbook({"Zulu": zulu, "Alpha": alpha})
+    warnings: list[str] = []
+    run_module._merge_historical_workbook(
+        workbook_path=workbook_path,
+        variant="unknown_variant",
+        as_of_date=date(2026, 2, 13),
+        cprs_ch_records=[{"Notional": 20.0, "Counterparty": "Series A"}],
+        warnings=warnings,
+    )
+
+    assert alpha.cell(row=3, column=1).value is None
+    assert workbook.saved_paths == []
+    assert any("no sheet mapping" in w for w in warnings)
+
+
+def test_merge_historical_workbook_updates_every_sheet_for_the_variant(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Each variant's spec covers multiple sheets in one call — "Total" (the
+    rollup Notional) and "TIPS" (the TIPS-column-only view) must each get their
+    own correctly column-matched value from the same cprs_ch_records."""
+    workbook_path = tmp_path / "hist.xlsx"
+    workbook_path.write_bytes(b"fixture")
+
+    total_sheet = _FakeWorksheet("Total")
+    total_sheet.set_value(1, 1, "Date")
+    total_sheet.set_value(1, 2, "Barclays")
+    total_sheet.set_value(1, 3, "Citibank")
+    total_sheet.set_value(2, 1, "2026-01-31")
+
+    tips_sheet = _FakeWorksheet("TIPS")
+    tips_sheet.set_value(1, 1, "Date")
+    tips_sheet.set_value(1, 2, "Barclays")
+    tips_sheet.set_value(1, 3, "Citibank")
+    tips_sheet.set_value(2, 1, "2026-01-31")
+
+    workbook = _FakeWorkbook({"Total": total_sheet, "TIPS": tips_sheet})
     monkeypatch.setitem(
         sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook)
     )
 
     run_module._merge_historical_workbook(
         workbook_path=workbook_path,
-        variant="unknown_variant",
+        variant="all_programs",
         as_of_date=date(2026, 2, 13),
-        totals_records=[
-            {"Notional": 20.0, "counterparty": "A"},
-            {"Notional": 5.0, "counterparty": "B"},
+        cprs_ch_records=[
+            {"Notional": 100.0, "TIPS": 40.0, "Counterparty": "Barclays"},
+            {"Notional": 60.0, "TIPS": 25.0, "Counterparty": "Citibank"},
         ],
         warnings=[],
     )
 
-    assert alpha.cell(row=3, column=1).value == date(2026, 2, 13)
-    assert alpha.cell(row=3, column=2).value == pytest.approx(25.0)
-    assert alpha.cell(row=3, column=3).value == 2
-    assert zulu.cell(row=3, column=1).value is None
+    assert total_sheet.cell(row=3, column=2).value == pytest.approx(100.0)
+    assert total_sheet.cell(row=3, column=3).value == pytest.approx(60.0)
+    assert tips_sheet.cell(row=3, column=2).value == pytest.approx(40.0)
+    assert tips_sheet.cell(row=3, column=3).value == pytest.approx(25.0)
+
+
+def test_merge_historical_workbook_raises_when_a_month_would_be_skipped(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Appending May directly onto March (skipping April) must fail loudly.
+
+    This is a regression test for a real incident: March-31 was immediately
+    followed by May-31 in a chained run because nothing checked for calendar
+    continuity, only that dates were increasing. That produced a silent
+    2-month gap in every trend chart.
+    """
+    workbook_path = tmp_path / "hist.xlsx"
+    workbook_path.write_bytes(b"fixture")
+
+    total_sheet = _FakeWorksheet("Total")
+    total_sheet.set_value(1, 1, "Date")
+    total_sheet.set_value(1, 2, "Barclays")
+    total_sheet.set_value(2, 1, date(2026, 3, 31))
+
+    workbook = _FakeWorkbook({"Total": total_sheet})
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook)
+    )
+
+    with pytest.raises(RuntimeError, match="Failed to update historical workbook") as exc_info:
+        run_module._merge_historical_workbook(
+            workbook_path=workbook_path,
+            variant="all_programs",
+            as_of_date=date(2026, 5, 31),
+            cprs_ch_records=[{"Notional": 10.0, "Counterparty": "Barclays"}],
+            warnings=[],
+        )
+
+    assert "skip 1 month" in str(exc_info.value.__cause__)
+    assert workbook.saved_paths == []
+
+
+def test_merge_historical_workbook_allows_consecutive_month_append(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workbook_path = tmp_path / "hist.xlsx"
+    workbook_path.write_bytes(b"fixture")
+
+    total_sheet = _FakeWorksheet("Total")
+    total_sheet.set_value(1, 1, "Date")
+    total_sheet.set_value(1, 2, "Barclays")
+    total_sheet.set_value(2, 1, date(2026, 3, 31))
+
+    workbook = _FakeWorkbook({"Total": total_sheet})
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook)
+    )
+
+    run_module._merge_historical_workbook(
+        workbook_path=workbook_path,
+        variant="all_programs",
+        as_of_date=date(2026, 4, 30),
+        cprs_ch_records=[{"Notional": 10.0, "Counterparty": "Barclays"}],
+        warnings=[],
+    )
+
+    assert total_sheet.cell(row=3, column=1).value == date(2026, 4, 30)
+    assert workbook.saved_paths == [workbook_path]
+
+
+def test_merge_historical_workbook_trims_to_36_month_rolling_window(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The real historical workbook is a rolling 3-year window, maintained via
+    periodic manual trims ("every 6 months or so" per the procedures document,
+    changed from "since inception" in 2022) -- this pipeline's own chain had
+    no equivalent and grew unbounded. Appending a 37th month must drop the
+    oldest row so the sheet stays at 36, matching that real convention."""
+    workbook_path = tmp_path / "hist.xlsx"
+    workbook_path.write_bytes(b"fixture")
+
+    total_sheet = _FakeWorksheet("Total")
+    total_sheet.set_value(1, 1, "Date")
+    total_sheet.set_value(1, 2, "Barclays")
+    # Seed 36 consecutive months: Jan 2023 (row 2) through Dec 2025 (row 37).
+    for offset in range(36):
+        year = 2023 + (offset // 12)
+        month = (offset % 12) + 1
+        last_day = calendar.monthrange(year, month)[1]
+        total_sheet.set_value(2 + offset, 1, date(year, month, last_day))
+        total_sheet.set_value(2 + offset, 2, float(offset))
+
+    workbook = _FakeWorkbook({"Total": total_sheet})
+    monkeypatch.setitem(
+        sys.modules, "openpyxl", types.SimpleNamespace(load_workbook=lambda filename: workbook)
+    )
+
+    run_module._merge_historical_workbook(
+        workbook_path=workbook_path,
+        variant="all_programs",
+        as_of_date=date(2026, 1, 31),
+        cprs_ch_records=[{"Notional": 999.0, "Counterparty": "Barclays"}],
+        warnings=[],
+    )
+
+    dated_rows = [
+        row
+        for row in range(2, total_sheet.max_row + 1)
+        if total_sheet.cell(row=row, column=1).value is not None
+    ]
+    assert len(dated_rows) == 36
+    # The oldest row (Jan 2023) was dropped; the second-oldest (Feb 2023) is
+    # now first, and the newly appended Jan 2026 row is last.
+    assert total_sheet.cell(row=dated_rows[0], column=1).value == date(2023, 2, 28)
+    assert total_sheet.cell(row=dated_rows[-1], column=1).value == date(2026, 1, 31)
+    assert total_sheet.cell(row=dated_rows[-1], column=2).value == pytest.approx(999.0)
 
 
 def test_merge_historical_workbook_fails_fast_when_required_headers_missing(
@@ -4131,7 +4472,7 @@ def test_merge_historical_workbook_fails_fast_when_required_headers_missing(
     broken = _FakeWorksheet("Total")
     broken.set_value(1, 1, "Date")
     broken.set_value(1, 2, "")
-    broken.set_value(1, 3, "Series B")
+    broken.set_value(1, 3, "")
     broken.set_value(2, 1, "2025-12-31")
 
     workbook = _FakeWorkbook({"Total": broken})
@@ -4144,14 +4485,14 @@ def test_merge_historical_workbook_fails_fast_when_required_headers_missing(
             workbook_path=workbook_path,
             variant="all_programs",
             as_of_date=date(2026, 2, 13),
-            totals_records=[{"Notional": 10.0, "counterparty": "A"}],
+            cprs_ch_records=[{"Notional": 10.0, "Counterparty": "A"}],
             warnings=[],
         )
 
     message = str(exc_info.value.__cause__)
     assert "missing required columns" in message
     assert "Total" in message
-    assert "value series 1" in message
+    assert "at least one series column" in message
     assert broken.cell(row=3, column=1).value is None
 
 
@@ -4165,7 +4506,7 @@ def test_merge_historical_workbook_applies_currency_formatting_profile(
     target.set_value(1, 1, "Date")
     target.set_value(1, 2, "Series A")
     target.set_value(1, 3, "Series B")
-    target.set_value(2, 1, "2025-12-31")
+    target.set_value(2, 1, "2026-01-31")
 
     workbook = _FakeWorkbook({"Total": target})
     monkeypatch.setitem(
@@ -4176,13 +4517,13 @@ def test_merge_historical_workbook_applies_currency_formatting_profile(
         workbook_path=workbook_path,
         variant="all_programs",
         as_of_date=date(2026, 2, 13),
-        totals_records=[{"Notional": 10.0, "counterparty": "A"}],
+        cprs_ch_records=[{"Notional": 10.0, "Counterparty": "Series A"}],
         formatting_profile="currency",
         warnings=[],
     )
 
     assert target.cell(row=3, column=2).number_format == "$#,##0.00;[Red]-$#,##0.00"
-    assert target.cell(row=3, column=3).number_format == "0"
+    assert target.cell(row=3, column=3).number_format == "$#,##0.00;[Red]-$#,##0.00"
 
 
 def test_merge_historical_workbook_applies_accounting_formatting_profile(
@@ -4195,7 +4536,7 @@ def test_merge_historical_workbook_applies_accounting_formatting_profile(
     target.set_value(1, 1, "Date")
     target.set_value(1, 2, "Series A")
     target.set_value(1, 3, "Series B")
-    target.set_value(2, 1, "2025-12-31")
+    target.set_value(2, 1, "2026-01-31")
 
     workbook = _FakeWorkbook({"Total": target})
     monkeypatch.setitem(
@@ -4206,7 +4547,7 @@ def test_merge_historical_workbook_applies_accounting_formatting_profile(
         workbook_path=workbook_path,
         variant="all_programs",
         as_of_date=date(2026, 2, 13),
-        totals_records=[{"Notional": 10.0, "counterparty": "A"}],
+        cprs_ch_records=[{"Notional": 10.0, "Counterparty": "Series A"}],
         formatting_profile="accounting",
         warnings=[],
     )
@@ -4214,7 +4555,9 @@ def test_merge_historical_workbook_applies_accounting_formatting_profile(
     notional_format = target.cell(row=3, column=2).number_format
     assert isinstance(notional_format, str)
     assert "#,##0.00" in notional_format
-    assert target.cell(row=3, column=3).number_format == "0"
+    second_column_format = target.cell(row=3, column=3).number_format
+    assert isinstance(second_column_format, str)
+    assert "#,##0.00" in second_column_format
 
 
 # ---------------------------------------------------------------------------
@@ -4567,7 +4910,9 @@ def test_export_chart_shapes_as_images_returns_empty_when_no_ole_shapes(
         def Count(self) -> int:  # noqa: N802  # pragma: no cover
             return 1
 
-    # Build a Slides-like object with .Count and index access.
+    # Models real COM collection semantics: Slides(i)/Item(i) is 1-based, while
+    # pywin32's bracket indexing is 0-based. Production code must use the 1-based
+    # call form, so the fake has to offer both and index them differently.
     class _SlideList:
         def __init__(self) -> None:
             self._slides = [_FakeSlide()]
@@ -4576,8 +4921,18 @@ def test_export_chart_shapes_as_images_returns_empty_when_no_ole_shapes(
         def __iter__(self) -> Any:
             return iter(self._slides)
 
-        def __getitem__(self, idx: int) -> Any:
+        def __call__(self, idx: int) -> Any:
+            if not 1 <= idx <= self.Count:
+                raise IndexError(f"slide index out of range (1-based): {idx}")
             return self._slides[idx - 1]
+
+        def Item(self, idx: int) -> Any:  # noqa: N802
+            return self(idx)
+
+        def __getitem__(self, idx: int) -> Any:
+            if not 0 <= idx < self.Count:
+                raise IndexError(f"slide index out of range (0-based): {idx}")
+            return self._slides[idx]
 
     class _Presentation:
         def __init__(self) -> None:
@@ -4611,14 +4966,28 @@ def test_export_chart_shapes_as_images_records_warning_on_export_failure(
             raise RuntimeError("COM export failed")
 
     class _SlideList:
+        # 1-based call form (real COM) plus 0-based brackets (pywin32).
         def __init__(self) -> None:
             self.Count = 1
 
-        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+        def _slide(self):  # type: ignore[no-untyped-def]
             class _Slide:
                 Shapes = [_FailingShape()]
 
             return _Slide()
+
+        def __call__(self, idx: int):  # type: ignore[no-untyped-def]
+            if not 1 <= idx <= self.Count:
+                raise IndexError(f"slide index out of range (1-based): {idx}")
+            return self._slide()
+
+        def Item(self, idx: int):  # type: ignore[no-untyped-def]  # noqa: N802
+            return self(idx)
+
+        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+            if not 0 <= idx < self.Count:
+                raise IndexError(f"slide index out of range (0-based): {idx}")
+            return self._slide()
 
     class _Presentation:
         def __init__(self) -> None:
@@ -4656,14 +5025,28 @@ def test_export_chart_shapes_as_images_collects_ole_shapes(
             written.append(path)
 
     class _SlideList:
+        # 1-based call form (real COM) plus 0-based brackets (pywin32).
         def __init__(self) -> None:
             self.Count = 1
 
-        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+        def _slide(self):  # type: ignore[no-untyped-def]
             class _Slide:
                 Shapes = [_OleShape()]
 
             return _Slide()
+
+        def __call__(self, idx: int):  # type: ignore[no-untyped-def]
+            if not 1 <= idx <= self.Count:
+                raise IndexError(f"slide index out of range (1-based): {idx}")
+            return self._slide()
+
+        def Item(self, idx: int):  # type: ignore[no-untyped-def]  # noqa: N802
+            return self(idx)
+
+        def __getitem__(self, idx: int):  # type: ignore[no-untyped-def]
+            if not 0 <= idx < self.Count:
+                raise IndexError(f"slide index out of range (0-based): {idx}")
+            return self._slide()
 
     class _Presentation:
         def __init__(self) -> None:
@@ -5185,3 +5568,34 @@ def _write_ci_langsmith_fleet_artifact(
         repo_root / "artifacts" / "langsmith" / run_module.LANGSMITH_FLEET_ARTIFACT_NAME,
         records,
     )
+
+
+def test_copy_row_presentation_carries_formats_to_appended_row() -> None:
+    """Appended rows must inherit the sheet's display conventions.
+
+    The historical workbooks show dates as mmm-yy and values in an accounting
+    format. openpyxl creates new cells with the default "General" format, so
+    without copying the prior row's presentation an appended row rendered as an
+    ISO date with unformatted numbers -- visually inconsistent with every other
+    row in a workbook the analysts maintain by hand.
+    """
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    workbook = Workbook()
+    worksheet = workbook.active
+    date_format = r"[$-409]mmm\-yy;@"
+    accounting_format = r'_(* #,##0_);_(* \(#,##0\);_(* "-"??_);_(@_)'
+
+    worksheet.cell(row=5, column=1).number_format = date_format
+    worksheet.cell(row=5, column=2).number_format = accounting_format
+    worksheet.cell(row=5, column=2).font = Font(name="Calibri", size=11, bold=True)
+
+    run_module._copy_row_presentation(worksheet=worksheet, source_row=5, target_row=6, max_column=2)
+
+    assert worksheet.cell(row=6, column=1).number_format == date_format
+    assert worksheet.cell(row=6, column=2).number_format == accounting_format
+    assert worksheet.cell(row=6, column=2).font.bold is True
+    # Presentation only -- values must not be carried down.
+    assert worksheet.cell(row=6, column=1).value is None
+    assert worksheet.cell(row=6, column=2).value is None

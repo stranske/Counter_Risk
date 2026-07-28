@@ -100,6 +100,7 @@ class WorkflowConfig(BaseModel):
     raw_nisa_ex_trend_xlsx: Path | None = None
     mosers_trend_xlsx: Path | None = None
     raw_nisa_trend_xlsx: Path | None = None
+    exposure_summary_xlsx: Path | None = None
     hist_all_programs_3yr_xlsx: Path
     hist_ex_llc_3yr_xlsx: Path
     hist_llc_3yr_xlsx: Path

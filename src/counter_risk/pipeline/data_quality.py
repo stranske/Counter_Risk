@@ -15,6 +15,7 @@ _SEVERITY_BY_CODE: dict[str, Severity] = {
     "UNMATCHED_MAPPINGS": "fail",
     "RECONCILIATION_GAPS": "fail",
     "RECONCILIATION_GAP_DETAIL": "fail",
+    "RECONCILIATION_DORMANT_SERIES": "info",
     "PPT_GENERATION_FAILED": "fail",
     "PPT_GENERATION_SKIPPED": "warn",
     "LIMIT_BREACHES": "warn",
@@ -40,6 +41,7 @@ _CATEGORY_BY_CODE: dict[str, str] = {
     "UNMATCHED_MAPPINGS": "mapping",
     "RECONCILIATION_GAPS": "reconciliation",
     "RECONCILIATION_GAP_DETAIL": "reconciliation",
+    "RECONCILIATION_DORMANT_SERIES": "reconciliation",
     "PPT_GENERATION_FAILED": "ppt",
     "PPT_GENERATION_SKIPPED": "ppt",
     "LIMIT_BREACHES": "limits",
@@ -470,6 +472,8 @@ def _recommended_action(*, category: str, severity: str) -> str:
 
 def _code_from_message(message: str) -> str:
     message_lower = message.casefold()
+    if "dormant series (informational" in message_lower:
+        return "RECONCILIATION_DORMANT_SERIES"
     if "missing a date header" in message_lower:
         return "MISSING_DATE_HEADER"
     if "date derivation" in message_lower:

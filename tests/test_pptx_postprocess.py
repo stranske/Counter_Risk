@@ -72,6 +72,53 @@ def test_scrub_external_relationships_from_pptx_removes_external_targets_across_
         assert archive.read("ppt/media/image1.png") == b"png"
 
 
+def test_scrub_external_relationships_removes_dangling_chart_external_data_ref(
+    tmp_path: Path,
+) -> None:
+    """Removing a chart's external relationship must also strip the chart's
+    own <c:externalData r:id="..."> reference to it, or the relationship id
+    it points to no longer resolves and PowerPoint refuses to open the file
+    (reproduced against real report output: every Distribution PPTX failed
+    to open via COM with exactly this dangling reference)."""
+
+    source = tmp_path / "source.pptx"
+    output = tmp_path / "distribution.pptx"
+
+    with ZipFile(source, "w") as archive:
+        archive.writestr(
+            "ppt/charts/_rels/chart1.xml.rels",
+            """<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">
+  <Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeOverride\" Target=\"../theme/themeOverride1.xml\"/>
+  <Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject\" Target=\"file:///X:/linked/book.xlsx\" TargetMode=\"External\"/>
+</Relationships>
+""",
+        )
+        archive.writestr(
+            "ppt/charts/chart1.xml",
+            (
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                '<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" '
+                'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+                "<c:chart><c:plotArea/></c:chart>"
+                '<c:externalData r:id="rId2"><c:autoUpdate val="0"/></c:externalData>'
+                "</c:chartSpace>"
+            ),
+        )
+
+    scrub_external_relationships_from_pptx(source, scrubbed_pptx_path=output)
+
+    with ZipFile(output) as archive:
+        chart_xml = archive.read("ppt/charts/chart1.xml").decode("utf-8")
+
+    assert "externalData" not in chart_xml
+    assert "rId2" not in chart_xml
+    # The chart's other content, and its still-valid internal relationship,
+    # must survive untouched.
+    assert "plotArea" in chart_xml
+    assert _relationship_count(output, "ppt/charts/_rels/chart1.xml.rels") == 1
+
+
 def test_scrub_external_relationships_from_pptx_returns_new_default_scrubbed_copy(
     tmp_path: Path,
 ) -> None:
