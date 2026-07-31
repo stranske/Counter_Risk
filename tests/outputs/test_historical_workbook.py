@@ -131,9 +131,9 @@ def test_historical_workbook_generator_wraps_pipeline_historical_update_flow(
     )
 
     parsed_by_variant: dict[str, dict[str, object]] = {
-        "all_programs": {"totals": [{"Notional": 100.0}]},
-        "ex_trend": {"totals": [{"Notional": 200.0}]},
-        "trend": {"totals": [{"Notional": 300.0}]},
+        "all_programs": {"cprs_ch": [{"Notional": 100.0}]},
+        "ex_trend": {"cprs_ch": [{"Notional": 200.0}]},
+        "trend": {"cprs_ch": [{"Notional": 300.0}]},
     }
 
     def _fake_copy(src: str | Path, dst: str | Path, *, follow_symlinks: bool = True) -> str:
@@ -147,18 +147,26 @@ def test_historical_workbook_generator_wraps_pipeline_historical_update_flow(
     def _fake_records(table: Any) -> list[dict[str, object]]:
         return [dict(record) for record in table]
 
+    breakdowns_seen: list[tuple[str, dict[str, float] | None]] = []
+
     def _fake_merge(
         *,
         workbook_path: Path,
         variant: str,
         as_of_date: date,
-        totals_records: list[dict[str, object]],
+        cprs_ch_records: list[dict[str, object]],
         formatting_profile: str | None = None,
+        class_breakdown: dict[str, float] | None = None,
         warnings: list[str],
     ) -> None:
         del warnings, formatting_profile
-        notional = cast(float, totals_records[0]["Notional"])
+        notional = cast(float, cprs_ch_records[0]["Notional"])
         merged.append((workbook_path, variant, float(notional), as_of_date.month))
+        breakdowns_seen.append((variant, class_breakdown))
+
+    def _fake_breakdown_reader(path: Path) -> dict[str, float] | None:
+        del path
+        return {"TIPS": 0.1, "Treasury": 0.2, "Equity": 0.3, "Commodity": 0.2, "Currency": 0.2}
 
     generator = HistoricalWorkbookOutputGenerator(
         parsed_by_variant=parsed_by_variant,
@@ -166,6 +174,7 @@ def test_historical_workbook_generator_wraps_pipeline_historical_update_flow(
         workbook_copier=_fake_copy,
         records_extractor=_fake_records,
         workbook_merger=_fake_merge,
+        class_breakdown_reader=_fake_breakdown_reader,
     )
 
     generated = generator.generate(context=output_context)
@@ -178,3 +187,7 @@ def test_historical_workbook_generator_wraps_pipeline_historical_update_flow(
         (expected_outputs[1], "ex_trend", 200.0, 1),
         (expected_outputs[2], "trend", 300.0, 1),
     ]
+    # The published class breakdown must reach the merger for every variant: Trend's
+    # mix comes from an absolute-value row that cannot be derived from the records.
+    assert [variant for variant, _ in breakdowns_seen] == ["all_programs", "ex_trend", "trend"]
+    assert all(breakdown is not None for _, breakdown in breakdowns_seen)

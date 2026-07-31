@@ -135,6 +135,170 @@ def test_parse_trend_variant_maps_swaps_to_futures(fake_pandas: None) -> None:
     assert {row["Segment"] for row in records} == {"futures"}
 
 
+def _build_real_shape_workbook(tmp_path: Path, name: str) -> Path:
+    """Build a minimal workbook reproducing two real-world layout quirks seen in
+    actual MOSERS exports:
+
+    1. A segment marker label (e.g. "Swaps") sharing its row with the first real
+       data row (label in column A, data starting in column B).
+    2. A "Total by Counterparty/Clearing House" rollup section where every row is
+       *also* stamped with a shorter "Total by Counterparty" tag in column A (a
+       real-world formatting artifact), plus trailing footer/annotation rows
+       ("Total Current Exposure", "MOSERS Program", "Notional Breakdown",
+       asterisked footnotes) that must not be parsed as counterparty rows.
+    """
+    import openpyxl
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "CPRS-CH"
+
+    sheet["A1"] = "Counterparty Risk Summary"
+    sheet["A2"] = "Futures - Clearing House"
+    sheet["A3"] = "As of 1.31.2026"
+    sheet["B5"] = "Counterparty/ \nClearing House"
+    sheet["K5"] = "Notional"
+    sheet["D6"] = "Cash"
+    sheet["E6"] = "TIPS"
+    sheet["F6"] = "Treasury"
+    sheet["G6"] = "Equity"
+    sheet["H6"] = "Commodity"
+    sheet["I6"] = "Currency"
+
+    # Swaps: label shares row 7 with the first data row (Citigroup).
+    sheet["A7"] = "Swaps"
+    sheet["B7"] = "Citigroup"
+    sheet["K7"] = 111.0
+    sheet["B8"] = "Bank of America, NA"
+    sheet["K8"] = 222.0
+
+    # Repo: label shares row 10 with the first data row (Nomura).
+    sheet["A10"] = "Repo"
+    sheet["B10"] = "Nomura"
+    sheet["K10"] = 33.0
+
+    # Rollup section: marker on its own row, but every data row also carries a
+    # shorter "Total by Counterparty" tag in column A.
+    sheet["B13"] = (
+        "Total by Counterparty/Clearing House (This is not the legal obligation exposure)"
+    )
+    sheet["A14"] = "Total by Counterparty"
+    sheet["B14"] = "Citigroup"
+    sheet["K14"] = 111.0
+    sheet["A15"] = "Total by Counterparty"
+    sheet["B15"] = "Bank of America, NA"
+    sheet["K15"] = 222.0
+    sheet["A16"] = "Total by Counterparty"
+    sheet["B16"] = "Nomura"
+    sheet["K16"] = 33.0
+
+    # Footer/annotation noise that must be excluded.
+    sheet["B17"] = "Total Current Exposure"
+    sheet["B18"] = "MOSERS Program"
+    sheet["K18"] = 366.0
+    sheet["B19"] = "Notional Breakdown"
+    sheet["B20"] = "*** Does not include cash."
+    # Some real exports wrap the footnote in a literal straight-quote pair.
+    sheet["B21"] = '"***Does not include cash"'
+
+    path = tmp_path / name
+    workbook.save(path)
+    return path
+
+
+def test_parse_cprs_ch_includes_first_row_sharing_segment_label(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    """Regression test: a segment label sharing its row with the first data row
+    (e.g. "Swaps" in column A, "Citigroup" in column B on the same row) must not
+    drop that first row."""
+    path = _build_real_shape_workbook(tmp_path, "shared_row.xlsx")
+    df = parse_cprs_ch(path)
+    records = df.to_records()
+
+    swaps_names = {row["Counterparty"] for row in records if row["Segment"] == "swaps"}
+    assert "Citigroup" in swaps_names
+
+    repo_names = {row["Counterparty"] for row in records if row["Segment"] == "repo"}
+    assert "Nomura" in repo_names
+
+
+def test_parse_cprs_ch_totals_section_ignores_per_row_tag_and_footer_noise(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    """Regression test: the rollup section's real counterparty rows must survive
+    (even though every row repeats a shorter "Total by Counterparty" tag in
+    column A that could be mistaken for a second section marker), and footer/
+    annotation rows must not appear as counterparty data."""
+    path = _build_real_shape_workbook(tmp_path, "totals_noise.xlsx")
+    df = parse_cprs_ch(path)
+    records = df.to_records()
+
+    totals = [row for row in records if row["Segment"] == "totals"]
+    totals_names = {row["Counterparty"] for row in totals}
+    assert totals_names == {"Citigroup", "Bank of America, NA", "Nomura"}
+
+    all_names = {row["Counterparty"] for row in records}
+    assert "Total Current Exposure" not in all_names
+    assert "MOSERS Program" not in all_names
+    assert "Notional Breakdown" not in all_names
+    assert "*** Does not include cash." not in all_names
+    assert '"***Does not include cash"' not in all_names
+
+
+def test_parse_cprs_ch_finds_totals_marker_shifted_to_column_c(
+    tmp_path: Path, fake_pandas: None
+) -> None:
+    """Regression test: a real December 2025 export places the "Total by
+    Counterparty/Clearing House" rollup marker in column C (the same column that
+    holds counterparty names in that file) with columns A and B both empty on
+    that row — unlike the other segment markers (Swaps/Repo/Futures), which sit
+    in column B. Before this fix, the marker went undetected and the entire
+    rollup section silently merged into the preceding segment, corrupting any
+    aggregate computed from "all rows" (double-counting, since the rollup
+    restates the segment rows)."""
+    import openpyxl
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "CPRS-CH"
+
+    sheet["C5"] = "Counterparty/ \nClearing House"
+    sheet["K5"] = "Notional"
+
+    sheet["B7"] = "Swaps"
+    sheet["C7"] = "Citigroup"
+    sheet["K7"] = 111.0
+
+    sheet["B9"] = "Repo"
+    sheet["C9"] = "Nomura"
+    sheet["K9"] = 33.0
+
+    # Rollup marker in column C only (A and B empty on this row).
+    sheet["C11"] = (
+        "Total by Counterparty/Clearing House (This is not the legal obligation exposure)"
+    )
+    sheet["B12"] = "Total by Counterparty"
+    sheet["C12"] = "Citigroup"
+    sheet["K12"] = 111.0
+    sheet["B13"] = "Total by Counterparty"
+    sheet["C13"] = "Nomura"
+    sheet["K13"] = 33.0
+
+    path = tmp_path / "column_c_marker.xlsx"
+    workbook.save(path)
+
+    df = parse_cprs_ch(path)
+    records = df.to_records()
+
+    totals = [row for row in records if row["Segment"] == "totals"]
+    assert {row["Counterparty"] for row in totals} == {"Citigroup", "Nomura"}
+    assert sum(row["Notional"] for row in totals) == pytest.approx(144.0)
+
+    # The overall sum across every row must not double-count the rollup section.
+    assert sum(row["Notional"] for row in records) == pytest.approx(288.0)
+
+
 def test_parse_cprs_ch_missing_file_raises() -> None:
     with pytest.raises(FileNotFoundError):
         parse_cprs_ch(Path("tests/fixtures/does-not-exist.xlsx"))

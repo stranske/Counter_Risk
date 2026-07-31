@@ -15,6 +15,24 @@ _XML_NS = {
     "pkg": "http://schemas.openxmlformats.org/package/2006/relationships",
 }
 
+# Plain blank/placeholder tokens, plus the standard Excel formula-error
+# strings (e.g. a volatility lookup with insufficient history yields #N/A).
+# Treated as 0.0, matching this codebase's convention of coercing missing
+# numeric data to zero rather than failing the whole parse.
+_BLANK_OR_MISSING_TOKENS = {
+    "-",
+    "--",
+    "N/A",
+    "n/a",
+    "#N/A",
+    "#DIV/0!",
+    "#VALUE!",
+    "#REF!",
+    "#NAME?",
+    "#NULL!",
+    "#NUM!",
+}
+
 
 def load_shared_strings(workbook_zip: ZipFile) -> list[str]:
     """Load the shared strings list from an Excel workbook zip archive."""
@@ -158,7 +176,7 @@ def coerce_accounting_float(value: Any, *, strip_percent: bool = True) -> float:
 
     # Normalization of string input
     text = canonicalize_name(str(value)).strip()
-    if not text or text in {"-", "--", "N/A", "n/a"}:
+    if not text or text in _BLANK_OR_MISSING_TOKENS:
         return 0.0
 
     # Handle parenthesized negative values, e.g. "(123.45)" -> "-123.45"

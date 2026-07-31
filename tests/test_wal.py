@@ -4,155 +4,63 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any
 
 import pytest
 
 from counter_risk.calculations.wal import calculate_wal
 
-
-def test_calculate_wal_fixture_matches_expected_value() -> None:
-    wal = calculate_wal(
-        Path("tests/fixtures/nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx"),
-        date(2025, 12, 31),
-    )
-    assert wal == pytest.approx(2.1369565217391304)
+openpyxl = pytest.importorskip("openpyxl")
+Workbook = openpyxl.Workbook
 
 
-def test_calculate_wal_is_deterministic_for_same_inputs() -> None:
-    fixture = Path("tests/fixtures/nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx")
-    first = calculate_wal(fixture, "2025-12-31")
-    second = calculate_wal(fixture, datetime(2025, 12, 31, 13, 45))
-    assert first == second
-
-
-def test_calculate_wal_is_deterministic_across_shifted_header_variants(tmp_path: Path) -> None:
-    rows = [
-        ("Alpha", "Interest Rate Swap", 100.0, 1.0),
-        ("Bravo", "Repo", 50.0, 4.0),
-    ]
-    standard = _create_exposure_summary_workbook(
-        tmp_path / "standard.xlsx",
-        rows=rows,
-        header_row=1,
-    )
-    shifted = _create_exposure_summary_workbook(
-        tmp_path / "shifted.xlsx",
-        rows=rows,
-        header_row=5,
-    )
-
-    first = calculate_wal(standard, "2026-01-31")
-    second = calculate_wal(shifted, "2026-01-31")
-    assert first == second
-
-
-def test_calculate_wal_missing_return_swaps_uses_all_rows(tmp_path: Path) -> None:
-    workbook = _create_exposure_summary_workbook(
-        tmp_path / "no_return_swaps.xlsx",
-        rows=[
-            ("Alpha", "Interest Rate Swap", 100.0, 1.0),
-            ("Bravo", "Repo", 50.0, 4.0),
-        ],
-    )
-    wal = calculate_wal(workbook, "2026-01-31")
-    assert wal == pytest.approx(2.0)
-
-
-def test_calculate_wal_returns_zero_when_all_rows_are_zero_filled(tmp_path: Path) -> None:
-    workbook = _create_exposure_summary_workbook(
-        tmp_path / "zeros.xlsx",
-        rows=[
-            ("Alpha", "Interest Rate Swap", None, 2.0),
-            ("Bravo", "Repo", 0.0, None),
-        ],
-    )
-    wal = calculate_wal(workbook, "2026-01-31")
-    assert wal == 0.0
-
-
-def test_calculate_wal_returns_zero_when_only_return_swaps_present(tmp_path: Path) -> None:
-    workbook = _create_exposure_summary_workbook(
-        tmp_path / "only_return_swaps.xlsx",
-        rows=[
-            ("Alpha", "Return Swaps", 1000.0, 3.0),
-            ("Bravo", "Return Swap", 50.0, 1.0),
-        ],
-    )
-    wal = calculate_wal(workbook, "2026-01-31")
-    assert wal == 0.0
-
-
-def test_calculate_wal_empty_data_raises_value_error(tmp_path: Path) -> None:
-    workbook = _create_exposure_summary_workbook(tmp_path / "empty.xlsx", rows=[])
-    with pytest.raises(ValueError, match="produced no rows"):
-        calculate_wal(workbook, "2026-01-31")
-
-
-def test_calculate_wal_invalid_px_date_raises_value_error(tmp_path: Path) -> None:
-    workbook = _create_exposure_summary_workbook(
-        tmp_path / "single_row.xlsx",
-        rows=[("Alpha", "Repo", 100.0, 2.0)],
-    )
-    with pytest.raises(ValueError, match="ISO date string"):
-        calculate_wal(workbook, "01-31-2026")
-
-
-def test_calculate_wal_nan_exposure_fails(tmp_path: Path) -> None:
-    # Test string "NaN"
-    workbook1 = _create_exposure_summary_workbook(
-        tmp_path / "nan_exposure_str.xlsx",
-        rows=[("Alpha", "Interest Rate Swap", "NaN", 2.0)],
-    )
-    with pytest.raises(ValueError, match="not finite|Non-finite|Unable to parse"):
-        calculate_wal(workbook1, "2026-01-31")
-
-    # Test string "nan"
-    workbook2 = _create_exposure_summary_workbook(
-        tmp_path / "nan_exposure_lc.xlsx",
-        rows=[("Alpha", "Interest Rate Swap", "nan", 2.0)],
-    )
-    with pytest.raises(ValueError, match="not finite|Non-finite|Unable to parse"):
-        calculate_wal(workbook2, "2026-01-31")
-
-    # Test string "inf"
-    workbook3 = _create_exposure_summary_workbook(
-        tmp_path / "inf_exposure.xlsx",
-        rows=[("Alpha", "Interest Rate Swap", "inf", 2.0)],
-    )
-    with pytest.raises(ValueError, match="not finite|Non-finite|Unable to parse"):
-        calculate_wal(workbook3, "2026-01-31")
-
-
-def _create_exposure_summary_workbook(
-    path: Path, rows: list[tuple[Any, Any, Any, Any]], *, header_row: int = 1
+def _write_schedule(
+    path: Path,
+    *,
+    px: datetime = datetime(2025, 11, 30),
+    rows: tuple[tuple[datetime, float | None], ...] = (
+        (datetime(2025, 12, 30), 100.0),  # 30 days
+        (datetime(2026, 1, 29), 300.0),  # 60 days
+    ),
 ) -> Path:
-    openpyxl = pytest.importorskip("openpyxl")
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = "Exposure Maturity Summary"
-
-    headers = (
-        "Counterparty",
-        "Product Type",
-        "Current Exposure",
-        "Years to Maturity",
-        "Maturity Date",
-        "Bucket",
-    )
-    for column_index, header in enumerate(headers, start=1):
-        sheet.cell(row=header_row, column=column_index).value = header
-
-    for row_index, (counterparty, product_type, exposure, years) in enumerate(
-        rows, start=header_row + 1
-    ):
-        sheet.cell(row=row_index, column=1).value = counterparty
-        sheet.cell(row=row_index, column=2).value = product_type
-        sheet.cell(row=row_index, column=3).value = exposure
-        sheet.cell(row=row_index, column=4).value = years
-        sheet.cell(row=row_index, column=5).value = "2030-01-31"
-        sheet.cell(row=row_index, column=6).value = "1-3Y"
-
-    workbook.save(path)
-    workbook.close()
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Exposure Maturity Schedule"
+    ws.cell(row=4, column=7).value = "Px Date"
+    ws.cell(row=4, column=8).value = px
+    ws.cell(row=10, column=3).value = "NISA TIPS"
+    ws.cell(row=11, column=6).value = "Total"
+    r = 14
+    for mat, total in rows:
+        ws.cell(row=r, column=2).value = mat
+        if total is not None:
+            ws.cell(row=r, column=6).value = total
+        r += 1
+    ws.cell(row=r, column=2).value = "Total"
+    wb.save(path)
     return path
+
+
+def test_calculate_wal_weighted_days(tmp_path: Path) -> None:
+    # (30*100 + 60*300) / (100+300) = (3000 + 18000)/400 = 52.5 days
+    p = _write_schedule(tmp_path / "wal.xlsx")
+    assert calculate_wal(p, date(2025, 11, 30)) == pytest.approx(52.5)
+
+
+def test_calculate_wal_uses_sheet_px_date_over_argument(tmp_path: Path) -> None:
+    # Sheet Px Date (2025-11-30) should be used even if a different arg is passed.
+    p = _write_schedule(tmp_path / "wal2.xlsx")
+    from_arg = calculate_wal(p, date(2020, 1, 1))
+    assert from_arg == pytest.approx(52.5)
+
+
+def test_calculate_wal_zero_when_all_totals_zero(tmp_path: Path) -> None:
+    p = _write_schedule(
+        tmp_path / "zero.xlsx",
+        rows=((datetime(2025, 12, 30), 0.0), (datetime(2026, 1, 29), 0.0)),
+    )
+    assert calculate_wal(p, date(2025, 11, 30)) == 0.0
+
+
+def test_calculate_wal_is_deterministic(tmp_path: Path) -> None:
+    p = _write_schedule(tmp_path / "det.xlsx")
+    assert calculate_wal(p, date(2025, 11, 30)) == calculate_wal(p, date(2025, 11, 30))

@@ -51,6 +51,8 @@ def test_reconcile_series_coverage_accepts_historical_headers_parameter() -> Non
                 "missing_from_historical_headers": [],
                 "missing_normalized_counterparties": [],
                 "missing_from_data": ["B"],
+                "dropped_from_data": ["B"],
+                "dormant_from_data": [],
                 "segments_in_data": [],
                 "missing_expected_segments": [],
                 "canonical_key_by_series": {"A": "A"},
@@ -121,6 +123,8 @@ def test_reconcile_series_coverage_extracts_counterparties_and_clearing_houses()
         "missing_from_historical_headers": ["Citibank", "CME", "ICE", "JPMorgan"],
         "missing_normalized_counterparties": ["Citibank", "JPMorgan"],
         "missing_from_data": [],
+        "dropped_from_data": [],
+        "dormant_from_data": [],
         "segments_in_data": [],
         "missing_expected_segments": [],
         "canonical_key_by_series": {
@@ -175,6 +179,8 @@ def test_reconcile_series_coverage_extracts_historical_series_headers_per_sheet(
         "missing_from_historical_headers": [],
         "missing_normalized_counterparties": [],
         "missing_from_data": ["CME", "ICE"],
+        "dropped_from_data": ["CME", "ICE"],
+        "dormant_from_data": [],
         "segments_in_data": [],
         "missing_expected_segments": [],
         "canonical_key_by_series": {},
@@ -192,6 +198,23 @@ def test_reconcile_series_coverage_counts_each_historical_series_missing_from_da
 
     assert result["by_sheet"]["Total"]["missing_from_data"] == ["B", "C"]
     assert result["gap_count"] == 2
+
+
+def test_reconcile_series_coverage_uses_authoritative_present_set_when_provided() -> None:
+    """When series_present_by_sheet says a header IS present (as the append's
+    per-asset-class sourcing determines), it must not be flagged missing even
+    though it is absent from that sheet's totals/futures records. This is the
+    per-sheet-view fix: reconciliation checks against what the pipeline actually
+    populates, not the single-sheet routing of totals records."""
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={"Equity": {"totals": [{"counterparty": "A"}], "futures": []}},
+        historical_series_headers_by_sheet={"Equity": ("A", "B", "C")},
+        # B has real Equity exposure (append writes it); C genuinely does not.
+        series_present_by_sheet={"Equity": {"A", "B"}},
+    )
+
+    assert result["by_sheet"]["Equity"]["missing_from_data"] == ["C"]
+    assert result["gap_count"] == 1
 
 
 def test_reconcile_series_coverage_counts_missing_historical_series_with_no_other_gaps() -> None:

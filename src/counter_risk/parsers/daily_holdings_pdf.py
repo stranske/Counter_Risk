@@ -41,6 +41,17 @@ _COUNTERPARTY_ALIASES: dict[str, tuple[str, ...]] = {
 
 _AMOUNT_PATTERN = re.compile(r"(?P<value>\(?\$?[-+]?\d[\d,]*(?:\.\d+)?\)?)")
 
+# Real MOSERS "STIF Holdings" daily PDFs list each repo position as
+#   "REPO - <Counterparty> <Notional>REPO-<Product> <rate>% <many trailing columns>"
+# where <Notional> is a comma-grouped amount (sometimes carrying a stray space
+# from PDF text extraction, e.g. "1 23,456,789") and is the value we want -- NOT the
+# trailing rating/duration columns. Match the counterparty and the notional that
+# immediately precedes the "REPO-<Product>" token.
+_STIF_REPO_LINE_PATTERN = re.compile(
+    r"REPO\s*-\s*(?P<cp>.+?)\s+(?P<amount>\d[\d, ]*\d)\s*REPO-",
+    re.IGNORECASE,
+)
+
 
 class DailyHoldingsPdfError(ValueError):
     """Raised when Daily Holdings parsing fails validation."""
@@ -111,8 +122,20 @@ def _tesseract_ocr_extract(content: bytes) -> Sequence[str]:
 
 
 def _extract_repo_cash_values(text: str) -> dict[str, float]:
-    totals: defaultdict[str, float] = defaultdict(float)
+    # Prefer the real STIF "REPO - <cp> <notional>REPO-<product>" layout: it lists
+    # every repo counterparty (not just a known subset) and the notional is the
+    # first number after the name, so take that rather than a trailing column.
+    stif_totals = _extract_stif_repo_values(text)
+    if stif_totals:
+        return {
+            counterparty: amount
+            for counterparty, amount in stif_totals.items()
+            if math.isfinite(amount) and amount != 0.0
+        }
 
+    # Fallback: simpler "<Counterparty> <Amount>" layout (e.g. sanitized samples),
+    # where the amount is the only/last number on the line.
+    totals: defaultdict[str, float] = defaultdict(float)
     for raw_line in text.splitlines():
         line = canonicalize_name(raw_line)
         if not line:
@@ -131,6 +154,39 @@ def _extract_repo_cash_values(text: str) -> dict[str, float]:
         if math.isfinite(amount) and amount != 0.0
     }
     return cleaned
+
+
+def _extract_stif_repo_values(text: str) -> dict[str, float]:
+    """Extract repo notionals per counterparty from the real STIF Holdings layout."""
+
+    totals: defaultdict[str, float] = defaultdict(float)
+    for raw_line in text.splitlines():
+        for match in _STIF_REPO_LINE_PATTERN.finditer(raw_line):
+            counterparty = _canonicalize_repo_counterparty(match.group("cp"))
+            if not counterparty:
+                continue
+            # Notional may carry stray spaces from PDF extraction ("1 23,456,789").
+            amount = _parse_amount(match.group("amount").replace(" ", ""))
+            if amount is None:
+                continue
+            totals[counterparty] += amount
+    return dict(totals)
+
+
+def _canonicalize_repo_counterparty(raw: str) -> str | None:
+    """Map a repo counterparty label to its canonical name.
+
+    Uses the known alias table first; otherwise falls back to the general name
+    canonicalizer so counterparties beyond the known subset (e.g. Mizuho, BNP
+    Paribas) are still captured and matched to the historical Cash sheet columns
+    downstream.
+    """
+
+    aliased = _match_counterparty(raw)
+    if aliased is not None:
+        return aliased
+    canonical = canonicalize_name(raw).strip()
+    return canonical or None
 
 
 def _parse_counterparty_amount_line(line: str) -> tuple[str, float] | None:

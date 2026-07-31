@@ -190,6 +190,38 @@ def test_append_to_sheet_raises_monotonicity_error_on_less_than_last_row_date_fr
     assert historical_update._get_cell_value_no_create(sheet, row=14, column=1) is None
 
 
+def test_append_to_sheet_raises_date_gap_error_when_a_month_is_skipped() -> None:
+    """Appending March directly onto a workbook last dated December (skipping
+    January and February) must fail loudly rather than silently succeed, since
+    March > December satisfies monotonicity but still leaves a 2-month gap."""
+    sheet_name = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
+    sheet = _build_sheet(sheet_name, historical_update.SERIES_BY_SHEET[sheet_name])
+    workbook = _FakeWorkbook({sheet_name: sheet})
+
+    with pytest.raises(historical_update.DateGapError, match="skip 2 month"):
+        historical_update._append_to_sheet(
+            workbook=workbook,
+            sheet_name=sheet_name,
+            rollup_data={"Total": 1.0},
+            resolved_date=date(2026, 3, 31),
+        )
+
+
+def test_append_to_sheet_allows_consecutive_month_append() -> None:
+    sheet_name = historical_update.SHEET_ALL_PROGRAMS_3_YEAR
+    sheet = _build_sheet(sheet_name, historical_update.SERIES_BY_SHEET[sheet_name])
+    workbook = _FakeWorkbook({sheet_name: sheet})
+
+    historical_update._append_to_sheet(
+        workbook=workbook,
+        sheet_name=sheet_name,
+        rollup_data={"Total": 1.0},
+        resolved_date=date(2026, 1, 31),
+    )
+
+    assert historical_update._get_cell_value_no_create(sheet, row=3, column=1) == date(2026, 1, 31)
+
+
 def test_read_wal_sheet_append_location_identifies_header_columns_and_next_row() -> None:
     wal_sheet = _FakeWorksheet(historical_update.SHEET_WAL)
     wal_sheet.set_value(2, 1, "Date")
@@ -663,6 +695,28 @@ def test_append_wal_row_rejects_non_monotonic_date(tmp_path: Path) -> None:
         historical_update.append_wal_row(
             workbook_path,
             px_date=date(2026, 1, 31),
+            wal_value=2.35,
+        )
+
+
+def test_append_wal_row_rejects_skipped_month(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    workbook_path = tmp_path / "historical.xlsx"
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = historical_update.SHEET_WAL
+    sheet.cell(row=2, column=1).value = "Date"
+    sheet.cell(row=2, column=2).value = "WAL TIPS REPO"
+    sheet.cell(row=3, column=1).value = date(2026, 1, 31)
+    sheet.cell(row=3, column=2).value = 2.1
+    workbook.save(workbook_path)
+    workbook.close()
+
+    with pytest.raises(historical_update.DateGapError, match="skip 1 month"):
+        historical_update.append_wal_row(
+            workbook_path,
+            px_date=date(2026, 3, 31),
             wal_value=2.35,
         )
 
