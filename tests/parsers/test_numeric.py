@@ -73,24 +73,20 @@ def test_coerce_accounting_float_us_locale_assumption() -> None:
 
 
 def test_cell_value_concatenates_rich_inline_strings() -> None:
-    cell = ET.fromstring(
-        """
+    cell = ET.fromstring("""
         <c xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" t="inlineStr">
           <is><r><t>Alpha</t></r><r><t> Beta</t></r></is>
         </c>
-        """
-    )
+        """)
 
     assert cell_value(cell, []) == "Alpha Beta"
 
 
 def test_cell_value_rejects_negative_shared_string_indexes() -> None:
-    cell = ET.fromstring(
-        """
+    cell = ET.fromstring("""
         <c xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" t="s">
           <v>-1</v>
         </c>
-        """
-    )
+        """)
 
     assert cell_value(cell, ["should-not-wrap"]) is None

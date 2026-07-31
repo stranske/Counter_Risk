@@ -9,7 +9,7 @@ def test_double_click_gui_launcher_exists_and_keeps_errors_visible() -> None:
     text = launcher.read_text(encoding="utf-8")
     raw = launcher.read_bytes()
 
-    assert "counter-risk.exe\" gui" in text
+    assert 'counter-risk.exe" gui' in text
     assert "counter-risk gui" in text
     assert "counter-risk-gui-launcher.log" in text
     assert "py -3.12 -m counter_risk.cli gui" in text
@@ -20,8 +20,8 @@ def test_double_click_gui_launcher_exists_and_keeps_errors_visible() -> None:
     assert "copy the messages above" in text
     assert "COUNTER_RISK_NO_PAUSE" in text
     assert "stale venv or global install" in text
-    assert text.index(r'src\counter_risk\cli\__init__.py') < text.index(
-        r'.venv\Scripts\counter-risk.exe'
+    assert text.index(r"src\counter_risk\cli\__init__.py") < text.index(
+        r".venv\Scripts\counter-risk.exe"
     )
     assert '1>>"%COUNTER_RISK_LAUNCHER_LOG%" 2>&1' in text
     assert b"\r\n" in raw

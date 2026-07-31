@@ -56,7 +56,7 @@ def reconcile_series_coverage(
     prior_populated_series_by_sheet: (
         Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
     ) = None,
-    series_present_by_sheet: (Mapping[str, tuple[str, ...] | list[str] | set[str]] | None) = None,
+    series_present_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]] | None = None,
 ) -> dict[str, Any]:
     """Reconcile parsed series labels against historical workbook headers per sheet.
 

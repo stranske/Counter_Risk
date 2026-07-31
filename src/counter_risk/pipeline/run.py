@@ -135,7 +135,7 @@ def reconcile_series_coverage(
     prior_populated_series_by_sheet: (
         Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
     ) = None,
-    series_present_by_sheet: (Mapping[str, tuple[str, ...] | list[str] | set[str]] | None) = None,
+    series_present_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]] | None = None,
 ) -> dict[str, Any]:
     return _reconcile_series_coverage(
         parsed_data_by_sheet=parsed_data_by_sheet,
