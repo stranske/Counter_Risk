@@ -135,7 +135,7 @@ def reconcile_series_coverage(
     prior_populated_series_by_sheet: (
         Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
     ) = None,
-    series_present_by_sheet: (Mapping[str, tuple[str, ...] | list[str] | set[str]] | None) = None,
+    series_present_by_sheet: Mapping[str, tuple[str, ...] | list[str] | set[str]] | None = None,
 ) -> dict[str, Any]:
     return _reconcile_series_coverage(
         parsed_data_by_sheet=parsed_data_by_sheet,
@@ -4332,8 +4332,24 @@ def _validate_historical_headers(*, worksheet: Any) -> dict[str, int]:
     return column_by_series
 
 
+def _worksheet_max_row(worksheet: Any, *, fallback: int = 0) -> int:
+    """Return a row bound even when the XLSX omits its dimension record."""
+
+    max_row = getattr(worksheet, "max_row", None)
+    if max_row is not None:
+        return int(max_row)
+
+    calculate_dimension = getattr(worksheet, "calculate_dimension", None)
+    if not callable(calculate_dimension):
+        return fallback
+
+    from openpyxl.utils.cell import range_boundaries
+
+    return int(range_boundaries(calculate_dimension(force=True))[3])
+
+
 def _find_historical_header_row(*, worksheet: Any, max_scan_rows: int = 25) -> int:
-    max_row = int(getattr(worksheet, "max_row", max_scan_rows))
+    max_row = _worksheet_max_row(worksheet, fallback=max_scan_rows)
     for row in range(1, min(max_row, max_scan_rows) + 1):
         if _normalize_header(worksheet.cell(row=row, column=1).value) in _DATE_HEADER_CANDIDATES:
             return row
@@ -4361,7 +4377,7 @@ def _last_historical_data_row(*, worksheet: Any, header_row: int) -> int:
     ``header_row`` when no dated data exists yet.
     """
 
-    max_row = int(getattr(worksheet, "max_row", header_row))
+    max_row = _worksheet_max_row(worksheet, fallback=header_row)
     last = header_row
     for row_index in range(header_row + 1, max_row + 1):
         if _coerce_historical_row_date(worksheet.cell(row=row_index, column=1).value) is not None:
@@ -4389,7 +4405,10 @@ def _trim_historical_sheet_to_rolling_window(
 
     dated_rows = [
         row_index
-        for row_index in range(header_row + 1, int(getattr(worksheet, "max_row", header_row)) + 1)
+        for row_index in range(
+            header_row + 1,
+            _worksheet_max_row(worksheet, fallback=header_row) + 1,
+        )
         if worksheet.cell(row=row_index, column=1).value is not None
     ]
     excess = len(dated_rows) - window_months
@@ -4831,7 +4850,7 @@ def _extract_mosers_program_notional_from_cprs_ch(*, workbook_path: Path) -> flo
             return None
         worksheet = workbook_obj[sheet_name]
 
-        max_row = int(getattr(worksheet, "max_row", 0))
+        max_row = _worksheet_max_row(worksheet)
         for row in range(1, max_row + 1):
             label = str(worksheet.cell(row=row, column=3).value or "").strip()
             if not label:

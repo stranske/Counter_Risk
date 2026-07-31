@@ -122,7 +122,7 @@ def test_parse_fcm_totals_ex_trend_fixture_numeric_totals_close() -> None:
         .to_dict()
     )
     expected_totals = {
-        "TIPS": 66200.0,
+        "TIPS": 58200.0,
         "Treasury": 105420.0,
         "Equity": 35140.0,
         "Commodity": 24160.0,

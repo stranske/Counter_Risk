@@ -1,9 +1,30 @@
 from __future__ import annotations
 
+import hashlib
+import re
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
 import pytest
+
+_SYNTHETIC_MANIFEST = Path("tests/fixtures/SYNTHETIC_FIXTURES.sha256")
+_PRODUCTION_ARTIFACT_NAME = re.compile(
+    r"(?:MOSERS Counterparty Risk Summary|Historical Counterparty Risk Graphs|"
+    r"NISA Drop-In Template|Monthly Counterparty Exposure Report|"
+    r"Counterparty Risk Report Procedures)",
+    re.IGNORECASE,
+)
+_PRODUCTION_NARRATIVE_TEXT = re.compile(
+    rb"Data sources:|Prospective (?:credit|equity|fixed income)|Correlation estimates|"
+    rb"Risk includes the",
+    re.IGNORECASE,
+)
+_PRODUCTION_VALUE_TEXT = re.compile(
+    rb"613563453\.14|2437132088\.31|4647960361\.939|124181574\.6156|"
+    rb"10837843\.75|7811999634\.2546|13704178\.2738|2422820068\.71|"
+    rb"4578574679\.329|124131536\.3156|7739089737\.494599|224224528\.0238|"
+    rb"153080581\.45"
+)
 
 
 def _assert_office_zip_container(path: Path) -> None:
@@ -35,6 +56,74 @@ def test_mosers_reference_fixture_exists_and_opens() -> None:
     _assert_office_zip_container(fixture_path)
 
 
+def test_synthetic_fixture_hashes_match_reviewed_manifest() -> None:
+    for line in _SYNTHETIC_MANIFEST.read_text(encoding="utf-8").splitlines():
+        expected_hash, relative_path = line.split("  ", maxsplit=1)
+        fixture_path = Path(relative_path)
+        assert fixture_path.is_file(), f"Missing synthetic fixture: {fixture_path}"
+        actual_hash = hashlib.sha256(fixture_path.read_bytes()).hexdigest()
+        assert (
+            actual_hash == expected_hash
+        ), f"Synthetic fixture changed without manifest review: {fixture_path}"
+
+
+def test_production_named_office_artifacts_are_not_tracked_as_docs() -> None:
+    roots = (Path("docs"), Path(".github"))
+    offenders = sorted(
+        path
+        for root in roots
+        for path in root.rglob("*")
+        if path.is_file()
+        and path.suffix.lower() in {".docx", ".pptx", ".xlsx", ".xlsm"}
+        and _PRODUCTION_ARTIFACT_NAME.search(path.name)
+    )
+    assert offenders == []
+
+
+def test_reconstructed_workbooks_have_no_hidden_office_payloads() -> None:
+    fixture_paths = [
+        Path(line.split("  ", maxsplit=1)[1])
+        for line in _SYNTHETIC_MANIFEST.read_text(encoding="utf-8").splitlines()
+        if line.endswith(".xlsx")
+    ]
+    forbidden_part_names = ("externalLinks", "connections", "comments", "drawings", "media")
+    for fixture_path in fixture_paths:
+        with ZipFile(fixture_path) as archive:
+            hidden_parts = [
+                name
+                for name in archive.namelist()
+                if any(token.casefold() in name.casefold() for token in forbidden_part_names)
+            ]
+            searchable_xml = b"".join(
+                archive.read(name)
+                for name in archive.namelist()
+                if name.endswith((".xml", ".rels"))
+            )
+        assert hidden_parts == [], f"Hidden Office payloads remain in {fixture_path}"
+        assert not _PRODUCTION_NARRATIVE_TEXT.search(
+            searchable_xml
+        ), f"Production-derived narrative remains in {fixture_path}"
+        assert not _PRODUCTION_VALUE_TEXT.search(
+            searchable_xml
+        ), f"Known production-derived value remains in {fixture_path}"
+
+
+def test_reconstructed_presentation_contains_only_synthetic_embedded_images() -> None:
+    fixture_path = Path("tests/fixtures/Monthly Counterparty Exposure Report.pptx")
+    with ZipFile(fixture_path) as archive:
+        media_parts = sorted(name for name in archive.namelist() if name.startswith("ppt/media/"))
+        media_hashes = {hashlib.sha256(archive.read(name)).hexdigest() for name in media_parts}
+        searchable_xml = b"".join(
+            archive.read(name) for name in archive.namelist() if name.endswith((".xml", ".rels"))
+        )
+
+    assert len(media_parts) == 6
+    assert len(media_hashes) == 1
+    assert b'TargetMode="External"' not in searchable_xml
+    assert not _PRODUCTION_NARRATIVE_TEXT.search(searchable_xml)
+    assert not _PRODUCTION_VALUE_TEXT.search(searchable_xml)
+
+
 def test_fixture_workbooks_and_presentations_open() -> None:
     pptx = pytest.importorskip("pptx")
     openpyxl = pytest.importorskip("openpyxl")
@@ -54,9 +143,9 @@ def test_fixture_workbooks_and_presentations_open() -> None:
         and path.name not in already_validated_fixture_names
     )
     assert fixture_paths, f"No .pptx/.xlsx fixtures found under {fixtures_root}."
-    assert len(fixture_paths) >= 10, (
-        "Expected representative fixture inventory under tests/fixtures."
-    )
+    assert (
+        len(fixture_paths) >= 10
+    ), "Expected representative fixture inventory under tests/fixtures."
 
     workbook_fixtures = [path for path in fixture_paths if path.suffix.lower() == ".xlsx"]
     presentation_fixtures = [path for path in fixture_paths if path.suffix.lower() == ".pptx"]

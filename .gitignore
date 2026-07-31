@@ -27,3 +27,11 @@ dist/
 !src/counter_risk/build/
 !src/counter_risk/build/*.py
 workloop-state.md
+
+# Production-derived MOSERS/NISA Office artifacts must never be committed.
+docs/**/MOSERS Counterparty Risk Summary*.xlsx
+docs/**/Historical Counterparty Risk Graphs*.xlsx
+docs/**/NISA Drop-In Template*.xlsx
+docs/**/Monthly Counterparty Exposure Report*.pptx
+docs/**/Counterparty Risk Report Procedures*.docx
+.github/**/MOSERS Counterparty Risk Summary*.xlsx

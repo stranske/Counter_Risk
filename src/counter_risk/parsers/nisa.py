@@ -67,6 +67,18 @@ _REQUIRED_HEADERS: tuple[str, ...] = (
 _HEADER_SCAN_ROW_LIMIT = 200
 
 
+def _worksheet_max_row(worksheet: Any) -> int:
+    """Return a row bound even when the workbook omits its dimension record."""
+
+    max_row = getattr(worksheet, "max_row", None)
+    if max_row is not None:
+        return int(max_row)
+
+    from openpyxl.utils.cell import range_boundaries
+
+    return int(range_boundaries(worksheet.calculate_dimension(force=True))[3])
+
+
 @dataclass(frozen=True)
 class NisaAllProgramsInputStructure:
     """Expected raw NISA input structure for All Programs parsing."""
@@ -193,7 +205,7 @@ def _coerce_float(value: Any) -> float:
 
 
 def _find_totals_marker_row(*, worksheet: Any, counterparty_column: int) -> int | None:
-    for row_number in range(1, int(worksheet.max_row) + 1):
+    for row_number in range(1, _worksheet_max_row(worksheet) + 1):
         marker_text = _matching_key(
             worksheet.cell(row=row_number, column=counterparty_column).value
         )
@@ -241,7 +253,7 @@ def _find_header_row_and_columns(*, worksheet: Any) -> tuple[int, dict[str, int]
     best_row = 1
     best_columns: dict[str, int] = {}
     best_missing: tuple[str, ...] = _REQUIRED_HEADERS
-    max_row = min(int(worksheet.max_row), _HEADER_SCAN_ROW_LIMIT)
+    max_row = min(_worksheet_max_row(worksheet), _HEADER_SCAN_ROW_LIMIT)
     max_column = int(worksheet.max_column)
 
     for row_number in range(1, max_row + 1):
@@ -264,7 +276,7 @@ def _build_header_column_map(*, worksheet: Any, header_row: int, max_column: int
     candidate_rows = [header_row]
     if header_row > 1:
         candidate_rows.append(header_row - 1)
-    if header_row < int(worksheet.max_row):
+    if header_row < _worksheet_max_row(worksheet):
         candidate_rows.append(header_row + 1)
 
     for column in range(1, max_column + 1):
@@ -300,7 +312,7 @@ def _infer_counterparty_column(*, worksheet: Any, header_columns: dict[str, int]
 
 
 def _find_totals_marker_position(*, worksheet: Any) -> tuple[int, int] | None:
-    max_row = int(worksheet.max_row)
+    max_row = _worksheet_max_row(worksheet)
     max_column = int(worksheet.max_column)
     for row_number in range(1, max_row + 1):
         for column_number in range(1, max_column + 1):
@@ -411,7 +423,7 @@ def _parse_totals_rows(
 ) -> list[NisaTotalsRow]:
     rows: list[NisaTotalsRow] = []
 
-    for row_number in range(totals_marker_row + 1, int(worksheet.max_row) + 1):
+    for row_number in range(totals_marker_row + 1, _worksheet_max_row(worksheet) + 1):
         row_label = _matching_key(
             worksheet.cell(row=row_number, column=header_columns["counterparty"]).value
         )

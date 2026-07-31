@@ -1,0 +1,15 @@
+7c041e3ce15044d4f1f026b867c30935beec5c425d280f70375631d04493026e  src/counter_risk/mosers/mosers_template.xlsx
+a70ab6c4363a9edd29b5497daad5603bde463f4a475180f64b9809d38f7e1909  tests/fixtures/Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx
+53c8f9940e9c6cdabc941b9c772c11c4d7e4ecf34bc4070262966e789c1fc534  tests/fixtures/Historical Counterparty Risk Graphs - LLC 3 Year.xlsx
+1906eeeb021b4b70f3a59ccfe531137ab37619f60a495515502ba3ceddfc5b34  tests/fixtures/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx
+62e64c789db13a6050592563813867622acf74aa35f61b73fa55ca4fafa77aa0  tests/fixtures/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx
+1fd143b4cc309d16ff8fff96c7673ec15715cc73c8d050d0bbd3e48077533dc3  tests/fixtures/MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx
+673ae30c3fca9a0d360c0fe59547764429b427aa9512e5f298e2d99e81ead4d5  tests/fixtures/MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx
+897f613e1ee80fce0c9f070118fd997fc48401c3f4880555a44fb7abd9ea86a3  tests/fixtures/Monthly Counterparty Exposure Report.pptx
+90ca6d9a75c64fb12ef46ef34866fdb6cf8c39dc557c787c8c8d9c6aaeb548c8  tests/fixtures/NISA Drop-In Template - All Programs.xlsx
+709414e87fd0434be70aafa156ff5c6d798bc85bf7ab9d0e551c97a3cb02eb7b  tests/fixtures/NISA Drop-In Template - Ex Trend.xlsx
+c48c2d79d83e3c79fa8be77c13ab7407bd657ca930d5cc7ec7543e6a91a1e185  tests/fixtures/NISA Drop-In Template - Trend.xlsx
+e4027797e833603ca47f36f7bb8c5fa528078cc7e8c0882a35d7d8647de57b0a  tests/fixtures/NISA Monthly All Programs - Raw.xlsx
+e5ad5453db4407d40479a9c033a7bb79216b433515950d6a90c5d43e0ec223a9  tests/fixtures/NISA Monthly Ex Trend - Raw.xlsx
+568d074d45e891d721ca6c2523c69aa4384757f75dbc78da440c3e69d4994fc2  tests/fixtures/NISA Monthly Trend - Raw.xlsx
+31279f239ecb70bb1c1e740bf71b4ef63d0e6f552b200d0a11f8a44cbc054d4a  tests/fixtures/mosers_reference.xlsx

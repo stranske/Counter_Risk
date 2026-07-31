@@ -143,6 +143,7 @@ def _collect_slide_picture_targets(archive: ZipFile) -> dict[int, list[str]]:
                     f"Missing relationship target for slide {slide_number} embed id '{embed}'"
                 )
             resolved = posixpath.normpath(posixpath.join(slide_dir, target))
+            resolved = resolved.lstrip("/")
             if not resolved.startswith("ppt/media/"):
                 raise ValueError(
                     f"Slide {slide_number} embed id '{embed}' points to non-media target: {resolved}"

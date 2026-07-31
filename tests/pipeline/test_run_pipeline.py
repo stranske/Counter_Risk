@@ -1684,11 +1684,13 @@ def test_evaluate_cprs_ch_totals_reconciliation_passes_when_totals_match() -> No
 def test_run_reconciliation_checks_records_cprs_ch_totals_mismatch_as_informational(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A same-name CH-vs-FCM total mismatch is not a reconciliation gap: verified
-    directly against the real historical workbook that the CH-tab figure is the
-    one that has always matched the actual historical/reporting record (e.g.
-    a synthetic counterparty may diverge from its own FCM-tab total
-    in recurring source differences). It's surfaced for visibility, not counted as a gap."""
+    """A same-name CH-vs-FCM mismatch is surfaced without becoming a gap.
+
+    Production validation established that the CH-side figure is the reporting
+    authority when the two source tabs differ. The synthetic values below retain
+    that control-flow contract without retaining any production amount or entity
+    pairing.
+    """
     config = _minimal_workflow_config(tmp_path)
     warnings: list[str] = []
     parsed_by_variant = {

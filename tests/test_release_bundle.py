@@ -56,9 +56,7 @@ def _write_fake_repo(root: Path) -> None:
     (root / "docs" / "remote_trigger_testing.md").write_text(
         "# Remote Trigger Testing\n", encoding="utf-8"
     )
-    (root / "run_counter_risk_gui.cmd").write_text(
-        "@echo off\necho gui\n", encoding="utf-8"
-    )
+    (root / "run_counter_risk_gui.cmd").write_text("@echo off\necho gui\n", encoding="utf-8")
 
 
 def _create_fake_built_executable(root: Path, executable_name: str) -> Path:
