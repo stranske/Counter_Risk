@@ -54,9 +54,9 @@ def test_fixture_workbooks_and_presentations_open() -> None:
         and path.name not in already_validated_fixture_names
     )
     assert fixture_paths, f"No .pptx/.xlsx fixtures found under {fixtures_root}."
-    assert (
-        len(fixture_paths) >= 10
-    ), "Expected representative fixture inventory under tests/fixtures."
+    assert len(fixture_paths) >= 10, (
+        "Expected representative fixture inventory under tests/fixtures."
+    )
 
     workbook_fixtures = [path for path in fixture_paths if path.suffix.lower() == ".xlsx"]
     presentation_fixtures = [path for path in fixture_paths if path.suffix.lower() == ".pptx"]
@@ -93,16 +93,23 @@ def test_wal_exposure_summary_fixture_exists_and_has_expected_headers() -> None:
         data_only=True,
     )
     try:
-        assert "Exposure Maturity Summary" in workbook.sheetnames
-        worksheet = workbook["Exposure Maturity Summary"]
-        headers = [worksheet.cell(row=1, column=column).value for column in range(1, 7)]
-        assert headers == [
-            "Counterparty",
-            "Product Type",
-            "Current Exposure",
-            "Years to Maturity",
-            "Maturity Date",
-            "Bucket",
-        ]
+        # The real NISA workbook's tab is "Exposure Maturity Schedule" and lays out
+        # product blocks (label, then Reverse Repo / Repo / Total Return Swaps /
+        # Total columns) with maturity dates beside each block -- not the flat
+        # Counterparty/Product Type/Bucket table an earlier revision assumed.
+        assert "Exposure Maturity Schedule" in workbook.sheetnames
+        worksheet = workbook["Exposure Maturity Schedule"]
+        text_cells = {
+            str(worksheet.cell(row=row, column=column).value).strip()
+            for row in range(1, min(worksheet.max_row, 20) + 1)
+            for column in range(1, min(worksheet.max_column, 10) + 1)
+            if worksheet.cell(row=row, column=column).value is not None
+        }
+        assert "Px Date" in text_cells
+        # WAL tracks the TIPS block, so the fixture must carry one.
+        assert any(
+            cell.upper().startswith("NISA ") and "TIPS" in cell.upper() for cell in text_cells
+        )
+        assert "Total" in text_cells
     finally:
         workbook.close()

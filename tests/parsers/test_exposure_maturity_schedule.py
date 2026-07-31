@@ -1,119 +1,103 @@
-"""Tests for exposure maturity schedule parser used by WAL."""
+"""Tests for the NISA 'Exposure Maturity Schedule' parser (primary block)."""
 
 from __future__ import annotations
 
+from datetime import date, datetime
 from pathlib import Path
-from typing import Any
 
 import pytest
 
 from counter_risk.parsers.exposure_maturity_schedule import (
-    ExposureMaturityColumnsMissingError,
-    ExposureMaturityWorkbookLoadError,
+    ExposureMaturityScheduleError,
     ExposureMaturityWorksheetMissingError,
     parse_exposure_maturity_schedule,
 )
 
-
-def test_parse_exposure_maturity_schedule_fixture() -> None:
-    rows = parse_exposure_maturity_schedule(
-        Path("tests/fixtures/nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx")
-    )
-
-    assert len(rows) == 6
-    assert rows[0].counterparty == "Alpha Clearing"
-    assert rows[0].product_type == "Interest Rate Swap"
-    assert rows[0].current_exposure == 1250000.0
-    assert rows[0].years_to_maturity == 0.5
-
-    assert rows[1].product_type == "Return Swaps"
-    assert rows[1].current_exposure == 320000.0
-    assert rows[1].years_to_maturity == 2.0
+openpyxl = pytest.importorskip("openpyxl")
+Workbook = openpyxl.Workbook
 
 
-def test_parse_exposure_maturity_schedule_missing_sheet_raises(tmp_path: Path) -> None:
-    openpyxl = pytest.importorskip("openpyxl")
-    workbook_path = tmp_path / "missing_sheet.xlsx"
-
-    workbook = openpyxl.Workbook()
-    workbook.active.title = "Other Sheet"
-    workbook.save(workbook_path)
-    workbook.close()
-
-    with pytest.raises(ExposureMaturityWorksheetMissingError, match="Missing required worksheet"):
-        parse_exposure_maturity_schedule(workbook_path)
-
-
-def test_parse_exposure_maturity_schedule_workbook_load_failure_is_specific(tmp_path: Path) -> None:
-    workbook_path = tmp_path / "not_a_workbook.xlsx"
-    workbook_path.write_text("not really an xlsx", encoding="utf-8")
-
-    with pytest.raises(
-        ExposureMaturityWorkbookLoadError, match="Unable to open exposure maturity workbook"
-    ):
-        parse_exposure_maturity_schedule(workbook_path)
-
-
-def test_parse_exposure_maturity_schedule_missing_required_header_raises(tmp_path: Path) -> None:
-    openpyxl = pytest.importorskip("openpyxl")
-    workbook_path = tmp_path / "missing_header.xlsx"
-
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = "Exposure Maturity Summary"
-    _set_headers(
-        sheet,
-        headers=[
-            "Counterparty",
-            "Product Type",
-            "Current Exposure",
-            # Missing Years to Maturity
-        ],
-    )
-    workbook.save(workbook_path)
-    workbook.close()
-
-    with pytest.raises(ExposureMaturityColumnsMissingError, match="Missing required headers"):
-        parse_exposure_maturity_schedule(workbook_path)
+def _write_schedule(
+    path: Path,
+    *,
+    block_label: str = "NISA TIPS",
+    px: datetime = datetime(2025, 11, 30),
+    rows: tuple[tuple[datetime, float | None], ...] = (
+        (datetime(2026, 1, 8), 144.87),
+        (datetime(2026, 1, 15), None),  # blank Total -> treated as 0
+        (datetime(2026, 1, 22), 156.06),
+        (datetime(2026, 2, 5), 187.30),
+    ),
+    sheet_name: str = "Exposure Maturity Schedule",
+) -> Path:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = sheet_name
+    # Px Date label + value (placed off to the right, as in the real files)
+    ws.cell(row=4, column=7).value = "Px Date"
+    ws.cell(row=4, column=8).value = px
+    # Block label + header row: dates in col B(2), Total in col F(6)
+    ws.cell(row=10, column=3).value = block_label
+    ws.cell(row=11, column=3).value = "Reverse Repo"
+    ws.cell(row=11, column=5).value = "Total Return Swaps"
+    ws.cell(row=11, column=6).value = "Total"
+    r = 14
+    for mat, total in rows:
+        ws.cell(row=r, column=2).value = mat
+        if total is not None:
+            ws.cell(row=r, column=6).value = total
+        r += 1
+    ws.cell(row=r, column=2).value = "Total"
+    ws.cell(row=r, column=6).value = sum(t for _, t in rows if t)
+    wb.save(path)
+    return path
 
 
-def test_parse_exposure_maturity_schedule_headers_shifted_down_within_scan_range(
-    tmp_path: Path,
-) -> None:
-    openpyxl = pytest.importorskip("openpyxl")
-    workbook_path = tmp_path / "shifted_headers.xlsx"
+def test_parse_primary_block_px_date_and_rows(tmp_path: Path) -> None:
+    p = _write_schedule(tmp_path / "sched.xlsx")
+    schedule = parse_exposure_maturity_schedule(p)
 
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = "Exposure Maturity Summary"
-
-    # Headers start at row 5 (within the 50-row scan window).
-    _set_headers(
-        sheet,
-        headers=[
-            "Counterparty",
-            "Product Type",
-            "Current Exposure",
-            "Years to Maturity",
-        ],
-        row=5,
-    )
-    sheet.cell(row=6, column=1).value = "Alpha"
-    sheet.cell(row=6, column=2).value = "Repo"
-    sheet.cell(row=6, column=3).value = 100.0
-    sheet.cell(row=6, column=4).value = 2.0
-
-    workbook.save(workbook_path)
-    workbook.close()
-
-    rows = parse_exposure_maturity_schedule(workbook_path)
-    assert len(rows) == 1
-    assert rows[0].counterparty == "Alpha"
-    assert rows[0].product_type == "Repo"
-    assert rows[0].current_exposure == 100.0
-    assert rows[0].years_to_maturity == 2.0
+    assert schedule.px_date == date(2025, 11, 30)
+    assert schedule.block == "NISA TIPS"
+    assert [(r.maturity_date, r.total) for r in schedule.rows] == [
+        (date(2026, 1, 8), 144.87),
+        (date(2026, 1, 15), 0.0),
+        (date(2026, 1, 22), 156.06),
+        (date(2026, 2, 5), 187.30),
+    ]
 
 
-def _set_headers(worksheet: Any, headers: list[str], *, row: int = 1) -> None:
-    for index, header in enumerate(headers, start=1):
-        worksheet.cell(row=row, column=index).value = header
+def test_parse_returns_no_rows_when_tips_block_absent(tmp_path: Path) -> None:
+    """WAL tracks the TIPS block only.
+
+    Once TIPS is wound down the sheet carries only the replacement exposure (e.g.
+    Synthetic US Treasuries), which must NOT be picked up: the schedule comes back
+    empty so WAL reports 0 rather than silently switching to a different product.
+    """
+    p = _write_schedule(tmp_path / "syn.xlsx", block_label="NISA SYNTHETIC US TREASURIES")
+    schedule = parse_exposure_maturity_schedule(p)
+
+    assert schedule.block == ""
+    assert schedule.rows == ()
+    assert schedule.px_date == date(2025, 11, 30)
+
+
+def test_missing_worksheet_raises(tmp_path: Path) -> None:
+    wb = Workbook()
+    wb.active.title = "Something Else"
+    p = tmp_path / "nosheet.xlsx"
+    wb.save(p)
+    with pytest.raises(ExposureMaturityWorksheetMissingError):
+        parse_exposure_maturity_schedule(p)
+
+
+def test_no_maturity_rows_raises(tmp_path: Path) -> None:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Exposure Maturity Schedule"
+    ws.cell(row=10, column=3).value = "NISA TIPS"
+    ws.cell(row=11, column=6).value = "Total"
+    p = tmp_path / "empty.xlsx"
+    wb.save(p)
+    with pytest.raises(ExposureMaturityScheduleError):
+        parse_exposure_maturity_schedule(p)

@@ -146,11 +146,30 @@ def test_export_ppt_slides_as_png_via_com_exports_all_slides(
             Path(path).write_bytes(png_bytes + bytes(str(self.index), encoding="ascii"))
 
     class _FakeSlides:
+        """Models real PowerPoint COM collection semantics.
+
+        ``Slides(i)``/``Item(i)`` is 1-based; pywin32's bracket indexing is
+        0-BASED. Both are bounds-checked. A previous unbounded fake accepted any
+        index, so it could not tell the two apart -- which let a real off-by-one
+        (brackets + a 1-based loop) ship: it dropped slide 1 and duplicated the
+        last slide while keeping the slide count correct.
+        """
+
         def __init__(self) -> None:
             self.Count = 2
 
-        def __getitem__(self, idx: int) -> _FakeSlide:
+        def __call__(self, idx: int) -> _FakeSlide:
+            if not 1 <= idx <= self.Count:
+                raise IndexError(f"slide index out of range (1-based): {idx}")
             return _FakeSlide(idx)
+
+        def Item(self, idx: int) -> _FakeSlide:  # noqa: N802
+            return self(idx)
+
+        def __getitem__(self, idx: int) -> _FakeSlide:
+            if not 0 <= idx < self.Count:
+                raise IndexError(f"slide index out of range (0-based): {idx}")
+            return _FakeSlide(idx + 1)
 
     class _FakePresentation:
         def __init__(self) -> None:
@@ -183,6 +202,11 @@ def test_export_ppt_slides_as_png_via_com_exports_all_slides(
 
     assert exported == [slide_images_dir / "slide_0001.png", slide_images_dir / "slide_0002.png"]
     assert all(path.exists() for path in exported)
+    # Each fake slide stamps its own 1-based index into the PNG bytes, so this
+    # pins slide_0001.png to slide 1 and slide_0002.png to slide 2. Regressing to
+    # 0-based bracket indexing would stamp slide 2 into slide_0001.png.
+    assert exported[0].read_bytes().endswith(b"1")
+    assert exported[1].read_bytes().endswith(b"2")
 
 
 def test_export_ppt_slides_as_png_via_com_reports_slide_export_context(
@@ -198,6 +222,12 @@ def test_export_ppt_slides_as_png_via_com_reports_slide_export_context(
 
     class _FakeSlides:
         Count = 1
+
+        def __call__(self, _idx: int) -> _FailingSlide:
+            return _FailingSlide()
+
+        def Item(self, idx: int) -> _FailingSlide:  # noqa: N802
+            return self(idx)
 
         def __getitem__(self, _idx: int) -> _FailingSlide:
             return _FailingSlide()

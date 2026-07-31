@@ -53,8 +53,31 @@ def reconcile_series_coverage(
     ) = None,
     fail_policy: Literal["warn", "strict"] = "warn",
     counterparty_resolver: Callable[[str], Any] = normalize_counterparty_with_source,
+    prior_populated_series_by_sheet: (
+        Mapping[str, tuple[str, ...] | list[str] | set[str]] | None
+    ) = None,
+    series_present_by_sheet: (Mapping[str, tuple[str, ...] | list[str] | set[str]] | None) = None,
 ) -> dict[str, Any]:
-    """Reconcile parsed series labels against historical workbook headers per sheet."""
+    """Reconcile parsed series labels against historical workbook headers per sheet.
+
+    ``series_present_by_sheet`` (when provided) is the authoritative set of series
+    that actually have exposure on each sheet -- built to mirror exactly what the
+    historical append writes (its per-asset-class CPRS-CH sourcing), rather than
+    the older heuristic that routed each counterparty to a single sheet. When given
+    for a sheet, the "missing from parsed data" check is evaluated against it, so a
+    counterparty the pipeline does populate on an asset-class sheet is no longer
+    false-flagged as missing. Absent (or a sheet not present in it) falls back to
+    deriving the present set from that sheet's totals/futures records.
+
+    When ``prior_populated_series_by_sheet`` is provided, a historical-header
+    series that is absent from this month's parsed data only counts as a gap
+    (and drives fail severity) if it had a real value in the prior month's
+    workbook -- i.e. a genuine month-over-month *drop*. Header series that were
+    already dormant last month are reported as informational and do not gate the
+    run. When the argument is ``None`` (or a sheet is absent from it), every
+    header-listed series missing from parsed data is treated as a gap, preserving
+    the original, stricter behavior.
+    """
     _validate_reconciliation_parsed_data_by_sheet(parsed_data_by_sheet=parsed_data_by_sheet)
 
     by_sheet: dict[str, dict[str, Any]] = {}
@@ -72,6 +95,14 @@ def reconcile_series_coverage(
         set(parsed_data_by_sheet).union(historical_series_headers_by_sheet), key=str.casefold
     )
     for sheet_name in sheet_names:
+        # When an authoritative present-set is provided, only reconcile the sheets
+        # the counterparty-series append actually manages (those we have a present-set
+        # for). Sheets it does not manage -- e.g. the WAL sheet, whose headers are
+        # WAL metrics, not counterparties -- are not series-coverage sheets and would
+        # otherwise be false-flagged. Absent a present-set (unit tests / no CPRS-CH),
+        # reconcile every sheet as before.
+        if series_present_by_sheet is not None and sheet_name not in series_present_by_sheet:
+            continue
         parsed_sections = parsed_data_by_sheet.get(sheet_name, {})
         totals_records = _records(parsed_sections.get("totals", []))
         futures_records = _records(parsed_sections.get("futures", []))
@@ -155,14 +186,32 @@ def reconcile_series_coverage(
         missing_from_historical = sorted(
             set(missing_counterparty_labels).union(missing_clearing_houses), key=str.casefold
         )
-        missing_from_data = sorted(
-            {
-                header
-                for header in historical_series_headers
-                if normalize_counterparty(header) not in normalized_current_series_labels
-            },
-            key=str.casefold,
-        )
+        if series_present_by_sheet is not None and sheet_name in series_present_by_sheet:
+            present_norms: set[str] = set()
+            for present_name in series_present_by_sheet.get(sheet_name, ()):
+                present_label = str(present_name).strip()
+                if not present_label:
+                    continue
+                present_norms.add(normalize_counterparty(present_label))
+                present_norms.add(normalize_clearing_house(present_label))
+            missing_from_data = sorted(
+                {
+                    header
+                    for header in historical_series_headers
+                    if normalize_counterparty(header) not in present_norms
+                    and normalize_clearing_house(header) not in present_norms
+                },
+                key=str.casefold,
+            )
+        else:
+            missing_from_data = sorted(
+                {
+                    header
+                    for header in historical_series_headers
+                    if normalize_counterparty(header) not in normalized_current_series_labels
+                },
+                key=str.casefold,
+            )
         parsed_segments = _extract_segments_from_records(parsed_sections)
         missing_expected_segments = sorted(
             expected_segments.difference(parsed_segments), key=str.casefold
@@ -195,12 +244,29 @@ def reconcile_series_coverage(
                 f"headers ({', '.join(missing_from_historical)})"
             )
 
-        if missing_from_data:
-            gap_count += len(missing_from_data)
+        dropped_from_data = list(missing_from_data)
+        dormant_from_data: list[str] = []
+        if prior_populated_series_by_sheet is not None:
+            prior_populated = set(prior_populated_series_by_sheet.get(sheet_name, ()))
+            dropped_from_data = [
+                header for header in missing_from_data if header in prior_populated
+            ]
+            dormant_from_data = [
+                header for header in missing_from_data if header not in prior_populated
+            ]
+
+        if dropped_from_data:
+            gap_count += len(dropped_from_data)
             warnings.append(
                 "Reconciliation gap in sheet "
                 f"{sheet_name!r}: series present in historical headers but missing from parsed "
-                f"data ({', '.join(missing_from_data)})"
+                f"data ({', '.join(dropped_from_data)})"
+            )
+        if dormant_from_data:
+            warnings.append(
+                "Reconciliation dormant series (informational, not a gap) in sheet "
+                f"{sheet_name!r}: {len(dormant_from_data)} historical header series with no "
+                f"position last month or this month ({', '.join(dormant_from_data)})"
             )
 
         if missing_normalized_counterparties:
@@ -291,6 +357,8 @@ def reconcile_series_coverage(
             "missing_from_historical_headers": missing_from_historical,
             "missing_normalized_counterparties": missing_normalized_counterparties,
             "missing_from_data": missing_from_data,
+            "dropped_from_data": dropped_from_data,
+            "dormant_from_data": dormant_from_data,
             "segments_in_data": sorted(parsed_segments, key=str.casefold),
             "missing_expected_segments": missing_expected_segments,
             "canonical_key_by_series": canonical_key_by_series,

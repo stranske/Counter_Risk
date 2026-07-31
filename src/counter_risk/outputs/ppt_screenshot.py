@@ -44,7 +44,13 @@ def export_ppt_slides_as_png_via_com(*, source_pptx: Path, slide_images_dir: Pat
         for slide_idx in range(1, slide_count + 1):
             image_path = slide_images_dir / f"slide_{slide_idx:04d}.png"
             try:
-                presentation.Slides[slide_idx].Export(str(image_path), "PNG")
+                # NOTE: use Slides(idx), NOT Slides[idx]. pywin32's bracket
+                # indexing on a COM collection is 0-BASED, while this loop (and
+                # PowerPoint's own Item()) is 1-based. Using brackets here
+                # silently exported slides 2..N+1 -- dropping slide 1 and
+                # duplicating the last slide (the out-of-range index clamps),
+                # which kept the slide COUNT correct and hid the defect.
+                presentation.Slides(slide_idx).Export(str(image_path), "PNG")
             except Exception as exc:
                 raise RuntimeError(
                     "PowerPoint slide PNG export failed "

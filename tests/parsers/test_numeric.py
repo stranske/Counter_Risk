@@ -20,6 +20,20 @@ def test_coerce_accounting_float_basics() -> None:
     assert coerce_accounting_float("n/a") == 0.0
 
 
+def test_coerce_accounting_float_excel_error_values() -> None:
+    """Excel formula-error strings (e.g. a volatility lookup with insufficient
+    history) must coerce to 0.0 like other blank/missing tokens, not raise --
+    reproduced against a real May 2026 CPRS-CH "Position Annualized
+    Volatility" cell containing literal #N/A."""
+    assert coerce_accounting_float("#N/A") == 0.0
+    assert coerce_accounting_float("#DIV/0!") == 0.0
+    assert coerce_accounting_float("#VALUE!") == 0.0
+    assert coerce_accounting_float("#REF!") == 0.0
+    assert coerce_accounting_float("#NAME?") == 0.0
+    assert coerce_accounting_float("#NULL!") == 0.0
+    assert coerce_accounting_float("#NUM!") == 0.0
+
+
 def test_coerce_accounting_float_percentages() -> None:
     # Under the default strip_percent=True contract:
     # "% is stripped but not rescaled by /100"

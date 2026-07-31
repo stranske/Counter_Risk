@@ -27,12 +27,40 @@ _XML_NS = {
     "rel": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
 }
 
+_CH_SHEET_ALIASES = ("cprs - ch", "cprs-ch")
+
 _EXPECTED_SEGMENT_PATTERNS: dict[str, tuple[str, ...]] = {
     "swaps": ("swaps",),
     "repo": ("repo",),
     "futures": ("futures",),
     "futures_cdx": ("futures cdx", "futures/cdx", "futures / cdx", "futures-cdx"),
 }
+
+# The consolidated "Total by Counterparty/Clearing House" section re-lists every
+# counterparty/clearing-house already seen in the segments above with the same
+# values (it is a display rollup, not new data). Its label carries a variable
+# trailing parenthetical (e.g. "...(This is not the legal obligation exposure)"),
+# so it is matched by prefix rather than exact equality like the other segments.
+# Deliberately the *full* phrase including "/clearing house": some real exports
+# also stamp a shorter "Total by Counterparty" tag in column A of every data row
+# within this section (a leftover formatting/grouping artifact) — matching only
+# the longer phrase avoids misidentifying those data rows as new segment starts.
+_TOTALS_SEGMENT_LABEL_PREFIX = "total by counterparty/clearing house"
+_TOTALS_SEGMENT_TYPE = "totals"
+
+# Footer/annotation rows that follow the totals section in real MOSERS exports and
+# are not counterparty data (e.g. "MOSERS Program", "Notional Breakdown", asterisked
+# footnotes) — must not be parsed as counterparty rows.
+_FOOTER_ROW_PREFIXES = (
+    "total",  # also catches legacy "Total"/"Subtotal" exact rows below
+    "subtotal",
+    "mosers program",
+    "notional breakdown",
+    "risk exclusive",
+    "risk includes",
+    "trend program",  # Trend-variant summary rows, not a real clearing-house row
+    "*",  # footnote markers, e.g. "*Absolute value of notional shown..."
+)
 
 _COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
     "Counterparty": ("counterparty", "counterparty/ clearing house", "clearing house"),
@@ -106,7 +134,7 @@ def parse_cprs_ch(path: Path | str) -> pd.DataFrame:
         raise FileNotFoundError(f"CPRS-CH file not found: {file_path}")
 
     try:
-        sheet_name, rows = _read_first_sheet(file_path)
+        sheet_name, rows = _read_ch_sheet(file_path)
     except (KeyError, ET.ParseError, BadZipFile, ValueError) as exc:
         raise ValueError(f"Malformed CPRS-CH workbook structure: {file_path}") from exc
 
@@ -130,14 +158,28 @@ def parse_cprs_ch(path: Path | str) -> pd.DataFrame:
     segment_ranges = _segment_ranges(segments, rows)
 
     for segment in segment_ranges:
-        for row_number in range(segment.start_row + 1, segment.end_row + 1):
+        # Real exports often place the segment label (e.g. "Swaps", "Repo") in the
+        # same physical row as the *first* data row (label in column A, data in
+        # column B+) — include start_row in the scan rather than skipping it
+        # unconditionally, and only drop it if the Counterparty-column cell on
+        # that row turns out to be the marker label itself (no distinct data).
+        for row_number in range(segment.start_row, segment.end_row + 1):
             row = rows.get(row_number, {})
             counterparty = _extract_text(row, column_map["Counterparty"])
             if not counterparty:
                 continue
 
-            # Stop before subtotal/footer noise.
-            if counterparty.lower() in {"total", "subtotal"}:
+            if (
+                row_number == segment.start_row
+                and _identify_segment(counterparty) == segment.segment_type
+            ):
+                continue
+
+            # Skip subtotal/footer/annotation noise rows (e.g. "Total Current Exposure",
+            # "MOSERS Program", "Notional Breakdown", asterisked footnotes — some real
+            # exports wrap the footnote text in literal straight/curly quote marks).
+            footer_check_text = counterparty.lower().strip("\"'“”")
+            if any(footer_check_text.startswith(prefix) for prefix in _FOOTER_ROW_PREFIXES):
                 continue
 
             record = {
@@ -251,8 +293,11 @@ def _scan_segments(rows: dict[int, dict[int, str | None]]) -> list[SegmentMetada
     for row_number in sorted(rows):
         row = rows[row_number]
         # Some MOSERS exports place segment labels in column B while legacy
-        # drop-in templates place them in column A.
-        label = _normalize_text(row.get(1) or row.get(2))
+        # drop-in templates place them in column A. At least one real export
+        # additionally shifts the "Total by Counterparty/Clearing House" rollup
+        # marker specifically into column C (the same column that holds
+        # counterparty names in that file), with no text in A or B on that row.
+        label = _normalize_text(row.get(1) or row.get(2) or row.get(3))
         if not label:
             continue
 
@@ -276,6 +321,9 @@ def _identify_segment(label: str) -> str | None:
     if normalized in _EXPECTED_SEGMENT_PATTERNS["futures_cdx"]:
         return "futures_cdx"
 
+    if normalized.startswith(_TOTALS_SEGMENT_LABEL_PREFIX):
+        return _TOTALS_SEGMENT_TYPE
+
     for segment_type, patterns in _EXPECTED_SEGMENT_PATTERNS.items():
         if segment_type == "futures_cdx":
             continue
@@ -289,11 +337,15 @@ def _validate_expected_segments(
     *, file_path: Path, sheet_name: str, segments: list[SegmentMetadata]
 ) -> None:
     expected = _expected_segments_for_variant(file_path=file_path, sheet_name=sheet_name)
-    found = {segment.segment_type for segment in segments}
+    found_all = {segment.segment_type for segment in segments}
+    # The "totals" rollup section is orthogonal to the swaps/repo/futures
+    # classification these expectations are about — exclude it from these checks.
+    found = found_all - {_TOTALS_SEGMENT_TYPE}
 
     # Trend files are occasionally labeled as "Swaps" despite futures-only rows.
     if expected == {"futures"} and "futures" not in found and found == {"swaps"}:
-        original = segments[0]
+        original = next(s for s in segments if s.segment_type == "swaps")
+        preserved = [s for s in segments if s.segment_type != "swaps"]
         segments.clear()
         segments.append(
             SegmentMetadata(
@@ -302,6 +354,7 @@ def _validate_expected_segments(
                 label_text=original.label_text,
             )
         )
+        segments.extend(preserved)
         found = {"futures"}
 
     missing = expected - found
@@ -414,15 +467,99 @@ def _extract_numeric(row: dict[int, str | None], column_index: int | None) -> fl
     return coerce_accounting_float(row.get(column_index), strip_percent=True)
 
 
-def _read_first_sheet(path: Path) -> tuple[str, dict[int, dict[int, str | None]]]:
+def _read_ch_sheet(path: Path) -> tuple[str, dict[int, dict[int, str | None]]]:
     with ZipFile(path) as workbook_zip:
         try:
-            sheet_name, sheet_path = resolve_sheet_target(workbook_zip, lambda name: True)
+            sheet_name, sheet_path = resolve_sheet_target(
+                workbook_zip,
+                lambda name: any(alias in _matching_key(name) for alias in _CH_SHEET_ALIASES),
+            )
         except ValueError as exc:
-            raise ValueError("Workbook contains no sheets") from exc
+            raise ValueError("Unable to locate CPRS-CH worksheet") from exc
 
         shared_strings = load_shared_strings(workbook_zip)
         sheet_xml = ET.fromstring(workbook_zip.read(sheet_path))
         rows = read_sheet_rows(sheet_xml, shared_strings)
 
     return sheet_name, rows
+
+
+_CLASS_BREAKDOWN_FIELDS: tuple[str, ...] = (
+    "TIPS",
+    "Treasury",
+    "Equity",
+    "Commodity",
+    "Currency",
+)
+_BREAKDOWN_LABEL = "notional breakdown"
+_ABSOLUTE_MARKER = "absolute"
+
+
+def read_class_notional_breakdown(path: Path | str) -> dict[str, float] | None:
+    """Read the published asset-class share row from a CPRS-CH worksheet.
+
+    The MOSERS CPRS-CH tab publishes the class mix directly as a "Notional
+    Breakdown" row, and the Trend workbook publishes a SECOND row, "Notional
+    Breakdown (Absolute Values)". They differ materially: Trend holds short
+    futures, so the signed row nets to a meaningless mix -- long and short
+    positions cancel, and a class can even come out negative -- while the
+    absolute row is what the report shows. The human process uses the absolute
+    row when it exists, so prefer it here and fall back to the plain row.
+
+    Note the absolute row is NOT recoverable by taking |value| of the parsed
+    clearing-house rows: longs and shorts net within a clearing house before
+    those rows are written, so a class's netted figure there can be materially
+    smaller than its absolute figure. It must be read from the published row.
+
+    Returns a mapping of asset class -> share, or None when no breakdown row is
+    present (the caller then computes the mix from records as before).
+    """
+    file_path = Path(path)
+    if not file_path.exists():
+        raise FileNotFoundError(f"CPRS-CH file not found: {file_path}")
+
+    try:
+        _sheet_name, rows = _read_ch_sheet(file_path)
+    except (KeyError, ET.ParseError, BadZipFile, ValueError):
+        return None
+
+    header_row = _find_header_row(rows)
+    if header_row is None:
+        return None
+    column_map = _build_column_map(rows, header_row)
+    class_columns = {
+        field: column_map[field] for field in _CLASS_BREAKDOWN_FIELDS if field in column_map
+    }
+    if not class_columns:
+        return None
+
+    plain_row: int | None = None
+    absolute_row: int | None = None
+    for row_number in sorted(rows):
+        for cell_value in rows[row_number].values():
+            text = _normalize_text(cell_value).casefold()
+            if not text.startswith(_BREAKDOWN_LABEL):
+                continue
+            if _ABSOLUTE_MARKER in text:
+                if absolute_row is None:
+                    absolute_row = row_number
+            elif plain_row is None:
+                plain_row = row_number
+            break
+
+    chosen = absolute_row if absolute_row is not None else plain_row
+    if chosen is None:
+        return None
+
+    breakdown: dict[str, float] = {}
+    for field, column_index in class_columns.items():
+        raw_value = rows[chosen].get(column_index)
+        try:
+            breakdown[field] = (
+                coerce_accounting_float(raw_value, strip_percent=True)
+                if raw_value not in (None, "")
+                else 0.0
+            )
+        except (ValueError, TypeError):
+            breakdown[field] = 0.0
+    return breakdown
