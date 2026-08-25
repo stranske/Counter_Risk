@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -86,7 +86,7 @@ def test_release_spec_pyinstaller_build_outputs_expected_executable(
     pyinstaller = shutil.which("pyinstaller")
     if pyinstaller is None:
         pytest.skip("PyInstaller is not installed in this environment.")
-    if Path(pyinstaller).resolve().parent != Path(sys.executable).resolve().parent:
+    if importlib.util.find_spec("PyInstaller") is None:
         pytest.skip("PyInstaller is not installed in the active test environment.")
 
     repo_root = Path(__file__).resolve().parents[1]

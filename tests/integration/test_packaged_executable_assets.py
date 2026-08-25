@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -29,7 +29,7 @@ def _build_packaged_output(tmp_path: Path) -> Path:
     pyinstaller = shutil.which("pyinstaller")
     if pyinstaller is None:
         pytest.skip("PyInstaller is not installed in this environment.")
-    if Path(pyinstaller).resolve().parent != Path(sys.executable).resolve().parent:
+    if importlib.util.find_spec("PyInstaller") is None:
         pytest.skip("PyInstaller is not installed in the active test environment.")
 
     repo_root = Path(__file__).resolve().parents[2]
