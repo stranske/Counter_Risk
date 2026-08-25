@@ -119,11 +119,16 @@ def _find_numeric(
             break
 
         try:
-            return float(raw_value)
+            value = float(raw_value)
         except (TypeError, ValueError) as exc:
             raise ValueError(f"Row value for {field!r} must be numeric") from exc
+        if not math.isfinite(value):
+            raise ValueError(f"Row value for {field!r} must be finite, got {raw_value!r}")
+        return value
 
     if default is not None:
+        if not math.isfinite(default):
+            raise ValueError(f"Default value for {field!r} must be finite, got {default!r}")
         return default
 
     raise ValueError(f"Row missing required numeric {field} column from aliases {keys}")

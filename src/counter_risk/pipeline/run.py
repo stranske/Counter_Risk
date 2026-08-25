@@ -35,6 +35,7 @@ from counter_risk.compute.limits import (
     write_limit_breaches_csv,
 )
 from counter_risk.compute.rollups import (
+    _find_numeric,
     apply_repo_cash_to_totals,
     compute_concentration_metrics,
     write_concentration_metrics_csv,
@@ -1747,13 +1748,15 @@ def _compute_metrics(
 
         sorted_exposures = sorted(
             totals_records,
-            key=lambda record: abs(float(record.get("Notional", 0.0) or 0.0)),
+            key=lambda record: abs(
+                _find_numeric(record, ("Notional",), field="Notional", default=0.0)
+            ),
             reverse=True,
         )
         top_exposures[variant] = [
             {
                 "counterparty": str(record.get("counterparty", "")),
-                "notional": float(record.get("Notional", 0.0) or 0.0),
+                "notional": _find_numeric(record, ("Notional",), field="Notional", default=0.0),
                 "evidence": top_exposure_evidence(
                     variant=variant,
                     sheet=totals_evidence.get(str(record.get("counterparty", "")), {}).get("sheet"),
@@ -1775,13 +1778,17 @@ def _compute_metrics(
 
         sorted_changes = sorted(
             totals_records,
-            key=lambda record: abs(float(record.get(change_column, 0.0) or 0.0)),
+            key=lambda record: abs(
+                _find_numeric(record, (change_column,), field=change_column, default=0.0)
+            ),
             reverse=True,
         )
         top_changes_per_variant[variant] = [
             {
                 "counterparty": str(record.get("counterparty", "")),
-                "notional_change": float(record.get(change_column, 0.0) or 0.0),
+                "notional_change": _find_numeric(
+                    record, (change_column,), field=change_column, default=0.0
+                ),
             }
             for record in sorted_changes[:5]
         ]
@@ -2098,10 +2105,22 @@ def _infer_prior_rows_from_notional_change(
 def _rank_proxy_rows(
     *, variant: str, records: list[dict[str, Any]], proxy_column: str
 ) -> list[dict[str, Any]]:
+    def finite_proxy_value(record: Mapping[str, Any]) -> float:
+        raw_value = record.get(proxy_column)
+        if raw_value is None:
+            raise ValueError(f"Risk proxy {proxy_column!r} must be numeric")
+        try:
+            value = float(raw_value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Risk proxy {proxy_column!r} must be numeric") from exc
+        if not math.isfinite(value):
+            raise ValueError(f"Risk proxy {proxy_column!r} must be finite, got {raw_value!r}")
+        return value
+
     ranked = sorted(
         records,
         key=lambda record: (
-            -abs(_to_float(record.get(proxy_column))),
+            -abs(finite_proxy_value(record)),
             _counterparty_canonical_sort_key(record),
         ),
     )
@@ -2113,7 +2132,7 @@ def _rank_proxy_rows(
                 "counterparty": str(record.get("counterparty", "")),
                 "proxy_name": proxy_column,
                 "formula": _RISK_PROXY_FORMULAS.get(proxy_column, ""),
-                "proxy_value": _to_float(record.get(proxy_column)),
+                "proxy_value": finite_proxy_value(record),
                 "rank": index,
             }
         )
