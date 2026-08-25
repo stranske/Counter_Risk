@@ -2107,6 +2107,8 @@ def _rank_proxy_rows(
 ) -> list[dict[str, Any]]:
     def finite_proxy_value(record: Mapping[str, Any]) -> float:
         raw_value = record.get(proxy_column)
+        if raw_value is None:
+            raise ValueError(f"Risk proxy {proxy_column!r} must be numeric")
         try:
             value = float(raw_value)
         except (TypeError, ValueError) as exc:
