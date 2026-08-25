@@ -8,6 +8,7 @@ from typing import Any, cast
 import pytest
 
 from counter_risk.compute.rollups import (
+    _find_numeric,
     apply_repo_cash_to_totals,
     compute_notional_breakdown,
     compute_risk_proxies,
@@ -16,6 +17,7 @@ from counter_risk.compute.rollups import (
     top_exposures,
 )
 from counter_risk.parsers.cprs_fcm import parse_fcm_totals
+from counter_risk.pipeline.run import _compute_metrics, _rank_proxy_rows
 
 _FRACTION_TOLERANCE = 1e-9
 
@@ -28,6 +30,60 @@ def _as_records(table: Any) -> list[dict[str, Any]]:
 
 def _fixture(name: str) -> Path:
     return Path("tests/fixtures") / name
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_find_numeric_rejects_nan(value: float) -> None:
+    with pytest.raises(ValueError, match="must be finite"):
+        _find_numeric({"Notional": value}, ("Notional",), field="Notional")
+
+
+@pytest.mark.parametrize("value", [float("inf"), float("-inf")])
+def test_find_numeric_rejects_infinity(value: float) -> None:
+    with pytest.raises(ValueError, match="must be finite"):
+        _find_numeric({"Notional": value}, ("Notional",), field="Notional")
+
+
+def test_find_numeric_rejects_non_finite_default() -> None:
+    with pytest.raises(ValueError, match="Default value.*must be finite"):
+        _find_numeric({}, ("Notional",), field="Notional", default=float("nan"))
+
+
+def test_risk_ranking_is_order_independent() -> None:
+    records = [
+        {"counterparty": "ALPHA BANK", "risk_proxy": 10.0},
+        {"counterparty": "BETA BANK", "risk_proxy": -30.0},
+        {"counterparty": "GAMMA BANK", "risk_proxy": 20.0},
+    ]
+
+    rankings = [
+        _rank_proxy_rows(variant="all", records=order, proxy_column="risk_proxy")
+        for order in (records, list(reversed(records)), [records[1], records[0], records[2]])
+    ]
+
+    assert [[row["counterparty"] for row in ranking] for ranking in rankings] == [
+        ["BETA BANK", "GAMMA BANK", "ALPHA BANK"],
+        ["BETA BANK", "GAMMA BANK", "ALPHA BANK"],
+        ["BETA BANK", "GAMMA BANK", "ALPHA BANK"],
+    ]
+    with pytest.raises(ValueError, match="Risk proxy 'risk_proxy' must be finite"):
+        _rank_proxy_rows(
+            variant="all",
+            records=[{**records[0], "risk_proxy": float("nan")}, *records[1:]],
+            proxy_column="risk_proxy",
+        )
+    with pytest.raises(ValueError, match="Row value for 'Notional' must be finite"):
+        _compute_metrics(
+            {
+                "all": {
+                    "totals": [
+                        {"counterparty": "ALPHA BANK", "Notional": float("nan")},
+                        {"counterparty": "BETA BANK", "Notional": 30.0},
+                        {"counterparty": "GAMMA BANK", "Notional": 20.0},
+                    ]
+                }
+            }
+        )
 
 
 @pytest.fixture
