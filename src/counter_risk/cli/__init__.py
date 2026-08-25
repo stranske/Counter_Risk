@@ -11,6 +11,7 @@ from typing import Any, cast
 
 from counter_risk.config import WorkflowConfig, load_config
 from counter_risk.io.discover import discover_workflow_inputs, resolve_discovery_selections
+from counter_risk.logging import configure_logging
 from counter_risk.pipeline import run_fixture_replay, run_pipeline_with_config
 from counter_risk.runtime_paths import resolve_runtime_path
 
@@ -42,6 +43,23 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the top-level CLI parser."""
 
     parser = argparse.ArgumentParser(prog="counter-risk")
+    parser.add_argument(
+        "--log-level",
+        default="INFO",
+        help=(
+            "Logging level for this invocation (default: INFO). Accepts any standard "
+            "level name, e.g. DEBUG, INFO, WARNING, ERROR."
+        ),
+    )
+    parser.add_argument(
+        "--log-file",
+        type=Path,
+        default=None,
+        help=(
+            "Optional path to also write JSON-formatted log records to, in addition to "
+            "the console."
+        ),
+    )
     subparsers = parser.add_subparsers(dest="command")
 
     run_parser = subparsers.add_parser("run", help="Run the Counter Risk pipeline")
@@ -479,6 +497,18 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    # Configure logging exactly once, here, before any subcommand dispatch. Every
+    # subcommand reaches this line -- including `gui`, which is how the packaged
+    # executable launches (release.spec builds src/counter_risk/cli/__main__.py, which
+    # calls this function). Until this call existed the root logger had no handler at
+    # runtime, so every `debug` and `info` record in the package emitted nothing and
+    # JsonFormatter never formatted a single production record.
+    #
+    # Deliberately NOT done at import time or in a library module: that would make
+    # handler installation a side effect of importing counter_risk, which breaks test
+    # isolation and any host embedding the package.
+    configure_logging(log_level=args.log_level, log_file=args.log_file)
 
     handler = getattr(args, "handler", None)
     if handler is None:
