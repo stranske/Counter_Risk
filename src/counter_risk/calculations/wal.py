@@ -30,7 +30,10 @@ many orders of magnitude outside the schedule's own maturity span (a correct WAL
 an exposure-weighted average of the row offsets, so it must lie between the earliest
 and latest of them). The guard below compares the signed total against the gross
 magnitude and refuses when the ratio falls below
-``_NEAR_CANCELLATION_RELATIVE_TOLERANCE``.
+``_NEAR_CANCELLATION_RELATIVE_TOLERANCE``. Less-extreme mixed-sign schedules
+can still have a usable-looking denominator while producing a signed weighted
+result outside the maturity span; that is likewise not a valid exposure-weighted
+average and is refused with the same diagnostic context.
 
 NOTE: for months where TIPS is present, this deterministic method reproduces the
 historical hand-entered WAL values to within ~0.5 day but not exactly; the sub-day
@@ -85,8 +88,21 @@ def calculate_wal(exposure_summary_path: Path | str, px_date: date | datetime | 
             "schedule's own maturity span."
         )
 
-    weighted_days = sum((row.maturity_date - px).days * row.total for row in schedule.rows)
-    return weighted_days / total_exposure
+    offsets = [(row.maturity_date - px).days for row in schedule.rows]
+    weighted_days = sum(
+        offset * row.total for offset, row in zip(offsets, schedule.rows, strict=True)
+    )
+    wal = weighted_days / total_exposure
+    earliest_maturity, latest_maturity = min(offsets), max(offsets)
+    if not earliest_maturity <= wal <= latest_maturity:
+        raise ValueError(
+            "Signed total exposure produced a weighted average life outside the "
+            f"schedule maturity span [{earliest_maturity}, {latest_maturity}]: "
+            f"WAL {wal!r}, signed total {total_exposure!r}, gross magnitude "
+            f"{gross_exposure!r}. This mixed-sign schedule has no meaningful "
+            "weighted average life under the signed weighting convention."
+        )
+    return wal
 
 
 def _coerce_px_date(px_date: date | datetime | str) -> date:

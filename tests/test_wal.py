@@ -114,10 +114,29 @@ def test_wal_result_lies_within_the_schedule_maturity_span(tmp_path: Path) -> No
         except ValueError:
             continue
         returned_a_value = True
-        assert (
-            low <= wal <= high
-        ), f"WAL {wal:,.0f} days is outside the span [{low}, {high}] for schedule {name!r}"
+        message = f"WAL {wal:,.0f} days is outside the span [{low}, {high}] for schedule {name!r}"
+        assert low <= wal <= high, message
     assert returned_a_value, "no schedule returned a value; the span invariant was never exercised"
+
+
+def test_wal_raises_when_mixed_sign_result_escapes_maturity_span(tmp_path: Path) -> None:
+    # This is not close enough to flat for the relative denominator guard: the
+    # signed total is roughly 82% of gross exposure. It still produces a negative
+    # signed-weighted WAL, below the earliest one-year maturity, so the result is
+    # not a valid weighted average and must be rejected.
+    px = _NEAR_CANCELLING_PX
+    p = _write_schedule(
+        tmp_path / "out_of_span_mixed_sign.xlsx",
+        px=px,
+        rows=(
+            (datetime(2026, 11, 30), 1_000_000.00),
+            (datetime(2035, 11, 30), -100_000.00),
+        ),
+    )
+    with pytest.raises(ValueError, match="outside the schedule maturity span") as excinfo:
+        calculate_wal(p, px.date())
+    assert "signed total 900000.0" in str(excinfo.value)
+    assert "gross magnitude 1100000.0" in str(excinfo.value)
 
 
 def test_wal_returns_zero_only_for_empty_gross_exposure(tmp_path: Path) -> None:
