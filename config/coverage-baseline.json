@@ -1,0 +1,8 @@
+{
+  "line": 85.0,
+  "warn_drop": 1.0,
+  "source_workflows": [
+    ".github/workflows/ci.yml"
+  ],
+  "note": "85.0 sits just under the 85.9% this repo really measures, so the guard can fail without being red on arrival. source_workflows names ci.yml because that is where coverage is measured here by documented design -- pr-00-gate.yml sets coverage: false with the comment 'PR Gate is optimized for fast feedback. Full coverage enforcement runs on main.' That was never a misconfiguration; the guard simply could not look anywhere but the Gate until stranske/Workflows#3270."
+}

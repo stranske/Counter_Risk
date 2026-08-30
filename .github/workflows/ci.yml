@@ -29,5 +29,10 @@ jobs:
       typecheck: true
       coverage: true
       coverage-min: '80'
+      # Publishes the coverage TREND artifact. Maint Coverage Guard requires a trend beside
+      # the coverage payload and skips any run carrying only one -- so without this the guard
+      # reported this repo as not measuring coverage at all, which was never true. Purely
+      # additive: the input publishes artifacts and gates nothing.
+      enable-soft-gate: true
       pytest_args: "-n auto --dist loadscope"
     secrets: inherit
