@@ -84,8 +84,14 @@ def test_top_exposure_formatting_is_deterministic_and_filters_negative_values() 
             ],
         }
     }
+    all_negative_manifest: dict[str, object] = {
+        "top_exposures": {
+            "a_variant": [{"name": "Negative", "notional": -1}],
+        }
+    }
 
     assert _format_top_exposures({}) == "No top exposures found in manifest."
+    assert _format_top_exposures(all_negative_manifest) == "No top exposures found in manifest."
     assert _format_top_exposures(manifest) == (
         "a_variant: Alpha (10.00); a_variant: Zulu (10.00); "
         "b_variant: Beta (10.00); a_variant: Tiny (0.00)"

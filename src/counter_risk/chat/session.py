@@ -572,6 +572,8 @@ def _format_top_exposures(manifest: dict[str, object]) -> str:
 
     sorted_rows = _sort_top_exposure_rows(rows)
     top_rows = _limit_top_exposure_rows(sorted_rows, top_n=5, min_value=0.0)
+    if not top_rows:
+        return "No top exposures found in manifest."
     formatted = [
         f"{row['variant']}: {row['name']} ({_format_exposure_value(cast(float, row['value']))})"
         for row in top_rows
