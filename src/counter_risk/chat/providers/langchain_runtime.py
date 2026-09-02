@@ -317,7 +317,8 @@ def build_chat_client(
     if not github_token and not openai_token and not anthropic_token:
         return None
 
-    selected_model = model or os.environ.get(ENV_MODEL) or DEFAULT_MODEL
+    model_override = (model or "").strip() or (os.environ.get(ENV_MODEL) or "").strip()
+    selected_model = model_override or DEFAULT_MODEL
     selected_timeout = DEFAULT_TIMEOUT if timeout is None else timeout
     selected_retries = DEFAULT_MAX_RETRIES if max_retries is None else max_retries
 
@@ -335,7 +336,6 @@ def build_chat_client(
             anthropic_token=anthropic_token,
         )
 
-    model_override = model or os.environ.get(ENV_MODEL)
     used_override = False
     for slot in _resolve_slots():
         slot_model = model_override if model_override and not used_override else slot.model

@@ -43,6 +43,10 @@ def _isolate_runtime_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         names.add(f"{runtime.ENV_SLOT_PREFIX}{index}_MODEL")
     for name in names:
         monkeypatch.delenv(name, raising=False)
+    # These values are read before pytest fixtures run, so deleting their
+    # source variables cannot by itself neutralize a developer's shell.
+    monkeypatch.setattr(runtime, "DEFAULT_TIMEOUT", 60)
+    monkeypatch.setattr(runtime, "DEFAULT_MAX_RETRIES", 2)
 
 
 @pytest.mark.parametrize(
@@ -180,6 +184,44 @@ def test_slot_overrides_ignore_blank_models_and_normalize_real_values(
         runtime.SlotDefinition("slot1", runtime.PROVIDER_OPENAI, "gpt-configured"),
         runtime.SlotDefinition("slot2", runtime.PROVIDER_GITHUB, "codex-mini-latest"),
     ]
+
+
+@pytest.mark.parametrize(
+    ("env_model", "expected_model"),
+    [("   ", "gpt-configured"), ("  gpt-override  ", "gpt-override")],
+)
+def test_build_chat_client_normalizes_env_model_before_slot_selection(
+    monkeypatch: pytest.MonkeyPatch,
+    env_model: str,
+    expected_model: str,
+) -> None:
+    """Blank model env must preserve slot config; real overrides must be normalized and honored."""
+
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-token")
+    monkeypatch.setenv(runtime.ENV_MODEL, env_model)
+    monkeypatch.setattr(
+        runtime,
+        "_resolve_slots",
+        lambda: [runtime.SlotDefinition("slot1", runtime.PROVIDER_OPENAI, "gpt-configured")],
+    )
+    selected_models: list[str] = []
+
+    def fake_build_client_for_provider(**kwargs: object) -> runtime.ClientInfo:
+        selected_model = cast(str, kwargs["model"])
+        selected_models.append(selected_model)
+        return runtime.ClientInfo(
+            client=object(),
+            provider=runtime.PROVIDER_OPENAI,
+            model=selected_model,
+        )
+
+    monkeypatch.setattr(runtime, "_build_client_for_provider", fake_build_client_for_provider)
+
+    client = runtime.build_chat_client()
+
+    assert client is not None
+    assert client.model == expected_model
+    assert selected_models == [expected_model]
 
 
 def test_env_int_uses_valid_values_and_falls_back_for_malformed_input(
@@ -442,6 +484,27 @@ def test_force_openai_passes_only_explicit_runtime_settings(
         "openai_token": "openai-token",
         "anthropic_token": None,
     }
+
+
+def test_build_chat_client_uses_repo_defaults_when_runtime_limits_are_omitted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Omitted limits must use stable repo defaults, independent of the test runner's shell."""
+
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-token")
+    captured: dict[str, object] = {}
+
+    def fake_build_client_for_provider(**kwargs: object) -> runtime.ClientInfo:
+        captured.update(kwargs)
+        return runtime.ClientInfo(client=object(), provider=runtime.PROVIDER_OPENAI, model="model")
+
+    monkeypatch.setattr(runtime, "_build_client_for_provider", fake_build_client_for_provider)
+
+    result = runtime.build_chat_client(model="gpt-defaults", force_openai=True)
+
+    assert result is not None
+    assert captured["timeout"] == 60
+    assert captured["max_retries"] == 2
 
 
 @pytest.mark.parametrize(
