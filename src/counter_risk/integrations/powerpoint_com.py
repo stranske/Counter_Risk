@@ -29,10 +29,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 def _as_path(path: str | Path, *, field_name: str) -> Path:
-    resolved = Path(path)
-    if not str(resolved):
+    if not str(path).strip():
         raise ValueError(f"{field_name} must not be empty.")
-    return resolved
+    return Path(path)
 
 
 def _default_output_path(source_path: Path) -> Path:
@@ -189,6 +188,7 @@ def list_external_link_targets(pptx_path: str | Path) -> list[str]:
     """List external link targets found in a PowerPoint presentation.
 
     Raises:
+        ValueError: The presentation path is blank.
         FileNotFoundError: The input file does not exist.
         PowerPointComError: COM initialization/open errors.
     """
@@ -228,6 +228,7 @@ def refresh_links_and_save(
     writes ``NEEDS_LINK_REFRESH.txt`` beside the output, and returns the output path.
 
     Raises:
+        ValueError: An input or output presentation path is blank.
         FileNotFoundError: The input file does not exist.
         PowerPointComInitializationError: COM exists but PowerPoint failed to initialize.
     """

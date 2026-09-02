@@ -33,13 +33,22 @@ def _build_packaged_output(tmp_path: Path) -> Path:
         pytest.skip("PyInstaller is not installed in the active test environment.")
 
     repo_root = Path(__file__).resolve().parents[2]
-    build_root = tmp_path / "build"
-    build_root.mkdir(parents=True, exist_ok=True)
+    work_root = tmp_path / "pyinstaller-work"
+    dist_root = tmp_path / "pyinstaller-dist"
     env = os.environ.copy()
     env["PYINSTALLER_CONFIG_DIR"] = str(tmp_path / ".pyinstaller")
 
     subprocess.run(
-        [pyinstaller, "--clean", "-y", str(repo_root / "release.spec")],
+        [
+            pyinstaller,
+            "--clean",
+            "-y",
+            "--workpath",
+            str(work_root),
+            "--distpath",
+            str(dist_root),
+            str(repo_root / "release.spec"),
+        ],
         cwd=repo_root,
         text=True,
         capture_output=True,
@@ -47,11 +56,11 @@ def _build_packaged_output(tmp_path: Path) -> Path:
         env=env,
     )
 
-    produced_dir = repo_root / "dist" / "counter-risk"
+    produced_dir = dist_root / "counter-risk"
     if not produced_dir.is_dir():
         pytest.fail(f"PyInstaller did not produce expected directory: {produced_dir}")
 
-    isolated_bundle = build_root / "counter-risk"
+    isolated_bundle = tmp_path / "isolated" / "counter-risk"
     shutil.copytree(produced_dir, isolated_bundle)
     return isolated_bundle
 
