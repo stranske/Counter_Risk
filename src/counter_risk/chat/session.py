@@ -386,7 +386,7 @@ def is_provider_model_supported(provider: str, model: str) -> bool:
     if available_models is None:
         return False
     required_env_keys = _PROVIDER_MODEL_REQUIRED_ENV_KEYS.get(provider_key, {}).get(model_key, ())
-    if required_env_keys and not any(os.environ.get(env_key) for env_key in required_env_keys):
+    if required_env_keys and not credential_env_available(required_env_keys):
         return False
     return model_key in available_models
 
