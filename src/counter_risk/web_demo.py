@@ -146,7 +146,7 @@ def _write_data_quality_summary(
                 "Mode: synthetic fixture replay",
                 "Data zone: no real/proprietary data; bundled tests/fixtures only",
                 "Network/LLM boundary: chat disabled via COUNTER_RISK_CHAT_OFFLINE_MODE=1",
-                f"Config: {config_path.as_posix()}",
+                f"Config: {_artifact_relative_path(str(config_path), run_dir=run_dir)}",
                 "",
                 "Fixture sources:",
                 source_lines,
