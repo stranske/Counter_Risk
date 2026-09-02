@@ -139,8 +139,12 @@ def _load_slot_config() -> list[SlotDefinition]:
     if not isinstance(payload, dict):
         return _default_slots()
 
+    raw_slots = payload.get("slots", [])
+    if not isinstance(raw_slots, list):
+        return _default_slots()
+
     slots: list[SlotDefinition] = []
-    for idx, entry in enumerate(payload.get("slots", []), start=1):
+    for idx, entry in enumerate(raw_slots, start=1):
         if not isinstance(entry, dict):
             continue
         provider = _normalize_provider(str(entry.get("provider", "")))
@@ -158,9 +162,9 @@ def _apply_slot_env_overrides(slots: list[SlotDefinition]) -> list[SlotDefinitio
         provider_key = f"{ENV_SLOT_PREFIX}{idx}_PROVIDER"
         model_key = f"{ENV_SLOT_PREFIX}{idx}_MODEL"
         provider_override = _normalize_provider(os.environ.get(provider_key))
-        model_override = os.environ.get(model_key)
+        model_override = (os.environ.get(model_key) or "").strip()
         if idx == 1:
-            model_override = model_override or os.environ.get(ENV_MODEL)
+            model_override = model_override or (os.environ.get(ENV_MODEL) or "").strip()
         updated.append(
             SlotDefinition(
                 name=slot.name,
