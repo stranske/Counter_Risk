@@ -259,7 +259,7 @@ def _resolve_content_range(worksheet: Any) -> Any:
 
 
 def _rasterize_pdf_page_to_png(*, pdf_path: Path, output_png: Path) -> None:
-    import pypdfium2 as pdfium  # type: ignore[import-not-found]
+    import pypdfium2 as pdfium  # type: ignore[import-untyped]
 
     pdf = pdfium.PdfDocument(str(pdf_path))
     try:

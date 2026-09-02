@@ -102,6 +102,24 @@ def test_public_operations_reject_blank_source_before_starting_powerpoint(
             powerpoint_com.refresh_links_and_save("  \t")
 
 
+def test_refresh_rejects_blank_output_before_starting_powerpoint(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A blank destination must not fall through to stateful PowerPoint automation."""
+
+    source_pptx = tmp_path / "input.pptx"
+    source_pptx.write_bytes(b"pptx-content")
+    monkeypatch.setattr(
+        powerpoint_com,
+        "initialize_powerpoint_application",
+        lambda: pytest.fail("PowerPoint must not start for an invalid output path"),
+    )
+
+    with pytest.raises(ValueError, match=r"^output_pptx_path must not be empty\.$"):
+        powerpoint_com.refresh_links_and_save(source_pptx, "  \t")
+
+
 def test_refresh_links_and_save_writes_manual_instructions_when_com_unavailable(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
