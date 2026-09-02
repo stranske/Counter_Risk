@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import IO, Any
+from typing import IO, Any, cast
 
 import pytest
 
@@ -397,6 +397,24 @@ def test_chat_session_rejects_model_when_required_credential_path_is_missing(
         ChatSession(context=context, provider="openai", model="github-only-model")
 
 
+def test_chat_session_rejects_model_when_required_credential_is_blank(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setenv("GITHUB_TOKEN", " \t ")
+    monkeypatch.setitem(session_module._PROVIDER_MODELS, "openai", {"github-only-model"})
+    monkeypatch.setitem(
+        session_module._PROVIDER_MODEL_REQUIRED_ENV_KEYS,
+        "openai",
+        {"github-only-model": ("GITHUB_TOKEN",)},
+    )
+
+    with pytest.raises(ChatSessionError, match="Unsupported model"):
+        ChatSession(context=context, provider="openai", model="github-only-model")
+
+
 def test_validate_prompt_boundaries_rejects_duplicate_markers() -> None:
     prompt = "\n".join(
         [
@@ -640,3 +658,235 @@ def test_chat_session_surfaces_chat_log_directory_create_failures(
 
     with pytest.raises(RuntimeError, match="Failed to write chat log transcript"):
         session.ask("top exposures")
+
+
+def test_chat_session_whitespace_overrides_preserve_session_selection(tmp_path: Path) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(
+        context=context,
+        provider="local",
+        model=_MODEL_KEY,
+        log_mode="off",
+    )
+
+    answer = session.ask(
+        "summarize this run",
+        provider_key=" \t ",
+        model_key=" \n ",
+    )
+
+    assert answer.startswith(f"local-stub:{_MODEL_KEY} | Run summary:")
+
+
+def test_chat_session_failed_transcript_write_does_not_commit_turn(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
+    original_append = session_module._append_chat_turn_log
+
+    def _fail_transcript_write(**_: object) -> None:
+        raise RuntimeError("transcript unavailable")
+
+    monkeypatch.setattr(session_module, "_append_chat_turn_log", _fail_transcript_write)
+
+    with pytest.raises(RuntimeError, match="transcript unavailable"):
+        session.ask("top exposures")
+
+    assert session.history == []
+    assert session._interaction_counter == 0
+
+    monkeypatch.setattr(session_module, "_append_chat_turn_log", original_append)
+    session.ask("top exposures")
+    chat_log = next((context.run_dir / _CHAT_LOG_DIR_NAME).glob("*.jsonl"))
+    payload = json.loads(chat_log.read_text(encoding="utf-8"))
+    assert payload["interaction"] == 1
+
+
+def test_chat_session_defaults_to_local_when_only_offline_provider_is_available(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for env_key in ("GITHUB_TOKEN", "OPENAI_API_KEY", "CLAUDE_API_STRANSKE"):
+        monkeypatch.delenv(env_key, raising=False)
+    context = load_run_context(_write_minimal_run(tmp_path))
+
+    session = ChatSession(context=context, log_mode="off")
+
+    assert session.provider == "local"
+    assert session.model == _MODEL_KEY
+
+
+def test_chat_session_initialization_reports_provider_configuration_errors(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    anthropic_model = _provider_model("anthropic")
+    monkeypatch.delenv("CLAUDE_API_STRANSKE", raising=False)
+
+    with pytest.raises(ChatSessionError, match="Provider 'anthropic' is not configured"):
+        ChatSession(context=context, provider="anthropic", model=anthropic_model)
+
+    with pytest.raises(ChatSessionError, match="Unsupported provider: unknown"):
+        ChatSession(context=context, provider="unknown", model="unknown-model")
+
+
+def test_chat_session_send_revalidates_provider_and_model_overrides(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(
+        context=context,
+        provider="local",
+        model=_MODEL_KEY,
+        log_mode="off",
+    )
+
+    with pytest.raises(ChatSessionError, match="local/not-a-model"):
+        session.ask("top exposures", model_key="not-a-model")
+
+    anthropic_model = _provider_model("anthropic")
+    monkeypatch.delenv("CLAUDE_API_STRANSKE", raising=False)
+    with pytest.raises(ChatSessionError, match="Provider 'anthropic' is not configured"):
+        session.ask(
+            "top exposures",
+            provider_key="anthropic",
+            model_key=anthropic_model,
+        )
+
+    monkeypatch.delenv("COUNTER_RISK_CHAT_OFFLINE_MODE", raising=False)
+    with pytest.raises(ChatSessionError, match="offline test mode"):
+        session.ask("top exposures", provider_key="local", model_key=_MODEL_KEY)
+
+
+def test_validate_user_query_rejects_empty_question() -> None:
+    with pytest.raises(PromptInjectionError, match="Question cannot be empty"):
+        validate_user_query(" \t\n ")
+
+
+@pytest.mark.parametrize(
+    ("prompt", "message"),
+    (
+        (
+            "\n".join(
+                [
+                    "SYSTEM_INSTRUCTIONS_START",
+                    "SYSTEM_INSTRUCTIONS_END",
+                    "UNTRUSTED_RUN_DATA_START",
+                    "UNTRUSTED_RUN_DATA_END",
+                    "USER_QUESTION_START",
+                ]
+            ),
+            "missing required boundary marker",
+        ),
+        (
+            "\n".join(
+                [
+                    "SYSTEM_INSTRUCTIONS_START",
+                    "UNTRUSTED_RUN_DATA_START",
+                    "SYSTEM_INSTRUCTIONS_END",
+                    "UNTRUSTED_RUN_DATA_END",
+                    "USER_QUESTION_START",
+                    "USER_QUESTION_END",
+                ]
+            ),
+            "boundary markers are out of order",
+        ),
+    ),
+)
+def test_validate_prompt_boundaries_rejects_incomplete_or_reordered_blocks(
+    prompt: str,
+    message: str,
+) -> None:
+    with pytest.raises(PromptInjectionError, match=message):
+        validate_prompt_boundaries(prompt)
+
+
+def test_warning_formatter_handles_empty_and_truncated_collections() -> None:
+    assert session_module._format_key_warnings([]) == "Key warnings: none."
+    assert session_module._format_key_warnings(["one", "two", "three", "four"]) == (
+        "Key warnings (4): 1. one; 2. two; 3. three; ... (+1 more)"
+    )
+
+
+def test_delta_formatter_skips_malformed_variants_and_uses_stable_fallbacks() -> None:
+    assert session_module._format_deltas({}) == "Top deltas: none."
+    deltas = cast(
+        dict[str, list[dict[str, object]]],
+        {
+            "a-empty": [],
+            "b-invalid": ["not-a-record"],
+            "c-fallback": [{"name": "Desk", "custom_change": 3}],
+            "d-unknown": [{"counterparty": "Counterparty"}],
+        },
+    )
+
+    assert session_module._format_deltas(deltas) == (
+        "c-fallback: Desk custom_change=3; d-unknown: Counterparty value=unknown"
+    )
+
+
+@pytest.mark.parametrize("failure_stage", ("mkdir", "write"))
+def test_optional_llm_log_failures_do_not_fail_completed_chat_turns(
+    failure_stage: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    context = load_run_context(_write_minimal_run(tmp_path))
+    session = ChatSession(
+        context=context,
+        provider="local",
+        model=_MODEL_KEY,
+        enable_llm_logging=True,
+        log_mode="off",
+    )
+    caplog.set_level(logging.WARNING)
+
+    if failure_stage == "mkdir":
+        original_mkdir = Path.mkdir
+
+        def _failing_mkdir(
+            self: Path,
+            mode: int = 0o777,
+            parents: bool = False,
+            exist_ok: bool = False,
+        ) -> None:
+            if self.name == _LLM_LOG_DIR_NAME:
+                raise OSError("permission denied")
+            original_mkdir(self, mode=mode, parents=parents, exist_ok=exist_ok)
+
+        monkeypatch.setattr(Path, "mkdir", _failing_mkdir)
+        expected_warning = "Failed to create LLM log directory"
+    else:
+        original_write_text = Path.write_text
+
+        def _failing_write_text(
+            self: Path,
+            data: str,
+            encoding: str | None = None,
+            errors: str | None = None,
+            newline: str | None = None,
+        ) -> int:
+            if self.parent.name == _LLM_LOG_DIR_NAME:
+                raise OSError("permission denied")
+            return original_write_text(
+                self,
+                data,
+                encoding=encoding,
+                errors=errors,
+                newline=newline,
+            )
+
+        monkeypatch.setattr(Path, "write_text", _failing_write_text)
+        expected_warning = "Failed to write LLM log artifact"
+
+    answer = session.ask("top exposures")
+
+    assert answer.startswith(f"local-stub:{_MODEL_KEY} | ")
+    assert len(session.history) == 2
+    assert session._interaction_counter == 1
+    assert any(expected_warning in record.message for record in caplog.records)

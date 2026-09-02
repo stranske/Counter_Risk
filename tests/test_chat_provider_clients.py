@@ -225,6 +225,59 @@ def test_langchain_provider_client_retries_next_provider_after_invoke_error(
     assert response == "fallback-success"
 
 
+def test_provider_env_available_rejects_whitespace_only_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", " \t ")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    assert not provider_base.provider_env_available("openai")
+
+
+def test_langchain_provider_client_falls_back_after_none_response(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        provider_base,
+        "get_provider_model_catalog",
+        lambda: {
+            "github-models": {"gpt-5.2"},
+            "openai": {"gpt-5.2"},
+            "anthropic": set(),
+        },
+    )
+    monkeypatch.setattr(provider_base, "missing_provider_dependencies", lambda provider: ())
+    calls: list[str | None] = []
+
+    def _fake_build_chat_client(
+        *, provider: str | None = None, model: str | None = None, **_: object
+    ) -> SimpleNamespace:
+        calls.append(provider)
+
+        class _Client:
+            def invoke(self, messages: object, config: object | None = None) -> object:
+                _ = (messages, config)
+                if provider == "github-models":
+                    return None
+                return SimpleNamespace(content="fallback-success")
+
+        return SimpleNamespace(client=_Client(), provider=provider, model=model)
+
+    monkeypatch.setattr(provider_base, "build_chat_client", _fake_build_chat_client)
+    client = provider_base.LangChainProviderClient(
+        provider_chain=("github-models", "openai"),
+        required_env_keys=("GITHUB_TOKEN", "OPENAI_API_KEY"),
+    )
+
+    response = client.generate(
+        messages=[{"role": "user", "content": "hello"}],
+        model="gpt-5.2",
+    )
+
+    assert response == "fallback-success"
+    assert calls == ["github-models", "openai"]
+
+
 def test_langchain_provider_client_reports_missing_credentials(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -339,3 +392,106 @@ def test_langchain_provider_client_reports_client_init_failure_when_credentials_
         match="credentials are present but no LangChain client could be initialized",
     ):
         client.generate(messages=[{"role": "user", "content": "hello"}], model="gpt-5.2")
+
+
+def test_build_provider_model_registry_uses_safe_defaults_for_empty_catalog(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(provider_base, "get_provider_model_catalog", lambda: {})
+
+    registry = provider_base.build_provider_model_registry(
+        local_model="chat-model-placeholder",
+        include_local=False,
+    )
+
+    assert registry.provider_models == {
+        "openai": {"gpt-5.2"},
+        "anthropic": {"claude-sonnet-4-5-20250929"},
+    }
+    assert registry.provider_model_required_env_keys["openai"]["gpt-5.2"] == (
+        "GITHUB_TOKEN",
+        "OPENAI_API_KEY",
+    )
+
+
+@pytest.mark.parametrize(
+    ("response", "expected"),
+    (
+        ("  direct text  ", "direct text"),
+        (SimpleNamespace(content="  message text  "), "message text"),
+        (
+            SimpleNamespace(content=["hello ", {"text": "world"}, {"ignored": "value"}, 7]),
+            "hello world",
+        ),
+        (42, "42"),
+    ),
+)
+def test_coerce_response_text_handles_supported_provider_shapes(
+    response: object,
+    expected: str,
+) -> None:
+    assert provider_base._coerce_response_text(response) == expected
+
+
+def test_langchain_provider_client_reports_empty_responses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        provider_base,
+        "get_provider_model_catalog",
+        lambda: {"openai": {"gpt-5.2"}},
+    )
+    monkeypatch.setattr(provider_base, "missing_provider_dependencies", lambda provider: ())
+
+    class _EmptyClient:
+        def invoke(self, messages: object, config: object | None = None) -> object:
+            _ = (messages, config)
+            return SimpleNamespace(content="   ")
+
+    monkeypatch.setattr(
+        provider_base,
+        "build_chat_client",
+        lambda **kwargs: SimpleNamespace(
+            client=_EmptyClient(),
+            provider=kwargs.get("provider"),
+            model=kwargs.get("model"),
+        ),
+    )
+    client = provider_base.LangChainProviderClient(
+        provider_chain=("openai",),
+        required_env_keys=(),
+    )
+
+    with pytest.raises(RuntimeError, match="returned an empty response"):
+        client.generate(messages=[{"role": "user", "content": "hello"}], model="gpt-5.2")
+
+
+def test_langchain_provider_client_reports_empty_unconfigured_chain(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(provider_base, "get_provider_model_catalog", lambda: {})
+    monkeypatch.setattr(provider_base, "missing_provider_dependencies", lambda provider: ())
+    monkeypatch.setattr(provider_base, "build_chat_client", lambda **_: None)
+    client = provider_base.LangChainProviderClient(
+        provider_chain=("custom",),
+        required_env_keys=(),
+    )
+
+    with pytest.raises(RuntimeError, match="No configured clients.*custom"):
+        client.generate(messages=[{"role": "user", "content": "hello"}], model="model")
+
+
+def test_provider_dependency_error_uses_runtime_dependency_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        provider_base,
+        "missing_provider_dependencies",
+        lambda provider: ("langchain-openai",) if provider == "openai" else (),
+    )
+
+    assert provider_base.provider_dependency_error(" OpenAI ") == (
+        "Provider 'openai' requires missing dependencies (langchain-openai). "
+        "Install packages: langchain-openai."
+    )
+    assert provider_base.provider_dependency_error("anthropic") is None

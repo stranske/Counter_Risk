@@ -41,6 +41,12 @@ class ProviderModelRegistry:
     provider_model_required_env_keys: dict[str, dict[str, tuple[str, ...]]]
 
 
+def credential_env_available(required_env_keys: tuple[str, ...]) -> bool:
+    """Return whether any required credential contains a non-blank value."""
+
+    return any((os.environ.get(key) or "").strip() for key in required_env_keys)
+
+
 def build_provider_model_registry(
     *, local_model: str, include_local: bool = True
 ) -> ProviderModelRegistry:
@@ -148,7 +154,7 @@ class LangChainProviderClient:
         if last_error is not None:
             raise RuntimeError(f"Provider request failed: {last_error}") from last_error
 
-        required_env_available = any(os.environ.get(key) for key in self._required_env_keys)
+        required_env_available = credential_env_available(self._required_env_keys)
         if self._required_env_keys and not required_env_available:
             missing_env = ", ".join(self._required_env_keys)
             raise RuntimeError(
@@ -198,9 +204,9 @@ def provider_env_available(provider: str) -> bool:
 
     provider_key = provider.strip().lower()
     if provider_key == "openai":
-        return any(os.environ.get(key) for key in _OPENAI_ENV_KEYS)
+        return credential_env_available(_OPENAI_ENV_KEYS)
     if provider_key == "anthropic":
-        return any(os.environ.get(key) for key in _ANTHROPIC_ENV_KEYS)
+        return credential_env_available(_ANTHROPIC_ENV_KEYS)
     return True
 
 
@@ -219,6 +225,8 @@ def provider_dependency_error(provider: str) -> str | None:
 
 
 def _coerce_response_text(response: object) -> str:
+    if response is None:
+        return ""
     if isinstance(response, str):
         return response.strip()
     content = getattr(response, "content", None)
