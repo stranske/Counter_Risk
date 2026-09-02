@@ -438,6 +438,21 @@ def test_build_chat_client_without_credentials_does_not_resolve_slots(
     assert runtime.build_chat_client() is None
 
 
+def test_build_chat_client_treats_whitespace_credentials_as_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", " \t ")
+    monkeypatch.setenv("OPENAI_API_KEY", " \n ")
+    monkeypatch.setenv(runtime.ENV_ANTHROPIC_KEY, "   ")
+    monkeypatch.setattr(
+        runtime,
+        "_resolve_slots",
+        lambda: pytest.fail("slots must not resolve for blank credentials"),
+    )
+
+    assert runtime.build_chat_client() is None
+
+
 def test_build_chat_client_rejects_unknown_explicit_provider_without_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -18,6 +18,7 @@ from counter_risk.chat.providers.base import (
     ProviderClient,
     build_provider_clients,
     build_provider_model_registry,
+    credential_env_available,
     provider_dependency_error,
     provider_env_available,
 )
@@ -65,7 +66,7 @@ def _model_credentials_available(provider: str, model: str) -> bool:
     required_env_keys = _PROVIDER_MODEL_REQUIRED_ENV_KEYS.get(provider, {}).get(model, ())
     if not required_env_keys:
         return True
-    return any(os.environ.get(env_key) for env_key in required_env_keys)
+    return credential_env_available(required_env_keys)
 
 
 def _default_provider_key() -> str:
@@ -265,8 +266,8 @@ class ChatSession:
 
         clean_question = validate_user_query(question)
         prompt = build_guarded_prompt(self.context, clean_question)
-        selected_provider = (provider_key or self.provider).strip().lower()
-        selected_model = (model_key or self.model).strip()
+        selected_provider = (provider_key or "").strip().lower() or self.provider
+        selected_model = (model_key or "").strip() or self.model
 
         if selected_provider == "local" and not _offline_mode_enabled():
             raise ChatSessionError(
@@ -296,9 +297,7 @@ class ChatSession:
             response_metadata=provider_response_metadata,
         )
 
-        self.history.append(ChatMessage(role="user", content=clean_question))
-        self.history.append(ChatMessage(role="assistant", content=answer))
-        self._interaction_counter += 1
+        interaction_number = self._interaction_counter + 1
         _LOGGER.debug("Built guarded prompt of %s characters", len(prompt))
         resolved_log_mode = _resolve_chat_log_mode(self.log_mode)
 
@@ -320,7 +319,7 @@ class ChatSession:
         if should_write_transcript:
             _append_chat_turn_log(
                 run_dir=self.context.run_dir,
-                interaction_number=self._interaction_counter,
+                interaction_number=interaction_number,
                 question=clean_question,
                 prompt=prompt,
                 response=answer,
@@ -335,13 +334,16 @@ class ChatSession:
         if should_write_llm_artifact:
             _write_llm_log(
                 run_dir=self.context.run_dir,
-                interaction_number=self._interaction_counter,
+                interaction_number=interaction_number,
                 prompt=prompt,
                 response=answer,
                 provider=selected_provider,
                 model=selected_model,
             )
 
+        self.history.append(ChatMessage(role="user", content=clean_question))
+        self.history.append(ChatMessage(role="assistant", content=answer))
+        self._interaction_counter = interaction_number
         return answer
 
     def _build_provider_messages(self, *, prompt: str, question: str) -> list[dict[str, str]]:

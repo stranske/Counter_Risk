@@ -311,9 +311,9 @@ def build_chat_client(
     timeout: int | None = None,
     max_retries: int | None = None,
 ) -> ClientInfo | None:
-    github_token = os.environ.get("GITHUB_TOKEN")
-    openai_token = os.environ.get("OPENAI_API_KEY")
-    anthropic_token = os.environ.get(ENV_ANTHROPIC_KEY)
+    github_token = (os.environ.get("GITHUB_TOKEN") or "").strip() or None
+    openai_token = (os.environ.get("OPENAI_API_KEY") or "").strip() or None
+    anthropic_token = (os.environ.get(ENV_ANTHROPIC_KEY) or "").strip() or None
     if not github_token and not openai_token and not anthropic_token:
         return None
 
