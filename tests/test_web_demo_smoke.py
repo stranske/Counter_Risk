@@ -84,6 +84,8 @@ def test_web_demo_artifact_uses_fixture_data_and_disables_chat(tmp_path: Path) -
     summary = summary_path.read_text(encoding="utf-8")
     assert "bundled tests/fixtures only" in summary
     assert "COUNTER_RISK_CHAT_OFFLINE_MODE=1" in summary
+    assert "Config: config/fixture_replay.yml" in summary
+    assert str(Path.cwd().resolve()) not in summary
     assert "ChatOpenAI" not in summary
     assert "ChatAnthropic" not in summary
 
