@@ -82,6 +82,26 @@ def test_initialize_powerpoint_application_wraps_dispatch_errors(
     assert isinstance(exc_info.value.__cause__, RuntimeError)
 
 
+@pytest.mark.parametrize("operation", ["list", "refresh"])
+def test_public_operations_reject_blank_source_before_starting_powerpoint(
+    monkeypatch: pytest.MonkeyPatch,
+    operation: str,
+) -> None:
+    """Blank config must not become cwd and reach a stateful PowerPoint COM call."""
+
+    monkeypatch.setattr(
+        powerpoint_com,
+        "initialize_powerpoint_application",
+        lambda: pytest.fail("PowerPoint must not start for an invalid path"),
+    )
+
+    with pytest.raises(ValueError, match=r"^pptx_path must not be empty\.$"):
+        if operation == "list":
+            powerpoint_com.list_external_link_targets("  \t")
+        else:
+            powerpoint_com.refresh_links_and_save("  \t")
+
+
 def test_refresh_links_and_save_writes_manual_instructions_when_com_unavailable(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

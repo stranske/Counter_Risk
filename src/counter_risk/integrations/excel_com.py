@@ -38,10 +38,9 @@ class ExcelComInitializationError(ExcelComError):
 
 
 def _as_path(path: str | Path, *, field_name: str) -> Path:
-    resolved = Path(path)
-    if not str(resolved):
+    if not str(path).strip():
         raise ValueError(f"{field_name} must not be empty.")
-    return resolved
+    return Path(path)
 
 
 def _run_com_cleanup(*, action: str, callback: Any) -> None:
@@ -148,6 +147,7 @@ def export_worksheet_range_as_png(
     Excel is running headless/invisible under COM automation.
 
     Raises:
+        ValueError: A workbook or output path is blank.
         FileNotFoundError: The workbook file does not exist.
         ExcelComError: COM initialization/open errors.
     """
@@ -259,7 +259,7 @@ def _resolve_content_range(worksheet: Any) -> Any:
 
 
 def _rasterize_pdf_page_to_png(*, pdf_path: Path, output_png: Path) -> None:
-    import pypdfium2 as pdfium  # type: ignore[import-untyped]
+    import pypdfium2 as pdfium  # type: ignore[import-not-found]
 
     pdf = pdfium.PdfDocument(str(pdf_path))
     try:
