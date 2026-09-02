@@ -139,8 +139,12 @@ def _load_slot_config() -> list[SlotDefinition]:
     if not isinstance(payload, dict):
         return _default_slots()
 
+    raw_slots = payload.get("slots", [])
+    if not isinstance(raw_slots, list):
+        return _default_slots()
+
     slots: list[SlotDefinition] = []
-    for idx, entry in enumerate(payload.get("slots", []), start=1):
+    for idx, entry in enumerate(raw_slots, start=1):
         if not isinstance(entry, dict):
             continue
         provider = _normalize_provider(str(entry.get("provider", "")))
@@ -158,9 +162,9 @@ def _apply_slot_env_overrides(slots: list[SlotDefinition]) -> list[SlotDefinitio
         provider_key = f"{ENV_SLOT_PREFIX}{idx}_PROVIDER"
         model_key = f"{ENV_SLOT_PREFIX}{idx}_MODEL"
         provider_override = _normalize_provider(os.environ.get(provider_key))
-        model_override = os.environ.get(model_key)
+        model_override = (os.environ.get(model_key) or "").strip()
         if idx == 1:
-            model_override = model_override or os.environ.get(ENV_MODEL)
+            model_override = model_override or (os.environ.get(ENV_MODEL) or "").strip()
         updated.append(
             SlotDefinition(
                 name=slot.name,
@@ -313,7 +317,8 @@ def build_chat_client(
     if not github_token and not openai_token and not anthropic_token:
         return None
 
-    selected_model = model or os.environ.get(ENV_MODEL) or DEFAULT_MODEL
+    model_override = (model or "").strip() or (os.environ.get(ENV_MODEL) or "").strip()
+    selected_model = model_override or DEFAULT_MODEL
     selected_timeout = DEFAULT_TIMEOUT if timeout is None else timeout
     selected_retries = DEFAULT_MAX_RETRIES if max_retries is None else max_retries
 
@@ -331,7 +336,6 @@ def build_chat_client(
             anthropic_token=anthropic_token,
         )
 
-    model_override = model or os.environ.get(ENV_MODEL)
     used_override = False
     for slot in _resolve_slots():
         slot_model = model_override if model_override and not used_override else slot.model
