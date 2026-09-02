@@ -49,3 +49,22 @@ def test_reconciliation_warn_mode_records_structured_exception_without_raising()
     assert isinstance(exceptions, list)
     assert len(exceptions) == 1
     assert isinstance(exceptions[0], UnmappedCounterpartyError)
+
+
+def test_reconciliation_skips_unmanaged_sheet_when_present_sets_are_authoritative() -> None:
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {"totals": [{"counterparty": "Counterparty A"}], "futures": []},
+            "WAL": {"totals": [], "futures": []},
+        },
+        historical_series_headers_by_sheet={
+            "Total": ("Counterparty A",),
+            "WAL": ("Legacy Counterparty",),
+        },
+        series_present_by_sheet={"Total": ("Counterparty A",)},
+    )
+
+    assert set(result["by_sheet"]) == {"Total"}
+    assert result["by_sheet"]["Total"]["counterparties_in_data"] == ["Counterparty A"]
+    assert result["missing_series"] == []
+    assert result["gap_count"] == 0
