@@ -3284,7 +3284,13 @@ def _ole_safe_resave_historical_workbooks(run_dir: Path) -> list[Path]:
     """
     import win32com.client
 
-    workbooks = sorted(run_dir.glob(_HIST_WORKBOOK_GLOB))
+    # Recovery leftovers also match the broad historical-workbook glob.  They are
+    # cleanup artifacts, not source workbooks to open and report as re-saved.
+    workbooks = sorted(
+        path
+        for path in run_dir.glob(_HIST_WORKBOOK_GLOB)
+        if not path.name.endswith(".olesafe.xlsx")
+    )
     if not workbooks:
         return []
     resaved: list[Path] = []
