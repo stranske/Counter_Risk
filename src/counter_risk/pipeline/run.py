@@ -3371,8 +3371,8 @@ def _repoint_and_autoscale_ppt_charts(pptx_path: Path, run_dir: Path) -> tuple[i
         decoded = url.replace("%20", " ")
         for name in ordered_names:
             if decoded.rstrip('"').endswith(name):
-                local = str(run_dir / name).replace(" ", "%20")
-                return 'Target="file:///' + local + '"'
+                local = (run_dir / name).resolve().as_uri()
+                return f'Target="{local}"'
         return None
 
     with _zip.ZipFile(pptx_path) as zin:
