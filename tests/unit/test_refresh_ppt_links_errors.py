@@ -7,12 +7,14 @@ import types
 import zipfile
 from pathlib import Path
 from typing import Any, cast
+from xml.etree import ElementTree
 
 import pytest
 
 from counter_risk.pipeline.run import (
     _ole_safe_resave_historical_workbooks,
     _refresh_ppt_links,
+    _repoint_and_autoscale_ppt_charts,
 )
 
 
@@ -252,6 +254,72 @@ def test_ole_safe_resave_cleans_partial_output_and_continues_after_save_failure(
     assert f"ole_safe_resave_failed file={failing_source}" in caplog.text
     assert "save blocked" in caplog.text
     assert f"ole_safe_temp_not_removed file={stuck_temp}" in caplog.text
+
+
+def test_repoint_ppt_chart_links_uses_valid_local_file_uri(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run & review"
+    run_dir.mkdir()
+    workbook_name = "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx"
+    workbook_path = run_dir / workbook_name
+    workbook_path.write_bytes(b"workbook")
+    ppt_path = tmp_path / "monthly.pptx"
+    relationships_path = "ppt/charts/_rels/chart1.xml.rels"
+    old_target = (
+        "file:///E:/archive/Historical%20Counterparty%20Risk%20Graphs%20-%20" "LLC%203%20Year.xlsx"
+    )
+    unrelated_target = "file:///E:/archive/Unrelated%203%20Year.xlsx"
+    relationships_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="oleObject" Target="{old_target}" TargetMode="External"/>
+  <Relationship Id="rId2" Type="oleObject" Target="{unrelated_target}" TargetMode="External"/>
+</Relationships>
+"""
+    with zipfile.ZipFile(ppt_path, "w") as archive:
+        archive.writestr(relationships_path, relationships_xml)
+        archive.writestr("ppt/presentation.xml", b"unchanged")
+
+    result = _repoint_and_autoscale_ppt_charts(ppt_path, run_dir)
+
+    assert result == (1, 0)
+    with zipfile.ZipFile(ppt_path) as archive:
+        rewritten = archive.read(relationships_path)
+        assert archive.read("ppt/presentation.xml") == b"unchanged"
+    relationships = {
+        element.attrib["Id"]: element.attrib["Target"]
+        for element in ElementTree.fromstring(rewritten)
+    }
+    assert relationships == {
+        "rId1": workbook_path.resolve().as_uri(),
+        "rId2": unrelated_target,
+    }
+
+
+def test_autoscale_ppt_charts_removes_only_date_and_category_axis_maxima(
+    tmp_path: Path,
+) -> None:
+    ppt_path = tmp_path / "monthly.pptx"
+    chart_path = "ppt/charts/chart1.xml"
+    chart_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
+  <c:dateAx><c:scaling><c:max val="45000"/></c:scaling></c:dateAx>
+  <c:catAx><c:scaling><c:max val="46000"/></c:scaling></c:catAx>
+  <c:valAx><c:scaling><c:max val="100"/></c:scaling></c:valAx>
+</c:chartSpace>
+"""
+    with zipfile.ZipFile(ppt_path, "w") as archive:
+        archive.writestr(chart_path, chart_xml)
+
+    result = _repoint_and_autoscale_ppt_charts(ppt_path, tmp_path)
+
+    assert result == (0, 2)
+    with zipfile.ZipFile(ppt_path) as archive:
+        rewritten = ElementTree.fromstring(archive.read(chart_path))
+    namespace = {"c": "http://schemas.openxmlformats.org/drawingml/2006/chart"}
+    assert rewritten.find("c:dateAx/c:scaling/c:max", namespace) is None
+    assert rewritten.find("c:catAx/c:scaling/c:max", namespace) is None
+    value_axis_max = rewritten.find("c:valAx/c:scaling/c:max", namespace)
+    assert value_axis_max is not None
+    assert value_axis_max.attrib["val"] == "100"
 
 
 def test_refresh_ppt_links_surfaces_com_failures_with_context(
