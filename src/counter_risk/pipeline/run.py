@@ -3299,18 +3299,18 @@ def _ole_safe_resave_historical_workbooks(run_dir: Path) -> list[Path]:
     normalizes it. Best-effort: any failure is logged and skipped (the link refresh
     simply may not take for that workbook).
     """
-    import win32com.client
-
     # Recovery leftovers also match the broad historical-workbook glob.  They are
     # cleanup artifacts, not source workbooks to open and report as re-saved.
+    _cleanup_ole_safe_temps(run_dir)
     workbooks = sorted(
         path
         for path in run_dir.glob(_HIST_WORKBOOK_GLOB)
         if not path.name.endswith(".olesafe.xlsx")
     )
     if not workbooks:
-        _cleanup_ole_safe_temps(run_dir)
         return []
+    import win32com.client
+
     resaved: list[Path] = []
     app = None
     try:
@@ -3321,8 +3321,13 @@ def _ole_safe_resave_historical_workbooks(run_dir: Path) -> list[Path]:
             app.Visible = False
         for wb_path in workbooks:
             tmp = wb_path.with_suffix(".olesafe.xlsx")
-            with contextlib.suppress(FileNotFoundError):
+            try:
                 tmp.unlink()
+            except FileNotFoundError:
+                pass
+            except OSError as exc:  # pragma: no cover - filesystem dependent
+                LOGGER.warning("ole_safe_temp_cleanup_failed file=%s error=%s", tmp, exc)
+                continue
             try:
                 wb = _com_retry(lambda p=wb_path: app.Workbooks.Open(str(p)))
                 wb.SaveAs(str(tmp), FileFormat=51)  # 51 = xlOpenXMLWorkbook
