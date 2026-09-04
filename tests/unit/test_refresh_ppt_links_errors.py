@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import logging
 import sys
 import types
@@ -9,7 +10,10 @@ from typing import Any, cast
 
 import pytest
 
-from counter_risk.pipeline.run import _refresh_ppt_links
+from counter_risk.pipeline.run import (
+    _ole_safe_resave_historical_workbooks,
+    _refresh_ppt_links,
+)
 
 
 class _State:
@@ -24,6 +28,230 @@ def _raise_runtime_error(message: str) -> None:
 
 def _raise_assertion_error(message: str) -> None:
     raise AssertionError(message)
+
+
+def _install_fake_win32com(monkeypatch: pytest.MonkeyPatch, app: types.SimpleNamespace) -> None:
+    fake_client = types.ModuleType("win32com.client")
+    cast(Any, fake_client).DispatchEx = lambda prog_id: (
+        app
+        if prog_id == "Excel.Application"
+        else _raise_assertion_error(f"Unexpected COM application: {prog_id}")
+    )
+    fake_win32com = types.ModuleType("win32com")
+    cast(Any, fake_win32com).client = fake_client
+
+    monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+
+
+def test_ole_safe_resave_cleans_only_stale_temp_without_starting_excel(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    stale_temp = tmp_path / "Historical Counterparty Risk Graphs - LLC 3 Year.olesafe.xlsx"
+    stale_temp.write_bytes(b"stale")
+    unlink_attempts = 0
+    sleep_calls: list[float] = []
+    real_unlink = Path.unlink
+
+    def _flaky_unlink(path: Path, *args: Any, **kwargs: Any) -> None:
+        nonlocal unlink_attempts
+        if path == stale_temp:
+            unlink_attempts += 1
+            if unlink_attempts == 1:
+                raise OSError("Excel still holds the file")
+        real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", _flaky_unlink)
+    monkeypatch.setattr("time.sleep", sleep_calls.append)
+    real_import = builtins.__import__
+
+    def _reject_win32com_import(name: str, *args: Any, **kwargs: Any) -> Any:
+        if name.startswith("win32com"):
+            raise AssertionError("Excel COM must not load when no source workbooks exist")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", _reject_win32com_import)
+
+    resaved = _ole_safe_resave_historical_workbooks(tmp_path)
+
+    assert resaved == []
+    assert not stale_temp.exists()
+    assert unlink_attempts == 2
+    assert sleep_calls == [1.0]
+
+
+def test_ole_safe_resave_skips_locked_matching_temp_and_continues(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    blocked_source = tmp_path / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx"
+    successful_source = tmp_path / "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx"
+    blocked_source.write_bytes(b"blocked")
+    successful_source.write_bytes(b"successful")
+    blocked_temp = blocked_source.with_suffix(".olesafe.xlsx")
+    blocked_temp.write_bytes(b"locked")
+    opened: list[Path] = []
+    real_unlink = Path.unlink
+
+    def _locked_unlink(path: Path, *args: Any, **kwargs: Any) -> None:
+        if path == blocked_temp:
+            raise OSError("Excel still holds the file")
+        real_unlink(path, *args, **kwargs)
+
+    class _Workbook:
+        def __init__(self, source: Path) -> None:
+            self.source = source
+
+        def SaveAs(self, destination: str, **kwargs: Any) -> None:  # noqa: N802
+            assert kwargs == {"FileFormat": 51}
+            Path(destination).write_bytes(b"ole-safe:" + self.source.read_bytes())
+
+        def Close(self, _save_changes: bool) -> None:  # noqa: N802
+            return None
+
+    state = _State()
+    app = types.SimpleNamespace(
+        DisplayAlerts=True,
+        Visible=True,
+        Workbooks=types.SimpleNamespace(
+            Open=lambda path: opened.append(Path(path)) or _Workbook(Path(path))
+        ),
+        Quit=lambda: setattr(state, "quit_called", True),
+    )
+    monkeypatch.setattr(Path, "unlink", _locked_unlink)
+    monkeypatch.setattr("time.sleep", lambda _seconds: None)
+    _install_fake_win32com(monkeypatch, app)
+
+    with caplog.at_level(logging.WARNING):
+        resaved = _ole_safe_resave_historical_workbooks(tmp_path)
+
+    assert resaved == [successful_source]
+    assert opened == [successful_source]
+    assert blocked_source.read_bytes() == b"blocked"
+    assert successful_source.read_bytes() == b"ole-safe:successful"
+    assert state.quit_called is True
+    assert f"ole_safe_temp_cleanup_failed file={blocked_temp}" in caplog.text
+
+
+def test_ole_safe_resave_ignores_stale_temps_and_replaces_each_workbook(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source_payloads = {
+        tmp_path / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx": b"all",
+        tmp_path / "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx": b"llc",
+    }
+    for source, payload in source_payloads.items():
+        source.write_bytes(payload)
+
+    matching_stale_temp = next(iter(source_payloads)).with_suffix(".olesafe.xlsx")
+    matching_stale_temp.write_bytes(b"stale")
+    unrelated_stale_temp = tmp_path / "orphan.olesafe.xlsx"
+    unrelated_stale_temp.write_bytes(b"orphan")
+
+    opened: list[Path] = []
+    closed: list[tuple[Path, bool]] = []
+    state = _State()
+
+    class _Workbook:
+        def __init__(self, source: Path) -> None:
+            self.source = source
+
+        def SaveAs(self, destination: str, **kwargs: Any) -> None:  # noqa: N802
+            assert kwargs == {"FileFormat": 51}
+            Path(destination).write_bytes(b"ole-safe:" + self.source.read_bytes())
+
+        def Close(self, save_changes: bool) -> None:  # noqa: N802
+            closed.append((self.source, save_changes))
+
+    def _open(path: str) -> _Workbook:
+        source = Path(path)
+        opened.append(source)
+        return _Workbook(source)
+
+    app = types.SimpleNamespace(
+        DisplayAlerts=True,
+        Visible=True,
+        Workbooks=types.SimpleNamespace(Open=_open),
+        Quit=lambda: setattr(state, "quit_called", True),
+    )
+    _install_fake_win32com(monkeypatch, app)
+
+    resaved = _ole_safe_resave_historical_workbooks(tmp_path)
+
+    expected_sources = sorted(source_payloads)
+    assert resaved == expected_sources
+    assert opened == expected_sources
+    assert closed == [(source, False) for source in expected_sources]
+    assert app.DisplayAlerts is False
+    assert app.Visible is False
+    assert state.quit_called is True
+    for source, payload in source_payloads.items():
+        assert source.read_bytes() == b"ole-safe:" + payload
+    assert list(tmp_path.glob("*.olesafe.xlsx")) == []
+
+
+def test_ole_safe_resave_cleans_partial_output_and_continues_after_save_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    failing_source = tmp_path / "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx"
+    successful_source = tmp_path / "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx"
+    failing_source.write_bytes(b"keep-original")
+    successful_source.write_bytes(b"replace-original")
+    stuck_temp = tmp_path / "stuck.olesafe.xlsx"
+    stuck_temp.write_bytes(b"locked")
+    state = _State()
+    sleep_calls: list[float] = []
+
+    real_unlink = Path.unlink
+
+    def _unlink(path: Path, *args: Any, **kwargs: Any) -> None:
+        if path == stuck_temp:
+            raise OSError("still locked")
+        real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", _unlink)
+    monkeypatch.setattr("time.sleep", sleep_calls.append)
+
+    class _Workbook:
+        def __init__(self, source: Path) -> None:
+            self.source = source
+
+        def SaveAs(self, destination: str, **kwargs: Any) -> None:  # noqa: N802
+            assert kwargs == {"FileFormat": 51}
+            output = Path(destination)
+            output.write_bytes(b"partial")
+            if self.source == failing_source:
+                raise RuntimeError("save blocked")
+            output.write_bytes(b"ole-safe:" + self.source.read_bytes())
+
+        def Close(self, _save_changes: bool) -> None:  # noqa: N802
+            return None
+
+    app = types.SimpleNamespace(
+        DisplayAlerts=True,
+        Visible=True,
+        Workbooks=types.SimpleNamespace(Open=lambda path: _Workbook(Path(path))),
+        Quit=lambda: setattr(state, "quit_called", True),
+    )
+    _install_fake_win32com(monkeypatch, app)
+
+    with caplog.at_level(logging.WARNING):
+        resaved = _ole_safe_resave_historical_workbooks(tmp_path)
+
+    assert resaved == [successful_source]
+    assert failing_source.read_bytes() == b"keep-original"
+    assert successful_source.read_bytes() == b"ole-safe:replace-original"
+    assert list(tmp_path.glob("*.olesafe.xlsx")) == [stuck_temp]
+    # The early cleanup protects the source-workbook loop; the final sweep retries
+    # again after COM shutdown in case Excel releases the handle meanwhile.
+    assert sleep_calls == [1.0] * 24
+    assert state.quit_called is True
+    assert f"ole_safe_resave_failed file={failing_source}" in caplog.text
+    assert "save blocked" in caplog.text
+    assert f"ole_safe_temp_not_removed file={stuck_temp}" in caplog.text
 
 
 def test_refresh_ppt_links_surfaces_com_failures_with_context(
