@@ -43,6 +43,35 @@ def _install_fake_win32com(monkeypatch: pytest.MonkeyPatch, app: types.SimpleNam
     monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
 
 
+def test_ole_safe_resave_cleans_only_stale_temp_without_starting_excel(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    stale_temp = tmp_path / "Historical Counterparty Risk Graphs - LLC 3 Year.olesafe.xlsx"
+    stale_temp.write_bytes(b"stale")
+    unlink_attempts = 0
+    sleep_calls: list[float] = []
+    real_unlink = Path.unlink
+
+    def _flaky_unlink(path: Path, *args: Any, **kwargs: Any) -> None:
+        nonlocal unlink_attempts
+        if path == stale_temp:
+            unlink_attempts += 1
+            if unlink_attempts == 1:
+                raise OSError("Excel still holds the file")
+        real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", _flaky_unlink)
+    monkeypatch.setattr("time.sleep", sleep_calls.append)
+    _install_fake_win32com(monkeypatch, types.SimpleNamespace())
+
+    resaved = _ole_safe_resave_historical_workbooks(tmp_path)
+
+    assert resaved == []
+    assert not stale_temp.exists()
+    assert unlink_attempts == 2
+    assert sleep_calls == [1.0]
+
+
 def test_ole_safe_resave_ignores_stale_temps_and_replaces_each_workbook(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

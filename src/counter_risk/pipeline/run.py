@@ -3272,6 +3272,23 @@ def _com_retry(fn: Any, tries: int = 6, wait: float = 1.5) -> Any:
         raise last
 
 
+def _cleanup_ole_safe_temps(run_dir: Path) -> None:
+    """Remove lingering OLE-safe files, retrying paths whose handles remain busy."""
+    import time as _time
+
+    for leftover in run_dir.glob("*.olesafe.xlsx"):
+        for _ in range(12):
+            try:
+                leftover.unlink()
+                break
+            except FileNotFoundError:
+                break
+            except OSError:
+                _time.sleep(1.0)
+        else:
+            LOGGER.warning("ole_safe_temp_not_removed file=%s", leftover)
+
+
 def _ole_safe_resave_historical_workbooks(run_dir: Path) -> list[Path]:
     """Re-save each historical workbook in ``run_dir`` through Excel so it is a valid
     OLE link source.
@@ -3292,6 +3309,7 @@ def _ole_safe_resave_historical_workbooks(run_dir: Path) -> list[Path]:
         if not path.name.endswith(".olesafe.xlsx")
     )
     if not workbooks:
+        _cleanup_ole_safe_temps(run_dir)
         return []
     resaved: list[Path] = []
     app = None
@@ -3323,19 +3341,7 @@ def _ole_safe_resave_historical_workbooks(run_dir: Path) -> list[Path]:
     # destination is written correctly but the temp source is not removed. Sweep
     # any lingering ".olesafe.xlsx" temporaries (with a short retry for handles
     # Excel/OneDrive has not released yet) so they do not clutter the run folder.
-    import time as _time
-
-    for leftover in run_dir.glob("*.olesafe.xlsx"):
-        for _ in range(12):
-            try:
-                leftover.unlink()
-                break
-            except FileNotFoundError:
-                break
-            except OSError:
-                _time.sleep(1.0)
-        else:
-            LOGGER.warning("ole_safe_temp_not_removed file=%s", leftover)
+    _cleanup_ole_safe_temps(run_dir)
     return resaved
 
 
