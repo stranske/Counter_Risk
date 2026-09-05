@@ -76,7 +76,7 @@ def test_reconciliation_prior_populated_treats_absent_series_as_dropped_gap() ->
             "Total": {"totals": [], "futures": []},
         },
         historical_series_headers_by_sheet={
-            "Total": ("Active Counterparty", "Dropped Counterparty"),
+            "Total": ("Active Counterparty", "Dropped Counterparty", "Dormant Counterparty"),
         },
         prior_populated_series_by_sheet={
             "Total": ("Active Counterparty", "Dropped Counterparty"),
@@ -85,7 +85,7 @@ def test_reconciliation_prior_populated_treats_absent_series_as_dropped_gap() ->
 
     sheet = result["by_sheet"]["Total"]
     assert sheet["dropped_from_data"] == ["Active Counterparty", "Dropped Counterparty"]
-    assert sheet["dormant_from_data"] == []
+    assert sheet["dormant_from_data"] == ["Dormant Counterparty"]
     assert result["gap_count"] == 2
     assert any("missing from parsed data" in warning for warning in result["warnings"])
 
