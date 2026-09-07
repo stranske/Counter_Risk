@@ -187,7 +187,6 @@ def compute_futures_delta(
     prior_rows = _filter_rows_with_nonblank_description(prior_rows)
 
     # Group by normalised description (blank descriptions excluded) before aggregation/matching.
-    current_groups = _group_rows_by_normalized_description(current_rows)
     prior_groups = _group_rows_by_normalized_description(prior_rows)
     prior_first_row_idx_by_key: dict[str, int] = {}
     for prior_row_idx, row in enumerate(prior_rows):
@@ -216,7 +215,6 @@ def compute_futures_delta(
         prior_by_key[key] = notional_sum
 
     records: list[dict[str, Any]] = []
-    current_keys: set[str] = set(current_groups.keys())
     current_by_key: dict[str, float] = {}
     current_first_row_by_key: dict[str, tuple[str, int]] = {}
 
@@ -274,7 +272,7 @@ def compute_futures_delta(
 
     # Report prior rows that have no match in current.
     for key, _prior_notional in prior_by_key.items():
-        if key not in current_keys:
+        if key not in current_by_key:
             original_desc = prior_desc_by_key.get(key, key)
             msg = f"Unmatched prior row (no current match): {original_desc!r}"
             _LOG.warning(msg)

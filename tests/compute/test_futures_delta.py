@@ -930,3 +930,30 @@ def test_nonfinite_notionals_produce_finite_delta_and_csv(
     for column in ("notional", "prior_notional", "notional_change"):
         assert math.isfinite(float(saved_row[column]))
         assert float(saved_row[column]) == row[column]
+
+
+@pytest.mark.parametrize("include_valid_current", [False, True])
+@pytest.mark.parametrize("description", ["ES MAR25", "ES March 2025", " ES Mar '25 "])
+def test_excluded_current_lots_do_not_hide_unmatched_prior(
+    include_valid_current: bool, description: str
+) -> None:
+    current: list[dict[str, Any]] = [{"description": description}]
+    if include_valid_current:
+        current.append({"description": "ES Mar '25", "notional": 100.0})
+    prior = _make_rows(("ES MAR25", 20.0), ("ES March 2025", 30.0))
+
+    result, warnings = _compute_checked(current, prior)
+    rows = _records(result)
+    assert [w["code"] for w in warnings.warnings] == (
+        [MISSING_NOTIONAL] if include_valid_current else [MISSING_NOTIONAL, NO_PRIOR_MATCH]
+    )
+    assert warnings.warnings[0]["row_idx"] == 0
+    if include_valid_current:
+        assert len(rows) == 1
+        assert rows[0]["notional"] == 100.0
+        assert rows[0]["prior_notional"] == 50.0
+        assert rows[0]["notional_change"] == 50.0
+    else:
+        assert rows == []
+        assert warnings.warnings[1]["row_idx"] == 0
+        assert warnings.warnings[1]["description"] == "ES MAR25"
