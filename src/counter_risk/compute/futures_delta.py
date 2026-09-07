@@ -156,8 +156,9 @@ def compute_futures_delta(
         ``result`` is the annotated table (a :class:`pandas.DataFrame` when pandas
         is available, otherwise a list of dicts) with columns:
 
-        * ``description`` – original description from the current-month row.
-        * ``notional`` – current-month notional.
+        * ``description`` – original description from the first valid current-month
+          row in the normalised contract group.
+        * ``notional`` – summed current-month notional for that group.
         * ``prior_notional`` – matched prior-month notional (``0.0`` when no
           prior row matched).
         * ``notional_change`` – ``notional - prior_notional``.
@@ -168,8 +169,9 @@ def compute_futures_delta(
         When *collector* is supplied, the same instance is returned.
 
         Rows are sorted ascending by the raw ``description`` text (exact input
-        string, no normalisation applied to the sort key).  Ties (duplicate
-        descriptions) preserve the original input order (stable sort).
+        string, no normalisation applied to the sort key). Split positions with
+        the same normalised description produce one row, using each month's
+        total once for the delta and sign-flip calculation.
     """
     active_collector = collector
     if active_collector is None:
@@ -215,7 +217,11 @@ def compute_futures_delta(
 
     records: list[dict[str, Any]] = []
     current_keys: set[str] = set(current_groups.keys())
+    current_by_key: dict[str, float] = {}
+    current_first_row_by_key: dict[str, tuple[str, int]] = {}
 
+    # Validate each source row before summing split positions, preserving warning
+    # locations and the first valid raw description for each contract.
     for row_idx, row in enumerate(current_rows):
         # Per-row required-field validation; skip invalid rows.
         if not _validate_row(row, row_idx=row_idx, collector=active_collector):
@@ -224,13 +230,17 @@ def compute_futures_delta(
         desc_raw = row.get("description", row.get("Description"))
         desc = str(desc_raw)
         key = normalize_description(desc)
-        current_notional = _extract_notional(
+        notional = _extract_notional(
             row,
             row_id=desc,
             row_idx=row_idx,
             collector=active_collector,
         )
+        current_by_key[key] = current_by_key.get(key, 0.0) + notional
+        current_first_row_by_key.setdefault(key, (desc, row_idx))
 
+    for key, current_notional in current_by_key.items():
+        desc, row_idx = current_first_row_by_key[key]
         if key in prior_by_key:
             prior_notional = prior_by_key[key]
         else:
@@ -276,7 +286,6 @@ def compute_futures_delta(
             )
 
     # Sort output by raw description text for stable, deterministic order.
-    # Python's sort is stable: duplicate descriptions preserve input order.
     records.sort(key=lambda r: str(r.get("description", "")))
 
     result = _to_output(records=records)

@@ -10,7 +10,12 @@ from typing import Any, cast
 
 import pytest
 
-from counter_risk.compute.errors import INVALID_NOTIONAL, NO_PRIOR_MATCH, NO_PRIOR_MONTH_MATCH
+from counter_risk.compute.errors import (
+    INVALID_NOTIONAL,
+    MISSING_NOTIONAL,
+    NO_PRIOR_MATCH,
+    NO_PRIOR_MONTH_MATCH,
+)
 from counter_risk.compute.futures_delta import (
     InvalidNotionalError,
     _extract_notional,
@@ -530,8 +535,8 @@ def test_sort_uses_raw_not_normalised() -> None:
     assert raw_descs == sorted(raw_descs)
 
 
-def test_duplicate_descriptions_preserve_input_order() -> None:
-    """Duplicate descriptions maintain their original input order (stable sort)."""
+def test_duplicate_descriptions_are_aggregated() -> None:
+    """Identical split positions produce one contract total."""
     current = [
         {"description": "ES Mar25", "notional": 10.0},
         {"description": "ES Mar25", "notional": 20.0},
@@ -540,8 +545,114 @@ def test_duplicate_descriptions_preserve_input_order() -> None:
     prior: list[dict[str, Any]] = []
     result = _compute_checked(current, prior)
     rows = _records(result)
-    # All three rows have the same description; original order is preserved.
-    assert [r["notional"] for r in rows] == pytest.approx([10.0, 20.0, 30.0])
+    assert [r["notional"] for r in rows] == pytest.approx([60.0])
+
+
+@pytest.mark.parametrize("input_kind", ["rows", "iterator", "dataframe"])
+@pytest.mark.parametrize("split_prior", [False, True])
+@pytest.mark.parametrize("second_description", ["ES MAR25", "es March 2025", " ES Mar '25 "])
+def test_split_positions_reconcile_monthly_and_csv_totals(
+    input_kind: str, split_prior: bool, second_description: str, tmp_path: Path
+) -> None:
+    current = _make_rows(("Z Bond Jun25", 40.0), ("ES MAR25", 100.0))
+    current.extend(_make_rows((second_description, 200.0), ("a Note Jun25", -20.0)))
+    prior = _make_rows(("Z Bond Jun25", 30.0), ("a Note Jun25", -10.0))
+    prior.extend(
+        _make_rows(("ES March 2025", 20.0), ("ES Mar '25", 30.0))
+        if split_prior
+        else _make_rows(("ES Mar25", 50.0))
+    )
+    original_current = [dict(row) for row in current]
+    original_prior = [dict(row) for row in prior]
+    current_input: Any = current
+    prior_input: Any = prior
+    if input_kind == "iterator":
+        current_input, prior_input = iter(current), iter(prior)
+    elif input_kind == "dataframe":
+        pd = pytest.importorskip("pandas")
+        current_input, prior_input = pd.DataFrame(current), pd.DataFrame(prior)
+
+    result, warnings = _compute_checked(current_input, prior_input)
+    rows = _records(result)
+
+    assert warnings.warnings == []
+    assert [r["description"] for r in rows] == ["ES MAR25", "Z Bond Jun25", "a Note Jun25"]
+    assert rows[0] == {
+        "description": "ES MAR25",
+        "notional": 300.0,
+        "prior_notional": 50.0,
+        "notional_change": 250.0,
+        "sign_flip": "",
+    }
+    assert sum(r["notional"] for r in rows) == sum(r["notional"] for r in current)
+    assert sum(r["prior_notional"] for r in rows) == sum(r["notional"] for r in prior)
+    assert sum(r["notional_change"] for r in rows) == 250.0
+    assert current == original_current
+    assert prior == original_prior
+
+    path = tmp_path / "split-positions.csv"
+    write_annotated_csv(result, path)
+    with path.open(newline="", encoding="utf-8") as stream:
+        exported = list(csv.DictReader(stream))
+    assert len(exported) == 3
+    assert sum(float(r["notional"]) for r in exported) == 320.0
+    assert sum(float(r["prior_notional"]) for r in exported) == 70.0
+    assert sum(float(r["notional_change"]) for r in exported) == 250.0
+
+
+@pytest.mark.parametrize(
+    ("lots", "prior_notional", "expected_flip"),
+    [
+        ((-100.0, 200.0), 50.0, ""),
+        ((100.0, -200.0), 50.0, "*"),
+        ((-100.0, 200.0), -50.0, "*"),
+        ((100.0, -100.0), 50.0, ""),
+        ((100.0, 200.0), 0.0, ""),
+    ],
+)
+def test_split_positions_sign_flip_uses_net_contract(
+    lots: tuple[float, float], prior_notional: float, expected_flip: str
+) -> None:
+    current = [
+        {"Description": "ES March 2025", "Notional": lots[0]},
+        {"Description": "ES Mar '25", "exposure": lots[1]},
+    ]
+    rows = _records(_compute_checked(current, _make_rows(("ES MAR25", prior_notional))))
+    assert rows == [
+        {
+            "description": "ES March 2025",
+            "notional": sum(lots),
+            "prior_notional": prior_notional,
+            "notional_change": sum(lots) - prior_notional,
+            "sign_flip": expected_flip,
+        }
+    ]
+
+
+@pytest.mark.parametrize("invalid", ["bad", "inf", None])
+def test_split_positions_keep_per_row_validation_and_group_warning(invalid: Any) -> None:
+    current = [
+        {"description": "ES Mar25"},
+        {"description": "ES March 2025", "notional": 100.0},
+        {"description": "ES Mar '25", "notional": invalid},
+        {"description": "ES MAR25", "notional": 200.0},
+    ]
+    result, warnings = _compute_checked(current, [])
+    rows = _records(result)
+    assert rows == [
+        {
+            "description": "ES March 2025",
+            "notional": 300.0,
+            "prior_notional": 0.0,
+            "notional_change": 300.0,
+            "sign_flip": "",
+        }
+    ]
+    assert [(w["row_idx"], w["code"]) for w in warnings.warnings] == [
+        (0, MISSING_NOTIONAL),
+        (2, MISSING_NOTIONAL if invalid is None else INVALID_NOTIONAL),
+        (1, NO_PRIOR_MONTH_MATCH),
+    ]
 
 
 # ---------------------------------------------------------------------------
