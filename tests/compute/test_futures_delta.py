@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import ast
 import csv
+import math
 from pathlib import Path
 from typing import Any, cast
 
 import pytest
 
-from counter_risk.compute.errors import NO_PRIOR_MATCH, NO_PRIOR_MONTH_MATCH
+from counter_risk.compute.errors import INVALID_NOTIONAL, NO_PRIOR_MATCH, NO_PRIOR_MONTH_MATCH
 from counter_risk.compute.futures_delta import (
+    InvalidNotionalError,
+    _extract_notional,
     compute_futures_delta,
     is_blank_description,
     normalize_description,
@@ -752,3 +755,67 @@ def test_src_callers_unpack_compute_futures_delta_return_values() -> None:
         "compute_futures_delta callers must unpack two values "
         f"(result, warnings): {invalid_call_sites}"
     )
+
+
+@pytest.mark.parametrize(
+    "value", ["inf", "-inf", float("inf"), -float("inf"), "1e999", "-1e999", "nan", float("nan")]
+)
+@pytest.mark.parametrize("field", ["notional", "Notional", "exposure"])
+@pytest.mark.parametrize("strict", [False, True])
+def test_nonfinite_notional_rejected_with_structured_warning(
+    value: str | float, field: str, strict: bool, caplog: pytest.LogCaptureFixture
+) -> None:
+    collector = WarningsCollector()
+    expected_message = f"Non-finite notional {value!r} for row 'ES Mar25' (key={field!r})"
+    if strict:
+        with pytest.raises(InvalidNotionalError) as exc_info:
+            _extract_notional(
+                {field: value}, row_id="ES Mar25", row_idx=7, strict=True, collector=collector
+            )
+        assert str(exc_info.value) == expected_message
+    else:
+        assert (
+            _extract_notional({field: value}, row_id="ES Mar25", row_idx=7, collector=collector)
+            == 0.0
+        )
+    assert len(collector.warnings) == 1
+    warning = collector.warnings[0]
+    assert warning["code"] == INVALID_NOTIONAL
+    assert warning["row_idx"] == 7
+    assert warning["row_id"] == "ES Mar25"
+    assert warning["field"] == field
+    assert warning["value"] is value
+    assert warning["message"] == expected_message
+    assert expected_message in caplog.messages
+
+
+@pytest.mark.parametrize("value", ["inf", "-inf", float("inf"), -float("inf")])
+@pytest.mark.parametrize("invalid_month", ["current", "prior", "both"])
+def test_nonfinite_notionals_produce_finite_delta_and_csv(
+    value: str | float, invalid_month: str, tmp_path: Path
+) -> None:
+    current_value = value if invalid_month in {"current", "both"} else 100.0
+    prior_value = value if invalid_month in {"prior", "both"} else 80.0
+    collector = WarningsCollector()
+    result, returned_collector = compute_futures_delta(
+        [{"Description": "ES Mar25", "Notional": current_value}],
+        [{"Description": "ES Mar25", "Notional": prior_value}],
+        collector=collector,
+    )
+    assert returned_collector is collector
+    row = _records(result)[0]
+    expected_current = 0.0 if invalid_month in {"current", "both"} else 100.0
+    expected_prior = 0.0 if invalid_month in {"prior", "both"} else 80.0
+    assert row["notional"] == expected_current
+    assert row["prior_notional"] == expected_prior
+    assert row["notional_change"] == expected_current - expected_prior
+    assert row["sign_flip"] == ""
+    assert len(collector.warnings) == (2 if invalid_month == "both" else 1)
+    assert all(warning["code"] == INVALID_NOTIONAL for warning in collector.warnings)
+    output = tmp_path / "delta.csv"
+    write_annotated_csv(result, output)
+    with output.open(encoding="utf-8", newline="") as handle:
+        saved_row = next(csv.DictReader(handle))
+    for column in ("notional", "prior_notional", "notional_change"):
+        assert math.isfinite(float(saved_row[column]))
+        assert float(saved_row[column]) == row[column]
