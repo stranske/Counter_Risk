@@ -763,14 +763,16 @@ def test_src_callers_unpack_compute_futures_delta_return_values() -> None:
 @pytest.mark.parametrize("field", ["notional", "Notional", "exposure"])
 @pytest.mark.parametrize("strict", [False, True])
 def test_nonfinite_notional_rejected_with_structured_warning(
-    value: str | float, field: str, strict: bool
+    value: str | float, field: str, strict: bool, caplog: pytest.LogCaptureFixture
 ) -> None:
     collector = WarningsCollector()
+    expected_message = f"Non-finite notional {value!r} for row 'ES Mar25' (key={field!r})"
     if strict:
-        with pytest.raises(InvalidNotionalError, match="Non-finite notional.*ES Mar25"):
+        with pytest.raises(InvalidNotionalError) as exc_info:
             _extract_notional(
                 {field: value}, row_id="ES Mar25", row_idx=7, strict=True, collector=collector
             )
+        assert str(exc_info.value) == expected_message
     else:
         assert (
             _extract_notional({field: value}, row_id="ES Mar25", row_idx=7, collector=collector)
@@ -783,6 +785,8 @@ def test_nonfinite_notional_rejected_with_structured_warning(
     assert warning["row_id"] == "ES Mar25"
     assert warning["field"] == field
     assert warning["value"] is value
+    assert warning["message"] == expected_message
+    assert expected_message in caplog.messages
 
 
 @pytest.mark.parametrize("value", ["inf", "-inf", float("inf"), -float("inf")])

@@ -494,7 +494,7 @@ def _extract_notional(
             return 0.0
         # Reject NaN and infinities before they enter delta arithmetic.
         if not math.isfinite(result):
-            msg = f"Non-finite notional for row {row_id!r} (key={key!r})"
+            msg = f"Non-finite notional {val!r} for row {row_id!r} (key={key!r})"
             _LOG.warning(msg)
             if collector is not None:
                 collector.add_structured(
