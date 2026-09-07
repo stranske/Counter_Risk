@@ -440,7 +440,7 @@ def _extract_notional(
         ``0.0`` for missing/invalid values.
     collector:
         Optional warnings collector that receives a structured warning entry
-        when the notional is missing, blank, non-numeric, or NaN.
+        when the notional is missing, blank, non-numeric, or non-finite.
 
     Returns
     -------
@@ -492,9 +492,9 @@ def _extract_notional(
             if strict:
                 raise InvalidNotionalError(msg) from None
             return 0.0
-        # Treat NaN as invalid.
-        if math.isnan(result):
-            msg = f"NaN notional for row {row_id!r} (key={key!r})"
+        # Reject NaN and infinities before they enter delta arithmetic.
+        if not math.isfinite(result):
+            msg = f"Non-finite notional for row {row_id!r} (key={key!r})"
             _LOG.warning(msg)
             if collector is not None:
                 collector.add_structured(
