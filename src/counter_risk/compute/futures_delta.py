@@ -228,12 +228,16 @@ def compute_futures_delta(
         desc_raw = row.get("description", row.get("Description"))
         desc = str(desc_raw)
         key = normalize_description(desc)
-        notional = _extract_notional(
-            row,
-            row_id=desc,
-            row_idx=row_idx,
-            collector=active_collector,
-        )
+        try:
+            notional = _extract_notional(
+                row,
+                row_id=desc,
+                row_idx=row_idx,
+                strict=True,
+                collector=active_collector,
+            )
+        except InvalidNotionalError:
+            continue
         current_by_key[key] = current_by_key.get(key, 0.0) + notional
         current_first_row_by_key.setdefault(key, (desc, row_idx))
 

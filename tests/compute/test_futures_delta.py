@@ -655,6 +655,20 @@ def test_split_positions_keep_per_row_validation_and_group_warning(invalid: Any)
     ]
 
 
+def test_invalid_only_current_lot_does_not_suppress_no_prior_match() -> None:
+    """An invalid-only current lot must not hide a prior-only unmatched contract."""
+    current = [{"description": "TY Mar25", "notional": "bad"}]
+    prior = _make_rows(("TY Mar25", 100.0))
+    col = _collector()
+    result, warnings = _compute_checked(current, prior, collector=col)
+    rows = _records(result)
+    assert rows == []
+    assert any(
+        w.get("code") == NO_PRIOR_MATCH and w.get("description") == "TY Mar25" for w in col.warnings
+    )
+    assert any(w.get("code") == INVALID_NOTIONAL for w in col.warnings)
+
+
 # ---------------------------------------------------------------------------
 # compute_futures_delta – edge cases
 # ---------------------------------------------------------------------------
@@ -914,22 +928,30 @@ def test_nonfinite_notionals_produce_finite_delta_and_csv(
         collector=collector,
     )
     assert returned_collector is collector
-    row = _records(result)[0]
-    expected_current = 0.0 if invalid_month in {"current", "both"} else 100.0
-    expected_prior = 0.0 if invalid_month in {"prior", "both"} else 80.0
-    assert row["notional"] == expected_current
-    assert row["prior_notional"] == expected_prior
-    assert row["notional_change"] == expected_current - expected_prior
-    assert row["sign_flip"] == ""
-    assert len(collector.warnings) == (2 if invalid_month == "both" else 1)
-    assert all(warning["code"] == INVALID_NOTIONAL for warning in collector.warnings)
-    output = tmp_path / "delta.csv"
-    write_annotated_csv(result, output)
-    with output.open(encoding="utf-8", newline="") as handle:
-        saved_row = next(csv.DictReader(handle))
-    for column in ("notional", "prior_notional", "notional_change"):
-        assert math.isfinite(float(saved_row[column]))
-        assert float(saved_row[column]) == row[column]
+    rows = _records(result)
+    if invalid_month in {"current", "both"}:
+        # Invalid current rows are excluded before aggregation; prior-only contracts
+        # must not be hidden behind a phantom zero-notional current lot.
+        assert rows == []
+        assert any(w.get("code") == NO_PRIOR_MATCH for w in collector.warnings)
+    else:
+        row = rows[0]
+        assert row["notional"] == 100.0
+        assert row["prior_notional"] == 0.0
+        assert row["notional_change"] == 100.0
+        assert row["sign_flip"] == ""
+        output = tmp_path / "delta.csv"
+        write_annotated_csv(result, output)
+        with output.open(encoding="utf-8", newline="") as handle:
+            saved_row = next(csv.DictReader(handle))
+        for column in ("notional", "prior_notional", "notional_change"):
+            assert math.isfinite(float(saved_row[column]))
+            assert float(saved_row[column]) == row[column]
+    assert len(collector.warnings) == (
+        3 if invalid_month == "both" else (2 if invalid_month == "current" else 1)
+    )
+    invalid_warnings = [w for w in collector.warnings if w["code"] == INVALID_NOTIONAL]
+    assert len(invalid_warnings) == (2 if invalid_month == "both" else 1)
 
 
 @pytest.mark.parametrize("include_valid_current", [False, True])
