@@ -383,8 +383,8 @@ class TestRawDescriptionSorting:
             "the sort key may be using normalization"
         )
 
-    def test_stable_sort_preserves_duplicate_order(self) -> None:
-        """Rows with identical descriptions preserve their original input order."""
+    def test_duplicate_descriptions_are_aggregated(self) -> None:
+        """Rows with identical descriptions produce one summed contract row."""
         current = [
             {"description": "ES Mar25", "notional": 10.0},
             {"description": "ES Mar25", "notional": 20.0},
@@ -393,7 +393,7 @@ class TestRawDescriptionSorting:
         prior: list[dict[str, Any]] = []
         result = _compute_checked(current, prior)
         rows = _records(result)
-        assert [r["notional"] for r in rows] == pytest.approx([10.0, 20.0, 30.0])
+        assert [r["notional"] for r in rows] == pytest.approx([60.0])
 
     def test_mixed_descriptions_sorted_correctly(self) -> None:
         current = _make_rows(
