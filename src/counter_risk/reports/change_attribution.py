@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
@@ -129,6 +129,19 @@ def _parse_exposure_rows(table: Any, *, arg_name: str) -> list[_ExposureRow]:
     return rows
 
 
+def _index_prior_rows(rows: Iterable[_ExposureRow], *, normalize: bool) -> dict[str, _ExposureRow]:
+    """Accumulate each lookup key while retaining its existing last-row label."""
+
+    indexed: dict[str, _ExposureRow] = {}
+    for row in rows:
+        key = row.normalized_counterparty if normalize else row.counterparty
+        previous = indexed.get(key)
+        indexed[key] = (
+            row if previous is None else replace(row, notional=previous.notional + row.notional)
+        )
+    return indexed
+
+
 def _best_fuzzy_match(
     *,
     current_normalized: str,
@@ -199,8 +212,8 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
     current_rows = _parse_exposure_rows(current_df, arg_name="current_df")
     prior_rows = _parse_exposure_rows(prior_df, arg_name="prior_df")
 
-    prior_by_exact = {row.counterparty: row for row in prior_rows}
-    prior_by_normalized = {row.normalized_counterparty: row for row in prior_rows}
+    prior_by_exact = _index_prior_rows(prior_rows, normalize=False)
+    prior_by_normalized = _index_prior_rows(prior_rows, normalize=True)
     used_prior_normalized: set[str] = set()
     has_any_prior_rows = bool(prior_rows)
 
