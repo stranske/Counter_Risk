@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from difflib import SequenceMatcher
@@ -84,9 +85,11 @@ def _first_float(record: Mapping[str, Any], candidates: tuple[str, ...]) -> floa
         if value is None:
             continue
         try:
-            return float(value)
+            parsed = float(value)
         except (TypeError, ValueError):
             continue
+        if math.isfinite(parsed):
+            return parsed
     return 0.0
 
 
@@ -98,9 +101,10 @@ def _optional_float(record: Mapping[str, Any], candidates: tuple[str, ...]) -> f
         if value is None:
             return None
         try:
-            return float(value)
+            parsed = float(value)
         except (TypeError, ValueError):
             return None
+        return parsed if math.isfinite(parsed) else None
     return None
 
 
