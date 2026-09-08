@@ -16,6 +16,7 @@ SURFACE: Final = "risk-reporting"
 GITHUB_ISSUE: Final = "stranske/Counter_Risk#610"
 ARTIFACT_NAME: Final = "langsmith-fleet.ndjson"
 ENV_COUNTER_RISK_LANGSMITH_PROJECT: Final = "COUNTER_RISK_LANGSMITH_PROJECT"
+ENV_COUNTER_RISK_GITHUB_ISSUE: Final = "COUNTER_RISK_GITHUB_ISSUE"
 ENV_LANGSMITH_KEY: Final = "LANGSMITH_API_KEY"
 ENV_LANGCHAIN_PROJECT: Final = "LANGCHAIN_PROJECT"
 ENV_LANGSMITH_PROJECT: Final = "LANGSMITH_PROJECT"
@@ -95,6 +96,7 @@ class FleetRunContext:
     github_pr: str | None = None
     latency_ms: int | None = None
     error_category: str = "none"
+    github_issue: str | None = None
 
 
 def ensure_langsmith_project_defaults() -> bool:
@@ -116,6 +118,22 @@ def resolve_langsmith_project_name() -> str:
 
     configured = os.environ.get(ENV_COUNTER_RISK_LANGSMITH_PROJECT, "").strip()
     return configured or DEFAULT_PROJECT
+
+
+def resolve_github_issue(explicit: str | None = None) -> str:
+    """Return the tracking issue reference for fleet records.
+
+    Precedence is explicit context value, then the
+    ``COUNTER_RISK_GITHUB_ISSUE`` environment override, then the module
+    default. Callers that omit the value keep the historical constant so
+    existing telemetry consumers see no schema change.
+    """
+
+    candidate = (explicit or "").strip()
+    if candidate:
+        return candidate
+    configured = os.environ.get(ENV_COUNTER_RISK_GITHUB_ISSUE, "").strip()
+    return configured or GITHUB_ISSUE
 
 
 def build_fleet_records(
@@ -276,7 +294,7 @@ def _record(
         "as_of_date": context.as_of_date,
         "scenario": context.scenario,
         "status": status,
-        "github_issue": GITHUB_ISSUE,
+        "github_issue": resolve_github_issue(context.github_issue),
         "recorded_at": recorded_at,
         "provider": context.provider,
         "model": context.model,
