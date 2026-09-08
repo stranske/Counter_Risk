@@ -26,10 +26,106 @@ def test_resolve_langsmith_project_name_uses_repo_default_when_unset(
     assert langsmith_fleet.resolve_langsmith_project_name() == langsmith_fleet.DEFAULT_PROJECT
 
 
+def test_resolve_github_issue_falls_back_to_module_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv(langsmith_fleet.ENV_COUNTER_RISK_GITHUB_ISSUE, raising=False)
+
+    assert langsmith_fleet.resolve_github_issue() == langsmith_fleet.GITHUB_ISSUE
+    assert langsmith_fleet.resolve_github_issue(None) == langsmith_fleet.GITHUB_ISSUE
+    assert langsmith_fleet.resolve_github_issue("   ") == langsmith_fleet.GITHUB_ISSUE
+
+
+def test_resolve_github_issue_prefers_explicit_over_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(langsmith_fleet.ENV_COUNTER_RISK_GITHUB_ISSUE, "stranske/Counter_Risk#900")
+
+    assert langsmith_fleet.resolve_github_issue() == "stranske/Counter_Risk#900"
+    assert (
+        langsmith_fleet.resolve_github_issue("stranske/Counter_Risk#1005")
+        == "stranske/Counter_Risk#1005"
+    )
+    # A blank explicit value is not an override; the environment still wins.
+    assert langsmith_fleet.resolve_github_issue("  ") == "stranske/Counter_Risk#900"
+
+
+def test_build_fleet_records_bind_context_github_issue(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv(langsmith_fleet.ENV_LANGSMITH_KEY, raising=False)
+    monkeypatch.setenv(langsmith_fleet.ENV_COUNTER_RISK_GITHUB_ISSUE, "stranske/Counter_Risk#900")
+    context = langsmith_fleet.FleetRunContext(
+        run_id="2026-09-08",
+        as_of_date="2026-09-08",
+        scenario="monthly-risk-report",
+        github_issue="stranske/Counter_Risk#1005",
+    )
+
+    records = langsmith_fleet.build_fleet_records(
+        context=context,
+        data_quality_status="success",
+        risk_proxy_status="success",
+        concentration_metric_count=1,
+        limit_breach_count=0,
+    )
+
+    assert records
+    assert all(record["github_issue"] == "stranske/Counter_Risk#1005" for record in records)
+    langsmith_fleet.validate_fleet_records(records)
+
+
+def test_build_fleet_records_bind_environment_github_issue(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv(langsmith_fleet.ENV_LANGSMITH_KEY, raising=False)
+    monkeypatch.setenv(langsmith_fleet.ENV_COUNTER_RISK_GITHUB_ISSUE, "stranske/Counter_Risk#1005")
+    context = langsmith_fleet.FleetRunContext(
+        run_id="2026-09-08",
+        as_of_date="2026-09-08",
+        scenario="monthly-risk-report",
+    )
+
+    records = langsmith_fleet.build_fleet_records(
+        context=context,
+        data_quality_status="success",
+        risk_proxy_status="success",
+        concentration_metric_count=1,
+        limit_breach_count=0,
+    )
+
+    assert records
+    assert all(record["github_issue"] == "stranske/Counter_Risk#1005" for record in records)
+    langsmith_fleet.validate_fleet_records(records)
+
+
+def test_build_fleet_records_keep_default_github_issue_for_legacy_callers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv(langsmith_fleet.ENV_LANGSMITH_KEY, raising=False)
+    monkeypatch.delenv(langsmith_fleet.ENV_COUNTER_RISK_GITHUB_ISSUE, raising=False)
+    # Positional construction proves the new field is appended, not inserted.
+    context = langsmith_fleet.FleetRunContext("2026-09-08", "2026-09-08", "monthly-risk-report")
+
+    records = langsmith_fleet.build_fleet_records(
+        context=context,
+        data_quality_status="success",
+        risk_proxy_status="success",
+        concentration_metric_count=1,
+        limit_breach_count=0,
+    )
+
+    assert records
+    assert context.github_issue is None
+    assert all(record["github_issue"] == langsmith_fleet.GITHUB_ISSUE for record in records)
+    langsmith_fleet.validate_fleet_records(records)
+
+
 def test_build_fleet_records_use_counter_risk_project_and_no_secret_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv(langsmith_fleet.ENV_LANGSMITH_KEY, raising=False)
+    monkeypatch.delenv(langsmith_fleet.ENV_COUNTER_RISK_GITHUB_ISSUE, raising=False)
     context = langsmith_fleet.FleetRunContext(
         run_id="2025-12-31",
         as_of_date="2025-12-31",
