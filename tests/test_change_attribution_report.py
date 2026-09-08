@@ -246,3 +246,92 @@ def test_change_attribution_outputs_explicitly_label_unmatched_and_low_confidenc
     md_text = md_path.read_text(encoding="utf-8")
     assert "UNMATCHED|LOW_CONFIDENCE" in csv_text
     assert "UNMATCHED|LOW_CONFIDENCE" in md_text
+
+
+@pytest.mark.parametrize("reverse_prior", [False, True])
+@pytest.mark.parametrize(
+    ("current_name", "prior_names", "match_type", "confidence"),
+    [
+        ("JPMorgan", ("JPMorgan", "JPMorgan"), "exact", "High"),
+        ("JP-Morgan", ("JPMorgan", "jp morgan"), "normalized", "Medium"),
+        ("Morgan Stanley Prime", ("Morgan Stanley", "morgan stanley"), "fuzzy", "Low"),
+    ],
+)
+def test_attribute_changes_aggregates_prior_counterparty_rows(
+    current_name: str,
+    prior_names: tuple[str, str],
+    match_type: str,
+    confidence: str,
+    reverse_prior: bool,
+) -> None:
+    prior = [
+        {"counterparty": prior_names[0], "Notional": 100.0, "account": "A"},
+        {"counterparty": prior_names[1], "Notional": 50.0, "account": "B"},
+        {"counterparty": "Unrelated Bank", "Notional": 900.0},
+    ]
+    if reverse_prior:
+        prior.reverse()
+    report = attribute_changes(
+        [{"counterparty": current_name, "Notional": 150.0, "NotionalChange": 0.0}],
+        prior,
+    )
+    row = report["rows"][0]
+    assert row["prior_notional"] == 150.0
+    assert row["notional_change"] == 0.0
+    assert row["match_type"] == match_type
+    assert row["confidence"] == confidence
+    assert report["summary"]["total_prior_rows"] == 3
+    assert report["summary"]["unattributed_remainder"] == 0.0
+    assert "| 150.000000 | 150.000000 | 0.000000 |" in render_change_attribution_markdown(report)
+
+
+@pytest.mark.parametrize(("supplied_delta", "confidence"), [(25.0, "High"), (125.0, "Medium")])
+def test_aggregated_prior_notional_controls_delta_confidence(
+    supplied_delta: float, confidence: str
+) -> None:
+    report = attribute_changes(
+        [{"counterparty": "JPMorgan", "Notional": 175.0, "NotionalChange": supplied_delta}],
+        [
+            {"counterparty": "JPMorgan", "Notional": 100.0},
+            {"counterparty": "JPMorgan", "Notional": 50.0},
+        ],
+    )
+    row = report["rows"][0]
+    assert row["prior_notional"] == 150.0
+    assert row["notional_change"] == 25.0
+    assert row["confidence"] == confidence
+
+
+def test_prior_aggregation_preserves_exact_match_precedence_and_signed_notionals() -> None:
+    report = attribute_changes(
+        [{"counterparty": "Desk A", "Notional": 75.0}],
+        [
+            {"counterparty": "Desk A", "Notional": 100.0},
+            {"counterparty": "Desk A", "Notional": -25.0},
+            {"counterparty": "desk-a", "Notional": 900.0},
+        ],
+    )
+    row = report["rows"][0]
+    assert row["prior_notional"] == 75.0
+    assert row["notional_change"] == 0.0
+    assert row["match_type"] == "exact"
+    assert row["matched_prior_counterparty"] == "Desk A"
+
+
+def test_aggregated_prior_group_is_not_reused_for_a_later_fuzzy_match() -> None:
+    report = attribute_changes(
+        [
+            {"counterparty": "Morgan Stanley", "Notional": 150.0},
+            {"counterparty": "Morgan Stanley Prime", "Notional": 25.0},
+        ],
+        [
+            {"counterparty": "Morgan Stanley", "Notional": 100.0},
+            {"counterparty": "Morgan Stanley", "Notional": 50.0},
+        ],
+    )
+    exact, unmatched = report["rows"]
+    assert exact["prior_notional"] == 150.0
+    assert unmatched["prior_notional"] == 0.0
+    assert unmatched["is_unmatched"] is True
+    assert report["summary"]["unmatched_rows"] == 1
+    assert report["summary"]["unattributed_remainder"] == 25.0
