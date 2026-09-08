@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import pytest
 
 from counter_risk.parsers.repo_cash_sources import (
+    _coerce_cash_value,
     find_duplicate_counterparty_names,
     load_cash_by_counterparty,
     load_repo_cash_overrides_csv,
@@ -277,3 +279,74 @@ def test_load_repo_cash_with_utf8_bom(tmp_path: Path) -> None:
     values = load_repo_cash_structured_source(source_path, source_type="csv")
     assert values["CIBC"] == 1.0
     assert values["ASL"] == 2.0
+
+
+@pytest.mark.parametrize("raw_value", ["nan", "NaN", "inf", "-inf", "Infinity", "1e309"])
+def test_coerce_cash_value_rejects_non_finite_with_context(raw_value: str) -> None:
+    path = Path("cash.csv")
+    with pytest.raises(ValueError) as exc_info:
+        _coerce_cash_value(raw_value, path=path, row_index=2)
+    assert str(exc_info.value) == f"Invalid cash value '{raw_value}' in '{path}' at row 2."
+
+
+@pytest.mark.parametrize("raw_value", ["nan", "inf", "-inf", "1e309"])
+@pytest.mark.parametrize("source_type", ["csv", "xlsx"])
+def test_structured_cash_rejects_non_finite_values(
+    tmp_path: Path, raw_value: str, source_type: Literal["csv", "xlsx"]
+) -> None:
+    source_path = tmp_path / f"repo_cash.{source_type}"
+    if source_type == "csv":
+        source_path.write_text(
+            f"counterparty,cash_value\nCIBC,2.5\nASL,{raw_value}\n", encoding="utf-8"
+        )
+    else:
+        from openpyxl import Workbook
+
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.append(["counterparty", "cash_value"])
+        sheet.append(["CIBC", 2.5])
+        sheet.append(["ASL", raw_value])
+        workbook.save(source_path)
+        workbook.close()
+
+    expected = f"Invalid cash value '{raw_value}' in '{source_path}' at row 3."
+    with pytest.raises(ValueError) as exc_info:
+        load_repo_cash_structured_source(source_path, source_type=source_type)
+    assert str(exc_info.value) == expected
+    with pytest.raises(ValueError) as exc_info:
+        load_cash_by_counterparty(source_type=source_type, source_path=source_path)
+    assert str(exc_info.value) == expected
+
+
+@pytest.mark.parametrize("raw_value", ["nan", "inf", "-inf", "1e309"])
+def test_cash_overrides_reject_non_finite_values(tmp_path: Path, raw_value: str) -> None:
+    source_path = tmp_path / "repo_cash.csv"
+    source_path.write_text("counterparty,cash_value\nCIBC,2.5\n", encoding="utf-8")
+    overrides_path = tmp_path / "overrides.csv"
+    overrides_path.write_text(
+        f"counterparty,cash_value,note\nCIBC,3.5,valid\nASL,{raw_value},invalid\n",
+        encoding="utf-8",
+    )
+    expected = f"Invalid cash value '{raw_value}' in '{overrides_path}' at row 3."
+    with pytest.raises(ValueError) as exc_info:
+        load_repo_cash_overrides_csv(overrides_path)
+    assert str(exc_info.value) == expected
+    with pytest.raises(ValueError) as exc_info:
+        load_cash_by_counterparty(
+            source_type="csv", source_path=source_path, overrides_path=overrides_path
+        )
+    assert str(exc_info.value) == expected
+
+
+@pytest.mark.parametrize(
+    ("raw_value", "expected"), [(" 1,234.5 ", 1234.5), ("0", 0.0), ("-2.5", -2.5)]
+)
+def test_coerce_cash_value_preserves_finite_values(raw_value: str, expected: float) -> None:
+    assert _coerce_cash_value(raw_value, path=Path("cash.csv"), row_index=2) == expected
+
+
+def test_coerce_cash_value_preserves_invalid_number_diagnostic() -> None:
+    with pytest.raises(ValueError) as exc_info:
+        _coerce_cash_value("not-cash", path=Path("cash.csv"), row_index=4)
+    assert str(exc_info.value) == "Invalid cash value 'not-cash' in 'cash.csv' at row 4."
