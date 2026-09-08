@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import math
 from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
@@ -274,7 +275,10 @@ def _first_matching_header(headers: set[str], candidates: tuple[str, ...]) -> st
 def _coerce_cash_value(raw_value: str, *, path: Path, row_index: int) -> float:
     normalized = raw_value.replace(",", "").strip()
     try:
-        return float(normalized)
+        value = float(normalized)
+        if not math.isfinite(value):
+            raise ValueError("cash value must be finite")
+        return value
     except ValueError as exc:
         raise ValueError(
             f"Invalid cash value '{raw_value}' in '{path}' at row {row_index}."
