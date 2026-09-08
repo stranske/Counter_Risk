@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -158,13 +159,20 @@ class WorkflowConfig(BaseModel):
             seen.add(normalized_name)
         return value
 
+    @field_validator("cash_total_min", "cash_total_max")
+    @classmethod
+    def _validate_cash_total_bound(cls, value: float | None) -> float | None:
+        if value is not None and (not math.isfinite(value) or value < 0.0):
+            raise ValueError("cash bounds must be non-negative finite numbers")
+        return value
+
     @field_validator("cash_total_max")
     @classmethod
     def _validate_cash_total_range_upper_bound(cls, value: float | None, info: Any) -> float | None:
         if value is None:
             return value
         lower_bound = info.data.get("cash_total_min")
-        if isinstance(lower_bound, (int, float)) and value < float(lower_bound):
+        if isinstance(lower_bound, (int, float)) and not value >= float(lower_bound):
             raise ValueError("cash_total_max must be greater than or equal to cash_total_min")
         return value
 
