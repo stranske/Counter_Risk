@@ -34,6 +34,8 @@ def test_resolve_github_issue_falls_back_to_module_default(
     assert langsmith_fleet.resolve_github_issue() == langsmith_fleet.GITHUB_ISSUE
     assert langsmith_fleet.resolve_github_issue(None) == langsmith_fleet.GITHUB_ISSUE
     assert langsmith_fleet.resolve_github_issue("   ") == langsmith_fleet.GITHUB_ISSUE
+    monkeypatch.setenv(langsmith_fleet.ENV_COUNTER_RISK_GITHUB_ISSUE, "   ")
+    assert langsmith_fleet.resolve_github_issue() == langsmith_fleet.GITHUB_ISSUE
 
 
 def test_resolve_github_issue_prefers_explicit_over_environment(
