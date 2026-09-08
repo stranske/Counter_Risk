@@ -5,8 +5,82 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from counter_risk.config import WorkflowConfig, load_config
+
+
+@pytest.fixture
+def cash_bound_config() -> dict[str, object]:
+    return {
+        "hist_all_programs_3yr_xlsx": "all.xlsx",
+        "hist_ex_llc_3yr_xlsx": "ex.xlsx",
+        "hist_llc_3yr_xlsx": "llc.xlsx",
+        "monthly_pptx": "report.pptx",
+    }
+
+
+@pytest.mark.parametrize("field", ["cash_total_min", "cash_total_max"])
+@pytest.mark.parametrize("other_bound_present", [False, True])
+@pytest.mark.parametrize(
+    "value", [float("nan"), float("inf"), float("-inf"), -100.0, "NaN", "Inf", "-Inf", "-0.5"]
+)
+def test_workflow_config_rejects_invalid_cash_bounds(
+    cash_bound_config: dict[str, object], field: str, other_bound_present: bool, value: object
+) -> None:
+    if other_bound_present:
+        other = "cash_total_max" if field == "cash_total_min" else "cash_total_min"
+        cash_bound_config[other] = 5.0
+    cash_bound_config[field] = value
+
+    with pytest.raises(
+        ValidationError, match="cash bounds must be non-negative finite numbers"
+    ) as exc:
+        WorkflowConfig.model_validate(cash_bound_config)
+
+    assert exc.value.errors()[0]["loc"] == (field,)
+
+
+@pytest.mark.parametrize(
+    ("lower", "upper"),
+    [(None, None), (0.0, None), (None, 0.0), (0.0, 0.0), (5.0, 5.0), (0.5, 20.0), ("1.5", "2.5")],
+)
+def test_workflow_config_accepts_optional_finite_cash_bounds(
+    cash_bound_config: dict[str, object], lower: float | str | None, upper: float | str | None
+) -> None:
+    cash_bound_config.update(cash_total_min=lower, cash_total_max=upper)
+    config = WorkflowConfig.model_validate(cash_bound_config)
+    assert config.cash_total_min == (float(lower) if lower is not None else None)
+    assert config.cash_total_max == (float(upper) if upper is not None else None)
+
+
+def test_workflow_config_preserves_cash_bound_defaults(
+    cash_bound_config: dict[str, object],
+) -> None:
+    config = WorkflowConfig.model_validate(cash_bound_config)
+    assert config.cash_total_min is None
+    assert config.cash_total_max is None
+
+
+def test_workflow_config_rejects_reversed_cash_bounds(cash_bound_config: dict[str, object]) -> None:
+    cash_bound_config.update(cash_total_min=10.0, cash_total_max=5.0)
+    with pytest.raises(ValidationError, match="cash_total_max must be greater than or equal"):
+        WorkflowConfig.model_validate(cash_bound_config)
+
+
+@pytest.mark.parametrize("field", ["cash_total_min", "cash_total_max"])
+@pytest.mark.parametrize("value", [".nan", ".inf", "-.inf", "-1.0", "'NaN'"])
+def test_load_config_rejects_invalid_cash_bounds(
+    tmp_path: Path, cash_bound_config: dict[str, object], field: str, value: str
+) -> None:
+    config_path = tmp_path / "invalid_cash_bound.yml"
+    config_path.write_text(
+        "".join(f"{key}: {entry}\n" for key, entry in cash_bound_config.items())
+        + f"{field}: {value}\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="cash bounds must be non-negative finite numbers"):
+        load_config(config_path)
 
 
 def test_load_all_programs_config() -> None:
