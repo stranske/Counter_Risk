@@ -7,10 +7,63 @@ from pathlib import Path
 import pytest
 
 from counter_risk.reports.change_attribution import (
+    _first_float,
+    _optional_float,
     attribute_changes,
+    render_change_attribution_markdown,
     write_change_attribution_csv,
     write_change_attribution_markdown,
 )
+
+
+@pytest.mark.parametrize("value", ["nan", "inf", "-inf", float("nan"), float("inf"), -float("inf")])
+def test_float_parsers_reject_non_finite_values(value: str | float) -> None:
+    assert _first_float({"Notional": value}, ("Notional", "notional")) == 0.0
+    assert _first_float({"Notional": value, "notional": 12.5}, ("Notional", "notional")) == 12.5
+    assert _optional_float({"NotionalChange": value}, ("NotionalChange",)) is None
+    # An invalid supplied delta is absent; a later alias must not replace it.
+    assert (
+        _optional_float(
+            {"NotionalChange": value, "notional_change": 25.0},
+            ("NotionalChange", "notional_change"),
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize("value", ["nan", "inf", "-inf", float("nan"), float("inf"), -float("inf")])
+@pytest.mark.parametrize("invalid_source", ["current", "prior", "delta", "unmatched"])
+def test_attribute_changes_non_finite_inputs_produce_finite_report(
+    value: str | float, invalid_source: str
+) -> None:
+    current: dict[str, str | float] = {"counterparty": "Desk A", "Notional": 125.0}
+    prior: dict[str, str | float] = {"counterparty": "Desk A", "Notional": 100.0}
+    if invalid_source in {"current", "unmatched"}:
+        current["Notional"] = value
+    elif invalid_source == "prior":
+        prior["Notional"] = value
+    else:
+        current["NotionalChange"] = value
+
+    report = attribute_changes([current], [] if invalid_source == "unmatched" else [prior])
+    row = report["rows"][0]
+    expected_current = 0.0 if invalid_source in {"current", "unmatched"} else 125.0
+    expected_prior = 0.0 if invalid_source in {"prior", "unmatched"} else 100.0
+    assert row["current_notional"] == expected_current
+    assert row["prior_notional"] == expected_prior
+    assert row["notional_change"] == expected_current - expected_prior
+    assert report["summary"]["unattributed_remainder"] == 0.0
+    if invalid_source == "delta":
+        assert row["confidence"] == "High"  # Same as an absent optional delta.
+    markdown = render_change_attribution_markdown(report).lower()
+    assert "nan" not in markdown
+    assert "inf" not in markdown
+
+
+@pytest.mark.parametrize("value", [0.0, -12.5, 25.0, "0", "-12.5", "25"])
+def test_float_parsers_preserve_finite_values(value: str | float) -> None:
+    assert _first_float({"notional": value}, ("notional",)) == float(value)
+    assert _optional_float({"notional_change": value}, ("notional_change",)) == float(value)
 
 
 def test_attribute_changes_labels_unmatched_current_rows() -> None:
