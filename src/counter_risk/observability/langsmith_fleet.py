@@ -94,9 +94,9 @@ class FleetRunContext:
     trace_url: str | None = None
     recorded_at: str | None = None
     github_pr: str | None = None
-    github_issue: str | None = None
     latency_ms: int | None = None
     error_category: str = "none"
+    github_issue: str | None = None
 
 
 def ensure_langsmith_project_defaults() -> bool:

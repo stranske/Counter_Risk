@@ -105,7 +105,21 @@ def test_build_fleet_records_keep_default_github_issue_for_legacy_callers(
     monkeypatch.delenv(langsmith_fleet.ENV_LANGSMITH_KEY, raising=False)
     monkeypatch.delenv(langsmith_fleet.ENV_COUNTER_RISK_GITHUB_ISSUE, raising=False)
     # Positional construction proves the new field is appended, not inserted.
-    context = langsmith_fleet.FleetRunContext("2026-09-08", "2026-09-08", "monthly-risk-report")
+    context = langsmith_fleet.FleetRunContext(
+        "2026-09-08",
+        "2026-09-08",
+        "monthly-risk-report",
+        "openai",
+        "test-model",
+        "test-trace",
+        "https://example.test/trace",
+        "2026-09-08T00:00:00Z",
+        "stranske/Counter_Risk#1014",
+        125,
+        "timeout",
+    )
+    assert context.latency_ms == 125
+    assert context.error_category == "timeout"
 
     records = langsmith_fleet.build_fleet_records(
         context=context,
