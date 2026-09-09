@@ -5665,3 +5665,33 @@ def test_copy_row_presentation_carries_formats_to_appended_row() -> None:
     # Presentation only -- values must not be carried down.
     assert worksheet.cell(row=6, column=1).value is None
     assert worksheet.cell(row=6, column=2).value is None
+
+
+@pytest.mark.parametrize("shape", ["single", "split", "reversed", "aliases"])
+def test_write_change_attribution_split_current_conservation(tmp_path: Path, shape: str) -> None:
+    rows = [{"counterparty": "Desk A", "Notional": 300.0, "NotionalChange": 50.0}]
+    if shape != "single":
+        rows = [
+            {"counterparty": "Desk A", "Notional": 100.0, "NotionalChange": 25.0},
+            {
+                "counterparty": "Desk-A" if shape == "aliases" else "Desk A",
+                "Notional": 200.0,
+                "NotionalChange": 25.0,
+            },
+        ]
+        if shape == "reversed":
+            rows.reverse()
+    warnings: list[str] = []
+    paths = run_module._write_change_attribution_outputs(
+        run_dir=tmp_path,
+        parsed_by_variant={"all_programs": {"totals": _FakeDataFrame(records=rows)}},
+        warnings=warnings,
+    )
+    assert warnings == []
+    assert paths == [tmp_path / "change_attribution.csv", tmp_path / "change_attribution.md"]
+    with paths[0].open(newline="", encoding="utf-8") as handle:
+        report_rows = list(csv.DictReader(handle))
+    assert sum(float(row["current_notional"]) for row in report_rows) == 300.0
+    assert sum(float(row["prior_notional"]) for row in report_rows) == 250.0
+    assert sum(float(row["notional_change"]) for row in report_rows) == 50.0
+    assert all(row["confidence"] == "High" for row in report_rows)
