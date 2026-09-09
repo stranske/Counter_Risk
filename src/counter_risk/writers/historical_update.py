@@ -362,8 +362,10 @@ def _coerce_rollup_data(rollup_data: Mapping[str, Any]) -> dict[str, float]:
             continue
         try:
             numeric_value = float(raw_value)
-        except (TypeError, ValueError) as exc:
+        except (TypeError, ValueError, OverflowError) as exc:
             raise HistoricalUpdateError(f"Rollup value for {raw_key!r} must be numeric") from exc
+        if not math.isfinite(numeric_value):
+            raise HistoricalUpdateError(f"Rollup value for {raw_key!r} must be finite")
         normalized[key] = numeric_value
     return normalized
 
@@ -598,6 +600,7 @@ def _append_to_sheet(
     if sheet_name not in getattr(workbook, "sheetnames", []):
         raise WorksheetNotFoundError(f"Required worksheet not found: {sheet_name}")
 
+    normalized_rollups = _coerce_rollup_data(rollup_data)
     worksheet = workbook[sheet_name]
     header_row = _find_header_row(worksheet)
     consolidated_headers = _build_consolidated_header_map(worksheet, max_scan_rows=HEADER_SCAN_ROWS)
@@ -630,7 +633,6 @@ def _append_to_sheet(
 
     worksheet.cell(row=target_row, column=date_column).value = resolved_date
 
-    normalized_rollups = _coerce_rollup_data(rollup_data)
     for series_column, normalized_series in numeric_series_columns.items():
         worksheet.cell(row=target_row, column=series_column).value = normalized_rollups.get(
             normalized_series, 0.0
