@@ -55,9 +55,14 @@ def test_release_build_waits_for_native_gui_launcher_smoke() -> None:
     assert jobs["build-windows"]["needs"] == "gui-launcher-smoke"
     smoke = jobs["gui-launcher-smoke"]
     assert smoke["runs-on"] == "windows-latest"
-    command = next(step for step in smoke["steps"] if "run" in step)
+    command = next(
+        step
+        for step in smoke["steps"]
+        if "scripts/windows/smoke_gui_launcher.ps1" in step.get("run", "")
+    )
     assert command["shell"] == "pwsh"
-    assert "scripts/windows/smoke_gui_launcher.ps1" in command["run"]
+    assert not command.get("continue-on-error", False)
+    assert not smoke.get("continue-on-error", False)
     upload = next(step for step in smoke["steps"] if "upload-artifact" in step.get("uses", ""))
     assert upload["if"] == "always()"
     assert "gui-launcher-evidence" in upload["with"]["path"]

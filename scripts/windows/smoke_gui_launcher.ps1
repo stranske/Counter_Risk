@@ -107,5 +107,5 @@ class Recorder {
     $env:COUNTER_RISK_NO_PAUSE = $savedNoPause
     $env:COUNTER_RISK_SMOKE_INVOCATIONS = $savedLog
     $env:COUNTER_RISK_SMOKE_EXIT = $savedExit
-    Remove-Item -Recurse -Force $sandbox
+    Remove-Item -LiteralPath $sandbox -Recurse -Force -ErrorAction SilentlyContinue
 }
