@@ -239,6 +239,8 @@ def _use_limit_config_path(monkeypatch: pytest.MonkeyPatch, limits_path: Path) -
     ],
 )
 def test_exposure_builders_coerce_finite_notionals(value: Any, expected: float) -> None:
+    # Keep the workbook columns independent of the implementation's class list so
+    # removing a supported segment cannot silently reduce regression coverage.
     asset_classes = ("TIPS", "Treasury", "Equity", "Commodity", "Currency")
     parsed = {
         "all_programs": {
@@ -265,11 +267,11 @@ def test_exposure_builders_coerce_finite_notionals(value: Any, expected: float) 
     ]
     limits = run_module._build_limit_exposure_rows(parsed)
     assert len(limits) == 2
-    assert limits[0]["counterparty"] == "Alpha"
-    assert limits[1]["fcm"] == "FCM A"
-    assert limits[1]["segment"] == "Rates"
+    counterparty_row = next(row for row in limits if row.get("counterparty") == "Alpha")
+    futures_row = next(row for row in limits if row.get("fcm") == "FCM A")
+    assert futures_row["segment"] == "Rates"
     assert all(row["variant"] == "all_programs" for row in limits)
-    assert [row["notional"] for row in limits] == [expected, expected]
+    assert counterparty_row["notional"] == futures_row["notional"] == expected
     assert all(math.isfinite(row["notional"]) for row in [*concentration, *limits])
 
 
@@ -291,9 +293,9 @@ def test_exposure_builders_default_missing_notionals_to_zero() -> None:
     ]
     limits = run_module._build_limit_exposure_rows(parsed)
     assert len(limits) == 2
-    assert limits[0]["counterparty"] == "Alpha"
-    assert limits[1]["fcm"] == "FCM A"
-    assert [row["notional"] for row in limits] == [0.0, 0.0]
+    counterparty_row = next(row for row in limits if row.get("counterparty") == "Alpha")
+    futures_row = next(row for row in limits if row.get("fcm") == "FCM A")
+    assert counterparty_row["notional"] == futures_row["notional"] == 0.0
 
 
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf"), "NaN", "Inf", "-Inf"])
