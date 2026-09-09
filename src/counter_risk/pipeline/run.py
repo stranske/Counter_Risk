@@ -2613,11 +2613,13 @@ def _row_numeric_value(row: Mapping[str, Any], *, aliases: tuple[str, ...]) -> f
             continue
         value = row.get(alias)
         if value is None:
-            return 0.0
+            continue
         try:
-            return float(value)
-        except (TypeError, ValueError):
-            return 0.0
+            number = float(value)
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if math.isfinite(number):
+            return number
     return 0.0
 
 

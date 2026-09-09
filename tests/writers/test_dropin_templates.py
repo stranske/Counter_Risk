@@ -10,6 +10,44 @@ from counter_risk.writers.dropin_templates import fill_dropin_template
 openpyxl = pytest.importorskip("openpyxl")
 
 
+@pytest.mark.parametrize("value", [None, "invalid", float("nan"), float("inf"), float("-inf")])
+def test_pipeline_alias_fallback_produces_finite_saved_breakdown(
+    tmp_path: Path, value: Any
+) -> None:
+    from counter_risk.pipeline.run import _build_dropin_notional_breakdown
+
+    breakdown = _build_dropin_notional_breakdown(
+        [
+            {"Notional": value, "notional": 200.0, "TIPS": value, "tips": 50.0},
+            {"Notional": "NaN", "TIPS": "inf"},
+        ]
+    )
+    assert breakdown == {
+        "tips": 0.25,
+        "treasury": 0.0,
+        "equity": 0.0,
+        "commodity": 0.0,
+        "currency": 0.0,
+        "notional": 1.0,
+    }
+    template = tmp_path / "template.xlsx"
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    assert worksheet is not None
+    worksheet.append(["Counterparty / Clearing House", "Tips", "Notional"])
+    worksheet.append(["Notional Breakdown", 999, 999])
+    workbook.save(template)
+    workbook.close()
+
+    output = fill_dropin_template(template, [], breakdown, output_path=tmp_path / "output.xlsx")
+    saved = openpyxl.load_workbook(output)
+    try:
+        assert saved.active is not None
+        assert list(saved.active.values)[1] == ("Notional Breakdown", 0.25, 1)
+    finally:
+        saved.close()
+
+
 @pytest.mark.parametrize(
     "value", [float("nan"), float("inf"), float("-inf"), "NaN", "inf", "-inf", "1e309"]
 )
