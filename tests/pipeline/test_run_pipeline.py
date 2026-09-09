@@ -6,6 +6,7 @@ import calendar
 import csv
 import hashlib
 import json
+import math
 import os
 import platform
 import re
@@ -218,6 +219,116 @@ def _use_limit_config_path(monkeypatch: pytest.MonkeyPatch, limits_path: Path) -
         return original_resolve_runtime_path(path)
 
     monkeypatch.setattr(run_module, "resolve_runtime_path", _resolve_runtime_path)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (float("nan"), 0.0),
+        (float("inf"), 0.0),
+        (-float("inf"), 0.0),
+        ("NaN", 0.0),
+        ("Inf", 0.0),
+        ("-Inf", 0.0),
+        (None, 0.0),
+        ("", 0.0),
+        ("invalid", 0.0),
+        (0, 0.0),
+        ("12.5", 12.5),
+        (-3.25, -3.25),
+    ],
+)
+def test_exposure_builders_coerce_finite_notionals(value: Any, expected: float) -> None:
+    # Keep the workbook columns independent of the implementation's class list so
+    # removing a supported segment cannot silently reduce regression coverage.
+    asset_classes = ("TIPS", "Treasury", "Equity", "Commodity", "Currency")
+    parsed = {
+        "all_programs": {
+            "totals": [
+                {
+                    "counterparty": " Alpha ",
+                    "Notional": value,
+                    **dict.fromkeys(asset_classes, value),
+                }
+            ],
+            "futures": [{"fcm": "FCM A", "class": "Rates", "notional": value}],
+        }
+    }
+
+    concentration = run_module._build_concentration_exposure_rows(parsed)
+    assert concentration == [
+        {
+            "variant": "all_programs",
+            "segment": segment,
+            "counterparty": "Alpha",
+            "notional": expected,
+        }
+        for segment in (*asset_classes, "total")
+    ]
+    limits = run_module._build_limit_exposure_rows(parsed)
+    assert len(limits) == 2
+    counterparty_row = next(row for row in limits if row.get("counterparty") == "Alpha")
+    futures_row = next(row for row in limits if row.get("fcm") == "FCM A")
+    assert futures_row["segment"] == "Rates"
+    assert all(row["variant"] == "all_programs" for row in limits)
+    assert counterparty_row["notional"] == futures_row["notional"] == expected
+    assert all(math.isfinite(row["notional"]) for row in [*concentration, *limits])
+
+
+def test_exposure_builders_default_missing_notionals_to_zero() -> None:
+    parsed = {
+        "all_programs": {
+            "totals": [{"counterparty": "Alpha"}, {"counterparty": " "}],
+            "futures": [{"fcm": "FCM A"}, {}],
+        }
+    }
+
+    assert run_module._build_concentration_exposure_rows(parsed) == [
+        {
+            "variant": "all_programs",
+            "segment": "total",
+            "counterparty": "Alpha",
+            "notional": 0.0,
+        }
+    ]
+    limits = run_module._build_limit_exposure_rows(parsed)
+    assert len(limits) == 2
+    counterparty_row = next(row for row in limits if row.get("counterparty") == "Alpha")
+    futures_row = next(row for row in limits if row.get("fcm") == "FCM A")
+    assert counterparty_row["notional"] == futures_row["notional"] == 0.0
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf"), "NaN", "Inf", "-Inf"])
+@pytest.mark.parametrize("include_finite", [False, True])
+def test_concentration_metrics_write_finite_values(
+    tmp_path: Path, value: Any, include_finite: bool
+) -> None:
+    totals = [{"counterparty": "Invalid", "Notional": value, "Equity": value}]
+    if include_finite:
+        totals.extend(
+            [
+                {"counterparty": "Alpha", "Notional": 3.0, "Equity": 3.0},
+                {"counterparty": "Beta", "Notional": 1.0, "Equity": 1.0},
+            ]
+        )
+    records = run_module._compute_and_write_concentration_metrics(
+        parsed_by_variant={"all_programs": {"totals": totals}}, run_dir=tmp_path
+    )
+
+    with (tmp_path / "concentration_metrics.csv").open(newline="", encoding="utf-8") as source:
+        written = list(csv.DictReader(source))
+    for rows in (records, written):
+        assert len(rows) == 2
+        assert {row["segment"] for row in rows} == {"Equity", "total"}
+        for row in rows:
+            for metric, expected in (
+                ("top5_share", 1.0 if include_finite else 0.0),
+                ("top10_share", 1.0 if include_finite else 0.0),
+                ("hhi", 0.625 if include_finite else 0.0),
+            ):
+                actual = float(row[metric])
+                assert math.isfinite(actual)
+                assert actual == pytest.approx(expected)
 
 
 def test_limit_exposure_rows_scope_clearing_house_percent_to_futures_rows() -> None:

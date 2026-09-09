@@ -803,12 +803,12 @@ def append_wal_row(
                 columns=tuple(range(1, preserve_through_column + 1)),
             )
 
-        worksheet.cell(
-            row=append_target.append_row, column=append_target.date_column
-        ).value = px_date
-        worksheet.cell(
-            row=append_target.append_row, column=append_target.wal_column
-        ).value = parsed_wal
+        worksheet.cell(row=append_target.append_row, column=append_target.date_column).value = (
+            px_date
+        )
+        worksheet.cell(row=append_target.append_row, column=append_target.wal_column).value = (
+            parsed_wal
+        )
         _validate_preserved_wal_cells(worksheet, preserve_snapshots)
         # Trim AFTER validating preserved cells: deleting leading rows shifts every
         # row index the snapshot was taken against.
