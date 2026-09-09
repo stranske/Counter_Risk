@@ -1097,39 +1097,37 @@ def _apply_daily_holdings_repo_cash(
 def _inject_repo_cash_into_cprs_ch(
     cprs_ch: Any, repo_cash_by_counterparty: Mapping[str, float]
 ) -> list[dict[str, Any]]:
-    """Append repo-segment CPRS-CH rows carrying the STIF repo cash per counterparty.
+    """Upsert one Repo row per authoritative STIF cash key, collapsing duplicates.
 
     Returns a list of record dicts (the historical append and reconciliation both
     read cprs_ch via ``_records``, which accepts a list of mappings).
     """
 
-    records = _records(cprs_ch)
-    # UPSERT, not blind append: the MOSERS CPRS-CH "Repo" section may already carry
-    # this same repo cash (the manual process types the STIF values into MOSERS).
-    # The Cash sheet aggregates every repo-segment record by canonical name, so a
-    # second record for the same counterparty would DOUBLE the reported cash. Key
-    # existing repo records by the *same* normalization the aggregation uses; when
-    # a counterparty is already present, overwrite its Cash with the STIF value
-    # (the authoritative daily-holdings source) instead of adding another row.
-    existing_repo_by_key: dict[str, dict[str, Any]] = {}
-    for record in records:
-        if str(record.get("Segment", "")).strip().lower() != "repo":
-            continue
-        key = _normalize_series_label_for_matching(str(record.get("Counterparty", "")).strip())
-        if key:
-            existing_repo_by_key.setdefault(key, record)
-
+    authoritative_cash: dict[str, tuple[str, float]] = {}
     for raw_counterparty, raw_amount in repo_cash_by_counterparty.items():
         counterparty = str(raw_counterparty).strip()
-        if not counterparty:
-            continue
-        amount = float(raw_amount)
-        key = _normalize_series_label_for_matching(counterparty)
-        existing = existing_repo_by_key.get(key) if key else None
-        if existing is not None:
-            # Same counterparty already in the Repo section -> replace, don't add.
-            existing["Cash"] = amount
-        else:
+        if counterparty:
+            key = _normalize_series_label_for_matching(counterparty)
+            if key:
+                authoritative_cash[key] = (counterparty, float(raw_amount))
+
+    # Historical Cash aggregates every Repo row by normalized name. Retain only
+    # the first row for each authoritative key, replacing its Cash and preserving
+    # its other fields. Unmapped counterparties and other segments stay intact.
+    records: list[dict[str, Any]] = []
+    applied_keys: set[str] = set()
+    for record in _records(cprs_ch):
+        if str(record.get("Segment", "")).strip().lower() == "repo":
+            key = _normalize_series_label_for_matching(str(record.get("Counterparty", "")).strip())
+            if key in authoritative_cash:
+                if key in applied_keys:
+                    continue
+                record["Cash"] = authoritative_cash[key][1]
+                applied_keys.add(key)
+        records.append(record)
+
+    for key, (counterparty, amount) in authoritative_cash.items():
+        if key not in applied_keys:
             records.append(
                 {
                     "Segment": "repo",

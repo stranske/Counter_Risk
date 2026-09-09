@@ -484,6 +484,70 @@ def test_write_langsmith_fleet_artifact_derives_limit_severity_from_counts(
     assert limit_record["domain"]["limit_fail_breach_count"] == 1
 
 
+@pytest.mark.parametrize(
+    ("cash_name", "names"),
+    [
+        ("CIBC", ("CIBC",)),
+        ("CIBC", ("CIBC", "CIBC")),
+        ("CIBC", ("CIBC", " CIBC ")),
+        ("Citibank", ("Citigroup", " Citibank ", "Citibank")),
+        ("CIBC", ()),
+    ],
+)
+def test_authoritative_repo_cash_collapses_duplicates_before_historical_aggregation(
+    cash_name: str,
+    names: tuple[str, ...],
+) -> None:
+    """Authoritative 100 replaces all normalized Repo cash, never leaving 120."""
+    unrelated = [
+        {"Segment": "bilateral", "Counterparty": "CIBC", "Cash": 7.0},
+        {"Segment": "repo", "Counterparty": "ASL", "Cash": 3.0},
+        {"Segment": "repo", "Counterparty": "ASL", "Cash": 4.0},
+        {"Segment": "repo", "Counterparty": "", "Cash": 5.0},
+    ]
+    original = [
+        {"Segment": " Repo ", "Counterparty": name, "Cash": 10.0 * (i + 1), "TIPS": 9.0}
+        for i, name in enumerate(names)
+    ]
+    # Interleave unrelated records to exercise stable preservation of all segments.
+    original = original[:1] + unrelated + original[1:]
+    before = [dict(row) for row in original]
+    result = run_module._inject_repo_cash_into_cprs_ch(original, {cash_name: 100.0})
+    assert original == before
+    key = run_module._normalize_series_label_for_matching(cash_name)
+    repo_rows = [row for row in result if str(row["Segment"]).strip().lower() == "repo"]
+    totals = run_module._aggregate_cprs_ch_series_totals(records=repo_rows, value_column="Cash")
+    assert totals[key] == pytest.approx(100.0)
+    matching = [
+        row
+        for row in repo_rows
+        if run_module._normalize_series_label_for_matching(str(row["Counterparty"])) == key
+    ]
+    assert len(matching) == 1
+    if names:
+        assert matching[0] == {**before[0], "Cash": 100.0}
+    else:
+        assert matching[0]["Notional"] == 100.0
+    assert [row for row in result if row not in matching] == unrelated
+    repeated = run_module._inject_repo_cash_into_cprs_ch(result, {f" {cash_name} ": 100.0})
+    assert repeated == result
+    assert run_module._inject_repo_cash_into_cprs_ch(original, {}) == original
+
+
+def test_authoritative_repo_cash_normalizes_new_mapping_aliases() -> None:
+    result = run_module._inject_repo_cash_into_cprs_ch(
+        [], {"Citibank": 10.0, "Citigroup": 100.0, "ASL": 50.0}
+    )
+    totals = run_module._aggregate_cprs_ch_series_totals(records=result, value_column="Cash")
+    assert totals[run_module._normalize_series_label_for_matching("Citibank")] == 100.0
+    assert totals[run_module._normalize_series_label_for_matching("ASL")] == 50.0
+    assert len(result) == 2
+    assert (
+        run_module._inject_repo_cash_into_cprs_ch(result, {"Citibank": 100.0, "ASL": 50.0})
+        == result
+    )
+
+
 def test_apply_daily_holdings_repo_cash_updates_all_programs_totals(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
