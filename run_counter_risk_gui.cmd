@@ -16,6 +16,11 @@ echo Starting Counter Risk GUI...
 echo Launcher log: "%COUNTER_RISK_LAUNCHER_LOG%"
 echo.
 
+if exist "%~dp0bin\counter-risk.exe" (
+    call :run_and_log "%~dp0bin\counter-risk.exe" gui
+    goto :after_run
+)
+
 if exist "%~dp0dist\counter-risk\counter-risk.exe" (
     call :run_and_log "%~dp0dist\counter-risk\counter-risk.exe" gui
     goto :after_run
