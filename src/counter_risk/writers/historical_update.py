@@ -734,10 +734,13 @@ def append_wal_row(
     workbook_path: str | Path,
     *,
     px_date: date,
-    wal_value: float,
+    wal_value: float | str,
     wal_sheet_name: str = SHEET_WAL,
 ) -> Path:
-    """Append one finite, non-negative WAL value to the historical WAL sheet."""
+    """Append a finite, non-negative WAL number or numeric string.
+
+    Convert ``wal_value`` to a float and validate it before workbook access.
+    """
 
     try:
         parsed_wal = float(wal_value)
