@@ -24,6 +24,58 @@ def _as_records(table: Any) -> list[dict[str, Any]]:
     return [dict(row) for row in table]
 
 
+@pytest.mark.parametrize("enabled", [True, False])
+def test_finite_limit_preserves_breach_and_disabled_behavior(enabled: bool) -> None:
+    config = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "counterparty",
+                "entity_name": "Alpha",
+                "limit_kind": "absolute_notional",
+                "limit_value": 50,
+                "severity": "fail",
+                "enabled": enabled,
+            }
+        ],
+    }
+    rows = _as_records(check_limits([{"counterparty": "Alpha", "notional": 100}], config))
+    if enabled:
+        assert len(rows) == 1
+        assert rows[0]["actual_value"] == 100
+        assert rows[0]["limit_value"] == 50
+        assert rows[0]["breach_amount"] == 50
+        assert rows[0]["severity"] == "fail"
+    else:
+        assert rows == []
+
+
+@pytest.mark.parametrize("limit_kind", ["absolute_notional", "percent_of_total"])
+@pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
+def test_check_limits_rejects_non_finite_policy_before_evaluation(
+    monkeypatch: pytest.MonkeyPatch, limit_kind: str, value: float
+) -> None:
+    def unexpected_evaluation(*args: Any, **kwargs: Any) -> None:
+        pytest.fail("Non-finite policy reached exposure evaluation")
+
+    monkeypatch.setattr(
+        "counter_risk.compute.limits._denominator_abs_notional", unexpected_evaluation
+    )
+    config = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "counterparty",
+                "entity_name": "Alpha",
+                "limit_kind": limit_kind,
+                "limit_value": value,
+            }
+        ],
+    }
+    with pytest.raises(ValueError, match=r"limit_value\s+Input should be a finite number"):
+        check_limits([{"counterparty": "Alpha", "notional": 100}], config)
+
+
 def test_check_limits_detects_absolute_and_percent_breaches_across_entity_types() -> None:
     exposures = [
         {

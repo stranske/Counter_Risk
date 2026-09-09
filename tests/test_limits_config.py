@@ -6,7 +6,44 @@ from pathlib import Path
 
 import pytest
 
-from counter_risk.limits_config import LimitsConfig, load_limits_config
+from counter_risk.limits_config import LimitEntry, LimitsConfig, load_limits_config
+
+
+@pytest.mark.parametrize("limit_kind", ["absolute_notional", "percent_of_total"])
+@pytest.mark.parametrize("enabled", [True, False])
+@pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
+def test_limit_entry_rejects_non_finite_values(
+    limit_kind: str, enabled: bool, value: float
+) -> None:
+    with pytest.raises(ValueError, match=r"limit_value\s+Input should be a finite number"):
+        LimitEntry.model_validate(
+            {
+                "entity_type": "counterparty",
+                "entity_name": "Alpha",
+                "limit_value": value,
+                "limit_kind": limit_kind,
+                "enabled": enabled,
+            }
+        )
+
+
+@pytest.mark.parametrize("limit_kind", ["absolute_notional", "percent_of_total"])
+@pytest.mark.parametrize("enabled", [True, False])
+@pytest.mark.parametrize("value", [".inf", "-.inf", ".nan"])
+def test_load_limits_config_rejects_non_finite_yaml(
+    tmp_path: Path, limit_kind: str, enabled: bool, value: str
+) -> None:
+    config_path = tmp_path / "limits.yml"
+    config_path.write_text(
+        "schema_version: 1\nlimits:\n"
+        "  - entity_type: counterparty\n    entity_name: Alpha\n"
+        f"    limit_value: {value}\n    limit_kind: {limit_kind}\n"
+        f"    enabled: {str(enabled).lower()}\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match=r"limit_value.*finite number"):
+        load_limits_config(config_path)
 
 
 def test_load_limits_config_default_file() -> None:
