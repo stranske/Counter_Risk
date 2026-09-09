@@ -20,7 +20,7 @@ class LimitEntry(BaseModel):
 
     entity_type: Literal["counterparty", "fcm", "clearing_house", "segment", "custom_group"]
     entity_name: str = Field(min_length=1)
-    limit_value: float = Field(gt=0)
+    limit_value: float = Field(gt=0, allow_inf_nan=False)
     limit_kind: Literal["absolute_notional", "percent_of_total"]
     severity: Literal["warning", "fail"] = "warning"
     enabled: bool = True
