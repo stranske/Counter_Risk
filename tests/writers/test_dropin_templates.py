@@ -38,6 +38,30 @@ def test_non_finite_breakdown_rejected_before_workbook_load(
     assert template.read_bytes() == b"template must not be loaded"
 
 
+@pytest.mark.parametrize("sign", [1, -1])
+def test_overflow_breakdown_rejected_with_metric_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, sign: int
+) -> None:
+    """Reject float conversion overflow before opening or changing a workbook."""
+    template = tmp_path / "template.xlsx"
+    template.write_bytes(b"template must not be loaded")
+    output = tmp_path / "existing-output.xlsx"
+    output.write_bytes(b"previous report")
+
+    def unexpected_load(*args: Any, **kwargs: Any) -> None:
+        pytest.fail("overflowing breakdown reached workbook loading")
+
+    monkeypatch.setattr(openpyxl, "load_workbook", unexpected_load)
+    with pytest.raises(ValueError, match="breakdown value for 'Total' must be numeric") as error:
+        fill_dropin_template(
+            template, [], {"Tips": 12.5, "Total": sign * 10**400}, output_path=output
+        )
+
+    assert isinstance(error.value.__cause__, OverflowError)
+    assert output.read_bytes() == b"previous report"
+    assert template.read_bytes() == b"template must not be loaded"
+
+
 def test_finite_breakdown_preserves_signed_values_in_saved_workbook(tmp_path: Path) -> None:
     template = tmp_path / "template.xlsx"
     workbook = openpyxl.Workbook()
