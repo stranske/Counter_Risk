@@ -23,8 +23,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  gui-launcher-smoke:
+    name: Smoke Windows GUI launcher
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
+
+      - name: Exercise assembled GUI launcher and deliberate break
+        shell: pwsh
+        run: >-
+          ./scripts/windows/smoke_gui_launcher.ps1
+          -LauncherPath ./run_counter_risk_gui.cmd
+          -EvidenceDirectory "${{ runner.temp }}/gui-launcher-evidence"
+
+      - name: Upload GUI launcher evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: counter-risk-gui-launcher-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/gui-launcher-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
   build-windows:
     name: Build Windows bundle
+    needs: gui-launcher-smoke
     runs-on: windows-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
