@@ -8,6 +8,7 @@ implemented in follow-on slices.
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Mapping
 from copy import copy
 from dataclasses import dataclass
@@ -736,7 +737,14 @@ def append_wal_row(
     wal_value: float,
     wal_sheet_name: str = SHEET_WAL,
 ) -> Path:
-    """Append one WAL row to the historical WAL sheet."""
+    """Append one finite, non-negative WAL value to the historical WAL sheet."""
+
+    try:
+        parsed_wal = float(wal_value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("wal_value must be finite and non-negative") from exc
+    if not math.isfinite(parsed_wal) or parsed_wal < 0:
+        raise ValueError("wal_value must be finite and non-negative")
 
     path = _as_path(workbook_path, field_name="workbook_path")
     _validate_workbook_path(path)
@@ -792,12 +800,12 @@ def append_wal_row(
                 columns=tuple(range(1, preserve_through_column + 1)),
             )
 
-        worksheet.cell(row=append_target.append_row, column=append_target.date_column).value = (
-            px_date
-        )
-        worksheet.cell(row=append_target.append_row, column=append_target.wal_column).value = float(
-            wal_value
-        )
+        worksheet.cell(
+            row=append_target.append_row, column=append_target.date_column
+        ).value = px_date
+        worksheet.cell(
+            row=append_target.append_row, column=append_target.wal_column
+        ).value = parsed_wal
         _validate_preserved_wal_cells(worksheet, preserve_snapshots)
         # Trim AFTER validating preserved cells: deleting leading rows shifts every
         # row index the snapshot was taken against.
