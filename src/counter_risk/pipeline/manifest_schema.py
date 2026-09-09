@@ -574,6 +574,24 @@ def _check_node(value: Any, schema: Mapping[str, Any], path: str) -> str | None:
     return None
 
 
+def _check_finite_floats(value: Any, path: str) -> str | None:
+    """Reject non-JSON floats even where the schema leaves values unconstrained."""
+
+    if isinstance(value, float) and not math.isfinite(value):
+        return f"{path} must be finite"
+    if isinstance(value, Mapping):
+        children = ((f"{path}.{key}", child) for key, child in value.items())
+    elif isinstance(value, (list, tuple)):
+        children = ((f"{path}[{index}]", child) for index, child in enumerate(value))
+    else:
+        return None
+    for child_path, child in children:
+        reason = _check_finite_floats(child, child_path)
+        if reason is not None:
+            return reason
+    return None
+
+
 def validate_manifest(manifest: Mapping[str, Any]) -> tuple[bool, str | None]:
     """Validate a full run manifest against :func:`manifest_schema`.
 
@@ -586,6 +604,10 @@ def validate_manifest(manifest: Mapping[str, Any]) -> tuple[bool, str | None]:
     """
 
     reason = _check_node(manifest, manifest_schema(), "manifest")
+    if reason is not None:
+        return False, reason
+    # Preserve specific schema diagnostics, then cover unconstrained objects/arrays.
+    reason = _check_finite_floats(manifest, "manifest")
     if reason is not None:
         return False, reason
     return True, None

@@ -245,3 +245,43 @@ def test_finite_manifest_numbers_remain_json_serializable(
     builder.write(run_dir=tmp_path, manifest=manifest)
     saved = json.loads((tmp_path / "manifest.json").read_text())
     assert saved["top_exposures"]["all_programs"][0]["notional"] == value
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("container", ["mapping", "list", "tuple"])
+def test_manifest_rejects_nonfinite_in_unconstrained_fields_before_writing(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+    tmp_path: Path,
+    container: str,
+    value: float,
+) -> None:
+    builder, manifest = numeric_manifest
+    nested: Any = {"delta": value}
+    if container == "list":
+        nested = [nested]
+    elif container == "tuple":
+        nested = (nested,)
+    manifest["top_changes_per_variant"]["all_programs"] = nested
+    # Protect existing output too: a failed write must neither create nor overwrite files.
+    (tmp_path / "manifest.json").write_text("existing manifest", encoding="utf-8")
+    (tmp_path / "DATA_QUALITY_SUMMARY.txt").write_text("existing summary", encoding="utf-8")
+    before = {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()}
+    valid, reason = validate_manifest(manifest)
+    assert valid is False
+    assert reason is not None and "top_changes_per_variant.all_programs" in reason
+    assert "delta" in reason and "finite" in reason
+    with pytest.raises(ValueError, match="Manifest failed schema validation"):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+    assert {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()} == before
+
+
+def test_manifest_preserves_valid_unconstrained_values(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]], tmp_path: Path
+) -> None:
+    builder, manifest = numeric_manifest
+    values = [None, True, False, "NaN", 10**400, 0.0, -1.5]
+    manifest["top_changes_per_variant"]["all_programs"] = {"values": values}
+    assert validate_manifest(manifest) == (True, None)
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert saved["top_changes_per_variant"]["all_programs"]["values"] == values
