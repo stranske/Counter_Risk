@@ -27,6 +27,42 @@ from counter_risk.pipeline.parsing_types import UnmappedCounterpartyError
 from counter_risk.pipeline.run import run_pipeline
 
 
+@pytest.mark.parametrize(
+    "value",
+    [None, "invalid", "", [], float("nan"), float("inf"), float("-inf"), "NaN", "1e309", 10**400],
+)
+def test_row_numeric_value_uses_later_finite_alias(value: Any) -> None:
+    assert (
+        run_module._row_numeric_value(
+            {"cash": value, "Cash": 120.0}, aliases=("missing", "cash", "Cash")
+        )
+        == 120.0
+    )
+
+
+@pytest.mark.parametrize(
+    "value", [float("nan"), float("inf"), float("-inf"), "NaN", "inf", "-inf", "1e309", 10**400]
+)
+def test_row_numeric_value_defaults_when_no_finite_alias(value: Any) -> None:
+    assert (
+        run_module._row_numeric_value(
+            {"cash": value, "Cash": "invalid"}, aliases=("cash", "Cash", "missing")
+        )
+        == 0.0
+    )
+
+
+@pytest.mark.parametrize("value", [0.0, -7.25, "12.5"])
+def test_row_numeric_value_preserves_first_finite_alias(value: Any) -> None:
+    assert run_module._row_numeric_value(
+        {"cash": value, "Cash": 120.0}, aliases=("cash", "Cash")
+    ) == float(value)
+
+
+def test_row_numeric_value_defaults_for_missing_aliases() -> None:
+    assert run_module._row_numeric_value({}, aliases=("cash", "Cash")) == 0.0
+
+
 class _FakeDataFrame:
     def __init__(
         self,
