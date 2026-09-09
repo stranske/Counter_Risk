@@ -335,3 +335,106 @@ def test_aggregated_prior_group_is_not_reused_for_a_later_fuzzy_match() -> None:
     assert unmatched["is_unmatched"] is True
     assert report["summary"]["unmatched_rows"] == 1
     assert report["summary"]["unattributed_remainder"] == 25.0
+
+
+@pytest.mark.parametrize("reverse_current", [False, True])
+@pytest.mark.parametrize(
+    ("current_name", "prior_name", "match_type"),
+    [
+        ("Desk A", "Desk A", "exact"),
+        ("Desk-A", "desk a", "normalized"),
+        ("Morgan Stanley Prime", "Morgan Stanley", "fuzzy"),
+    ],
+)
+def test_split_current_conservation(
+    reverse_current: bool, current_name: str, prior_name: str, match_type: str
+) -> None:
+    prior = [{"counterparty": prior_name, "Notional": 250.0}]
+    single = [{"counterparty": current_name, "Notional": 300.0, "NotionalChange": 50.0}]
+    split = [
+        {"counterparty": current_name, "Notional": 100.0, "NotionalChange": 25.0},
+        {"counterparty": current_name, "Notional": 200.0, "NotionalChange": 25.0},
+    ]
+    if reverse_current:
+        split.reverse()
+    snapshot = [dict(row) for row in split]
+    report = attribute_changes(split, prior)
+    assert report["rows"] == attribute_changes(single, prior)["rows"]
+    assert len(report["rows"]) == 1
+    row = report["rows"][0]
+    assert (row["current_notional"], row["prior_notional"], row["notional_change"]) == (
+        300,
+        250,
+        50,
+    )
+    assert row["match_type"] == match_type
+    assert report["summary"]["total_current_rows"] == 2  # Input count remains diagnostic.
+    assert split == snapshot
+
+
+@pytest.mark.parametrize(
+    ("deltas", "confidence"),
+    [
+        ([25.0, 25.0], "High"),
+        ([25.0, 24.0], "Medium"),
+        ([25.0, None], "High"),
+        ([None, 25.0], "High"),
+        ([None, None], "High"),
+    ],
+)
+def test_split_current_delta_confidence(deltas: list[float | None], confidence: str) -> None:
+    report = attribute_changes(
+        [
+            {"counterparty": "Desk A", "Notional": amount, "NotionalChange": delta}
+            for amount, delta in zip([100.0, 200.0], deltas, strict=True)
+        ],
+        [{"counterparty": "Desk A", "Notional": 250.0}],
+    )
+    assert len(report["rows"]) == 1
+    assert report["rows"][0]["confidence"] == confidence
+
+
+@pytest.mark.parametrize("reverse_current", [False, True])
+def test_split_current_normalized_labels_are_deterministic(reverse_current: bool) -> None:
+    current = [
+        {"counterparty": "Desk-A", "Notional": 350.0, "NotionalChange": 75.0},
+        {"counterparty": "DESK A", "Notional": -50.0, "NotionalChange": -25.0},
+    ]
+    if reverse_current:
+        current.reverse()
+    report = attribute_changes(current, [{"counterparty": "desk a", "Notional": 250.0}])
+    assert len(report["rows"]) == 1
+    row = report["rows"][0]
+    assert row["counterparty"] == "DESK A"
+    assert (row["current_notional"], row["prior_notional"], row["notional_change"]) == (
+        300,
+        250,
+        50,
+    )
+
+
+def test_split_current_exact_and_normalized_matches_do_not_reuse_prior() -> None:
+    current = [
+        {"counterparty": name, "Notional": amount}
+        for name, amount in [("Desk A", 100.0), ("Desk-A", 200.0)]
+    ]
+    prior = [
+        {"counterparty": "Desk A", "Notional": 75.0},
+        {"counterparty": "desk a", "Notional": 175.0},
+    ]
+    report = attribute_changes(current, prior)
+    assert sum(row["current_notional"] for row in report["rows"]) == 300.0
+    assert sum(row["prior_notional"] for row in report["rows"]) == 250.0
+    assert sum(row["notional_change"] for row in report["rows"]) == 50.0
+
+
+def test_fuzzy_match_cannot_consume_a_later_direct_normalized_match() -> None:
+    report = attribute_changes(
+        [
+            {"counterparty": "Morgan Stanle", "Notional": 25.0},
+            {"counterparty": "Morgan-Stanley", "Notional": 300.0},
+        ],
+        [{"counterparty": "Morgan Stanley", "Notional": 250.0}],
+    )
+    assert sum(row["prior_notional"] for row in report["rows"]) == 250.0
+    assert report["rows"][0]["is_unmatched"] is True

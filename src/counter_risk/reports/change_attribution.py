@@ -142,6 +142,40 @@ def _index_prior_rows(rows: Iterable[_ExposureRow], *, normalize: bool) -> dict[
     return indexed
 
 
+def _group_current_rows(
+    rows: Iterable[_ExposureRow], *, exact_prior_names: set[str]
+) -> list[_ExposureRow]:
+    """Group by exact lookup key, or normalized key when no exact prior exists.
+
+    A group has a supplied delta only when every constituent provides one;
+    treating a partial sum as the complete delta would invent a discrepancy.
+    Labels are chosen deterministically, independently of input ordering.
+    """
+
+    grouped: dict[tuple[bool, str], _ExposureRow] = {}
+    for row in rows:
+        exact = row.counterparty in exact_prior_names
+        key = (exact, row.counterparty if exact else row.normalized_counterparty)
+        previous = grouped.get(key)
+        if previous is None:
+            grouped[key] = row
+            continue
+        label = min(
+            previous.counterparty, row.counterparty, key=lambda name: (name.casefold(), name)
+        )
+        grouped[key] = replace(
+            row,
+            counterparty=label,
+            notional=previous.notional + row.notional,
+            supplied_delta=(
+                previous.supplied_delta + row.supplied_delta
+                if previous.supplied_delta is not None and row.supplied_delta is not None
+                else None
+            ),
+        )
+    return sorted(grouped.values(), key=lambda row: (row.counterparty.casefold(), row.counterparty))
+
+
 def _best_fuzzy_match(
     *,
     current_normalized: str,
@@ -213,7 +247,14 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
     prior_rows = _parse_exposure_rows(prior_df, arg_name="prior_df")
 
     prior_by_exact = _index_prior_rows(prior_rows, normalize=False)
-    prior_by_normalized = _index_prior_rows(prior_rows, normalize=True)
+    exact_current_names = {row.counterparty for row in current_rows} & prior_by_exact.keys()
+    # Reserve exact matches before normalized/fuzzy lookup, so fallback groups
+    # cannot consume balances already attributed to an exact current key.
+    prior_by_normalized = _index_prior_rows(
+        (row for row in prior_rows if row.counterparty not in exact_current_names), normalize=True
+    )
+    grouped_current_rows = _group_current_rows(current_rows, exact_prior_names=set(prior_by_exact))
+    reserved_normalized = {row.normalized_counterparty for row in grouped_current_rows}
     used_prior_normalized: set[str] = set()
     has_any_prior_rows = bool(prior_rows)
 
@@ -221,7 +262,7 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
     unmatched_count = 0
     low_confidence_count = 0
 
-    for current in sorted(current_rows, key=lambda row: row.counterparty.casefold()):
+    for current in grouped_current_rows:
         prior_match: _ExposureRow | None = None
         reason = _unmatched_reason(has_any_prior_rows=has_any_prior_rows)
         match_type = "unmatched"
@@ -250,7 +291,7 @@ def attribute_changes(current_df: Any, prior_df: Any) -> dict[str, Any]:
             prior_match = _best_fuzzy_match(
                 current_normalized=current.normalized_counterparty,
                 prior_by_normalized=prior_by_normalized,
-                used_keys=used_prior_normalized,
+                used_keys=used_prior_normalized | reserved_normalized,
             )
             if prior_match is not None:
                 match_type = "fuzzy"
