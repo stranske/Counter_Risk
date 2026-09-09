@@ -50,7 +50,7 @@ def test_assembled_bin_executable_precedes_development_and_global_fallbacks() ->
 
 def test_release_build_waits_for_native_gui_launcher_smoke() -> None:
     root = Path(__file__).resolve().parent.parent
-    workflow = yaml.safe_load((root / ".github/workflows/release.yml").read_text())
+    workflow = yaml.safe_load((root / ".github/workflows/release.yml").read_text(encoding="utf-8"))
     jobs = workflow["jobs"]
     assert jobs["build-windows"]["needs"] == "gui-launcher-smoke"
     smoke = jobs["gui-launcher-smoke"]

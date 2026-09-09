@@ -53,8 +53,13 @@ class Recorder {
 }
 '@ | Set-Content $source
     $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+    if (-not (Test-Path -LiteralPath $compiler -PathType Leaf)) {
+        throw "Command recorder C# compiler not found: $compiler"
+    }
     & $compiler /nologo /target:exe "/out:$bin\counter-risk.exe" $source
-    if ($LASTEXITCODE -ne 0) { throw 'Command recorder compilation failed' }
+    if ($LASTEXITCODE -ne 0) {
+        throw "Command recorder compilation failed with exit code $LASTEXITCODE ($compiler)"
+    }
     $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
     $env:COUNTER_RISK_NO_PAUSE = '1'
     Push-Location $working
