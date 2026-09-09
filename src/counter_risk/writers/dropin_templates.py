@@ -102,8 +102,11 @@ def _coerce_breakdown(breakdown: Mapping[str, Any]) -> dict[str, float]:
 
         try:
             value = float(raw_value)
-        except (TypeError, ValueError) as exc:
+        except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError(f"breakdown value for {key!r} must be numeric") from exc
+
+        if not math.isfinite(value):
+            raise ValueError(f"breakdown value for {key!r} must be finite")
 
         normalized[key] = value
 
