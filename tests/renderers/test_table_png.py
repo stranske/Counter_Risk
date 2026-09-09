@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from counter_risk.renderers import table_png
 from counter_risk.renderers.table_png import (
     _to_renderable_rows,
     cprs_ch_font_spec,
@@ -157,6 +158,47 @@ def test_to_renderable_rows_formats_accounting_profile_with_parentheses() -> Non
 
     assert rows[0]["Cash"] == "$125.00"
     assert rows[0]["Equity"] == "($15.00)"
+
+
+@pytest.mark.parametrize("character", ("$", "(", ")"))
+def test_currency_and_accounting_glyphs_have_explicit_bitmaps(character: str) -> None:
+    glyph = table_png._glyph_for(character)
+
+    assert isinstance(glyph, tuple)
+    assert glyph == table_png._GLYPHS[character]
+    assert glyph != table_png._GLYPHS["?"]
+    assert len(glyph) == 7
+    assert all(len(row) == 5 and set(row) <= {"0", "1"} for row in glyph)
+    assert any("1" in row for row in glyph)
+
+
+@pytest.mark.parametrize("renderer_name", ("render_cprs_ch_png", "render_cprs_fcm_png"))
+@pytest.mark.parametrize(
+    ("profile", "expected_symbols"), (("currency", {"$", "-"}), ("accounting", {"$", "(", ")"}))
+)
+def test_formatted_table_pngs_render_without_fallback_glyphs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    renderer_name: str,
+    profile: str,
+    expected_symbols: set[str],
+) -> None:
+    original_glyph_for = table_png._glyph_for
+    rendered_characters: set[str] = set()
+
+    def checked_glyph_for(character: str) -> tuple[str, ...]:
+        glyph = original_glyph_for(character)
+        assert glyph != table_png._GLYPHS["?"], f"Fallback glyph for {character!r}"
+        rendered_characters.add(character)
+        return glyph
+
+    monkeypatch.setattr(table_png, "_glyph_for", checked_glyph_for)
+    output = tmp_path / f"{renderer_name}-{profile}.png"
+    renderer = getattr(table_png, renderer_name)
+    renderer(_sample_frame(), output, formatting_profile=profile)
+
+    assert output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    assert expected_symbols <= rendered_characters
 
 
 def test_render_cprs_fcm_png_none_exposures_df_raises(tmp_path: Path) -> None:
