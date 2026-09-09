@@ -26,6 +26,8 @@ jobs:
   build-windows:
     name: Build Windows bundle
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout repository
@@ -80,10 +82,49 @@ jobs:
             echo "OK: $path"
           done
 
+      - name: Stage candidate bundle for isolated smoke
+        uses: actions/upload-artifact@v7
+        with:
+          name: counter-risk-windows-candidate
+          path: |
+            release/${{ steps.version.outputs.version }}/
+            scripts/windows/smoke_assembled_release.ps1
+          if-no-files-found: error
+          retention-days: 1
+
+  smoke-windows:
+    name: Smoke Windows bundle without checkout or Python setup
+    needs: build-windows
+    runs-on: windows-latest
+    steps:
+      - name: Download candidate bundle and smoke harness
+        uses: actions/download-artifact@v8
+        with:
+          name: counter-risk-windows-candidate
+          path: candidate
+
+      - name: Smoke assembled Windows executable
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ needs.build-windows.outputs.version }}
+        run: >
+          ./candidate/scripts/windows/smoke_assembled_release.ps1
+          -Bundle "candidate/release/$env:RELEASE_VERSION"
+          -EvidenceDirectory "release-smoke-evidence"
+
+      - name: Upload executable smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: counter-risk-windows-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: release-smoke-evidence/
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Upload bundle artifact
         uses: actions/upload-artifact@v7
         with:
-          name: counter-risk-${{ steps.version.outputs.version }}-windows
-          path: release/${{ steps.version.outputs.version }}/
+          name: counter-risk-${{ needs.build-windows.outputs.version }}-windows
+          path: candidate/release/${{ needs.build-windows.outputs.version }}/
           if-no-files-found: error
           retention-days: 30

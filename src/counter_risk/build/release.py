@@ -281,7 +281,9 @@ def _copy_bundled_executable(root: Path, bundle_dir: Path) -> Path:
     bundle_bin_dir = bundle_dir / "bin"
     bundle_bin_dir.mkdir(parents=True, exist_ok=True)
     destination = bundle_bin_dir / built_executable.name
-    shutil.copy2(built_executable, destination)
+    # release.spec uses COLLECT (one-directory mode): the bootloader needs
+    # its sibling libraries and data, including any nested runtime directory.
+    shutil.copytree(built_executable.parent, bundle_bin_dir, dirs_exist_ok=True)
     return destination
 
 
@@ -372,6 +374,11 @@ def assemble_release(version: str, output_dir: Path, *, force: bool = False) -> 
         suffixes={".yml", ".yaml", ".json"},
     )
     copied["executable"] = [_copy_bundled_executable(root, bundle_dir)]
+    copied["runtime"] = sorted(
+        path
+        for path in (bundle_dir / "bin").rglob("*")
+        if path.is_file() and path not in copied["executable"]
+    )
 
     version_file = bundle_dir / "VERSION"
     version_file.write_text(f"{version}\n", encoding="utf-8")

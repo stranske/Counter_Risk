@@ -12,6 +12,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
+import yaml
 
 from counter_risk.build import release
 from tests.utils.assertions import assert_numeric_outputs_close
@@ -130,6 +131,67 @@ def test_assemble_release_creates_versioned_bundle_with_executable(
     assert manifest["release_name"] == expected_version
     assert manifest["artifacts"]["executable"] == ["bin/counter-risk"]
     assert manifest["artifacts"]["gui_launcher"] == ["run_counter_risk_gui.cmd"]
+
+
+@pytest.mark.parametrize("runtime_directory", [".", "_internal"])
+def test_assemble_release_preserves_complete_collect_payload(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, runtime_directory: str
+) -> None:
+    repo_root = tmp_path / "repo"
+    _write_fake_repo(repo_root)
+    executable = _create_fake_built_executable(repo_root, release._executable_filename())
+    payload = executable.parent / runtime_directory
+    (payload / "config" / "nested").mkdir(parents=True)
+    (payload / "templates").mkdir()
+    companions = {
+        "python-runtime.dll": b"required runtime library",
+        "config/nested/settings.yaml": b"mode: packaged\n",
+        "templates/report.pptx": b"packaged template",
+    }
+    for relative, contents in companions.items():
+        (payload / relative).write_bytes(contents)
+    monkeypatch.setattr(release, "repository_root", lambda: repo_root)
+    monkeypatch.setattr(release, "_run_pyinstaller", lambda root, spec: None)
+
+    bundle = release.assemble_release("1.2.3", tmp_path / "release")
+
+    assert (bundle / "bin" / executable.name).read_bytes() == b"fake-binary"
+    expected_runtime = set()
+    for relative, contents in companions.items():
+        copied = bundle / "bin" / runtime_directory / relative
+        assert copied.read_bytes() == contents
+        expected_runtime.add(str(copied.relative_to(bundle)))
+    manifest = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
+    assert set(manifest["artifacts"]["runtime"]) == expected_runtime
+    assert manifest["artifacts"]["executable"] == [str(Path("bin") / executable.name)]
+
+
+def test_windows_release_smoke_gates_bundle_upload_and_retains_failure_evidence() -> None:
+    root = Path(__file__).resolve().parents[1]
+    workflow = yaml.safe_load((root / ".github/workflows/release.yml").read_text())
+    smoke_job = workflow["jobs"]["smoke-windows"]
+    assert smoke_job["needs"] == "build-windows"
+    steps = smoke_job["steps"]
+    assert not any(
+        step.get("uses", "").startswith(("actions/checkout@", "actions/setup-python@"))
+        for step in steps
+    )
+    smoke_index = next(
+        i for i, step in enumerate(steps) if "smoke_assembled_release.ps1" in step.get("run", "")
+    )
+    bundle_upload_index = next(
+        i for i, step in enumerate(steps) if step.get("name") == "Upload bundle artifact"
+    )
+    smoke = steps[smoke_index]
+    assert smoke["shell"] == "pwsh"
+    assert smoke_index < bundle_upload_index
+    assert not smoke.get("continue-on-error", False)
+    assert steps[bundle_upload_index].get("if", "success()") == "success()"
+    evidence = next(
+        step for step in steps if step.get("name") == "Upload executable smoke evidence"
+    )
+    assert evidence["if"] == "always()"
+    assert evidence["with"]["path"] == "release-smoke-evidence/"
 
 
 def test_create_runner_file_directly_invokes_packaged_executable_only(tmp_path: Path) -> None:
