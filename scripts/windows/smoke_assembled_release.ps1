@@ -80,6 +80,10 @@ try {
     }
     'PASS: isolated assembled executable; schema-valid manifest; seven exact fixture outputs' |
         Set-Content (Join-Path $EvidenceDirectory 'result.txt')
+} catch {
+    "FAIL: $($_.Exception.Message)" |
+        Set-Content (Join-Path $EvidenceDirectory 'result.txt')
+    throw
 } finally {
     Set-Location $savedLocation
     foreach ($key in $savedEnvironment.Keys) {
