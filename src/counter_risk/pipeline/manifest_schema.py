@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from typing import Any
 
@@ -486,7 +487,11 @@ def _matches_type(value: Any, type_name: str) -> bool:
         # JSON integers are not booleans, even though ``bool`` subclasses ``int``.
         return isinstance(value, int) and not isinstance(value, bool)
     if type_name == "number":
-        return isinstance(value, (int, float)) and not isinstance(value, bool)
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and (not isinstance(value, float) or math.isfinite(value))
+        )
     if type_name == "boolean":
         return isinstance(value, bool)
     if type_name == "null":
