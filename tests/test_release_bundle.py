@@ -169,9 +169,18 @@ def test_assemble_release_preserves_complete_collect_payload(
 def test_windows_release_smoke_gates_bundle_upload_and_retains_failure_evidence() -> None:
     root = Path(__file__).resolve().parents[1]
     workflow = yaml.safe_load((root / ".github/workflows/release.yml").read_text())
+    candidate = next(
+        step
+        for step in workflow["jobs"]["build-windows"]["steps"]
+        if step.get("name") == "Stage candidate bundle for isolated smoke"
+    )
+    assert candidate["with"]["overwrite"] is True
     smoke_job = workflow["jobs"]["smoke-windows"]
     assert smoke_job["needs"] == "build-windows"
     steps = smoke_job["steps"]
+    download = next(step for step in steps if "actions/download-artifact@" in step.get("uses", ""))
+    assert candidate["with"]["name"] == download["with"]["name"]
+    assert "run_attempt" not in download["with"]["name"]
     assert not any(
         step.get("uses", "").startswith(("actions/checkout@", "actions/setup-python@"))
         for step in steps
@@ -187,6 +196,7 @@ def test_windows_release_smoke_gates_bundle_upload_and_retains_failure_evidence(
     assert smoke_index < bundle_upload_index
     assert not smoke.get("continue-on-error", False)
     assert steps[bundle_upload_index].get("if", "success()") == "success()"
+    assert steps[bundle_upload_index]["with"]["overwrite"] is True
     evidence = next(
         step for step in steps if step.get("name") == "Upload executable smoke evidence"
     )
