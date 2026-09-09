@@ -2266,10 +2266,7 @@ def _build_concentration_exposure_rows(
             # Individual asset class segments
             for asset_class in _CONCENTRATION_ASSET_CLASSES:
                 if asset_class in record:
-                    try:
-                        notional = float(record[asset_class] or 0.0)
-                    except (TypeError, ValueError):
-                        notional = 0.0
+                    notional = _to_float(record[asset_class])
                     rows.append(
                         {
                             "variant": variant,
@@ -2279,10 +2276,7 @@ def _build_concentration_exposure_rows(
                         }
                     )
             # Overall total segment
-            try:
-                total_notional = float(record.get("Notional", 0.0) or 0.0)
-            except (TypeError, ValueError):
-                total_notional = 0.0
+            total_notional = _to_float(record.get("Notional"))
             rows.append(
                 {
                     "variant": variant,
@@ -2329,10 +2323,7 @@ def _build_limit_exposure_rows(
             counterparty = str(record.get("counterparty", "")).strip()
             if not counterparty:
                 continue
-            try:
-                notional = float(record.get("Notional", 0.0) or 0.0)
-            except (TypeError, ValueError):
-                notional = 0.0
+            notional = _to_float(record.get("Notional"))
             rows.append(
                 {
                     _LIMIT_GRANULARITY_KEY: _COUNTERPARTY_GRANULARITY,
@@ -2344,10 +2335,7 @@ def _build_limit_exposure_rows(
 
         futures_records = _records(parsed["futures"])
         for record in futures_records:
-            try:
-                notional = float(record.get("notional", 0.0) or 0.0)
-            except (TypeError, ValueError):
-                notional = 0.0
+            notional = _to_float(record.get("notional"))
 
             exposure_row: dict[str, Any] = {
                 _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
