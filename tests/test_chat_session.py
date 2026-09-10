@@ -105,6 +105,107 @@ def test_chat_session_returns_manifest_top_exposure(tmp_path: Path) -> None:
     assert len(session.history) == 2
 
 
+@pytest.mark.parametrize(
+    "value",
+    (
+        float("nan"),
+        float("inf"),
+        float("-inf"),
+        "nan",
+        "NaN",
+        "inf",
+        "infinity",
+        "-Infinity",
+        " +INF ",
+        "1e999",
+        10**400,
+        -(10**400),
+    ),
+)
+def test_parse_float_rejects_non_finite_values(value: object) -> None:
+    assert session_module._parse_float(value) is None
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    (
+        (0, 0.0),
+        (-12, -12.0),
+        (1.25, 1.25),
+        (" 1,234.50 ", 1234.5),
+        ("-2.5", -2.5),
+        ("1e3", 1000.0),
+        ("1e308", 1e308),
+        (True, None),
+        (False, None),
+        (None, None),
+        ("", None),
+        (" ", None),
+        ("invalid", None),
+        ([], None),
+    ),
+)
+def test_parse_float_preserves_finite_and_invalid_input_behavior(
+    value: object, expected: float | None
+) -> None:
+    assert session_module._parse_float(value) == expected
+
+
+@pytest.mark.parametrize("value", (float("nan"), float("inf"), "-Infinity"))
+def test_exposure_extraction_skips_non_finite_aliases(value: object) -> None:
+    assert session_module._extract_numeric_value({"notional": value, "exposure": 0}) == 0.0
+    assert session_module._extract_numeric_value({"notional": value, "custom": -5}) == -5.0
+    assert (
+        session_module._extract_numeric_value({"counterparty": "Invalid", "value": value}) is None
+    )
+
+
+@pytest.mark.parametrize("reverse_records", (False, True))
+def test_chat_session_exposure_ranking_ignores_non_finite_records(
+    tmp_path: Path, reverse_records: bool
+) -> None:
+    run_dir = _write_minimal_run(tmp_path)
+    manifest_path = run_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    records = [
+        {"counterparty": f"Invalid {index}", "notional": value}
+        for index, value in enumerate(
+            (float("nan"), float("inf"), float("-inf"), "nan", "infinity", "1e999")
+        )
+    ] + [
+        {"counterparty": "Lowest", "notional": 0},
+        {"counterparty": "Second", "notional": "20"},
+        {"counterparty": "First", "notional": 100.0},
+        {"counterparty": "Negative", "notional": -10},
+    ]
+    manifest["top_exposures"] = {"all_programs": records[::-1] if reverse_records else records}
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    context = load_run_context(run_dir)
+    rows = session_module._extract_top_exposure_rows(context.manifest)
+    ranked = session_module._sort_top_exposure_rows(rows)
+    assert [row["name"] for row in ranked] == ["First", "Second", "Lowest", "Negative"]
+    assert [row["value"] for row in ranked] == [100.0, 20.0, 0.0, -10.0]
+    top_rows = session_module._limit_top_exposure_rows(ranked, top_n=2)
+    assert [row["name"] for row in top_rows] == ["First", "Second"]
+
+    session = ChatSession(context=context, provider="local", model=_MODEL_KEY)
+    answer = session.ask("top exposures")
+    assert "Invalid" not in answer
+    assert "Negative" not in answer
+    assert "all_programs: First (100.00); all_programs: Second (20.00); " in answer
+    assert "all_programs: Lowest (0.00)" in answer
+
+
+def test_top_exposures_with_only_non_finite_values_are_empty() -> None:
+    assert (
+        session_module._format_top_exposures(
+            {"top_exposures": {"all_programs": [{"counterparty": "Invalid", "notional": "NaN"}]}}
+        )
+        == "No top exposures found in manifest."
+    )
+
+
 def test_chat_session_rejects_local_provider_when_offline_mode_is_disabled(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

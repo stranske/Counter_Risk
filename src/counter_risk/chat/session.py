@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import re
 from dataclasses import dataclass, field
@@ -700,17 +701,15 @@ def _extract_numeric_value(record: dict[object, object]) -> float | None:
 def _parse_float(value: object) -> float | None:
     if isinstance(value, bool):
         return None
-    if isinstance(value, int | float):
-        return float(value)
     if isinstance(value, str):
-        cleaned = value.strip().replace(",", "")
-        if not cleaned:
-            return None
-        try:
-            return float(cleaned)
-        except ValueError:
-            return None
-    return None
+        value = value.strip().replace(",", "")
+    elif not isinstance(value, int | float):
+        return None
+    try:
+        parsed = float(value)
+    except (ValueError, OverflowError):
+        return None
+    return parsed if math.isfinite(parsed) else None
 
 
 def _format_key_warnings(warnings: list[str]) -> str:
