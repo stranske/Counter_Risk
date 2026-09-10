@@ -74,10 +74,14 @@ operators having to inspect raw exposure tables. Suggested reading:
    a look at the per-counterparty rows in the totals output, because it
    indicates that more than half the variant's notional sits with five or
    fewer counterparties.
-3. An `hhi` above roughly `0.18` (DOJ 1,800) is the conventional
-   "concentrated market" threshold; above `0.25` (DOJ 2,500) is "highly
-   concentrated." These cutoffs are heuristics for orientation, not policy
-   limits.
+3. For market-concentration context, the
+   [DOJ HHI explainer](https://www.justice.gov/atr/herfindahl-hirschman-index)
+   (updated January 17, 2024) cites the **2023 Merger Guidelines**: markets
+   with HHI above 1,800 points (`hhi > 0.18` on this report's fractional
+   scale) are considered highly concentrated. This merger-market heuristic
+   is for orientation only; it does not set portfolio counterparty limits.
+   For configured exposure limits and breach handling, see
+   [Limit Monitoring](limit_monitoring.md) and `config/limits.yml`.
 4. Drill into individual asset-class segments (`TIPS`, `Treasury`, etc.) when
    the `total` view looks fine but a single asset class is dominated by one
    counterparty.
