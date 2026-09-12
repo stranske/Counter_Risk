@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import struct
+import zlib
 from pathlib import Path
 
 import pytest
@@ -77,6 +79,81 @@ def test_render_cprs_ch_png_writes_deterministic_bytes(tmp_path: Path) -> None:
     assert data_one.startswith(b"\x89PNG\r\n\x1a\n")
     assert len(data_one) > 500
     assert data_one == data_two
+
+
+@pytest.mark.parametrize("renderer_name", ("render_cprs_ch_png", "render_cprs_fcm_png"))
+@pytest.mark.parametrize("profile", ("plain", "currency", "accounting"))
+def test_numeric_cell_text_right_alignment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, renderer_name: str, profile: str
+) -> None:
+    calls: list[tuple[int, str]] = []
+    original_draw_text = table_png._draw_text
+
+    def record_text(
+        pixels: bytearray, width: int, x: int, y: int, text: str, color: table_png.RGB
+    ) -> None:
+        calls.append((x, text))
+        original_draw_text(pixels, width, x, y, text, color)
+
+    monkeypatch.setattr(table_png, "_draw_text", record_text)
+    getattr(table_png, renderer_name)(
+        _sample_frame(), tmp_path / "aligned.png", formatting_profile=profile
+    )
+
+    columns = cprs_ch_table_layout()
+    assert len(calls) == 3 * len(columns)  # Header and two rows of differing numeric widths.
+    cell_left = 12
+    for index, column in enumerate(columns):
+        cell_width = table_png._column_pixel_width(int(column["width_chars"]))
+        for row_index in range(3):
+            text_x, text = calls[row_index * len(columns) + index]
+            if index == 0:
+                assert text_x == cell_left + table_png._CELL_PADDING_X
+            else:
+                assert (
+                    text_x + table_png._text_pixel_width(text)
+                    == cell_left + cell_width - table_png._CELL_PADDING_X
+                )
+        cell_left += cell_width + 1
+
+
+@pytest.mark.parametrize("renderer_name", ("render_cprs_ch_png", "render_cprs_fcm_png"))
+def test_numeric_cell_png_right_alignment(tmp_path: Path, renderer_name: str) -> None:
+    output = tmp_path / "aligned.png"
+    getattr(table_png, renderer_name)(_sample_frame(), output)
+    png = output.read_bytes()
+    width, height = struct.unpack(">II", png[16:24])
+    compressed = bytearray()
+    offset = 8
+    while offset < len(png):
+        length = int.from_bytes(png[offset : offset + 4], "big")
+        if png[offset + 4 : offset + 8] == b"IDAT":
+            compressed.extend(png[offset + 8 : offset + 8 + length])
+        offset += length + 12
+    scanlines = zlib.decompress(compressed)
+    stride = width * 3 + 1
+    assert len(scanlines) == height * stride
+    assert all(scanlines[y * stride] == 0 for y in range(height))
+
+    row_height = table_png._CHAR_HEIGHT + 2 * table_png._CELL_PADDING_Y
+    cell_left = 12
+    for index, column in enumerate(cprs_ch_table_layout()):
+        cell_width = table_png._column_pixel_width(int(column["width_chars"]))
+        for row_index in range(3):
+            top = 12 + row_index * (row_height + 1) + table_png._CELL_PADDING_Y
+            color = bytes(cprs_ch_table_style()["header_text" if row_index == 0 else "text"])
+            ink_x = [
+                x
+                for y in range(top, top + table_png._CHAR_HEIGHT)
+                for x in range(cell_left, cell_left + cell_width)
+                if scanlines[y * stride + 1 + x * 3 : y * stride + 1 + x * 3 + 3] == color
+            ]
+            assert ink_x
+            if index == 0:
+                assert min(ink_x) == cell_left + table_png._CELL_PADDING_X
+            else:
+                assert max(ink_x) == cell_left + cell_width - table_png._CELL_PADDING_X - 1
+        cell_left += cell_width + 1
 
 
 def test_render_cprs_fcm_png_writes_deterministic_bytes(tmp_path: Path) -> None:

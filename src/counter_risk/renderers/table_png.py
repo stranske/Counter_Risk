@@ -291,10 +291,13 @@ def _render_cprs_table_png(
         x = origin_x
         for column_index, column in enumerate(layout.columns):
             text = row[column.key]
+            text_x = x + _CELL_PADDING_X
+            if column.header_align == "right":
+                text_x = x + col_widths[column_index] - _CELL_PADDING_X - _text_pixel_width(text)
             _draw_text(
                 pixels,
                 width,
-                x + _CELL_PADDING_X,
+                text_x,
                 y + _CELL_PADDING_Y,
                 text,
                 layout.style.text,
