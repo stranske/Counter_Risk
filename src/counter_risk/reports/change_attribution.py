@@ -82,11 +82,11 @@ def _first_string(record: Mapping[str, Any], candidates: tuple[str, ...]) -> str
 def _first_float(record: Mapping[str, Any], candidates: tuple[str, ...]) -> float:
     for key in candidates:
         value = record.get(key)
-        if value is None:
+        if value is None or isinstance(value, bool):
             continue
         try:
             parsed = float(value)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             continue
         if math.isfinite(parsed):
             return parsed
@@ -98,13 +98,14 @@ def _optional_float(record: Mapping[str, Any], candidates: tuple[str, ...]) -> f
         if key not in record:
             continue
         value = record.get(key)
-        if value is None:
-            return None
+        if value is None or isinstance(value, bool):
+            continue
         try:
             parsed = float(value)
-        except (TypeError, ValueError):
-            return None
-        return parsed if math.isfinite(parsed) else None
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if math.isfinite(parsed):
+            return parsed
     return None
 
 
