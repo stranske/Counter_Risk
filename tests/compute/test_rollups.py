@@ -49,6 +49,62 @@ def test_find_numeric_rejects_non_finite_default() -> None:
         _find_numeric({}, ("Notional",), field="Notional", default=float("nan"))
 
 
+@pytest.mark.parametrize("missing", [None, "", " \t\n"])
+@pytest.mark.parametrize("fallback", [100.0, 0.0, -12.5, "42.5"])
+def test_find_numeric_falls_through_empty_aliases(missing: Any, fallback: Any) -> None:
+    assert _find_numeric(
+        {"notional": missing, "exposure": fallback},
+        ("notional", "exposure"),
+        field="notional",
+        default=999.0,
+    ) == float(fallback)
+
+
+@pytest.mark.parametrize("value", [True, False])
+@pytest.mark.parametrize("default", [None, 0.0])
+def test_find_numeric_rejects_boolean_before_fallback(value: bool, default: Any) -> None:
+    with pytest.raises(ValueError, match="must be numeric"):
+        _find_numeric(
+            {"notional": value, "exposure": 100.0},
+            ("notional", "exposure"),
+            field="notional",
+            default=default,
+        )
+
+
+def test_find_numeric_preserves_alias_precedence_and_missing_behavior() -> None:
+    assert (
+        _find_numeric({"notional": 0, "exposure": 100}, ("notional", "exposure"), field="notional")
+        == 0.0
+    )
+    missing = {"notional": None, "exposure": " "}
+    assert _find_numeric(missing, ("notional", "exposure"), field="notional", default=0.0) == 0.0
+    with pytest.raises(ValueError, match="missing required numeric"):
+        _find_numeric(missing, ("notional", "exposure"), field="notional")
+
+
+def test_compute_totals_uses_current_and_prior_fallback_aliases() -> None:
+    records = _as_records(
+        compute_totals(
+            [
+                {
+                    "counterparty": "A",
+                    "asset_class": "Equity",
+                    "notional": None,
+                    "exposure": 100.0,
+                    "prior_notional": " ",
+                    "prior_month_notional": 80.0,
+                }
+            ]
+        )
+    )
+    assert len(records) == 2
+    for row in records:
+        assert row["notional"] == 100.0
+        assert row["prior_notional"] == 80.0
+        assert row["notional_change"] == 20.0
+
+
 def test_risk_ranking_is_order_independent() -> None:
     records = [
         {"counterparty": "ALPHA BANK", "risk_proxy": 10.0},
