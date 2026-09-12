@@ -102,7 +102,9 @@ def _find_notional(row: Mapping[str, Any]) -> float:
             continue
         raw_value = row.get(key)
         if raw_value is None or (isinstance(raw_value, str) and not raw_value.strip()):
-            raise ValueError("exposures_df contains blank notional values")
+            continue
+        if isinstance(raw_value, bool):
+            raise ValueError("exposures_df notional values must be numeric")
         try:
             return float(raw_value)
         except (TypeError, ValueError) as exc:

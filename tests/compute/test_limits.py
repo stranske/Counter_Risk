@@ -11,6 +11,7 @@ from counter_risk.compute.limits import (
     _COUNTERPARTY_GRANULARITY,
     _FUTURES_GRANULARITY,
     _LIMIT_GRANULARITY_KEY,
+    _find_notional,
     check_limits,
     find_missing_limit_entities,
     write_limit_breaches_csv,
@@ -22,6 +23,60 @@ def _as_records(table: Any) -> list[dict[str, Any]]:
     if hasattr(table, "to_dict"):
         return cast(list[dict[str, Any]], table.to_dict(orient="records"))
     return [dict(row) for row in table]
+
+
+@pytest.mark.parametrize("blank", [None, "", " \t "])
+@pytest.mark.parametrize("fallback", ["Notional", "exposure", "total", "amount"])
+def test_find_notional_skips_blank_aliases(blank: Any, fallback: str) -> None:
+    assert _find_notional({"notional": blank, fallback: 250000.0}) == 250000.0
+
+
+@pytest.mark.parametrize("value", [True, False])
+@pytest.mark.parametrize("key", ["notional", "Notional", "exposure", "total", "amount"])
+def test_find_notional_rejects_boolean_aliases(value: bool, key: str) -> None:
+    with pytest.raises(ValueError, match="notional values must be numeric"):
+        _find_notional({key: value})
+
+
+def test_find_notional_preserves_precedence_zero_and_invalid_value_rejection() -> None:
+    assert _find_notional({"notional": 0, "exposure": 250000.0}) == 0.0
+    assert _find_notional({"notional": "-125.5", "exposure": 250000.0}) == -125.5
+    assert _find_notional({"amount": "250000"}) == 250000.0
+    for invalid in (True, False, "oops", []):
+        with pytest.raises(ValueError, match="notional values must be numeric"):
+            _find_notional({"notional": invalid, "exposure": 250000.0})
+
+
+@pytest.mark.parametrize("row", [{}, {"notional": None, "exposure": "", "amount": " "}])
+def test_find_notional_rejects_rows_without_usable_aliases(row: dict[str, Any]) -> None:
+    with pytest.raises(ValueError, match="must include one of the notional columns"):
+        _find_notional(row)
+
+
+def test_check_limits_uses_fallback_notional_for_breaches_and_denominator() -> None:
+    exposures = [
+        {"counterparty": "Alpha", "notional": None, "Notional": "", "exposure": 250000.0},
+        {"counterparty": "Beta", "notional": " ", "exposure": None, "amount": 750000.0},
+    ]
+    config = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "counterparty",
+                "entity_name": "Alpha",
+                "limit_kind": kind,
+                "limit_value": limit,
+            }
+            for kind, limit in [("absolute_notional", 200000.0), ("percent_of_total", 0.2)]
+        ],
+    }
+    rows = _as_records(check_limits(exposures, config))
+    by_kind = {row["limit_kind"]: row for row in rows}
+    assert set(by_kind) == {"absolute_notional", "percent_of_total"}
+    assert by_kind["absolute_notional"]["actual_value"] == 250000.0
+    assert by_kind["absolute_notional"]["breach_amount"] == 50000.0
+    assert by_kind["percent_of_total"]["actual_value"] == pytest.approx(0.25)
+    assert by_kind["percent_of_total"]["breach_amount"] == pytest.approx(0.05)
 
 
 @pytest.mark.parametrize("enabled", [True, False])
