@@ -90,3 +90,28 @@ def test_cell_value_rejects_negative_shared_string_indexes() -> None:
         """)
 
     assert cell_value(cell, ["should-not-wrap"]) is None
+
+
+def test_coerce_accounting_float_rejects_booleans() -> None:
+    """``bool`` is a subclass of ``int``, so an unguarded isinstance check would
+    coerce an accidental boolean workbook cell into a 1.0/0.0 dollar amount."""
+    with pytest.raises(ValueError, match="Boolean value is not a valid accounting number"):
+        coerce_accounting_float(True)
+    with pytest.raises(ValueError, match="Boolean value is not a valid accounting number"):
+        coerce_accounting_float(False)
+
+
+def test_coerce_accounting_float_rejects_booleans_under_strip_percent_false() -> None:
+    """The boolean guard must not depend on the strip_percent branch."""
+    with pytest.raises(ValueError, match="Boolean value is not a valid accounting number"):
+        coerce_accounting_float(True, strip_percent=False)
+    with pytest.raises(ValueError, match="Boolean value is not a valid accounting number"):
+        coerce_accounting_float(False, strip_percent=False)
+
+
+def test_coerce_accounting_float_still_accepts_numeric_zero_and_one() -> None:
+    """The boolean rejection must not regress the int/float path it guards."""
+    assert coerce_accounting_float(0) == 0.0
+    assert coerce_accounting_float(1) == 1.0
+    assert coerce_accounting_float(0.0) == 0.0
+    assert coerce_accounting_float(1.0) == 1.0

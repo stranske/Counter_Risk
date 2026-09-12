@@ -164,7 +164,15 @@ def coerce_accounting_float(value: Any, *, strip_percent: bool = True) -> float:
     is NOT rescaled by dividing by 100 (e.g., "5%" becomes 5.0, not 0.05).
 
     Non-finite floats (NaN, Inf, -Inf) are rejected by raising a ValueError.
+
+    Booleans are rejected by raising a ValueError. ``bool`` is a subclass of
+    ``int``, so without an explicit guard ``True``/``False`` would silently
+    coerce to ``1.0``/``0.0`` and an accidental boolean flag in a workbook cell
+    would be read as a dollar/notional amount.
     """
+    if isinstance(value, bool):
+        raise ValueError(f"Boolean value is not a valid accounting number: {value!r}")
+
     if value is None:
         return 0.0
 
