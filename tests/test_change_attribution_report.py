@@ -21,13 +21,13 @@ def test_float_parsers_reject_non_finite_values(value: str | float) -> None:
     assert _first_float({"Notional": value}, ("Notional", "notional")) == 0.0
     assert _first_float({"Notional": value, "notional": 12.5}, ("Notional", "notional")) == 12.5
     assert _optional_float({"NotionalChange": value}, ("NotionalChange",)) is None
-    # An invalid supplied delta is absent; a later alias must not replace it.
+    # Invalid candidates are absent; a valid later alias still supplies the delta.
     assert (
         _optional_float(
             {"NotionalChange": value, "notional_change": 25.0},
             ("NotionalChange", "notional_change"),
         )
-        is None
+        == 25.0
     )
 
 
@@ -64,6 +64,57 @@ def test_attribute_changes_non_finite_inputs_produce_finite_report(
 def test_float_parsers_preserve_finite_values(value: str | float) -> None:
     assert _first_float({"notional": value}, ("notional",)) == float(value)
     assert _optional_float({"notional_change": value}, ("notional_change",)) == float(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [None, "", "  ", "invalid", True, False, 10**1000],
+    ids=["none", "empty", "whitespace", "text", "true", "false", "overflow"],
+)
+def test_float_parsers_skip_invalid_candidates(value: object) -> None:
+    record = {"primary": value, "secondary": 42.5}
+    candidates = ("missing", "primary", "secondary")
+    assert _first_float(record, candidates) == 42.5
+    assert _optional_float(record, candidates) == 42.5
+    assert _first_float({"primary": value}, candidates) == 0.0
+    assert _optional_float({"primary": value}, candidates) is None
+
+
+def test_optional_float_falls_through_none_delta_alias() -> None:
+    assert _optional_float({"delta": None, "daily_change": 42.5}, ("delta", "daily_change")) == 42.5
+
+
+@pytest.mark.parametrize("value", [0.0, -12.5, "25"])
+def test_float_parsers_keep_first_valid_candidate(value: str | float) -> None:
+    record = {"primary": value, "secondary": 42.5}
+    assert _first_float(record, ("primary", "secondary")) == float(value)
+    assert _optional_float(record, ("primary", "secondary")) == float(value)
+
+
+@pytest.mark.parametrize("value", [None, "", "invalid", True, False, float("nan"), float("inf")])
+def test_attribute_changes_uses_valid_numeric_aliases(value: object) -> None:
+    report = attribute_changes(
+        [
+            {
+                "counterparty": "Desk A",
+                "Notional": value,
+                "notional": 125.0,
+                "NotionalChange": value,
+                "NotionalChangeFromPriorMonth": None,
+                "notional_change": 24.0,
+            }
+        ],
+        [{"counterparty": "Desk A", "Notional": value, "notional": 100.0}],
+    )
+
+    row = report["rows"][0]
+    assert row["current_notional"] == 125.0
+    assert row["prior_notional"] == 100.0
+    assert row["notional_change"] == 25.0
+    # The supplied fallback delta differs from the calculated change, so it must
+    # downgrade confidence instead of being silently treated as absent.
+    assert row["confidence"] == "Medium"
+    assert report["summary"]["unattributed_remainder"] == 0.0
 
 
 def test_attribute_changes_labels_unmatched_current_rows() -> None:
