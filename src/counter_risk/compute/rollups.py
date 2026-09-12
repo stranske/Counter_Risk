@@ -116,7 +116,9 @@ def _find_numeric(
 
         raw_value = row.get(key)
         if raw_value is None or (isinstance(raw_value, str) and not raw_value.strip()):
-            break
+            continue
+        if isinstance(raw_value, bool):
+            raise ValueError(f"Row value for {field!r} must be numeric")
 
         try:
             value = float(raw_value)
