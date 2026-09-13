@@ -248,6 +248,7 @@ _BAD_SHARES: list[Any] = [
     float("-inf"),
     None,
     "not-a-number",
+    pytest.param(10**400, id="overflow"),
 ]
 
 
@@ -334,13 +335,14 @@ def test_missing_metric_keys_render_placeholders(tmp_path: Path) -> None:
     assert row[4] == MISSING_VALUE_PLACEHOLDER
 
 
-def test_none_label_renders_placeholder(tmp_path: Path) -> None:
-    """A None variant/segment renders the placeholder, not the string 'None'."""
+@pytest.mark.parametrize("label", [None, "", "   "])
+def test_none_label_renders_placeholder(tmp_path: Path, label: str | None) -> None:
+    """Missing or blank variant/segment labels render the placeholder."""
     pptx = tmp_path / "deck.pptx"
     _make_minimal_pptx(pptx)
     append_concentration_table_slide(
         pptx,
-        [{"variant": None, "segment": None, "top5_share": 0.65, "top10_share": 0.9, "hhi": 0.12}],
+        [{"variant": label, "segment": label, "top5_share": 0.65, "top10_share": 0.9, "hhi": 0.12}],
     )
     row = _last_slide_table_cell_texts(pptx)[1]
     assert row[0] == MISSING_VALUE_PLACEHOLDER
