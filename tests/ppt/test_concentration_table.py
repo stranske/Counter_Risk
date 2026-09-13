@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
-from counter_risk.ppt.concentration_table import append_concentration_table_slide
+import pytest
+
+from counter_risk.ppt.concentration_table import (
+    MISSING_VALUE_PLACEHOLDER,
+    append_concentration_table_slide,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -230,3 +236,170 @@ def test_append_concentration_table_slide_accepts_path_str(tmp_path: Path) -> No
     before = _slide_count(pptx)
     append_concentration_table_slide(str(pptx), _SAMPLE_METRICS)
     assert _slide_count(pptx) == before + 1
+
+
+# ---------------------------------------------------------------------------
+# Tests: non-finite and missing values render placeholders (issue #1049)
+# ---------------------------------------------------------------------------
+
+_BAD_SHARES: list[Any] = [
+    float("nan"),
+    float("inf"),
+    float("-inf"),
+    None,
+    "not-a-number",
+    pytest.param(10**400, id="overflow"),
+]
+
+
+@pytest.mark.parametrize("bad", _BAD_SHARES)
+def test_non_finite_share_renders_placeholder_not_raw_float(tmp_path: Path, bad: Any) -> None:
+    """A nan/inf/None/garbage share never reaches the slide as a raw string."""
+    pptx = tmp_path / "deck.pptx"
+    _make_minimal_pptx(pptx)
+    append_concentration_table_slide(
+        pptx,
+        [
+            {
+                "variant": "all_programs",
+                "segment": "total",
+                "top5_share": bad,
+                "top10_share": bad,
+                "hhi": 0.12,
+            }
+        ],
+    )
+    rows = _last_slide_table_cell_texts(pptx)
+    top5_text, top10_text = rows[1][2], rows[1][3]
+    assert top5_text == MISSING_VALUE_PLACEHOLDER, f"top5 cell was {top5_text!r}"
+    assert top10_text == MISSING_VALUE_PLACEHOLDER, f"top10 cell was {top10_text!r}"
+    for text in (top5_text, top10_text):
+        assert "nan" not in text.lower()
+        assert "inf" not in text.lower()
+        assert text != "None"
+
+
+@pytest.mark.parametrize("bad", _BAD_SHARES)
+def test_non_finite_hhi_renders_placeholder_not_raw_float(tmp_path: Path, bad: Any) -> None:
+    """A nan/inf/None/garbage HHI never reaches the slide as a raw string."""
+    pptx = tmp_path / "deck.pptx"
+    _make_minimal_pptx(pptx)
+    append_concentration_table_slide(
+        pptx,
+        [
+            {
+                "variant": "all_programs",
+                "segment": "total",
+                "top5_share": 0.65,
+                "top10_share": 0.90,
+                "hhi": bad,
+            }
+        ],
+    )
+    hhi_text = _last_slide_table_cell_texts(pptx)[1][4]
+    assert hhi_text == MISSING_VALUE_PLACEHOLDER, f"hhi cell was {hhi_text!r}"
+    assert "nan" not in hhi_text.lower()
+    assert "inf" not in hhi_text.lower()
+    assert hhi_text != "None"
+
+
+def test_nan_share_cell_contains_placeholder_by_direct_inspection(tmp_path: Path) -> None:
+    """Direct cell inspection for float('nan'): the cell reads '-' or 'N/A'."""
+    pptx = tmp_path / "deck.pptx"
+    _make_minimal_pptx(pptx)
+    append_concentration_table_slide(
+        pptx,
+        [
+            {
+                "variant": "all_programs",
+                "segment": "total",
+                "top5_share": math.nan,
+                "top10_share": math.nan,
+                "hhi": math.nan,
+            }
+        ],
+    )
+    row = _last_slide_table_cell_texts(pptx)[1]
+    for cell_text in row[2:5]:
+        assert cell_text in ("-", "N/A"), f"expected '-' or 'N/A', got {cell_text!r}"
+
+
+def test_missing_metric_keys_render_placeholders(tmp_path: Path) -> None:
+    """Records missing metric keys entirely render placeholders, not blanks."""
+    pptx = tmp_path / "deck.pptx"
+    _make_minimal_pptx(pptx)
+    append_concentration_table_slide(pptx, [{"variant": "all_programs", "segment": "total"}])
+    row = _last_slide_table_cell_texts(pptx)[1]
+    assert row[2] == MISSING_VALUE_PLACEHOLDER
+    assert row[3] == MISSING_VALUE_PLACEHOLDER
+    assert row[4] == MISSING_VALUE_PLACEHOLDER
+
+
+@pytest.mark.parametrize("label", [None, "", "   "])
+def test_none_label_renders_placeholder(tmp_path: Path, label: str | None) -> None:
+    """Missing or blank variant/segment labels render the placeholder."""
+    pptx = tmp_path / "deck.pptx"
+    _make_minimal_pptx(pptx)
+    append_concentration_table_slide(
+        pptx,
+        [{"variant": label, "segment": label, "top5_share": 0.65, "top10_share": 0.9, "hhi": 0.12}],
+    )
+    row = _last_slide_table_cell_texts(pptx)[1]
+    assert row[0] == MISSING_VALUE_PLACEHOLDER
+    assert row[1] == MISSING_VALUE_PLACEHOLDER
+    assert "None" not in row[0]
+
+
+def test_boolean_share_is_not_rendered_as_a_percentage(tmp_path: Path) -> None:
+    """bool is not a metric: True must not silently render as '100.00%'."""
+    pptx = tmp_path / "deck.pptx"
+    _make_minimal_pptx(pptx)
+    append_concentration_table_slide(
+        pptx,
+        [
+            {
+                "variant": "all_programs",
+                "segment": "total",
+                "top5_share": True,
+                "top10_share": False,
+                "hhi": True,
+            }
+        ],
+    )
+    row = _last_slide_table_cell_texts(pptx)[1]
+    assert row[2] == MISSING_VALUE_PLACEHOLDER
+    assert row[3] == MISSING_VALUE_PLACEHOLDER
+    assert row[4] == MISSING_VALUE_PLACEHOLDER
+
+
+def test_finite_values_still_format_normally(tmp_path: Path) -> None:
+    """The defensive path does not change formatting of ordinary finite values."""
+    pptx = tmp_path / "deck.pptx"
+    _make_minimal_pptx(pptx)
+    append_concentration_table_slide(pptx, _SAMPLE_METRICS)
+    row = _last_slide_table_cell_texts(pptx)[1]
+    assert row[2] == "65.00%"
+    assert row[3] == "90.00%"
+    assert row[4] == "0.1200"
+
+
+def test_mixed_record_keeps_good_values_and_masks_bad_ones(tmp_path: Path) -> None:
+    """One bad metric in a record does not blank out its healthy siblings."""
+    pptx = tmp_path / "deck.pptx"
+    _make_minimal_pptx(pptx)
+    append_concentration_table_slide(
+        pptx,
+        [
+            {
+                "variant": "all_programs",
+                "segment": "total",
+                "top5_share": 0.65,
+                "top10_share": float("nan"),
+                "hhi": 0.12,
+            }
+        ],
+    )
+    row = _last_slide_table_cell_texts(pptx)[1]
+    assert row[2] == "65.00%"
+    assert row[3] == MISSING_VALUE_PLACEHOLDER
+    assert row[4] == "0.1200"
