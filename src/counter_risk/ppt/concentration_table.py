@@ -2,8 +2,55 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
+
+#: Rendered in place of a metric that is missing, non-numeric, or non-finite.
+#: Executive decks must never surface raw floating-point artifacts such as
+#: ``"nan%"``, ``"inf%"``, or ``"None"``.
+MISSING_VALUE_PLACEHOLDER = "N/A"
+
+
+def _finite_float(value: Any) -> float | None:
+    """Return *value* as a finite float, or ``None`` when it cannot be one.
+
+    ``bool`` is rejected explicitly: ``float(True)`` is ``1.0``, which would
+    silently render ``True`` as ``100.00%``.
+    """
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(number):
+        return None
+    return number
+
+
+def _format_share(value: Any) -> str:
+    """Format a share metric as a percentage, or the placeholder."""
+    number = _finite_float(value)
+    if number is None:
+        return MISSING_VALUE_PLACEHOLDER
+    return f"{number:.2%}"
+
+
+def _format_hhi(value: Any) -> str:
+    """Format an HHI metric to four decimal places, or the placeholder."""
+    number = _finite_float(value)
+    if number is None:
+        return MISSING_VALUE_PLACEHOLDER
+    return f"{number:.4f}"
+
+
+def _format_label(value: Any) -> str:
+    """Format a non-numeric label cell, or the placeholder when absent."""
+    if value is None:
+        return MISSING_VALUE_PLACEHOLDER
+    text = str(value)
+    return text if text.strip() else MISSING_VALUE_PLACEHOLDER
 
 
 def append_concentration_table_slide(
@@ -18,6 +65,10 @@ def append_concentration_table_slide(
     python-pptx table with one row per ``(variant, segment)`` group and columns
     for Top 5 share, Top 10 share, and HHI.  Share values are formatted as
     percentages; HHI is formatted to four decimal places.
+
+    Metric values that are missing, ``None``, non-numeric, or non-finite
+    (``nan``, ``inf``, ``-inf``) render as :data:`MISSING_VALUE_PLACEHOLDER`
+    rather than leaking ``"nan%"``, ``"inf%"``, or ``"None"`` into a slide.
 
     Parameters
     ----------
@@ -83,19 +134,13 @@ def append_concentration_table_slide(
     for row_idx, record in enumerate(metrics_records):
         for col_idx, key in enumerate(_keys):
             cell = tbl.cell(row_idx + 1, col_idx)
-            value = record.get(key, "")
+            value = record.get(key)
             if key in ("top5_share", "top10_share"):
-                try:
-                    cell.text = f"{float(value):.2%}"
-                except (TypeError, ValueError):
-                    cell.text = str(value)
+                cell.text = _format_share(value)
             elif key == "hhi":
-                try:
-                    cell.text = f"{float(value):.4f}"
-                except (TypeError, ValueError):
-                    cell.text = str(value)
+                cell.text = _format_hhi(value)
             else:
-                cell.text = str(value)
+                cell.text = _format_label(value)
             para = cell.text_frame.paragraphs[0]
             if para.runs:
                 para.runs[0].font.size = Pt(9)
