@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.run import _date_resolution_fallback_warning
@@ -20,6 +22,49 @@ def _make_config(tmp_path: Path) -> WorkflowConfig:
         monthly_pptx=tmp_path / "monthly.pptx",
         output_root=tmp_path / "output-root",
     )
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "NO_PRIOR_MATCH",
+        "NO_PRIOR_MONTH_MATCH",
+        "WRITEBACK_MISSING_DESCRIPTION",
+        "WRITEBACK_NO_WORKBOOK_MATCH",
+    ],
+)
+def test_manifest_groups_futures_and_writeback_warnings_as_data_validation(
+    tmp_path: Path, code: str
+) -> None:
+    builder = ManifestBuilder(
+        config=_make_config(tmp_path),
+        as_of_date=date(2026, 2, 13),
+        run_date=date(2026, 2, 14),
+    )
+    manifest = builder.build(
+        run_dir=tmp_path,
+        input_hashes={},
+        output_paths=[],
+        top_exposures={},
+        top_changes_per_variant={},
+        # Neutral wording ensures the code, not a message heuristic, selects the category.
+        warnings=[{"code": code, "message": "Source row needs attention", "row_idx": 3}],
+    )
+
+    quality = manifest["data_quality"]
+    assert quality["findings"] == [
+        {
+            "code": code,
+            "category": "data_validation",
+            "severity": "warn",
+            "message": "Source row needs attention",
+        }
+    ]
+    assert quality["overall_status"] == "warn"
+    assert quality["counts"]["by_category"] == {
+        "data_validation": {"info": 0, "warn": 1, "fail": 0, "total": 1}
+    }
+    assert quality["recommended_actions"][0]["category"] == "data_validation"
 
 
 def test_manifest_build_populates_data_quality_from_warnings(tmp_path: Path) -> None:
