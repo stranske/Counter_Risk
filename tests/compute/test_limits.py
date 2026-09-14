@@ -17,6 +17,7 @@ from counter_risk.compute.limits import (
     write_limit_breaches_csv,
 )
 from counter_risk.limits_config import LimitsConfig
+from counter_risk.pipeline.run import _build_limit_exposure_rows
 
 
 def _as_records(table: Any) -> list[dict[str, Any]]:
@@ -486,16 +487,16 @@ def test_check_limits_skips_disabled_limits_for_breaches_and_missing_entities() 
 
 
 def _counterparty_limit_exposure_rows(counterparty: str, notional: float) -> list[dict[str, Any]]:
-    """Mirror pipeline ``_build_limit_exposure_rows`` counterparty-total shape."""
+    """Exercise the production reshaper with parsed counterparty totals."""
 
-    return [
+    return _build_limit_exposure_rows(
         {
-            _LIMIT_GRANULARITY_KEY: _COUNTERPARTY_GRANULARITY,
-            "variant": "all_programs",
-            "counterparty": counterparty,
-            "notional": notional,
+            "all_programs": {
+                "totals": [{"counterparty": counterparty, "Notional": notional}],
+                "futures": [],
+            }
         }
-    ]
+    )
 
 
 def test_registered_alias_triggers_canonical_limit() -> None:
