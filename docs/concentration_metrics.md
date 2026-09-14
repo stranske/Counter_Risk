@@ -29,6 +29,11 @@ used, and how operators should interpret the values.
 | `top10_share` | float in `[0.0, 1.0]` | Same as `top5_share` but for the ten largest counterparties. Equals `top5_share` when the group has five or fewer counterparties. |
 | `hhi` | float in `[0.0, 1.0]` | Herfindahl-Hirschman Index — see scaling note below. |
 
+Repeated counterparty rows are consolidated within each group before ranking.
+Each counterparty contributes the sum of its row notional magnitudes (gross
+exposure), so opposite signs do not net and splitting a position across rows
+does not change concentration.
+
 Row ordering is deterministic: groups appear in the order their
 `(variant, segment)` keys are first encountered while iterating the parsed
 exposure rows, which itself is deterministic for a given input set.
