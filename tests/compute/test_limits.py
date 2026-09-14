@@ -483,3 +483,49 @@ def test_check_limits_skips_disabled_limits_for_breaches_and_missing_entities() 
 
     assert _as_records(check_limits(exposures, limits_cfg)) == []
     assert find_missing_limit_entities(exposures, limits_cfg) == []
+
+
+def _counterparty_limit_exposure_rows(counterparty: str, notional: float) -> list[dict[str, Any]]:
+    """Mirror pipeline ``_build_limit_exposure_rows`` counterparty-total shape."""
+
+    return [
+        {
+            _LIMIT_GRANULARITY_KEY: _COUNTERPARTY_GRANULARITY,
+            "variant": "all_programs",
+            "counterparty": counterparty,
+            "notional": notional,
+        }
+    ]
+
+
+def test_registered_alias_triggers_canonical_limit() -> None:
+    limits_cfg = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "counterparty",
+                "entity_name": "bank_of_america",
+                "limit_value": 100.0,
+                "limit_kind": "absolute_notional",
+                "severity": "fail",
+            }
+        ],
+    }
+
+    alias_exposures = _counterparty_limit_exposure_rows("Bank of America, NA", 200.0)
+    alias_breaches = _as_records(check_limits(alias_exposures, limits_cfg))
+    assert len(alias_breaches) == 1
+    assert alias_breaches[0]["actual_value"] == 200.0
+    assert alias_breaches[0]["breach_amount"] == 100.0
+    assert alias_breaches[0]["severity"] == "fail"
+    assert find_missing_limit_entities(alias_exposures, limits_cfg) == []
+
+    canonical_exposures = _counterparty_limit_exposure_rows("Bank of America", 200.0)
+    canonical_breaches = _as_records(check_limits(canonical_exposures, limits_cfg))
+    assert canonical_breaches == alias_breaches
+
+    unknown_exposures = _counterparty_limit_exposure_rows("Totally Unknown Counterparty", 200.0)
+    assert _as_records(check_limits(unknown_exposures, limits_cfg)) == []
+    assert find_missing_limit_entities(unknown_exposures, limits_cfg) == [
+        {"entity_type": "counterparty", "entity_name": "bank_of_america"}
+    ]

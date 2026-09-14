@@ -11,6 +11,7 @@ from typing import Any, cast
 from pydantic import ValidationError
 
 from counter_risk.limits_config import LimitEntry, LimitsConfig
+from counter_risk.normalize import resolve_counterparty
 
 _NOTIONAL_KEYS = ("notional", "Notional", "exposure", "total", "amount")
 _LIMIT_GRANULARITY_KEY = "_limit_granularity"
@@ -87,6 +88,14 @@ def _records_from_table(table: Any, *, arg_name: str) -> list[dict[str, Any]]:
 
 def _normalize_entity_key(value: object) -> str:
     return "_".join(str(value).strip().split()).casefold()
+
+
+def _canonical_entity_key(entity_type: str, entity_name: str) -> str:
+    if entity_type == "counterparty":
+        resolution = resolve_counterparty(entity_name)
+        if resolution.canonical_key is not None:
+            return _normalize_entity_key(resolution.canonical_key)
+    return _normalize_entity_key(entity_name)
 
 
 def _exposure_magnitude(notional: float) -> float:
@@ -206,7 +215,9 @@ def find_missing_limit_entities(exposures_df: Any, limits_cfg: Any) -> list[dict
             entity_name = _find_entity_name(row, aliases)
             if entity_name is None:
                 continue
-            entity_values_by_type[entity_type].add(_normalize_entity_key(entity_name))
+            entity_values_by_type[entity_type].add(
+                _canonical_entity_key(entity_type, entity_name)
+            )
 
     missing: list[dict[str, str]] = []
     for limit in limits.limits:
@@ -260,7 +271,7 @@ def check_limits(exposures_df: Any, limits_cfg: Any) -> Any:
             entity_name = _find_entity_name(row, aliases)
             if entity_name is None:
                 continue
-            if _normalize_entity_key(entity_name) != limit.entity_name:
+            if _canonical_entity_key(limit.entity_type, entity_name) != limit.entity_name:
                 continue
             found_match = True
             matched_abs_notional += _exposure_magnitude(_find_notional(row))
