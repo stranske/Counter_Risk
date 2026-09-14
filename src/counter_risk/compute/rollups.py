@@ -523,6 +523,11 @@ def compute_concentration_metrics(
       fractions for every entity in the group.  Ranges from 1/N (perfectly
       dispersed) to 1.0 (fully concentrated in one entity).
 
+    Repeated counterparties are consolidated within each group by summing
+    row magnitudes (gross exposure, without netting opposite signs). Identity
+    uses the standard counterparty aliases; rows without an identity remain
+    independent entities for compatibility with identity-free inputs.
+
     When the total notional magnitude for a group is near zero all three
     metrics are returned as ``0.0``.
 
@@ -568,21 +573,31 @@ def compute_concentration_metrics(
                 f"{', '.join(repr(c) for c in missing)}"
             )
 
-    groups: dict[tuple[str, ...], list[float]] = defaultdict(list)
+    groups: dict[tuple[str, ...], dict[str | int, float]] = defaultdict(lambda: defaultdict(float))
     group_key_order: list[tuple[str, ...]] = []
     seen_keys: set[tuple[str, ...]] = set()
 
-    for row in rows:
+    for row_index, row in enumerate(rows):
         key = tuple(str(row.get(col, "")).strip() for col in group_by)
         notional = _find_numeric(row, _NOTIONAL_KEYS, field="notional")
         if key not in seen_keys:
             group_key_order.append(key)
             seen_keys.add(key)
-        groups[key].append(notional)
+        counterparty = next(
+            (
+                value.strip()
+                for alias in _COUNTERPARTY_KEYS
+                if isinstance(value := row.get(alias), str) and value.strip()
+            ),
+            None,
+        )
+        # Keep anonymous rows independent for callers without identity columns.
+        entity = counterparty if counterparty is not None else row_index
+        groups[key][entity] += _exposure_magnitude(notional)
 
     records: list[dict[str, Any]] = []
     for key in group_key_order:
-        notionals = sorted((_exposure_magnitude(value) for value in groups[key]), reverse=True)
+        notionals = sorted(groups[key].values(), reverse=True)
         total = sum(notionals)
 
         if total <= _NEAR_ZERO_EXPOSURE_TOTAL:

@@ -12,6 +12,7 @@ from counter_risk.compute.rollups import (
     compute_concentration_metrics,
     write_concentration_metrics_csv,
 )
+from counter_risk.pipeline.run import _build_concentration_exposure_rows
 
 _TOL = 1e-9
 
@@ -479,3 +480,89 @@ def test_write_concentration_metrics_csv_multi_group(tmp_path: Path) -> None:
     assert len(rows) == 2
     keys = {(r["variant"], r["segment"]) for r in rows}
     assert keys == {("v1", "s1"), ("v1", "s2")}
+
+
+@pytest.mark.parametrize(
+    ("alpha_parts", "peer_notional"),
+    [
+        pytest.param((60.0, 60.0), 10.0, id="split-positive"),
+        pytest.param((60.0, -60.0), 10.0, id="split-mixed-sign"),
+        pytest.param((0.0, 0.0), 10.0, id="zero-counterparty"),
+        pytest.param((0.0, 0.0), 0.0, id="zero-total"),
+        pytest.param((1e-15, -1e-15), 0.0, id="near-zero-total"),
+    ],
+)
+def test_split_counterparty_preserves_concentration(
+    alpha_parts: tuple[float, float], peer_notional: float
+) -> None:
+    """The production reshaper must not make concentration depend on row splitting."""
+    peers = [
+        {"counterparty": f"Peer{i}", "Notional": peer_notional, "Equity": peer_notional}
+        for i in range(10)
+    ]
+    valid_control = [
+        {"counterparty": f"Peer{i}", "Notional": 10.0, "Equity": 10.0} for i in range(10)
+    ]
+    split = [
+        {"counterparty": "Alpha", "Notional": value, "Equity": value} for value in alpha_parts
+    ] + peers
+    gross_alpha = sum(abs(value) for value in alpha_parts)
+    consolidated = [
+        {"counterparty": "Alpha", "Notional": gross_alpha, "Equity": gross_alpha}
+    ] + peers
+
+    def metrics(totals: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        exposures = _build_concentration_exposure_rows(
+            {"all_programs": {"totals": totals}, "control": {"totals": valid_control}}
+        )
+        # Both asset-class and total rows must traverse the production reshaper.
+        assert len(exposures) == 2 * (len(totals) + len(valid_control))
+        return _as_records(compute_concentration_metrics(exposures))
+
+    actual = metrics(split)
+    expected = metrics(consolidated)
+    assert len(actual) == len(expected) == 4
+    assert {(row["variant"], row["segment"]) for row in actual} == {
+        (variant, segment)
+        for variant in ("all_programs", "control")
+        for segment in ("Equity", "total")
+    }
+    for row, control in zip(actual, expected, strict=True):
+        assert (row["variant"], row["segment"]) == (control["variant"], control["segment"])
+        for metric in ("top5_share", "top10_share", "hhi"):
+            assert row[metric] == pytest.approx(control[metric], abs=_TOL)
+        if row["variant"] == "all_programs" and peer_notional == 0.0:
+            for metric in ("top5_share", "top10_share", "hhi"):
+                assert row[metric] == 0.0
+        elif row["variant"] == "all_programs" and gross_alpha:
+            assert row["top5_share"] == pytest.approx(0.7272727272727273, abs=_TOL)
+            assert row["top10_share"] == pytest.approx(0.9545454545454546, abs=_TOL)
+            assert row["hhi"] == pytest.approx(0.3181818181818182, abs=_TOL)
+        else:
+            assert row["top5_share"] == pytest.approx(0.5, abs=_TOL)
+            assert row["top10_share"] == pytest.approx(1.0, abs=_TOL)
+            assert row["hhi"] == pytest.approx(0.1, abs=_TOL)
+
+
+def test_repeated_counterparty_with_custom_grouping() -> None:
+    data = [
+        {"region": "east", "counterparty": "A", "notional": 30.0},
+        {"region": "east", "counterparty_name": " A ", "notional": -30.0},
+        {"region": "east", "name": "B", "notional": 40.0},
+        {"region": "west", "counterparty": "A", "notional": 10.0},
+    ]
+    rows = _as_records(compute_concentration_metrics(data, group_by=["region"]))
+    assert [row["region"] for row in rows] == ["east", "west"]
+    assert rows[0]["hhi"] == pytest.approx(0.6**2 + 0.4**2, abs=_TOL)
+    assert rows[1]["hhi"] == pytest.approx(1.0, abs=_TOL)
+    combined = _as_records(compute_concentration_metrics(data, group_by=[]))
+    assert combined[0]["hhi"] == pytest.approx((70 / 110) ** 2 + (40 / 110) ** 2, abs=_TOL)
+
+
+def test_anonymous_exposure_rows_remain_independent() -> None:
+    data = [
+        {"variant": "v", "segment": "s", "notional": 60.0},
+        {"variant": "v", "segment": "s", "notional": 40.0},
+    ]
+    rows = _as_records(compute_concentration_metrics(data))
+    assert rows[0]["hhi"] == pytest.approx(0.6**2 + 0.4**2, abs=_TOL)
