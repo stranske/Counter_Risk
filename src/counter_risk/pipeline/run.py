@@ -4885,11 +4885,16 @@ def _extract_mosers_program_notional_from_cprs_ch(*, workbook_path: Path) -> flo
             if raw_notional in (None, ""):
                 return None
             try:
-                return float(raw_notional)
+                if isinstance(raw_notional, bool):
+                    raise ValueError("boolean notional")
+                notional = float(raw_notional)
+                if not math.isfinite(notional):
+                    raise ValueError("non-finite notional")
             except (TypeError, ValueError) as exc:
                 raise ValueError(
-                    "MOSERS Program row has non-numeric Notional value in CPRS - CH sheet"
+                    "MOSERS Program row requires a finite numeric Notional value in CPRS - CH sheet"
                 ) from exc
+            return notional
         return None
     finally:
         workbook_obj.close()
