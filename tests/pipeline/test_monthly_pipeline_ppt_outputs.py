@@ -11,6 +11,7 @@ from pptx import Presentation
 
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
+from counter_risk.outputs.pdf_export import PDFExportGenerator
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import PptStandaloneValidationResult
@@ -425,6 +426,86 @@ def test_distribution_disabled_keeps_master_and_records_skipped_manifest_entry(
         "skipped_reason": "Distribution output disabled for this run.",
         "status": "skipped",
     }
+
+
+def test_pdf_request_with_distribution_disabled_is_explicit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    exported: list[tuple[Path, Path]] = []
+
+    def _export_pdf(source: Path, target: Path) -> None:
+        exported.append((source, target))
+        target.write_bytes(b"%PDF-1.4\n%test\n")
+
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+    )
+    monkeypatch.setattr(
+        run_module,
+        "_build_pdf_export_output_generator",
+        lambda *, source_pptx, warnings: PDFExportGenerator(
+            source_pptx=source_pptx,
+            warnings=warnings,
+            com_availability_checker=lambda: True,
+            pptx_to_pdf_exporter=_export_pdf,
+        ),
+    )
+
+    disabled_config = _build_config(
+        tmp_path / "disabled", enable_ppt_output=True, enable_distribution_output=False
+    )
+    disabled_config.export_pdf = True
+    disabled_dir = tmp_path / "disabled" / "run"
+    disabled_dir.mkdir(parents=True)
+    with pytest.raises(ValueError, match="export_pdf requires enable_distribution_output"):
+        run_module._validate_pipeline_config(disabled_config)
+    with pytest.raises(ValueError, match="export_pdf requires enable_distribution_output"):
+        run_module._write_outputs(
+            run_dir=disabled_dir,
+            config=disabled_config,
+            as_of_date=date(2025, 12, 31),
+            warnings=[],
+        )
+    assert exported == []
+    assert list(disabled_dir.iterdir()) == []
+
+    enabled_config = _build_config(tmp_path / "enabled", enable_ppt_output=True)
+    enabled_config.export_pdf = True
+    run_module._validate_pipeline_config(enabled_config)
+    enabled_dir = tmp_path / "enabled" / "run"
+    enabled_dir.mkdir(parents=True)
+    output_paths, _ = run_module._write_outputs(
+        run_dir=enabled_dir,
+        config=enabled_config,
+        as_of_date=date(2025, 12, 31),
+        warnings=[],
+    )
+    assert len(exported) == 1
+    source, target = exported[0]
+    assert (
+        source == enabled_dir / resolve_ppt_output_names(date(2025, 12, 31)).distribution_filename
+    )
+    assert target == source.with_suffix(".pdf")
+    assert target in output_paths
+    assert target.read_bytes().startswith(b"%PDF-1.4")
+
+    no_pdf_config = _build_config(
+        tmp_path / "no-pdf", enable_ppt_output=True, enable_distribution_output=True
+    )
+    no_pdf_config.export_pdf = False
+    run_module._validate_pipeline_config(no_pdf_config)
+    no_pdf_dir = tmp_path / "no-pdf" / "run"
+    no_pdf_dir.mkdir(parents=True)
+    output_paths, _ = run_module._write_outputs(
+        run_dir=no_pdf_dir,
+        config=no_pdf_config,
+        as_of_date=date(2025, 12, 31),
+        warnings=[],
+    )
+    assert not any(path.suffix == ".pdf" for path in output_paths)
+    assert len(exported) == 1
 
 
 def test_master_refresh_skipped_records_master_skipped_and_distribution_success(
