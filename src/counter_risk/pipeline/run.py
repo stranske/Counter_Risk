@@ -35,6 +35,7 @@ from counter_risk.compute.limits import (
     write_limit_breaches_csv,
 )
 from counter_risk.compute.rollups import (
+    _counterparty_label_from_totals_row,
     _find_numeric,
     apply_repo_cash_to_totals,
     compute_concentration_metrics,
@@ -2302,7 +2303,7 @@ def _build_concentration_exposure_rows(
     for variant, parsed in parsed_by_variant.items():
         totals_records = _records(parsed["totals"])
         for record in totals_records:
-            counterparty = str(record.get("counterparty", "")).strip()
+            counterparty = _counterparty_label_from_totals_row(record)
             if not counterparty:
                 continue
             # Individual asset class segments

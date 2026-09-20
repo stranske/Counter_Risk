@@ -335,6 +335,23 @@ def test_exposure_builders_default_missing_notionals_to_zero() -> None:
     assert counterparty_row["notional"] == futures_row["notional"] == 0.0
 
 
+def test_concentration_includes_group_name_only_counterparty_rows() -> None:
+    parsed = {
+        "all_programs": {
+            "totals": [
+                {"group_type": "counterparty", "group_name": " Alpha ", "Notional": 100.0},
+                {"counterparty": "Beta", "Notional": 50.0},
+                {"group_type": "sector", "group_name": "Equity", "Notional": 150.0},
+            ]
+        }
+    }
+
+    assert run_module._build_concentration_exposure_rows(parsed) == [
+        {"variant": "all_programs", "segment": "total", "counterparty": "Alpha", "notional": 100.0},
+        {"variant": "all_programs", "segment": "total", "counterparty": "Beta", "notional": 50.0},
+    ]
+
+
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf"), "NaN", "Inf", "-Inf"])
 @pytest.mark.parametrize("include_finite", [False, True])
 def test_concentration_metrics_write_finite_values(
