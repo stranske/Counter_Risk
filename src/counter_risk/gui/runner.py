@@ -322,7 +322,7 @@ def _read_manifest_data_quality_color(run_dir: Path) -> str:
     manifest_path = run_dir / "manifest.json"
     try:
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, UnicodeError, json.JSONDecodeError):
         return ""
     if not isinstance(payload, dict):
         return ""
@@ -341,7 +341,7 @@ def _load_limit_breach_banner(run_dir: Path) -> str | None:
         return None
     try:
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, UnicodeError, json.JSONDecodeError):
         return None
     if not isinstance(payload, dict):
         return None
@@ -550,6 +550,8 @@ def launch_gui(
         status_var.set("Failed - see message")
         result_var.set(result.error_message or f"Exit code {result.exit_code}")
         quality_var.set(result.data_quality_status)
+        if result.output_dir is not None:
+            last_output_dir = result.output_dir
         banner = (
             _load_limit_breach_banner(result.output_dir) if result.output_dir is not None else None
         )

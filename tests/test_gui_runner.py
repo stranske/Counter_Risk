@@ -65,6 +65,29 @@ def test_load_limit_breach_banner_returns_none_for_missing_or_invalid_manifest(
     assert gui_runner._load_limit_breach_banner(run_dir) is None
 
 
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [
+        ("info", "GREEN"),
+        ("warn", "YELLOW"),
+        ("fail", "RED"),
+        ("  WaRn  ", "YELLOW"),
+        ("unknown", ""),
+    ],
+)
+def test_failed_run_manifest_status_mapping(tmp_path: Path, status: str, expected: str) -> None:
+    (tmp_path / "manifest.json").write_text(
+        json.dumps({"data_quality": {"overall_status": status}}), encoding="utf-8"
+    )
+    assert gui_runner._read_manifest_data_quality_color(tmp_path) == expected
+
+
+def test_invalid_utf8_manifest_uses_empty_status_and_banner(tmp_path: Path) -> None:
+    (tmp_path / "manifest.json").write_bytes(b"\xff")
+    assert gui_runner._read_manifest_data_quality_color(tmp_path) == ""
+    assert gui_runner._load_limit_breach_banner(tmp_path) is None
+
+
 def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> None:
     captured: dict[str, list[str]] = {}
 
@@ -627,6 +650,52 @@ def test_gui_failed_run_surfaces_limit_breach_banner_from_manifest(
     )
     assert quality.kwargs["textvariable"].get() == "RED - Do not send"
     assert banner.kwargs["textvariable"].get() == warning
+
+
+def test_gui_failed_run_opens_its_own_output_after_prior_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created, opened_paths, _, _ = _install_headless_tk(monkeypatch)
+
+    class _ImmediateThread:
+        def __init__(
+            self, *, target: Callable[..., None], kwargs: dict[str, object], **_extra: object
+        ):
+            self.target = target
+            self.kwargs = kwargs
+
+        def start(self) -> None:
+            self.target(**self.kwargs)
+
+    monkeypatch.setattr(gui_runner.threading, "Thread", _ImmediateThread)
+    runs = 0
+
+    def alternating_runner(argv: list[str]) -> int:
+        nonlocal runs
+        runs += 1
+        run_dir = Path(argv[argv.index("--output-dir") + 1])
+        run_dir.mkdir(parents=True)
+        if runs == 2:
+            (run_dir / "manifest.json").write_text(
+                json.dumps({"data_quality": {"overall_status": "fail"}}), encoding="utf-8"
+            )
+            return 1
+        return 0
+
+    launch_gui(
+        initial_state=GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs")),
+        runner=alternating_runner,
+    )
+    widgets = created["widgets"]
+    assert isinstance(widgets, list)
+    run_button = next(widget for widget in widgets if widget.kwargs.get("text") == "Run")
+    run_button.kwargs["command"]()
+    run_button.kwargs["command"]()
+    output_button = next(
+        widget for widget in widgets if widget.kwargs.get("text") == "Open Output Folder"
+    )
+    output_button.kwargs["command"]()
+    assert opened_paths == [tmp_path / "runs" / "2025-12-31_1"]
 
 
 def test_gui_ppt_folder_target_matches_runner_launch_contract() -> None:
