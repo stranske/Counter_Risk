@@ -541,17 +541,17 @@ def test_final_concentration_slide_precedes_pdf_export(
         + "\n",
         encoding="utf-8",
     )
-    export_source: list[tuple[int, list[str]]] = []
+    export_source: list[tuple[int, list[list[str]]]] = []
 
-    def _last_table_row(pptx_path: Path) -> list[str]:
+    def _last_slide_table(pptx_path: Path) -> list[list[str]]:
         presentation = Presentation(str(pptx_path))
         tables = [shape.table for shape in presentation.slides[-1].shapes if shape.has_table]
         if not tables:
             return []
-        return [cell.text for cell in tables[0].rows[1].cells]
+        return [[cell.text for cell in row.cells] for row in tables[0].rows]
 
     def _export_pdf(source: Path, target: Path) -> None:
-        export_source.append((len(Presentation(str(source)).slides), _last_table_row(source)))
+        export_source.append((len(Presentation(str(source)).slides), _last_slide_table(source)))
         target.write_bytes(b"%PDF-1.4\n%test\n")
 
     monkeypatch.setattr(
@@ -568,23 +568,30 @@ def test_final_concentration_slide_precedes_pdf_export(
     run_dir = run_module.run_pipeline(config_path, output_dir=tmp_path / "run")
     distribution = run_dir / resolve_ppt_output_names(date(2025, 12, 31)).distribution_filename
     assert len(Presentation(str(distribution)).slides) == expected_slides
-    final_row = _last_table_row(distribution)
+    final_table = _last_slide_table(distribution)
     if include_concentration:
         with (run_dir / "concentration_metrics.csv").open(
             newline="", encoding="utf-8"
         ) as metrics_file:
-            first_metric = next(csv.DictReader(metrics_file))
-        assert final_row == [
-            first_metric["variant"],
-            first_metric["segment"],
-            f"{float(first_metric['top5_share']):.2%}",
-            f"{float(first_metric['top10_share']):.2%}",
-            f"{float(first_metric['hhi']):.4f}",
+            metrics = list(csv.DictReader(metrics_file))
+        expected_table = [
+            ["Variant", "Segment", "Top 5 Share", "Top 10 Share", "HHI"],
+            *[
+                [
+                    metric["variant"],
+                    metric["segment"],
+                    f"{float(metric['top5_share']):.2%}",
+                    f"{float(metric['top10_share']):.2%}",
+                    f"{float(metric['hhi']):.4f}",
+                ]
+                for metric in metrics
+            ],
         ]
+        assert final_table == expected_table
     else:
-        assert final_row == []
+        assert final_table == []
     if export_pdf:
-        assert export_source == [(expected_slides, final_row)]
+        assert export_source == [(expected_slides, final_table)]
         assert distribution.with_suffix(".pdf").exists()
     else:
         assert export_source == []
