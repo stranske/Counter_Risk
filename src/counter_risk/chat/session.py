@@ -27,6 +27,8 @@ from counter_risk.chat.utils import cmp_with_tol, is_close
 
 _LOGGER = logging.getLogger(__name__)
 
+_MAX_DELTA_PROMPT_CHARS: Final[int] = 4000
+
 _PLACEHOLDER_MODEL: Final[str] = "chat-model-placeholder"
 _OFFLINE_MODE_ENV: Final[str] = "COUNTER_RISK_CHAT_OFFLINE_MODE"
 _CHAT_LOG_MODE_ENV: Final[str] = "COUNTER_RISK_CHAT_LOG_MODE"
@@ -409,6 +411,14 @@ def build_guarded_prompt(context: RunContext, question: str) -> str:
     summary = sanitize_untrusted_text(context.summary())
     warnings = sanitize_untrusted_text("\n".join(context.warnings) or "none")
     top_exposures = sanitize_untrusted_text(_format_top_exposures(context.manifest))
+    deltas = sanitize_untrusted_text(_format_deltas(context.deltas))
+    # Sanitizer suffixes retain the reserved token text; remove those tokens
+    # from this data section so they cannot masquerade as prompt boundaries.
+    for token in _BOUNDARY_TOKENS:
+        deltas = deltas.replace(token, "[REDACTED_BOUNDARY]")
+    if len(deltas) > _MAX_DELTA_PROMPT_CHARS:
+        suffix = "... [truncated]"
+        deltas = deltas[: _MAX_DELTA_PROMPT_CHARS - len(suffix)] + suffix
 
     prompt = "\n".join(
         [
@@ -421,6 +431,7 @@ def build_guarded_prompt(context: RunContext, question: str) -> str:
             f"RUN_SUMMARY: {summary}",
             f"WARNINGS: {warnings}",
             f"TOP_EXPOSURES: {top_exposures}",
+            f"TOP_DELTAS: {deltas}",
             "UNTRUSTED_RUN_DATA_END",
             "USER_QUESTION_START",
             question.strip(),
