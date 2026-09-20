@@ -407,9 +407,9 @@ def test_headless_discover_resolution_never_calls_stdin_input(
     assert input_calls == []
 
 
-def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
+def _install_headless_tk(
     monkeypatch: pytest.MonkeyPatch,
-) -> None:
+) -> tuple[dict[str, object], list[Path], type[Any], type[Any]]:
     created: dict[str, object] = {"widgets": []}
     opened_paths: list[Path] = []
 
@@ -503,6 +503,14 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     monkeypatch.setattr(gui_runner, "_open_path", lambda path: opened_paths.append(path))
     monkeypatch.setattr(gui_runner, "_validate_path_roots", lambda _state: (True, ""))
 
+    return created, opened_paths, _FakeTk, _FakeWidget
+
+
+def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    created, opened_paths, fake_tk_class, fake_widget_class = _install_headless_tk(monkeypatch)
+
     launch_gui(
         initial_state=GuiRunState(as_of_date="2025-12-31"),
         runner=lambda _argv: 0,
@@ -510,7 +518,7 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
 
     fake_root = created.get("root")
     assert fake_root is not None
-    assert isinstance(fake_root, _FakeTk)
+    assert isinstance(fake_root, fake_tk_class)
     assert fake_root.title_value == "Counter Risk Runner"
     assert fake_root.geometry_value == "640x420"
     assert fake_root.mainloop_called is True
@@ -520,19 +528,82 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     ppt_buttons = [
         widget
         for widget in widgets
-        if isinstance(widget, _FakeWidget) and widget.kwargs.get("text") == "Open PPT Folder"
+        if isinstance(widget, fake_widget_class) and widget.kwargs.get("text") == "Open PPT Folder"
     ]
     assert len(ppt_buttons) == 1
     status_labels = [
         widget
         for widget in widgets
-        if isinstance(widget, _FakeWidget) and widget.kwargs.get("text") == "Run Status"
+        if isinstance(widget, fake_widget_class) and widget.kwargs.get("text") == "Run Status"
     ]
     assert len(status_labels) == 1
 
     ppt_buttons[0].kwargs["command"]()
 
     assert opened_paths == [Path("runs/2025-12-31")]
+
+
+def test_gui_failed_run_surfaces_limit_breach_banner_from_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created, _, _, _ = _install_headless_tk(monkeypatch)
+
+    class _ImmediateThread:
+        def __init__(
+            self, *, target: Callable[..., None], kwargs: dict[str, object], **_extra: object
+        ):
+            self.target = target
+            self.kwargs = kwargs
+
+        def start(self) -> None:
+            self.target(**self.kwargs)
+
+    monkeypatch.setattr(gui_runner.threading, "Thread", _ImmediateThread)
+
+    warning = "1 fail limit breach detected. Review limit_breaches.csv."
+
+    def failed_runner(argv: list[str]) -> int:
+        run_dir = Path(argv[argv.index("--output-dir") + 1])
+        run_dir.mkdir(parents=True)
+        (run_dir / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "data_quality": {"overall_status": "fail"},
+                    "limit_breach_summary": {
+                        "has_breaches": True,
+                        "fail_breach_count": 1,
+                        "warning_banner": warning,
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        return 1
+
+    launch_gui(
+        initial_state=GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs")),
+        runner=failed_runner,
+    )
+    widgets = created["widgets"]
+    assert isinstance(widgets, list)
+    run_button = next(widget for widget in widgets if widget.kwargs.get("text") == "Run")
+    run_button.kwargs["command"]()
+    quality = next(
+        widget
+        for widget in widgets
+        if widget.kwargs.get("textvariable") is not None
+        and widget.grid_calls
+        and widget.grid_calls[0][1].get("row") == 14
+    )
+    banner = next(
+        widget
+        for widget in widgets
+        if widget.kwargs.get("textvariable") is not None
+        and widget.grid_calls
+        and widget.grid_calls[0][1].get("row") == 15
+    )
+    assert quality.kwargs["textvariable"].get() == "RED - Do not send"
+    assert banner.kwargs["textvariable"].get() == warning
 
 
 def test_gui_ppt_folder_target_matches_runner_launch_contract() -> None:

@@ -281,6 +281,9 @@ def execute_gui_run(
     if exit_code == 0:
         data_quality_color = _read_data_quality_status_color(output_dir)
         data_quality_status = data_quality_status_label(data_quality_color)
+    elif output_dir is not None:
+        data_quality_color = _read_manifest_data_quality_color(output_dir)
+        data_quality_status = data_quality_status_label(data_quality_color)
     return GuiRunResult(
         exit_code=exit_code,
         cli_args=tuple(cli_args),
@@ -313,6 +316,23 @@ def _read_data_quality_status_color(output_dir: Path | None) -> str:
     if output_dir is None:
         return ""
     return read_overall_status_color(output_dir / "DATA_QUALITY_SUMMARY.txt")
+
+
+def _read_manifest_data_quality_color(run_dir: Path) -> str:
+    manifest_path = run_dir / "manifest.json"
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ""
+    if not isinstance(payload, dict):
+        return ""
+    data_quality = payload.get("data_quality")
+    if not isinstance(data_quality, dict):
+        return ""
+    status = data_quality.get("overall_status")
+    if not isinstance(status, str):
+        return ""
+    return {"info": "GREEN", "warn": "YELLOW", "fail": "RED"}.get(status.strip().lower(), "")
 
 
 def _load_limit_breach_banner(run_dir: Path) -> str | None:
@@ -529,8 +549,11 @@ def launch_gui(
 
         status_var.set("Failed - see message")
         result_var.set(result.error_message or f"Exit code {result.exit_code}")
-        quality_var.set("")
-        limit_banner_var.set("None")
+        quality_var.set(result.data_quality_status)
+        banner = (
+            _load_limit_breach_banner(result.output_dir) if result.output_dir is not None else None
+        )
+        limit_banner_var.set(banner or "None")
         _show_operator_error(
             "Counter Risk Runner", result.error_message or f"Exit code {result.exit_code}"
         )
