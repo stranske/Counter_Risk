@@ -42,9 +42,7 @@ def test_run_pipeline_with_config_serializes_relative_paths_as_absolute(
             (config_dir / "tests/fixtures/monthly.pptx").resolve()
         )
         assert serialized["output_root"] == str((config_dir / "runs").resolve())
-        assert serialized["exposure_summary_xlsx"] == str(
-            (config_dir / "exposure.xlsx").resolve()
-        )
+        assert serialized["exposure_summary_xlsx"] == str((config_dir / "exposure.xlsx").resolve())
         return output_dir
 
     monkeypatch.setattr(run_module, "run_pipeline", _fake_run_pipeline)
