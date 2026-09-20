@@ -467,6 +467,7 @@ def test_pdf_request_with_distribution_disabled_is_explicit(
             warnings=[],
         )
     assert exported == []
+    assert list(disabled_dir.iterdir()) == []
 
     enabled_config = _build_config(tmp_path / "enabled", enable_ppt_output=True)
     enabled_config.export_pdf = True
