@@ -2469,13 +2469,22 @@ def test_optional_input_provenance_hashes(
         lambda **kwargs: run_module.LimitBreachEvaluation(csv_path=None, breach_count=0),
     )
     monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **kwargs: [])
+
+    validated_screenshot_inputs: dict[str, dict[str, Path]] = {}
+
+    def validate_screenshot_inputs_at_report_boundary(
+        *, run_dir: Path, config: WorkflowConfig, **_: Any
+    ) -> tuple[list[Path], run_module.PptProcessingResult]:
+        if run_module._ppt_screenshot_output_active(config):
+            validated_screenshot_inputs[run_dir.name] = (
+                run_module._resolve_screenshot_input_mapping(config)
+            )
+        return [], run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+
     monkeypatch.setattr(
         run_module,
         "_call_write_outputs",
-        lambda **kwargs: (
-            [],
-            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
-        ),
+        validate_screenshot_inputs_at_report_boundary,
     )
 
     def manifest_for(*, wal_active: bool, screenshot_active: bool, run_name: str) -> dict[str, Any]:
@@ -2521,6 +2530,10 @@ def test_optional_input_provenance_hashes(
     assert original["exposure_summary_xlsx"] == _sha256(maturity_workbook)
     assert original["screenshot_inputs.slide1"] == _sha256(screenshot)
     assert "screenshot_inputs.slide2" not in original
+    assert validated_screenshot_inputs["original"]["slide1"] == screenshot.resolve()
+    generated_input = validated_screenshot_inputs["original"]["slide2"]
+    assert generated_input == (tmp_path / "original/_screenshots/internal.png").resolve()
+    assert generated_input.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
     wal_disabled = manifest_for(wal_active=False, screenshot_active=True, run_name="wal-disabled")
     assert "exposure_summary_xlsx" not in wal_disabled
