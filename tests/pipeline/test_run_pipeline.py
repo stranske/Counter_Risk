@@ -2439,8 +2439,10 @@ def test_optional_input_provenance_hashes(
     fixtures = Path("tests/fixtures").resolve()
     screenshot = tmp_path / "external.png"
     shutil.copyfile(fixtures / "screenshots/slide_1.png", screenshot)
-    exposure = tmp_path / "exposure.xlsx"
-    shutil.copyfile(fixtures / "nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx", exposure)
+    maturity_workbook = tmp_path / "exposure-maturity.xlsx"
+    shutil.copyfile(
+        fixtures / "nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx", maturity_workbook
+    )
 
     def generated_screenshot(
         *, config: WorkflowConfig, run_dir: Path, warnings: list[str]
@@ -2476,7 +2478,7 @@ def test_optional_input_provenance_hashes(
         ),
     )
 
-    def manifest_for(*, active: bool, run_name: str) -> tuple[Path, dict[str, Any]]:
+    def manifest_for(*, wal_active: bool, screenshot_active: bool, run_name: str) -> dict[str, Any]:
         config_path = tmp_path / f"{run_name}.yml"
         config_lines = [
             "as_of_date: 2025-12-31",
@@ -2487,91 +2489,59 @@ def test_optional_input_provenance_hashes(
             f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
             f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
             f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
-            f"exposure_summary_xlsx: {exposure}",
-            f"enable_screenshot_replacement: {str(active).lower()}",
+            f"exposure_summary_xlsx: {maturity_workbook}",
+            "enable_screenshot_replacement: true",
             "screenshot_inputs:",
             f"  slide1: {screenshot}",
             f"output_root: {tmp_path / run_name}",
+            "output_generators:",
+            "  - name: historical_workbook",
+            "    registration: builtin:historical_workbook",
+            "    stage: historical",
+            "  - name: historical_wal_workbook",
+            "    registration: builtin:historical_wal_workbook",
+            "    stage: historical",
+            f"    enabled: {str(wal_active).lower()}",
+            "  - name: ppt_screenshot",
+            "    registration: builtin:ppt_screenshot",
+            "    stage: ppt_master",
+            f"    enabled: {str(screenshot_active).lower()}",
+            "  - name: ppt_link_refresh",
+            "    registration: builtin:ppt_link_refresh",
+            "    stage: ppt_refresh",
+            "  - name: pdf_export",
+            "    registration: builtin:pdf_export",
+            "    stage: ppt_post_distribution",
         ]
-        if active:
-            config_lines.extend(
-                [
-                    "output_generators:",
-                    "  - name: historical_workbook",
-                    "    registration: builtin:historical_workbook",
-                    "    stage: historical",
-                    "  - name: historical_wal_workbook",
-                    "    registration: builtin:historical_wal_workbook",
-                    "    stage: historical",
-                    "  - name: ppt_screenshot",
-                    "    registration: builtin:ppt_screenshot",
-                    "    stage: ppt_master",
-                    "  - name: ppt_link_refresh",
-                    "    registration: builtin:ppt_link_refresh",
-                    "    stage: ppt_refresh",
-                    "  - name: pdf_export",
-                    "    registration: builtin:pdf_export",
-                    "    stage: ppt_post_distribution",
-                ]
-            )
         config_path.write_text("\n".join(config_lines) + "\n", encoding="utf-8")
         run_dir = run_pipeline(config_path, output_dir=tmp_path / run_name)
-        input_hashes = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))[
-            "input_hashes"
-        ]
-        return config_path, input_hashes
+        return json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["input_hashes"]
 
-    active_config_path, original = manifest_for(active=True, run_name="original")
-    assert original["exposure_summary_xlsx"] == _sha256(exposure)
+    original = manifest_for(wal_active=True, screenshot_active=True, run_name="original")
+    assert original["exposure_summary_xlsx"] == _sha256(maturity_workbook)
     assert original["screenshot_inputs.slide1"] == _sha256(screenshot)
     assert "screenshot_inputs.slide2" not in original
 
-    active_config = run_module.load_config(active_config_path)
-    wal_disabled_config = active_config.model_copy(
-        update={
-            "output_generators": tuple(
-                (
-                    entry.model_copy(update={"enabled": False})
-                    if entry.name == "historical_wal_workbook"
-                    else entry
-                )
-                for entry in active_config.output_generators
-            )
-        }
-    )
-    wal_disabled_paths = run_module._resolve_manifest_input_paths(
-        wal_disabled_config, external_screenshot_inputs=active_config.screenshot_inputs
-    )
-    assert "exposure_summary_xlsx" not in wal_disabled_paths
-    assert "screenshot_inputs.slide1" in wal_disabled_paths
+    wal_disabled = manifest_for(wal_active=False, screenshot_active=True, run_name="wal-disabled")
+    assert "exposure_summary_xlsx" not in wal_disabled
+    assert wal_disabled["screenshot_inputs.slide1"] == _sha256(screenshot)
 
-    screenshot_disabled_config = active_config.model_copy(
-        update={
-            "output_generators": tuple(
-                (
-                    entry.model_copy(update={"enabled": False})
-                    if entry.name == "ppt_screenshot"
-                    else entry
-                )
-                for entry in active_config.output_generators
-            )
-        }
+    screenshot_disabled = manifest_for(
+        wal_active=True, screenshot_active=False, run_name="screenshot-disabled"
     )
-    screenshot_disabled_paths = run_module._resolve_manifest_input_paths(
-        screenshot_disabled_config,
-        external_screenshot_inputs=active_config.screenshot_inputs,
-    )
-    assert "exposure_summary_xlsx" in screenshot_disabled_paths
-    assert "screenshot_inputs.slide1" not in screenshot_disabled_paths
+    assert screenshot_disabled["exposure_summary_xlsx"] == _sha256(maturity_workbook)
+    assert not any(key.startswith("screenshot_inputs.") for key in screenshot_disabled)
 
-    workbook = openpyxl.load_workbook(exposure)
+    workbook = openpyxl.load_workbook(maturity_workbook)
     workbook.active.cell(row=100, column=20, value="provenance-change")
-    workbook.save(exposure)
+    workbook.save(maturity_workbook)
     workbook.close()
     shutil.copyfile(fixtures / "screenshots/slide_2.png", screenshot)
-    _, changed = manifest_for(active=True, run_name="changed")
+    changed = manifest_for(wal_active=True, screenshot_active=True, run_name="changed")
     assert (
-        changed["exposure_summary_xlsx"] == _sha256(exposure) != original["exposure_summary_xlsx"]
+        changed["exposure_summary_xlsx"]
+        == _sha256(maturity_workbook)
+        != original["exposure_summary_xlsx"]
     )
     assert (
         changed["screenshot_inputs.slide1"]
@@ -2579,7 +2549,7 @@ def test_optional_input_provenance_hashes(
         != original["screenshot_inputs.slide1"]
     )
 
-    _, disabled = manifest_for(active=False, run_name="disabled")
+    disabled = manifest_for(wal_active=False, screenshot_active=False, run_name="disabled")
     assert "exposure_summary_xlsx" not in disabled
     assert not any(key.startswith("screenshot_inputs.") for key in disabled)
 
