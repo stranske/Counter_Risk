@@ -2451,11 +2451,32 @@ def test_optional_input_provenance_hashes(
         return {"slide2": generated}
 
     monkeypatch.setattr(run_module, "_generate_cprs_screenshot_inputs", generated_screenshot)
-    # The WAL writer has its own focused integration test; this test keeps its
-    # registration active while exercising the production config-to-manifest path.
+    # Keep the production config loading, optional-input validation, generated-image
+    # merge, hashing, and manifest write boundary. Stub unrelated report calculations
+    # and writers so repeated byte-mutation runs stay focused and fast.
+    monkeypatch.setattr(run_module, "_parse_inputs", lambda _: _minimal_parsed_by_variant())
+    monkeypatch.setattr(run_module, "_validate_parsed_inputs", lambda _: None)
+    monkeypatch.setattr(run_module, "_run_reconciliation_checks", lambda **kwargs: {})
+    monkeypatch.setattr(run_module, "_compute_metrics", lambda _: ({}, {}))
+    monkeypatch.setattr(run_module, "_write_risk_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(run_module, "_compute_and_write_concentration_metrics", lambda **kwargs: [])
+    monkeypatch.setattr(run_module, "_write_change_attribution_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(
+        run_module,
+        "_compute_and_write_limit_breaches",
+        lambda **kwargs: run_module.LimitBreachEvaluation(csv_path=None, breach_count=0),
+    )
     monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(
+        run_module,
+        "_call_write_outputs",
+        lambda **kwargs: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
+    )
 
-    def manifest_for(*, active: bool, run_name: str) -> dict[str, Any]:
+    def manifest_for(*, active: bool, run_name: str) -> tuple[Path, dict[str, Any]]:
         config_path = tmp_path / f"{run_name}.yml"
         config_lines = [
             "as_of_date: 2025-12-31",
@@ -2495,19 +2516,60 @@ def test_optional_input_provenance_hashes(
             )
         config_path.write_text("\n".join(config_lines) + "\n", encoding="utf-8")
         run_dir = run_pipeline(config_path, output_dir=tmp_path / run_name)
-        return json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["input_hashes"]
+        input_hashes = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))[
+            "input_hashes"
+        ]
+        return config_path, input_hashes
 
-    original = manifest_for(active=True, run_name="original")
+    active_config_path, original = manifest_for(active=True, run_name="original")
     assert original["exposure_summary_xlsx"] == _sha256(exposure)
     assert original["screenshot_inputs.slide1"] == _sha256(screenshot)
     assert "screenshot_inputs.slide2" not in original
+
+    active_config = run_module.load_config(active_config_path)
+    wal_disabled_config = active_config.model_copy(
+        update={
+            "output_generators": tuple(
+                (
+                    entry.model_copy(update={"enabled": False})
+                    if entry.name == "historical_wal_workbook"
+                    else entry
+                )
+                for entry in active_config.output_generators
+            )
+        }
+    )
+    wal_disabled_paths = run_module._resolve_manifest_input_paths(
+        wal_disabled_config, external_screenshot_inputs=active_config.screenshot_inputs
+    )
+    assert "exposure_summary_xlsx" not in wal_disabled_paths
+    assert "screenshot_inputs.slide1" in wal_disabled_paths
+
+    screenshot_disabled_config = active_config.model_copy(
+        update={
+            "output_generators": tuple(
+                (
+                    entry.model_copy(update={"enabled": False})
+                    if entry.name == "ppt_screenshot"
+                    else entry
+                )
+                for entry in active_config.output_generators
+            )
+        }
+    )
+    screenshot_disabled_paths = run_module._resolve_manifest_input_paths(
+        screenshot_disabled_config,
+        external_screenshot_inputs=active_config.screenshot_inputs,
+    )
+    assert "exposure_summary_xlsx" in screenshot_disabled_paths
+    assert "screenshot_inputs.slide1" not in screenshot_disabled_paths
 
     workbook = openpyxl.load_workbook(exposure)
     workbook.active.cell(row=100, column=20, value="provenance-change")
     workbook.save(exposure)
     workbook.close()
     shutil.copyfile(fixtures / "screenshots/slide_2.png", screenshot)
-    changed = manifest_for(active=True, run_name="changed")
+    _, changed = manifest_for(active=True, run_name="changed")
     assert (
         changed["exposure_summary_xlsx"] == _sha256(exposure) != original["exposure_summary_xlsx"]
     )
@@ -2517,7 +2579,7 @@ def test_optional_input_provenance_hashes(
         != original["screenshot_inputs.slide1"]
     )
 
-    disabled = manifest_for(active=False, run_name="disabled")
+    _, disabled = manifest_for(active=False, run_name="disabled")
     assert "exposure_summary_xlsx" not in disabled
     assert not any(key.startswith("screenshot_inputs.") for key in disabled)
 

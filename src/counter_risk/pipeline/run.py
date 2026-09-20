@@ -945,12 +945,15 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
         paths["cash_overrides_csv"] = config.cash_overrides_csv
     if config.dropin_all_programs_template_xlsx is not None:
         paths["dropin_all_programs_template_xlsx"] = config.dropin_all_programs_template_xlsx
-    if config.exposure_summary_xlsx is not None and any(
-        entry.name == "historical_wal_workbook" and entry.enabled
-        for entry in config.output_generators
+    if config.exposure_summary_xlsx is not None and _output_generator_is_enabled(
+        config, "historical_wal_workbook"
     ):
         paths["exposure_summary_xlsx"] = config.exposure_summary_xlsx
     return paths
+
+
+def _output_generator_is_enabled(config: WorkflowConfig, name: str) -> bool:
+    return any(entry.name == name and entry.enabled for entry in config.output_generators)
 
 
 def _resolve_manifest_input_paths(
@@ -959,7 +962,11 @@ def _resolve_manifest_input_paths(
     """Return externally supplied sources, never run-generated screenshot intermediates."""
 
     paths = _resolve_input_paths(config)
-    if config.enable_screenshot_replacement and external_screenshot_inputs:
+    if (
+        config.enable_screenshot_replacement
+        and _output_generator_is_enabled(config, "ppt_screenshot")
+        and external_screenshot_inputs
+    ):
         explicit_config = config.model_copy(
             update={"screenshot_inputs": external_screenshot_inputs}
         )
