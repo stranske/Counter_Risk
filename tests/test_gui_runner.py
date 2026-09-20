@@ -140,7 +140,9 @@ def test_execute_gui_run_reads_data_quality_status_after_success(tmp_path: Path)
     assert result.data_quality_status == "YELLOW - Review warnings"
 
 
-def test_execute_gui_run_leaves_data_quality_status_empty_on_failure(tmp_path: Path) -> None:
+def test_execute_gui_run_leaves_data_quality_status_empty_on_failure_without_manifest(
+    tmp_path: Path,
+) -> None:
     def fake_runner(_argv: list[str]) -> int:
         print("input validation failed: missing required input")
         return 2
@@ -154,6 +156,27 @@ def test_execute_gui_run_leaves_data_quality_status_empty_on_failure(tmp_path: P
     assert result.data_quality_status == ""
     assert "Operator action:" in result.error_message
     assert "verify required input files" in result.error_message
+
+
+def test_execute_gui_run_reads_data_quality_status_from_manifest_after_failure(
+    tmp_path: Path,
+) -> None:
+    def fake_runner(argv: list[str]) -> int:
+        output_dir = Path(argv[argv.index("--output-dir") + 1])
+        output_dir.mkdir(parents=True)
+        (output_dir / "manifest.json").write_text(
+            json.dumps({"data_quality": {"overall_status": "fail"}}),
+            encoding="utf-8",
+        )
+        return 1
+
+    state = GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs"))
+
+    result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
+
+    assert result.exit_code == 1
+    assert result.data_quality_color == "RED"
+    assert result.data_quality_status == "RED - Do not send"
 
 
 def test_execute_gui_run_returns_empty_data_quality_when_summary_missing(tmp_path: Path) -> None:
