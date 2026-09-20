@@ -4807,6 +4807,21 @@ def _to_float(value: Any) -> float:
     return number
 
 
+def _finite_notional_total(records: list[dict[str, Any]]) -> float | None:
+    total = 0.0
+    for record in records:
+        try:
+            notional = float(record.get("Notional", 0.0) or 0.0)
+        except OverflowError:
+            return None
+        if not math.isfinite(notional):
+            return None
+        total += notional
+        if not math.isfinite(total):
+            return None
+    return total
+
+
 def _evaluate_cprs_ch_totals_reconciliation(
     *, parsed_sections: Mapping[str, Any], variant: str, mosers_workbook_path: Path | None
 ) -> dict[str, Any]:
@@ -4820,6 +4835,11 @@ def _evaluate_cprs_ch_totals_reconciliation(
         # every other segment (swaps/repo/futures/futures_cdx) restates a subset
         # of the same rows, so summing across *all* segments would double-count.
         primary_records = _select_primary_cprs_ch_records(cprs_ch_records)
+        if _finite_notional_total(primary_records) is None:
+            return {
+                "status": "failed",
+                "message": "CPRS-CH totals check failed: non-finite CPRS-CH primary notional or total",
+            }
         if totals_records:
             # The CH tab's rollup is a superset of the FCM tab's: it also includes
             # clearing houses reached directly (not via an FCM), which the FCM tab
@@ -4837,9 +4857,12 @@ def _evaluate_cprs_ch_totals_reconciliation(
                 for record in primary_records
                 if str(record.get("Counterparty", "")).strip().casefold() in fcm_names
             ]
-        expected_total = sum(
-            float(record.get("Notional", 0.0) or 0.0) for record in primary_records
-        )
+        expected_total = _finite_notional_total(primary_records)
+        if expected_total is None:
+            return {
+                "status": "failed",
+                "message": "CPRS-CH totals check failed: non-finite CPRS-CH primary notional or total",
+            }
     else:
         if mosers_workbook_path is None:
             return {
@@ -4869,6 +4892,11 @@ def _evaluate_cprs_ch_totals_reconciliation(
                     "CPRS - CH did not contain a MOSERS Program notional row"
                 ),
             }
+        if not math.isfinite(expected_total):
+            return {
+                "status": "failed",
+                "message": "CPRS-CH totals check failed: non-finite CPRS-CH MOSERS program notional",
+            }
 
     if not totals_records:
         # cprs_fcm.py documents this as expected, not a parse failure: the CPRS-FCM
@@ -4886,8 +4914,18 @@ def _evaluate_cprs_ch_totals_reconciliation(
             ),
         }
 
-    computed_total = sum(float(record.get("Notional", 0.0) or 0.0) for record in totals_records)
+    computed_total = _finite_notional_total(totals_records)
+    if computed_total is None:
+        return {
+            "status": "failed",
+            "message": "CPRS-CH totals check failed: non-finite CPRS-FCM notional or total",
+        }
     absolute_difference = abs(expected_total - computed_total)
+    if not math.isfinite(absolute_difference):
+        return {
+            "status": "failed",
+            "message": "CPRS-CH totals check failed: non-finite CPRS-CH/FCM difference",
+        }
 
     result: dict[str, Any] = {
         "status": "passed" if absolute_difference <= _CPRS_CH_TOTAL_TOLERANCE else "informational",
