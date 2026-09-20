@@ -952,10 +952,10 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
     return paths
 
 
-<<<<<<< HEAD
 def _output_generator_is_enabled(config: WorkflowConfig, name: str) -> bool:
     return any(entry.name == name and entry.enabled for entry in config.output_generators)
-=======
+
+
 def _ppt_screenshot_output_active(config: WorkflowConfig) -> bool:
     """Return whether _write_outputs will run the ppt_screenshot master generator."""
 
@@ -965,7 +965,6 @@ def _ppt_screenshot_output_active(config: WorkflowConfig) -> bool:
         entry.name == "ppt_screenshot" and entry.enabled and entry.stage == "ppt_master"
         for entry in config.output_generators
     )
->>>>>>> e1e1ab0eb1ba38ffe56a19f077a78c191348f17e
 
 
 def _resolve_manifest_input_paths(
@@ -976,13 +975,8 @@ def _resolve_manifest_input_paths(
     paths = _resolve_input_paths(config)
     if (
         config.enable_screenshot_replacement
-<<<<<<< HEAD
-        and _output_generator_is_enabled(config, "ppt_screenshot")
-        and external_screenshot_inputs
-=======
         and external_screenshot_inputs
         and _ppt_screenshot_output_active(config)
->>>>>>> e1e1ab0eb1ba38ffe56a19f077a78c191348f17e
     ):
         explicit_config = config.model_copy(
             update={"screenshot_inputs": external_screenshot_inputs}
