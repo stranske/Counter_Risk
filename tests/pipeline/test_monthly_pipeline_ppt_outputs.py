@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import shutil
 from datetime import date
 from pathlib import Path
@@ -577,8 +578,17 @@ def test_final_concentration_slide_precedes_pdf_export(
     assert validated_slides == [expected_slides]
     final_row = _last_table_row(distribution)
     if include_concentration:
-        assert len(final_row) == 5
-        assert final_row[0] == "all_programs"
+        with (run_dir / "concentration_metrics.csv").open(
+            newline="", encoding="utf-8"
+        ) as metrics_file:
+            first_metric = next(csv.DictReader(metrics_file))
+        assert final_row == [
+            first_metric["variant"],
+            first_metric["segment"],
+            f"{float(first_metric['top5_share']):.2%}",
+            f"{float(first_metric['top10_share']):.2%}",
+            f"{float(first_metric['hhi']):.4f}",
+        ]
     else:
         assert final_row == []
     if export_pdf:
