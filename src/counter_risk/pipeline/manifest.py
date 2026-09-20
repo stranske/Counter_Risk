@@ -99,6 +99,11 @@ class ManifestBuilder:
                 "by_variant": {},
             }
         )
+        ppt_outputs = self._build_ppt_outputs(
+            output_paths=normalized_output_paths,
+            ppt_status=ppt_status,
+            explicit_outputs=ppt_outputs,
+        )
         manifest: dict[str, Any] = {
             "manifest_schema_version": MANIFEST_SCHEMA_VERSION,
             "provenance": self._build_provenance(),
@@ -120,17 +125,13 @@ class ManifestBuilder:
                 missing_inputs=resolved_missing_inputs,
                 reconciliation_results=resolved_reconciliation_results,
                 ppt_status=ppt_status,
+                ppt_outputs=ppt_outputs,
                 limit_breach_summary=limit_breach_summary,
             ),
             "unmatched_mappings": resolved_unmatched_mappings,
             "missing_inputs": resolved_missing_inputs,
             "reconciliation_results": resolved_reconciliation_results,
         }
-        ppt_outputs = self._build_ppt_outputs(
-            output_paths=normalized_output_paths,
-            ppt_status=ppt_status,
-            explicit_outputs=ppt_outputs,
-        )
         if ppt_outputs:
             manifest["ppt_outputs"] = ppt_outputs
         if concentration_metrics is not None:
