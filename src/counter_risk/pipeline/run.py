@@ -953,13 +953,28 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
     return paths
 
 
+def _ppt_screenshot_output_active(config: WorkflowConfig) -> bool:
+    """Return whether _write_outputs will run the ppt_screenshot master generator."""
+
+    if not config.ppt_output_enabled:
+        return False
+    return any(
+        entry.name == "ppt_screenshot" and entry.enabled and entry.stage == "ppt_master"
+        for entry in config.output_generators
+    )
+
+
 def _resolve_manifest_input_paths(
     config: WorkflowConfig, *, external_screenshot_inputs: Mapping[str, Path]
 ) -> dict[str, Path]:
     """Return externally supplied sources, never run-generated screenshot intermediates."""
 
     paths = _resolve_input_paths(config)
-    if config.enable_screenshot_replacement and external_screenshot_inputs:
+    if (
+        config.enable_screenshot_replacement
+        and external_screenshot_inputs
+        and _ppt_screenshot_output_active(config)
+    ):
         explicit_config = config.model_copy(
             update={"screenshot_inputs": external_screenshot_inputs}
         )
