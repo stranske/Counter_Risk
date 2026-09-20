@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from pathlib import Path
+from xml.etree import ElementTree
+from zipfile import ZipFile
 
 import pytest
 
@@ -178,3 +180,27 @@ def test_valid_accounting_totals_reach_wal(tmp_path: Path) -> None:
     _replace_total(path, "$100.00", "F14")
     _replace_total(path, "$300.00")
     assert calculate_wal(path, date(2025, 11, 30)) == pytest.approx(52.5)
+
+
+def test_oversized_numeric_total_raises_with_cell_context(tmp_path: Path) -> None:
+    path = _write_schedule(tmp_path / "oversized-total.xlsx")
+    # Excel writers coerce integers to floats. Patch the actual numeric XML cell
+    # so openpyxl reads the oversized integer a malformed workbook can contain.
+    with ZipFile(path) as archive:
+        entries = {name: archive.read(name) for name in archive.namelist()}
+    sheet = ElementTree.fromstring(entries["xl/worksheets/sheet1.xml"])
+    ns = {"s": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+    cell = sheet.find(".//s:c[@r='F14']/s:v", ns)
+    assert cell is not None
+    cell.text = str(10**400)
+    entries["xl/worksheets/sheet1.xml"] = ElementTree.tostring(sheet)
+    with ZipFile(path, "w") as archive:
+        for name, data in entries.items():
+            archive.writestr(name, data)
+    with pytest.raises(
+        ExposureMaturityScheduleError, match=r"row 14, Total column 6 \(F14\)"
+    ) as exc:
+        parse_exposure_maturity_schedule(path)
+    assert isinstance(exc.value.__cause__, OverflowError)
+    with pytest.raises(ExposureMaturityScheduleError, match="Total column 6"):
+        calculate_wal(path, date(2025, 11, 30))
