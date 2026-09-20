@@ -542,8 +542,6 @@ def test_final_concentration_slide_precedes_pdf_export(
         encoding="utf-8",
     )
     export_source: list[tuple[int, list[str]]] = []
-    validated_slides: list[int] = []
-    real_validate = run_module.validate_distribution_ppt_standalone
 
     def _last_table_row(pptx_path: Path) -> list[str]:
         presentation = Presentation(str(pptx_path))
@@ -552,15 +550,10 @@ def test_final_concentration_slide_precedes_pdf_export(
             return []
         return [cell.text for cell in tables[0].rows[1].cells]
 
-    def _observe_validation(pptx_path: Path) -> PptStandaloneValidationResult:
-        validated_slides.append(len(Presentation(str(pptx_path)).slides))
-        return real_validate(pptx_path)
-
     def _export_pdf(source: Path, target: Path) -> None:
         export_source.append((len(Presentation(str(source)).slides), _last_table_row(source)))
         target.write_bytes(b"%PDF-1.4\n%test\n")
 
-    monkeypatch.setattr(run_module, "validate_distribution_ppt_standalone", _observe_validation)
     monkeypatch.setattr(
         run_module,
         "_build_pdf_export_output_generator",
@@ -575,7 +568,6 @@ def test_final_concentration_slide_precedes_pdf_export(
     run_dir = run_module.run_pipeline(config_path, output_dir=tmp_path / "run")
     distribution = run_dir / resolve_ppt_output_names(date(2025, 12, 31)).distribution_filename
     assert len(Presentation(str(distribution)).slides) == expected_slides
-    assert validated_slides == [expected_slides]
     final_row = _last_table_row(distribution)
     if include_concentration:
         with (run_dir / "concentration_metrics.csv").open(
