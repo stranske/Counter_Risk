@@ -251,7 +251,11 @@ def _parse_block_rows(
                 if raw_total not in (None, "")
                 else 0.0
             )
-        except (ValueError, TypeError):
-            total = 0.0
+        except (ValueError, TypeError) as exc:
+            coordinate = worksheet.cell(row=row, column=total_col).coordinate
+            raise ExposureMaturityScheduleError(
+                f"Invalid maturity amount in {worksheet.title!r}, row {row}, "
+                f"Total column {total_col} ({coordinate}): {raw_total!r}"
+            ) from exc
         rows.append(ExposureMaturityRow(maturity_date=maturity, total=total))
     return rows
