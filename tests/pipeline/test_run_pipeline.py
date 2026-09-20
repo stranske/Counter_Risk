@@ -1950,6 +1950,54 @@ def test_cprs_ch_totals_reconciliation_rejects_non_finite_fcm_notional() -> None
     assert "absolute_difference" not in result or math.isfinite(result["absolute_difference"])
 
 
+@pytest.mark.parametrize(
+    ("ch_rows", "fcm_rows", "source"),
+    [
+        (
+            [
+                {"Counterparty": "Direct CH", "Notional": float("nan")},
+                {"Counterparty": "Counterparty A", "Notional": 60.0},
+            ],
+            [{"counterparty": "Counterparty A", "Notional": 60.0}],
+            "CPRS-CH",
+        ),
+        (
+            [
+                {"Counterparty": "Counterparty A", "Notional": 1e308},
+                {"Counterparty": "Counterparty A", "Notional": 1e308},
+            ],
+            [{"counterparty": "Counterparty A", "Notional": 1e308}],
+            "CPRS-CH",
+        ),
+        (
+            [{"Counterparty": "Counterparty A", "Notional": -(10**400)}],
+            [{"counterparty": "Counterparty A", "Notional": 1.0}],
+            "CPRS-CH",
+        ),
+        (
+            [{"Counterparty": "Counterparty A", "Notional": -1e308}],
+            [{"counterparty": "Counterparty A", "Notional": 1e308}],
+            "difference",
+        ),
+    ],
+)
+def test_cprs_ch_totals_reconciliation_rejects_overflow_and_unmatched_invalid_ch(
+    ch_rows: list[dict[str, Any]], fcm_rows: list[dict[str, Any]], source: str
+) -> None:
+    result = run_module._evaluate_cprs_ch_totals_reconciliation(
+        parsed_sections={
+            "totals": _FakeDataFrame(records=fcm_rows),
+            "cprs_ch": _FakeDataFrame(records=ch_rows),
+        },
+        variant="all_programs",
+        mosers_workbook_path=None,
+    )
+
+    assert result["status"] == "failed"
+    assert source in result["message"]
+    assert "absolute_difference" not in result
+
+
 def test_run_reconciliation_checks_records_cprs_ch_totals_mismatch_as_informational(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

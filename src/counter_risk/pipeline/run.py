@@ -4810,7 +4810,10 @@ def _to_float(value: Any) -> float:
 def _finite_notional_total(records: list[dict[str, Any]]) -> float | None:
     total = 0.0
     for record in records:
-        notional = float(record.get("Notional", 0.0) or 0.0)
+        try:
+            notional = float(record.get("Notional", 0.0) or 0.0)
+        except OverflowError:
+            return None
         if not math.isfinite(notional):
             return None
         total += notional
@@ -4832,6 +4835,11 @@ def _evaluate_cprs_ch_totals_reconciliation(
         # every other segment (swaps/repo/futures/futures_cdx) restates a subset
         # of the same rows, so summing across *all* segments would double-count.
         primary_records = _select_primary_cprs_ch_records(cprs_ch_records)
+        if _finite_notional_total(primary_records) is None:
+            return {
+                "status": "failed",
+                "message": "CPRS-CH totals check failed: non-finite CPRS-CH primary notional or total",
+            }
         if totals_records:
             # The CH tab's rollup is a superset of the FCM tab's: it also includes
             # clearing houses reached directly (not via an FCM), which the FCM tab
