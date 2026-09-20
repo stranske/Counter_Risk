@@ -7,6 +7,7 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+from pptx import Presentation
 
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
@@ -48,6 +49,99 @@ def _build_config(
         enable_ppt_output=enable_ppt_output,
         enable_distribution_output=enable_distribution_output,
     )
+
+
+@pytest.mark.parametrize("explicit_outputs", [True, False])
+@pytest.mark.parametrize("refresh_status", ["skipped", "success"])
+def test_skipped_refresh_reports_existing_distribution(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    explicit_outputs: bool,
+    refresh_status: str,
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(
+            status=run_module.PptProcessingStatus(refresh_status),
+        ),
+    )
+    warnings: list[str] = []
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=warnings
+    )
+    distribution = run_dir / resolve_ppt_output_names(date(2025, 12, 31)).distribution_filename
+    assert distribution in output_paths
+    assert len(Presentation(str(distribution)).slides) > 0
+    builder = ManifestBuilder(
+        config=config, as_of_date=date(2025, 12, 31), run_date=date(2026, 1, 2)
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=warnings,
+        ppt_status=ppt_result.status.value,
+        ppt_outputs=ppt_result.ppt_outputs if explicit_outputs else None,
+    )
+    builder.write(run_dir=run_dir, manifest=manifest)
+    summary = (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text()
+    codes = {finding["code"] for finding in manifest["data_quality"]["findings"]}
+    assert manifest["ppt_outputs"]["distribution"]["status"] == "success"
+    assert "PPT_GENERATION_SKIPPED" not in codes
+    assert "PowerPoint generation was skipped" not in summary
+    if refresh_status == "skipped":
+        assert "PPT_LINK_REFRESH_SKIPPED" in codes
+        assert "link refresh was skipped" in summary
+        assert "Distribution PowerPoint was generated" in summary
+        assert "WARN (YELLOW)" in summary
+    else:
+        assert "PPT_LINK_REFRESH_SKIPPED" not in codes
+
+
+@pytest.mark.parametrize("enable_ppt_output", [True, False])
+def test_skipped_refresh_reports_absent_distribution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, enable_ppt_output: bool
+) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    config = _build_config(
+        tmp_path, enable_ppt_output=enable_ppt_output, enable_distribution_output=False
+    )
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _path: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SKIPPED),
+    )
+    output_paths, ppt_result = run_module._write_outputs(
+        run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=[]
+    )
+    distribution = run_dir / resolve_ppt_output_names(date(2025, 12, 31)).distribution_filename
+    assert not distribution.exists()
+    builder = ManifestBuilder(
+        config=config, as_of_date=date(2025, 12, 31), run_date=date(2026, 1, 2)
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=ppt_result.status.value,
+        ppt_outputs=ppt_result.ppt_outputs,
+    )
+    builder.write(run_dir=run_dir, manifest=manifest)
+    summary = (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text()
+    assert "PPT_GENERATION_SKIPPED" in summary
+    assert "PowerPoint generation was skipped" in summary
+    assert "Distribution PowerPoint was generated" not in summary
+    assert ("PPT_LINK_REFRESH_SKIPPED" in summary) is enable_ppt_output
 
 
 def test_ppt_disabled_skips_ppt_entrypoint_and_produces_no_pptx(

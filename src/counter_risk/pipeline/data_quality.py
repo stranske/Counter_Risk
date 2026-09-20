@@ -18,6 +18,7 @@ _SEVERITY_BY_CODE: dict[str, Severity] = {
     "RECONCILIATION_DORMANT_SERIES": "info",
     "PPT_GENERATION_FAILED": "fail",
     "PPT_GENERATION_SKIPPED": "warn",
+    "PPT_LINK_REFRESH_SKIPPED": "warn",
     "LIMIT_BREACHES": "warn",
     "MISSING_NOTIONAL": "warn",
     "INVALID_NOTIONAL": "warn",
@@ -48,6 +49,7 @@ _CATEGORY_BY_CODE: dict[str, str] = {
     "RECONCILIATION_DORMANT_SERIES": "reconciliation",
     "PPT_GENERATION_FAILED": "ppt",
     "PPT_GENERATION_SKIPPED": "ppt",
+    "PPT_LINK_REFRESH_SKIPPED": "ppt",
     "LIMIT_BREACHES": "limits",
     "MISSING_NOTIONAL": "data_validation",
     "INVALID_NOTIONAL": "data_validation",
@@ -77,6 +79,7 @@ def build_data_quality(
     missing_inputs: Mapping[str, Any] | None = None,
     reconciliation_results: Mapping[str, Any] | None = None,
     ppt_status: str = "success",
+    ppt_outputs: Mapping[str, Mapping[str, str]] | None = None,
     limit_breach_summary: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the manifest data_quality object from warning entries."""
@@ -87,6 +90,7 @@ def build_data_quality(
         missing_inputs=missing_inputs,
         reconciliation_results=reconciliation_results,
         ppt_status=ppt_status,
+        ppt_outputs=ppt_outputs,
         limit_breach_summary=limit_breach_summary,
     )
     counts = _build_counts(findings)
@@ -109,6 +113,7 @@ def _build_findings(
     missing_inputs: Mapping[str, Any] | None,
     reconciliation_results: Mapping[str, Any] | None,
     ppt_status: str,
+    ppt_outputs: Mapping[str, Mapping[str, str]] | None,
     limit_breach_summary: Mapping[str, Any] | None,
 ) -> list[dict[str, Any]]:
     findings: list[dict[str, Any]] = _build_warning_findings(warnings)
@@ -118,6 +123,7 @@ def _build_findings(
             missing_inputs=missing_inputs,
             reconciliation_results=reconciliation_results,
             ppt_status=ppt_status,
+            ppt_outputs=ppt_outputs,
             limit_breach_summary=limit_breach_summary,
         )
     )
@@ -164,6 +170,7 @@ def _collect_validation_findings(
     missing_inputs: Mapping[str, Any] | None,
     reconciliation_results: Mapping[str, Any] | None,
     ppt_status: str,
+    ppt_outputs: Mapping[str, Mapping[str, str]] | None,
     limit_breach_summary: Mapping[str, Any] | None,
 ) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
@@ -224,13 +231,31 @@ def _collect_validation_findings(
             )
         )
     elif normalized_ppt_status == "skipped":
-        findings.append(
-            _make_finding(
-                category="ppt",
-                code="PPT_GENERATION_SKIPPED",
-                message="PowerPoint generation was skipped.",
+        outputs = ppt_outputs or {}
+        distribution_generated = outputs.get("distribution", {}).get("status") == "success"
+        if outputs.get("master"):
+            message = "Master PowerPoint link refresh was skipped."
+            if distribution_generated:
+                message += " Distribution PowerPoint was generated; verify links/slides manually."
+            findings.append(
+                _make_finding(
+                    category="ppt",
+                    code="PPT_LINK_REFRESH_SKIPPED",
+                    message=message,
+                )
             )
-        )
+        if not distribution_generated:
+            findings.append(
+                _make_finding(
+                    category="ppt",
+                    code="PPT_GENERATION_SKIPPED",
+                    message=(
+                        "Distribution PowerPoint generation was skipped."
+                        if outputs.get("master")
+                        else "PowerPoint generation was skipped."
+                    ),
+                )
+            )
 
     has_breaches = bool(limit_breach_summary.get("has_breaches"))
     breach_count = _safe_int(limit_breach_summary.get("breach_count", 0))
