@@ -235,6 +235,7 @@ _WORKFLOW_CONFIG_PATH_FIELDS: tuple[str, ...] = (
     "raw_nisa_ex_trend_xlsx",
     "mosers_trend_xlsx",
     "raw_nisa_trend_xlsx",
+    "exposure_summary_xlsx",
     "hist_all_programs_3yr_xlsx",
     "hist_ex_llc_3yr_xlsx",
     "hist_llc_3yr_xlsx",
@@ -660,7 +661,10 @@ def run_pipeline(
 
     try:
         input_hashes = {
-            name: _sha256_file(path) for name, path in _resolve_input_paths(runtime_config).items()
+            name: _sha256_file(path)
+            for name, path in _resolve_manifest_input_paths(
+                runtime_config, external_screenshot_inputs=config.screenshot_inputs
+            ).items()
         }
         manifest_builder = ManifestBuilder(
             config=config,
@@ -941,6 +945,26 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
         paths["cash_overrides_csv"] = config.cash_overrides_csv
     if config.dropin_all_programs_template_xlsx is not None:
         paths["dropin_all_programs_template_xlsx"] = config.dropin_all_programs_template_xlsx
+    if config.exposure_summary_xlsx is not None and any(
+        entry.name == "historical_wal_workbook" and entry.enabled
+        for entry in config.output_generators
+    ):
+        paths["exposure_summary_xlsx"] = config.exposure_summary_xlsx
+    return paths
+
+
+def _resolve_manifest_input_paths(
+    config: WorkflowConfig, *, external_screenshot_inputs: Mapping[str, Path]
+) -> dict[str, Path]:
+    """Return externally supplied sources, never run-generated screenshot intermediates."""
+
+    paths = _resolve_input_paths(config)
+    if config.enable_screenshot_replacement and external_screenshot_inputs:
+        explicit_config = config.model_copy(
+            update={"screenshot_inputs": external_screenshot_inputs}
+        )
+        for key, path in _resolve_screenshot_input_mapping(explicit_config).items():
+            paths[f"screenshot_inputs.{key}"] = path
     return paths
 
 
