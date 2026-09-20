@@ -600,6 +600,7 @@ def run_pipeline(
             as_of_date=as_of_date,
             warnings=warnings,
             parsed_by_variant=parsed_by_variant,
+            concentration_metrics_records=concentration_metrics_records,
         )
     except Exception as exc:
         _record_stage_event("report-generation", started_at=report_stage_started_at, status="error")
@@ -643,20 +644,6 @@ def run_pipeline(
         )
         LOGGER.exception("pipeline_failed stage=langsmith_fleet_artifact run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during LangSmith fleet artifact stage") from exc
-
-    if runtime_config.include_concentration_table_in_ppt and concentration_metrics_records:
-        dist_ppt_path = run_dir / resolve_ppt_output_names(as_of_date).distribution_filename
-        if dist_ppt_path.exists():
-            try:
-                from counter_risk.ppt.concentration_table import append_concentration_table_slide
-
-                append_concentration_table_slide(dist_ppt_path, concentration_metrics_records)
-                LOGGER.info("concentration_table_appended path=%s", dist_ppt_path)
-            except Exception as exc:
-                LOGGER.exception("pipeline_failed stage=concentration_table run_dir=%s", run_dir)
-                raise RuntimeError(
-                    "Pipeline failed during concentration table append stage"
-                ) from exc
 
     try:
         input_hashes = {
@@ -804,6 +791,7 @@ def _call_write_outputs(
     as_of_date: date,
     warnings: list[str],
     parsed_by_variant: Mapping[str, Mapping[str, Any]],
+    concentration_metrics_records: list[dict[str, Any]],
 ) -> tuple[list[Path], PptProcessingResult]:
     write_outputs_kwargs: dict[str, Any] = {
         "run_dir": run_dir,
@@ -813,6 +801,8 @@ def _call_write_outputs(
     }
     if "parsed_by_variant" in inspect.signature(_write_outputs).parameters:
         write_outputs_kwargs["parsed_by_variant"] = parsed_by_variant
+    if "concentration_metrics_records" in inspect.signature(_write_outputs).parameters:
+        write_outputs_kwargs["concentration_metrics_records"] = concentration_metrics_records
     return _write_outputs(**write_outputs_kwargs)
 
 
@@ -2628,6 +2618,7 @@ def _write_outputs(
     as_of_date: date,
     warnings: list[str],
     parsed_by_variant: Mapping[str, Mapping[str, Any]] | None = None,
+    concentration_metrics_records: list[dict[str, Any]] | None = None,
 ) -> tuple[list[Path], PptProcessingResult]:
     LOGGER.info("write_outputs_start run_dir=%s", run_dir)
     _validate_pdf_distribution_config(config)
@@ -2814,6 +2805,19 @@ def _write_outputs(
             # linger in run_dir alongside the Master/Distribution outputs.
             with contextlib.suppress(OSError):
                 chart_replaced_ppt.unlink()
+        if config.include_concentration_table_in_ppt and concentration_metrics_records:
+            try:
+                from counter_risk.ppt.concentration_table import append_concentration_table_slide
+
+                append_concentration_table_slide(
+                    target_distribution_ppt, concentration_metrics_records
+                )
+                LOGGER.info("concentration_table_appended path=%s", target_distribution_ppt)
+            except Exception as exc:
+                LOGGER.exception("pipeline_failed stage=concentration_table run_dir=%s", run_dir)
+                raise RuntimeError(
+                    "Pipeline failed during concentration table append stage"
+                ) from exc
         try:
             distribution_validation = validate_distribution_ppt_standalone(target_distribution_ppt)
         except RuntimeError as exc:
