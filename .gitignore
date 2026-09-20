@@ -139,3 +139,13 @@ node_modules/
 # Template-Version bump, and this must not depend on a propagator that no workflow invokes.
 /langsmith-fleet*.json
 /langsmith-fleet*.ndjson
+
+# Keep agent transcripts out of implementation PRs.
+/codex-session-*.jsonl
+
+# This repository vendors only the three local minimatch dependencies below.
+# npm installs other packages here during CI; keep those transient files untracked.
+/.github/scripts/node_modules/*
+!/.github/scripts/node_modules/balanced-match/
+!/.github/scripts/node_modules/brace-expansion/
+!/.github/scripts/node_modules/minimatch/
