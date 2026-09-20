@@ -2620,6 +2620,11 @@ def _write_outputs(
     parsed_by_variant: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> tuple[list[Path], PptProcessingResult]:
     LOGGER.info("write_outputs_start run_dir=%s", run_dir)
+    if config.export_pdf and not config.enable_distribution_output:
+        raise ValueError(
+            "export_pdf requires enable_distribution_output; "
+            "the distribution PPT is the PDF export source"
+        )
 
     variant_inputs = [
         _VariantInputs(
