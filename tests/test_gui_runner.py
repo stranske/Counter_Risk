@@ -65,6 +65,29 @@ def test_load_limit_breach_banner_returns_none_for_missing_or_invalid_manifest(
     assert gui_runner._load_limit_breach_banner(run_dir) is None
 
 
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [
+        ("info", "GREEN"),
+        ("warn", "YELLOW"),
+        ("fail", "RED"),
+        ("  WaRn  ", "YELLOW"),
+        ("unknown", ""),
+    ],
+)
+def test_failed_run_manifest_status_mapping(tmp_path: Path, status: str, expected: str) -> None:
+    (tmp_path / "manifest.json").write_text(
+        json.dumps({"data_quality": {"overall_status": status}}), encoding="utf-8"
+    )
+    assert gui_runner._read_manifest_data_quality_color(tmp_path) == expected
+
+
+def test_invalid_utf8_manifest_uses_empty_status_and_banner(tmp_path: Path) -> None:
+    (tmp_path / "manifest.json").write_bytes(b"\xff")
+    assert gui_runner._read_manifest_data_quality_color(tmp_path) == ""
+    assert gui_runner._load_limit_breach_banner(tmp_path) is None
+
+
 def test_execute_gui_run_builds_run_args_and_writes_settings(tmp_path: Path) -> None:
     captured: dict[str, list[str]] = {}
 
@@ -140,7 +163,9 @@ def test_execute_gui_run_reads_data_quality_status_after_success(tmp_path: Path)
     assert result.data_quality_status == "YELLOW - Review warnings"
 
 
-def test_execute_gui_run_leaves_data_quality_status_empty_on_failure(tmp_path: Path) -> None:
+def test_execute_gui_run_leaves_data_quality_status_empty_on_failure_without_manifest(
+    tmp_path: Path,
+) -> None:
     def fake_runner(_argv: list[str]) -> int:
         print("input validation failed: missing required input")
         return 2
@@ -154,6 +179,27 @@ def test_execute_gui_run_leaves_data_quality_status_empty_on_failure(tmp_path: P
     assert result.data_quality_status == ""
     assert "Operator action:" in result.error_message
     assert "verify required input files" in result.error_message
+
+
+def test_execute_gui_run_reads_data_quality_status_from_manifest_after_failure(
+    tmp_path: Path,
+) -> None:
+    def fake_runner(argv: list[str]) -> int:
+        output_dir = Path(argv[argv.index("--output-dir") + 1])
+        output_dir.mkdir(parents=True)
+        (output_dir / "manifest.json").write_text(
+            json.dumps({"data_quality": {"overall_status": "fail"}}),
+            encoding="utf-8",
+        )
+        return 1
+
+    state = GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs"))
+
+    result = execute_gui_run(state=state, runner=fake_runner, temp_dir=tmp_path)
+
+    assert result.exit_code == 1
+    assert result.data_quality_color == "RED"
+    assert result.data_quality_status == "RED - Do not send"
 
 
 def test_execute_gui_run_returns_empty_data_quality_when_summary_missing(tmp_path: Path) -> None:
@@ -407,9 +453,9 @@ def test_headless_discover_resolution_never_calls_stdin_input(
     assert input_calls == []
 
 
-def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
+def _install_headless_tk(
     monkeypatch: pytest.MonkeyPatch,
-) -> None:
+) -> tuple[dict[str, object], list[Path], type[Any], type[Any]]:
     created: dict[str, object] = {"widgets": []}
     opened_paths: list[Path] = []
 
@@ -503,6 +549,14 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     monkeypatch.setattr(gui_runner, "_open_path", lambda path: opened_paths.append(path))
     monkeypatch.setattr(gui_runner, "_validate_path_roots", lambda _state: (True, ""))
 
+    return created, opened_paths, _FakeTk, _FakeWidget
+
+
+def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    created, opened_paths, fake_tk_class, fake_widget_class = _install_headless_tk(monkeypatch)
+
     launch_gui(
         initial_state=GuiRunState(as_of_date="2025-12-31"),
         runner=lambda _argv: 0,
@@ -510,7 +564,7 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
 
     fake_root = created.get("root")
     assert fake_root is not None
-    assert isinstance(fake_root, _FakeTk)
+    assert isinstance(fake_root, fake_tk_class)
     assert fake_root.title_value == "Counter Risk Runner"
     assert fake_root.geometry_value == "640x420"
     assert fake_root.mainloop_called is True
@@ -520,19 +574,128 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     ppt_buttons = [
         widget
         for widget in widgets
-        if isinstance(widget, _FakeWidget) and widget.kwargs.get("text") == "Open PPT Folder"
+        if isinstance(widget, fake_widget_class) and widget.kwargs.get("text") == "Open PPT Folder"
     ]
     assert len(ppt_buttons) == 1
     status_labels = [
         widget
         for widget in widgets
-        if isinstance(widget, _FakeWidget) and widget.kwargs.get("text") == "Run Status"
+        if isinstance(widget, fake_widget_class) and widget.kwargs.get("text") == "Run Status"
     ]
     assert len(status_labels) == 1
 
     ppt_buttons[0].kwargs["command"]()
 
     assert opened_paths == [Path("runs/2025-12-31")]
+
+
+def test_gui_failed_run_surfaces_limit_breach_banner_from_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created, _, _, _ = _install_headless_tk(monkeypatch)
+
+    class _ImmediateThread:
+        def __init__(
+            self, *, target: Callable[..., None], kwargs: dict[str, object], **_extra: object
+        ):
+            self.target = target
+            self.kwargs = kwargs
+
+        def start(self) -> None:
+            self.target(**self.kwargs)
+
+    monkeypatch.setattr(gui_runner.threading, "Thread", _ImmediateThread)
+
+    warning = "1 fail limit breach detected. Review limit_breaches.csv."
+
+    def failed_runner(argv: list[str]) -> int:
+        run_dir = Path(argv[argv.index("--output-dir") + 1])
+        run_dir.mkdir(parents=True)
+        (run_dir / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "data_quality": {"overall_status": "fail"},
+                    "limit_breach_summary": {
+                        "has_breaches": True,
+                        "fail_breach_count": 1,
+                        "warning_banner": warning,
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        return 1
+
+    launch_gui(
+        initial_state=GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs")),
+        runner=failed_runner,
+    )
+    widgets = created["widgets"]
+    assert isinstance(widgets, list)
+    run_button = next(widget for widget in widgets if widget.kwargs.get("text") == "Run")
+    run_button.kwargs["command"]()
+    quality = next(
+        widget
+        for widget in widgets
+        if widget.kwargs.get("textvariable") is not None
+        and widget.grid_calls
+        and widget.grid_calls[0][1].get("row") == 14
+    )
+    banner = next(
+        widget
+        for widget in widgets
+        if widget.kwargs.get("textvariable") is not None
+        and widget.grid_calls
+        and widget.grid_calls[0][1].get("row") == 15
+    )
+    assert quality.kwargs["textvariable"].get() == "RED - Do not send"
+    assert banner.kwargs["textvariable"].get() == warning
+
+
+def test_gui_failed_run_opens_its_own_output_after_prior_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    created, opened_paths, _, _ = _install_headless_tk(monkeypatch)
+
+    class _ImmediateThread:
+        def __init__(
+            self, *, target: Callable[..., None], kwargs: dict[str, object], **_extra: object
+        ):
+            self.target = target
+            self.kwargs = kwargs
+
+        def start(self) -> None:
+            self.target(**self.kwargs)
+
+    monkeypatch.setattr(gui_runner.threading, "Thread", _ImmediateThread)
+    runs = 0
+
+    def alternating_runner(argv: list[str]) -> int:
+        nonlocal runs
+        runs += 1
+        run_dir = Path(argv[argv.index("--output-dir") + 1])
+        run_dir.mkdir(parents=True)
+        if runs == 2:
+            (run_dir / "manifest.json").write_text(
+                json.dumps({"data_quality": {"overall_status": "fail"}}), encoding="utf-8"
+            )
+            return 1
+        return 0
+
+    launch_gui(
+        initial_state=GuiRunState(as_of_date="2025-12-31", output_root=str(tmp_path / "runs")),
+        runner=alternating_runner,
+    )
+    widgets = created["widgets"]
+    assert isinstance(widgets, list)
+    run_button = next(widget for widget in widgets if widget.kwargs.get("text") == "Run")
+    run_button.kwargs["command"]()
+    run_button.kwargs["command"]()
+    output_button = next(
+        widget for widget in widgets if widget.kwargs.get("text") == "Open Output Folder"
+    )
+    output_button.kwargs["command"]()
+    assert opened_paths == [tmp_path / "runs" / "2025-12-31_1"]
 
 
 def test_gui_ppt_folder_target_matches_runner_launch_contract() -> None:
