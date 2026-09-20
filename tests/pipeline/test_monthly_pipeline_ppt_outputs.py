@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import shutil
 from datetime import date
 from pathlib import Path
@@ -506,6 +507,141 @@ def test_pdf_request_with_distribution_disabled_is_explicit(
     )
     assert not any(path.suffix == ".pdf" for path in output_paths)
     assert len(exported) == 1
+
+
+@pytest.mark.parametrize(
+    ("include_concentration", "export_pdf", "expected_slides"),
+    [(True, True, 24), (False, True, 23), (True, False, 24)],
+)
+def test_final_concentration_slide_precedes_pdf_export(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    include_concentration: bool,
+    export_pdf: bool,
+    expected_slides: int,
+) -> None:
+    fixtures = Path("tests/fixtures")
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+                f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+                f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+                f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+                f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+                f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+                f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+                f"output_root: {tmp_path / 'runs'}",
+                f"include_concentration_table_in_ppt: {str(include_concentration).lower()}",
+                f"export_pdf: {str(export_pdf).lower()}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    export_source: list[tuple[int, list[list[str]]]] = []
+
+    def _last_slide_table(pptx_path: Path) -> list[list[str]]:
+        presentation = Presentation(str(pptx_path))
+        tables = [shape.table for shape in presentation.slides[-1].shapes if shape.has_table]
+        if not tables:
+            return []
+        return [[cell.text for cell in row.cells] for row in tables[0].rows]
+
+    def _export_pdf(source: Path, target: Path) -> None:
+        export_source.append((len(Presentation(str(source)).slides), _last_slide_table(source)))
+        target.write_bytes(b"%PDF-1.4\n%test\n")
+
+    monkeypatch.setattr(
+        run_module,
+        "_build_pdf_export_output_generator",
+        lambda *, source_pptx, warnings: PDFExportGenerator(
+            source_pptx=source_pptx,
+            warnings=warnings,
+            com_availability_checker=lambda: True,
+            pptx_to_pdf_exporter=_export_pdf,
+        ),
+    )
+
+    run_dir = run_module.run_pipeline(config_path, output_dir=tmp_path / "run")
+    distribution = run_dir / resolve_ppt_output_names(date(2025, 12, 31)).distribution_filename
+    assert len(Presentation(str(distribution)).slides) == expected_slides
+    final_table = _last_slide_table(distribution)
+    if include_concentration:
+        with (run_dir / "concentration_metrics.csv").open(
+            newline="", encoding="utf-8"
+        ) as metrics_file:
+            metrics = list(csv.DictReader(metrics_file))
+        expected_table = [
+            ["Variant", "Segment", "Top 5 Share", "Top 10 Share", "HHI"],
+            *[
+                [
+                    metric["variant"],
+                    metric["segment"],
+                    f"{float(metric['top5_share']):.2%}",
+                    f"{float(metric['top10_share']):.2%}",
+                    f"{float(metric['hhi']):.4f}",
+                ]
+                for metric in metrics
+            ],
+        ]
+        assert final_table == expected_table
+    else:
+        assert final_table == []
+    if export_pdf:
+        assert export_source == [(expected_slides, final_table)]
+        assert distribution.with_suffix(".pdf").exists()
+    else:
+        assert export_source == []
+        assert not distribution.with_suffix(".pdf").exists()
+
+
+def test_final_concentration_validation_failure_prevents_pdf_export(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    config.include_concentration_table_in_ppt = True
+    config.export_pdf = True
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    exported: list[Path] = []
+
+    def _invalid_final_deck(path: Path) -> PptStandaloneValidationResult:
+        assert len(Presentation(str(path)).slides) == 24
+        return PptStandaloneValidationResult(
+            is_valid=False,
+            external_relationship_count=1,
+            relationship_parts_scanned=("ppt/slides/_rels/slide24.xml.rels",),
+            external_relationship_parts=("ppt/slides/_rels/slide24.xml.rels",),
+        )
+
+    def _unexpected_export(source: Path, target: Path) -> None:
+        _ = target
+        exported.append(source)
+
+    monkeypatch.setattr(run_module, "validate_distribution_ppt_standalone", _invalid_final_deck)
+    monkeypatch.setattr(
+        run_module,
+        "_build_pdf_export_output_generator",
+        lambda *, source_pptx, warnings: PDFExportGenerator(
+            source_pptx=source_pptx,
+            warnings=warnings,
+            com_availability_checker=lambda: True,
+            pptx_to_pdf_exporter=_unexpected_export,
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="standalone validation failed"):
+        run_module._write_outputs(
+            run_dir=run_dir,
+            config=config,
+            as_of_date=date(2025, 12, 31),
+            warnings=[],
+            concentration_metrics_records=[{"variant": "all_programs", "segment": "fixture"}],
+        )
+    assert exported == []
 
 
 def test_master_refresh_skipped_records_master_skipped_and_distribution_success(
