@@ -118,16 +118,26 @@ def _replace_total(path: Path, value: object, coordinate: str = "F15") -> None:
     "total",
     ["not-a-number", True, False, "NaN", "Infinity", "-Infinity", "1e309", "10%"],
 )
-def test_invalid_nonblank_total_raises(tmp_path: Path, total: object) -> None:
+@pytest.mark.parametrize("row", [14, 15, 17])
+def test_invalid_nonblank_total_raises(tmp_path: Path, total: object, row: int) -> None:
     path = _write_schedule(tmp_path / "invalid-total.xlsx")
-    _replace_total(path, total)
+    # Keep a valid control in this named regression test so running it alone
+    # proves that the production boundary accepts accounting amounts first.
+    _replace_total(path, "$144.87", "F14")
+    schedule = parse_exposure_maturity_schedule(path)
+    assert [item.total for item in schedule.rows] == [144.87, 0.0, 156.06, 187.30]
+    expected_wal = (39 * 144.87 + 53 * 156.06 + 67 * 187.30) / (144.87 + 156.06 + 187.30)
+    assert calculate_wal(path, date(2025, 11, 30)) == pytest.approx(expected_wal)
+
+    coordinate = f"F{row}"
+    _replace_total(path, total, coordinate)
 
     with pytest.raises(ExposureMaturityScheduleError) as excinfo:
         parse_exposure_maturity_schedule(path)
     message = str(excinfo.value)
     assert "Exposure Maturity Schedule" in message
-    assert "row 15" in message
-    assert "Total column 6 (F15)" in message
+    assert f"row {row}" in message
+    assert f"Total column 6 ({coordinate})" in message
     assert repr(total) in message
     assert isinstance(excinfo.value.__cause__, (ValueError, TypeError))
 

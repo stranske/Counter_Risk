@@ -215,9 +215,7 @@ def find_missing_limit_entities(exposures_df: Any, limits_cfg: Any) -> list[dict
             entity_name = _find_entity_name(row, aliases)
             if entity_name is None:
                 continue
-            entity_values_by_type[entity_type].add(
-                _canonical_entity_key(entity_type, entity_name)
-            )
+            entity_values_by_type[entity_type].add(_canonical_entity_key(entity_type, entity_name))
 
     missing: list[dict[str, str]] = []
     for limit in limits.limits:
