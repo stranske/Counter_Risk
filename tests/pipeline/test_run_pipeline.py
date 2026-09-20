@@ -2450,7 +2450,9 @@ def test_optional_input_provenance_hashes(
         generated = run_dir / "_screenshots" / "internal.png"
         generated.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(fixtures / "screenshots/slide_2.png", generated)
-        return {"slide2": generated}
+        # Exercise the production merge rule as well as generated-only input:
+        # the explicit slide1 source must win this collision.
+        return {"slide1": generated, "slide2": generated}
 
     monkeypatch.setattr(run_module, "_generate_cprs_screenshot_inputs", generated_screenshot)
     # Keep the production config loading, optional-input validation, generated-image
