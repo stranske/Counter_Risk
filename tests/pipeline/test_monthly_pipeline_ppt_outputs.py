@@ -460,6 +460,8 @@ def test_pdf_request_with_distribution_disabled_is_explicit(
     disabled_dir = tmp_path / "disabled" / "run"
     disabled_dir.mkdir(parents=True)
     with pytest.raises(ValueError, match="export_pdf requires enable_distribution_output"):
+        run_module._validate_pipeline_config(disabled_config)
+    with pytest.raises(ValueError, match="export_pdf requires enable_distribution_output"):
         run_module._write_outputs(
             run_dir=disabled_dir,
             config=disabled_config,
@@ -471,6 +473,7 @@ def test_pdf_request_with_distribution_disabled_is_explicit(
 
     enabled_config = _build_config(tmp_path / "enabled", enable_ppt_output=True)
     enabled_config.export_pdf = True
+    run_module._validate_pipeline_config(enabled_config)
     enabled_dir = tmp_path / "enabled" / "run"
     enabled_dir.mkdir(parents=True)
     output_paths, _ = run_module._write_outputs(
@@ -488,10 +491,16 @@ def test_pdf_request_with_distribution_disabled_is_explicit(
     assert target in output_paths
     assert target.read_bytes().startswith(b"%PDF-1.4")
 
-    disabled_config.export_pdf = False
+    no_pdf_config = _build_config(
+        tmp_path / "no-pdf", enable_ppt_output=True, enable_distribution_output=True
+    )
+    no_pdf_config.export_pdf = False
+    run_module._validate_pipeline_config(no_pdf_config)
+    no_pdf_dir = tmp_path / "no-pdf" / "run"
+    no_pdf_dir.mkdir(parents=True)
     output_paths, _ = run_module._write_outputs(
-        run_dir=disabled_dir,
-        config=disabled_config,
+        run_dir=no_pdf_dir,
+        config=no_pdf_config,
         as_of_date=date(2025, 12, 31),
         warnings=[],
     )

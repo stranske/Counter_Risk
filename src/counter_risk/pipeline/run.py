@@ -945,6 +945,8 @@ def _resolve_input_paths(config: WorkflowConfig) -> dict[str, Path]:
 
 
 def _validate_pipeline_config(config: WorkflowConfig) -> None:
+    _validate_pdf_distribution_config(config)
+
     if config.output_root.exists() and not config.output_root.is_dir():
         raise ValueError(f"output_root must be a directory path: {config.output_root}")
 
@@ -1037,6 +1039,14 @@ def _validate_pipeline_config(config: WorkflowConfig) -> None:
         path=config.monthly_pptx,
         expected_suffix=".pptx",
     )
+
+
+def _validate_pdf_distribution_config(config: WorkflowConfig) -> None:
+    if config.export_pdf and not config.enable_distribution_output:
+        raise ValueError(
+            "export_pdf requires enable_distribution_output; "
+            "the distribution PPT is the PDF export source"
+        )
 
 
 def _validate_extension(*, field_name: str, path: Path, expected_suffix: str) -> None:
@@ -2620,11 +2630,7 @@ def _write_outputs(
     parsed_by_variant: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> tuple[list[Path], PptProcessingResult]:
     LOGGER.info("write_outputs_start run_dir=%s", run_dir)
-    if config.export_pdf and not config.enable_distribution_output:
-        raise ValueError(
-            "export_pdf requires enable_distribution_output; "
-            "the distribution PPT is the PDF export source"
-        )
+    _validate_pdf_distribution_config(config)
 
     variant_inputs = [
         _VariantInputs(
