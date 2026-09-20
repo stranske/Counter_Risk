@@ -2534,6 +2534,10 @@ def test_optional_input_provenance_hashes(
     generated_input = validated_screenshot_inputs["original"]["slide2"]
     assert generated_input == (tmp_path / "original/_screenshots/internal.png").resolve()
     assert generated_input.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    assert _sha256(generated_input) not in original.values()
+    assert {key for key in original if key.startswith("screenshot_inputs.")} == {
+        "screenshot_inputs.slide1"
+    }
 
     wal_disabled = manifest_for(wal_active=False, screenshot_active=True, run_name="wal-disabled")
     assert "exposure_summary_xlsx" not in wal_disabled
