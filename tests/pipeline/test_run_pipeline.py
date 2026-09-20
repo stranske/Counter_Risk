@@ -10,6 +10,7 @@ import math
 import os
 import platform
 import re
+import shutil
 import sys
 import types
 import zipfile
@@ -2427,6 +2428,149 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
     ]
     assert all("source_id" not in record for record in langsmith_records)
     assert all("evidence" not in record for record in langsmith_records)
+
+
+def test_optional_input_provenance_hashes(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Manifest hashes track active external sources, not generated images or idle options."""
+
+    openpyxl = pytest.importorskip("openpyxl")
+    fixtures = Path("tests/fixtures").resolve()
+    screenshot = tmp_path / "external.png"
+    shutil.copyfile(fixtures / "screenshots/slide_1.png", screenshot)
+    maturity_workbook = tmp_path / "exposure-maturity.xlsx"
+    shutil.copyfile(
+        fixtures / "nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx", maturity_workbook
+    )
+
+    def generated_screenshot(
+        *, config: WorkflowConfig, run_dir: Path, warnings: list[str]
+    ) -> dict[str, Path]:
+        generated = run_dir / "_screenshots" / "internal.png"
+        generated.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(fixtures / "screenshots/slide_2.png", generated)
+        # Exercise the production merge rule as well as generated-only input:
+        # the explicit slide1 source must win this collision.
+        return {"slide1": generated, "slide2": generated}
+
+    monkeypatch.setattr(run_module, "_generate_cprs_screenshot_inputs", generated_screenshot)
+    # Keep the production config loading, optional-input validation, generated-image
+    # merge, hashing, and manifest write boundary. Stub unrelated report calculations
+    # and writers so repeated byte-mutation runs stay focused and fast.
+    monkeypatch.setattr(run_module, "_parse_inputs", lambda _: _minimal_parsed_by_variant())
+    monkeypatch.setattr(run_module, "_validate_parsed_inputs", lambda _: None)
+    monkeypatch.setattr(run_module, "_run_reconciliation_checks", lambda **kwargs: {})
+    monkeypatch.setattr(run_module, "_compute_metrics", lambda _: ({}, {}))
+    monkeypatch.setattr(run_module, "_write_risk_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(run_module, "_compute_and_write_concentration_metrics", lambda **kwargs: [])
+    monkeypatch.setattr(run_module, "_write_change_attribution_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(
+        run_module,
+        "_compute_and_write_limit_breaches",
+        lambda **kwargs: run_module.LimitBreachEvaluation(csv_path=None, breach_count=0),
+    )
+    monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **kwargs: [])
+
+    validated_screenshot_inputs: dict[str, dict[str, Path]] = {}
+
+    def validate_screenshot_inputs_at_report_boundary(
+        *, run_dir: Path, config: WorkflowConfig, **_: Any
+    ) -> tuple[list[Path], run_module.PptProcessingResult]:
+        if run_module._ppt_screenshot_output_active(config):
+            validated_screenshot_inputs[run_dir.name] = (
+                run_module._resolve_screenshot_input_mapping(config)
+            )
+        return [], run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+
+    monkeypatch.setattr(
+        run_module,
+        "_call_write_outputs",
+        validate_screenshot_inputs_at_report_boundary,
+    )
+
+    def manifest_for(*, wal_active: bool, screenshot_active: bool, run_name: str) -> dict[str, Any]:
+        config_path = tmp_path / f"{run_name}.yml"
+        config_lines = [
+            "as_of_date: 2025-12-31",
+            f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
+            f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
+            f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
+            f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
+            f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
+            f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
+            f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+            f"exposure_summary_xlsx: {maturity_workbook}",
+            "enable_screenshot_replacement: true",
+            "screenshot_inputs:",
+            f"  slide1: {screenshot}",
+            f"output_root: {tmp_path / run_name}",
+            "output_generators:",
+            "  - name: historical_workbook",
+            "    registration: builtin:historical_workbook",
+            "    stage: historical",
+            "  - name: historical_wal_workbook",
+            "    registration: builtin:historical_wal_workbook",
+            "    stage: historical",
+            f"    enabled: {str(wal_active).lower()}",
+            "  - name: ppt_screenshot",
+            "    registration: builtin:ppt_screenshot",
+            "    stage: ppt_master",
+            f"    enabled: {str(screenshot_active).lower()}",
+            "  - name: ppt_link_refresh",
+            "    registration: builtin:ppt_link_refresh",
+            "    stage: ppt_refresh",
+            "  - name: pdf_export",
+            "    registration: builtin:pdf_export",
+            "    stage: ppt_post_distribution",
+        ]
+        config_path.write_text("\n".join(config_lines) + "\n", encoding="utf-8")
+        run_dir = run_pipeline(config_path, output_dir=tmp_path / run_name)
+        return json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["input_hashes"]
+
+    original = manifest_for(wal_active=True, screenshot_active=True, run_name="original")
+    assert original["exposure_summary_xlsx"] == _sha256(maturity_workbook)
+    assert original["screenshot_inputs.slide1"] == _sha256(screenshot)
+    assert "screenshot_inputs.slide2" not in original
+    assert validated_screenshot_inputs["original"]["slide1"] == screenshot.resolve()
+    generated_input = validated_screenshot_inputs["original"]["slide2"]
+    assert generated_input == (tmp_path / "original/_screenshots/internal.png").resolve()
+    assert generated_input.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    assert _sha256(generated_input) not in original.values()
+    assert {key for key in original if key.startswith("screenshot_inputs.")} == {
+        "screenshot_inputs.slide1"
+    }
+
+    wal_disabled = manifest_for(wal_active=False, screenshot_active=True, run_name="wal-disabled")
+    assert "exposure_summary_xlsx" not in wal_disabled
+    assert wal_disabled["screenshot_inputs.slide1"] == _sha256(screenshot)
+
+    screenshot_disabled = manifest_for(
+        wal_active=True, screenshot_active=False, run_name="screenshot-disabled"
+    )
+    assert screenshot_disabled["exposure_summary_xlsx"] == _sha256(maturity_workbook)
+    assert not any(key.startswith("screenshot_inputs.") for key in screenshot_disabled)
+
+    workbook = openpyxl.load_workbook(maturity_workbook)
+    workbook.active.cell(row=100, column=20, value="provenance-change")
+    workbook.save(maturity_workbook)
+    workbook.close()
+    shutil.copyfile(fixtures / "screenshots/slide_2.png", screenshot)
+    changed = manifest_for(wal_active=True, screenshot_active=True, run_name="changed")
+    assert (
+        changed["exposure_summary_xlsx"]
+        == _sha256(maturity_workbook)
+        != original["exposure_summary_xlsx"]
+    )
+    assert (
+        changed["screenshot_inputs.slide1"]
+        == _sha256(screenshot)
+        != original["screenshot_inputs.slide1"]
+    )
+
+    disabled = manifest_for(wal_active=False, screenshot_active=False, run_name="disabled")
+    assert "exposure_summary_xlsx" not in disabled
+    assert not any(key.startswith("screenshot_inputs.") for key in disabled)
 
 
 def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> None:

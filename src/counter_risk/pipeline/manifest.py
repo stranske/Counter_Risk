@@ -431,7 +431,9 @@ class ManifestBuilder:
         }
 
     def _serialize_config_snapshot(self, config: WorkflowConfig) -> dict[str, Any]:
-        raw = config.model_dump(mode="python")
+        # Nested optional inputs (notably screenshot_inputs) also contain Paths.
+        # JSON mode converts them without changing the snapshot's public shape.
+        raw = config.model_dump(mode="json")
         snapshot: dict[str, Any] = {}
         for key, value in raw.items():
             if isinstance(value, Path):
