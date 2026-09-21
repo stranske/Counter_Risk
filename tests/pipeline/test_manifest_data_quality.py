@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from counter_risk.config import WorkflowConfig
+from counter_risk.pipeline.data_quality import build_data_quality
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.run import _date_resolution_fallback_warning
 
@@ -470,3 +471,13 @@ def test_manifest_build_collects_date_cash_and_output_generation_findings(tmp_pa
     assert findings_by_code["REPO_CASH_APPLIED_TO_TOTALS"]["severity"] == "info"
     assert findings_by_code["OUTPUT_GENERATION_SKIPPED"]["category"] == "output_generation"
     assert findings_by_code["OUTPUT_GENERATION_FAILED"]["severity"] == "fail"
+
+
+def test_manifest_data_quality_maps_repo_cash_duplicate_counterparty_code() -> None:
+    message = (
+        "Repo Cash source has duplicate counterparty names after normalization: CIBC."
+    )
+    data_quality = build_data_quality([message])
+    finding = data_quality["findings"][0]
+    assert finding["category"] == "cash"
+    assert finding["code"] == "REPO_CASH_DUPLICATE_COUNTERPARTY_NAMES"
