@@ -249,7 +249,7 @@ def apply_repo_cash_to_totals(
 
     For matched counterparties, this increments both ``Cash`` and ``Notional``.
     For unmatched counterparties, a new totals row is appended with zeroes for
-    non-cash asset classes and ``NotionalChange`` defaulted to ``0.0``.
+    non-cash asset classes and its repo-cash amount as ``NotionalChange``.
     """
 
     rows = _iter_rows(totals_df, arg_name="totals_df")
@@ -301,7 +301,7 @@ def apply_repo_cash_to_totals(
                     "prior_notional": 0.0,
                     "notional_change": amount,
                     "Notional": amount,
-                    "NotionalChange": 0.0,
+                    "NotionalChange": amount,
                 }
             )
             normalized_index[normalized] = len(records) - 1
@@ -312,7 +312,14 @@ def apply_repo_cash_to_totals(
         _add_amount_to_aliases(row=row, aliases=("notional", "Notional"), amount=amount)
         if row.get("group_type") == "counterparty":
             row["group_name"] = _counterparty_label_from_totals_row(row) or counterparty
-            row["notional_change"] = float(row.get("notional_change", 0.0) or 0.0) + amount
+
+        existing_change = row.get("notional_change")
+        if existing_change is None or (
+            isinstance(existing_change, str) and not existing_change.strip()
+        ):
+            existing_change = row.get("NotionalChange", 0.0)
+        row["notional_change"] = float(existing_change or 0.0) + amount
+        row["NotionalChange"] = row["notional_change"]
 
     return _to_dataframe_or_records(records=records, columns=tuple(output_columns))
 
