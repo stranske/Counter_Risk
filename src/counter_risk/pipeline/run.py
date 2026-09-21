@@ -75,6 +75,7 @@ from counter_risk.parsers.repo_cash_sources import (
     load_repo_cash_overrides_csv,
     load_repo_cash_structured_source,
 )
+from counter_risk.pipeline.data_quality import build_data_quality
 from counter_risk.pipeline.evidence import top_exposure_evidence
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.parsing_types import (
@@ -723,7 +724,7 @@ def _write_langsmith_fleet_artifact(
         if _is_relative_to(path, run_dir)
     ]
     risk_proxy_status = "success" if risk_proxy_summary else "skipped"
-    data_quality_status = "warning" if warnings else "success"
+    data_quality_status = _derive_fleet_data_quality_status(warnings, limit_breach_summary)
     records = build_fleet_records(
         context=context,
         data_quality_status=data_quality_status,
@@ -766,6 +767,26 @@ def _resolve_error_category_for_fleet() -> str:
         if value:
             return value
     return "none"
+
+
+def _derive_fleet_data_quality_status(
+    warnings: Sequence[Any],
+    limit_breach_summary: Mapping[str, Any],
+) -> str:
+    """Map manifest-grade data quality severity to LangSmith fleet status."""
+
+    overall_status = build_data_quality(
+        list(warnings),
+        limit_breach_summary=limit_breach_summary,
+    )["overall_status"]
+    if overall_status == "fail":
+        return "fail"
+    max_severity = _limit_summary_max_severity(limit_breach_summary)
+    if max_severity == "fail":
+        return "fail"
+    if overall_status == "warn" or warnings or max_severity == "warning":
+        return "warning"
+    return "success"
 
 
 def _limit_summary_max_severity(
