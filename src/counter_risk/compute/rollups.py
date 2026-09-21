@@ -312,8 +312,14 @@ def apply_repo_cash_to_totals(
         _add_amount_to_aliases(row=row, aliases=("notional", "Notional"), amount=amount)
         if row.get("group_type") == "counterparty":
             row["group_name"] = _counterparty_label_from_totals_row(row) or counterparty
-            row["notional_change"] = float(row.get("notional_change", 0.0) or 0.0) + amount
-            row["NotionalChange"] = row["notional_change"]
+
+        existing_change = row.get("notional_change")
+        if existing_change is None or (
+            isinstance(existing_change, str) and not existing_change.strip()
+        ):
+            existing_change = row.get("NotionalChange", 0.0)
+        row["notional_change"] = float(existing_change or 0.0) + amount
+        row["NotionalChange"] = row["notional_change"]
 
     return _to_dataframe_or_records(records=records, columns=tuple(output_columns))
 
