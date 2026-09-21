@@ -34,7 +34,10 @@ _SEVERITY_BY_CODE: dict[str, Severity] = {
     "REPO_CASH_OVERRIDES_APPLIED": "info",
     "REPO_CASH_OVERRIDES_EMPTY": "warn",
     "REPO_CASH_LIMIT_BREACH": "warn",
+    "REPO_CASH_DUPLICATE_COUNTERPARTY_NAMES": "warn",
+    "REPO_CASH_ORPHAN_OVERRIDE_COUNTERPARTIES": "warn",
     "REPO_CASH_MISSING_REQUIRED_COUNTERPARTIES": "warn",
+    "REPO_CASH_EMPTY_SOURCE": "warn",
     "REPO_CASH_APPLIED_TO_TOTALS": "info",
     "OUTPUT_GENERATION_SKIPPED": "warn",
     "OUTPUT_GENERATION_FAILED": "fail",
@@ -65,7 +68,10 @@ _CATEGORY_BY_CODE: dict[str, str] = {
     "REPO_CASH_OVERRIDES_APPLIED": "cash",
     "REPO_CASH_OVERRIDES_EMPTY": "cash",
     "REPO_CASH_LIMIT_BREACH": "cash",
+    "REPO_CASH_DUPLICATE_COUNTERPARTY_NAMES": "cash",
+    "REPO_CASH_ORPHAN_OVERRIDE_COUNTERPARTIES": "cash",
     "REPO_CASH_MISSING_REQUIRED_COUNTERPARTIES": "cash",
+    "REPO_CASH_EMPTY_SOURCE": "cash",
     "REPO_CASH_APPLIED_TO_TOTALS": "cash",
     "OUTPUT_GENERATION_SKIPPED": "output_generation",
     "OUTPUT_GENERATION_FAILED": "output_generation",
@@ -523,8 +529,17 @@ def _code_from_message(message: str) -> str:
         "below configured minimum" in message_lower or "exceeds configured maximum" in message_lower
     ):
         return "REPO_CASH_LIMIT_BREACH"
-    if "repo cash missing required counterparties" in message_lower:
+    if "repo cash source has duplicate counterparty names after normalization" in message_lower:
+        return "REPO_CASH_DUPLICATE_COUNTERPARTY_NAMES"
+    if "override file contains counterparties not found in base source" in message_lower:
+        return "REPO_CASH_ORPHAN_OVERRIDE_COUNTERPARTIES"
+    if "repo cash source is missing required counterparties" in message_lower:
         return "REPO_CASH_MISSING_REQUIRED_COUNTERPARTIES"
+    if (
+        "repo cash source" in message_lower
+        and "did not yield any counterparty values" in message_lower
+    ):
+        return "REPO_CASH_EMPTY_SOURCE"
     if "applied repo cash values to all_programs totals" in message_lower:
         return "REPO_CASH_APPLIED_TO_TOTALS"
     if " skipped" in message_lower and (
