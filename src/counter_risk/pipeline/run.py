@@ -784,7 +784,7 @@ def _derive_fleet_data_quality_status(
     max_severity = _limit_summary_max_severity(limit_breach_summary)
     if max_severity == "fail":
         return "fail"
-    if overall_status == "warn" or warnings or max_severity == "warning":
+    if overall_status == "warn" or max_severity == "warning":
         return "warning"
     return "success"
 
