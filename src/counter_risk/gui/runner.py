@@ -58,6 +58,7 @@ _GUI_FIELD_HELP: dict[str, str] = {
         "Use default for standard Counter Risk output. Other profiles apply known historical "
         "PowerPoint and PNG formatting variants."
     ),
+    "Export PDF": "Create PDF copies of the generated PowerPoint deliverables.",
     "Input Root": (
         "Folder containing this month's Counter Risk source workbooks/exports; use Browse... "
         "to select it."
@@ -475,6 +476,7 @@ def launch_gui(
     format_var = tk.StringVar(value=state.formatting_profile)
     input_root_var = tk.StringVar(value=state.input_root)
     output_root_var = tk.StringVar(value=state.output_root)
+    export_pdf_var = tk.BooleanVar(value=state.export_pdf is True)
     status_var = tk.StringVar(value="Ready")
     result_var = tk.StringVar(value="")
     quality_var = tk.StringVar(value="")
@@ -495,6 +497,7 @@ def launch_gui(
             input_root=input_root_var.get().strip(),
             output_root=output_root_var.get().strip(),
             config_path=None,
+            export_pdf=bool(export_pdf_var.get()),
         )
 
     def _set_running(active: bool) -> None:
@@ -757,6 +760,13 @@ def launch_gui(
             )
 
     root.columnconfigure(1, weight=1)
+
+    ttk.Checkbutton(root, text="Export PDF", variable=export_pdf_var).grid(
+        row=7, column=1, sticky="w", padx=8, pady=4
+    )
+    ttk.Label(root, text=field_help["Export PDF"], wraplength=240).grid(
+        row=7, column=2, sticky="w", padx=(0, 8), pady=4
+    )
 
     run_button = ttk.Button(root, text="Run", command=_run)
     run_button.grid(row=8, column=0, padx=8, pady=8, sticky="ew")
