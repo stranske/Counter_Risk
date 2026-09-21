@@ -333,6 +333,30 @@ def test_apply_repo_cash_to_totals_updates_counterparty_group_rows_from_rollups_
     assert float(asl["Cash"]) == pytest.approx(1.0)
 
 
+def test_apply_repo_cash_syncs_notional_change_columns() -> None:
+    totals_rows = [
+        {
+            "counterparty": "CIBC",
+            "group_type": "counterparty",
+            "group_name": "CIBC",
+            "Notional": 10.0,
+            "NotionalChange": 1.0,
+            "notional_change": 2.0,
+        }
+    ]
+
+    updated = _as_records(apply_repo_cash_to_totals(totals_rows, {"CIBC": 3.5, "ASL": 250.0}))
+    by_counterparty = {row["counterparty"]: row for row in updated}
+    assert by_counterparty["CIBC"]["notional_change"] == pytest.approx(5.5)
+    assert by_counterparty["CIBC"]["NotionalChange"] == pytest.approx(5.5)
+    assert by_counterparty["ASL"]["notional_change"] == pytest.approx(250.0)
+    assert by_counterparty["ASL"]["NotionalChange"] == pytest.approx(250.0)
+
+    _, top_changes = _compute_metrics({"all": {"totals": updated}})
+    assert top_changes["all"][0] == {"counterparty": "ASL", "notional_change": 250.0}
+    assert top_changes["all"][1] == {"counterparty": "CIBC", "notional_change": 5.5}
+
+
 def test_top_exposures_is_deterministic_for_ties() -> None:
     exposures = [
         {"counterparty": "Bravo", "asset_class": "Equity", "notional": 100.0},
