@@ -382,7 +382,9 @@ def _detect_variant(*, file_path: Path, sheet_name: str) -> str | None:
     title = normalize_variant_text(f"{file_path.name} {sheet_name}")
     if "ex trend" in title:
         return "ex_trend"
-    if "all" in title:
+    # Keep explicit all-programs markers, but do not let an incidental "all"
+    # substring (for example, "trend-allocation") override the Trend variant.
+    if "all programs" in title or ("all" in title and "trend" not in title):
         return "all_programs"
     # Generated pipeline artifacts often include both "trend" and
     # "mosers input" in the filename; prioritize the explicit
