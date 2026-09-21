@@ -138,3 +138,20 @@ def test_reconciliation_missing_expected_segments_records_gap() -> None:
     ]
     assert result["gap_count"] == 1
     assert any("expected segments missing" in warning for warning in result["warnings"])
+
+
+def test_reconcile_clearing_house_canonical_label_does_not_false_flag_missing_from_historical() -> (
+    None
+):
+    result = reconcile_series_coverage(
+        parsed_data_by_sheet={
+            "Total": {
+                "totals": [],
+                "futures": [{"clearing_house": "ICE"}],
+            },
+        },
+        historical_series_headers_by_sheet={"Total": ("ICE Clear US",)},
+    )
+
+    assert result["by_sheet"]["Total"]["missing_from_historical_headers"] == []
+    assert result["gap_count"] == 0
