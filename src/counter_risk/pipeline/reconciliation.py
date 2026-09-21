@@ -149,6 +149,9 @@ def reconcile_series_coverage(
         normalized_historical_series_headers = {
             normalize_counterparty(header) for header in historical_series_headers
         }
+        normalized_historical_clearing_house_headers = {
+            normalize_clearing_house(header) for header in historical_series_headers
+        }
         missing_normalized_counterparties = sorted(
             {
                 normalized_name
@@ -175,7 +178,8 @@ def reconcile_series_coverage(
             key=str.casefold,
         )
         missing_clearing_houses = sorted(
-            set(clearing_houses_in_data).difference(historical_series_headers), key=str.casefold
+            set(clearing_houses_in_data).difference(normalized_historical_clearing_house_headers),
+            key=str.casefold,
         )
         current_series_labels = sorted(
             set(counterparties_in_data).union(clearing_houses_in_data), key=str.casefold
