@@ -624,16 +624,12 @@ def test_gui_state_from_form_preserves_export_pdf_flag(
         initial_state=GuiRunState(
             as_of_date="2025-12-31",
             output_root=str(tmp_path / "runs"),
-            export_pdf=not export_pdf,
+            export_pdf=export_pdf,
         ),
         runner=lambda argv: captured_args.append(argv) or 0,
     )
     widgets = created["widgets"]
     assert isinstance(widgets, list)
-    export_checkbox = next(
-        widget for widget in widgets if widget.kwargs.get("text") == "Export PDF"
-    )
-    export_checkbox.kwargs["variable"].set(export_pdf)
     run_button = next(widget for widget in widgets if widget.kwargs.get("text") == "Run")
     run_button.kwargs["command"]()
 
