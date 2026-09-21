@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any, cast
 
@@ -408,6 +409,20 @@ def test_top_changes_rejects_non_finite_notional_change(notional_change: float) 
             "notional": 100.0,
             "prior_notional": 100.0,
             "notional_change": notional_change,
+        }
+    ]
+
+    with pytest.raises(ValueError, match="notional_change values must be finite"):
+        top_changes(totals)
+
+
+def test_top_changes_rejects_non_finite_derived_change() -> None:
+    totals = [
+        {
+            "group_type": "counterparty",
+            "group_name": "A",
+            "notional": sys.float_info.max,
+            "prior_notional": -sys.float_info.max,
         }
     ]
 
