@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 import types
 from pathlib import Path
+from shutil import copyfile
 from typing import Any
 
 import pytest
@@ -133,6 +134,32 @@ def test_parse_trend_variant_maps_swaps_to_futures(fake_pandas: None) -> None:
 
     records = df.to_records()
     assert {row["Segment"] for row in records} == {"futures"}
+
+
+@pytest.mark.parametrize(
+    "filename", ["mosers-trend-all.xlsx", "small-trend.xlsx", "trend-allocation.xlsx"]
+)
+def test_parse_cprs_ch_trend_workbook_not_misclassified_when_filename_contains_all(
+    fake_pandas: None, tmp_path: Path, filename: str
+) -> None:
+    source = _fixture(_TREND_FIXTURE)
+    renamed = tmp_path / filename
+    copyfile(source, renamed)
+
+    records = parse_cprs_ch(renamed).to_records()
+
+    assert records == parse_cprs_ch(source).to_records()
+    assert {row["Segment"] for row in records} == {"futures"}
+
+
+def test_parse_cprs_ch_explicit_all_programs_marker_retains_segment_validation(
+    fake_pandas: None, tmp_path: Path
+) -> None:
+    renamed = tmp_path / "all_programs-trend.xlsx"
+    copyfile(_fixture(_TREND_FIXTURE), renamed)
+
+    with pytest.raises(ValueError, match="Missing expected CPRS-CH segments: futures_cdx, repo"):
+        parse_cprs_ch(renamed)
 
 
 def _build_real_shape_workbook(tmp_path: Path, name: str) -> Path:
