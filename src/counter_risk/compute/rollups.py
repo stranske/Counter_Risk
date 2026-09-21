@@ -414,6 +414,11 @@ def top_changes(totals_df: Any, n: int = 10) -> Any:
                 change_value = float(row["notional_change"])
             except (TypeError, ValueError) as exc:
                 raise ValueError("totals_df notional_change values must be numeric") from exc
+            if not math.isfinite(change_value):
+                raise ValueError(
+                    "totals_df notional_change values must be finite, "
+                    f"got {row['notional_change']!r}"
+                )
         else:
             notional = _find_numeric(row, ("notional",), field="notional", default=0.0)
             prior_notional = _find_numeric(
