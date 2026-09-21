@@ -241,9 +241,13 @@ class ManifestBuilder:
             }
 
         if distribution_filename in output_path_strings:
+            # A failed master generation invalidates the distribution deck too: the
+            # distribution artifact is derived from the same PPT run, so reporting it
+            # as "success" told downstream consumers the run produced a sendable deck
+            # when it had not.
             ppt_outputs["distribution"] = {
                 "role": "distribution",
-                "status": "success",
+                "status": "failed" if ppt_status == "failed" else "success",
                 "path": distribution_filename,
                 "generation_step": "ppt_distribution",
             }
