@@ -530,6 +530,7 @@ def _install_headless_tk(
     tkinter_module.Listbox = _FakeWidget
     tkinter_module.Button = _FakeWidget
     tkinter_module.IntVar = _FakeStringVar
+    tkinter_module.BooleanVar = _FakeStringVar
     tkinter_module.StringVar = _FakeStringVar
     tkinter_module.messagebox = SimpleNamespace(showerror=lambda *_args, **_kwargs: None)
     tkinter_module.filedialog = SimpleNamespace(askdirectory=lambda **_kwargs: "")
@@ -539,6 +540,7 @@ def _install_headless_tk(
     ttk_module.Combobox = _FakeWidget
     ttk_module.Entry = _FakeWidget
     ttk_module.Button = _FakeWidget
+    ttk_module.Checkbutton = _FakeWidget
     ttk_module.Frame = _FakeFrame
     tkinter_module.ttk = ttk_module
 
@@ -587,6 +589,53 @@ def test_launch_gui_starts_tk_mainloop_with_headless_stubs(
     ppt_buttons[0].kwargs["command"]()
 
     assert opened_paths == [Path("runs/2025-12-31")]
+
+
+@pytest.mark.parametrize(
+    ("export_pdf", "expected_flag", "unexpected_flag"),
+    [
+        (True, "--export-pdf", "--no-export-pdf"),
+        (False, "--no-export-pdf", "--export-pdf"),
+    ],
+)
+def test_gui_state_from_form_preserves_export_pdf_flag(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    export_pdf: bool,
+    expected_flag: str,
+    unexpected_flag: str,
+) -> None:
+    created, _, _, _ = _install_headless_tk(monkeypatch)
+    captured_args: list[list[str]] = []
+
+    class _ImmediateThread:
+        def __init__(
+            self, *, target: Callable[..., None], kwargs: dict[str, object], **_extra: object
+        ) -> None:
+            self.target = target
+            self.kwargs = kwargs
+
+        def start(self) -> None:
+            self.target(**self.kwargs)
+
+    monkeypatch.setattr(gui_runner.threading, "Thread", _ImmediateThread)
+
+    launch_gui(
+        initial_state=GuiRunState(
+            as_of_date="2025-12-31",
+            output_root=str(tmp_path / "runs"),
+            export_pdf=export_pdf,
+        ),
+        runner=lambda argv: captured_args.append(argv) or 0,
+    )
+    widgets = created["widgets"]
+    assert isinstance(widgets, list)
+    run_button = next(widget for widget in widgets if widget.kwargs.get("text") == "Run")
+    run_button.kwargs["command"]()
+
+    assert len(captured_args) == 1
+    assert expected_flag in captured_args[0]
+    assert unexpected_flag not in captured_args[0]
 
 
 def test_gui_failed_run_surfaces_limit_breach_banner_from_manifest(
