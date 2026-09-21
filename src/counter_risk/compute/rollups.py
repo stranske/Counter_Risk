@@ -424,6 +424,11 @@ def top_changes(totals_df: Any, n: int = 10) -> Any:
             )
             change_value = notional - prior_notional
 
+        if not math.isfinite(change_value):
+            raise ValueError(
+                f"totals_df notional_change values must be finite, got {change_value!r}"
+            )
+
         group_type = str(row.get("group_type", "")).strip() or "unknown"
         group_name = str(row.get("group_name", "")).strip() or "unknown"
 
