@@ -922,9 +922,19 @@ def test_format_deltas_omits_non_finite_notional_change() -> None:
         dict[str, list[dict[str, object]]],
         {"all_programs": [{"counterparty": "Y", "notional_change": float("inf")}]},
     )
+    fallback_nan_deltas = cast(
+        dict[str, list[dict[str, object]]],
+        {"all_programs": [{"counterparty": "Z", "custom_change": float("nan")}]},
+    )
 
     assert session_module._format_deltas(nan_deltas) == "Top deltas: none."
     assert session_module._format_deltas(inf_deltas) == "Top deltas: none."
+    assert session_module._format_deltas(fallback_nan_deltas) == "Top deltas: none."
+
+
+def test_format_metric_value_normalizes_finite_floats() -> None:
+    assert session_module._format_metric_value(3.0) == "3"
+    assert session_module._format_metric_value(1.25) == "1.25"
 
 
 def test_delta_formatter_skips_malformed_variants_and_uses_stable_fallbacks() -> None:

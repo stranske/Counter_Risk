@@ -758,10 +758,22 @@ def _format_deltas(deltas: dict[str, list[dict[str, object]]]) -> str:
     return "; ".join(lines) if lines else "Top deltas: none."
 
 
-def _format_metric_value(parsed: float) -> str:
-    if parsed.is_integer():
-        return str(int(parsed))
-    return str(parsed)
+def _format_metric_value(value: object) -> str | None:
+    parsed = _parse_float(value)
+    if parsed is not None:
+        if parsed.is_integer():
+            return str(int(parsed))
+        return str(parsed)
+
+    # Preserve non-numeric untrusted values for the existing prompt sanitizer,
+    # but reject numeric values that parsed as NaN or infinity.
+    if isinstance(value, str):
+        normalized = value.strip().replace(",", "")
+        try:
+            float(normalized)
+        except (ValueError, OverflowError):
+            return value
+    return None
 
 
 def _find_delta_metric(record: dict[str, object]) -> tuple[str, str] | None:
@@ -775,18 +787,18 @@ def _find_delta_metric(record: dict[str, object]) -> tuple[str, str] | None:
     )
     for key in candidate_keys:
         if key in record:
-            parsed = _parse_float(record[key])
-            if parsed is None:
+            formatted = _format_metric_value(record[key])
+            if formatted is None:
                 return None
-            return key, _format_metric_value(parsed)
+            return key, formatted
 
     for key, value in record.items():
         if key in {"counterparty", "name"}:
             continue
-        parsed = _parse_float(value)
-        if parsed is None:
+        formatted = _format_metric_value(value)
+        if formatted is None:
             return None
-        return str(key), _format_metric_value(parsed)
+        return str(key), formatted
 
     return "value", "unknown"
 
