@@ -748,13 +748,35 @@ def _format_deltas(deltas: dict[str, list[dict[str, object]]]) -> str:
             continue
 
         counterparty = str(first.get("counterparty") or first.get("name") or "unknown")
-        metric, metric_value = _find_delta_metric(first)
-        lines.append(f"{variant}: {counterparty} {metric}={metric_value}")
+        metric = _find_delta_metric(first)
+        if metric is None:
+            continue
+
+        metric_name, metric_value = metric
+        lines.append(f"{variant}: {counterparty} {metric_name}={metric_value}")
 
     return "; ".join(lines) if lines else "Top deltas: none."
 
 
-def _find_delta_metric(record: dict[str, object]) -> tuple[str, str]:
+def _format_metric_value(value: object) -> str | None:
+    parsed = _parse_float(value)
+    if parsed is not None:
+        if parsed.is_integer():
+            return str(int(parsed))
+        return str(parsed)
+
+    # Preserve non-numeric untrusted values for the existing prompt sanitizer,
+    # but reject numeric values that parsed as NaN or infinity.
+    if isinstance(value, str):
+        normalized = value.strip().replace(",", "")
+        try:
+            float(normalized)
+        except (ValueError, OverflowError):
+            return value
+    return None
+
+
+def _find_delta_metric(record: dict[str, object]) -> tuple[str, str] | None:
     candidate_keys = (
         "notional_change",
         "delta",
@@ -765,12 +787,18 @@ def _find_delta_metric(record: dict[str, object]) -> tuple[str, str]:
     )
     for key in candidate_keys:
         if key in record:
-            return key, str(record[key])
+            formatted = _format_metric_value(record[key])
+            if formatted is None:
+                return None
+            return key, formatted
 
     for key, value in record.items():
         if key in {"counterparty", "name"}:
             continue
-        return str(key), str(value)
+        formatted = _format_metric_value(value)
+        if formatted is None:
+            return None
+        return str(key), formatted
 
     return "value", "unknown"
 
