@@ -913,6 +913,20 @@ def test_warning_formatter_handles_empty_and_truncated_collections() -> None:
     )
 
 
+def test_format_deltas_omits_non_finite_notional_change() -> None:
+    nan_deltas = cast(
+        dict[str, list[dict[str, object]]],
+        {"all_programs": [{"counterparty": "X", "notional_change": float("nan")}]},
+    )
+    inf_deltas = cast(
+        dict[str, list[dict[str, object]]],
+        {"all_programs": [{"counterparty": "Y", "notional_change": float("inf")}]},
+    )
+
+    assert session_module._format_deltas(nan_deltas) == "Top deltas: none."
+    assert session_module._format_deltas(inf_deltas) == "Top deltas: none."
+
+
 def test_delta_formatter_skips_malformed_variants_and_uses_stable_fallbacks() -> None:
     assert session_module._format_deltas({}) == "Top deltas: none."
     deltas = cast(
