@@ -2,8 +2,38 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+from counter_risk.pipeline import run as run_module
 from counter_risk.pipeline.parsing_types import UnmappedCounterpartyError
 from counter_risk.pipeline.run import reconcile_series_coverage
+
+
+def _write_cprs_ch_workbook(path: Path, notional: object) -> None:
+    from openpyxl import Workbook
+
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "CPRS - CH"
+    worksheet.cell(3, 3, "MOSERS Program")
+    worksheet.cell(3, 11, notional)
+    workbook.save(path)
+    workbook.close()
+
+
+def test_reconciliation_gate_rejects_boolean_workbook_total(tmp_path: Path) -> None:
+    workbook_path = tmp_path / "totals.xlsx"
+    _write_cprs_ch_workbook(workbook_path, True)
+
+    result = run_module._evaluate_cprs_ch_totals_reconciliation(
+        parsed_sections={"totals": [{"Notional": 1.0}]},
+        variant="all_programs",
+        mosers_workbook_path=workbook_path,
+    )
+
+    assert result["status"] == "failed"
+    assert "MOSERS Program row" in result["message"]
+    assert "computed_total_notional" not in result
 
 
 def test_reconciliation_strict_exception_exposes_normalized_counterparty() -> None:
