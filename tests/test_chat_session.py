@@ -921,6 +921,9 @@ def test_format_deltas_lists_multiple_movers_per_variant() -> None:
                 {"counterparty": "BigMover", "notional_change": 500},
                 {"counterparty": "Second", "notional_change": 400},
                 {"counterparty": "Third", "notional_change": 300},
+                {"counterparty": "Fourth", "notional_change": 200},
+                {"counterparty": "Fifth", "notional_change": 100},
+                {"counterparty": "Sixth", "notional_change": 0},
             ],
         },
     )
@@ -928,7 +931,9 @@ def test_format_deltas_lists_multiple_movers_per_variant() -> None:
     assert session_module._format_deltas(deltas) == (
         "all_programs: BigMover notional_change=500; "
         "all_programs: Second notional_change=400; "
-        "all_programs: Third notional_change=300"
+        "all_programs: Third notional_change=300; "
+        "all_programs: Fourth notional_change=200; "
+        "all_programs: Fifth notional_change=100"
     )
 
 
