@@ -1,5 +1,7 @@
 # Counter_Risk — Whole-App Audit
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 ## Executive Summary
 
 Counter_Risk is a well-engineered pipeline: the code is clean (ruff passes, ~1350 tests collected), strongly typed, and disciplined about failing loudly rather than miscomputing. Config loading uses `extra="forbid"` so typo'd keys are caught, parsers raise typed exceptions on missing sheets/headers, and the pipeline wraps every stage with consistent error handling and provenance/manifest validation. However, the app is **not ready for the intended no-install Windows operator path**, and there are **four genuinely wrong-number / wrong-outcome defects** that affect the risk report itself.

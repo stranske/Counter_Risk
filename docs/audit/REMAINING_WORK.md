@@ -1,5 +1,7 @@
 # Audit-fix implementation — progress & remaining work
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 Branch: `audit-fixes` (local only, not pushed). Base: `main`.
 
 ## Committed & verified (durable)
@@ -13,20 +15,22 @@ Branch: `audit-fixes` (local only, not pushed). Base: `main`.
 All 7 audit BLOCKERs' **core logic** is in except the two UI/packaging BLOCKERs below (#6, #7).
 Imports clean on the branch.
 
-## NOT yet done
-### Cursor UI/outputs lane (not started)
-- **#7 [BLOCKER]** discover `input()` crashes windowed GUI — `io/discover.py:242`, `gui/runner.py:149`
-- #9 [MAJOR] GUI pipeline on Tk main thread → worker thread + `root.after`
-- #10 [MAJOR] GUI raw exit codes → wire `format_launch_error_for_runner`; wrap "Open…" handlers
-- #17 [MAJOR] `as_of_date` discarded by MOSERS writers — stamp it (`writers/mosers_workbook.py:74`)
-- #20 [MAJOR] GUI file/dir pickers + path validation
-- #23 [MINOR] pptx geometry-mismatch error/EMU robustness
-- #25 [MINOR] dead `OutputContext.warnings`
-- #26 [MINOR] `historical_update._append_to_sheet` row 13 → `header_row+1`
-- Prompt staged at `/tmp/cr_prompts/lane3_cursor.txt`
+## Historical status (resolved and deferred items)
+
+The rows below preserve the pre-merge gaps and record whether each item is resolved on `main` or deferred. See `docs/PRODUCT_CONTRACT.md` for current work.
+
+### Cursor UI/outputs lane (resolved on main)
+- **#7 [BLOCKER]** discover `input()` — resolved (GUI uses worker thread / non-blocking discover).
+- #9 [MAJOR] GUI pipeline on Tk main thread — resolved.
+- #10 [MAJOR] GUI raw exit codes — resolved for the interactive GUI worker; `gui --headless` still prints raw exception text (follow-up).
+- #17 [MAJOR] `as_of_date` discarded by MOSERS writers — resolved.
+- #20 [MAJOR] GUI file/dir pickers + path validation — resolved.
+- #23 [MINOR] pptx geometry-mismatch error/EMU robustness — resolved on main.
+- #25 [MINOR] dead `OutputContext.warnings` — deferred to issues.
+- #26 [MINOR] `historical_update._append_to_sheet` row 13 — resolved.
 
 ### Runner.xlsm
-- **#6 [BLOCKER]** inert "buttons" — needs Form Controls wired to VBA + `Config` sheet (likely via `src/counter_risk/build/xlsm.py`). Fiddly binary/VBA work; staged last.
+- **#6 [BLOCKER]** runner controls and `Config` sheet — resolved; `Ask about this run` remains an unimplemented label with no VBA handler.
 
 ### Deferred MINORs (dropped from claude lane to avoid a test-breaking refactor)
 - #22 unify YAML loaders (reverted — broke 5 limit tests despite being byte-faithful; mechanism unresolved)
