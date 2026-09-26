@@ -14,7 +14,7 @@ Production code on this branch keeps the merged fix; this file records the RED/G
 
 `pytest tests/parsers/test_cprs_ch.py::test_parse_cprs_ch_trend_workbook_not_misclassified_when_filename_contains_all -q --no-cov`
 
-```
+```text
 FAILED tests/parsers/test_cprs_ch.py::test_parse_cprs_ch_trend_workbook_not_misclassified_when_filename_contains_all[mosers-trend-all.xlsx]
 FAILED tests/parsers/test_cprs_ch.py::test_parse_cprs_ch_trend_workbook_not_misclassified_when_filename_contains_all[small-trend.xlsx]
 FAILED tests/parsers/test_cprs_ch.py::test_parse_cprs_ch_trend_workbook_not_misclassified_when_filename_contains_all[trend-allocation.xlsx]
@@ -22,11 +22,11 @@ FAILED tests/parsers/test_cprs_ch.py::test_parse_cprs_ch_trend_workbook_not_misc
 ```
 
 Representative failure: trend workbooks were classified as `all_programs`, raising
-`ValueError: Missing expected CPRS-CH segments: futures_cdx, repo, swaps`.
+`ValueError: Missing expected CPRS-CH segments: futures_cdx, repo`.
 
 ## GREEN — restored guard, same command
 
-```
+```text
 ============================== 3 passed in 6.87s ===============================
 ```
 
