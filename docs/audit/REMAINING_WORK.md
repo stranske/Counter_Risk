@@ -15,22 +15,22 @@ Branch: `audit-fixes` (local only, not pushed). Base: `main`.
 All 7 audit BLOCKERs' **core logic** is in except the two UI/packaging BLOCKERs below (#6, #7).
 Imports clean on the branch.
 
-## NOT yet done (resolved on main — kept for history)
+## Historical status (resolved and deferred items)
 
-The rows below described pre-merge gaps; they are **resolved on `main`** as of 2026-09-23 (#1081–#1090, #1103–#1107). See `docs/PRODUCT_CONTRACT.md` for current work.
+The rows below preserve the pre-merge gaps and record whether each item is resolved on `main` or deferred. See `docs/PRODUCT_CONTRACT.md` for current work.
 
 ### Cursor UI/outputs lane (resolved on main)
 - **#7 [BLOCKER]** discover `input()` — resolved (GUI uses worker thread / non-blocking discover).
 - #9 [MAJOR] GUI pipeline on Tk main thread — resolved.
-- #10 [MAJOR] GUI raw exit codes — resolved.
+- #10 [MAJOR] GUI raw exit codes — resolved for the interactive GUI worker; `gui --headless` still prints raw exception text (follow-up).
 - #17 [MAJOR] `as_of_date` discarded by MOSERS writers — resolved.
 - #20 [MAJOR] GUI file/dir pickers + path validation — resolved.
-- #23 [MINOR] pptx geometry-mismatch error/EMU robustness — deferred to issues.
+- #23 [MINOR] pptx geometry-mismatch error/EMU robustness — resolved on main.
 - #25 [MINOR] dead `OutputContext.warnings` — deferred to issues.
 - #26 [MINOR] `historical_update._append_to_sheet` row 13 — resolved.
 
-### Runner.xlsm (resolved on main)
-- **#6 [BLOCKER]** inert "buttons" — resolved (Form Controls wired in shipped workbook).
+### Runner.xlsm
+- **#6 [BLOCKER]** runner controls and `Config` sheet — resolved; `Ask about this run` remains an unimplemented label with no VBA handler.
 
 ### Deferred MINORs (dropped from claude lane to avoid a test-breaking refactor)
 - #22 unify YAML loaders (reverted — broke 5 limit tests despite being byte-faithful; mechanism unresolved)
