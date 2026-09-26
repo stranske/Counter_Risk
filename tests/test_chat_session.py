@@ -913,6 +913,30 @@ def test_warning_formatter_handles_empty_and_truncated_collections() -> None:
     )
 
 
+def test_format_deltas_lists_multiple_movers_per_variant() -> None:
+    deltas = cast(
+        dict[str, list[dict[str, object]]],
+        {
+            "all_programs": [
+                {"counterparty": "BigMover", "notional_change": 500},
+                {"counterparty": "Second", "notional_change": 400},
+                {"counterparty": "Third", "notional_change": 300},
+                {"counterparty": "Fourth", "notional_change": 200},
+                {"counterparty": "Fifth", "notional_change": 100},
+                {"counterparty": "Sixth", "notional_change": 0},
+            ],
+        },
+    )
+
+    assert session_module._format_deltas(deltas) == (
+        "all_programs: BigMover notional_change=500; "
+        "all_programs: Second notional_change=400; "
+        "all_programs: Third notional_change=300; "
+        "all_programs: Fourth notional_change=200; "
+        "all_programs: Fifth notional_change=100"
+    )
+
+
 def test_format_deltas_omits_non_finite_notional_change() -> None:
     nan_deltas = cast(
         dict[str, list[dict[str, object]]],
