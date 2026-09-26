@@ -743,17 +743,17 @@ def _format_deltas(deltas: dict[str, list[dict[str, object]]]) -> str:
         if not records:
             continue
 
-        first = records[0]
-        if not isinstance(first, dict):
-            continue
+        for record in records[:5]:
+            if not isinstance(record, dict):
+                continue
 
-        counterparty = str(first.get("counterparty") or first.get("name") or "unknown")
-        metric = _find_delta_metric(first)
-        if metric is None:
-            continue
+            counterparty = str(record.get("counterparty") or record.get("name") or "unknown")
+            metric = _find_delta_metric(record)
+            if metric is None:
+                continue
 
-        metric_name, metric_value = metric
-        lines.append(f"{variant}: {counterparty} {metric_name}={metric_value}")
+            metric_name, metric_value = metric
+            lines.append(f"{variant}: {counterparty} {metric_name}={metric_value}")
 
     return "; ".join(lines) if lines else "Top deltas: none."
 
