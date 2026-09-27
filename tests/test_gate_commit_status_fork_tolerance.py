@@ -103,6 +103,11 @@ RUNNER_JS = textwrap.dedent("""
           state: 'success',
           error: makeError(403, 'Resource not accessible by integration'),
         }),
+        fork_read_only_failure: await runCase({
+          ...FORK,
+          state: 'failure',
+          error: makeError(403, 'Resource not accessible by integration'),
+        }),
         deleted_fork_read_only: await runCase({
           headRepo: null,
           baseRepo: 'stranske/Counter_Risk',
@@ -179,6 +184,17 @@ def test_fork_read_only_403_reports_the_real_verdict(outcomes: dict[str, Any]) -
     assert "headsha" in summary
     assert "success" in summary
     assert "all checks passed" in summary
+
+
+def test_fork_read_only_403_preserves_failure_verdict(
+    outcomes: dict[str, Any],
+) -> None:
+    case = outcomes["fork_read_only_failure"]
+    warning = " ".join(case["warnings"])
+    summary = " ".join(case["summaryRaw"])
+    assert case["threw"] is None
+    assert "'failure'" in warning
+    assert "failure" in summary
 
 
 def test_deleted_fork_read_only_403_reports_the_verdict(
