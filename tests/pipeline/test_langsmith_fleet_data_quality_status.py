@@ -27,9 +27,7 @@ def _write_fleet(
         limit_breach_summary=limit_breach_summary,
     )
     return [
-        json.loads(line)
-        for line in artifact_path.read_text(encoding="utf-8").splitlines()
-        if line
+        json.loads(line) for line in artifact_path.read_text(encoding="utf-8").splitlines() if line
     ]
 
 
@@ -47,7 +45,9 @@ def test_fleet_data_quality_status_reflects_fail_limit_breaches(tmp_path: Path) 
     )
     assert records
     assert all(record["domain"]["data_quality_status"] == "fail" for record in records)
-    data_quality_record = next(record for record in records if record["operation"] == "data-quality")
+    data_quality_record = next(
+        record for record in records if record["operation"] == "data-quality"
+    )
     assert data_quality_record["domain"]["stage_status"] == "fail"
 
 
