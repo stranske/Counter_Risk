@@ -35,7 +35,7 @@ PYTEST_ADDOPTS=<unset>
 $ python3 -m pytest tests/test_gate_commit_status_fork_tolerance.py -q
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
-rootdir: /Users/teacher/.codex/automations/imi-merge-verify-closer/worktrees/counter-risk-1130
+rootdir: /private/tmp/counter-risk-evidence.nRvYDT
 configfile: pyproject.toml
 plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
@@ -97,7 +97,7 @@ FAILED tests/test_gate_commit_status_fork_tolerance.py::test_fork_read_only_403_
 FAILED tests/test_gate_commit_status_fork_tolerance.py::test_fork_read_only_403_reports_the_real_verdict
 FAILED tests/test_gate_commit_status_fork_tolerance.py::test_fork_read_only_403_preserves_failure_verdict
 FAILED tests/test_gate_commit_status_fork_tolerance.py::test_deleted_fork_read_only_403_reports_the_verdict
-========================= 4 failed, 4 passed in 0.40s ==========================
+========================= 4 failed, 4 passed in 0.41s ==========================
 ```
 
 ## GREEN — production workflow restored
@@ -112,7 +112,7 @@ collected 8 items
 
 tests/test_gate_commit_status_fork_tolerance.py ........                 [100%]
 
-============================== 8 passed in 2.43s ===============================
+============================== 8 passed in 0.33s ===============================
 ```
 
 The named gate therefore fails when fork tolerance is removed and passes when the
