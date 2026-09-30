@@ -604,3 +604,34 @@ def test_build_langsmith_metadata_uses_repo_project_override(
     assert metadata["langsmith_project"] == "counter-risk-prod"
     assert os.environ[runtime.ENV_LANGCHAIN_PROJECT] == "counter-risk-prod"
     assert os.environ[runtime.ENV_LANGSMITH_PROJECT] == "counter-risk-prod"
+
+
+def test_build_anthropic_client_claude5_family_omits_temperature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fake_chat_anthropic(**kwargs: object) -> object:
+        calls.append(kwargs)
+        return object()
+
+    monkeypatch.setattr(
+        runtime.importlib,
+        "import_module",
+        lambda _: SimpleNamespace(ChatAnthropic=fake_chat_anthropic),
+    )
+    assert (
+        runtime._build_anthropic_client(
+            model="claude-sonnet-5-5", token="t", timeout=31, max_retries=2
+        )
+        is not None
+    )
+    assert calls == [
+        {
+            "model": "claude-sonnet-5-5",
+            "anthropic_api_key": "t",
+            "timeout": 31,
+            "max_retries": 2,
+            "max_tokens": runtime.ANTHROPIC_THINKING_MAX_TOKENS,
+        }
+    ]
