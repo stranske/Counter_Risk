@@ -409,7 +409,7 @@ def test_build_provider_model_registry_uses_safe_defaults_for_empty_catalog(
 
     assert registry.provider_models == {
         "openai": {"gpt-5.2"},
-        "anthropic": {"claude-sonnet-4-5-20250929"},
+        "anthropic": {"claude-sonnet-5-5"},
     }
     assert registry.provider_model_required_env_keys["openai"]["gpt-5.2"] == (
         "GITHUB_TOKEN",

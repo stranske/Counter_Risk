@@ -120,9 +120,7 @@ def _resolve_provider(provider: str | None, *, force_openai: bool) -> tuple[str 
 def _default_slots() -> list[SlotDefinition]:
     return [
         SlotDefinition(name="slot1", provider=PROVIDER_OPENAI, model="gpt-5.2"),
-        SlotDefinition(
-            name="slot2", provider=PROVIDER_ANTHROPIC, model="claude-sonnet-4-5-20250929"
-        ),
+        SlotDefinition(name="slot2", provider=PROVIDER_ANTHROPIC, model="claude-sonnet-5-5"),
         SlotDefinition(name="slot3", provider=PROVIDER_GITHUB, model=DEFAULT_MODEL),
     ]
 
@@ -234,6 +232,16 @@ def _build_openai_client(
         return None
 
 
+ANTHROPIC_THINKING_MAX_TOKENS = 16000
+
+
+def _is_claude5_family(model: str) -> bool:
+    lowered = model.lower().strip()
+    return any(
+        lowered.startswith(f"claude-{family}-5") for family in ("opus", "sonnet", "haiku", "fable")
+    )
+
+
 def _build_anthropic_client(
     *, model: str, token: str, timeout: int, max_retries: int
 ) -> object | None:
@@ -244,17 +252,20 @@ def _build_anthropic_client(
     chat_anthropic = getattr(module, "ChatAnthropic", None)
     if chat_anthropic is None:
         return None
+    kwargs: dict[str, object] = {
+        "model": model,
+        "anthropic_api_key": token,
+        "timeout": timeout,
+        "max_retries": max_retries,
+    }
+    if _is_claude5_family(model):
+        # Always-thinking family: a custom temperature is a 400, and thinking tokens count
+        # against max_tokens (langchain-anthropic falls back to 4096 for unprofiled models).
+        kwargs["max_tokens"] = ANTHROPIC_THINKING_MAX_TOKENS
+    else:
+        kwargs["temperature"] = 0.1
     try:
-        return cast(
-            object,
-            chat_anthropic(
-                model=model,
-                anthropic_api_key=token,
-                temperature=0.1,
-                timeout=timeout,
-                max_retries=max_retries,
-            ),
-        )
+        return cast(object, chat_anthropic(**kwargs))
     except Exception:
         return None
 

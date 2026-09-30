@@ -61,7 +61,7 @@ def build_provider_model_registry(
     if not openai_models:
         openai_models.add("gpt-5.2")
     if not anthropic_models:
-        anthropic_models.add("claude-sonnet-4-5-20250929")
+        anthropic_models.add("claude-sonnet-5-5")
 
     openai_model_requirements: dict[str, tuple[str, ...]] = {}
     for model in sorted(github_models):
