@@ -52,3 +52,45 @@ python3.12 -m pytest -q -n 4 -m 'not release and not slow' --cov=counter_risk --
 Identical 106-file coverage scope; 48 release/slow deselections in both selections. The new tests add 5 covered statements; newly covered target lines: `[751, 754, 755, 808, 809]`. Focused/adjacent saved-artifact, data-quality and observability selection: 37 PASS. Black, Ruff and diff whitespace checks pass. Seven controls plus their seven restorations execute for real. No floor, exclusion, workflow or production behavior changed.
 
 This is local line coverage. It does not establish release/slow packaging, Office/native execution, hosted delivery, live LangSmith service acceptance, branch coverage, or current-head GitHub gates. Matching keepalive owns CI/review after push. Reviewed Repo Merge Verify Closer owns expected-check topology, unchanged-head validation, zero active review threads, seven-minute review floor, guarded merge and verifier disposition.
+
+## Acceptance follow-up
+
+The existing seven pytest nodes now also check that a blank trace error category
+with a blank or absent pipeline category persists `none` at both the top level
+and in shared metadata. The external-report test checks the saved artifact count
+alongside the filtered references, including an external-only input that must
+persist an empty list and a count of zero. Production behavior is unchanged.
+
+Both added behaviors have matching mutation checks: changing the error resolver's
+default to `unknown-category`, or making an empty report list count as one, fails
+the corresponding node. Each passes after exact source-byte restoration. Complete
+RED/restored GREEN outputs and the targeted coverage output are recorded in the
+[follow-up transcript](issue-1140-fleet-artifact-followup-transcript.txt).
+
+The focused and adjacent selection passed all 37 tests on Linux with Python
+3.14.7 using `-m 'not slow'` and `--cov=counter_risk.pipeline.run`. The specific
+module's coverage table reports 2,511 statements, 2,197 missed, and 13 percent
+(rounded). This narrowly selected run is not comparable to the full-suite
+measurements above, does not replace them, and does not establish a 90 percent
+repository coverage result. No new pytest nodes were added; the seven original
+mutation receipts and the earlier 2,217-test measurement remain historical
+evidence for the original candidate.
+
+The repository-wide Black 26.5.1 check passed for all 369 Python files with line
+length 100 and the required exclusion expression. Sandbox restrictions prevented
+the default Python 3.14 worker startup; worker retries stalled. A temporary Python
+3.12 launcher called Black's own `reformat_one` sequentially for every file found
+by its unchanged CLI discovery. The launcher and successful gate output are in
+the follow-up transcript. Focused Ruff and diff whitespace checks also passed.
+
+Verified acceptance checklist:
+
+- [x] Tests: saved fleet-artifact metadata fallbacks cover latency selection and blank error categories.
+- [x] Tests: saved artifact references and counts exclude reports outside the run directory.
+- [x] Documentation: fallback coverage, validation results, and measurement limits are recorded.
+
+GitHub API access was unavailable during this follow-up, so the PR-body checklist
+and its open/ready-for-review state could not be verified or updated remotely.
+The workspace's `.git` directory is read-only, preventing a commit on this
+checkout. The follow-up commit was prepared in a temporary checkout with a Git
+bundle for import; this workspace's branch remains unchanged.

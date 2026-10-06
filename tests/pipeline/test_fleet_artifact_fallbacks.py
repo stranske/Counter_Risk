@@ -82,6 +82,21 @@ def test_fleet_artifact_uses_pipeline_error_after_blank_trace_category(
         for record in records
     )
 
+    # A blank trace category must also fall through when the pipeline category
+    # is unusable; neither whitespace nor an absent value is a real category.
+    for index, pipeline_category in enumerate((" \t ", None)):
+        if pipeline_category is None:
+            monkeypatch.delenv("PIPELINE_ERROR_CATEGORY")
+        else:
+            monkeypatch.setenv("PIPELINE_ERROR_CATEGORY", pipeline_category)
+
+        records = _records(tmp_path / f"unknown-error-{index}")
+
+        assert all(record["error_category"] == "none" for record in records)
+        assert all(
+            record["domain"]["shared_metadata"]["error_category"] == "none" for record in records
+        )
+
 
 @pytest.mark.usefixtures("clean_trace_env")
 def test_fleet_artifact_omits_external_report_paths(tmp_path: Path) -> None:
@@ -96,5 +111,12 @@ def test_fleet_artifact_omits_external_report_paths(tmp_path: Path) -> None:
         record["domain"]["report_artifacts"] == ["artifact:monthly-report.xlsx"]
         for record in records
     )
+    assert all(record["domain"]["report_artifact_count"] == 1 for record in records)
+    assert "private-input" not in json.dumps(records)
+
+    records = _records(tmp_path / "external-only-run", [outside])
+
+    assert all(record["domain"]["report_artifacts"] == [] for record in records)
+    assert all(record["domain"]["report_artifact_count"] == 0 for record in records)
     assert "private-input" not in json.dumps(records)
     assert outside.read_bytes() == b"external-input"

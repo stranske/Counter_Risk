@@ -1,0 +1,570 @@
+Console output is complete; trailing whitespace is removed for the diff whitespace gate.
+
+blank-error-default: RED
+Command: /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_pipeline_error_after_blank_trace_category -m not slow -q
+Exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_fleet_artifact_fallbacks.py F                        [100%]
+
+=================================== FAILURES ===================================
+______ test_fleet_artifact_uses_pipeline_error_after_blank_trace_category ______
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-2/test_fleet_artifact_uses_pipel0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f875d203100>
+
+    @pytest.mark.usefixtures("clean_trace_env")
+    def test_fleet_artifact_uses_pipeline_error_after_blank_trace_category(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("LANGSMITH_ERROR_CATEGORY", " \t ")
+        monkeypatch.setenv("PIPELINE_ERROR_CATEGORY", "  input-unavailable  ")
+
+        records = _records(tmp_path / "run")
+
+        assert all(record["error_category"] == "input-unavailable" for record in records)
+        assert all(
+            record["domain"]["shared_metadata"]["error_category"] == "input-unavailable"
+            for record in records
+        )
+
+        # A blank trace category must also fall through when the pipeline category
+        # is unusable; neither whitespace nor an absent value is a real category.
+        for index, pipeline_category in enumerate((" \t ", None)):
+            if pipeline_category is None:
+                monkeypatch.delenv("PIPELINE_ERROR_CATEGORY")
+            else:
+                monkeypatch.setenv("PIPELINE_ERROR_CATEGORY", pipeline_category)
+
+            records = _records(tmp_path / f"unknown-error-{index}")
+
+>           assert all(record["error_category"] == "none" for record in records)
+E           assert False
+E            +  where False = all(<generator object test_fleet_artifact_uses_pipeline_error_after_blank_trace_category.<locals>.<genexpr> at 0x7f875e4db850>)
+
+tests/pipeline/test_fleet_artifact_fallbacks.py:95: AssertionError
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_pipeline_error_after_blank_trace_category - assert False
+ +  where False = all(<generator object test_fleet_artifact_uses_pipeline_error_after_blank_trace_category.<locals>.<genexpr> at 0x7f875e4db850>)
+============================== 1 failed in 0.31s ===============================
+
+blank-error-default: restored GREEN
+Command: /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_pipeline_error_after_blank_trace_category -m not slow -q
+Exit: 0
+Source SHA256: 10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_fleet_artifact_fallbacks.py .                        [100%]
+
+============================== 1 passed in 0.27s ===============================
+
+external-only-report-count: RED
+Command: /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_omits_external_report_paths -m not slow -q
+Exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_fleet_artifact_fallbacks.py F                        [100%]
+
+=================================== FAILURES ===================================
+_______________ test_fleet_artifact_omits_external_report_paths ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-4/test_fleet_artifact_omits_exte0')
+
+    @pytest.mark.usefixtures("clean_trace_env")
+    def test_fleet_artifact_omits_external_report_paths(tmp_path: Path) -> None:
+        run_dir = tmp_path / "run"
+        outside = tmp_path / "private-input.xlsx"
+        outside.write_bytes(b"external-input")
+        inside = run_dir / "monthly-report.xlsx"
+
+        records = _records(run_dir, [inside, outside])
+
+        assert all(
+            record["domain"]["report_artifacts"] == ["artifact:monthly-report.xlsx"]
+            for record in records
+        )
+        assert all(record["domain"]["report_artifact_count"] == 1 for record in records)
+        assert "private-input" not in json.dumps(records)
+
+        records = _records(tmp_path / "external-only-run", [outside])
+
+        assert all(record["domain"]["report_artifacts"] == [] for record in records)
+>       assert all(record["domain"]["report_artifact_count"] == 0 for record in records)
+E       assert False
+E        +  where False = all(<generator object test_fleet_artifact_omits_external_report_paths.<locals>.<genexpr> at 0x7f72726793c0>)
+
+tests/pipeline/test_fleet_artifact_fallbacks.py:120: AssertionError
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_omits_external_report_paths - assert False
+ +  where False = all(<generator object test_fleet_artifact_omits_external_report_paths.<locals>.<genexpr> at 0x7f72726793c0>)
+============================== 1 failed in 0.27s ===============================
+
+external-only-report-count: restored GREEN
+Command: /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_omits_external_report_paths -m not slow -q
+Exit: 0
+Source SHA256: 461c3ff1af573bb92a043b5a03018edbb60975051470aad5c5873f62a0d7283c
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_fleet_artifact_fallbacks.py .                        [100%]
+
+============================== 1 passed in 0.22s ===============================
+
+Focused and adjacent targeted coverage
+Command: pytest tests/pipeline/test_fleet_artifact_fallbacks.py tests/pipeline/test_langsmith_fleet_data_quality_status.py tests/observability/test_langsmith_fleet.py --cov=counter_risk.pipeline.run --cov-report=term-missing -m "not slow" -q
+Exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 37 items
+
+tests/pipeline/test_fleet_artifact_fallbacks.py .......                  [ 18%]
+tests/pipeline/test_langsmith_fleet_data_quality_status.py ......        [ 35%]
+tests/observability/test_langsmith_fleet.py ........................     [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.7-final-0 ________________
+
+Name                               Stmts   Miss  Cover   Missing
+----------------------------------------------------------------
+src/counter_risk/pipeline/run.py    2511   2197    13%   143, 288, 305-334, 338-363, 374-694, 786, 801, 822-832, 838-878, 884, 888-898, 904-934, 938-968, 972, 978-980, 991-1002, 1006-1095, 1103-1104, 1111-1112, 1125-1162, 1174-1213, 1223-1403, 1407-1434, 1443-1460, 1469-1471, 1475-1478, 1484-1501, 1512-1537, 1545-1564, 1571-1578, 1582-1595, 1599-1601, 1609-1629, 1639-1691, 1695-1706, 1714-1740, 1744-1780, 1790-1792, 1801-1863, 1869-2020, 2028-2063, 2074-2115, 2121-2147, 2153-2168, 2174-2205, 2209-2211, 2217-2246, 2252-2281, 2285-2288, 2292-2298, 2302-2306, 2327-2356, 2365-2381, 2387-2428, 2442-2483, 2493-2496, 2502-2516, 2532-2536, 2542-2555, 2561-2581, 2595-2622, 2626-2629, 2635-2656, 2667-2679, 2691-2950, 2972-3049, 3055-3072, 3081-3091, 3098, 3137-3174, 3185-3206, 3216-3237, 3241-3263, 3267-3271, 3277-3279, 3289-3303, 3311-3325, 3333-3343, 3348-3360, 3375-3421, 3434-3488, 3501-3563, 3584-3632, 3643-3661, 3665-3667, 3687-3723, 3745-3824, 3835-3845, 3851-3860, 3866-3872, 3884-3907, 3916, 3959-3961, 3965-3967, 3971-3975, 3983-3985, 3998-4000, 4011-4013, 4025-4027, 4036-4038, 4046-4061, 4141-4142, 4148-4152, 4160-4171, 4188-4199, 4212-4366, 4370, 4382-4395, 4399-4401, 4412-4439, 4445-4455, 4459-4463, 4487-4492, 4513-4523, 4527-4531, 4535-4537, 4541-4549, 4553-4563, 4567-4573, 4577, 4581-4583, 4593-4723, 4730-4743, 4749-4822, 4826-4832, 4836-4847, 4853-4979, 4983-5021, 5025-5032, 5038-5079, 5101-5127, 5135-5192, 5200-5208, 5215-5228, 5236-5242, 5250-5272, 5288-5330, 5339-5346, 5350-5358, 5367-5373, 5383-5387, 5391-5468, 5473-5483, 5500-5550, 5563-5676, 5686-5692, 5699, 5707
+----------------------------------------------------------------
+TOTAL                               2511   2197    13%
+============================== 37 passed in 0.73s ==============================
+
+Repository-wide Black gate scheduling workaround
+The Python 3.14 default process workers could not bind their forkserver socket in the sandbox. Thread and Python 3.12 process worker retries stalled and were interrupted. The following temporary launcher keeps Black CLI source discovery, formatting, and reporting and calls the stock per-file entry point sequentially.
+#!/usr/bin/python3.12
+import sys
+sys.path.insert(0, "/opt/hostedtoolcache/Python/3.14.7/x64/lib/python3.14/site-packages")
+import black
+import black.concurrency
+
+def serial_reformat_many(sources, fast, write_back, mode, report, workers, no_cache=False):
+    for source in sorted(sources):
+        black.reformat_one(src=source, fast=fast, write_back=write_back, mode=mode,
+                           report=report, no_cache=no_cache)
+
+black.concurrency.reformat_many = serial_reformat_many
+black.patched_main()
+
+Command: PATH=/tmp/issue-1140-format-bin:$PATH black --check --line-length 100 --exclude "(\.workflows-lib|node_modules)" . --verbose
+Exit: 0
+Identified `/home/runner/work/Counter_Risk/Counter_Risk` as project root containing a .git directory.
+Using configuration from project root.
+line_length: 100
+target_version: ['py312']
+extend_exclude: /(
+  \.venv
+  | node_modules
+  | \.workflows-lib
+)/
+
+Found input source directory: "/home/runner/work/Counter_Risk/Counter_Risk"
+/home/runner/work/Counter_Risk/Counter_Risk/node_modules ignored: matches the --exclude regular expression
+/home/runner/work/Counter_Risk/Counter_Risk/.github/scripts/node_modules ignored: matches the --exclude regular expression
+/home/runner/work/Counter_Risk/Counter_Risk/.workflows-lib ignored: matches the --exclude regular expression
+/home/runner/work/Counter_Risk/Counter_Risk/.github/scripts/autofix_emit_report.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/.github/scripts/decode_raw_input.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/.github/scripts/fallback_split.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/.github/scripts/gate_summary.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/.github/scripts/issue_format.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/.github/scripts/parse_chatgpt_topics.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/.github/scripts/verifier_verdict_json.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/design-system/ds_streamlit.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/pyinstaller_runtime_hook.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/aggregate_agent_metrics.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/api_client.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/autopilot_metrics_collector.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/autopilot_step_timer.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/build_runner_workbook.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/check_agents_md_freshness.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/check_deliberate_break.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/check_docs_drift.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/ci_coverage_delta.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/ci_history.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/ci_metrics.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/coverage_history_append.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/docs_drift_fix_agent.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/extract_vba_modules.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/_llm_client.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/capability_check.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/checklist_utils.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/context_extractor.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/followup_issue_generator.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/injection_guard.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/integration_layer.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/issue_dedup.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/issue_formatter.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/issue_optimizer.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/issue_pr_context.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/label_matcher.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/pr_verifier.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/progress_reviewer.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/semantic_matcher.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/structured_output.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/task_decomposer.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/task_validator.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/topic_splitter.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/trace_utils.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/verdict_extract.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/verdict_policy.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/langchain/verifier_config.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/orchestrator_skill.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/reference_packs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/reusable_ci_scope.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/runner_lib/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/runner_lib/__main__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/runner_lib/core.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/state_fingerprint.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/sync_dev_dependencies.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/sync_status_file_ignores.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/sync_test_dependencies.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/sync_tool_versions.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/validate_dependency_test_setup.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/validate_release_workflow_yaml.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/scripts/validate_run_contract.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/sitecustomize.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/build/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/build/release.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/build/xlsm.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/calculations/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/calculations/wal.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/context.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/providers/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/providers/anthropic_stub.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/providers/base.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/providers/langchain_runtime.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/providers/openai_stub.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/session.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/ui.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/utils.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/cli/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/cli/__main__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/cli/mapping_diff_report.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/compute/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/compute/errors.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/compute/futures_delta.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/compute/limits.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/compute/rollups.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/config.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/dates.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/demo_artifact.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/formatting.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/gui/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/gui/runner.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/integrations/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/integrations/excel_com.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/integrations/powerpoint_com.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/io/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/io/discover.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/io/errors.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/io/excel_range_compare.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/io/mosers_workbook.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/io/workbook_compare.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/limits_config.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/logging.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/mosers/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/mosers/template.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/mosers/workbook_generation.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/name_matching.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/name_registry.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/normalize.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/observability/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/observability/langsmith_fleet.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/outputs/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/outputs/base.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/outputs/historical_workbook.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/outputs/pdf_export.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/outputs/ppt_link_refresh.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/outputs/ppt_screenshot.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/outputs/registry.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parser.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/_variant_text.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/_xlsx_reader.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/cprs_ch.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/cprs_fcm.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/daily_holdings_pdf.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/exposure_maturity_schedule.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/nisa.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/nisa_all_programs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/nisa_ex_trend.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/nisa_trend.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/parsers/repo_cash_sources.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/data_quality.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/evidence.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/fixture_replay.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/manifest.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/manifest_schema.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/parsing_types.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/ppt_naming.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/ppt_validation.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/reconciliation.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run_folder_outputs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/time_utils.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/warnings.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/ppt/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/ppt/concentration_table.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/ppt/pptx_postprocess.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/ppt/pptx_static.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/ppt/replace_screenshots.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/renderers/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/renderers/table_png.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/reports/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/reports/change_attribution.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/reports/mapping_diff.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/runner_date_control.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/runner_launch.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/runtime_paths.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/web_demo.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/workflows/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/workflows/historical_update.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/writer.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/writers/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/writers/dropin_templates.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/writers/historical_update.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/writers/mosers_workbook.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/writers/pptx_screenshots.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/yaml_utils.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/baseline/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/baseline/adapter.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/baseline/conftest.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/baseline/invariants.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/baseline/test_coverage_manifest.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/baseline/test_directional.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/baseline/test_golden.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/baseline/test_invariants.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/chat/test_top_exposures.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_concentration_metrics.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_errors.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_futures_delta.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_futures_delta_callsites.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_rollups.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/conftest.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/docs/test_audit_log_historical.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/docs/test_product_contract.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/helpers/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/helpers/excel_asserts.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/helpers/pptx_asserts.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/integration/test_cli_run.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/integration/test_mosers_workbook_writeback_atomicity.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/integration/test_packaged_executable_assets.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/integration/test_windows_runner_cmd.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/integrations/test_excel_com.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/integrations/test_powerpoint_com.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/mosers_reference_outputs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/observability/test_langsmith_fleet.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/outputs/test_base.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/outputs/test_historical_workbook.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/outputs/test_pdf_export.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/outputs/test_ppt_link_refresh.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/outputs/test_ppt_screenshot.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_cprs_ch.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_cprs_fcm.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_daily_holdings_pdf.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_exposure_maturity_schedule.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_exposure_maturity_schedule_no_broad_except.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_nisa_all_programs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_nisa_all_programs_input_structure.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_nisa_ex_trend.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_nisa_trend.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_numeric.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/parsers/test_repo_cash_sources.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/conftest.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_cprs_screenshot_generation.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_fleet_artifact_fallbacks.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_frozen_runtime_config.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_historical_headers.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_langsmith_fleet_data_quality_status.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_manifest.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_manifest_data_quality.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_manifest_data_quality_entries.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_manifest_provenance.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_manifest_schema.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_manifest_schema_conformance.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_manifest_structured_warnings.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_monthly_pipeline_ppt_outputs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_parsing_types.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_pipeline.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_ppt_validation.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_reconcile_series_coverage.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_reconciliation.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_run_folder_outputs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_run_folder_readme.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_run_manifest_ppt_entries.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_run_pipeline.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_run_pipeline_runtime_config_paths.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_time_utils.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/pipeline/test_top_exposure_evidence.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/ppt/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/ppt/test_concentration_table.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/renderers/test_table_png.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/spec/conftest.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/spec/test_macro_spec_doc.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/spec/test_macro_spec_fixtures.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_build_xlsm.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_change_attribution_report.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_chat_context.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_chat_provider_clients.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_chat_session.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_chat_ui.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_cli.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_com_cleanup.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_config.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_counter_risk_cli.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_counter_risk_logging.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_coverage_policy.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_dates.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_demo_artifact.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_dependency_version_alignment.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_dropin_template_openpyxl_absence.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_dropin_templates.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_excel_asserts.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_excel_range_compare.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_extract_vba_modules.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_fixture_replay_config.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_fixture_replay_numeric_outputs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_fixtures_smoke.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_followup_issue_generator_checklist_placeholders.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_formatting.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_futures_delta.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_gate_commit_status_fork_tolerance.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_gui_runner.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_historical_update.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_historical_workbook_validation.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_imports.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_io_discover.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_issue_formatter_checklist_placeholders.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_langchain_runtime.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_limit_monitoring_docs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_limits_config.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_macro_spec_parity.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_manifest_paths.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_mapping_diff_report.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_mapping_diff_report_cli.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_mosers_all_programs_output_structure.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_mosers_ex_trend_output_structure.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_mosers_range_level_reference.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_mosers_template.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_mosers_trend_output_structure.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_mosers_workbook.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_name_registry.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_name_registry_docs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_nisa_all_programs_parser.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_nisa_parser.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_normalization_registry_first.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_normalize.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_numeric_assertions.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_package_metadata.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_parser_writer_normalization.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_pdf_export.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_pipeline_run_dir.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_pipeline_run_dir_safety.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_pipeline_run_outputs.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_pipeline_screenshot_replacement.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_png_validation.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_ppt_screenshot_replacement.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_ppt_status_reporting.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_pptx_postprocess.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_pptx_relationships.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_pptx_replacement_workflow.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_pptx_static.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_pyinstaller_guard.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_readme_testing_section.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_release_bundle.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_release_checklist.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_release_spec.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_release_workflow_setup.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_risk_proxy_outputs_doc.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_runner_launch.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_runner_month_selector_decision.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_runner_vba_module.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_runner_workbook.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_runner_xlsm_vba_project.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_runtime_dependencies_declared.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_sitecustomize.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_sync_dev_dependencies_black_drift.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_table_png.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_validate_release_bundle.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_validate_release_workflow_yaml.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_vba_module_inventory.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_vba_runnerlaunch_signature.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_verify_release_workflow_dispatch.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_wal.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_warnings_collector.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_web_demo_smoke.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_windows_gui_launcher.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_workbook_compare.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_write_prior_month_notional.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/test_xlsx_compare.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/unit/test_ppt_naming.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/unit/test_refresh_ppt_links_errors.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/unit/test_runtime_paths.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/unit/test_template_bundling_duplicates.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/utils/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/utils/assertions.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/utils/xlsx_compare.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/workflows/test_historical_update_workflow.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/writers/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/writers/test_dropin_templates.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/writers/test_historical_update.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/writers/test_mosers_workbook.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tests/writers/test_pptx_screenshots.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/__init__.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/check_model_registry_freshness.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/ci_failure_triage.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/coverage_guard.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/coverage_trend.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/discover_model_catalog.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/embedding_provider.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/evaluate_model_benchmark.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/langchain_client.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/llm_provider.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/llm_registry.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/post_ci_summary.py already well formatted, good job.
+/home/runner/work/Counter_Risk/Counter_Risk/tools/resolve_mypy_pin.py already well formatted, good job.
+
+All done! ✨ 🍰 ✨
+369 files would be left unchanged.
+
+Command: ruff check tests/pipeline/test_fleet_artifact_fallbacks.py
+Exit: 0
+All checks passed!
+Command: git diff --check
+Exit: 0
+
+Command: PATH=/tmp/issue-1140-format-bin:$PATH black --check --line-length 100 --exclude "(\.workflows-lib|node_modules)" .
+Exit: 0
+All done! ✨ 🍰 ✨
+369 files would be left unchanged.
