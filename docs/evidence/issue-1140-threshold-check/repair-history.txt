@@ -1,0 +1,1619 @@
+COMMIT Retry concurrent run-folder claims and cover safety guards (#1142)
+
+src/counter_risk/pipeline/run.py
+COMMIT fix(chat): move Anthropic slot to claude-sonnet-5-5; drop temperature for Claude 5 (#1134)
+
+src/counter_risk/chat/providers/base.py
+src/counter_risk/chat/providers/langchain_runtime.py
+COMMIT fix(chat): list up to five delta movers per variant (#1106)
+
+src/counter_risk/chat/session.py
+COMMIT fix(chat): omit non-finite delta notional_change values (#1105) (#1109)
+
+src/counter_risk/chat/session.py
+COMMIT fix(repo-cash): surface correct notional changes in manifest (#1107)
+
+src/counter_risk/compute/rollups.py
+COMMIT fix(cprs): prefer Trend variant over incidental all in filenames (#1103)
+
+src/counter_risk/parsers/cprs_ch.py
+COMMIT fix(manifest): mark distribution PPT failed when master generation fails (#1102)
+
+src/counter_risk/pipeline/manifest.py
+COMMIT fix: normalize clearing-house labels in reconciliation (#1088)
+
+src/counter_risk/pipeline/reconciliation.py
+COMMIT GUI: add Export PDF runner toggle (#1100)
+
+src/counter_risk/gui/runner.py
+COMMIT fix(pipeline): map repo-cash reconciliation codes in data_quality (#1086)
+
+src/counter_risk/pipeline/data_quality.py
+COMMIT Reject non-finite notional_change in top_changes (#1085)
+
+src/counter_risk/compute/rollups.py
+COMMIT fix(pipeline): fleet data_quality_status reflects fail limit breaches (#1084) (#1096)
+
+src/counter_risk/pipeline/run.py
+COMMIT fix(gui): surface limit breaches on failed runs (#1083)
+
+src/counter_risk/gui/runner.py
+COMMIT fix: fail closed on non-finite CPRS reconciliation totals (#1082)
+
+src/counter_risk/pipeline/run.py
+COMMIT fix: include group-name counterparties in concentration rows (#1092)
+
+src/counter_risk/pipeline/run.py
+COMMIT Hash active optional report inputs in manifest provenance (#1078)
+
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/run.py
+COMMIT Finalize distribution deck before PDF export (#1079)
+
+src/counter_risk/pipeline/run.py
+COMMIT Reject PDF export when distribution output is disabled (#1077)
+
+src/counter_risk/pipeline/run.py
+COMMIT fix: distinguish skipped PPT refresh from generated distribution (#1076)
+
+src/counter_risk/pipeline/data_quality.py
+src/counter_risk/pipeline/manifest.py
+COMMIT fix(chat): include change facts in live provider messages (#1075)
+
+src/counter_risk/chat/session.py
+COMMIT fix(parser): reject malformed maturity totals (#1074)
+
+src/counter_risk/compute/limits.py
+src/counter_risk/parsers/exposure_maturity_schedule.py
+COMMIT fix(pipeline): reject invalid workbook reconciliation totals (#1060)
+
+src/counter_risk/pipeline/run.py
+COMMIT fix(concentration): consolidate counterparty gross exposures (#1071)
+
+src/counter_risk/compute/rollups.py
+COMMIT fix(limits): resolve registry aliases when matching counterparty limits (closes #1061) (#1069)
+
+src/counter_risk/compute/limits.py
+COMMIT fix(ppt): render N/A for non-finite and missing concentration metrics (#1056)
+
+src/counter_risk/ppt/concentration_table.py
+COMMIT fix(pipeline): categorize futures and writeback warnings (#1057)
+
+src/counter_risk/pipeline/data_quality.py
+COMMIT fix(parsers): reject boolean values in accounting float coercion (#1055)
+
+src/counter_risk/parsers/_xlsx_reader.py
+COMMIT fix(attribution): fall through invalid numeric aliases (#1052)
+
+src/counter_risk/reports/change_attribution.py
+COMMIT fix(limits): traverse blank notional aliases and reject booleans (#1054)
+
+src/counter_risk/compute/limits.py
+COMMIT fix(rollups): traverse missing aliases and reject booleans (#1053)
+
+src/counter_risk/compute/rollups.py
+COMMIT fix(renderers): align numeric table cells with headers (#1051)
+
+src/counter_risk/renderers/table_png.py
+COMMIT Reject non-finite chat exposure values (#1042)
+
+src/counter_risk/chat/session.py
+COMMIT Reject non-finite numbers in manifest schema validation (#1041)
+
+src/counter_risk/pipeline/manifest_schema.py
+COMMIT Reject non-finite historical rollups before worksheet mutation (#1040)
+
+src/counter_risk/writers/historical_update.py
+COMMIT Fix drop-in numeric alias fallback and reject non-finite values (#1039)
+
+src/counter_risk/pipeline/run.py
+COMMIT Fix finite numeric coercion in pipeline exposure builders (#1038)
+
+src/counter_risk/pipeline/run.py
+src/counter_risk/writers/historical_update.py
+COMMIT fix: render currency and accounting table glyphs (#1037)
+
+src/counter_risk/renderers/table_png.py
+COMMIT fix: validate historical WAL bounds before workbook writes (#1030)
+
+src/counter_risk/writers/historical_update.py
+COMMIT fix: reject non-finite drop-in notional breakdowns (#1029)
+
+src/counter_risk/writers/dropin_templates.py
+COMMIT fix: conserve prior attribution across split current rows (#1028)
+
+src/counter_risk/reports/change_attribution.py
+COMMIT Collapse duplicate Repo rows before authoritative cash aggregation (#1027)
+
+src/counter_risk/pipeline/run.py
+COMMIT fix(limits): reject non-finite exposure policy thresholds (#1026)
+
+src/counter_risk/limits_config.py
+COMMIT Preserve complete PyInstaller release payload and gate Windows artifacts (#1024)
+
+src/counter_risk/build/release.py
+COMMIT fix(parsers): reject non-finite repo cash values (#1015)
+
+src/counter_risk/parsers/repo_cash_sources.py
+COMMIT fix(observability): bind github_issue reference to FleetRunContext (#1005) (#1014)
+
+src/counter_risk/observability/langsmith_fleet.py
+COMMIT fix: validate finite nonnegative cash total bounds (#1011)
+
+src/counter_risk/config.py
+COMMIT fix: aggregate prior counterparty rows in change attribution (#1010)
+
+src/counter_risk/reports/change_attribution.py
+COMMIT fix: reject non-finite change attribution inputs (#1009)
+
+src/counter_risk/reports/change_attribution.py
+COMMIT fix: aggregate split current futures before prior matching (#1008)
+
+src/counter_risk/compute/futures_delta.py
+COMMIT fix: reject non-finite futures notionals (#1007)
+
+src/counter_risk/compute/futures_delta.py
+COMMIT fix: emit valid file URIs for chart links (#992)
+
+src/counter_risk/pipeline/run.py
+COMMIT fix: ignore stale OLE-safe workbook temps (#986)
+
+src/counter_risk/pipeline/run.py
+COMMIT fix(chat): preserve session and provider fallback integrity (#983)
+
+src/counter_risk/chat/providers/base.py
+src/counter_risk/chat/providers/langchain_runtime.py
+src/counter_risk/chat/session.py
+COMMIT fix(demo): keep fixture artifacts portable (#981)
+
+src/counter_risk/demo_artifact.py
+src/counter_risk/web_demo.py
+COMMIT fix(chat): keep provider slot configuration resilient (#980)
+
+src/counter_risk/chat/providers/langchain_runtime.py
+COMMIT test(com): protect Office automation state and paths (#979)
+
+src/counter_risk/integrations/excel_com.py
+src/counter_risk/integrations/powerpoint_com.py
+COMMIT fix: reject out-of-span signed WAL results (#963)
+
+src/counter_risk/calculations/wal.py
+COMMIT fix(cli): call configure_logging from the CLI entry point (#969)
+
+src/counter_risk/cli/__init__.py
+COMMIT fix(wal): guard the WAL denominator against signed near-cancellation (#967)
+
+src/counter_risk/calculations/wal.py
+COMMIT fix: reject non-finite rollup values (#962)
+
+src/counter_risk/compute/rollups.py
+src/counter_risk/pipeline/run.py
+COMMIT security: scrub production-derived MOSERS artifacts
+
+src/counter_risk/mosers/mosers_template.xlsx
+src/counter_risk/parsers/nisa.py
+src/counter_risk/pipeline/reconciliation.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/ppt/replace_screenshots.py
+src/counter_risk/writers/historical_update.py
+COMMIT Monthly readiness: reconciliation, cash, WAL, class mix, and deck output fixes (#895)
+
+src/counter_risk/calculations/wal.py
+src/counter_risk/config.py
+src/counter_risk/integrations/excel_com.py
+src/counter_risk/outputs/historical_workbook.py
+src/counter_risk/outputs/ppt_screenshot.py
+src/counter_risk/parsers/_xlsx_reader.py
+src/counter_risk/parsers/cprs_ch.py
+src/counter_risk/parsers/daily_holdings_pdf.py
+src/counter_risk/parsers/exposure_maturity_schedule.py
+src/counter_risk/pipeline/data_quality.py
+src/counter_risk/pipeline/reconciliation.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/ppt/pptx_postprocess.py
+src/counter_risk/writers/historical_update.py
+COMMIT Consume shared PDF text baseline
+
+src/counter_risk/parsers/daily_holdings_pdf.py
+COMMIT Include GUI launcher in release bundle (#819)
+
+src/counter_risk/build/release.py
+COMMIT Add GUI runner help and status cues (#781)
+
+src/counter_risk/gui/runner.py
+COMMIT Follow up GUI input root first-run hint (#776)
+
+src/counter_risk/gui/runner.py
+COMMIT Add GUI runner field help (#775)
+
+src/counter_risk/gui/runner.py
+COMMIT Guide GUI users when input root is missing
+
+src/counter_risk/gui/runner.py
+COMMIT style: format date fallback warning
+
+src/counter_risk/pipeline/run.py
+COMMIT Emit DATE_RESOLUTION_FALLBACK for inferred as_of_date (#746)
+
+src/counter_risk/pipeline/run.py
+COMMIT Audit fixes: correctness BLOCKERs, parser robustness, GUI/Windows readiness (#732)
+
+src/counter_risk/calculations/wal.py
+src/counter_risk/compute/limits.py
+src/counter_risk/compute/rollups.py
+src/counter_risk/config.py
+src/counter_risk/gui/runner.py
+src/counter_risk/io/discover.py
+src/counter_risk/limits_config.py
+src/counter_risk/name_registry.py
+src/counter_risk/parsers/_xlsx_reader.py
+src/counter_risk/parsers/cprs_ch.py
+src/counter_risk/parsers/cprs_fcm.py
+src/counter_risk/parsers/daily_holdings_pdf.py
+src/counter_risk/parsers/exposure_maturity_schedule.py
+src/counter_risk/parsers/nisa.py
+src/counter_risk/parsers/repo_cash_sources.py
+src/counter_risk/pipeline.py
+src/counter_risk/pipeline/data_quality.py
+src/counter_risk/pipeline/reconciliation.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/runner_launch.py
+src/counter_risk/runtime_paths.py
+src/counter_risk/writers/historical_update.py
+src/counter_risk/writers/mosers_workbook.py
+src/counter_risk/writers/pptx_screenshots.py
+src/counter_risk/yaml_utils.py
+COMMIT fix(windows): resolve loader default config paths via runtime paths when frozen (#731)
+
+src/counter_risk/limits_config.py
+src/counter_risk/name_registry.py
+COMMIT fix(windows): resolve bundled config via runtime paths in frozen build (#730)
+
+src/counter_risk/normalize.py
+src/counter_risk/pipeline/reconciliation.py
+src/counter_risk/pipeline/run.py
+COMMIT style: black-format 6 files to satisfy pinned Black 26.5.1 (lint-format) (#719)
+
+src/counter_risk/gui/runner.py
+src/counter_risk/pipeline/evidence.py
+COMMIT Align runner output directory naming (#704)
+
+src/counter_risk/gui/runner.py
+src/counter_risk/runner_launch.py
+COMMIT Fix formatting profile CLI help (#664)
+
+src/counter_risk/cli/__init__.py
+COMMIT Issue #651: Attach evidence provenance to top exposures
+
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/cprs_fcm.py
+src/counter_risk/pipeline/evidence.py
+src/counter_risk/pipeline/manifest_schema.py
+src/counter_risk/pipeline/run.py
+COMMIT Issue #650: Preserve structured warning fields in manifest
+
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/manifest_schema.py
+COMMIT Add manifest schema version and provenance (#649)
+
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/manifest_schema.py
+COMMIT Enforce full run manifest schema validation (#648)
+
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/manifest_schema.py
+src/counter_risk/pipeline/run.py
+COMMIT Add synthetic browser demo artifact (#645) (#655)
+
+src/counter_risk/demo_artifact.py
+src/counter_risk/web_demo.py
+COMMIT Declare runtime dependency set for pipeline installs (#644) (#654)
+
+src/counter_risk/chat/context.py
+src/counter_risk/pipeline/run.py
+COMMIT Follow-up #610: clean verifier artifact debt
+
+src/counter_risk/observability/__init__.py
+src/counter_risk/observability/langsmith_fleet.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/writers/historical_update.py
+COMMIT Follow-up #610: validate LangSmith fleet contract
+
+src/counter_risk/chat/providers/langchain_runtime.py
+src/counter_risk/observability/langsmith_fleet.py
+src/counter_risk/pipeline/run.py
+COMMIT Issue #610: Add LangSmith fleet records (#629)
+
+src/counter_risk/chat/providers/langchain_runtime.py
+src/counter_risk/observability/__init__.py
+src/counter_risk/observability/langsmith_fleet.py
+src/counter_risk/pipeline/manifest_schema.py
+src/counter_risk/pipeline/run.py
+COMMIT deps(deps-dev): bump types-pyyaml from 6.0.12.20260408 to 6.0.12.20260518 (#621)
+
+src/counter_risk/limits_config.py
+COMMIT Issue #476: use canonical risk proxy tie-breaks
+
+src/counter_risk/compute/rollups.py
+src/counter_risk/pipeline/run.py
+COMMIT Issue #477: Add limit monitoring severity controls
+
+src/counter_risk/compute/limits.py
+src/counter_risk/gui/runner.py
+src/counter_risk/limits_config.py
+src/counter_risk/pipeline/manifest_schema.py
+src/counter_risk/pipeline/run.py
+COMMIT Issue #552: Align PPT folder launchers (#578)
+
+src/counter_risk/gui/runner.py
+src/counter_risk/runner_launch.py
+COMMIT Follow-up: Document registry maintainer workflow (#577)
+
+src/counter_risk/cli/mapping_diff_report.py
+src/counter_risk/name_matching.py
+src/counter_risk/name_registry.py
+src/counter_risk/normalize.py
+src/counter_risk/pipeline/reconciliation.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/writers/historical_update.py
+COMMIT Issue #479: Preserve registry canonical keys in mapping reconciliation (#575)
+
+src/counter_risk/cli/mapping_diff_report.py
+src/counter_risk/name_registry.py
+src/counter_risk/normalize.py
+src/counter_risk/parsers/nisa.py
+src/counter_risk/pipeline/reconciliation.py
+src/counter_risk/reports/mapping_diff.py
+src/counter_risk/writers/historical_update.py
+COMMIT Issue #478: Surface data quality status in runner UI (#574)
+
+src/counter_risk/gui/runner.py
+src/counter_risk/pipeline/data_quality.py
+COMMIT Issue #473: Accept generated MOSERS workbook variants
+
+src/counter_risk/chat/providers/base.py
+src/counter_risk/chat/session.py
+src/counter_risk/mosers/workbook_generation.py
+src/counter_risk/parsers/_variant_text.py
+src/counter_risk/parsers/cprs_ch.py
+src/counter_risk/parsers/cprs_fcm.py
+src/counter_risk/pipeline/reconciliation.py
+src/counter_risk/pipeline/run.py
+COMMIT feat: record repo cash source metadata in manifest (#474) (#569)
+
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/repo_cash_sources.py
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/manifest_schema.py
+src/counter_risk/pipeline/run.py
+COMMIT Issue #476: Surface risk proxy manifest summary (#572)
+
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/run.py
+COMMIT docs: add concentration metrics output reference (#475)
+
+src/counter_risk/compute/rollups.py
+COMMIT Issue #470: Make static distribution output canonical (#522)
+
+src/counter_risk/chat/providers/base.py
+src/counter_risk/outputs/ppt_screenshot.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/ppt/pptx_postprocess.py
+src/counter_risk/ppt/pptx_static.py
+COMMIT Issue #469: Canonicalize matching keys through canonicalize_name (#521)
+
+src/counter_risk/build/xlsm.py
+src/counter_risk/name_registry.py
+src/counter_risk/outputs/ppt_link_refresh.py
+src/counter_risk/parsers/cprs_ch.py
+src/counter_risk/parsers/cprs_fcm.py
+src/counter_risk/parsers/exposure_maturity_schedule.py
+src/counter_risk/parsers/nisa.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/pipeline/run_folder_outputs.py
+src/counter_risk/reports/mapping_diff.py
+src/counter_risk/writers/historical_update.py
+COMMIT Issue #471: track dual PPT deliverables
+
+src/counter_risk/config.py
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/manifest_schema.py
+src/counter_risk/pipeline/ppt_naming.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/pipeline/run_folder_outputs.py
+COMMIT Issue #468: Report reconciliation coverage gaps (#520)
+
+src/counter_risk/pipeline/data_quality.py
+src/counter_risk/pipeline/reconciliation.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/reports/mapping_diff.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/compute/futures_delta.py
+src/counter_risk/compute/limits.py
+src/counter_risk/compute/rollups.py
+src/counter_risk/io/excel_range_compare.py
+src/counter_risk/io/mosers_workbook.py
+src/counter_risk/mosers/template.py
+src/counter_risk/parsers/cprs_fcm.py
+src/counter_risk/parsers/daily_holdings_pdf.py
+src/counter_risk/parsers/exposure_maturity_schedule.py
+src/counter_risk/parsers/nisa.py
+src/counter_risk/parsers/repo_cash_sources.py
+src/counter_risk/writers/dropin_templates.py
+src/counter_risk/writers/historical_update.py
+COMMIT feat(dates): track as_of/run_date resolution source in manifest
+
+src/counter_risk/dates.py
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/run.py
+COMMIT deps(deps): bump runtime-minor group
+
+src/counter_risk/parsers/daily_holdings_pdf.py
+COMMIT merge main into config sheet branch
+COMMIT chore: sync workflow templates (#343)
+
+src/counter_risk/build/release.py
+src/counter_risk/mosers/workbook_generation.py
+COMMIT feat: add Config sheet to XLSM for file-path entry without editing YAML
+
+src/counter_risk/build/xlsm.py
+src/counter_risk/cli/__init__.py
+COMMIT fix: use template_xlsm_path() helper in _build_runner_xlsm
+
+src/counter_risk/build/release.py
+COMMIT fix: address release.yml and release.py review comments
+
+src/counter_risk/build/release.py
+COMMIT fix: use shutil.move instead of Path.replace in _replace_zip_member
+
+src/counter_risk/build/xlsm.py
+COMMIT fix: use shutil.move instead of Path.replace in _replace_zip_member
+
+src/counter_risk/build/xlsm.py
+COMMIT fix: build versioned XLSM from template and update release checklist (#334)
+
+src/counter_risk/build/release.py
+COMMIT fix: remove unused date import from release.py
+
+src/counter_risk/build/release.py
+COMMIT fix: wrap long lines to satisfy ruff E501
+
+src/counter_risk/build/release.py
+COMMIT Update src/counter_risk/build/release.py
+
+src/counter_risk/build/release.py
+COMMIT fix: build versioned XLSM from template in release assembler
+
+src/counter_risk/build/release.py
+COMMIT feat: add remote trigger scripts and complete bundle operator entrypoint (#333)
+
+src/counter_risk/build/release.py
+COMMIT [Agent] Mop-up: harden LangChain runtime imports + pipeline test compatibility (#310)
+
+src/counter_risk/chat/context.py
+src/counter_risk/chat/providers/base.py
+src/counter_risk/chat/providers/langchain_runtime.py
+src/counter_risk/renderers/table_png.py
+COMMIT [Agent] [Ops] Implement formatting settings contract in output writers (#303) (#308)
+
+src/counter_risk/cli/__init__.py
+src/counter_risk/formatting.py
+src/counter_risk/outputs/base.py
+src/counter_risk/outputs/historical_workbook.py
+src/counter_risk/pipeline/run.py
+COMMIT [Agent] [Ops] Port Tkinter GUI runner deliverable onto main (#301) (#306)
+
+src/counter_risk/cli/__init__.py
+src/counter_risk/gui/__init__.py
+src/counter_risk/gui/runner.py
+COMMIT [Agent] [Chat] Add configurable chat logging modes (#304) (#309)
+
+src/counter_risk/chat/session.py
+COMMIT [Agent] [Chat] Productionize LangChain deps + fail-fast diagnostics (#302) (#307)
+
+src/counter_risk/chat/providers/__init__.py
+src/counter_risk/chat/providers/base.py
+src/counter_risk/chat/session.py
+COMMIT chore: clean coverage artifacts and apply repo formatting baseline (#305)
+
+src/counter_risk/chat/providers/base.py
+src/counter_risk/chat/session.py
+src/counter_risk/cli/__init__.py
+src/counter_risk/mosers/template.py
+src/counter_risk/parsers/repo_cash_sources.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/runner_launch.py
+src/counter_risk/writers/historical_update.py
+COMMIT [Agent] [Chat] Port run-folder chat transcripts to main (+logging controls docs) (#283) (#299)
+
+src/counter_risk/chat/__init__.py
+src/counter_risk/chat/context.py
+src/counter_risk/chat/providers/base.py
+src/counter_risk/chat/session.py
+COMMIT [Agent] [Ops] Port Runner settings + settings-CLI wiring to main (#279) (#298)
+
+src/counter_risk/cli/__init__.py
+src/counter_risk/runner_launch.py
+COMMIT finish issue 216 canonicalization and manifest assertions (#295)
+
+src/counter_risk/writers/pptx_screenshots.py
+COMMIT [Agent] [Chat] Restrict local stub provider to offline mode (#282) (#293)
+
+src/counter_risk/chat/providers/base.py
+src/counter_risk/chat/session.py
+COMMIT [Agent] [M2] Add layered Repo Cash sources and override checks (#277) (#291)
+
+src/counter_risk/config.py
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/repo_cash_sources.py
+src/counter_risk/pipeline/run.py
+COMMIT [Agent] [Ops] Make MOSERS CPRS-CH writes marker-driven (#281) (#286)
+
+src/counter_risk/mosers/template.py
+src/counter_risk/mosers/workbook_generation.py
+COMMIT [Agent] [Ops] Productionize workflow-mode counter-risk run (#278) (#285)
+
+src/counter_risk/cli/__init__.py
+src/counter_risk/pipeline/__init__.py
+src/counter_risk/pipeline/fixture_replay.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/runner_launch.py
+COMMIT [Agent] [Chat] Replace stub providers with LangChain clients (#282) (#287)
+
+src/counter_risk/chat/__init__.py
+src/counter_risk/chat/providers/__init__.py
+src/counter_risk/chat/providers/base.py
+src/counter_risk/chat/session.py
+src/counter_risk/chat/ui.py
+COMMIT Agent belt for #42 (#268)
+
+src/counter_risk/config.py
+src/counter_risk/io/__init__.py
+src/counter_risk/io/excel_range_compare.py
+src/counter_risk/mosers/__init__.py
+src/counter_risk/mosers/workbook_generation.py
+src/counter_risk/parsers/nisa.py
+src/counter_risk/parsers/nisa_all_programs.py
+src/counter_risk/pipeline/run.py
+COMMIT Agent belt for #47 (#275)
+
+src/counter_risk/io/workbook_compare.py
+COMMIT Add Daily Holdings PDF parser for Repo Cash automation (issue #34) (#276)
+
+src/counter_risk/chat/session.py
+src/counter_risk/compute/__init__.py
+src/counter_risk/compute/rollups.py
+src/counter_risk/config.py
+src/counter_risk/outputs/registry.py
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/daily_holdings_pdf.py
+src/counter_risk/pipeline/data_quality.py
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/manifest_schema.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/runner_launch.py
+src/counter_risk/writers/dropin_templates.py
+src/counter_risk/writers/historical_update.py
+COMMIT Agent belt for #46 (#274)
+
+src/counter_risk/pipeline/run.py
+src/counter_risk/reports/__init__.py
+src/counter_risk/reports/change_attribution.py
+COMMIT Agent belt for #33 (#267)
+
+src/counter_risk/chat/session.py
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/manifest_schema.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/runner_launch.py
+COMMIT Agent belt for #45 (#266)
+
+src/counter_risk/compute/__init__.py
+src/counter_risk/compute/limits.py
+src/counter_risk/limits_config.py
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/manifest_schema.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/pipeline/run_folder_outputs.py
+COMMIT Agent belt for #44 (#265)
+
+src/counter_risk/compute/__init__.py
+src/counter_risk/compute/rollups.py
+src/counter_risk/pipeline/run.py
+COMMIT Agent belt for #43 (#264)
+
+src/counter_risk/compute/rollups.py
+src/counter_risk/config.py
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/manifest_schema.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/ppt/concentration_table.py
+COMMIT Agent belt for #32 (#261)
+
+src/counter_risk/build/release.py
+src/counter_risk/build/xlsm.py
+COMMIT Agent belt for #31 (#256)
+
+src/counter_risk/config.py
+src/counter_risk/outputs/__init__.py
+src/counter_risk/outputs/base.py
+src/counter_risk/outputs/historical_workbook.py
+src/counter_risk/outputs/pdf_export.py
+src/counter_risk/outputs/ppt_link_refresh.py
+src/counter_risk/outputs/ppt_screenshot.py
+src/counter_risk/outputs/registry.py
+src/counter_risk/pipeline/run.py
+COMMIT fix: address code review feedback and lint failure
+
+src/counter_risk/pipeline/run.py
+COMMIT fix: complete remaining PR #249 acceptance criteria gaps
+
+src/counter_risk/pipeline/run.py
+COMMIT Merge remote-tracking branch 'origin/main' into codex/issue-239
+COMMIT Merge pull request #243 from stranske/codex/issue-240
+COMMIT feat: add discovery-driven workflow execution with interactive file selection
+
+src/counter_risk/cli/__init__.py
+src/counter_risk/io/discover.py
+src/counter_risk/pipeline/__init__.py
+src/counter_risk/pipeline/fixture_replay.py
+src/counter_risk/runner_launch.py
+COMMIT Enforce structured writeback warnings with explicit row_idx
+
+src/counter_risk/io/mosers_workbook.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/io/__init__.py
+src/counter_risk/io/mosers_workbook.py
+COMMIT chore(codex-keepalive): apply updates (PR #243)
+
+src/counter_risk/io/__init__.py
+src/counter_risk/io/mosers_workbook.py
+COMMIT chore(scope): remove out-of-scope pipeline delta from PR
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-keepalive): apply updates (PR #243)
+
+src/counter_risk/compute/futures_delta.py
+COMMIT chore(codex-keepalive): apply updates (PR #249)
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-keepalive): apply updates (PR #249)
+
+src/counter_risk/normalize.py
+COMMIT fix: resolve merge conflicts with main
+COMMIT Merge pull request #250 from stranske/codex/issue-30
+COMMIT Use constants for futures delta warning codes
+
+src/counter_risk/compute/errors.py
+src/counter_risk/compute/futures_delta.py
+COMMIT chore(codex-keepalive): apply updates (PR #250)
+
+src/counter_risk/io/discover.py
+COMMIT Fix clearing-house registry-first normalization and source diff test
+
+src/counter_risk/normalize.py
+COMMIT fix: resolve mypy typecheck failures for win32com and openpyxl imports
+
+src/counter_risk/pipeline/run.py
+COMMIT Add runner dry-run discovery preview path
+
+src/counter_risk/cli/__init__.py
+src/counter_risk/runner_launch.py
+COMMIT Add output-format forwarding coverage for mapping diff CLI
+
+src/counter_risk/cli/mapping_diff_report.py
+src/counter_risk/reports/mapping_diff.py
+COMMIT chore(codex-keepalive): apply updates (PR #243)
+
+src/counter_risk/compute/futures_delta.py
+COMMIT Merge remote-tracking branch 'origin/main' into claude/counter-risk-pr-228-RSKOO
+COMMIT Add input discovery module with date-aware matching
+
+src/counter_risk/io/discover.py
+COMMIT Use source-aware counterparty normalization in reconciliation
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-keepalive): apply updates (PR #250)
+
+src/counter_risk/config.py
+src/counter_risk/writers/historical_update.py
+COMMIT Improve core-properties workbook diff filtering
+
+src/counter_risk/io/workbook_compare.py
+COMMIT Document source metadata in counterparty normalization API
+
+src/counter_risk/normalize.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/io/workbook_compare.py
+COMMIT chore(codex-keepalive): apply updates (PR #249)
+
+src/counter_risk/normalize.py
+COMMIT Ignore volatile core workbook metadata in comparisons
+
+src/counter_risk/io/workbook_compare.py
+COMMIT Use structured warnings in workbook write-back
+
+src/counter_risk/io/mosers_workbook.py
+COMMIT chore(codex-keepalive): apply updates (PR #243)
+
+src/counter_risk/compute/futures_delta.py
+COMMIT Refactor futures delta warning emissions to structured records
+
+src/counter_risk/compute/futures_delta.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/compute/futures_delta.py
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/warnings.py
+COMMIT Refactor warnings collector to structured records
+
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/warnings.py
+COMMIT Handle duplicate normalized descriptions in workbook writeback
+
+src/counter_risk/io/__init__.py
+src/counter_risk/io/errors.py
+src/counter_risk/io/mosers_workbook.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/io/__init__.py
+COMMIT Route workbook writeback flow through atomic wrapper
+
+src/counter_risk/io/__init__.py
+src/counter_risk/io/mosers_workbook.py
+COMMIT chore(codex-keepalive): apply updates (PR #243)
+
+src/counter_risk/compute/futures_delta.py
+COMMIT Add atomic MOSERS writeback with locate-first failure cleanup
+
+src/counter_risk/io/__init__.py
+src/counter_risk/io/mosers_workbook.py
+COMMIT Use futures delta error constants for unmatched warnings
+
+src/counter_risk/compute/futures_delta.py
+COMMIT Add NO_PRIOR_MATCH error code constant
+
+src/counter_risk/compute/errors.py
+COMMIT chore(codex-keepalive): apply updates (PR #243)
+
+src/counter_risk/compute/errors.py
+COMMIT Exclude blank descriptions in futures grouping and add focused tests
+
+src/counter_risk/compute/futures_delta.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/compute/futures_delta.py
+src/counter_risk/writers/historical_update.py
+COMMIT Filter blank descriptions before futures matching
+
+src/counter_risk/compute/futures_delta.py
+COMMIT feat: wire chart replacement with confidence checks into distribution pipeline
+
+src/counter_risk/pipeline/run.py
+COMMIT Gate run-folder README on master PPT success and strengthen tests
+
+src/counter_risk/pipeline/run.py
+COMMIT Skip blank descriptions during futures key normalization
+
+src/counter_risk/compute/futures_delta.py
+COMMIT Add futures delta blank description helper
+
+src/counter_risk/compute/futures_delta.py
+COMMIT Use resolved PPT output paths in run-folder README builder
+
+src/counter_risk/pipeline/run.py
+src/counter_risk/pipeline/run_folder_outputs.py
+COMMIT merge: resolve conflicts with main in test_futures_delta.py and test_run_manifest_ppt_entries.py
+COMMIT Merge pull request #231 from stranske/codex/issue-230
+COMMIT merge: resolve conflict with main in keepalive_loop.js
+COMMIT chore(codex-keepalive): apply updates (PR #231)
+
+src/counter_risk/writers/historical_update.py
+COMMIT Raise strict reconciliation as UnmappedCounterpartyError when available
+
+src/counter_risk/pipeline/run.py
+COMMIT fix: resolve 5 ruff lint violations
+
+src/counter_risk/compute/futures_delta.py
+COMMIT Codex bootstrap for #236 (#237)
+
+src/counter_risk/pipeline/run.py
+COMMIT Add PNG integrity validation for static PPT rebuild
+
+src/counter_risk/ppt/pptx_static.py
+src/counter_risk/writers/historical_update.py
+COMMIT Resolve merge conflict with main after sync PR #238
+COMMIT fix: resolve CI failures
+
+src/counter_risk/pipeline/run.py
+COMMIT fix: resolve merge conflicts with main
+COMMIT fix: resolve CI failures
+
+src/counter_risk/writers/historical_update.py
+COMMIT Add export_pdf toggle and fail-fast PDF export tests
+
+src/counter_risk/cli.py
+src/counter_risk/config.py
+src/counter_risk/pipeline/run.py
+COMMIT feat(futures-delta): workbook write-back, raw-description sorting, and manifest warnings
+
+src/counter_risk/compute/futures_delta.py
+src/counter_risk/io/__init__.py
+src/counter_risk/io/mosers_workbook.py
+src/counter_risk/pipeline/manifest.py
+COMMIT Agent belt for #227 (#228)
+
+src/counter_risk/cli/__init__.py
+src/counter_risk/cli/__main__.py
+src/counter_risk/cli/mapping_diff_report.py
+src/counter_risk/normalize.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/reports/__init__.py
+src/counter_risk/reports/mapping_diff.py
+COMMIT Harden COM cleanup logging and add cleanup failure tests
+
+src/counter_risk/integrations/powerpoint_com.py
+COMMIT merge: resolve conflicts with main in test_run_pipeline.py
+COMMIT Merge pull request #225 from stranske/codex/issue-222
+COMMIT Claude bootstrap for #29 (#232)
+
+src/counter_risk/compute/__init__.py
+src/counter_risk/compute/futures_delta.py
+COMMIT Fix reconciliation sheet keying, unmapped metadata, and impacted row counting
+
+src/counter_risk/pipeline/run.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/parsers/exposure_maturity_schedule.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/writers/historical_update.py
+COMMIT Claude bootstrap for #217 (#220)
+
+src/counter_risk/normalize.py
+src/counter_risk/pipeline/run.py
+COMMIT Merge pull request #224 from stranske/codex/issue-221
+COMMIT fix: resolve CI failures
+
+src/counter_risk/pipeline/time_utils.py
+COMMIT Add standalone distribution PPT validation
+
+src/counter_risk/pipeline/ppt_validation.py
+src/counter_risk/pipeline/run.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/pipeline/manifest_schema.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-keepalive): apply updates (PR #225)
+
+src/counter_risk/pipeline/run_folder_outputs.py
+COMMIT Handle master PPT refresh exceptions in pipeline
+
+src/counter_risk/pipeline/run.py
+COMMIT Harden low-confidence chart replacement fallback
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-keepalive): apply updates (PR #223)
+
+src/counter_risk/writers/historical_update.py
+COMMIT Add run-folder README content generator for PPT outputs
+
+src/counter_risk/pipeline/run_folder_outputs.py
+COMMIT Expand PPTX scrubber path support and validate string inputs
+
+src/counter_risk/ppt/pptx_postprocess.py
+COMMIT Fix reconciliation impacted-scope accounting for segment gaps
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-keepalive): apply updates (PR #223)
+
+src/counter_risk/pipeline/run.py
+COMMIT Add chart replacement confidence fallback and reconcile task tracker
+
+src/counter_risk/pipeline/run.py
+COMMIT Use slide-image static rebuild path for distribution PPTX
+
+src/counter_risk/pipeline/run.py
+src/counter_risk/ppt/pptx_static.py
+COMMIT Add Python <3.11 UTC fallback in time utils
+
+src/counter_risk/pipeline/time_utils.py
+COMMIT Add manifest schema for master/distribution PPT outputs
+
+src/counter_risk/pipeline/manifest_schema.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/parsers/exposure_maturity_schedule.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/ppt/pptx_postprocess.py
+src/counter_risk/writers/historical_update.py
+COMMIT Skip distribution derivation when master refresh fails
+
+src/counter_risk/pipeline/run.py
+COMMIT docs: clarify unmapped counterparty exception contract
+
+src/counter_risk/pipeline/parsing_types.py
+COMMIT Add explicit Master/Distribution PPT filename helpers
+
+src/counter_risk/pipeline/ppt_naming.py
+COMMIT Merge pull request #208 from stranske/codex/issue-48
+COMMIT chore(codex-keepalive): apply updates (PR #224)
+
+src/counter_risk/pipeline/run.py
+COMMIT Gate pipeline PPT generation on config flag
+
+src/counter_risk/pipeline/run.py
+COMMIT Extract PPTX external-relationship scrubber and wire distribution
+
+src/counter_risk/pipeline/run.py
+src/counter_risk/ppt/pptx_postprocess.py
+COMMIT chore(codex-keepalive): apply updates (PR #224)
+
+src/counter_risk/pipeline/parsing_types.py
+COMMIT chore(codex-keepalive): apply updates (PR #225)
+
+src/counter_risk/config.py
+COMMIT chore(codex-autofix): apply updates (PR #208)
+
+src/counter_risk/parsers/exposure_maturity_schedule.py
+src/counter_risk/writers/historical_update.py
+COMMIT Claude bootstrap for #39 (#170)
+
+src/counter_risk/config.py
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-autofix): apply updates (PR #208)
+
+src/counter_risk/name_registry.py
+COMMIT Enforce top-level name registry schema version
+
+src/counter_risk/name_registry.py
+COMMIT chore(codex-keepalive): apply updates (PR #208)
+
+src/counter_risk/name_registry.py
+COMMIT Agent belt for #190 (#191)
+
+src/counter_risk/pipeline/parsing_types.py
+src/counter_risk/pipeline/run.py
+src/counter_risk/pipeline/time_utils.py
+COMMIT Codex bootstrap for #40 (#185)
+
+src/counter_risk/pipeline/ppt_naming.py
+src/counter_risk/pipeline/run.py
+COMMIT Codex belt for #37 (#163)
+
+src/counter_risk/config.py
+src/counter_risk/pipeline/run.py
+COMMIT Codex belt for #36 (#165)
+
+src/counter_risk/config.py
+src/counter_risk/dates.py
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/run.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/parsers/exposure_maturity_schedule.py
+src/counter_risk/writers/historical_update.py
+COMMIT Fix WAL parser/header scan and workbook formatting
+
+src/counter_risk/calculations/wal.py
+src/counter_risk/parsers/exposure_maturity_schedule.py
+src/counter_risk/writers/historical_update.py
+COMMIT Merge main into codex/issue-127
+COMMIT Fix runner VBA + tests (issue 129 follow-up)
+
+src/counter_risk/runner_launch.py
+COMMIT fix(workflow): coerce CLI WAL date before IO
+
+src/counter_risk/workflows/historical_update.py
+COMMIT Merge main into codex/issue-127
+COMMIT Merge pull request #115 from stranske/codex/issue-114
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/chat/context.py
+src/counter_risk/chat/session.py
+COMMIT chore(codex-keepalive): apply updates (PR #115)
+
+src/counter_risk/chat/providers/__init__.py
+src/counter_risk/chat/providers/anthropic_stub.py
+src/counter_risk/chat/providers/base.py
+src/counter_risk/chat/providers/openai_stub.py
+src/counter_risk/chat/session.py
+src/counter_risk/chat/ui.py
+COMMIT chore(codex-autofix): apply updates (PR #115)
+
+src/counter_risk/chat/context.py
+COMMIT chore(codex-autofix): apply updates (PR #115)
+
+src/counter_risk/chat/context.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/chat/context.py
+COMMIT chore(codex-autofix): apply updates (PR #115)
+
+src/counter_risk/chat/context.py
+COMMIT Harden parquet load errors with targeted handlers
+
+src/counter_risk/chat/context.py
+COMMIT chat: add non-blocking sanitization heuristics
+
+src/counter_risk/chat/session.py
+COMMIT chore(codex-keepalive): apply updates (PR #115)
+
+src/counter_risk/chat/session.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/chat/session.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/workflows/__init__.py
+src/counter_risk/workflows/historical_update.py
+COMMIT chore(codex-keepalive): apply updates (PR #128)
+
+src/counter_risk/writers/historical_update.py
+COMMIT Add tolerance-aware top exposure sorting and tests
+
+src/counter_risk/chat/session.py
+src/counter_risk/chat/utils.py
+COMMIT chore(codex-keepalive): apply updates (PR #128)
+
+src/counter_risk/workflows/__init__.py
+src/counter_risk/workflows/historical_update.py
+COMMIT Merge main into codex/issue-114
+COMMIT Merge main into codex/issue-28
+COMMIT chore(codex-autofix): apply updates (PR #117)
+
+src/counter_risk/writers/mosers_workbook.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/writers/mosers_workbook.py
+COMMIT chore(codex-keepalive): apply updates (PR #117)
+
+src/counter_risk/mosers/__init__.py
+src/counter_risk/mosers/workbook_generation.py
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/nisa_trend.py
+src/counter_risk/writers/__init__.py
+src/counter_risk/writers/mosers_workbook.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/writers/historical_update.py
+COMMIT Add WAL append validation for formula and format preservation
+
+src/counter_risk/writers/historical_update.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/mosers/workbook_generation.py
+COMMIT Add WAL sheet append location and row append helpers
+
+src/counter_risk/writers/__init__.py
+src/counter_risk/writers/historical_update.py
+COMMIT chore(codex-keepalive): apply updates (PR #117)
+
+src/counter_risk/mosers/workbook_generation.py
+COMMIT chore(codex-autofix): apply updates (PR #116)
+
+src/counter_risk/writers/historical_update.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/writers/historical_update.py
+COMMIT chore(codex-keepalive): apply updates (PR #116)
+
+src/counter_risk/writers/historical_update.py
+COMMIT chore(codex-autofix): apply updates (PR #117)
+
+src/counter_risk/parsers/nisa.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/parsers/nisa_ex_trend.py
+COMMIT Add WAL calculation module and test coverage
+
+src/counter_risk/calculations/__init__.py
+src/counter_risk/calculations/wal.py
+COMMIT Add Ex Trend parser entrypoint and fixture test
+
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/nisa_ex_trend.py
+COMMIT Add exposure maturity schedule parser for WAL inputs
+
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/exposure_maturity_schedule.py
+COMMIT chore(codex-autofix): apply updates (PR #115)
+
+src/counter_risk/chat/session.py
+COMMIT Add deterministic chat intent routing and context handlers
+
+src/counter_risk/chat/session.py
+COMMIT chore(codex-keepalive): apply updates (PR #113)
+
+src/counter_risk/mosers/workbook_generation.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/chat/ui.py
+COMMIT Add UI submit validation for provider/model
+
+src/counter_risk/chat/__init__.py
+src/counter_risk/chat/session.py
+src/counter_risk/chat/ui.py
+COMMIT Tighten MOSERS workbook population mapping checks
+
+src/counter_risk/mosers/workbook_generation.py
+COMMIT chore(codex-autofix): apply updates (PR #113)
+
+src/counter_risk/mosers/workbook_generation.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/writers/mosers_workbook.py
+COMMIT Implement data-driven MOSERS generation and NISA parser fallback
+
+src/counter_risk/mosers/__init__.py
+src/counter_risk/mosers/workbook_generation.py
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/nisa.py
+src/counter_risk/parsers/nisa_all_programs.py
+src/counter_risk/writers/mosers_workbook.py
+COMMIT chore(codex-autofix): apply updates (PR #109)
+
+src/counter_risk/chat/context.py
+COMMIT Add guarded chat session with prompt-injection defenses
+
+src/counter_risk/chat/__init__.py
+src/counter_risk/chat/session.py
+COMMIT Add chat run-context loader and tests
+
+src/counter_risk/chat/__init__.py
+src/counter_risk/chat/context.py
+COMMIT Add strict MOSERS fixture parity range test and template alignment
+
+src/counter_risk/parsers/cprs_ch.py
+src/counter_risk/writers/mosers_workbook.py
+COMMIT chore(codex-autofix): apply updates (PR #107)
+
+src/counter_risk/parsers/nisa_all_programs.py
+COMMIT chore(codex-keepalive): apply updates (PR #107)
+
+src/counter_risk/pipeline/run.py
+COMMIT Harden raw NISA parser with header-based sheet detection
+
+src/counter_risk/parsers/nisa_all_programs.py
+COMMIT Add MOSERS template module and use it in workbook generation
+
+src/counter_risk/mosers/__init__.py
+src/counter_risk/mosers/template.py
+src/counter_risk/writers/mosers_workbook.py
+COMMIT chore(codex-autofix): apply updates (PR #105)
+
+src/counter_risk/pipeline/fixture_replay.py
+COMMIT Support raw NISA All Programs input in pipeline run
+
+src/counter_risk/config.py
+src/counter_risk/pipeline/run.py
+COMMIT feat: generate MOSERS workbook from raw NISA input
+
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/nisa_all_programs.py
+src/counter_risk/writers/__init__.py
+src/counter_risk/writers/mosers_workbook.py
+COMMIT Merge pull request #96 from stranske/codex/issue-95
+COMMIT Enforce unique same-date run directory isolation
+
+src/counter_risk/pipeline/run.py
+COMMIT pipeline: fail fast on duplicate run dirs and add acceptance-key tests
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-autofix): apply updates (PR #90)
+
+src/counter_risk/runner_launch.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/runner_launch.py
+COMMIT test: add runner launch unit tests with filesystem/explorer stubs
+
+src/counter_risk/runner_launch.py
+COMMIT Merge pull request #87 from stranske/codex/issue-86
+COMMIT fix: resolve merge conflicts with main
+COMMIT chore(codex-keepalive): apply updates (PR #87)
+
+src/counter_risk/runtime_paths.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/pipeline/manifest.py
+COMMIT Normalize manifest artifact paths and promote python-pptx runtime dep
+
+src/counter_risk/pipeline/manifest.py
+COMMIT Surface PPT COM refresh failures and add unit test
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-autofix): apply updates (PR #91)
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/pipeline/run.py
+COMMIT Stabilize screenshot input mapping normalization
+
+src/counter_risk/pipeline/run.py
+COMMIT Stabilize screenshot input mapping and verify backend routing
+
+src/counter_risk/pipeline/run.py
+COMMIT Raise on missing runtime assets and add unit coverage
+
+src/counter_risk/runtime_paths.py
+COMMIT Harden counterparty validation for CPRS FCM PNG renderer
+
+src/counter_risk/renderers/table_png.py
+COMMIT Log PyInstaller stdout/stderr on success and failure
+
+src/counter_risk/build/release.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/pipeline/run.py
+COMMIT Wire screenshot replacement backends into pipeline outputs
+
+src/counter_risk/config.py
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-autofix): apply updates (PR #84)
+
+src/counter_risk/writers/pptx_screenshots.py
+COMMIT Merge main into codex/issue-83
+COMMIT Refactor PPTX screenshot replacement to in-place image swap helper
+
+src/counter_risk/writers/pptx_screenshots.py
+COMMIT Merge pull request #73 from stranske/codex/issue-23
+COMMIT Gate screenshot replacements on exact title and geometry
+
+src/counter_risk/writers/pptx_screenshots.py
+COMMIT Add FCM per-variant minimum row validation
+
+src/counter_risk/renderers/table_png.py
+COMMIT Merge pull request #82 from stranske/codex/issue-81
+COMMIT Add None-input validation coverage for CPRS PNG renderers
+
+src/counter_risk/renderers/table_png.py
+COMMIT chore(codex-autofix): apply updates (PR #73)
+
+src/counter_risk/writers/pptx_screenshots.py
+COMMIT chore(codex-keepalive): apply updates (PR #84)
+
+src/counter_risk/renderers/table_png.py
+COMMIT Merge pull request #79 from stranske/codex/issue-78
+COMMIT Add CPRS-CH variant row-count validation
+
+src/counter_risk/renderers/table_png.py
+COMMIT chore(codex-autofix): apply updates (PR #82)
+
+src/counter_risk/pipeline/run.py
+COMMIT Add explicit empty DataFrame validation for CPRS PNG renderer
+
+src/counter_risk/renderers/table_png.py
+COMMIT chore(codex-keepalive): apply updates (PR #82)
+
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-autofix): apply updates (PR #82)
+
+src/counter_risk/ppt/replace_screenshots.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/ppt/replace_screenshots.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/renderers/__init__.py
+COMMIT Add zip-based PPT screenshot replacement core
+
+src/counter_risk/ppt/__init__.py
+src/counter_risk/ppt/replace_screenshots.py
+COMMIT Add shared CPRS PNG helper and FCM renderer export
+
+src/counter_risk/renderers/__init__.py
+src/counter_risk/renderers/table_png.py
+COMMIT chore(codex-keepalive): apply updates (PR #82)
+
+src/counter_risk/pipeline/run.py
+COMMIT style: format release.py
+
+src/counter_risk/build/release.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/pipeline/manifest.py
+COMMIT Make manifest artifact paths run-dir-relative and validated
+
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-autofix): apply updates (PR #82)
+
+src/counter_risk/pipeline/__init__.py
+COMMIT Merge main into codex/issue-23
+COMMIT Refactor pipeline manifest builder to take explicit run_dir
+
+src/counter_risk/pipeline/manifest.py
+src/counter_risk/pipeline/run.py
+COMMIT style: format pptx_screenshots for lint-format
+
+src/counter_risk/writers/pptx_screenshots.py
+COMMIT Enforce repo-root run directory in pipeline entrypoint
+
+src/counter_risk/pipeline/run.py
+COMMIT Merge main into codex/issue-19 and resolve writers init conflict
+COMMIT feat: add pptx screenshot replacement writer and tests
+
+src/counter_risk/writers/__init__.py
+src/counter_risk/writers/pptx_screenshots.py
+COMMIT Improve release fixture portability and bundle-run validation
+
+src/counter_risk/build/release.py
+COMMIT Add explicit CPRS-CH view rendering contract
+
+src/counter_risk/renderers/table_png.py
+COMMIT chore(codex-autofix): apply updates (PR #69)
+
+src/counter_risk/pipeline/__init__.py
+src/counter_risk/pipeline/fixture_replay.py
+COMMIT fix: resolve merge conflicts with main
+COMMIT Detect duplicate template filenames during release bundling
+
+src/counter_risk/build/release.py
+COMMIT Harden run_pipeline setup error handling
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/build/release.py
+COMMIT Define explicit CPRS-CH header layout contract
+
+src/counter_risk/renderers/table_png.py
+COMMIT Package release bundle with PyInstaller executable
+
+src/counter_risk/build/release.py
+COMMIT Add PyInstaller release spec and bundled path resolver
+
+src/counter_risk/cli.py
+src/counter_risk/runtime_paths.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/build/__init__.py
+COMMIT chore(codex-autofix): apply updates (PR #69)
+
+src/counter_risk/pipeline/run.py
+COMMIT Define stable CPRS-CH table layout contract
+
+src/counter_risk/renderers/table_png.py
+COMMIT chore(codex-keepalive): apply updates (PR #69)
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-keepalive): apply updates (PR #73)
+
+src/counter_risk/runner_date_control.py
+COMMIT Add fixture-replay run mode and release bundle parity test
+
+src/counter_risk/build/release.py
+src/counter_risk/cli.py
+src/counter_risk/pipeline.py
+COMMIT Add programmatic release entrypoint with version/output params
+
+src/counter_risk/build/release.py
+COMMIT Bundle runnable pipeline entrypoint in release output
+
+src/counter_risk/build/release.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/build/release.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/writers/dropin_templates.py
+COMMIT Add explicit CPRS-CH renderer contracts for backend and headers
+
+src/counter_risk/renderers/table_png.py
+COMMIT Add initial release bundle assembler and tests
+
+src/counter_risk/build/__init__.py
+src/counter_risk/build/release.py
+COMMIT chore(codex-autofix): apply updates (PR #69)
+
+src/counter_risk/writers/dropin_templates.py
+COMMIT Add wrapped input and manifest error handling in run pipeline
+
+src/counter_risk/pipeline/run.py
+COMMIT Define scoped Runner date-control decision API
+
+src/counter_risk/runner_date_control.py
+COMMIT pipeline: add historical workbook update stage
+
+src/counter_risk/pipeline/run.py
+COMMIT renderer: make CPRS-CH deterministic font contract explicit
+
+src/counter_risk/renderers/table_png.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/writers/historical_update.py
+COMMIT Implement append-date fallback inference and acceptance tests
+
+src/counter_risk/writers/historical_update.py
+COMMIT Add multi-row header numeric zero-default coverage
+
+src/counter_risk/writers/historical_update.py
+COMMIT Add dedicated monotonicity error and equality test
+
+src/counter_risk/writers/historical_update.py
+COMMIT Codify Runner date control selection policy
+
+src/counter_risk/runner_date_control.py
+COMMIT Scan full 12-row header window for date detection
+
+src/counter_risk/writers/historical_update.py
+COMMIT Merge pull request #67 from stranske/codex/issue-21
+COMMIT Merge pull request #68 from stranske/codex/issue-20
+COMMIT Merge pull request #64 from stranske/codex/issue-18
+COMMIT style: format historical update
+
+src/counter_risk/writers/historical_update.py
+COMMIT Handle OLE link refresh in PowerPoint COM integration
+
+src/counter_risk/integrations/powerpoint_com.py
+COMMIT Handle grouped PowerPoint shapes during link refresh
+
+src/counter_risk/integrations/powerpoint_com.py
+COMMIT Add compute-stage pipeline error handling test
+
+src/counter_risk/pipeline/run.py
+COMMIT Add CI-safe COM success-path tests for PowerPoint integration
+
+src/counter_risk/integrations/powerpoint_com.py
+COMMIT Validate parsed pipeline inputs before compute stage
+
+src/counter_risk/pipeline/run.py
+COMMIT Add pipeline config validation stage and tests
+
+src/counter_risk/pipeline/run.py
+COMMIT Add PowerPoint COM link refresh fallback and tests
+
+src/counter_risk/integrations/__init__.py
+src/counter_risk/integrations/powerpoint_com.py
+COMMIT Add stage-level error handling in run_pipeline and tests
+
+src/counter_risk/pipeline/run.py
+COMMIT chore(codex-autofix): apply updates (PR #68)
+
+src/counter_risk/integrations/powerpoint_com.py
+COMMIT chore(codex-autofix): apply updates (PR #67)
+
+src/counter_risk/compute/rollups.py
+COMMIT chore(codex-keepalive): apply updates (PR #69)
+
+src/counter_risk/pipeline/__init__.py
+src/counter_risk/pipeline/run.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/compute/rollups.py
+COMMIT Add rollup computations and deterministic summary tests
+
+src/counter_risk/compute/__init__.py
+src/counter_risk/compute/rollups.py
+COMMIT Add PowerPoint COM availability and initialization helpers
+
+src/counter_risk/integrations/__init__.py
+src/counter_risk/integrations/powerpoint_com.py
+COMMIT chore(codex-autofix): apply updates (PR #65)
+
+src/counter_risk/parsers/cprs_fcm.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/parsers/cprs_fcm.py
+COMMIT Add CPRS-FCM parser and variant coverage tests
+
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/cprs_fcm.py
+COMMIT Implement historical workbook row appends and row-count test
+
+src/counter_risk/writers/historical_update.py
+COMMIT Add historical workbook update module scaffold
+
+src/counter_risk/writers/__init__.py
+src/counter_risk/writers/historical_update.py
+COMMIT Merge pull request #62 from stranske/codex/issue-17
+COMMIT Validate drop-in exposure identifiers and add tests
+
+src/counter_risk/writers/dropin_templates.py
+COMMIT Implement drop-in notional breakdown population and fixture tests
+
+src/counter_risk/writers/dropin_templates.py
+COMMIT Define explicit CPRS-CH table style contract
+
+src/counter_risk/renderers/table_png.py
+COMMIT style: format table png renderer
+
+src/counter_risk/renderers/table_png.py
+COMMIT style: format dropin templates writer
+
+src/counter_risk/writers/dropin_templates.py
+COMMIT Document deterministic CPRS-CH PNG backend and test it
+
+src/counter_risk/renderers/table_png.py
+COMMIT Define explicit CPRS-CH PNG column layout
+
+src/counter_risk/renderers/table_png.py
+COMMIT Populate drop-in numeric columns via header-based mapping
+
+src/counter_risk/writers/dropin_templates.py
+COMMIT chore(codex-autofix): apply updates (PR #63)
+
+src/counter_risk/renderers/table_png.py
+COMMIT Add deterministic CPRS-CH table PNG renderer
+
+src/counter_risk/renderers/__init__.py
+src/counter_risk/renderers/table_png.py
+COMMIT Strengthen drop-in template path validation
+
+src/counter_risk/writers/dropin_templates.py
+COMMIT fix: resolve CI failures
+
+src/counter_risk/writers/dropin_templates.py
+COMMIT chore(codex-keepalive): apply updates (PR #62)
+
+src/counter_risk/writers/__init__.py
+src/counter_risk/writers/dropin_templates.py
+COMMIT Merge pull request #61 from stranske/codex/issue-14
+COMMIT style: format cprs_ch parser
+
+src/counter_risk/parsers/cprs_ch.py
+COMMIT chore(codex-autofix): apply updates (PR #61)
+
+src/counter_risk/parsers/cprs_ch.py
+COMMIT chore(autofix): formatting/lint
+
+src/counter_risk/parsers/cprs_ch.py
+COMMIT Add CPRS-CH parser with segment and numeric extraction tests
+
+src/counter_risk/parsers/__init__.py
+src/counter_risk/parsers/cprs_ch.py
+COMMIT Add counterparty and clearing-house normalization with tests
+
+src/counter_risk/normalize.py
+src/counter_risk/parser.py
+src/counter_risk/writer.py
+COMMIT Add PPTX fixture helpers and untrack Python build artifacts
+
+src/counter_risk/__pycache__/__init__.cpython-311.pyc
+src/counter_risk/__pycache__/cli.cpython-311.pyc
+src/counter_risk/__pycache__/config.cpython-311.pyc
+src/counter_risk/__pycache__/logging.cpython-311.pyc
+COMMIT chore(codex-keepalive): apply updates (PR #56)
+
+src/counter_risk/__pycache__/__init__.cpython-311.pyc
+src/counter_risk/__pycache__/cli.cpython-311.pyc
+src/counter_risk/__pycache__/config.cpython-311.pyc
+src/counter_risk/__pycache__/logging.cpython-311.pyc
+COMMIT chore(codex-autofix): apply updates (PR #56)
+
+src/counter_risk/__pycache__/__init__.cpython-311.pyc
+src/counter_risk/__pycache__/cli.cpython-311.pyc
+src/counter_risk/__pycache__/config.cpython-311.pyc
+src/counter_risk/__pycache__/logging.cpython-311.pyc
+COMMIT chore(codex-keepalive): apply updates (PR #56)
+
+src/counter_risk/__pycache__/__init__.cpython-311.pyc
+src/counter_risk/__pycache__/cli.cpython-311.pyc
+src/counter_risk/__pycache__/config.cpython-311.pyc
+src/counter_risk/__pycache__/logging.cpython-311.pyc
+COMMIT Add workflow YAML config model, loader, and tests
+
+src/counter_risk/config.py
+COMMIT chore(codex-autofix): apply updates (PR #55)
+
+src/counter_risk/__pycache__/__init__.cpython-311.pyc
+src/counter_risk/__pycache__/cli.cpython-311.pyc
+src/counter_risk/__pycache__/logging.cpython-311.pyc
+src/counter_risk/cli.py
+COMMIT chore(codex-keepalive): apply updates (PR #55)
+
+src/counter_risk/__pycache__/__init__.cpython-311.pyc
+src/counter_risk/__pycache__/cli.cpython-311.pyc
+src/counter_risk/__pycache__/logging.cpython-311.pyc
+COMMIT Add counter_risk core package, CLI stub, logging, and dev tooling/tests
+
+src/counter_risk/__init__.py
+src/counter_risk/cli.py
+src/counter_risk/logging.py
