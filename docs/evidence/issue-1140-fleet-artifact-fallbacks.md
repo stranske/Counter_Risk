@@ -94,3 +94,97 @@ and its open/ready-for-review state could not be verified or updated remotely.
 The workspace's `.git` directory is read-only, preventing a commit on this
 checkout. The follow-up commit was prepared in a temporary checkout with a Git
 bundle for import; this workspace's branch remains unchanged.
+
+
+## Latency boundary follow-up (2026-10-06)
+
+Reviewed commits `7ca458c` and `fd507be` before editing. Their committed evidence
+already verifies the three generic measurement/regression/mutation tasks and the
+historical full-scope and directory-safety criteria. The PR's automated unchecked
+copies were stale. GitHub rejected the PR-body update, blocker-comment and
+`needs-human` attempts with `MCP tool call requires approval, but approval policy
+is never`; no remote checkbox or label was changed. The PR was observed open and
+ready (`draft=false`). Its preamble still says `Closes #1140`; that should become
+`Refs #1140` because the broader initiative must remain open below 90 percent.
+
+Three new saved-artifact parameter cases protect a nonzero primary latency,
+fractional input falling through to an integer secondary value, and absent
+higher-priority keys falling through to the tertiary value. They assert both
+top-level and shared metadata across all five persisted NDJSON records. No
+production defect was reproduced; no production repair or refactor was needed.
+
+The fresh baseline selected 2,217 items before the test edits (workers had already
+collected them); the candidate selected 2,220. Both runs used Python 3.14.7 on Linux,
+four workers, `--cov=counter_risk`, and `-m 'not release and not slow'`, with 48
+deselections each. Candidate coverage used a separate `COVERAGE_FILE` to keep the
+data independent. Full outputs and collection are appended to the companion
+transcript (only trailing whitespace is normalized); all 106 per-file summaries and missing-line arrays,
+the refreshed ranking, and per-node receipts are in the JSON follow-up object.
+
+| Measurement | Baseline | Candidate |
+|---|---:|---:|
+| Test outcome | 2216 passed, 1 skipped in 989.51s (0:16:29) | 2219 passed, 1 skipped in 700.37s (0:11:40) |
+| Covered statements | 10825 | 10825 |
+| Total statements | 12038 | 12038 |
+| Missing statements | 1213 | 1213 |
+| Exact coverage percent | 89.923575344742 | 89.923575344742 |
+
+Actual change: **+0 covered statements** and
+**+0.000000000000 percentage points**. These tests
+strengthen behavioral boundaries rather than claim a line-coverage gain. The
+starting exact percentage is below 90; the broader initiative remains open.
+
+Ranking uses the last 500 production-source commits at starting HEAD `fd507be`,
+whole-word repair subjects (`fix|bug|repair|regression|correct`), then churn, then
+measured missing statements. The history proxy is not a verified incident count.
+
+| Source | Repair-history proxy | Churn | Missing statements |
+|---|---:|---:|---:|
+| `src/counter_risk/pipeline/run.py` | 19 | 111 | 317 |
+| `src/counter_risk/writers/historical_update.py` | 8 | 39 | 36 |
+| `src/counter_risk/build/release.py` | 6 | 23 | 17 |
+| `src/counter_risk/compute/futures_delta.py` | 6 | 19 | 9 |
+| `src/counter_risk/compute/rollups.py` | 5 | 15 | 16 |
+
+Mutations ran in an isolated checkout of the same starting HEAD with the new test
+file copied in, so neither full coverage run could observe mutated source. Each
+control failed its named assertion and passed after exact byte restoration in
+`finally`. The last two controls repeat the prior follow-up assertions so their
+machine-readable receipts also accompany the main evidence.
+
+| Exact node | Actual source mutation | RED | Restored GREEN |
+|---|---|---|---|
+| `tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_first_valid_nonnegative_latency[primary-preferred]` | `if parsed >= 0 and (key != "LANGSMITH_TRACE_LATENCY_MS" or parsed == 0):` | 1 failed / exit 1 | 1 passed / exit 0 |
+| `tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_first_valid_nonnegative_latency[fractional-to-secondary]` | `parsed = int(float(value))` | 1 failed / exit 1 | 1 passed / exit 0 |
+| `tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_first_valid_nonnegative_latency[absent-to-tertiary]` | `if raw is None: return None` | 1 failed / exit 1 | 1 passed / exit 0 |
+| `tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_pipeline_error_after_blank_trace_category` | `return "unknown-category"` | 1 failed / exit 1 | 1 passed / exit 0 |
+| `tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_omits_external_report_paths` | `"report_artifact_count": len(report_refs) or 1,` | 1 failed / exit 1 | 1 passed / exit 0 |
+
+Restored pipeline SHA256: `10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b`.
+Restored observability SHA256:
+`461c3ff1af573bb92a043b5a03018edbb60975051470aad5c5873f62a0d7283c`.
+
+Focused artifact/data-quality/observability tests: **40 passed**; directory-safety
+tests: **20 passed**. Targeted `--cov=counter_risk.pipeline.run -m 'not slow'`
+reports **314 / 2,511 statements (13% rounded)**; it is not a package measurement.
+Black formatted the changed Python file, Ruff passed, and the exact whole-repo
+Black CLI check passed for **369 files** with the required line length/exclusions.
+Sandbox worker execution stalled; a temporary Python 3.12 serial launcher used
+Black 26.5.1's unchanged CLI discovery and `reformat_one`, populated a writable
+cache, and then the standard Black command passed. The launcher/output are in
+the transcript. No formatting, marker, coverage or workflow configuration changed.
+
+The exact `python3.12 -m pytest` acceptance command could not run because that
+interpreter has no pytest installed. Python 3.14 validation is explicitly recorded
+as such; the Python 3.12 acceptance checkbox remains unchecked. Release/slow,
+Office/native, hosted/live LangSmith, branch coverage and current-head GitHub
+checks remain outside these local measurements.
+
+Locally verified task reconciliation:
+
+- [x] Package measurement and ranked target selection.
+- [x] Focused regressions with no reproduced production defect to repair.
+- [x] Every new parameter node failed an actual source mutation and passed after exact restoration.
+- [x] Directory-safety suite and identical-scope baseline/candidate evidence.
+- [ ] Python 3.12 saved-artifact acceptance command (pytest unavailable).
+- [ ] Live PR checklist, closing-reference correction and needs-human/comment updates (GitHub writes rejected).

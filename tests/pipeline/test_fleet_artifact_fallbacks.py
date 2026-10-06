@@ -45,6 +45,9 @@ def _records(run_dir: Path, output_paths: list[Path] | None = None) -> list[dict
         (("-1", "7", "99"), 7),
         (("0", "99", None), 0),
         (("bad", "-2", " "), None),
+        ((" 31 ", "99", "101"), 31),
+        (("1.5", "17", None), 17),
+        ((None, None, " 23 "), 23),
     ],
     ids=(
         "invalid-primary",
@@ -52,6 +55,9 @@ def _records(run_dir: Path, output_paths: list[Path] | None = None) -> list[dict
         "negative-to-positive",
         "zero-preferred",
         "all-invalid",
+        "primary-preferred",
+        "fractional-to-secondary",
+        "absent-to-tertiary",
     ),
 )
 def test_fleet_artifact_uses_first_valid_nonnegative_latency(
