@@ -1,0 +1,179 @@
+{
+  "base_head": "9a0e9f877a1828be662c37a4a8c2e5cdb2d084f8",
+  "scope": "counter_risk",
+  "markers": "not release and not slow",
+  "interpreter": "3.12.2 | packaged by conda-forge | (main, Feb 16 2024, 20:54:21) [Clang 16.0.6 ]",
+  "workers": 4,
+  "line_only": true,
+  "baseline": {
+    "covered_lines": 10826,
+    "num_statements": 12038,
+    "percent_covered": 89.93188237248712,
+    "percent_covered_display": "90",
+    "missing_lines": 1212,
+    "excluded_lines": 84,
+    "percent_statements_covered": 89.93188237248712,
+    "percent_statements_covered_display": "90"
+  },
+  "candidate": {
+    "covered_lines": 10842,
+    "num_statements": 12038,
+    "percent_covered": 90.06479481641469,
+    "percent_covered_display": "90",
+    "missing_lines": 1196,
+    "excluded_lines": 84,
+    "percent_statements_covered": 90.06479481641469,
+    "percent_statements_covered_display": "90"
+  },
+  "gained_lines": {
+    "src/counter_risk/pipeline/run.py": [
+      906,
+      907,
+      908,
+      909,
+      915,
+      919,
+      920,
+      921,
+      922,
+      923,
+      924,
+      925,
+      926,
+      927,
+      928,
+      929
+    ]
+  },
+  "lost_lines": {},
+  "ranking": [
+    {
+      "path": "src/counter_risk/pipeline/run.py",
+      "repair_proxy": 19,
+      "churn": 111,
+      "missing": 317
+    },
+    {
+      "path": "src/counter_risk/writers/historical_update.py",
+      "repair_proxy": 8,
+      "churn": 39,
+      "missing": 36
+    },
+    {
+      "path": "src/counter_risk/build/release.py",
+      "repair_proxy": 6,
+      "churn": 23,
+      "missing": 17
+    },
+    {
+      "path": "src/counter_risk/compute/futures_delta.py",
+      "repair_proxy": 6,
+      "churn": 19,
+      "missing": 9
+    },
+    {
+      "path": "src/counter_risk/compute/rollups.py",
+      "repair_proxy": 5,
+      "churn": 15,
+      "missing": 16
+    },
+    {
+      "path": "src/counter_risk/parsers/exposure_maturity_schedule.py",
+      "repair_proxy": 5,
+      "churn": 11,
+      "missing": 9
+    },
+    {
+      "path": "src/counter_risk/chat/session.py",
+      "repair_proxy": 4,
+      "churn": 24,
+      "missing": 13
+    },
+    {
+      "path": "src/counter_risk/compute/limits.py",
+      "repair_proxy": 4,
+      "churn": 7,
+      "missing": 22
+    },
+    {
+      "path": "src/counter_risk/reports/change_attribution.py",
+      "repair_proxy": 4,
+      "churn": 5,
+      "missing": 11
+    },
+    {
+      "path": "src/counter_risk/pipeline/manifest.py",
+      "repair_proxy": 3,
+      "churn": 24,
+      "missing": 19
+    }
+  ],
+  "source_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b",
+  "mutations": [
+    {
+      "name": "row-bound",
+      "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_bounds_rows_columns_and_closes_reader",
+      "mutation": "int(worksheet.max_row)",
+      "red_exit": 1,
+      "green_exit": 0,
+      "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+    },
+    {
+      "name": "column-bound",
+      "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_bounds_rows_columns_and_closes_reader",
+      "mutation": "range(1, max_cols + 2)",
+      "red_exit": 1,
+      "green_exit": 0,
+      "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+    },
+    {
+      "name": "missing-reader",
+      "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_tolerates_unavailable_optional_reader[missing]",
+      "mutation": "except ModuleNotFoundError:\n        raise",
+      "red_exit": 1,
+      "green_exit": 0,
+      "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+    },
+    {
+      "name": "broken-reader",
+      "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_tolerates_unavailable_optional_reader[broken]",
+      "mutation": "except Exception:\n        raise\n\n    workbook = None",
+      "red_exit": 1,
+      "green_exit": 0,
+      "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+    },
+    {
+      "name": "corrupt-workbook",
+      "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_tolerates_corrupt_workbook",
+      "mutation": "    except Exception:\n        raise\n    finally:",
+      "red_exit": 1,
+      "green_exit": 0,
+      "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+    },
+    {
+      "name": "empty-workbook",
+      "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_handles_no_worksheets_and_closes_reader",
+      "mutation": "if not workbook.sheetnames:\n            return [\"phantom header\"]",
+      "red_exit": 1,
+      "green_exit": 0,
+      "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+    },
+    {
+      "name": "partial-read",
+      "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_discards_partial_read_and_closes_reader",
+      "mutation": "    except Exception:\n        return lines\n    finally:",
+      "red_exit": 1,
+      "green_exit": 0,
+      "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+    },
+    {
+      "name": "close-reader",
+      "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_discards_partial_read_and_closes_reader",
+      "mutation": "pass  # deliberate reader leak",
+      "red_exit": 1,
+      "green_exit": 0,
+      "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+    }
+  ],
+  "testgen_ok": true
+}

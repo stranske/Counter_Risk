@@ -1,0 +1,257 @@
+{
+  "ok": false,
+  "checks": [
+    {
+      "name": "collect_import_ok",
+      "ok": true,
+      "detail": "candidate tests collect and import under pytest --collect-only",
+      "could_not_measure": false
+    },
+    {
+      "name": "baseline_non_regression",
+      "ok": true,
+      "detail": "baseline pytest command passes at least once under coverage",
+      "could_not_measure": false
+    },
+    {
+      "name": "candidate_coverage_run",
+      "ok": true,
+      "detail": "candidate pytest command passes once under coverage",
+      "could_not_measure": false
+    },
+    {
+      "name": "candidate_reliability",
+      "ok": true,
+      "detail": "candidate pytest command passes 3 repeated runs",
+      "could_not_measure": false
+    },
+    {
+      "name": "coverage_delta",
+      "ok": true,
+      "detail": "covered-lines delta 29 >= required 1",
+      "could_not_measure": false
+    },
+    {
+      "name": "no_hollow_nodes",
+      "ok": false,
+      "detail": "COULD NOT MEASURE HOLLOWNESS \u2014 no --base-ref was given, so there is no broken base to grade against. This is a misuse of the gate, NOT a verdict on the tests. Pass --base-ref <ref-before-the-change>, and --test-path for the new tests.",
+      "could_not_measure": true
+    }
+  ],
+  "coverage_measurement": {
+    "measured": true,
+    "reasons": [],
+    "unmeasured_sources": [],
+    "never_imported": [],
+    "statements": 2511,
+    "unevaluated_because": ""
+  },
+  "could_not_measure": [
+    "no_hollow_nodes"
+  ],
+  "baseline": {
+    "pytest_args": [
+      "tests/pipeline/test_fleet_artifact_fallbacks.py",
+      "-q"
+    ],
+    "coverage": {
+      "covered_lines": 310,
+      "num_statements": 2511,
+      "percent_covered": 12.345679012345679
+    },
+    "run": {
+      "name": "baseline_coverage_run",
+      "argv": [
+        "/opt/anaconda3/bin/python3.12",
+        "-m",
+        "coverage",
+        "run",
+        "--data-file=/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/baseline.coverage",
+        "--source=counter_risk.pipeline.run",
+        "-m",
+        "pytest",
+        "-o",
+        "cache_dir=/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/baseline-pytest-cache",
+        "tests/pipeline/test_fleet_artifact_fallbacks.py",
+        "-q"
+      ],
+      "ok": true,
+      "exit_code": 0,
+      "duration_sec": 2.109,
+      "stdout_tail": "============================= test session starts ==============================\nplatform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0\ncachedir: /var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/baseline-pytest-cache\nrootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries\nconfigfile: pyproject.toml\nplugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\ncollected 10 items\n\ntests/pipeline/test_fleet_artifact_fallbacks.py ..........               [100%]\n\n============================== 10 passed in 0.32s ==============================\n",
+      "stderr_tail": ""
+    },
+    "json": {
+      "name": "baseline_coverage_json",
+      "argv": [
+        "/opt/anaconda3/bin/python3.12",
+        "-m",
+        "coverage",
+        "json",
+        "--data-file=/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/baseline.coverage",
+        "-o",
+        "/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/baseline.json",
+        "--fail-under=0",
+        "-q"
+      ],
+      "ok": true,
+      "exit_code": 0,
+      "duration_sec": 0.259,
+      "stdout_tail": "",
+      "stderr_tail": ""
+    },
+    "error": null
+  },
+  "candidate": {
+    "pytest_args": [
+      "tests/pipeline/test_fleet_artifact_fallbacks.py",
+      "tests/pipeline/test_header_extraction_boundaries.py",
+      "-q"
+    ],
+    "collect": {
+      "name": "candidate_collect",
+      "argv": [
+        "/opt/anaconda3/bin/python3.12",
+        "-m",
+        "pytest",
+        "--collect-only",
+        "-o",
+        "cache_dir=/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/collect-pytest-cache",
+        "tests/pipeline/test_fleet_artifact_fallbacks.py",
+        "tests/pipeline/test_header_extraction_boundaries.py",
+        "-q"
+      ],
+      "ok": true,
+      "exit_code": 0,
+      "duration_sec": 1.502,
+      "stdout_tail": "alid_nonnegative_latency[zero-preferred]>\n        <Function test_fleet_artifact_uses_first_valid_nonnegative_latency[all-invalid]>\n        <Function test_fleet_artifact_uses_first_valid_nonnegative_latency[primary-preferred]>\n        <Function test_fleet_artifact_uses_first_valid_nonnegative_latency[fractional-to-secondary]>\n        <Function test_fleet_artifact_uses_first_valid_nonnegative_latency[absent-to-tertiary]>\n        <Function test_fleet_artifact_uses_pipeline_error_after_blank_trace_category>\n        <Function test_fleet_artifact_omits_external_report_paths>\n      <Module test_header_extraction_boundaries.py>\n        <Function test_header_extraction_bounds_rows_columns_and_closes_reader>\n        <Function test_header_extraction_tolerates_unavailable_optional_reader[missing]>\n        <Function test_header_extraction_tolerates_unavailable_optional_reader[broken]>\n        <Function test_header_extraction_tolerates_corrupt_workbook>\n        <Function test_header_extraction_handles_no_worksheets_and_closes_reader>\n        <Function test_header_extraction_discards_partial_read_and_closes_reader>\n\n========================= 16 tests collected in 0.44s ==========================\n",
+      "stderr_tail": ""
+    },
+    "coverage": {
+      "covered_lines": 339,
+      "num_statements": 2511,
+      "percent_covered": 13.500597371565114
+    },
+    "run": {
+      "name": "candidate_coverage_run",
+      "argv": [
+        "/opt/anaconda3/bin/python3.12",
+        "-m",
+        "coverage",
+        "run",
+        "--data-file=/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/candidate.coverage",
+        "--source=counter_risk.pipeline.run",
+        "-m",
+        "pytest",
+        "-o",
+        "cache_dir=/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/candidate-pytest-cache",
+        "tests/pipeline/test_fleet_artifact_fallbacks.py",
+        "tests/pipeline/test_header_extraction_boundaries.py",
+        "-q"
+      ],
+      "ok": true,
+      "exit_code": 0,
+      "duration_sec": 2.236,
+      "stdout_tail": "============================= test session starts ==============================\nplatform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0\ncachedir: /var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/candidate-pytest-cache\nrootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries\nconfigfile: pyproject.toml\nplugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\ncollected 16 items\n\ntests/pipeline/test_fleet_artifact_fallbacks.py ..........               [ 62%]\ntests/pipeline/test_header_extraction_boundaries.py ......               [100%]\n\n============================== 16 passed in 0.48s ==============================\n",
+      "stderr_tail": ""
+    },
+    "json": {
+      "name": "candidate_coverage_json",
+      "argv": [
+        "/opt/anaconda3/bin/python3.12",
+        "-m",
+        "coverage",
+        "json",
+        "--data-file=/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/candidate.coverage",
+        "-o",
+        "/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/candidate.json",
+        "--fail-under=0",
+        "-q"
+      ],
+      "ok": true,
+      "exit_code": 0,
+      "duration_sec": 0.25,
+      "stdout_tail": "",
+      "stderr_tail": ""
+    },
+    "error": null
+  },
+  "coverage_delta": {
+    "covered_lines": 29,
+    "min_required": 1,
+    "baseline_covered_lines": 310,
+    "candidate_covered_lines": 339
+  },
+  "reliability": {
+    "runs_requested": 3,
+    "pytest_args": [
+      "tests/pipeline/test_fleet_artifact_fallbacks.py",
+      "tests/pipeline/test_header_extraction_boundaries.py",
+      "-q"
+    ],
+    "all_passed": true,
+    "runs": [
+      {
+        "name": "candidate_reliability_1",
+        "argv": [
+          "/opt/anaconda3/bin/python3.12",
+          "-m",
+          "pytest",
+          "-o",
+          "cache_dir=/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/reliability-pytest-cache-1",
+          "tests/pipeline/test_fleet_artifact_fallbacks.py",
+          "tests/pipeline/test_header_extraction_boundaries.py",
+          "-q"
+        ],
+        "ok": true,
+        "exit_code": 0,
+        "duration_sec": 1.375,
+        "stdout_tail": "============================= test session starts ==============================\nplatform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0\ncachedir: /var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/reliability-pytest-cache-1\nrootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries\nconfigfile: pyproject.toml\nplugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\ncollected 16 items\n\ntests/pipeline/test_fleet_artifact_fallbacks.py ..........               [ 62%]\ntests/pipeline/test_header_extraction_boundaries.py ......               [100%]\n\n============================== 16 passed in 0.44s ==============================\n",
+        "stderr_tail": ""
+      },
+      {
+        "name": "candidate_reliability_2",
+        "argv": [
+          "/opt/anaconda3/bin/python3.12",
+          "-m",
+          "pytest",
+          "-o",
+          "cache_dir=/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/reliability-pytest-cache-2",
+          "tests/pipeline/test_fleet_artifact_fallbacks.py",
+          "tests/pipeline/test_header_extraction_boundaries.py",
+          "-q"
+        ],
+        "ok": true,
+        "exit_code": 0,
+        "duration_sec": 1.319,
+        "stdout_tail": "============================= test session starts ==============================\nplatform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0\ncachedir: /var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/reliability-pytest-cache-2\nrootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries\nconfigfile: pyproject.toml\nplugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\ncollected 16 items\n\ntests/pipeline/test_fleet_artifact_fallbacks.py ..........               [ 62%]\ntests/pipeline/test_header_extraction_boundaries.py ......               [100%]\n\n============================== 16 passed in 0.43s ==============================\n",
+        "stderr_tail": ""
+      },
+      {
+        "name": "candidate_reliability_3",
+        "argv": [
+          "/opt/anaconda3/bin/python3.12",
+          "-m",
+          "pytest",
+          "-o",
+          "cache_dir=/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/reliability-pytest-cache-3",
+          "tests/pipeline/test_fleet_artifact_fallbacks.py",
+          "tests/pipeline/test_header_extraction_boundaries.py",
+          "-q"
+        ],
+        "ok": true,
+        "exit_code": 0,
+        "duration_sec": 1.346,
+        "stdout_tail": "============================= test session starts ==============================\nplatform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0\ncachedir: /var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/orch-testgen-gate-3n6a95e8/reliability-pytest-cache-3\nrootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries\nconfigfile: pyproject.toml\nplugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0\nasyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function\ncollected 16 items\n\ntests/pipeline/test_fleet_artifact_fallbacks.py ..........               [ 62%]\ntests/pipeline/test_header_extraction_boundaries.py ......               [100%]\n\n============================== 16 passed in 0.43s ==============================\n",
+        "stderr_tail": ""
+      }
+    ]
+  },
+  "hollow": {
+    "measured": false,
+    "reason": "no --base-ref was given, so there is no broken base to grade against",
+    "remedy": "Pass --base-ref <ref-before-the-change>, and --test-path for the new tests.",
+    "hollow_nodes": []
+  },
+  "error": "failed checks: no_hollow_nodes; no_hollow_nodes COULD NOT MEASURE \u2014 this is a misuse of the gate, not a verdict on the tests: COULD NOT MEASURE HOLLOWNESS \u2014 no --base-ref was given, so there is no broken base to grade against. This is a misuse of the gate, NOT a verdict on the tests. Pass --base-ref <ref-before-the-change>, and --test-path for the new tests."
+}

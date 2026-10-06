@@ -1,0 +1,32 @@
+import hashlib,json,pathlib,subprocess,os
+root=pathlib.Path('/Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries')
+proof=pathlib.Path('/Users/teacher/.codex/automations/pd-workloop-resume/evidence/20261006T1901Z')
+p=root/'src/counter_risk/pipeline/run.py'; original=p.read_bytes(); source=original.decode(); start=source.index('def _extract_header_text_lines(');end=source.index('\ndef _resolve_input_paths(',start); fragment=source[start:end]
+base='tests/pipeline/test_header_extraction_boundaries.py::'
+cases=[
+ ('row-bound','test_header_extraction_bounds_rows_columns_and_closes_reader','min(int(worksheet.max_row), max_rows)','int(worksheet.max_row)'),
+ ('column-bound','test_header_extraction_bounds_rows_columns_and_closes_reader','range(1, max_cols + 1)','range(1, max_cols + 2)'),
+ ('missing-reader','test_header_extraction_tolerates_unavailable_optional_reader[missing]','except ModuleNotFoundError:\n        return []','except ModuleNotFoundError:\n        raise'),
+ ('broken-reader','test_header_extraction_tolerates_unavailable_optional_reader[broken]','except Exception:\n        return []\n\n    workbook = None','except Exception:\n        raise\n\n    workbook = None'),
+ ('corrupt-workbook','test_header_extraction_tolerates_corrupt_workbook','    except Exception:\n        return []\n    finally:','    except Exception:\n        raise\n    finally:'),
+ ('empty-workbook','test_header_extraction_handles_no_worksheets_and_closes_reader','if not workbook.sheetnames:\n            return []','if not workbook.sheetnames:\n            return ["phantom header"]'),
+ ('partial-read','test_header_extraction_discards_partial_read_and_closes_reader','    except Exception:\n        return []\n    finally:','    except Exception:\n        return lines\n    finally:'),
+ ('close-reader','test_header_extraction_discards_partial_read_and_closes_reader','workbook.close()','pass  # deliberate reader leak'),
+]
+rows=[]
+with (proof/'header-mutations.txt').open('w') as out:
+ for name,node,before,after in cases:
+  assert fragment.count(before)==1,(name,fragment.count(before))
+  mutant=source[:start]+fragment.replace(before,after,1)+source[end:]
+  try:
+   p.write_text(mutant)
+   red=subprocess.run(['python3.12','-m','pytest',base+node,'-q'],cwd=root,capture_output=True,text=True)
+   out.write(f'\n=== {name} RED ===\n'+red.stdout+red.stderr);out.flush()
+   assert red.returncode==1 and '1 failed' in red.stdout,(name,red.returncode)
+  finally:p.write_bytes(original)
+  green=subprocess.run(['python3.12','-m','pytest',base+node,'-q'],cwd=root,capture_output=True,text=True)
+  out.write(f'\n=== {name} RESTORED GREEN ===\n'+green.stdout+green.stderr);out.flush()
+  assert green.returncode==0 and '1 passed' in green.stdout,(name,green.returncode)
+  rows.append(dict(name=name,node=base+node,mutation=after,red_exit=red.returncode,green_exit=green.returncode,restored_sha256=hashlib.sha256(p.read_bytes()).hexdigest()))
+(proof/'header-mutations.json').write_text(json.dumps(rows,indent=2)+'\n')
+print('Actual controls',len(rows),'source restored',p.read_bytes()==original)

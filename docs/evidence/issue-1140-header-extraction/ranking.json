@@ -1,0 +1,398 @@
+[
+  {
+    "path": "src/counter_risk/pipeline/run.py",
+    "repair_proxy": 19,
+    "churn": 111,
+    "missing": 317
+  },
+  {
+    "path": "src/counter_risk/writers/historical_update.py",
+    "repair_proxy": 8,
+    "churn": 39,
+    "missing": 36
+  },
+  {
+    "path": "src/counter_risk/build/release.py",
+    "repair_proxy": 6,
+    "churn": 23,
+    "missing": 17
+  },
+  {
+    "path": "src/counter_risk/compute/futures_delta.py",
+    "repair_proxy": 6,
+    "churn": 19,
+    "missing": 9
+  },
+  {
+    "path": "src/counter_risk/compute/rollups.py",
+    "repair_proxy": 5,
+    "churn": 15,
+    "missing": 16
+  },
+  {
+    "path": "src/counter_risk/parsers/exposure_maturity_schedule.py",
+    "repair_proxy": 5,
+    "churn": 11,
+    "missing": 9
+  },
+  {
+    "path": "src/counter_risk/chat/session.py",
+    "repair_proxy": 4,
+    "churn": 24,
+    "missing": 13
+  },
+  {
+    "path": "src/counter_risk/compute/limits.py",
+    "repair_proxy": 4,
+    "churn": 7,
+    "missing": 22
+  },
+  {
+    "path": "src/counter_risk/reports/change_attribution.py",
+    "repair_proxy": 4,
+    "churn": 5,
+    "missing": 11
+  },
+  {
+    "path": "src/counter_risk/pipeline/manifest.py",
+    "repair_proxy": 3,
+    "churn": 24,
+    "missing": 19
+  },
+  {
+    "path": "src/counter_risk/writers/dropin_templates.py",
+    "repair_proxy": 3,
+    "churn": 12,
+    "missing": 10
+  },
+  {
+    "path": "src/counter_risk/pipeline/data_quality.py",
+    "repair_proxy": 3,
+    "churn": 8,
+    "missing": 21
+  },
+  {
+    "path": "src/counter_risk/chat/providers/langchain_runtime.py",
+    "repair_proxy": 3,
+    "churn": 6,
+    "missing": 9
+  },
+  {
+    "path": "src/counter_risk/calculations/wal.py",
+    "repair_proxy": 3,
+    "churn": 6,
+    "missing": 3
+  },
+  {
+    "path": "src/counter_risk/renderers/table_png.py",
+    "repair_proxy": 2,
+    "churn": 21,
+    "missing": 14
+  },
+  {
+    "path": "src/counter_risk/cli/__init__.py",
+    "repair_proxy": 2,
+    "churn": 11,
+    "missing": 22
+  },
+  {
+    "path": "src/counter_risk/chat/providers/base.py",
+    "repair_proxy": 2,
+    "churn": 11,
+    "missing": 2
+  },
+  {
+    "path": "src/counter_risk/normalize.py",
+    "repair_proxy": 2,
+    "churn": 10,
+    "missing": 5
+  },
+  {
+    "path": "src/counter_risk/pipeline/reconciliation.py",
+    "repair_proxy": 2,
+    "churn": 9,
+    "missing": 21
+  },
+  {
+    "path": "src/counter_risk/io/mosers_workbook.py",
+    "repair_proxy": 2,
+    "churn": 9,
+    "missing": 8
+  },
+  {
+    "path": "src/counter_risk/parsers/repo_cash_sources.py",
+    "repair_proxy": 2,
+    "churn": 6,
+    "missing": 25
+  },
+  {
+    "path": "src/counter_risk/limits_config.py",
+    "repair_proxy": 2,
+    "churn": 6,
+    "missing": 3
+  },
+  {
+    "path": "src/counter_risk/build/xlsm.py",
+    "repair_proxy": 2,
+    "churn": 5,
+    "missing": 48
+  },
+  {
+    "path": "src/counter_risk/config.py",
+    "repair_proxy": 1,
+    "churn": 18,
+    "missing": 2
+  },
+  {
+    "path": "src/counter_risk/pipeline/manifest_schema.py",
+    "repair_proxy": 1,
+    "churn": 15,
+    "missing": 14
+  },
+  {
+    "path": "src/counter_risk/runner_launch.py",
+    "repair_proxy": 1,
+    "churn": 14,
+    "missing": 14
+  },
+  {
+    "path": "src/counter_risk/gui/runner.py",
+    "repair_proxy": 1,
+    "churn": 13,
+    "missing": 92
+  },
+  {
+    "path": "src/counter_risk/parsers/cprs_ch.py",
+    "repair_proxy": 1,
+    "churn": 10,
+    "missing": 26
+  },
+  {
+    "path": "src/counter_risk/parsers/cprs_fcm.py",
+    "repair_proxy": 1,
+    "churn": 8,
+    "missing": 23
+  },
+  {
+    "path": "src/counter_risk/parsers/nisa.py",
+    "repair_proxy": 1,
+    "churn": 8,
+    "missing": 16
+  },
+  {
+    "path": "src/counter_risk/name_registry.py",
+    "repair_proxy": 1,
+    "churn": 8,
+    "missing": 8
+  },
+  {
+    "path": "src/counter_risk/parsers/daily_holdings_pdf.py",
+    "repair_proxy": 1,
+    "churn": 6,
+    "missing": 32
+  },
+  {
+    "path": "src/counter_risk/ppt/pptx_postprocess.py",
+    "repair_proxy": 1,
+    "churn": 5,
+    "missing": 54
+  },
+  {
+    "path": "src/counter_risk/observability/langsmith_fleet.py",
+    "repair_proxy": 1,
+    "churn": 4,
+    "missing": 15
+  },
+  {
+    "path": "src/counter_risk/mosers/template.py",
+    "repair_proxy": 1,
+    "churn": 4,
+    "missing": 6
+  },
+  {
+    "path": "src/counter_risk/io/workbook_compare.py",
+    "repair_proxy": 1,
+    "churn": 4,
+    "missing": 5
+  },
+  {
+    "path": "src/counter_risk/parsers/_xlsx_reader.py",
+    "repair_proxy": 1,
+    "churn": 3,
+    "missing": 11
+  },
+  {
+    "path": "src/counter_risk/demo_artifact.py",
+    "repair_proxy": 1,
+    "churn": 2,
+    "missing": 11
+  },
+  {
+    "path": "src/counter_risk/web_demo.py",
+    "repair_proxy": 1,
+    "churn": 2,
+    "missing": 6
+  },
+  {
+    "path": "src/counter_risk/io/excel_range_compare.py",
+    "repair_proxy": 1,
+    "churn": 2,
+    "missing": 4
+  },
+  {
+    "path": "src/counter_risk/pipeline/warnings.py",
+    "repair_proxy": 1,
+    "churn": 2,
+    "missing": 1
+  },
+  {
+    "path": "src/counter_risk/chat/context.py",
+    "repair_proxy": 0,
+    "churn": 11,
+    "missing": 19
+  },
+  {
+    "path": "src/counter_risk/mosers/workbook_generation.py",
+    "repair_proxy": 0,
+    "churn": 11,
+    "missing": 14
+  },
+  {
+    "path": "src/counter_risk/writers/mosers_workbook.py",
+    "repair_proxy": 0,
+    "churn": 9,
+    "missing": 9
+  },
+  {
+    "path": "src/counter_risk/writers/pptx_screenshots.py",
+    "repair_proxy": 0,
+    "churn": 8,
+    "missing": 14
+  },
+  {
+    "path": "src/counter_risk/integrations/powerpoint_com.py",
+    "repair_proxy": 0,
+    "churn": 8,
+    "missing": 9
+  },
+  {
+    "path": "src/counter_risk/reports/mapping_diff.py",
+    "repair_proxy": 0,
+    "churn": 5,
+    "missing": 12
+  },
+  {
+    "path": "src/counter_risk/io/discover.py",
+    "repair_proxy": 0,
+    "churn": 4,
+    "missing": 23
+  },
+  {
+    "path": "src/counter_risk/ppt/replace_screenshots.py",
+    "repair_proxy": 0,
+    "churn": 4,
+    "missing": 18
+  },
+  {
+    "path": "src/counter_risk/cli/mapping_diff_report.py",
+    "repair_proxy": 0,
+    "churn": 4,
+    "missing": 12
+  },
+  {
+    "path": "src/counter_risk/pipeline/fixture_replay.py",
+    "repair_proxy": 0,
+    "churn": 4,
+    "missing": 6
+  },
+  {
+    "path": "src/counter_risk/chat/ui.py",
+    "repair_proxy": 0,
+    "churn": 4,
+    "missing": 2
+  },
+  {
+    "path": "src/counter_risk/runtime_paths.py",
+    "repair_proxy": 0,
+    "churn": 4,
+    "missing": 1
+  },
+  {
+    "path": "src/counter_risk/outputs/historical_workbook.py",
+    "repair_proxy": 0,
+    "churn": 3,
+    "missing": 1
+  },
+  {
+    "path": "src/counter_risk/outputs/ppt_screenshot.py",
+    "repair_proxy": 0,
+    "churn": 3,
+    "missing": 1
+  },
+  {
+    "path": "src/counter_risk/ppt/pptx_static.py",
+    "repair_proxy": 0,
+    "churn": 3,
+    "missing": 1
+  },
+  {
+    "path": "src/counter_risk/integrations/excel_com.py",
+    "repair_proxy": 0,
+    "churn": 2,
+    "missing": 16
+  },
+  {
+    "path": "src/counter_risk/dates.py",
+    "repair_proxy": 0,
+    "churn": 2,
+    "missing": 12
+  },
+  {
+    "path": "src/counter_risk/outputs/registry.py",
+    "repair_proxy": 0,
+    "churn": 2,
+    "missing": 6
+  },
+  {
+    "path": "src/counter_risk/outputs/ppt_link_refresh.py",
+    "repair_proxy": 0,
+    "churn": 2,
+    "missing": 5
+  },
+  {
+    "path": "src/counter_risk/outputs/pdf_export.py",
+    "repair_proxy": 0,
+    "churn": 1,
+    "missing": 15
+  },
+  {
+    "path": "src/counter_risk/chat/providers/anthropic_stub.py",
+    "repair_proxy": 0,
+    "churn": 1,
+    "missing": 5
+  },
+  {
+    "path": "src/counter_risk/chat/providers/openai_stub.py",
+    "repair_proxy": 0,
+    "churn": 1,
+    "missing": 5
+  },
+  {
+    "path": "src/counter_risk/yaml_utils.py",
+    "repair_proxy": 0,
+    "churn": 1,
+    "missing": 3
+  },
+  {
+    "path": "src/counter_risk/cli/__main__.py",
+    "repair_proxy": 0,
+    "churn": 1,
+    "missing": 2
+  },
+  {
+    "path": "src/counter_risk/pipeline/ppt_validation.py",
+    "repair_proxy": 0,
+    "churn": 1,
+    "missing": 1
+  }
+]

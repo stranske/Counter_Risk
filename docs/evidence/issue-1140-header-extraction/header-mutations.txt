@@ -1,0 +1,483 @@
+
+=== row-bound RED ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py F                    [100%]
+
+=================================== FAILURES ===================================
+_________ test_header_extraction_bounds_rows_columns_and_closes_reader _________
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1080/test_header_extraction_bounds_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10c047680>
+
+    def test_header_extraction_bounds_rows_columns_and_closes_reader(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        path = tmp_path / "headers.xlsx"
+        _workbook(path)
+        book, closed = _track_reader(monkeypatch, path)
+
+>       assert run_module._extract_header_text_lines(path, max_rows=2, max_cols=4) == ["CPRS 42"]
+E       AssertionError: assert ['CPRS 42', 'outside rows'] == ['CPRS 42']
+E
+E         Left contains one more item: 'outside rows'
+E         Use -v to get more diff
+
+tests/pipeline/test_header_extraction_boundaries.py:49: AssertionError
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_bounds_rows_columns_and_closes_reader
+============================== 1 failed in 0.48s ===============================
+
+=== row-bound RESTORED GREEN ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py .                    [100%]
+
+============================== 1 passed in 0.41s ===============================
+
+=== column-bound RED ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py F                    [100%]
+
+=================================== FAILURES ===================================
+_________ test_header_extraction_bounds_rows_columns_and_closes_reader _________
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1082/test_header_extraction_bounds_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11151e1e0>
+
+    def test_header_extraction_bounds_rows_columns_and_closes_reader(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        path = tmp_path / "headers.xlsx"
+        _workbook(path)
+        book, closed = _track_reader(monkeypatch, path)
+
+>       assert run_module._extract_header_text_lines(path, max_rows=2, max_cols=4) == ["CPRS 42"]
+E       AssertionError: assert ['CPRS 42 out...also outside'] == ['CPRS 42']
+E
+E         At index 0 diff: 'CPRS 42 outside columns' != 'CPRS 42'
+E         Left contains one more item: 'also outside'
+E         Use -v to get more diff
+
+tests/pipeline/test_header_extraction_boundaries.py:49: AssertionError
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_bounds_rows_columns_and_closes_reader
+============================== 1 failed in 0.48s ===============================
+
+=== column-bound RESTORED GREEN ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py .                    [100%]
+
+============================== 1 passed in 0.41s ===============================
+
+=== missing-reader RED ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py F                    [100%]
+
+=================================== FAILURES ===================================
+____ test_header_extraction_tolerates_unavailable_optional_reader[missing] _____
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1084/test_header_extraction_tolerat0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x124b9e690>
+error = <class 'ModuleNotFoundError'>
+
+    @pytest.mark.parametrize("error", [ModuleNotFoundError, RuntimeError], ids=["missing", "broken"])
+    def test_header_extraction_tolerates_unavailable_optional_reader(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: type[Exception]
+    ) -> None:
+        original_import = builtins.__import__
+
+        def guarded_import(name, *args, **kwargs):
+            if name == "openpyxl":
+                raise error("optional workbook reader unavailable")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", guarded_import)
+
+>       assert run_module._extract_header_text_lines(tmp_path / "unused.xlsx") == []
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/pipeline/test_header_extraction_boundaries.py:67:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/counter_risk/pipeline/run.py:905: in _extract_header_text_lines
+    from openpyxl import load_workbook
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'openpyxl'
+args = ({'__name__': 'counter_risk.pipeline.run', '__doc__': 'Counter Risk pipeline orchestration.', '__package__': 'counter_..., '__loader__': <_frozen_importlib_external.SourceFileLoader object at 0x123374740>, ...}, None, ('load_workbook',), 0)
+kwargs = {}
+
+    def guarded_import(name, *args, **kwargs):
+        if name == "openpyxl":
+>           raise error("optional workbook reader unavailable")
+E           ModuleNotFoundError: optional workbook reader unavailable
+
+tests/pipeline/test_header_extraction_boundaries.py:62: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_tolerates_unavailable_optional_reader[missing]
+============================== 1 failed in 0.39s ===============================
+
+=== missing-reader RESTORED GREEN ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py .                    [100%]
+
+============================== 1 passed in 0.33s ===============================
+
+=== broken-reader RED ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py F                    [100%]
+
+=================================== FAILURES ===================================
+_____ test_header_extraction_tolerates_unavailable_optional_reader[broken] _____
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1086/test_header_extraction_tolerat0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x116d51fd0>
+error = <class 'RuntimeError'>
+
+    @pytest.mark.parametrize("error", [ModuleNotFoundError, RuntimeError], ids=["missing", "broken"])
+    def test_header_extraction_tolerates_unavailable_optional_reader(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error: type[Exception]
+    ) -> None:
+        original_import = builtins.__import__
+
+        def guarded_import(name, *args, **kwargs):
+            if name == "openpyxl":
+                raise error("optional workbook reader unavailable")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", guarded_import)
+
+>       assert run_module._extract_header_text_lines(tmp_path / "unused.xlsx") == []
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/pipeline/test_header_extraction_boundaries.py:67:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/counter_risk/pipeline/run.py:905: in _extract_header_text_lines
+    from openpyxl import load_workbook
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+name = 'openpyxl'
+args = ({'__name__': 'counter_risk.pipeline.run', '__doc__': 'Counter Risk pipeline orchestration.', '__package__': 'counter_..., '__loader__': <_frozen_importlib_external.SourceFileLoader object at 0x114b599a0>, ...}, None, ('load_workbook',), 0)
+kwargs = {}
+
+    def guarded_import(name, *args, **kwargs):
+        if name == "openpyxl":
+>           raise error("optional workbook reader unavailable")
+E           RuntimeError: optional workbook reader unavailable
+
+tests/pipeline/test_header_extraction_boundaries.py:62: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_tolerates_unavailable_optional_reader[broken]
+============================== 1 failed in 0.41s ===============================
+
+=== broken-reader RESTORED GREEN ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py .                    [100%]
+
+============================== 1 passed in 0.34s ===============================
+
+=== corrupt-workbook RED ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py F                    [100%]
+
+=================================== FAILURES ===================================
+______________ test_header_extraction_tolerates_corrupt_workbook _______________
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1088/test_header_extraction_tolerat0')
+
+    def test_header_extraction_tolerates_corrupt_workbook(tmp_path: Path) -> None:
+        path = tmp_path / "corrupt.xlsx"
+        original_bytes = b"This is not an XLSX zip archive."
+        path.write_bytes(original_bytes)
+
+>       assert run_module._extract_header_text_lines(path) == []
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/pipeline/test_header_extraction_boundaries.py:75:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/counter_risk/pipeline/run.py:913: in _extract_header_text_lines
+    workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/anaconda3/lib/python3.12/site-packages/openpyxl/reader/excel.py:346: in load_workbook
+    reader = ExcelReader(filename, read_only, keep_vba,
+/opt/anaconda3/lib/python3.12/site-packages/openpyxl/reader/excel.py:123: in __init__
+    self.archive = _validate_archive(fn)
+                   ^^^^^^^^^^^^^^^^^^^^^
+/opt/anaconda3/lib/python3.12/site-packages/openpyxl/reader/excel.py:95: in _validate_archive
+    archive = ZipFile(filename, 'r')
+              ^^^^^^^^^^^^^^^^^^^^^^
+/opt/anaconda3/lib/python3.12/zipfile/__init__.py:1341: in __init__
+    self._RealGetContents()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <zipfile.ZipFile [closed]>
+
+    def _RealGetContents(self):
+        """Read in the table of contents for the ZIP file."""
+        fp = self.fp
+        try:
+            endrec = _EndRecData(fp)
+        except OSError:
+            raise BadZipFile("File is not a zip file")
+        if not endrec:
+>           raise BadZipFile("File is not a zip file")
+E           zipfile.BadZipFile: File is not a zip file
+
+/opt/anaconda3/lib/python3.12/zipfile/__init__.py:1408: BadZipFile
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_tolerates_corrupt_workbook
+============================== 1 failed in 0.56s ===============================
+
+=== corrupt-workbook RESTORED GREEN ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py .                    [100%]
+
+============================== 1 passed in 0.42s ===============================
+
+=== empty-workbook RED ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py F                    [100%]
+
+=================================== FAILURES ===================================
+________ test_header_extraction_handles_no_worksheets_and_closes_reader ________
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1090/test_header_extraction_handles0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10dc9dfd0>
+
+    def test_header_extraction_handles_no_worksheets_and_closes_reader(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        source = tmp_path / "source.xlsx"
+        _workbook(source)
+        path = tmp_path / "empty.xlsx"
+        # A real XLSX with an empty sheet inventory, rather than a stubbed workbook.
+        with ZipFile(source) as archive, ZipFile(path, "w") as empty:
+            for entry in archive.infolist():
+                data = archive.read(entry.filename)
+                if entry.filename == "xl/workbook.xml":
+                    from xml.etree import ElementTree
+
+                    root = ElementTree.fromstring(data)
+                    sheets = root.find(
+                        "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheets"
+                    )
+                    assert sheets is not None
+                    sheets.clear()
+                    data = ElementTree.tostring(root)
+                empty.writestr(entry, data)
+        book, closed = _track_reader(monkeypatch, path)
+        assert book.sheetnames == []
+
+>       assert run_module._extract_header_text_lines(path) == []
+E       AssertionError: assert ['phantom header'] == []
+E
+E         Left contains one more item: 'phantom header'
+E         Use -v to get more diff
+
+tests/pipeline/test_header_extraction_boundaries.py:103: AssertionError
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_handles_no_worksheets_and_closes_reader
+============================== 1 failed in 0.44s ===============================
+
+=== empty-workbook RESTORED GREEN ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py .                    [100%]
+
+============================== 1 passed in 0.41s ===============================
+
+=== partial-read RED ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py F                    [100%]
+
+=================================== FAILURES ===================================
+________ test_header_extraction_discards_partial_read_and_closes_reader ________
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1092/test_header_extraction_discard0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11617b830>
+
+    def test_header_extraction_discards_partial_read_and_closes_reader(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        path = tmp_path / "unreadable-row.xlsx"
+        _workbook(path)
+        book, closed = _track_reader(monkeypatch, path)
+        sheet = book[book.sheetnames[0]]
+        original_cell = sheet.cell
+
+        def cell(*, row, column):
+            if row == 2:
+                raise OSError("workbook row became unreadable")
+            return original_cell(row=row, column=column)
+
+        monkeypatch.setattr(sheet, "cell", cell)
+
+>       assert run_module._extract_header_text_lines(path) == []
+E       AssertionError: assert ['CPRS 42 outside columns'] == []
+E
+E         Left contains one more item: 'CPRS 42 outside columns'
+E         Use -v to get more diff
+
+tests/pipeline/test_header_extraction_boundaries.py:124: AssertionError
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_discards_partial_read_and_closes_reader
+============================== 1 failed in 0.44s ===============================
+
+=== partial-read RESTORED GREEN ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py .                    [100%]
+
+============================== 1 passed in 0.42s ===============================
+
+=== close-reader RED ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py F                    [100%]
+
+=================================== FAILURES ===================================
+________ test_header_extraction_discards_partial_read_and_closes_reader ________
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1094/test_header_extraction_discard0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10d7bbfe0>
+
+    def test_header_extraction_discards_partial_read_and_closes_reader(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        path = tmp_path / "unreadable-row.xlsx"
+        _workbook(path)
+        book, closed = _track_reader(monkeypatch, path)
+        sheet = book[book.sheetnames[0]]
+        original_cell = sheet.cell
+
+        def cell(*, row, column):
+            if row == 2:
+                raise OSError("workbook row became unreadable")
+            return original_cell(row=row, column=column)
+
+        monkeypatch.setattr(sheet, "cell", cell)
+
+        assert run_module._extract_header_text_lines(path) == []
+>       assert closed == [True]
+E       assert [] == [True]
+E
+E         Right contains one more item: True
+E         Use -v to get more diff
+
+tests/pipeline/test_header_extraction_boundaries.py:125: AssertionError
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_discards_partial_read_and_closes_reader
+============================== 1 failed in 0.46s ===============================
+
+=== close-reader RESTORED GREEN ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/Counter_Risk-1140-telemetry-boundaries
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/pipeline/test_header_extraction_boundaries.py .                    [100%]
+
+============================== 1 passed in 0.41s ===============================
