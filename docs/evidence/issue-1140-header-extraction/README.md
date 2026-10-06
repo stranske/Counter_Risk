@@ -1,6 +1,6 @@
 # Workbook header extraction: issue #1140
 
-One test-only chunk on baseline `9a0e9f877a1828be662c37a4a8c2e5cdb2d084f8`. The previous #1143 chunk was independently dispositioned at PR comment 6022379505. Six new nodes use real XLSX files and actual openpyxl read-only workbooks. They protect row/column bounds, missing or broken optional imports, corrupt archives, an empty sheet inventory, partial-read rejection, and closing readers on success and error. No production bug was reproduced; production source and coverage configuration are unchanged.
+One test-only chunk on baseline `9a0e9f877a1828be662c37a4a8c2e5cdb2d084f8`. The previous #1143 chunk was independently dispositioned at PR comment 6022379505. Six new nodes cover three input classes: three open real XLSX workbooks using openpyxl read-only readers, two raise an optional-import error before any file is opened, and the corrupt-archive node supplies non-XLSX bytes. They protect row/column bounds, missing or broken optional imports, corrupt archives, an empty sheet inventory, partial-read rejection, and closing readers on success and error. No production bug was reproduced; production source and coverage configuration are unchanged.
 
 ## Selection
 
