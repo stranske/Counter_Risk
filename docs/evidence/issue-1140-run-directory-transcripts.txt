@@ -28,14 +28,14 @@ output_dir = PosixPath('<pytest-tmp>')
 >                   has_existing_entries = any(resolved_output_dir.iterdir())
                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-src/counter_risk/pipeline/run.py:844: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/counter_risk/pipeline/run.py:844:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = PosixPath('<pytest-tmp>')
 
     def iterdir(self):
         """Yield path objects of the directory contents.
-    
+
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
@@ -55,8 +55,8 @@ tmp_path = PosixPath('<pytest-tmp>')
         with pytest.raises(ValueError, match="must be a directory"):
 >           run._create_run_directory(as_of_date=AS_OF, output_dir=output)
 
-tests/test_pipeline_run_dir_safety.py:18: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_pipeline_run_dir_safety.py:18:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 as_of_date = datetime.date(2026, 2, 13), run_date = None
 output_dir = PosixPath('<pytest-tmp>')
@@ -102,20 +102,20 @@ monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1071d7770>
         tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         error = PermissionError("directory inspection denied")
-    
+
         def denied(_path: Path):
             raise error
-    
+
         monkeypatch.setattr(Path, "iterdir", denied)
         with pytest.raises(RuntimeError, match="Unable to inspect output_dir") as caught:
 >           run._create_run_directory(as_of_date=AS_OF, output_dir=tmp_path)
 
-tests/test_pipeline_run_dir_safety.py:32: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_pipeline_run_dir_safety.py:32:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 src/counter_risk/pipeline/run.py:844: in _create_run_directory
     has_existing_entries = any(resolved_output_dir.iterdir())
                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 _path = PosixPath('<pytest-tmp>')
 
@@ -147,8 +147,8 @@ tmp_path = PosixPath('<pytest-tmp>')
 >       assert run._create_run_directory(as_of_date=AS_OF, output_dir=tmp_path) == tmp_path
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/test_pipeline_run_dir_safety.py:37: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_pipeline_run_dir_safety.py:37:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 as_of_date = datetime.date(2026, 2, 13), run_date = None
 output_dir = PosixPath('<pytest-tmp>')
@@ -237,7 +237,7 @@ monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a04b3b0>
         original_mkdir = Path.mkdir
         contested = tmp_path / "runs" / AS_OF.isoformat()
         claimed = False
-    
+
         def claim_first(path: Path, *args, **kwargs) -> None:
             nonlocal claimed
             if path == contested and not claimed:
@@ -245,18 +245,18 @@ monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a04b3b0>
                 original_mkdir(path, parents=True)
                 (path / "manifest.json").write_text("other run")
             original_mkdir(path, *args, **kwargs)
-    
+
         monkeypatch.setattr(Path, "mkdir", claim_first)
 >       result = run._create_run_directory(as_of_date=AS_OF)
                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/test_pipeline_run_dir_safety.py:75: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_pipeline_run_dir_safety.py:75:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 src/counter_risk/pipeline/run.py:872: in _create_run_directory
     run_dir.mkdir(parents=True, exist_ok=False)
 tests/test_pipeline_run_dir_safety.py:72: in claim_first
     original_mkdir(path, *args, **kwargs)
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = PosixPath('<pytest-tmp>')
 mode = 511, parents = True, exist_ok = False
@@ -324,16 +324,16 @@ monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106b8f740>
     ) -> None:
         monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
         error = PermissionError("run root is read-only")
-    
+
         def denied(_path: Path, *args, **kwargs) -> None:
             raise error
-    
+
         monkeypatch.setattr(Path, "mkdir", denied)
         with pytest.raises(PermissionError) as caught:
 >           run._create_run_directory(as_of_date=AS_OF)
 
-tests/test_pipeline_run_dir_safety.py:102: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_pipeline_run_dir_safety.py:102:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 as_of_date = datetime.date(2026, 2, 13), run_date = None, output_dir = None
 
@@ -357,10 +357,10 @@ as_of_date = datetime.date(2026, 2, 13), run_date = None, output_dir = None
                         f"{resolved_output_dir}. Choose an empty directory or remove existing files."
                     )
                 return resolved_output_dir
-    
+
             resolved_output_dir.mkdir(parents=True, exist_ok=False)
             return resolved_output_dir
-    
+
         runs_root = _resolve_repo_root() / "runs"
         base_name = (
             as_of_date.isoformat()
@@ -368,7 +368,7 @@ as_of_date = datetime.date(2026, 2, 13), run_date = None, output_dir = None
             else f"{as_of_date.isoformat()}__run_{run_date.isoformat()}"
         )
         candidate_names = [base_name, *(f"{base_name}_{index}" for index in range(1, 10_000))]
-    
+
         for candidate_name in candidate_names:
             run_dir = runs_root / candidate_name
             if run_dir.exists():
@@ -379,7 +379,7 @@ as_of_date = datetime.date(2026, 2, 13), run_date = None, output_dir = None
                 # Another run may claim this name after the existence check.
                 continue
             return run_dir
-    
+
 >       raise RuntimeError(f"Unable to create unique run directory for as_of_date {base_name}")
 E       RuntimeError: Unable to create unique run directory for as_of_date 2026-02-13
 

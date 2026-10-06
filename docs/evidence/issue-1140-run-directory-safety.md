@@ -40,7 +40,7 @@ Each row ran its exact node with `python -m pytest tests/test_pipeline_run_dir_s
 | `exhaustion` | `test_exhausted_run_names_fail_without_reusing_any_directory` | 1 failed, exit 1 |
 | `noncollision-error` | `test_automatic_run_does_not_swallow_noncollision_filesystem_error` | 1 failed, exit 1 |
 
-Mutations respectively bypassed the explicit file guard, dropped exception wrapping, broke empty-directory reuse, reused an owned folder, removed atomic collision recovery, returned a folder after name exhaustion, and swallowed noncollision errors. The complete console transcript is [issue-1140-run-directory-transcripts.txt](issue-1140-run-directory-transcripts.txt); machine-local path prefixes are redacted, while test names, failures, source lines and outcomes are preserved.
+Mutations respectively bypassed the explicit file guard, dropped exception wrapping, broke empty-directory reuse, reused an owned folder, removed atomic collision recovery, returned a folder after name exhaustion, and swallowed noncollision errors. The complete console transcript is [issue-1140-run-directory-transcripts.txt](issue-1140-run-directory-transcripts.txt); machine-local path prefixes are redacted and trailing whitespace normalized, while test names, failures, source lines and outcomes are preserved.
 
 Restoration command:
 
