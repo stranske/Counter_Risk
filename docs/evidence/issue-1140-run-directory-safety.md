@@ -54,3 +54,40 @@ Byte-identical restored `src/counter_risk/pipeline/run.py` SHA256: `10038a2a20f1
 ## Candidate validation
 
 Candidate: **2,201 passed, 1 skipped** in299.77s, with the same48 release/slow deselections. Total 10,820 / 12,038 (**89.882040%**), +8 covered statements. Selected module 2,189 / 2,511 (**87.176424%**), +8 covered statements. The exact total remains below90%; the broad initiative stays open. Black/Ruff passed on both changed Python files; mypy reports no issues in the changed production module. No production workflow, floor, coverage exclusion or marker configuration changed. Local tests do not establish hosted/Office/native integration or current-head GitHub acceptance. Keepalive owns new-head CI/review; closer owns full chunk acceptance and verifier disposition.
+
+## Separate-process acceptance verification
+
+The follow-up regression `test_separate_processes_claim_distinct_run_directories` starts two independent Python processes using the `spawn` context. A barrier makes both processes observe the same candidate as absent before either attempts directory creation. Both must exit successfully, return the base name and its `_1` suffix, and retain their own manifest contents. The test covers both the as-of-date name and the name with an explicit run date. Worker timeouts and cleanup keep a broken collision handler from hanging the suite.
+
+Removing only the `FileExistsError` recovery makes **both parameter cases fail**, with a child process reporting `FileExistsError` and exiting 1. Production source was restored byte-for-byte in `finally`, retaining SHA256 `10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b`. The complete failure output is in [issue-1140-process-claims-transcript.txt](issue-1140-process-claims-transcript.txt).
+
+Validation after restoration, on Python 3.14.7:
+
+```sh
+python -m pytest tests/test_pipeline_run_dir_safety.py tests/test_pipeline_run_dir.py \
+  -q -m 'not slow' --cov=counter_risk.pipeline.run --cov-report=term-missing \
+  --cov-report=json:/tmp/run-directory-claims-coverage.json
+# 14 passed in 2.39s
+```
+
+The targeted coverage table reports **588 / 2,511 statements (23%)** for the entire `pipeline/run.py` module. Within `_create_run_directory`'s AST line span, the coverage JSON records **28 / 28 executable lines covered (100%)**, with no missing lines. This focused run does not rerun or replace the broader baseline/candidate comparison above; no new repository-wide coverage gain is claimed. These are line-coverage results, not branch-coverage measurements.
+
+`ruff check tests/test_pipeline_run_dir_safety.py` passed. The repository-wide formatting gate also passed, reporting **368 files would be left unchanged**:
+
+```sh
+BLACK_CACHE_DIR=/tmp/counter-risk-black-cache \
+  black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .
+```
+
+The sandbox denied Black's default process startup, and its alternative worker executors stalled. A temporary launcher checked every selected file serially with the installed Black formatter and populated the writable cache; the standard CLI command above then passed. No formatter configuration or file-selection exclusions changed.
+
+Local acceptance checklist, completed after the restored-source validation:
+
+* [x] **Bug Fixes**
+  * [x] Run directory creation now moves on to the next available name if another process claims a candidate directory at the same time.
+* [x] **Tests**
+  * [x] Added coverage for existing files and directories, concurrent directory creation, exhausted run names, and filesystem errors.
+* [x] **Documentation**
+  * [x] Added test results and coverage notes for run-directory safety. Hosted, Office, and native integration, as well as current-head GitHub acceptance, are not established.
+
+The new process tests ran locally on Linux. Hosted, Office, and native integration remain unverified. GitHub's API was unreachable during this follow-up, so the live PR checkboxes, readiness, and current-head GitHub acceptance could not be verified or updated.
