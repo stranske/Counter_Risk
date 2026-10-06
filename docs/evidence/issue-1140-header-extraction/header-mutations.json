@@ -1,0 +1,66 @@
+[
+  {
+    "name": "row-bound",
+    "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_bounds_rows_columns_and_closes_reader",
+    "mutation": "int(worksheet.max_row)",
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+  },
+  {
+    "name": "column-bound",
+    "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_bounds_rows_columns_and_closes_reader",
+    "mutation": "range(1, max_cols + 2)",
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+  },
+  {
+    "name": "missing-reader",
+    "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_tolerates_unavailable_optional_reader[missing]",
+    "mutation": "except ModuleNotFoundError:\n        raise",
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+  },
+  {
+    "name": "broken-reader",
+    "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_tolerates_unavailable_optional_reader[broken]",
+    "mutation": "except Exception:\n        raise\n\n    workbook = None",
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+  },
+  {
+    "name": "corrupt-workbook",
+    "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_tolerates_corrupt_workbook",
+    "mutation": "    except Exception:\n        raise\n    finally:",
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+  },
+  {
+    "name": "empty-workbook",
+    "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_handles_no_worksheets_and_closes_reader",
+    "mutation": "if not workbook.sheetnames:\n            return [\"phantom header\"]",
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+  },
+  {
+    "name": "partial-read",
+    "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_discards_partial_read_and_closes_reader",
+    "mutation": "    except Exception:\n        return lines\n    finally:",
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+  },
+  {
+    "name": "close-reader",
+    "node": "tests/pipeline/test_header_extraction_boundaries.py::test_header_extraction_discards_partial_read_and_closes_reader",
+    "mutation": "pass  # deliberate reader leak",
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b"
+  }
+]

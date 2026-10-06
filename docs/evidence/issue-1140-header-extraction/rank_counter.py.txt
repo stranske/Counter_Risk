@@ -1,0 +1,7 @@
+import pathlib,subprocess,json,re,collections
+proof=pathlib.Path('/Users/teacher/.codex/automations/pd-workloop-resume/evidence/20261006T1901Z');j=json.load((proof/'counter-baseline-coverage.json').open());hist=subprocess.check_output(['git','log','-500','--format=COMMIT %s','--name-only','--','src/counter_risk'],text=True);counts=collections.Counter();repairs=collections.Counter();fix=False
+for line in hist.splitlines():
+ if line.startswith('COMMIT '):fix=bool(re.search(r'\b(?:fix|bug|repair|regression|correct)\b',line,re.I))
+ elif line.startswith('src/'):counts[line]+=1;repairs[line]+=int(fix)
+rows=sorted([dict(path=k,repair_proxy=repairs[k],churn=counts[k],missing=v['summary']['missing_lines']) for k,v in j['files'].items() if v['summary']['missing_lines']],key=lambda x:(-x['repair_proxy'],-x['churn'],-x['missing'],x['path']))
+(proof/'ranking.json').write_text(json.dumps(rows,indent=2)+'\n');print(j['totals']);print(rows[:5])

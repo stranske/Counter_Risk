@@ -1,0 +1,22 @@
+{
+  "README.md": "4c168beab6e691fd3330ee82e2f3cbeb8af78252a04de271e63231459a8ff3ff",
+  "counter-baseline-coverage.json": "f9ffc2a1cf018a36de9283cb12dc8ecec47ebcaecf9758117a69b216e6f6ba7d",
+  "counter-baseline.txt": "98aa5aa5c7876cdf4c188a959034a6f396cc9430a3e75b0428686f505276c97c",
+  "counter-candidate-coverage.json": "4a8578f1a41c61ef493d7cb7fcf025433c40f346fa5f7644e2dca8195da2bd32",
+  "counter-candidate.txt": "dce6d1e49029db9c6c2bbfca0caf18a9b0fa09666d877a9e6d963f2ff9b700a9",
+  "counter-initial-candidate-failure-coverage.json": "7f3f2e5c0a2df1f109e620ddc323dc18d70ef1fe8730fb8aa29234284bdeb157",
+  "counter-initial-candidate-failure.txt": "370f414057a4464cea7b08f37061b92f69769b9f4295a3914cc2bae25022d143",
+  "header-adjacent.txt": "7d4c5389bd77a6574b3228dd3a10d3d0579fc80f971cf2837c5a3040d5ac42e2",
+  "header-combined-broken.patch.json": "8df04c6eaf937aeb42642e7eb5e53a99faa1a0df3aedc693088fe73db20a9dce",
+  "header-combined-red.txt": "5e9e8befffb56521d458d9769ffe5eb7013cb3c68346202b2dafd4f3003b467e",
+  "header-final-adjacent.txt": "5b9fa549efc5f273cb0919b73e05c8ac190c67a94067e133831f898705add544",
+  "header-focused.txt": "e18f0d0e6b0807544abe5f4f690e5125ff9be2b7af13bad10a2d0885c563e493",
+  "header-mutations.json": "14f311b01c4f78172adb47d7c4b60b43801648f548eeb9846c132d8af1b810f2",
+  "header-mutations.txt": "faa8deefc692d5e3d524b57dcb7fe85ea6dc379d3188ccca44c3a67af6926342",
+  "header-summary.json": "e2fc8bb3fee214a909fdccd31863d57d9bbac569b3788dfe968d50dc21c64843",
+  "mutate_headers.py.txt": "d80de04f44910eab5f60931a3d81a48baa2cf92b895ad9f991f7114a7bf8af61",
+  "rank_counter.py.txt": "9a582f37c469554bba782dd83fe3d2b9ab2b696bf3b0a5f84b7defb8a128255a",
+  "ranking.json": "2a72d44bb5fff18b601b737011bb9027cebf82753632cefd3ba0c07af6589f11",
+  "testgen-gate-complete.json": "848e758118bdbc65e4ee0970c8dd5f783a97297756eb6e227ca59c4ef0a0d214",
+  "testgen-gate.json": "5dece8d76389f1d15c26fd74e693e8001360931084104f009fcc090b2f064f07"
+}

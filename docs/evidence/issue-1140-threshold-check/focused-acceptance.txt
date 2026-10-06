@@ -1,0 +1,15 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 66 items
+
+tests/pipeline/test_header_extraction_boundaries.py ......               [  9%]
+tests/pipeline/test_fleet_artifact_fallbacks.py ..........               [ 24%]
+tests/pipeline/test_langsmith_fleet_data_quality_status.py ......        [ 33%]
+tests/observability/test_langsmith_fleet.py ........................     [ 69%]
+tests/test_pipeline_run_dir_safety.py ...............                    [ 92%]
+tests/test_pipeline_run_dir.py .....                                     [100%]
+
+============================== 66 passed in 5.54s ==============================

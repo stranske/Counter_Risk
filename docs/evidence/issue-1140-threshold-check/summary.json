@@ -1,0 +1,38 @@
+{
+  "head": "6d0e77a524337b38383967a1dfb200b951db771c",
+  "command": "python -m pytest -q -n 4 -m \"not release and not slow\" --cov=counter_risk --cov-report=json:coverage.json",
+  "python": "3.14.8 (main, Oct  1 2026, 02:38:33) [GCC 13.3.0]",
+  "platform": "linux",
+  "totals": {
+    "covered_lines": 10841,
+    "num_statements": 12038,
+    "percent_covered": 90.05648778866922,
+    "percent_covered_display": "90",
+    "missing_lines": 1197,
+    "excluded_lines": 84,
+    "percent_statements_covered": 90.05648778866922,
+    "percent_statements_covered_display": "90"
+  },
+  "passed": 2225,
+  "skipped": 1,
+  "deselected": 48,
+  "duration_seconds": 549.65,
+  "ranking_proxy_regex": "\\b(?:fix|bug|repair|regression|correct)\\b",
+  "ranking_history_limit": 500,
+  "stop_threshold_met": true,
+  "source_sha256": "10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b",
+  "archived_header_hashes_verified": 20,
+  "focused_passed": 66,
+  "pr": {
+    "number": 1144,
+    "state": "open",
+    "draft": false,
+    "head_sha": "6d0e77a524337b38383967a1dfb200b951db771c"
+  },
+  "scope_limitations": [
+    "line coverage only",
+    "release and slow nodes deselected",
+    "Python 3.12 has no pytest in this environment",
+    "Office, native, hosted integration and merge/verifier disposition not established"
+  ]
+}
