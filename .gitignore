@@ -149,3 +149,7 @@ node_modules/
 !/.github/scripts/node_modules/balanced-match/
 !/.github/scripts/node_modules/brace-expansion/
 !/.github/scripts/node_modules/minimatch/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
