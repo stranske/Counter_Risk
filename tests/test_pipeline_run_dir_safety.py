@@ -1,5 +1,6 @@
 """Run folder safety at the filesystem ownership boundary."""
 
+import errno
 import multiprocessing
 from datetime import date
 from multiprocessing.synchronize import Barrier
@@ -234,3 +235,38 @@ def test_automatic_run_does_not_swallow_noncollision_filesystem_error(
     with pytest.raises(PermissionError) as caught:
         run._create_run_directory(as_of_date=AS_OF)
     assert caught.value is error
+
+
+@pytest.mark.parametrize(
+    "error_number", [errno.EACCES, errno.ENOSPC], ids=["permission", "disk-full"]
+)
+def test_automatic_claim_error_after_collision_propagates_without_reusing_other_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error_number: int
+) -> None:
+    monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
+    runs_root = tmp_path / "runs"
+    runs_root.mkdir()
+    contested = runs_root / AS_OF.isoformat()
+    next_candidate = runs_root / (AS_OF.isoformat() + "_1")
+    error = OSError(error_number, "cannot claim run directory", str(next_candidate))
+    original_mkdir = Path.mkdir
+    attempted = []
+
+    def claim_then_deny(path: Path, *args, **kwargs) -> None:
+        attempted.append(path)
+        if path == contested:
+            original_mkdir(path)
+            (path / "manifest.json").write_text("other run", encoding="utf-8")
+            original_mkdir(path, *args, **kwargs)
+        else:
+            raise error
+
+    monkeypatch.setattr(Path, "mkdir", claim_then_deny)
+    with pytest.raises(OSError) as caught:
+        run._create_run_directory(as_of_date=AS_OF)
+
+    assert caught.value is error
+    assert attempted == [contested, next_candidate]
+    assert list(runs_root.iterdir()) == [contested]
+    assert list(contested.iterdir()) == [contested / "manifest.json"]
+    assert (contested / "manifest.json").read_text(encoding="utf-8") == "other run"

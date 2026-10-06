@@ -204,3 +204,82 @@ The tested Python changes and evidence remain in the working tree for the
 automation runner or a maintainer to commit in a writable checkout.
 Attempts to post the blocker comment and add `needs-human` also failed because
 `api.github.com` was unreachable; neither remote action was completed.
+
+
+## Errors after an automatic claim collision (2026-10-06)
+
+Starting HEAD: `e56ecf9`. The first measurement/ranking task was already
+verified by the preceding completed runs, so this follow-up uses the archived
+candidate (**2,207 passed, 1 skipped**, 89.88204020601428%) as its baseline
+rather than repeating it. The production tree is unchanged from `d62fd77`:
+`610589c4a8f563caed2dca24a6a2785830c6f563`. This is below the 90% stopping threshold.
+The refreshed 500-production-commit ranking is unchanged: `pipeline/run.py`
+(repair-history proxy 20, churn 111, 322 missing), `historical_update.py`
+(8, 39, 36), `build/release.py` (6, 23, 17), `futures_delta.py` (6, 19, 9),
+then `rollups.py` (5, 15, 16). The proxy remains a whole-word commit-subject
+match, not a verified incident count.
+
+The previous noncollision-error test fails while creating the run root, before
+the candidate's collision handler. The new parametrized regression creates the
+parent first, forces another run to claim the base name, then raises an actual
+`EACCES` or `ENOSPC` error while claiming suffix `_1`. It requires propagation
+of that same exception object, exactly two claim attempts, and preservation of
+the other run's sole manifest. Both cases pass on current production code;
+no new defect or production repair is claimed.
+
+Each case ran its own mutation, widening `except FileExistsError` to
+`except OSError`. Each actual RED swallowed the error, exhausted the names,
+and raised `RuntimeError: Unable to create unique run directory` instead.
+
+| Exact node in `tests/test_pipeline_run_dir_safety.py` | Actual mutation RED | Exact-source restored GREEN |
+|---|---|---|
+| `test_automatic_claim_error_after_collision_propagates_without_reusing_other_run[permission]` | 1 failed, exit 1 | 1 passed, exit 0 |
+| `test_automatic_claim_error_after_collision_propagates_without_reusing_other_run[disk-full]` | 1 failed, exit 1 | 1 passed, exit 0 |
+
+The [complete mutation transcript](issue-1140-claim-errors-transcript.txt)
+records each named failure, individual restoration, and the restored focused
+suite: **20 passed in 2.55s**. Source bytes were restored after every mutation
+and in `finally`; SHA256 remains `10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b`.
+Targeted `--cov=counter_risk.pipeline.run -m 'not slow'` reports **588 / 2,511
+statements (23%)** for the full module and **28 / 28 executable lines (100%)**
+within the allocator's AST span, with no missing lines.
+
+The fresh full candidate used the exact package scope and marker selection
+shown above: **2,209 passed, 1 skipped in 640.63s**, **2,210 selected**,
+and the same **48 release/slow deselections**. Both baseline and candidate
+cover **10,820 / 12,038 production statements (89.88204020601428%)**, with
+**1,218 missing** and **84 excluded** lines. The selected module remains
+**2,189 / 2,511 (87.17642373556352%)**, with **322 missing** lines. All
+**106 per-file summaries and missing-line lists** match the archived
+baseline exactly: the actual change is **zero covered lines and zero percentage
+points**. These regressions strengthen behavior coverage within the same low-risk
+chunk; the broader initiative remains open. The
+[full candidate coverage transcript](issue-1140-claim-errors-coverage-transcript.txt)
+records the baseline provenance, console output, collection, refreshed ranking,
+comparison, and every production file's missing lines. These are local line
+coverage measurements; release/slow, Office, native and hosted integration,
+and current-head GitHub acceptance remain outside their scope.
+
+Black formatted the changed test file, Ruff passed, and the required whole-repo
+Black CLI check passed with **368 files unchanged**. As in the previous run,
+the executor stalled; a temporary serial launcher checked the same CLI-selected
+files using Black's normal formatter and populated the writable cache, then
+the standard `black --check --line-length 100 --exclude
+'(\.workflows-lib|node_modules)' .` command passed. No formatting configuration,
+coverage floor, exclusion, marker, or workflow was changed.
+
+Local staging remains blocked by the checkout's read-only `.git` directory.
+The GitHub connector's read APIs work, but `create_tree` was rejected with
+`MCP tool call requires approval, but approval policy is never`. The required
+`needs-human` label and blocker-comment attempts were rejected with the same
+message. No tree, commit, branch update, live checklist update, label, or comment
+was created. The tested Python changes and evidence remain in the workspace for
+a writable checkout or runner authorized for GitHub writes. PR #1142 was verified
+open with `draft=false`; current-head GitHub acceptance remains unverified.
+
+Locally verified follow-up tasks:
+
+- [x] Required package measurement and production gap ranking are recorded.
+- [x] Both newly added regression cases fail real mutations and pass after exact-source restoration.
+- [x] Both focused test files pass, and the full same-scope candidate passes with the baseline comparison recorded.
+- [ ] Commit and deliver the tested source/evidence changes, then update live task checkboxes; blocked by the write restrictions above.
