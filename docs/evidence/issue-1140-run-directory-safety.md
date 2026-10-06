@@ -283,3 +283,30 @@ Locally verified follow-up tasks:
 - [x] Both newly added regression cases fail real mutations and pass after exact-source restoration.
 - [x] Both focused test files pass, and the full same-scope candidate passes with the baseline comparison recorded.
 - [ ] Commit and deliver the tested source/evidence changes, then update live task checkboxes; blocked by the write restrictions above.
+
+
+## Saved-artifact latency boundary reconciliation (2026-10-06)
+
+The subsequent saved-artifact chunk supplements this completed directory-safety
+work. Fresh directory validation passes all 20 tests. The three newly tested
+latency nodes each fail their actual mutation and pass after exact restoration:
+
+| `tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_first_valid_nonnegative_latency[primary-preferred]` | `if parsed >= 0 and (key != "LANGSMITH_TRACE_LATENCY_MS" or parsed == 0):` | 1 failed / exit 1 | 1 passed / exit 0 |
+| `tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_first_valid_nonnegative_latency[fractional-to-secondary]` | `parsed = int(float(value))` | 1 failed / exit 1 | 1 passed / exit 0 |
+| `tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_first_valid_nonnegative_latency[absent-to-tertiary]` | `if raw is None: return None` | 1 failed / exit 1 | 1 passed / exit 0 |
+| `tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_uses_pipeline_error_after_blank_trace_category` | `return "unknown-category"` | 1 failed / exit 1 | 1 passed / exit 0 |
+| `tests/pipeline/test_fleet_artifact_fallbacks.py::test_fleet_artifact_omits_external_report_paths` | `"report_artifact_count": len(report_refs) or 1,` | 1 failed / exit 1 | 1 passed / exit 0 |
+
+Fresh identical-package full measurements: baseline **2216 passed, 1 skipped in 989.51s (0:16:29)**,
+candidate **2219 passed, 1 skipped in 700.37s (0:11:40)**; `counter_risk`, four workers,
+`not release and not slow`, 48 deselections each. Coverage is
+**10825/12038 (89.923575344742%)**
+to **10825/12038 (89.923575344742%)**,
+with **+0 covered statements**. The refreshed repair-history/churn/missing-line
+ranking, all per-file missing lines, exact restoration hashes, full console
+outputs, and scope limits are in
+[the saved-artifact evidence](issue-1140-fleet-artifact-fallbacks.md),
+[its JSON](issue-1140-fleet-artifact-fallbacks.json), and
+[its transcript](issue-1140-fleet-artifact-fallbacks-transcript.txt).
+The broader initiative stays open below 90 percent. Python 3.12's missing pytest
+and rejected GitHub writes leave those specific acceptance/delivery actions open.
