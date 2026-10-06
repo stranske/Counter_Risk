@@ -1,0 +1,402 @@
+Actual seven mutation transcripts and byte-identical restoration. Only local machine path prefixes redacted.
+
+=== file-guard ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <worktree>
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+_____________ test_explicit_file_is_rejected_without_modifying_it ______________
+
+as_of_date = datetime.date(2026, 2, 13), run_date = None
+output_dir = PosixPath('<pytest-tmp>')
+
+    def _create_run_directory(
+        *, as_of_date: date, run_date: date | None = None, output_dir: Path | None = None
+    ) -> Path:
+        if output_dir is not None:
+            resolved_output_dir = output_dir.resolve()
+            if resolved_output_dir.exists():
+                if False:
+                    raise ValueError(f"output_dir must be a directory path: {resolved_output_dir}")
+                try:
+>                   has_existing_entries = any(resolved_output_dir.iterdir())
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/counter_risk/pipeline/run.py:844: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('<pytest-tmp>')
+
+    def iterdir(self):
+        """Yield path objects of the directory contents.
+    
+        The children are yielded in arbitrary order, and the
+        special entries '.' and '..' are not included.
+        """
+>       for name in os.listdir(self):
+                    ^^^^^^^^^^^^^^^^
+E       NotADirectoryError: [Errno 20] Not a directory: '<pytest-tmp>'
+
+<python-runtime>/lib/python3.12/pathlib.py:1056: NotADirectoryError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('<pytest-tmp>')
+
+    def test_explicit_file_is_rejected_without_modifying_it(tmp_path: Path) -> None:
+        output = tmp_path / "report.txt"
+        output.write_text("existing report")
+        with pytest.raises(ValueError, match="must be a directory"):
+>           run._create_run_directory(as_of_date=AS_OF, output_dir=output)
+
+tests/test_pipeline_run_dir_safety.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+as_of_date = datetime.date(2026, 2, 13), run_date = None
+output_dir = PosixPath('<pytest-tmp>')
+
+    def _create_run_directory(
+        *, as_of_date: date, run_date: date | None = None, output_dir: Path | None = None
+    ) -> Path:
+        if output_dir is not None:
+            resolved_output_dir = output_dir.resolve()
+            if resolved_output_dir.exists():
+                if False:
+                    raise ValueError(f"output_dir must be a directory path: {resolved_output_dir}")
+                try:
+                    has_existing_entries = any(resolved_output_dir.iterdir())
+                except OSError as exc:
+>                   raise RuntimeError(
+                        f"Unable to inspect output_dir contents: {resolved_output_dir}"
+                    ) from exc
+E                   RuntimeError: Unable to inspect output_dir contents: <pytest-tmp>
+
+src/counter_risk/pipeline/run.py:846: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_explicit_file_is_rejected_without_modifying_it
+============================== 1 failed in 0.77s ===============================
+
+=== inspection-cause ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <worktree>
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+__________ test_unreadable_output_directory_retains_filesystem_cause ___________
+
+tmp_path = PosixPath('<pytest-tmp>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1071d7770>
+
+    def test_unreadable_output_directory_retains_filesystem_cause(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        error = PermissionError("directory inspection denied")
+    
+        def denied(_path: Path):
+            raise error
+    
+        monkeypatch.setattr(Path, "iterdir", denied)
+        with pytest.raises(RuntimeError, match="Unable to inspect output_dir") as caught:
+>           run._create_run_directory(as_of_date=AS_OF, output_dir=tmp_path)
+
+tests/test_pipeline_run_dir_safety.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/counter_risk/pipeline/run.py:844: in _create_run_directory
+    has_existing_entries = any(resolved_output_dir.iterdir())
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+_path = PosixPath('<pytest-tmp>')
+
+    def denied(_path: Path):
+>       raise error
+E       PermissionError: directory inspection denied
+
+tests/test_pipeline_run_dir_safety.py:28: PermissionError
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_unreadable_output_directory_retains_filesystem_cause
+============================== 1 failed in 0.29s ===============================
+
+=== empty-directory ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <worktree>
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+________________ test_existing_empty_output_directory_is_reused ________________
+
+tmp_path = PosixPath('<pytest-tmp>')
+
+    def test_existing_empty_output_directory_is_reused(tmp_path: Path) -> None:
+>       assert run._create_run_directory(as_of_date=AS_OF, output_dir=tmp_path) == tmp_path
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_pipeline_run_dir_safety.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+as_of_date = datetime.date(2026, 2, 13), run_date = None
+output_dir = PosixPath('<pytest-tmp>')
+
+    def _create_run_directory(
+        *, as_of_date: date, run_date: date | None = None, output_dir: Path | None = None
+    ) -> Path:
+        if output_dir is not None:
+            resolved_output_dir = output_dir.resolve()
+            if resolved_output_dir.exists():
+                if not resolved_output_dir.is_dir():
+                    raise ValueError(f"output_dir must be a directory path: {resolved_output_dir}")
+                try:
+                    has_existing_entries = any(resolved_output_dir.iterdir())
+                except OSError as exc:
+                    raise RuntimeError(
+                        f"Unable to inspect output_dir contents: {resolved_output_dir}"
+                    ) from exc
+                if has_existing_entries:
+                    raise FileExistsError(
+                        "Output directory already exists and is not empty: "
+                        f"{resolved_output_dir}. Choose an empty directory or remove existing files."
+                    )
+>               raise RuntimeError("broken reuse")
+E               RuntimeError: broken reuse
+
+src/counter_risk/pipeline/run.py:854: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_existing_empty_output_directory_is_reused
+============================== 1 failed in 0.26s ===============================
+
+=== owned-folders ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <worktree>
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+_______ test_automatic_run_preserves_owned_folders_and_uses_next_suffix ________
+
+tmp_path = PosixPath('<pytest-tmp>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1122c34a0>
+
+    def test_automatic_run_preserves_owned_folders_and_uses_next_suffix(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
+        base = "2026-02-13__run_2026-02-14"
+        for name in (base, base + "_1"):
+            folder = tmp_path / "runs" / name
+            folder.mkdir(parents=True)
+            (folder / "manifest.json").write_text(name)
+        result = run._create_run_directory(as_of_date=AS_OF, run_date=date(2026, 2, 14))
+>       assert result == tmp_path / "runs" / (base + "_2")
+E       AssertionError: assert PosixPath('<pytest-tmp>') == ((PosixPath('<pytest-tmp>') / 'runs') / ('2026-02-13__run_2026-02-14' + '_2'))
+
+tests/test_pipeline_run_dir_safety.py:51: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_automatic_run_preserves_owned_folders_and_uses_next_suffix
+============================== 1 failed in 0.24s ===============================
+
+=== atomic-claim ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <worktree>
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+____ test_concurrent_run_directory_claim_advances_without_reusing_other_run ____
+
+tmp_path = PosixPath('<pytest-tmp>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a04b3b0>
+
+    def test_concurrent_run_directory_claim_advances_without_reusing_other_run(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
+        original_mkdir = Path.mkdir
+        contested = tmp_path / "runs" / AS_OF.isoformat()
+        claimed = False
+    
+        def claim_first(path: Path, *args, **kwargs) -> None:
+            nonlocal claimed
+            if path == contested and not claimed:
+                claimed = True
+                original_mkdir(path, parents=True)
+                (path / "manifest.json").write_text("other run")
+            original_mkdir(path, *args, **kwargs)
+    
+        monkeypatch.setattr(Path, "mkdir", claim_first)
+>       result = run._create_run_directory(as_of_date=AS_OF)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_pipeline_run_dir_safety.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/counter_risk/pipeline/run.py:872: in _create_run_directory
+    run_dir.mkdir(parents=True, exist_ok=False)
+tests/test_pipeline_run_dir_safety.py:72: in claim_first
+    original_mkdir(path, *args, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('<pytest-tmp>')
+mode = 511, parents = True, exist_ok = False
+
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        """
+        Create a new directory at this given path.
+        """
+        try:
+>           os.mkdir(self, mode)
+E           FileExistsError: [Errno 17] File exists: '<pytest-tmp>'
+
+<python-runtime>/lib/python3.12/pathlib.py:1311: FileExistsError
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_concurrent_run_directory_claim_advances_without_reusing_other_run
+============================== 1 failed in 0.26s ===============================
+
+=== exhaustion ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <worktree>
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+_________ test_exhausted_run_names_fail_without_reusing_any_directory __________
+
+tmp_path = PosixPath('<pytest-tmp>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1128237a0>
+
+    def test_exhausted_run_names_fail_without_reusing_any_directory(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
+        monkeypatch.setattr(Path, "exists", lambda _path: True)
+>       with pytest.raises(RuntimeError, match="Unable to create unique run directory"):
+E       Failed: DID NOT RAISE RuntimeError
+
+tests/test_pipeline_run_dir_safety.py:87: Failed
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_exhausted_run_names_fail_without_reusing_any_directory
+============================== 1 failed in 0.22s ===============================
+
+=== noncollision-error ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <worktree>
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+______ test_automatic_run_does_not_swallow_noncollision_filesystem_error _______
+
+tmp_path = PosixPath('<pytest-tmp>')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x106b8f740>
+
+    def test_automatic_run_does_not_swallow_noncollision_filesystem_error(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
+        error = PermissionError("run root is read-only")
+    
+        def denied(_path: Path, *args, **kwargs) -> None:
+            raise error
+    
+        monkeypatch.setattr(Path, "mkdir", denied)
+        with pytest.raises(PermissionError) as caught:
+>           run._create_run_directory(as_of_date=AS_OF)
+
+tests/test_pipeline_run_dir_safety.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+as_of_date = datetime.date(2026, 2, 13), run_date = None, output_dir = None
+
+    def _create_run_directory(
+        *, as_of_date: date, run_date: date | None = None, output_dir: Path | None = None
+    ) -> Path:
+        if output_dir is not None:
+            resolved_output_dir = output_dir.resolve()
+            if resolved_output_dir.exists():
+                if not resolved_output_dir.is_dir():
+                    raise ValueError(f"output_dir must be a directory path: {resolved_output_dir}")
+                try:
+                    has_existing_entries = any(resolved_output_dir.iterdir())
+                except OSError as exc:
+                    raise RuntimeError(
+                        f"Unable to inspect output_dir contents: {resolved_output_dir}"
+                    ) from exc
+                if has_existing_entries:
+                    raise FileExistsError(
+                        "Output directory already exists and is not empty: "
+                        f"{resolved_output_dir}. Choose an empty directory or remove existing files."
+                    )
+                return resolved_output_dir
+    
+            resolved_output_dir.mkdir(parents=True, exist_ok=False)
+            return resolved_output_dir
+    
+        runs_root = _resolve_repo_root() / "runs"
+        base_name = (
+            as_of_date.isoformat()
+            if run_date is None
+            else f"{as_of_date.isoformat()}__run_{run_date.isoformat()}"
+        )
+        candidate_names = [base_name, *(f"{base_name}_{index}" for index in range(1, 10_000))]
+    
+        for candidate_name in candidate_names:
+            run_dir = runs_root / candidate_name
+            if run_dir.exists():
+                continue
+            try:
+                run_dir.mkdir(parents=True, exist_ok=False)
+            except OSError:
+                # Another run may claim this name after the existence check.
+                continue
+            return run_dir
+    
+>       raise RuntimeError(f"Unable to create unique run directory for as_of_date {base_name}")
+E       RuntimeError: Unable to create unique run directory for as_of_date 2026-02-13
+
+src/counter_risk/pipeline/run.py:878: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_automatic_run_does_not_swallow_noncollision_filesystem_error
+============================== 1 failed in 0.39s ===============================
+
+=== restored source ===
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <worktree>
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 12 items
+
+tests/test_pipeline_run_dir_safety.py .......                            [ 58%]
+tests/test_pipeline_run_dir.py .....                                     [100%]
+
+============================== 12 passed in 0.42s ==============================
