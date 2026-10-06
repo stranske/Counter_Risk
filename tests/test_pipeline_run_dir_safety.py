@@ -64,6 +64,25 @@ def test_existing_empty_output_directory_is_reused(tmp_path: Path) -> None:
     assert list(tmp_path.iterdir()) == []
 
 
+def test_explicit_output_claim_collision_preserves_other_run_and_raises(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    output = tmp_path / "explicit-output"
+    original_mkdir = Path.mkdir
+
+    def claim_first(path: Path, *args, **kwargs) -> None:
+        if path == output:
+            original_mkdir(path)
+            (path / "manifest.json").write_text("other run", encoding="utf-8")
+        original_mkdir(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "mkdir", claim_first)
+    with pytest.raises(FileExistsError):
+        run._create_run_directory(as_of_date=AS_OF, output_dir=output)
+    assert (output / "manifest.json").read_text(encoding="utf-8") == "other run"
+    assert list(tmp_path.iterdir()) == [output]
+
+
 def test_automatic_run_preserves_owned_folders_and_uses_next_suffix(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -103,6 +122,56 @@ def test_concurrent_run_directory_claim_advances_without_reusing_other_run(
     assert result.is_dir()
     assert list(result.iterdir()) == []
     assert (contested / "manifest.json").read_text() == "other run"
+
+
+@pytest.mark.parametrize("run_date", [None, date(2026, 2, 14)], ids=["as-of", "run-date"])
+def test_repeated_file_claim_collisions_advance_to_next_free_run_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_date: date | None
+) -> None:
+    monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
+    runs_root = tmp_path / "runs"
+    runs_root.mkdir()
+    base_name = AS_OF.isoformat()
+    if run_date is not None:
+        base_name += f"__run_{run_date.isoformat()}"
+    contested = [runs_root / base_name, runs_root / (base_name + "_1")]
+    original_mkdir = Path.mkdir
+    claimed = []
+
+    def claim_first(path: Path, *args, **kwargs) -> None:
+        if path in contested:
+            path.write_text("other run", encoding="utf-8")
+            claimed.append(path)
+        original_mkdir(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "mkdir", claim_first)
+    result = run._create_run_directory(as_of_date=AS_OF, run_date=run_date)
+    assert result == runs_root / (base_name + "_2")
+    assert result.is_dir()
+    assert list(result.iterdir()) == []
+    assert claimed == contested
+    for path in contested:
+        assert path.is_file()
+        assert path.read_text(encoding="utf-8") == "other run"
+
+
+def test_last_available_run_suffix_is_claimed_before_exhaustion(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
+    last_candidate = tmp_path / "runs" / (AS_OF.isoformat() + "_9999")
+    original_exists = Path.exists
+
+    def occupied_until_last(path: Path) -> bool:
+        if path.parent == tmp_path / "runs" and path != last_candidate:
+            return True
+        return original_exists(path)
+
+    monkeypatch.setattr(Path, "exists", occupied_until_last)
+    result = run._create_run_directory(as_of_date=AS_OF)
+    assert result == last_candidate
+    assert result.is_dir()
+    assert list(result.iterdir()) == []
 
 
 @pytest.mark.parametrize("run_date", [None, date(2026, 2, 14)], ids=["as-of", "run-date"])

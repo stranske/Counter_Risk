@@ -91,3 +91,116 @@ Local acceptance checklist, completed after the restored-source validation:
   * [x] Added test results and coverage notes for run-directory safety. Hosted, Office, and native integration, as well as current-head GitHub acceptance, are not established.
 
 The new process tests ran locally on Linux. Hosted, Office, and native integration remain unverified. GitHub's API was unreachable during this follow-up, so the live PR checkboxes, readiness, and current-head GitHub acceptance could not be verified or updated.
+
+## Boundary regressions and renewed measurement (2026-10-06)
+
+This keepalive started from `d62fd77`. Before edits, the exact full measurement command
+above passed: **2,203 passed, 1 skipped in 366.20s** on Python 3.14.7. Production
+coverage was **10,820 / 12,038 (89.88204020601428%)**, with **1,218 missing lines**
+and 84 excluded lines. This remains below the 90% stopping threshold despite the
+rounded display. The broader initiative remains open.
+
+The renewed ranking uses the last 500 production-source commits reachable from
+the starting HEAD. The repair-history proxy matches whole words
+`fix|bug|repair|regression|correct` in commit subjects, case-insensitively; it does
+not count words such as "fixture" and is still not an incident count. Sort keys
+are repair-history proxy, churn, then uncovered statements, all descending.
+
+| Source | Repair-history proxy | Churn | Uncovered statements |
+|---|---:|---:|---:|
+| `src/counter_risk/pipeline/run.py` | 20 | 111 | 322 |
+| `src/counter_risk/writers/historical_update.py` | 8 | 39 | 36 |
+| `src/counter_risk/build/release.py` | 6 | 23 | 17 |
+| `src/counter_risk/compute/futures_delta.py` | 6 | 19 | 9 |
+| `src/counter_risk/compute/rollups.py` | 5 | 15 | 16 |
+
+The selected module remains `pipeline/run.py`, with **2,189 / 2,511 statements
+covered (87.17642373556352%)**. The allocator itself already has **28 / 28
+executable lines covered**, so this follow-up strengthens missing safety cases
+within the existing logical chunk. It does not claim new line coverage or a new
+production defect. No production repair was needed for these cases.
+
+The added regressions verify that an explicit-path collision raises without
+reusing another run's directory, repeated automatic claims by files advance to
+the next free directory for both naming modes, and suffix `_9999` can still be
+claimed before exhaustion. Every new case ran its own real mutation and
+restoration with `python -m pytest tests/test_pipeline_run_dir_safety.py::<node>
+-q -m 'not slow'`:
+
+| Named test node | Deliberate source mutation | Actual RED | Restored GREEN |
+|---|---|---|---|
+| `test_explicit_output_claim_collision_preserves_other_run_and_raises` | Set explicit-path `mkdir` to `exist_ok=True` | `DID NOT RAISE FileExistsError`; 1 failed, exit 1 | 1 passed, exit 0 |
+| `test_repeated_file_claim_collisions_advance_to_next_free_run_directory[as-of]` | Return the contested path from the collision handler | Path equality assertion fails; 1 failed, exit 1 | 1 passed, exit 0 |
+| `test_repeated_file_claim_collisions_advance_to_next_free_run_directory[run-date]` | Return the contested path from the collision handler | Path equality assertion fails; 1 failed, exit 1 | 1 passed, exit 0 |
+| `test_last_available_run_suffix_is_claimed_before_exhaustion` | Shorten suffix range from `range(1, 10_000)` to `range(1, 9_999)` | `RuntimeError: Unable to create unique run directory`; 1 failed, exit 1 | 1 passed, exit 0 |
+
+The [complete boundary mutation transcript](issue-1140-boundary-transcript.txt)
+contains each actual failure, individual restored pass, and the final targeted
+coverage run. Production source was restored byte-for-byte after every mutation
+and in `finally`, with SHA256
+`10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b`.
+The restored focused suite passed **18 tests in 1.63s**. Its module table shows
+**588 / 2,511 (23%)**; the allocator's AST span remains **28 / 28 (100%)**, with
+zero missing lines. Full-module and per-function measurements are distinct.
+
+Black formatted the changed test file and Ruff passed. The required whole-repo
+Black CLI check passed, reporting **368 files would be left unchanged**, using
+the same writable cache and serial cache-population workaround documented above.
+The initial single-worker executor stalled and was interrupted; the serial
+formatter checked the CLI-selected files, and the subsequent standard command
+exited 0:
+
+```sh
+BLACK_CACHE_DIR=/tmp/counter-risk-black-cache \
+  black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .
+```
+
+### Same-scope comparison for this follow-up
+
+Both full runs used `--cov=counter_risk` and `-m 'not release and not slow'`,
+four workers, the same interpreter and coverage configuration. The production
+source bytes were identical. The baseline selected 2,204 nodes and the candidate
+selected 2,208; all four added nodes are unmarked. Collection confirms the same
+**48 release/slow deselections**. Local coverage is line-only and excludes those
+tests; it does not establish Office, native, hosted or current-head GitHub
+integration behavior.
+
+| Measurement | Starting HEAD | Candidate |
+|---|---:|---:|
+| Passed / skipped | 2,203 / 1 | 2,207 / 1 |
+| Full-suite duration | 366.20s | 343.60s |
+| Production covered / total statements | 10,820 / 12,038 | 10,820 / 12,038 |
+| Production missing lines | 1,218 | 1,218 |
+| Exact production coverage | 89.88204020601428% | 89.88204020601428% |
+| Selected module covered / total statements | 2,189 / 2,511 | 2,189 / 2,511 |
+| Selected module missing lines | 322 | 322 |
+| Allocator covered / total executable lines | 28 / 28 | 28 / 28 |
+
+The coverage JSON's complete per-file results, including missing-line arrays,
+match exactly. The actual change for this follow-up is **zero covered lines and
+zero percentage points**. The earlier main-to-initial-fix improvement remains
+the +8 covered statements recorded above. The
+[full coverage transcript](issue-1140-boundary-coverage-transcript.txt) preserves
+both complete console runs, collection counts, ranking, and every production
+file's missing-line list and statistics.
+
+Verified local task checklist for the previously unchecked tasks:
+
+- [x] Measure `src/counter_risk` with the required full command and rank production gaps.
+- [x] Add focused regressions for the selected production symbol; no further reproduced defect required repair.
+- [x] Actually mutate each newly tested behavior, restore exact source bytes, and record RED/GREEN results here.
+- [x] Both focused run-directory test files pass; each added test case has an actual named mutation failure and restoration.
+- [x] Baseline/candidate full local runs have identical package scope and marker selection, with counts, uncovered lines, ranking, limitations and actual change captured.
+- [x] Starting coverage is below 90%; keep this test-only follow-up in the existing low-risk run-directory chunk and leave the broader initiative open.
+
+GitHub's API remained unreachable during this run. This checklist records local
+verification; it does not claim that live PR checkboxes, readiness or current-head
+GitHub acceptance were updated or verified.
+
+The final focused rerun passed **18 tests in 1.89s** with no failures, and
+`git diff --check` passed. The requested commit could not be made: staging failed
+with `fatal: Unable to create '<repo>/.git/index.lock': Read-only file system`.
+The tested Python changes and evidence remain in the working tree for the
+automation runner or a maintainer to commit in a writable checkout.
+Attempts to post the blocker comment and add `needs-human` also failed because
+`api.github.com` was unreachable; neither remote action was completed.

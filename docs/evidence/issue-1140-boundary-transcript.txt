@@ -1,0 +1,310 @@
+Original source SHA256: 10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b
+
+MUTATION explicit-output-claim: RED
+$ /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest tests/test_pipeline_run_dir_safety.py::test_explicit_output_claim_collision_preserves_other_run_and_raises -q -m 'not slow'
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+_____ test_explicit_output_claim_collision_preserves_other_run_and_raises ______
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-6/test_explicit_output_claim_col0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7faece1d7ce0>
+
+    def test_explicit_output_claim_collision_preserves_other_run_and_raises(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        output = tmp_path / "explicit-output"
+        original_mkdir = Path.mkdir
+    
+        def claim_first(path: Path, *args, **kwargs) -> None:
+            if path == output:
+                original_mkdir(path)
+                (path / "manifest.json").write_text("other run", encoding="utf-8")
+            original_mkdir(path, *args, **kwargs)
+    
+        monkeypatch.setattr(Path, "mkdir", claim_first)
+>       with pytest.raises(FileExistsError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE FileExistsError
+
+tests/test_pipeline_run_dir_safety.py:80: Failed
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_explicit_output_claim_collision_preserves_other_run_and_raises - Failed: DID NOT RAISE FileExistsError
+============================== 1 failed in 0.20s ===============================
+Exit code: 1
+Restored source SHA256: 10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b
+RESTORATION explicit-output-claim: GREEN
+$ /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest tests/test_pipeline_run_dir_safety.py::test_explicit_output_claim_collision_preserves_other_run_and_raises -q -m 'not slow'
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py .                                  [100%]
+
+============================== 1 passed in 0.17s ===============================
+Exit code: 0
+
+MUTATION repeated-file-claims-as-of: RED
+$ /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest 'tests/test_pipeline_run_dir_safety.py::test_repeated_file_claim_collisions_advance_to_next_free_run_directory[as-of]' -q -m 'not slow'
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+_ test_repeated_file_claim_collisions_advance_to_next_free_run_directory[as-of] _
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-8/test_repeated_file_claim_colli0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f0855bebce0>
+run_date = None
+
+    @pytest.mark.parametrize("run_date", [None, date(2026, 2, 14)], ids=["as-of", "run-date"])
+    def test_repeated_file_claim_collisions_advance_to_next_free_run_directory(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_date: date | None
+    ) -> None:
+        monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
+        runs_root = tmp_path / "runs"
+        runs_root.mkdir()
+        base_name = AS_OF.isoformat()
+        if run_date is not None:
+            base_name += f"__run_{run_date.isoformat()}"
+        contested = [runs_root / base_name, runs_root / (base_name + "_1")]
+        original_mkdir = Path.mkdir
+        claimed = []
+    
+        def claim_first(path: Path, *args, **kwargs) -> None:
+            if path in contested:
+                path.write_text("other run", encoding="utf-8")
+                claimed.append(path)
+            original_mkdir(path, *args, **kwargs)
+    
+        monkeypatch.setattr(Path, "mkdir", claim_first)
+        result = run._create_run_directory(as_of_date=AS_OF, run_date=run_date)
+>       assert result == runs_root / (base_name + "_2")
+E       AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-8/test_repeated_file_claim_colli0/runs/2026-02-13') == (PosixPath('/tmp/pytest-of-runner/pytest-8/test_repeated_file_claim_colli0/runs') / ('2026-02-13' + '_2'))
+
+tests/test_pipeline_run_dir_safety.py:149: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_repeated_file_claim_collisions_advance_to_next_free_run_directory[as-of] - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-8/test_repeated_file_claim_colli0/runs/2026-02-13') == (PosixPath('/tmp/pytest-of-runner/pytest-8/test_repeated_file_claim_colli0/runs') / ('2026-02-13' + '_2'))
+============================== 1 failed in 0.21s ===============================
+Exit code: 1
+Restored source SHA256: 10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b
+RESTORATION repeated-file-claims-as-of: GREEN
+$ /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest 'tests/test_pipeline_run_dir_safety.py::test_repeated_file_claim_collisions_advance_to_next_free_run_directory[as-of]' -q -m 'not slow'
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py .                                  [100%]
+
+============================== 1 passed in 0.17s ===============================
+Exit code: 0
+
+MUTATION repeated-file-claims-run-date: RED
+$ /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest 'tests/test_pipeline_run_dir_safety.py::test_repeated_file_claim_collisions_advance_to_next_free_run_directory[run-date]' -q -m 'not slow'
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+_ test_repeated_file_claim_collisions_advance_to_next_free_run_directory[run-date] _
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-10/test_repeated_file_claim_colli0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f245e1d7ce0>
+run_date = datetime.date(2026, 2, 14)
+
+    @pytest.mark.parametrize("run_date", [None, date(2026, 2, 14)], ids=["as-of", "run-date"])
+    def test_repeated_file_claim_collisions_advance_to_next_free_run_directory(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run_date: date | None
+    ) -> None:
+        monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
+        runs_root = tmp_path / "runs"
+        runs_root.mkdir()
+        base_name = AS_OF.isoformat()
+        if run_date is not None:
+            base_name += f"__run_{run_date.isoformat()}"
+        contested = [runs_root / base_name, runs_root / (base_name + "_1")]
+        original_mkdir = Path.mkdir
+        claimed = []
+    
+        def claim_first(path: Path, *args, **kwargs) -> None:
+            if path in contested:
+                path.write_text("other run", encoding="utf-8")
+                claimed.append(path)
+            original_mkdir(path, *args, **kwargs)
+    
+        monkeypatch.setattr(Path, "mkdir", claim_first)
+        result = run._create_run_directory(as_of_date=AS_OF, run_date=run_date)
+>       assert result == runs_root / (base_name + "_2")
+E       AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-10/test_repeated_file_claim_colli0/runs/2026-02-13__run_2026-02-14') == (PosixPath('/tmp/pytest-of-runner/pytest-10/test_repeated_file_claim_colli0/runs') / ('2026-02-13__run_2026-02-14' + '_2'))
+
+tests/test_pipeline_run_dir_safety.py:149: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_repeated_file_claim_collisions_advance_to_next_free_run_directory[run-date] - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-10/test_repeated_file_claim_colli0/runs/2026-02-13__run_2026-02-14') == (PosixPath('/tmp/pytest-of-runner/pytest-10/test_repeated_file_claim_colli0/runs') / ('2026-02-13__run_2026-02-14' + '_2'))
+============================== 1 failed in 0.20s ===============================
+Exit code: 1
+Restored source SHA256: 10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b
+RESTORATION repeated-file-claims-run-date: GREEN
+$ /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest 'tests/test_pipeline_run_dir_safety.py::test_repeated_file_claim_collisions_advance_to_next_free_run_directory[run-date]' -q -m 'not slow'
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py .                                  [100%]
+
+============================== 1 passed in 0.17s ===============================
+Exit code: 0
+
+MUTATION last-suffix-boundary: RED
+$ /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest tests/test_pipeline_run_dir_safety.py::test_last_available_run_suffix_is_claimed_before_exhaustion -q -m 'not slow'
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py F                                  [100%]
+
+=================================== FAILURES ===================================
+_________ test_last_available_run_suffix_is_claimed_before_exhaustion __________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-12/test_last_available_run_suffix0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5468ebfce0>
+
+    def test_last_available_run_suffix_is_claimed_before_exhaustion(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(run, "_resolve_repo_root", lambda: tmp_path)
+        last_candidate = tmp_path / "runs" / (AS_OF.isoformat() + "_9999")
+        original_exists = Path.exists
+    
+        def occupied_until_last(path: Path) -> bool:
+            if path.parent == tmp_path / "runs" and path != last_candidate:
+                return True
+            return original_exists(path)
+    
+        monkeypatch.setattr(Path, "exists", occupied_until_last)
+>       result = run._create_run_directory(as_of_date=AS_OF)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_pipeline_run_dir_safety.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+as_of_date = datetime.date(2026, 2, 13), run_date = None, output_dir = None
+
+    def _create_run_directory(
+        *, as_of_date: date, run_date: date | None = None, output_dir: Path | None = None
+    ) -> Path:
+        if output_dir is not None:
+            resolved_output_dir = output_dir.resolve()
+            if resolved_output_dir.exists():
+                if not resolved_output_dir.is_dir():
+                    raise ValueError(f"output_dir must be a directory path: {resolved_output_dir}")
+                try:
+                    has_existing_entries = any(resolved_output_dir.iterdir())
+                except OSError as exc:
+                    raise RuntimeError(
+                        f"Unable to inspect output_dir contents: {resolved_output_dir}"
+                    ) from exc
+                if has_existing_entries:
+                    raise FileExistsError(
+                        "Output directory already exists and is not empty: "
+                        f"{resolved_output_dir}. Choose an empty directory or remove existing files."
+                    )
+                return resolved_output_dir
+    
+            resolved_output_dir.mkdir(parents=True, exist_ok=False)
+            return resolved_output_dir
+    
+        runs_root = _resolve_repo_root() / "runs"
+        base_name = (
+            as_of_date.isoformat()
+            if run_date is None
+            else f"{as_of_date.isoformat()}__run_{run_date.isoformat()}"
+        )
+        candidate_names = [base_name, *(f"{base_name}_{index}" for index in range(1, 9_999))]
+    
+        for candidate_name in candidate_names:
+            run_dir = runs_root / candidate_name
+            if run_dir.exists():
+                continue
+            try:
+                run_dir.mkdir(parents=True, exist_ok=False)
+            except FileExistsError:
+                # Another run may claim this name after the existence check.
+                continue
+            return run_dir
+    
+>       raise RuntimeError(f"Unable to create unique run directory for as_of_date {base_name}")
+E       RuntimeError: Unable to create unique run directory for as_of_date 2026-02-13
+
+src/counter_risk/pipeline/run.py:878: RuntimeError
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_last_available_run_suffix_is_claimed_before_exhaustion - RuntimeError: Unable to create unique run directory for as_of_date 2026-02-13
+============================== 1 failed in 0.33s ===============================
+Exit code: 1
+Restored source SHA256: 10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b
+RESTORATION last-suffix-boundary: GREEN
+$ /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest tests/test_pipeline_run_dir_safety.py::test_last_available_run_suffix_is_claimed_before_exhaustion -q -m 'not slow'
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 1 item
+
+tests/test_pipeline_run_dir_safety.py .                                  [100%]
+
+============================== 1 passed in 0.24s ===============================
+Exit code: 0
+
+FINAL FOCUSED SUITE
+$ /opt/hostedtoolcache/Python/3.14.7/x64/bin/python -m pytest tests/test_pipeline_run_dir_safety.py tests/test_pipeline_run_dir.py -q -m 'not slow' --cov=counter_risk.pipeline.run --cov-report=term-missing --cov-report=json:/tmp/issue-1140-boundary-focused-coverage.json
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 18 items
+
+tests/test_pipeline_run_dir_safety.py .............                      [ 72%]
+tests/test_pipeline_run_dir.py .....                                     [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.7-final-0 ________________
+
+Name                               Stmts   Miss  Cover   Missing
+----------------------------------------------------------------
+src/counter_risk/pipeline/run.py    2511   1923    23%   143, 288, 305-334, 338-363, 389-391, 395-397, 410-416, 427-429, 437-442, 446, 474, 478-486, 490-492, 512-517, 526, 530-535, 543-545, 555-558, 578-580, 583-594, 608-611, 614, 626, 644-649, 686-688, 749-757, 766-768, 783, 786, 789, 797, 799, 801, 808-809, 829, 831, 884, 896, 906-909, 914-929, 934, 951, 953, 955, 957, 959, 961, 963, 967, 972, 978-980, 997-1001, 1009, 1012, 1022, 1028, 1036, 1042, 1050, 1056, 1062-1064, 1069, 1075, 1104, 1112, 1135-1162, 1174-1213, 1250-1403, 1410, 1412-1414, 1416-1421, 1424-1431, 1433, 1443-1460, 1469-1471, 1477-1478, 1533, 1545-1564, 1571-1578, 1582-1595, 1599-1601, 1609-1629, 1676-1687, 1691, 1695-1706, 1714-1740, 1744-1780, 1790-1792, 1801-1863, 1875-1968, 1976-1989, 1997-2014, 2016, 2041-2060, 2074-2115, 2124, 2129-2147, 2153-2168, 2174-2205, 2209-2211, 2217-2246, 2252-2281, 2285-2288, 2292-2298, 2302-2306, 2329-2348, 2369-2381, 2387-2428, 2443, 2450-2483, 2493-2496, 2510-2512, 2536, 2544-2545, 2549-2555, 2561-2581, 2595-2622, 2626-2629, 2635-2656, 2667-2679, 2691-2950, 2972-3049, 3055-3072, 3081-3091, 3098, 3137-3174, 3185-3206, 3216-3237, 3241-3263, 3267-3271, 3277-3279, 3289-3303, 3311-3325, 3333-3343, 3348-3360, 3375-3421, 3434-3488, 3501-3563, 3584-3632, 3643-3661, 3665-3667, 3687-3723, 3745-3824, 3835-3845, 3851-3860, 3866-3872, 3884-3907, 3916, 3959-3961, 3965-3967, 3971-3975, 3983-3985, 3998-4000, 4011-4013, 4025-4027, 4036-4038, 4046-4061, 4141-4142, 4148-4152, 4160-4171, 4188-4199, 4212-4366, 4370, 4382-4395, 4399-4401, 4412-4439, 4445-4455, 4459-4463, 4487-4492, 4513-4523, 4535-4537, 4541-4549, 4553-4563, 4567-4573, 4577, 4582, 4614-4679, 4702-4723, 4730-4743, 4749-4822, 4826-4832, 4836-4847, 4853-4979, 4983-5021, 5025-5032, 5042-5077, 5101-5127, 5135-5192, 5200-5208, 5215-5228, 5236-5242, 5250-5272, 5288-5330, 5339-5346, 5350-5358, 5367-5373, 5383-5387, 5391-5468, 5473-5483, 5500-5550, 5563-5676, 5686-5692, 5699, 5707
+----------------------------------------------------------------
+TOTAL                               2511   1923    23%
+Coverage JSON written to file /tmp/issue-1140-boundary-focused-coverage.json
+============================== 18 passed in 1.63s ==============================
+Exit code: 0
+Final restored source SHA256: 10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b
