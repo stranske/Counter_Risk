@@ -868,7 +868,11 @@ def _create_run_directory(
         run_dir = runs_root / candidate_name
         if run_dir.exists():
             continue
-        run_dir.mkdir(parents=True, exist_ok=False)
+        try:
+            run_dir.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            # Another run may claim this name after the existence check.
+            continue
         return run_dir
 
     raise RuntimeError(f"Unable to create unique run directory for as_of_date {base_name}")

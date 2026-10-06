@@ -1,0 +1,157 @@
+Mutation: remove FileExistsError recovery from the automatic run-directory allocator.
+Command: python -m pytest tests/test_pipeline_run_dir_safety.py::test_separate_processes_claim_distinct_run_directories -q -m 'not slow'
+Exit code: 1
+
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+rootdir: $REPO
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.4, platformdirs-4.12.3, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 2 items
+
+tests/test_pipeline_run_dir_safety.py FF                                 [100%]
+
+=================================== FAILURES ===================================
+________ test_separate_processes_claim_distinct_run_directories[as-of] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-2/test_separate_processes_claim_0')
+run_date = None
+
+    @pytest.mark.parametrize("run_date", [None, date(2026, 2, 14)], ids=["as-of", "run-date"])
+    def test_separate_processes_claim_distinct_run_directories(
+        tmp_path: Path, run_date: date | None
+    ) -> None:
+        (tmp_path / "runs").mkdir()
+        context = multiprocessing.get_context("spawn")
+        barrier = context.Barrier(2)
+        processes = [
+            context.Process(
+                target=_claim_run_directory_in_process,
+                args=(tmp_path, run_date, barrier, index),
+            )
+            for index in range(2)
+        ]
+        try:
+            for process in processes:
+                process.start()
+            for process in processes:
+                process.join(timeout=20)
+>           assert [process.exitcode for process in processes] == [0, 0]
+E           assert [0, 1] == [0, 0]
+E
+E             At index 1 diff: 1 != 0
+E
+E             Full diff:
+E               [
+E                   0,
+E             -     0,
+E             ?     ^
+E             +     1,
+E             ?     ^
+E               ]
+
+tests/test_pipeline_run_dir_safety.py:127: AssertionError
+----------------------------- Captured stderr call -----------------------------
+Process SpawnProcess-2:
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.14.7/x64/lib/python3.14/multiprocessing/process.py", line 320, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/opt/hostedtoolcache/Python/3.14.7/x64/lib/python3.14/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "$REPO/tests/test_pipeline_run_dir_safety.py", line 34, in _claim_run_directory_in_process
+    result = run._create_run_directory(as_of_date=AS_OF, run_date=run_date)
+  File "$REPO/src/counter_risk/pipeline/run.py", line 871, in _create_run_directory
+    run_dir.mkdir(parents=True, exist_ok=False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.7/x64/lib/python3.14/pathlib/__init__.py", line 1011, in mkdir
+    os.mkdir(self, mode)
+    ~~~~~~~~^^^^^^^^^^^^
+FileExistsError: [Errno 17] File exists: '/tmp/pytest-of-runner/pytest-2/test_separate_processes_claim_0/runs/2026-02-13'
+_______ test_separate_processes_claim_distinct_run_directories[run-date] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-2/test_separate_processes_claim_1')
+run_date = datetime.date(2026, 2, 14)
+
+    @pytest.mark.parametrize("run_date", [None, date(2026, 2, 14)], ids=["as-of", "run-date"])
+    def test_separate_processes_claim_distinct_run_directories(
+        tmp_path: Path, run_date: date | None
+    ) -> None:
+        (tmp_path / "runs").mkdir()
+        context = multiprocessing.get_context("spawn")
+        barrier = context.Barrier(2)
+        processes = [
+            context.Process(
+                target=_claim_run_directory_in_process,
+                args=(tmp_path, run_date, barrier, index),
+            )
+            for index in range(2)
+        ]
+        try:
+            for process in processes:
+                process.start()
+            for process in processes:
+                process.join(timeout=20)
+>           assert [process.exitcode for process in processes] == [0, 0]
+E           assert [1, 0] == [0, 0]
+E
+E             At index 0 diff: 1 != 0
+E
+E             Full diff:
+E               [
+E             -     0,
+E             ?     ^
+E             +     1,
+E             ?     ^
+E                   0,
+E               ]
+
+tests/test_pipeline_run_dir_safety.py:127: AssertionError
+----------------------------- Captured stderr call -----------------------------
+Process SpawnProcess-3:
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.14.7/x64/lib/python3.14/multiprocessing/process.py", line 320, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/opt/hostedtoolcache/Python/3.14.7/x64/lib/python3.14/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "$REPO/tests/test_pipeline_run_dir_safety.py", line 34, in _claim_run_directory_in_process
+    result = run._create_run_directory(as_of_date=AS_OF, run_date=run_date)
+  File "$REPO/src/counter_risk/pipeline/run.py", line 871, in _create_run_directory
+    run_dir.mkdir(parents=True, exist_ok=False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.7/x64/lib/python3.14/pathlib/__init__.py", line 1011, in mkdir
+    os.mkdir(self, mode)
+    ~~~~~~~~^^^^^^^^^^^^
+FileExistsError: [Errno 17] File exists: '/tmp/pytest-of-runner/pytest-2/test_separate_processes_claim_1/runs/2026-02-13__run_2026-02-14'
+=========================== short test summary info ============================
+FAILED tests/test_pipeline_run_dir_safety.py::test_separate_processes_claim_distinct_run_directories[as-of] - assert [0, 1] == [0, 0]
+
+  At index 1 diff: 1 != 0
+
+  Full diff:
+    [
+        0,
+  -     0,
+  ?     ^
+  +     1,
+  ?     ^
+    ]
+FAILED tests/test_pipeline_run_dir_safety.py::test_separate_processes_claim_distinct_run_directories[run-date] - assert [1, 0] == [0, 0]
+
+  At index 0 diff: 1 != 0
+
+  Full diff:
+    [
+  -     0,
+  ?     ^
+  +     1,
+  ?     ^
+        0,
+    ]
+============================== 2 failed in 2.00s ===============================
+
+Source restored byte-for-byte in finally.
+Restored SHA256: 10038a2a20f1a6167d0e6992bc212e89546169d0a7e524350a4b2574b983723b
