@@ -55,9 +55,9 @@ dev = [
     "app-baseline-kit @ git+https://github.com/stranske/Workflows.git#subdirectory=packages/app-baseline-kit",
     "pytest-regressions==2.11.0",
     "numpy>=2.0,<3",
-    "black==26.5.1",
-    "ruff==0.16.9",
-    "mypy==2.3.1",
+    "black==26.10.0",
+    "ruff==0.16.10",
+    "mypy==2.4.0",
     "types-PyYAML==6.0.12.20260724",
     # Required by scripts/sync_test_dependencies.py when --fix is needed in CI
     "tomlkit>=0.14.0",
