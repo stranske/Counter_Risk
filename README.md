@@ -50,7 +50,11 @@ output_generators:
     enabled: true
 ```
 
-Setting `enabled: false` cleanly skips that generator for the run.
+Setting `enabled: false` cleanly skips that generator for the run. Disabling or
+omitting `ppt_link_refresh` also skips the legacy COM refresh fallback: the PPT
+processing result and manifest record an intentional skip with a reason, rather
+than a refresh failure. Distribution generation retains its configured behavior;
+a real refresh failure still suppresses distribution.
 
 ## Repo Cash Source Configuration
 

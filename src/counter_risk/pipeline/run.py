@@ -2794,7 +2794,18 @@ def _write_outputs(
             warnings=warnings,
         ),
     )
-    refresh_result = PptProcessingResult(status=PptProcessingStatus.SKIPPED)
+    refresh_enabled = any(
+        registration.name == "ppt_link_refresh"
+        and registration.stage == "ppt_refresh"
+        and registration.enabled
+        for registration in config.output_generators
+    )
+    refresh_result = PptProcessingResult(
+        status=PptProcessingStatus.SKIPPED,
+        error_detail=(
+            None if refresh_enabled else "ppt_link_refresh output generator is disabled or omitted."
+        ),
+    )
     ran_master_refresh = False
     for generator in refresh_generators:
         generator.generate(context=output_context)
@@ -2802,7 +2813,7 @@ def _write_outputs(
             refresh_result = _to_ppt_processing_result(getattr(generator, "last_result", None))
             ran_master_refresh = True
 
-    if not ran_master_refresh:
+    if not ran_master_refresh and refresh_enabled:
         try:
             refresh_result = _refresh_ppt_links(target_master_ppt)
         except Exception as exc:

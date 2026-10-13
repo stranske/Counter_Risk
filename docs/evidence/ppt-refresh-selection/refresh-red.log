@@ -1,0 +1,217 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/counter-refresh-20261013
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 25 items / 19 deselected / 6 selected
+
+tests/pipeline/test_monthly_pipeline_ppt_outputs.py .FF.FF               [100%]
+
+=================================== FAILURES ===================================
+_____ test_configured_refresh_respects_generator_selection[True-disabled] ______
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1465/test_configured_refresh_respec1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109987470>
+selection = 'disabled', distribution_enabled = True
+
+    @pytest.mark.parametrize("selection", ["enabled", "disabled", "omitted"])
+    @pytest.mark.parametrize("distribution_enabled", [True, False])
+    def test_configured_refresh_respects_generator_selection(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        selection: str,
+        distribution_enabled: bool,
+    ) -> None:
+        config = _build_config(
+            tmp_path, enable_ppt_output=True, enable_distribution_output=distribution_enabled
+        )
+        config = config.model_copy(
+            update={
+                "output_generators": tuple(
+                    (
+                        registration.model_copy(update={"enabled": selection == "enabled"})
+                        if registration.name == "ppt_link_refresh"
+                        else registration
+                    )
+                    for registration in config.output_generators
+                    if selection != "omitted" or registration.name != "ppt_link_refresh"
+                )
+            }
+        )
+        calls: list[Path] = []
+    
+        def refresh(path: Path) -> run_module.PptProcessingResult:
+            calls.append(path)
+            return run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+    
+        monkeypatch.setattr(run_module, "_refresh_ppt_links", refresh)
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        warnings: list[str] = []
+        outputs, result = run_module._write_outputs(
+            run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=warnings
+        )
+        enabled = selection == "enabled"
+        names = resolve_ppt_output_names(date(2025, 12, 31))
+>       assert calls == [run_dir / names.master_filename] if enabled else calls == []
+E       assert False
+
+tests/pipeline/test_monthly_pipeline_ppt_outputs.py:95: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  counter_risk.outputs.pdf_export:pdf_export.py:55 distribution_pdf_skipped reason=export_pdf_disabled
+______ test_configured_refresh_respects_generator_selection[True-omitted] ______
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1465/test_configured_refresh_respec2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109a0fd10>
+selection = 'omitted', distribution_enabled = True
+
+    @pytest.mark.parametrize("selection", ["enabled", "disabled", "omitted"])
+    @pytest.mark.parametrize("distribution_enabled", [True, False])
+    def test_configured_refresh_respects_generator_selection(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        selection: str,
+        distribution_enabled: bool,
+    ) -> None:
+        config = _build_config(
+            tmp_path, enable_ppt_output=True, enable_distribution_output=distribution_enabled
+        )
+        config = config.model_copy(
+            update={
+                "output_generators": tuple(
+                    (
+                        registration.model_copy(update={"enabled": selection == "enabled"})
+                        if registration.name == "ppt_link_refresh"
+                        else registration
+                    )
+                    for registration in config.output_generators
+                    if selection != "omitted" or registration.name != "ppt_link_refresh"
+                )
+            }
+        )
+        calls: list[Path] = []
+    
+        def refresh(path: Path) -> run_module.PptProcessingResult:
+            calls.append(path)
+            return run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+    
+        monkeypatch.setattr(run_module, "_refresh_ppt_links", refresh)
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        warnings: list[str] = []
+        outputs, result = run_module._write_outputs(
+            run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=warnings
+        )
+        enabled = selection == "enabled"
+        names = resolve_ppt_output_names(date(2025, 12, 31))
+>       assert calls == [run_dir / names.master_filename] if enabled else calls == []
+E       assert False
+
+tests/pipeline/test_monthly_pipeline_ppt_outputs.py:95: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  counter_risk.outputs.pdf_export:pdf_export.py:55 distribution_pdf_skipped reason=export_pdf_disabled
+_____ test_configured_refresh_respects_generator_selection[False-disabled] _____
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1465/test_configured_refresh_respec4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109a1c260>
+selection = 'disabled', distribution_enabled = False
+
+    @pytest.mark.parametrize("selection", ["enabled", "disabled", "omitted"])
+    @pytest.mark.parametrize("distribution_enabled", [True, False])
+    def test_configured_refresh_respects_generator_selection(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        selection: str,
+        distribution_enabled: bool,
+    ) -> None:
+        config = _build_config(
+            tmp_path, enable_ppt_output=True, enable_distribution_output=distribution_enabled
+        )
+        config = config.model_copy(
+            update={
+                "output_generators": tuple(
+                    (
+                        registration.model_copy(update={"enabled": selection == "enabled"})
+                        if registration.name == "ppt_link_refresh"
+                        else registration
+                    )
+                    for registration in config.output_generators
+                    if selection != "omitted" or registration.name != "ppt_link_refresh"
+                )
+            }
+        )
+        calls: list[Path] = []
+    
+        def refresh(path: Path) -> run_module.PptProcessingResult:
+            calls.append(path)
+            return run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+    
+        monkeypatch.setattr(run_module, "_refresh_ppt_links", refresh)
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        warnings: list[str] = []
+        outputs, result = run_module._write_outputs(
+            run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=warnings
+        )
+        enabled = selection == "enabled"
+        names = resolve_ppt_output_names(date(2025, 12, 31))
+>       assert calls == [run_dir / names.master_filename] if enabled else calls == []
+E       assert False
+
+tests/pipeline/test_monthly_pipeline_ppt_outputs.py:95: AssertionError
+_____ test_configured_refresh_respects_generator_selection[False-omitted] ______
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-1465/test_configured_refresh_respec5')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x109a1e090>
+selection = 'omitted', distribution_enabled = False
+
+    @pytest.mark.parametrize("selection", ["enabled", "disabled", "omitted"])
+    @pytest.mark.parametrize("distribution_enabled", [True, False])
+    def test_configured_refresh_respects_generator_selection(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        selection: str,
+        distribution_enabled: bool,
+    ) -> None:
+        config = _build_config(
+            tmp_path, enable_ppt_output=True, enable_distribution_output=distribution_enabled
+        )
+        config = config.model_copy(
+            update={
+                "output_generators": tuple(
+                    (
+                        registration.model_copy(update={"enabled": selection == "enabled"})
+                        if registration.name == "ppt_link_refresh"
+                        else registration
+                    )
+                    for registration in config.output_generators
+                    if selection != "omitted" or registration.name != "ppt_link_refresh"
+                )
+            }
+        )
+        calls: list[Path] = []
+    
+        def refresh(path: Path) -> run_module.PptProcessingResult:
+            calls.append(path)
+            return run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+    
+        monkeypatch.setattr(run_module, "_refresh_ppt_links", refresh)
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        warnings: list[str] = []
+        outputs, result = run_module._write_outputs(
+            run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=warnings
+        )
+        enabled = selection == "enabled"
+        names = resolve_ppt_output_names(date(2025, 12, 31))
+>       assert calls == [run_dir / names.master_filename] if enabled else calls == []
+E       assert False
+
+tests/pipeline/test_monthly_pipeline_ppt_outputs.py:95: AssertionError
+- generated xml file: /Users/teacher/.codex/automations/pd-workloop-resume/run-20261013T0857Z/refresh-red.xml -
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_monthly_pipeline_ppt_outputs.py::test_configured_refresh_respects_generator_selection[True-disabled]
+FAILED tests/pipeline/test_monthly_pipeline_ppt_outputs.py::test_configured_refresh_respects_generator_selection[True-omitted]
+FAILED tests/pipeline/test_monthly_pipeline_ppt_outputs.py::test_configured_refresh_respects_generator_selection[False-disabled]
+FAILED tests/pipeline/test_monthly_pipeline_ppt_outputs.py::test_configured_refresh_respects_generator_selection[False-omitted]
+================== 4 failed, 2 passed, 19 deselected in 0.71s ==================

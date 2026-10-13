@@ -1,0 +1,17 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/counter-refresh-20261013
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 45 items
+
+tests/pipeline/test_monthly_pipeline_ppt_outputs.py .................... [ 44%]
+.....                                                                    [ 55%]
+tests/outputs/test_base.py .                                             [ 57%]
+tests/outputs/test_historical_workbook.py ...                            [ 64%]
+tests/outputs/test_pdf_export.py .....                                   [ 75%]
+tests/outputs/test_ppt_link_refresh.py .......                           [ 91%]
+tests/outputs/test_ppt_screenshot.py ....                                [100%]
+
+- generated xml file: /Users/teacher/.codex/automations/pd-workloop-resume/run-20261013T0857Z/refresh-green.xml -
+======================== 45 passed in 175.38s (0:02:55) ========================

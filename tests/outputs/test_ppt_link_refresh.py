@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
@@ -160,3 +161,21 @@ def test_resolve_ppt_link_refresh_result_uses_canonicalize_name(
 
     assert result.status == PptLinkRefreshStatus.SUCCESS
     assert calls == ["success"]
+
+
+def test_ppt_link_refresh_generator_skips_when_ppt_output_disabled(tmp_path: Path) -> None:
+    context = _output_context(tmp_path)
+    context = replace(
+        context, config=context.config.model_copy(update={"enable_ppt_output": False})
+    )
+    warnings: list[str] = []
+
+    def unexpected_refresh(_path: Path) -> object:
+        raise AssertionError("Disabled PPT output must not invoke the standalone refresher")
+
+    generator = PptLinkRefreshOutputGenerator(
+        warnings=warnings, ppt_link_refresher=unexpected_refresh
+    )
+    assert generator.generate(context=context) == ()
+    assert generator.last_result is None
+    assert warnings == []
