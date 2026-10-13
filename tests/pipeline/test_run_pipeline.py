@@ -399,6 +399,7 @@ def test_concentration_metrics_write_finite_values(
                 assert actual == pytest.approx(expected)
 
 
+@pytest.mark.slow
 def test_concentration_alias_parser_csv_manifest_ppt(
     tmp_path: Path, registered_alias_workbook: Path
 ) -> None:

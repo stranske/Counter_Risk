@@ -516,6 +516,7 @@ def test_pdf_request_with_distribution_disabled_is_explicit(
     ("include_concentration", "export_pdf", "expected_slides"),
     [(True, True, 24), (False, True, 23), (True, False, 24)],
 )
+@pytest.mark.slow
 def test_final_concentration_slide_precedes_pdf_export(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
