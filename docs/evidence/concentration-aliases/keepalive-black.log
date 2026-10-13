@@ -1,0 +1,4 @@
+Black 26.10.0 with one worker and an event-loop heartbeat for restricted socket wakeups
+Command: black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .
+All done! ✨ 🍰 ✨
+370 files would be left unchanged.

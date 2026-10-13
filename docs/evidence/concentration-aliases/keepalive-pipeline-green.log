@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.14.8/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.8, platformdirs-4.13.0, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collecting ... collected 196 items / 182 deselected / 14 selected
+
+tests/pipeline/test_run_pipeline.py::test_concentration_includes_group_name_only_counterparty_rows PASSED [  7%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[False-nan] PASSED [ 14%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[False-inf] PASSED [ 21%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[False--inf] PASSED [ 28%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[False-NaN] PASSED [ 35%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[False-Inf] PASSED [ 42%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[False--Inf] PASSED [ 50%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[True-nan] PASSED [ 57%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[True-inf] PASSED [ 64%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[True--inf] PASSED [ 71%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[True-NaN] PASSED [ 78%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[True-Inf] PASSED [ 85%]
+tests/pipeline/test_run_pipeline.py::test_concentration_metrics_write_finite_values[True--Inf] PASSED [ 92%]
+tests/pipeline/test_run_pipeline.py::test_concentration_alias_parser_csv_manifest_ppt PASSED [100%]
+
+- generated xml file: /home/runner/work/Counter_Risk/Counter_Risk/docs/evidence/concentration-aliases/keepalive-pipeline-green.xml -
+====================== 14 passed, 182 deselected in 1.15s ======================

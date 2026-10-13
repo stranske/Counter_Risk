@@ -624,17 +624,89 @@ def test_unknown_alias_fallback_does_not_merge_distinct_labels() -> None:
     assert rows[0]["hhi"] == pytest.approx(0.6**2 + 0.4**2)
 
 
-def test_alias_reshaper_preserves_display_and_emits_registry_identity() -> None:
+@pytest.mark.parametrize("alias", ["Citigroup", "CITIGROUP", "citibank"])
+def test_alias_reshaper_preserves_display_and_emits_registry_identity(alias: str) -> None:
     rows = _build_concentration_exposure_rows(
         {
             "v": {
                 "totals": [
-                    {"counterparty": "Citigroup", "Notional": -40.0, "Equity": -40.0},
+                    {"counterparty": alias, "Notional": -40.0, "Equity": -40.0},
                     {"counterparty": "Citibank", "Notional": 60.0, "Equity": 60.0},
                 ]
             }
         }
     )
-    assert [row["counterparty"] for row in rows] == ["Citigroup"] * 2 + ["Citibank"] * 2
+    assert [row["counterparty"] for row in rows] == [alias] * 2 + ["Citibank"] * 2
     assert {row["canonical_key"] for row in rows} == {"citibank"}
     assert all(row["hhi"] == 1.0 for row in _as_records(compute_concentration_metrics(rows)))
+
+
+def test_alias_reshaper_emits_identity_for_every_segment_and_variant() -> None:
+    """Identity travels with every signed exposure without crossing group boundaries."""
+    segments = ("TIPS", "Treasury", "Equity", "Commodity", "Currency", "total")
+    source_records = [
+        {
+            "counterparty": "Citigroup",
+            "TIPS": -4.0,
+            "Treasury": 8.0,
+            "Equity": -40.0,
+            "Commodity": 12.0,
+            "Currency": -16.0,
+            "Notional": -40.0,
+        },
+        {
+            "counterparty": "Citibank",
+            "TIPS": 6.0,
+            "Treasury": 12.0,
+            "Equity": 60.0,
+            "Commodity": 18.0,
+            "Currency": 24.0,
+            "Notional": 60.0,
+        },
+        {
+            "counterparty": "Unknown Peer",
+            "TIPS": 10.0,
+            "Treasury": 20.0,
+            "Equity": 100.0,
+            "Commodity": 30.0,
+            "Currency": 40.0,
+            "Notional": 100.0,
+        },
+    ]
+    rows = _build_concentration_exposure_rows(
+        {
+            "all_programs": {"totals": source_records},
+            "ex_trend": {"totals": [{"counterparty": "CITIGROUP", "Notional": -20.0}]},
+        }
+    )
+    expected_rows = [
+        {
+            "variant": "all_programs",
+            "segment": segment,
+            "counterparty": record["counterparty"],
+            "canonical_key": canonical_key,
+            "notional": record["Notional" if segment == "total" else segment],
+        }
+        for record, canonical_key in zip(
+            source_records, ("citibank", "citibank", "Unknown Peer"), strict=True
+        )
+        for segment in segments
+    ]
+    expected_rows.append(
+        {
+            "variant": "ex_trend",
+            "segment": "total",
+            "counterparty": "CITIGROUP",
+            "canonical_key": "citibank",
+            "notional": -20.0,
+        }
+    )
+    assert rows == expected_rows
+    metrics = _as_records(compute_concentration_metrics(rows))
+    assert [(row["variant"], row["segment"]) for row in metrics] == [
+        *[("all_programs", segment) for segment in segments],
+        ("ex_trend", "total"),
+    ]
+    # Each all-programs group has equal gross exposures to Citibank and its peer.
+    assert [row["hhi"] for row in metrics] == pytest.approx([0.5] * 6 + [1.0])
+    assert all(row["top5_share"] == row["top10_share"] == 1.0 for row in metrics)
