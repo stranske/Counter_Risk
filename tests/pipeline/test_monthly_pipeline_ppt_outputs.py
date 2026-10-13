@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import csv
+import json
 import shutil
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 import pytest
 from pptx import Presentation
@@ -13,6 +15,7 @@ from pptx import Presentation
 import counter_risk.pipeline.run as run_module
 from counter_risk.config import WorkflowConfig
 from counter_risk.outputs.pdf_export import PDFExportGenerator
+from counter_risk.parsers import parse_fcm_totals
 from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import PptStandaloneValidationResult
@@ -513,9 +516,11 @@ def test_pdf_request_with_distribution_disabled_is_explicit(
     ("include_concentration", "export_pdf", "expected_slides"),
     [(True, True, 24), (False, True, 23), (True, False, 24)],
 )
+@pytest.mark.slow
 def test_final_concentration_slide_precedes_pdf_export(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    registered_alias_workbook: Path,
     include_concentration: bool,
     export_pdf: bool,
     expected_slides: int,
@@ -542,6 +547,14 @@ def test_final_concentration_slide_precedes_pdf_export(
         encoding="utf-8",
     )
     export_source: list[tuple[int, list[list[str]]]] = []
+    parse_inputs = run_module._parse_inputs
+
+    def _parse_alias_input(input_paths: dict[str, Path]) -> dict[str, dict[str, Any]]:
+        parsed = parse_inputs(input_paths)
+        parsed["all_programs"]["totals"] = parse_fcm_totals(registered_alias_workbook)
+        return parsed
+
+    monkeypatch.setattr(run_module, "_parse_inputs", _parse_alias_input)
 
     def _last_slide_table(pptx_path: Path) -> list[list[str]]:
         presentation = Presentation(str(pptx_path))
@@ -569,6 +582,10 @@ def test_final_concentration_slide_precedes_pdf_export(
     distribution = run_dir / resolve_ppt_output_names(date(2025, 12, 31)).distribution_filename
     assert len(Presentation(str(distribution)).slides) == expected_slides
     final_table = _last_slide_table(distribution)
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    for metric in manifest["concentration_metrics"]:
+        if metric["variant"] == "all_programs" and metric["segment"] in {"Equity", "total"}:
+            assert [metric[key] for key in ("top5_share", "top10_share", "hhi")] == [1.0] * 3
     if include_concentration:
         with (run_dir / "concentration_metrics.csv").open(
             newline="", encoding="utf-8"

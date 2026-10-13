@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="12" skipped="0" tests="12" time="0.589" timestamp="2026-10-13T08:21:18.156701+00:00" hostname="runnervmmprz5"><testcase classname="tests.compute.test_concentration_metrics" name="test_registered_alias_concentration_matches_consolidated_portfolio[Citigroup-40.0]" time="0.236"><failure message="assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.6190476190476191&#10;  Expected: 0.6666666666666666 ± 6.7e-07">alias = 'Citigroup', second = 40.0
+
+    @pytest.mark.parametrize("second", [40.0, -40.0])
+    @pytest.mark.parametrize("alias", ["Citigroup", " CITIGROUP ", "citibank"])
+    def test_registered_alias_concentration_matches_consolidated_portfolio(
+        alias: str, second: float
+    ) -&gt; None:
+        peers = [
+            {"variant": "v", "segment": "Equity", "counterparty": f"Peer{i}", "notional": 10.0}
+            for i in range(11)
+        ]
+        split = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 60.0},
+            {"variant": "v", "segment": "Equity", "counterparty": alias, "notional": second},
+            *peers,
+        ]
+        consolidated = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 100.0},
+            *peers,
+        ]
+        actual = _as_records(compute_concentration_metrics(split))[0]
+        control = _as_records(compute_concentration_metrics(consolidated))[0]
+        for metric, expected in (
+            ("top5_share", 140 / 210),
+            ("top10_share", 190 / 210),
+            ("hhi", (100**2 + 11 * 10**2) / 210**2),
+        ):
+&gt;           assert actual[metric] == pytest.approx(expected)
+E           assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07
+E             
+E             comparison failed
+E             Obtained: 0.6190476190476191
+E             Expected: 0.6666666666666666 ± 6.7e-07
+
+tests/compute/test_concentration_metrics.py:596: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_registered_alias_concentration_matches_consolidated_portfolio[Citigroup--40.0]" time="0.003"><failure message="assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.6190476190476191&#10;  Expected: 0.6666666666666666 ± 6.7e-07">alias = 'Citigroup', second = -40.0
+
+    @pytest.mark.parametrize("second", [40.0, -40.0])
+    @pytest.mark.parametrize("alias", ["Citigroup", " CITIGROUP ", "citibank"])
+    def test_registered_alias_concentration_matches_consolidated_portfolio(
+        alias: str, second: float
+    ) -&gt; None:
+        peers = [
+            {"variant": "v", "segment": "Equity", "counterparty": f"Peer{i}", "notional": 10.0}
+            for i in range(11)
+        ]
+        split = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 60.0},
+            {"variant": "v", "segment": "Equity", "counterparty": alias, "notional": second},
+            *peers,
+        ]
+        consolidated = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 100.0},
+            *peers,
+        ]
+        actual = _as_records(compute_concentration_metrics(split))[0]
+        control = _as_records(compute_concentration_metrics(consolidated))[0]
+        for metric, expected in (
+            ("top5_share", 140 / 210),
+            ("top10_share", 190 / 210),
+            ("hhi", (100**2 + 11 * 10**2) / 210**2),
+        ):
+&gt;           assert actual[metric] == pytest.approx(expected)
+E           assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07
+E             
+E             comparison failed
+E             Obtained: 0.6190476190476191
+E             Expected: 0.6666666666666666 ± 6.7e-07
+
+tests/compute/test_concentration_metrics.py:596: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_registered_alias_concentration_matches_consolidated_portfolio[ CITIGROUP -40.0]" time="0.002"><failure message="assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.6190476190476191&#10;  Expected: 0.6666666666666666 ± 6.7e-07">alias = ' CITIGROUP ', second = 40.0
+
+    @pytest.mark.parametrize("second", [40.0, -40.0])
+    @pytest.mark.parametrize("alias", ["Citigroup", " CITIGROUP ", "citibank"])
+    def test_registered_alias_concentration_matches_consolidated_portfolio(
+        alias: str, second: float
+    ) -&gt; None:
+        peers = [
+            {"variant": "v", "segment": "Equity", "counterparty": f"Peer{i}", "notional": 10.0}
+            for i in range(11)
+        ]
+        split = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 60.0},
+            {"variant": "v", "segment": "Equity", "counterparty": alias, "notional": second},
+            *peers,
+        ]
+        consolidated = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 100.0},
+            *peers,
+        ]
+        actual = _as_records(compute_concentration_metrics(split))[0]
+        control = _as_records(compute_concentration_metrics(consolidated))[0]
+        for metric, expected in (
+            ("top5_share", 140 / 210),
+            ("top10_share", 190 / 210),
+            ("hhi", (100**2 + 11 * 10**2) / 210**2),
+        ):
+&gt;           assert actual[metric] == pytest.approx(expected)
+E           assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07
+E             
+E             comparison failed
+E             Obtained: 0.6190476190476191
+E             Expected: 0.6666666666666666 ± 6.7e-07
+
+tests/compute/test_concentration_metrics.py:596: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_registered_alias_concentration_matches_consolidated_portfolio[ CITIGROUP --40.0]" time="0.002"><failure message="assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.6190476190476191&#10;  Expected: 0.6666666666666666 ± 6.7e-07">alias = ' CITIGROUP ', second = -40.0
+
+    @pytest.mark.parametrize("second", [40.0, -40.0])
+    @pytest.mark.parametrize("alias", ["Citigroup", " CITIGROUP ", "citibank"])
+    def test_registered_alias_concentration_matches_consolidated_portfolio(
+        alias: str, second: float
+    ) -&gt; None:
+        peers = [
+            {"variant": "v", "segment": "Equity", "counterparty": f"Peer{i}", "notional": 10.0}
+            for i in range(11)
+        ]
+        split = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 60.0},
+            {"variant": "v", "segment": "Equity", "counterparty": alias, "notional": second},
+            *peers,
+        ]
+        consolidated = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 100.0},
+            *peers,
+        ]
+        actual = _as_records(compute_concentration_metrics(split))[0]
+        control = _as_records(compute_concentration_metrics(consolidated))[0]
+        for metric, expected in (
+            ("top5_share", 140 / 210),
+            ("top10_share", 190 / 210),
+            ("hhi", (100**2 + 11 * 10**2) / 210**2),
+        ):
+&gt;           assert actual[metric] == pytest.approx(expected)
+E           assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07
+E             
+E             comparison failed
+E             Obtained: 0.6190476190476191
+E             Expected: 0.6666666666666666 ± 6.7e-07
+
+tests/compute/test_concentration_metrics.py:596: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_registered_alias_concentration_matches_consolidated_portfolio[citibank-40.0]" time="0.002"><failure message="assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.6190476190476191&#10;  Expected: 0.6666666666666666 ± 6.7e-07">alias = 'citibank', second = 40.0
+
+    @pytest.mark.parametrize("second", [40.0, -40.0])
+    @pytest.mark.parametrize("alias", ["Citigroup", " CITIGROUP ", "citibank"])
+    def test_registered_alias_concentration_matches_consolidated_portfolio(
+        alias: str, second: float
+    ) -&gt; None:
+        peers = [
+            {"variant": "v", "segment": "Equity", "counterparty": f"Peer{i}", "notional": 10.0}
+            for i in range(11)
+        ]
+        split = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 60.0},
+            {"variant": "v", "segment": "Equity", "counterparty": alias, "notional": second},
+            *peers,
+        ]
+        consolidated = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 100.0},
+            *peers,
+        ]
+        actual = _as_records(compute_concentration_metrics(split))[0]
+        control = _as_records(compute_concentration_metrics(consolidated))[0]
+        for metric, expected in (
+            ("top5_share", 140 / 210),
+            ("top10_share", 190 / 210),
+            ("hhi", (100**2 + 11 * 10**2) / 210**2),
+        ):
+&gt;           assert actual[metric] == pytest.approx(expected)
+E           assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07
+E             
+E             comparison failed
+E             Obtained: 0.6190476190476191
+E             Expected: 0.6666666666666666 ± 6.7e-07
+
+tests/compute/test_concentration_metrics.py:596: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_registered_alias_concentration_matches_consolidated_portfolio[citibank--40.0]" time="0.003"><failure message="assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.6190476190476191&#10;  Expected: 0.6666666666666666 ± 6.7e-07">alias = 'citibank', second = -40.0
+
+    @pytest.mark.parametrize("second", [40.0, -40.0])
+    @pytest.mark.parametrize("alias", ["Citigroup", " CITIGROUP ", "citibank"])
+    def test_registered_alias_concentration_matches_consolidated_portfolio(
+        alias: str, second: float
+    ) -&gt; None:
+        peers = [
+            {"variant": "v", "segment": "Equity", "counterparty": f"Peer{i}", "notional": 10.0}
+            for i in range(11)
+        ]
+        split = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 60.0},
+            {"variant": "v", "segment": "Equity", "counterparty": alias, "notional": second},
+            *peers,
+        ]
+        consolidated = [
+            {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 100.0},
+            *peers,
+        ]
+        actual = _as_records(compute_concentration_metrics(split))[0]
+        control = _as_records(compute_concentration_metrics(consolidated))[0]
+        for metric, expected in (
+            ("top5_share", 140 / 210),
+            ("top10_share", 190 / 210),
+            ("hhi", (100**2 + 11 * 10**2) / 210**2),
+        ):
+&gt;           assert actual[metric] == pytest.approx(expected)
+E           assert 0.6190476190476191 == 0.6666666666666666 ± 6.7e-07
+E             
+E             comparison failed
+E             Obtained: 0.6190476190476191
+E             Expected: 0.6666666666666666 ± 6.7e-07
+
+tests/compute/test_concentration_metrics.py:596: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_registered_aliases_preserve_variant_and_segment_boundaries" time="0.002"><failure message="assert [0.38, 1.0, 1.0] == approx([0.5 ±....0 ± 1.0e-06])&#10;  &#10;  comparison failed. Mismatched elements: 1 / 3:&#10;  Max absolute difference: 0.12&#10;  Max relative difference: 0.3157894736842105&#10;  Index | Obtained | Expected     &#10;  0     | 0.38     | 0.5 ± 5.0e-07">def test_registered_aliases_preserve_variant_and_segment_boundaries() -&gt; None:
+        data = [
+            {"variant": "v1", "segment": "Equity", "counterparty": "Citibank", "notional": 60.0},
+            {"variant": "v1", "segment": "Equity", "counterparty": "Citigroup", "notional": -40.0},
+            {"variant": "v1", "segment": "Equity", "counterparty": "Barclays", "notional": 100.0},
+            {"variant": "v2", "segment": "Equity", "counterparty": "Citigroup", "notional": 20.0},
+            {"variant": "v1", "segment": "Treasury", "counterparty": "Citigroup", "notional": 30.0},
+        ]
+        rows = _as_records(compute_concentration_metrics(data))
+        assert [(row["variant"], row["segment"]) for row in rows] == [
+            ("v1", "Equity"),
+            ("v2", "Equity"),
+            ("v1", "Treasury"),
+        ]
+&gt;       assert [row["hhi"] for row in rows] == pytest.approx([0.5, 1.0, 1.0])
+E       assert [0.38, 1.0, 1.0] == approx([0.5 ±....0 ± 1.0e-06])
+E         
+E         comparison failed. Mismatched elements: 1 / 3:
+E         Max absolute difference: 0.12
+E         Max relative difference: 0.3157894736842105
+E         Index | Obtained | Expected     
+E         0     | 0.38     | 0.5 ± 5.0e-07
+
+tests/compute/test_concentration_metrics.py:614: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_unknown_alias_fallback_does_not_merge_distinct_labels" time="0.001"><failure message="assert 0.34 == 0.52 ± 5.2e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.34&#10;  Expected: 0.52 ± 5.2e-07">def test_unknown_alias_fallback_does_not_merge_distinct_labels() -&gt; None:
+        data = [
+            {"variant": "v", "segment": "s", "counterparty": "  Unknown   A ", "notional": 30.0},
+            {"variant": "v", "segment": "s", "counterparty": "Unknown A", "notional": -30.0},
+            {"variant": "v", "segment": "s", "counterparty": "Unknown B", "notional": 40.0},
+        ]
+        rows = _as_records(compute_concentration_metrics(data))
+&gt;       assert rows[0]["hhi"] == pytest.approx(0.6**2 + 0.4**2)
+E       assert 0.34 == 0.52 ± 5.2e-07
+E         
+E         comparison failed
+E         Obtained: 0.34
+E         Expected: 0.52 ± 5.2e-07
+
+tests/compute/test_concentration_metrics.py:624: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_alias_reshaper_preserves_display_and_emits_registry_identity[Citigroup]" time="0.004"><failure message="assert False&#10; +  where False = all(&lt;generator object test_alias_reshaper_preserves_display_and_emits_registry_identity.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9234367440&gt;)">alias = 'Citigroup'
+
+    @pytest.mark.parametrize("alias", ["Citigroup", "CITIGROUP", "citibank"])
+    def test_alias_reshaper_preserves_display_and_emits_registry_identity(alias: str) -&gt; None:
+        rows = _build_concentration_exposure_rows(
+            {
+                "v": {
+                    "totals": [
+                        {"counterparty": alias, "Notional": -40.0, "Equity": -40.0},
+                        {"counterparty": "Citibank", "Notional": 60.0, "Equity": 60.0},
+                    ]
+                }
+            }
+        )
+        assert [row["counterparty"] for row in rows] == [alias] * 2 + ["Citibank"] * 2
+        assert {row["canonical_key"] for row in rows} == {"citibank"}
+&gt;       assert all(row["hhi"] == 1.0 for row in _as_records(compute_concentration_metrics(rows)))
+E       assert False
+E        +  where False = all(&lt;generator object test_alias_reshaper_preserves_display_and_emits_registry_identity.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9234367440&gt;)
+
+tests/compute/test_concentration_metrics.py:641: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_alias_reshaper_preserves_display_and_emits_registry_identity[CITIGROUP]" time="0.002"><failure message="assert False&#10; +  where False = all(&lt;generator object test_alias_reshaper_preserves_display_and_emits_registry_identity.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f923413cd40&gt;)">alias = 'CITIGROUP'
+
+    @pytest.mark.parametrize("alias", ["Citigroup", "CITIGROUP", "citibank"])
+    def test_alias_reshaper_preserves_display_and_emits_registry_identity(alias: str) -&gt; None:
+        rows = _build_concentration_exposure_rows(
+            {
+                "v": {
+                    "totals": [
+                        {"counterparty": alias, "Notional": -40.0, "Equity": -40.0},
+                        {"counterparty": "Citibank", "Notional": 60.0, "Equity": 60.0},
+                    ]
+                }
+            }
+        )
+        assert [row["counterparty"] for row in rows] == [alias] * 2 + ["Citibank"] * 2
+        assert {row["canonical_key"] for row in rows} == {"citibank"}
+&gt;       assert all(row["hhi"] == 1.0 for row in _as_records(compute_concentration_metrics(rows)))
+E       assert False
+E        +  where False = all(&lt;generator object test_alias_reshaper_preserves_display_and_emits_registry_identity.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f923413cd40&gt;)
+
+tests/compute/test_concentration_metrics.py:641: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_alias_reshaper_preserves_display_and_emits_registry_identity[citibank]" time="0.002"><failure message="assert False&#10; +  where False = all(&lt;generator object test_alias_reshaper_preserves_display_and_emits_registry_identity.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9234463d30&gt;)">alias = 'citibank'
+
+    @pytest.mark.parametrize("alias", ["Citigroup", "CITIGROUP", "citibank"])
+    def test_alias_reshaper_preserves_display_and_emits_registry_identity(alias: str) -&gt; None:
+        rows = _build_concentration_exposure_rows(
+            {
+                "v": {
+                    "totals": [
+                        {"counterparty": alias, "Notional": -40.0, "Equity": -40.0},
+                        {"counterparty": "Citibank", "Notional": 60.0, "Equity": 60.0},
+                    ]
+                }
+            }
+        )
+        assert [row["counterparty"] for row in rows] == [alias] * 2 + ["Citibank"] * 2
+        assert {row["canonical_key"] for row in rows} == {"citibank"}
+&gt;       assert all(row["hhi"] == 1.0 for row in _as_records(compute_concentration_metrics(rows)))
+E       assert False
+E        +  where False = all(&lt;generator object test_alias_reshaper_preserves_display_and_emits_registry_identity.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9234463d30&gt;)
+
+tests/compute/test_concentration_metrics.py:641: AssertionError</failure></testcase><testcase classname="tests.compute.test_concentration_metrics" name="test_alias_reshaper_emits_identity_for_every_segment_and_variant" time="0.002"><failure message="assert [0.38, 0.38, ...38, 0.38, ...] == approx([0.5 ±....0 ± 1.0e-06])&#10;  &#10;  comparison failed. Mismatched elements: 6 / 7:&#10;  Max absolute difference: 0.12&#10;  Max relative difference: 0.3157894736842105&#10;  Index | Obtained | Expected     &#10;  0     | 0.38     | 0.5 ± 5.0e-07&#10;  1     | 0.38     | 0.5 ± 5.0e-07&#10;  2     | 0.38     | 0.5 ± 5.0e-07&#10;  3     | 0.38     | 0.5 ± 5.0e-07&#10;  4     | 0.38     | 0.5 ± 5.0e-07&#10;  5     | 0.38     | 0.5 ± 5.0e-07">def test_alias_reshaper_emits_identity_for_every_segment_and_variant() -&gt; None:
+        """Identity travels with every signed exposure without crossing group boundaries."""
+        segments = ("TIPS", "Treasury", "Equity", "Commodity", "Currency", "total")
+        source_records = [
+            {
+                "counterparty": "Citigroup",
+                "TIPS": -4.0,
+                "Treasury": 8.0,
+                "Equity": -40.0,
+                "Commodity": 12.0,
+                "Currency": -16.0,
+                "Notional": -40.0,
+            },
+            {
+                "counterparty": "Citibank",
+                "TIPS": 6.0,
+                "Treasury": 12.0,
+                "Equity": 60.0,
+                "Commodity": 18.0,
+                "Currency": 24.0,
+                "Notional": 60.0,
+            },
+            {
+                "counterparty": "Unknown Peer",
+                "TIPS": 10.0,
+                "Treasury": 20.0,
+                "Equity": 100.0,
+                "Commodity": 30.0,
+                "Currency": 40.0,
+                "Notional": 100.0,
+            },
+        ]
+        rows = _build_concentration_exposure_rows(
+            {
+                "all_programs": {"totals": source_records},
+                "ex_trend": {"totals": [{"counterparty": "CITIGROUP", "Notional": -20.0}]},
+            }
+        )
+        expected_rows = [
+            {
+                "variant": "all_programs",
+                "segment": segment,
+                "counterparty": record["counterparty"],
+                "canonical_key": canonical_key,
+                "notional": record["Notional" if segment == "total" else segment],
+            }
+            for record, canonical_key in zip(
+                source_records, ("citibank", "citibank", "Unknown Peer"), strict=True
+            )
+            for segment in segments
+        ]
+        expected_rows.append(
+            {
+                "variant": "ex_trend",
+                "segment": "total",
+                "counterparty": "CITIGROUP",
+                "canonical_key": "citibank",
+                "notional": -20.0,
+            }
+        )
+        assert rows == expected_rows
+        metrics = _as_records(compute_concentration_metrics(rows))
+        assert [(row["variant"], row["segment"]) for row in metrics] == [
+            *[("all_programs", segment) for segment in segments],
+            ("ex_trend", "total"),
+        ]
+        # Each all-programs group has equal gross exposures to Citibank and its peer.
+&gt;       assert [row["hhi"] for row in metrics] == pytest.approx([0.5] * 6 + [1.0])
+E       assert [0.38, 0.38, ...38, 0.38, ...] == approx([0.5 ±....0 ± 1.0e-06])
+E         
+E         comparison failed. Mismatched elements: 6 / 7:
+E         Max absolute difference: 0.12
+E         Max relative difference: 0.3157894736842105
+E         Index | Obtained | Expected     
+E         0     | 0.38     | 0.5 ± 5.0e-07
+E         1     | 0.38     | 0.5 ± 5.0e-07
+E         2     | 0.38     | 0.5 ± 5.0e-07
+E         3     | 0.38     | 0.5 ± 5.0e-07
+E         4     | 0.38     | 0.5 ± 5.0e-07
+E         5     | 0.38     | 0.5 ± 5.0e-07
+
+tests/compute/test_concentration_metrics.py:711: AssertionError</failure></testcase></testsuite></testsuites>

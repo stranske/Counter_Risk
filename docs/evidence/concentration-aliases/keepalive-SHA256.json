@@ -1,0 +1,23 @@
+{
+  "files": {
+    "KEEPALIVE.md": "222ff5884a70b780693ac2028648c94bba565e5f8cb268b8a8047966748a2a39",
+    "keepalive-alias-green.log": "37d621bf86b331ff3f2e1ee850d29e87fa8897e7a765facda900e6d63ae9b834",
+    "keepalive-alias-green.xml": "84c596c5ac5b0cf195ec52bc17d4f79183ff8fcd82313d4a73fbf44e58d16197",
+    "keepalive-black.log": "cb9d8fcf961e9d8906f8de3119795c265c1e78c40e8c481cebbca83fd2bb4fc5",
+    "keepalive-canonical.log": "669c471974a76fc2bb5473ac1d6322c5ebeae2fd759ad373735fb0b131b27233",
+    "keepalive-compute-parser-green.log": "3ed52507340ba6e949adab45f603d78f87d4c53fb2464ea28912cff196324092",
+    "keepalive-compute-parser-green.xml": "ee9ad5961f7eb1ad582d66c00d20284a7de2e809c03ed226b4f9927bc53c6951",
+    "keepalive-mutation.json": "2ca9893c7212d075310932631d240f80bf9b0dc9b75228ad8bd09846a4e3b4b7",
+    "keepalive-pipeline-green.log": "5b00d43b73de4e00ab682cb0080ab49cb18509691edf968cc80e6d399c8c22b5",
+    "keepalive-pipeline-green.xml": "5505b5f3179f3804cacbb50a6b7270ed6a8896398122f45e3506421fc608fe7e",
+    "keepalive-ppt-green.log": "facc9f9a533ac96fccdd23ac31da1daa4279997b3cbc987410cba95b66a57465",
+    "keepalive-ppt-green.xml": "db1093187b9761adc46f47ceb86399cc80347c00e46ee612fb1ba6c252a3504e",
+    "keepalive-report-artifacts.log": "9bf38d3af2fc6e01f44d5d8bf37423973dc2bb8cf697f6a2d59f3661304773fa",
+    "keepalive-report-observations.json": "ab6b32016e794290f8133bbec3a8574fd11fccb586d2fb70c103bdaf6ef28d7e",
+    "keepalive-rollups-red.log": "c91adee279142e160880c6c8a55dc19c32a8ddbf4103713bef3ce2a2ce21bad7",
+    "keepalive-rollups-red.xml": "e41e04f7fa7b703d03bfe3b7b371df3b7b7c43802d40b8b8d4b0a879cd082747",
+    "keepalive-rollups-restored-green.log": "6e5312203b4572b007e31700c78dab6feede62cb50173ff08b4981e25b2a88f7",
+    "keepalive-rollups-restored-green.xml": "53213ca7e8c58cae10d6f01e2e71927ba30ca6da55af6fd2789607cbc8c1175a",
+    "keepalive-ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  }
+}

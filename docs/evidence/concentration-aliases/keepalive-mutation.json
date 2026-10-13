@@ -1,0 +1,19 @@
+{
+  "production_path": "src/counter_risk/compute/rollups.py",
+  "command": [
+    "/opt/hostedtoolcache/Python/3.14.8/x64/bin/python",
+    "-m",
+    "pytest",
+    "tests/compute/test_concentration_metrics.py",
+    "-k",
+    "alias",
+    "-m",
+    "not slow"
+  ],
+  "before_sha256": "31c8fe926ddfed2bddfb920b9a8d0940c1c38cdbe016d4457994f54839e649ab",
+  "mutant_sha256": "7448f26596b6287ccf5160b3959bef52ef9ab8fed656fd34049a0e6c0df6dba4",
+  "restored_sha256": "31c8fe926ddfed2bddfb920b9a8d0940c1c38cdbe016d4457994f54839e649ab",
+  "red_exit": 1,
+  "restored_green_exit": 0,
+  "byte_identical_restoration": true
+}

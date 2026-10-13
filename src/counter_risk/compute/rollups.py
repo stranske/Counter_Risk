@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from counter_risk.compute.limits import _exposure_magnitude
-from counter_risk.normalize import normalize_counterparty
+from counter_risk.normalize import normalize_counterparty, normalize_counterparty_with_source
 
 _COUNTERPARTY_KEYS = ("counterparty", "counterparty_name", "name")
 _ASSET_CLASS_KEYS = ("asset_class", "class", "segment")
@@ -537,7 +537,8 @@ def compute_concentration_metrics(
 
     Repeated counterparties are consolidated within each group by summing
     row magnitudes (gross exposure, without netting opposite signs). Identity
-    uses the standard counterparty aliases; rows without an identity remain
+    uses registry canonical keys (including registered aliases), falling back
+    to cleaned labels for unknown names. Rows without an identity remain
     independent entities for compatibility with identity-free inputs.
 
     When the total notional magnitude for a group is near zero all three
@@ -603,8 +604,15 @@ def compute_concentration_metrics(
             ),
             None,
         )
-        # Keep anonymous rows independent for callers without identity columns.
-        entity = counterparty if counterparty is not None else row_index
+        canonical_key = row.get("canonical_key")
+        if isinstance(canonical_key, str) and canonical_key.strip():
+            entity: str | int = canonical_key.strip()
+        elif counterparty is not None:
+            resolution = normalize_counterparty_with_source(counterparty)
+            entity = resolution.canonical_key or resolution.canonical_name
+        else:
+            # Keep anonymous rows independent for callers without identity columns.
+            entity = row_index
         groups[key][entity] += _exposure_magnitude(notional)
 
     records: list[dict[str, Any]] = []

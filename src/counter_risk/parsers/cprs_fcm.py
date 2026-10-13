@@ -97,7 +97,12 @@ class FcmTotalEvidence(TypedDict):
 
 
 def parse_fcm_totals(path: Path | str) -> Any:  # pandas.DataFrame
-    """Parse totals-by-counterparty section from the CPRS-FCM worksheet."""
+    """Parse totals-by-counterparty section from the CPRS-FCM worksheet.
+
+    Counterparty labels retain their source spelling after whitespace cleanup.
+    Registry identity is resolved downstream by the concentration reshaper;
+    registered aliases remain separate source rows here.
+    """
     return _to_dataframe(
         records=_parse_fcm_total_records(path), columns=_TOTAL_COLUMNS, dtypes=_TOTAL_DTYPES
     )
@@ -326,6 +331,7 @@ def _read_fcm_sheet(path: Path) -> tuple[str, dict[int, dict[int, str | None]]]:
 
 
 def _normalize_text(value: str | None) -> str:
+    """Clean display whitespace without resolving counterparty registry identity."""
     if value is None:
         return ""
     return safe_display_name(value.replace("\n", " "))

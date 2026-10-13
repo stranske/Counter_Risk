@@ -1,0 +1,23 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.14.8/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.8, platformdirs-4.13.0, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collecting ... collected 56 items / 44 deselected / 12 selected
+
+tests/compute/test_concentration_metrics.py::test_registered_alias_concentration_matches_consolidated_portfolio[Citigroup-40.0] PASSED [  8%]
+tests/compute/test_concentration_metrics.py::test_registered_alias_concentration_matches_consolidated_portfolio[Citigroup--40.0] PASSED [ 16%]
+tests/compute/test_concentration_metrics.py::test_registered_alias_concentration_matches_consolidated_portfolio[ CITIGROUP -40.0] PASSED [ 25%]
+tests/compute/test_concentration_metrics.py::test_registered_alias_concentration_matches_consolidated_portfolio[ CITIGROUP --40.0] PASSED [ 33%]
+tests/compute/test_concentration_metrics.py::test_registered_alias_concentration_matches_consolidated_portfolio[citibank-40.0] PASSED [ 41%]
+tests/compute/test_concentration_metrics.py::test_registered_alias_concentration_matches_consolidated_portfolio[citibank--40.0] PASSED [ 50%]
+tests/compute/test_concentration_metrics.py::test_registered_aliases_preserve_variant_and_segment_boundaries PASSED [ 58%]
+tests/compute/test_concentration_metrics.py::test_unknown_alias_fallback_does_not_merge_distinct_labels PASSED [ 66%]
+tests/compute/test_concentration_metrics.py::test_alias_reshaper_preserves_display_and_emits_registry_identity[Citigroup] PASSED [ 75%]
+tests/compute/test_concentration_metrics.py::test_alias_reshaper_preserves_display_and_emits_registry_identity[CITIGROUP] PASSED [ 83%]
+tests/compute/test_concentration_metrics.py::test_alias_reshaper_preserves_display_and_emits_registry_identity[citibank] PASSED [ 91%]
+tests/compute/test_concentration_metrics.py::test_alias_reshaper_emits_identity_for_every_segment_and_variant PASSED [100%]
+
+- generated xml file: /home/runner/work/Counter_Risk/Counter_Risk/docs/evidence/concentration-aliases/keepalive-alias-green.xml -
+====================== 12 passed, 44 deselected in 0.64s =======================

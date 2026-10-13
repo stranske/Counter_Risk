@@ -1,0 +1,156 @@
+{
+  "test": "tests/pipeline/test_run_pipeline.py::test_concentration_alias_parser_csv_manifest_ppt",
+  "source_rows": [
+    {
+      "counterparty": "Citibank",
+      "notional": 60.0
+    },
+    {
+      "counterparty": "Citigroup",
+      "notional": -40.0
+    }
+  ],
+  "canonical_gross_exposure": {
+    "citibank": 100.0
+  },
+  "manifest_concentration_metrics": [
+    {
+      "hhi": 0.0,
+      "segment": "TIPS",
+      "top10_share": 0.0,
+      "top5_share": 0.0,
+      "variant": "all_programs"
+    },
+    {
+      "hhi": 0.0,
+      "segment": "Treasury",
+      "top10_share": 0.0,
+      "top5_share": 0.0,
+      "variant": "all_programs"
+    },
+    {
+      "hhi": 1.0,
+      "segment": "Equity",
+      "top10_share": 1.0,
+      "top5_share": 1.0,
+      "variant": "all_programs"
+    },
+    {
+      "hhi": 0.0,
+      "segment": "Commodity",
+      "top10_share": 0.0,
+      "top5_share": 0.0,
+      "variant": "all_programs"
+    },
+    {
+      "hhi": 0.0,
+      "segment": "Currency",
+      "top10_share": 0.0,
+      "top5_share": 0.0,
+      "variant": "all_programs"
+    },
+    {
+      "hhi": 1.0,
+      "segment": "total",
+      "top10_share": 1.0,
+      "top5_share": 1.0,
+      "variant": "all_programs"
+    }
+  ],
+  "csv_rows": [
+    {
+      "variant": "all_programs",
+      "segment": "TIPS",
+      "top5_share": "0.0",
+      "top10_share": "0.0",
+      "hhi": "0.0"
+    },
+    {
+      "variant": "all_programs",
+      "segment": "Treasury",
+      "top5_share": "0.0",
+      "top10_share": "0.0",
+      "hhi": "0.0"
+    },
+    {
+      "variant": "all_programs",
+      "segment": "Equity",
+      "top5_share": "1.0",
+      "top10_share": "1.0",
+      "hhi": "1.0"
+    },
+    {
+      "variant": "all_programs",
+      "segment": "Commodity",
+      "top5_share": "0.0",
+      "top10_share": "0.0",
+      "hhi": "0.0"
+    },
+    {
+      "variant": "all_programs",
+      "segment": "Currency",
+      "top5_share": "0.0",
+      "top10_share": "0.0",
+      "hhi": "0.0"
+    },
+    {
+      "variant": "all_programs",
+      "segment": "total",
+      "top5_share": "1.0",
+      "top10_share": "1.0",
+      "hhi": "1.0"
+    }
+  ],
+  "ppt_table": [
+    [
+      "Variant",
+      "Segment",
+      "Top 5 Share",
+      "Top 10 Share",
+      "HHI"
+    ],
+    [
+      "all_programs",
+      "TIPS",
+      "0.00%",
+      "0.00%",
+      "0.0000"
+    ],
+    [
+      "all_programs",
+      "Treasury",
+      "0.00%",
+      "0.00%",
+      "0.0000"
+    ],
+    [
+      "all_programs",
+      "Equity",
+      "100.00%",
+      "100.00%",
+      "1.0000"
+    ],
+    [
+      "all_programs",
+      "Commodity",
+      "0.00%",
+      "0.00%",
+      "0.0000"
+    ],
+    [
+      "all_programs",
+      "Currency",
+      "0.00%",
+      "0.00%",
+      "0.0000"
+    ],
+    [
+      "all_programs",
+      "total",
+      "100.00%",
+      "100.00%",
+      "1.0000"
+    ]
+  ],
+  "verified": true
+}
