@@ -1,0 +1,16 @@
+{
+  "docs/evidence/ppt-refresh-selection/followup-black.log": "58fecb2ac27b3410508cb4f6019893328b3632542de1b53cd52fef26b2457222",
+  "docs/evidence/ppt-refresh-selection/followup-green.log": "b90ae9109f72dc388e56b3aadfa685fc75f3857bac689c76dadd0abfa22b8d75",
+  "docs/evidence/ppt-refresh-selection/followup-green.xml": "216bc62e938bdc96e633abd21b3b4d41d972b244b0c9377ee2cbe3856da3a6d7",
+  "docs/evidence/ppt-refresh-selection/followup-mutation.json": "3af380b1df012e4730410c739e31f0bd0e74044d2d8ac9be46ca8efaa68cbee8",
+  "docs/evidence/ppt-refresh-selection/followup-red.log": "cd887cde7aacc7e0bcbf5e3ae06aa7bf931ab182259bd023e49ffc8f650694fc",
+  "docs/evidence/ppt-refresh-selection/followup-red.xml": "4c57d2c0d610080c3041b7a9b7df6f0e0d5c820964626b696f186b2241a417d9",
+  "docs/evidence/ppt-refresh-selection/followup-regressions.log": "025456dcf2b24582b28088c89bdc57d4ed777338b03394d68cad6155d3874882",
+  "docs/evidence/ppt-refresh-selection/followup-regressions.xml": "8ab24bd7401711726975a99c97536efcaadcd7201017768951769e9acf7107a6",
+  "docs/evidence/ppt-refresh-selection/followup-restored.log": "77d35c1888231e9ec4e27c5634fa956e7ed52c8587f68784e55d23d5b5ea1a0e",
+  "docs/evidence/ppt-refresh-selection/followup-restored.xml": "ae4f911c6407c9fc5633ad6b895faf300758b8215278bb1e349db47e8f90ad8e",
+  "src/counter_risk/pipeline/run.py": "c5a2d3ca3397b628948cfb9ea1d7c699b8c5e23199cb3832ed911a300f8ae3b1",
+  "tests/pipeline/test_monthly_pipeline_ppt_outputs.py": "09442a684b37e4b16cb3a0827b26677df6ac59f8dceb9ac7949f0c382dd3d7d4",
+  "tests/outputs/test_ppt_link_refresh.py": "f163a0938baac2afcf9d41c422a384897ea6d63c1e92f9f46b63605ca4f27fa8",
+  "README.md": "aaa5d03ddab4c0a85b5a4b42356f8475a8e1bdfc7e1938314f85a9af2c8b7933"
+}

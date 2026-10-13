@@ -11,3 +11,15 @@ Commands use the configured Python environment and normal repository `pythonpath
 - Focused Ruff, repository Black and production module Mypy pass; logs retained. README documents selection and distribution behavior.
 
 This is bounded local Python/presentation-fixture coverage. Native Windows Office COM execution, hosted CI, provider verdicts, and deployment are not established by these tests. The unchanged native refresher is mocked for deterministic call/status observations. Absolute temporary paths in raw logs identify this run; hashes bind their exact bytes.
+
+Follow-up verification strengthens the tests without changing the existing production guard. The selection matrix now also exercises the legacy fallback with no refresh generator returned by the registry. Assertions read the written `manifest.json` and `DATA_QUALITY_SUMMARY.txt`; the existing failed-refresh test checks that those artifacts report failure and suppress distribution, rather than reporting an intentional skip.
+
+- [x] Disabled and omitted registrations make zero refresh calls, return SKIPPED with a reason, and write `master.skipped_reason` and `PPT_LINK_REFRESH_SKIPPED` (`followup-green.*`, 12 passed).
+- [x] Enabled registrations make exactly one call, both through the generator and the legacy fallback (`followup-green.*`).
+- [x] Failed-refresh distribution suppression and all eight standalone-generator tests pass (`followup-regressions.*`, nine passed).
+- [x] Removing only the fallback guard fails all eight disabled/omitted zero-call assertions; byte-identical restoration passes all 12 cases (`followup-red.*`, `followup-restored.*`, `followup-mutation.json`).
+- [x] `rg -n "ppt_link_refresh" README.md` confirms the documented disabled/omitted skip behavior at line 54.
+
+Follow-up commands include `-m "not slow"`. `followup-SHA256.json` records hashes for the follow-up logs, JUnit, mutation record, and source/test files. The repository Black check passed for all 370 files with the required CLI arguments. Its temporary runner uses `BLACK_NUM_WORKERS=1` and schedules an event-loop tick every 0.05 seconds: the sandbox blocks the default process-pool socket and does not wake the event loop after thread completion. The runner invokes Black's normal CLI without altering formatting or file selection. Focused Ruff also passed. The broader existing pipeline/standalone suite passed all 33 tests before the test additions.
+
+Delivery blocker: the sandbox mounts `.git` read-only, so staging and committing fail when Git creates `.git/index.lock`. GitHub connector commit creation, the `needs-human` label, and a blocker comment were also denied because they require approval while this run's approval policy is `never`. No remote changes were made. The saved changes require a writable Git environment or approved connector writes to commit. PR #1152 was verified open and ready for review at head `a8077e1413d63ef103aee71edba0fbb6de771879`.

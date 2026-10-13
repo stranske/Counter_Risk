@@ -8,6 +8,7 @@ import shutil
 from datetime import date
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from pptx import Presentation
@@ -58,11 +59,13 @@ def _build_config(
 
 @pytest.mark.parametrize("selection", ["enabled", "disabled", "omitted"])
 @pytest.mark.parametrize("distribution_enabled", [True, False])
+@pytest.mark.parametrize("use_legacy_fallback", [False, True])
 def test_configured_refresh_respects_generator_selection(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     selection: str,
     distribution_enabled: bool,
+    use_legacy_fallback: bool,
 ) -> None:
     config = _build_config(
         tmp_path, enable_ppt_output=True, enable_distribution_output=distribution_enabled
@@ -90,6 +93,21 @@ def test_configured_refresh_respects_generator_selection(
     run_dir = tmp_path / "run"
     run_dir.mkdir()
     warnings: list[str] = []
+    if use_legacy_fallback:
+        registry = run_module._build_output_generator_registry(warnings=warnings)
+        load = registry.load
+        monkeypatch.setattr(
+            registry,
+            "load",
+            Mock(
+                side_effect=lambda **kwargs: (
+                    () if kwargs["stage"] == "ppt_refresh" else load(**kwargs)
+                )
+            ),
+        )
+        monkeypatch.setattr(
+            run_module, "_build_output_generator_registry", lambda *, warnings: registry
+        )
     outputs, result = run_module._write_outputs(
         run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=warnings
     )
@@ -114,7 +132,9 @@ def test_configured_refresh_respects_generator_selection(
         ppt_status=result.status.value,
         ppt_outputs=result.ppt_outputs,
     )
-    builder.write(run_dir=run_dir, manifest=manifest)
+    manifest_path = builder.write(run_dir=run_dir, manifest=manifest)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["ppt_status"] == result.status.value
     master = manifest["ppt_outputs"]["master"]
     if enabled:
         assert master["status"] == "success"
@@ -129,6 +149,14 @@ def test_configured_refresh_respects_generator_selection(
     codes = {finding["code"] for finding in manifest["data_quality"]["findings"]}
     assert ("PPT_LINK_REFRESH_SKIPPED" in codes) is not enabled
     assert "PPT_LINK_REFRESH_FAILED" not in codes
+    assert "PPT_GENERATION_FAILED" not in codes
+    summary = (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text(encoding="utf-8")
+    assert ("PPT_LINK_REFRESH_SKIPPED" in summary) is not enabled
+    assert ("Master PowerPoint link refresh was skipped." in summary) is not enabled
+    assert ("Distribution PowerPoint was generated" in summary) is (
+        not enabled and distribution_enabled
+    )
+    assert "PPT_GENERATION_FAILED" not in summary
     assert not any("refresh failed" in warning for warning in warnings)
 
 
@@ -394,6 +422,31 @@ def test_master_refresh_failure_logs_error_and_skips_distribution_derivation(
         path.name != "Monthly Counterparty Exposure Report - 2025-12-31.pptx"
         for path in output_paths
     )
+    builder = ManifestBuilder(
+        config=config, as_of_date=date(2025, 12, 31), run_date=date(2026, 1, 2)
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=ppt_result.status.value,
+        ppt_outputs=ppt_result.ppt_outputs,
+    )
+    manifest_path = builder.write(run_dir=run_dir, manifest=manifest)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["ppt_status"] == "failed"
+    assert manifest["ppt_outputs"]["master"]["status"] == "failed"
+    assert "skipped_reason" not in manifest["ppt_outputs"]["master"]
+    assert "refresh failed" in manifest["ppt_outputs"]["distribution"]["skipped_reason"]
+    codes = {finding["code"] for finding in manifest["data_quality"]["findings"]}
+    assert "PPT_GENERATION_FAILED" in codes
+    assert "PPT_LINK_REFRESH_SKIPPED" not in codes
+    summary = (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text(encoding="utf-8")
+    assert "PPT_GENERATION_FAILED" in summary
+    assert "PPT_LINK_REFRESH_SKIPPED" not in summary
 
 
 def test_ppt_enabled_order_master_generated_before_distribution(
