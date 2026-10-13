@@ -32,7 +32,13 @@ used, and how operators should interpret the values.
 Repeated counterparty rows are consolidated within each group before ranking.
 Each counterparty contributes the sum of its row notional magnitudes (gross
 exposure), so opposite signs do not net and splitting a position across rows
-does not change concentration.
+does not change concentration. Identity is the maintained name registry's
+`canonical_key`: registered aliases (including case variants) such as Citibank
+and Citigroup contribute to one entity. Parsers retain the source display labels;
+the production concentration reshaper resolves identity downstream. Unknown names
+use the existing normalizer's deterministic cleaned-label fallback, and rows
+without an identity stay independent. Consolidation never crosses variant or
+segment boundaries. CSV, manifest and optional PPT use the same corrected result.
 
 Row ordering is deterministic: groups appear in the order their
 `(variant, segment)` keys are first encountered while iterating the parsed

@@ -2320,7 +2320,9 @@ def _build_concentration_exposure_rows(
 ) -> list[dict[str, Any]]:
     """Reshape parsed variant totals into long-format rows for concentration metrics.
 
-    Each output row has: variant, segment, counterparty, notional.
+    Each output row has: variant, segment, counterparty, canonical_key, notional.
+    The raw display label is preserved; registry identity is resolved here,
+    downstream of the parsers, before any gross-exposure consolidation.
     Segments are the individual asset classes (TIPS, Treasury, …) plus "total"
     for the overall Notional column.
     """
@@ -2331,6 +2333,8 @@ def _build_concentration_exposure_rows(
             counterparty = _counterparty_label_from_totals_row(record)
             if not counterparty:
                 continue
+            resolution = normalize_counterparty_with_source(counterparty)
+            canonical_key = resolution.canonical_key or resolution.canonical_name
             # Individual asset class segments
             for asset_class in _CONCENTRATION_ASSET_CLASSES:
                 if asset_class in record:
@@ -2340,6 +2344,7 @@ def _build_concentration_exposure_rows(
                             "variant": variant,
                             "segment": asset_class,
                             "counterparty": counterparty,
+                            "canonical_key": canonical_key,
                             "notional": notional,
                         }
                     )
@@ -2350,6 +2355,7 @@ def _build_concentration_exposure_rows(
                     "variant": variant,
                     "segment": "total",
                     "counterparty": counterparty,
+                    "canonical_key": canonical_key,
                     "notional": total_notional,
                 }
             )

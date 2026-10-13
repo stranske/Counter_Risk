@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-10-13T08:10:21.048692+00:00",
+  "files": {
+    "README.md": "b3713603ac33983b4e07589610f273285a3933a2aa989752b05845769d2d890d",
+    "baseline-red.log": "e50b1190508a04410462089ec6943f7fd440fd985a68e433db53c9f9a9b039ba",
+    "baseline-red.xml": "5ac4032722cceabee89573554b3a6eddeabea5c0df006aefe42717d47b2c1488",
+    "compute-green.log": "7f6ec62e4946c3a5a6ad6fb8f1283988ba2a1a7a4aa4cda884376c790218b713",
+    "compute-green.xml": "d84d9bd5032cd4d71aa61711a20c9d0122a63a5014c77c9a24767bcea2852066",
+    "focused-green.log": "98866a107fcdbe796e9e2b63205af0a7e56a6ed08535d840d5c232ca326597f1",
+    "focused-green.xml": "ad78cc693fc09bbdc3355a7073476e6c57f27fe9da10e68053626e191cc4487b",
+    "mutations.json": "6fb150770ca64ac6fddffe60317f5328c26eeb9aed56e44337493dd1ec819871",
+    "mypy.log": "53e25184a6260918150ed39c9c76ee17f8734279375dda0f1cb9f6be2add7d09",
+    "pipeline-green.log": "26485893d261d6bf29e026c58a252292f0d87b04f6479591478fa13bd43ec33a",
+    "pipeline-green.xml": "1af5e71060926fccda63130b8caf9c328e00c15d3a68ea2b367d5ae73ac2a792",
+    "ppt-green.log": "ca4d1a14c0a76a527aebf6fd2b782bf77c71a6e4a2a5a6ddc50d2dae71e6e26c",
+    "ppt-green.xml": "384117eec6566913a64c48777c76866a196f35ab002e83e6750d0586c5faa0ab",
+    "reshaper-red.log": "96d6956507492456f3c75d5ded470b1ef90eb30438b5a78c4babe92dbdb79b49",
+    "reshaper-red.xml": "474ccc9e8dba5c571ce783179ad6762de6add99937f22b1bbb9597cc64f35c5b",
+    "reshaper-restored-green.log": "12a9a9090890339014bf5642a71fcd77129a4ea0a1ccff5e9436c707f3947112",
+    "reshaper-restored-green.xml": "ba54aa09954e298b50dfad5fb7cc25dd6a1b0fcd1c68220cbbbe2afb74f08ecd",
+    "rollups-red.log": "7e3500f0ccaeb24c880f5bde1b5937b82690d75a02294ee2c2ad1b19cb77909a",
+    "rollups-red.xml": "497e641350ed418ac0647594970d7a748a1bffdc7a7ff0e6a7332fb565dd3865",
+    "rollups-restored-green.log": "10e070f9d05a7d55a503dc4e55bc9f71e0de6a89b69bc8bd7c8c6e9943843945",
+    "rollups-restored-green.xml": "5e096382691c526758996347ecca3a1fbe0e2061355663aa4ba7b0bb1104bf3e"
+  }
+}

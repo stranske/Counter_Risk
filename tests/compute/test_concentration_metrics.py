@@ -566,3 +566,75 @@ def test_anonymous_exposure_rows_remain_independent() -> None:
     ]
     rows = _as_records(compute_concentration_metrics(data))
     assert rows[0]["hhi"] == pytest.approx(0.6**2 + 0.4**2, abs=_TOL)
+
+
+@pytest.mark.parametrize("second", [40.0, -40.0])
+@pytest.mark.parametrize("alias", ["Citigroup", " CITIGROUP ", "citibank"])
+def test_registered_alias_concentration_matches_consolidated_portfolio(
+    alias: str, second: float
+) -> None:
+    peers = [
+        {"variant": "v", "segment": "Equity", "counterparty": f"Peer{i}", "notional": 10.0}
+        for i in range(11)
+    ]
+    split = [
+        {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 60.0},
+        {"variant": "v", "segment": "Equity", "counterparty": alias, "notional": second},
+        *peers,
+    ]
+    consolidated = [
+        {"variant": "v", "segment": "Equity", "counterparty": "Citibank", "notional": 100.0},
+        *peers,
+    ]
+    actual = _as_records(compute_concentration_metrics(split))[0]
+    control = _as_records(compute_concentration_metrics(consolidated))[0]
+    for metric, expected in (
+        ("top5_share", 140 / 210),
+        ("top10_share", 190 / 210),
+        ("hhi", (100**2 + 11 * 10**2) / 210**2),
+    ):
+        assert actual[metric] == pytest.approx(expected)
+        assert actual[metric] == pytest.approx(control[metric])
+
+
+def test_registered_aliases_preserve_variant_and_segment_boundaries() -> None:
+    data = [
+        {"variant": "v1", "segment": "Equity", "counterparty": "Citibank", "notional": 60.0},
+        {"variant": "v1", "segment": "Equity", "counterparty": "Citigroup", "notional": -40.0},
+        {"variant": "v1", "segment": "Equity", "counterparty": "Barclays", "notional": 100.0},
+        {"variant": "v2", "segment": "Equity", "counterparty": "Citigroup", "notional": 20.0},
+        {"variant": "v1", "segment": "Treasury", "counterparty": "Citigroup", "notional": 30.0},
+    ]
+    rows = _as_records(compute_concentration_metrics(data))
+    assert [(row["variant"], row["segment"]) for row in rows] == [
+        ("v1", "Equity"),
+        ("v2", "Equity"),
+        ("v1", "Treasury"),
+    ]
+    assert [row["hhi"] for row in rows] == pytest.approx([0.5, 1.0, 1.0])
+
+
+def test_unknown_alias_fallback_does_not_merge_distinct_labels() -> None:
+    data = [
+        {"variant": "v", "segment": "s", "counterparty": "  Unknown   A ", "notional": 30.0},
+        {"variant": "v", "segment": "s", "counterparty": "Unknown A", "notional": -30.0},
+        {"variant": "v", "segment": "s", "counterparty": "Unknown B", "notional": 40.0},
+    ]
+    rows = _as_records(compute_concentration_metrics(data))
+    assert rows[0]["hhi"] == pytest.approx(0.6**2 + 0.4**2)
+
+
+def test_alias_reshaper_preserves_display_and_emits_registry_identity() -> None:
+    rows = _build_concentration_exposure_rows(
+        {
+            "v": {
+                "totals": [
+                    {"counterparty": "Citigroup", "Notional": -40.0, "Equity": -40.0},
+                    {"counterparty": "Citibank", "Notional": 60.0, "Equity": 60.0},
+                ]
+            }
+        }
+    )
+    assert [row["counterparty"] for row in rows] == ["Citigroup"] * 2 + ["Citibank"] * 2
+    assert {row["canonical_key"] for row in rows} == {"citibank"}
+    assert all(row["hhi"] == 1.0 for row in _as_records(compute_concentration_metrics(rows)))

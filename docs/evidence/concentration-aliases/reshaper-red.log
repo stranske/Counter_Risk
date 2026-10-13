@@ -1,0 +1,30 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_alias_reshaper_preserves_display_and_emits_registry_identity _______
+
+    def test_alias_reshaper_preserves_display_and_emits_registry_identity() -> None:
+        rows = _build_concentration_exposure_rows(
+            {
+                "v": {
+                    "totals": [
+                        {"counterparty": "Citigroup", "Notional": -40.0, "Equity": -40.0},
+                        {"counterparty": "Citibank", "Notional": 60.0, "Equity": 60.0},
+                    ]
+                }
+            }
+        )
+        assert [row["counterparty"] for row in rows] == ["Citigroup"] * 2 + ["Citibank"] * 2
+>       assert {row["canonical_key"] for row in rows} == {"citibank"}
+E       AssertionError: assert {'Citibank', 'Citigroup'} == {'citibank'}
+E         
+E         Extra items in the left set:
+E         'Citigroup'
+E         'Citibank'
+E         Extra items in the right set:
+E         'citibank'
+E         Use -v to get more diff
+
+tests/compute/test_concentration_metrics.py:639: AssertionError
+=========================== short test summary info ============================
+FAILED tests/compute/test_concentration_metrics.py::test_alias_reshaper_preserves_display_and_emits_registry_identity
+1 failed in 0.33s

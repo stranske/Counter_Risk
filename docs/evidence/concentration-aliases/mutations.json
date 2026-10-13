@@ -1,0 +1,24 @@
+[
+  {
+    "mutation": "rollups",
+    "production_path": "src/counter_risk/compute/rollups.py",
+    "test": "tests/compute/test_concentration_metrics.py::test_registered_alias_concentration_matches_consolidated_portfolio",
+    "red_exit": 1,
+    "restored_green_exit": 0,
+    "before_sha256": "31c8fe926ddfed2bddfb920b9a8d0940c1c38cdbe016d4457994f54839e649ab",
+    "mutant_sha256": "7448f26596b6287ccf5160b3959bef52ef9ab8fed656fd34049a0e6c0df6dba4",
+    "restored_sha256": "31c8fe926ddfed2bddfb920b9a8d0940c1c38cdbe016d4457994f54839e649ab",
+    "byte_identical_restoration": true
+  },
+  {
+    "mutation": "reshaper",
+    "production_path": "src/counter_risk/pipeline/run.py",
+    "test": "tests/compute/test_concentration_metrics.py::test_alias_reshaper_preserves_display_and_emits_registry_identity",
+    "red_exit": 1,
+    "restored_green_exit": 0,
+    "before_sha256": "3b0c5d471cde030d1e6cc010996e02d7beccb5fa79917a28f02b312f5ed4e5d0",
+    "mutant_sha256": "1df4526956239d02cc249a2b9c00ba96be11cdbc61d973bc50e9892b625cfe33",
+    "restored_sha256": "3b0c5d471cde030d1e6cc010996e02d7beccb5fa79917a28f02b312f5ed4e5d0",
+    "byte_identical_restoration": true
+  }
+]

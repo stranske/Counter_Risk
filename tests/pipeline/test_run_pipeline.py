@@ -298,6 +298,7 @@ def test_exposure_builders_coerce_finite_notionals(value: Any, expected: float) 
             "variant": "all_programs",
             "segment": segment,
             "counterparty": "Alpha",
+            "canonical_key": "Alpha",
             "notional": expected,
         }
         for segment in (*asset_classes, "total")
@@ -325,6 +326,7 @@ def test_exposure_builders_default_missing_notionals_to_zero() -> None:
             "variant": "all_programs",
             "segment": "total",
             "counterparty": "Alpha",
+            "canonical_key": "Alpha",
             "notional": 0.0,
         }
     ]
@@ -347,8 +349,20 @@ def test_concentration_includes_group_name_only_counterparty_rows() -> None:
     }
 
     assert run_module._build_concentration_exposure_rows(parsed) == [
-        {"variant": "all_programs", "segment": "total", "counterparty": "Alpha", "notional": 100.0},
-        {"variant": "all_programs", "segment": "total", "counterparty": "Beta", "notional": 50.0},
+        {
+            "variant": "all_programs",
+            "segment": "total",
+            "counterparty": "Alpha",
+            "canonical_key": "Alpha",
+            "notional": 100.0,
+        },
+        {
+            "variant": "all_programs",
+            "segment": "total",
+            "counterparty": "Beta",
+            "canonical_key": "Beta",
+            "notional": 50.0,
+        },
     ]
 
 
@@ -383,6 +397,56 @@ def test_concentration_metrics_write_finite_values(
                 actual = float(row[metric])
                 assert math.isfinite(actual)
                 assert actual == pytest.approx(expected)
+
+
+def test_concentration_alias_parser_csv_manifest_ppt(
+    tmp_path: Path, registered_alias_workbook: Path
+) -> None:
+    from pptx import Presentation
+
+    from counter_risk.pipeline.manifest import ManifestBuilder
+    from counter_risk.ppt.concentration_table import append_concentration_table_slide
+
+    totals = parse_fcm_totals(registered_alias_workbook)
+    assert totals["counterparty"].tolist() == ["Citibank", "Citigroup"]
+    records = run_module._compute_and_write_concentration_metrics(
+        parsed_by_variant={"all_programs": {"totals": totals}}, run_dir=tmp_path
+    )
+    csv_path = tmp_path / "concentration_metrics.csv"
+    with csv_path.open(newline="", encoding="utf-8") as source:
+        csv_rows = list(csv.DictReader(source))
+    assert len(records) == len(csv_rows) == 6
+    for record, csv_row in zip(records, csv_rows, strict=True):
+        expected = 1.0 if record["segment"] in {"Equity", "total"} else 0.0
+        for metric in ("top5_share", "top10_share", "hhi"):
+            assert record[metric] == pytest.approx(expected)
+            assert float(csv_row[metric]) == pytest.approx(expected)
+    deck_path = tmp_path / "concentration.pptx"
+    Presentation().save(deck_path)
+    append_concentration_table_slide(deck_path, records)
+    table = next(
+        shape.table for shape in Presentation(deck_path).slides[-1].shapes if shape.has_table
+    )
+    for index, record in enumerate(records, start=1):
+        assert table.cell(index, 2).text == f"{record['top5_share']:.2%}"
+        assert table.cell(index, 3).text == f"{record['top10_share']:.2%}"
+        assert table.cell(index, 4).text == f"{record['hhi']:.4f}"
+    builder = ManifestBuilder(
+        config=_minimal_workflow_config(tmp_path),
+        as_of_date=date(2025, 12, 31),
+        run_date=date(2026, 1, 2),
+    )
+    manifest = builder.build(
+        run_dir=tmp_path,
+        input_hashes={},
+        output_paths=[csv_path, deck_path],
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        concentration_metrics=records,
+    )
+    manifest_path = builder.write(run_dir=tmp_path, manifest=manifest)
+    assert json.loads(manifest_path.read_text())["concentration_metrics"] == records
 
 
 def test_limit_exposure_rows_scope_clearing_house_percent_to_futures_rows() -> None:

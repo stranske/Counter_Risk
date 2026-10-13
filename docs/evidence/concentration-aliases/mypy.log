@@ -1,0 +1,2 @@
+pyproject.toml: note: unused section(s): module = ['counter_risk.chat.context', 'pdfplumber', 'pypdf', 'scripts.*', 'stranske_pdf_extract', 'tests.*']
+Success: no issues found in 2 source files
