@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/counter-refresh-20261013
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 25 items / 19 deselected / 6 selected
+
+tests/pipeline/test_monthly_pipeline_ppt_outputs.py ......               [100%]
+
+- generated xml file: /Users/teacher/.codex/automations/pd-workloop-resume/run-20261013T0857Z/refresh-restored.xml -
+======================= 6 passed, 19 deselected in 0.77s =======================

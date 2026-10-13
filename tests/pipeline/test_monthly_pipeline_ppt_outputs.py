@@ -8,6 +8,7 @@ import shutil
 from datetime import date
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
 from pptx import Presentation
@@ -54,6 +55,109 @@ def _build_config(
         enable_ppt_output=enable_ppt_output,
         enable_distribution_output=enable_distribution_output,
     )
+
+
+@pytest.mark.parametrize("selection", ["enabled", "disabled", "omitted"])
+@pytest.mark.parametrize("distribution_enabled", [True, False])
+@pytest.mark.parametrize("use_legacy_fallback", [False, True])
+def test_configured_refresh_respects_generator_selection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    selection: str,
+    distribution_enabled: bool,
+    use_legacy_fallback: bool,
+) -> None:
+    config = _build_config(
+        tmp_path, enable_ppt_output=True, enable_distribution_output=distribution_enabled
+    )
+    config = config.model_copy(
+        update={
+            "output_generators": tuple(
+                (
+                    registration.model_copy(update={"enabled": selection == "enabled"})
+                    if registration.name == "ppt_link_refresh"
+                    else registration
+                )
+                for registration in config.output_generators
+                if selection != "omitted" or registration.name != "ppt_link_refresh"
+            )
+        }
+    )
+    calls: list[Path] = []
+
+    def refresh(path: Path) -> run_module.PptProcessingResult:
+        calls.append(path)
+        return run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", refresh)
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    warnings: list[str] = []
+    if use_legacy_fallback:
+        registry = run_module._build_output_generator_registry(warnings=warnings)
+        load = registry.load
+        monkeypatch.setattr(
+            registry,
+            "load",
+            Mock(
+                side_effect=lambda **kwargs: (
+                    () if kwargs["stage"] == "ppt_refresh" else load(**kwargs)
+                )
+            ),
+        )
+        monkeypatch.setattr(
+            run_module, "_build_output_generator_registry", lambda *, warnings: registry
+        )
+    outputs, result = run_module._write_outputs(
+        run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=warnings
+    )
+    enabled = selection == "enabled"
+    names = resolve_ppt_output_names(date(2025, 12, 31))
+    assert calls == [run_dir / names.master_filename] if enabled else calls == []
+    assert result.status == (
+        run_module.PptProcessingStatus.SUCCESS
+        if enabled
+        else run_module.PptProcessingStatus.SKIPPED
+    )
+    builder = ManifestBuilder(
+        config=config, as_of_date=date(2025, 12, 31), run_date=date(2026, 1, 2)
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=outputs,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=warnings,
+        ppt_status=result.status.value,
+        ppt_outputs=result.ppt_outputs,
+    )
+    manifest_path = builder.write(run_dir=run_dir, manifest=manifest)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["ppt_status"] == result.status.value
+    master = manifest["ppt_outputs"]["master"]
+    if enabled:
+        assert master["status"] == "success"
+        assert "skipped_reason" not in master
+    else:
+        assert result.error_detail and "disabled or omitted" in result.error_detail
+        assert master["status"] == "skipped"
+        assert master["skipped_reason"] == result.error_detail
+    assert manifest["ppt_outputs"]["distribution"]["status"] == (
+        "success" if distribution_enabled else "skipped"
+    )
+    codes = {finding["code"] for finding in manifest["data_quality"]["findings"]}
+    assert ("PPT_LINK_REFRESH_SKIPPED" in codes) is not enabled
+    assert "PPT_LINK_REFRESH_FAILED" not in codes
+    assert "PPT_GENERATION_FAILED" not in codes
+    summary = (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text(encoding="utf-8")
+    assert ("PPT_LINK_REFRESH_SKIPPED" in summary) is not enabled
+    assert ("Master PowerPoint link refresh was skipped." in summary) is not enabled
+    assert ("Distribution PowerPoint was generated" in summary) is (
+        not enabled and distribution_enabled
+    )
+    assert "PPT_GENERATION_FAILED" not in summary
+    assert not any("refresh failed" in warning for warning in warnings)
 
 
 @pytest.mark.parametrize("explicit_outputs", [True, False])
@@ -318,6 +422,31 @@ def test_master_refresh_failure_logs_error_and_skips_distribution_derivation(
         path.name != "Monthly Counterparty Exposure Report - 2025-12-31.pptx"
         for path in output_paths
     )
+    builder = ManifestBuilder(
+        config=config, as_of_date=date(2025, 12, 31), run_date=date(2026, 1, 2)
+    )
+    manifest = builder.build(
+        run_dir=run_dir,
+        input_hashes={},
+        output_paths=output_paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status=ppt_result.status.value,
+        ppt_outputs=ppt_result.ppt_outputs,
+    )
+    manifest_path = builder.write(run_dir=run_dir, manifest=manifest)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["ppt_status"] == "failed"
+    assert manifest["ppt_outputs"]["master"]["status"] == "failed"
+    assert "skipped_reason" not in manifest["ppt_outputs"]["master"]
+    assert "refresh failed" in manifest["ppt_outputs"]["distribution"]["skipped_reason"]
+    codes = {finding["code"] for finding in manifest["data_quality"]["findings"]}
+    assert "PPT_GENERATION_FAILED" in codes
+    assert "PPT_LINK_REFRESH_SKIPPED" not in codes
+    summary = (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text(encoding="utf-8")
+    assert "PPT_GENERATION_FAILED" in summary
+    assert "PPT_LINK_REFRESH_SKIPPED" not in summary
 
 
 def test_ppt_enabled_order_master_generated_before_distribution(

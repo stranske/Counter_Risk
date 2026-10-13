@@ -383,7 +383,7 @@ def test_write_outputs_raises_when_distribution_standalone_validation_fails(
     assert called["validate_distribution"] == 1
 
 
-def test_write_outputs_runs_master_refresh_even_when_refresh_generator_is_disabled(
+def test_write_outputs_skips_master_refresh_when_refresh_generator_is_disabled(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     run_dir = tmp_path / "run"
@@ -403,11 +403,11 @@ def test_write_outputs_runs_master_refresh_even_when_refresh_generator_is_disabl
 
     def _unexpected_refresh(_path: Path) -> run_module.PptProcessingResult:
         called["refresh"] += 1
-        return run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+        raise AssertionError("PPT refresh should not run when its generator is disabled")
 
     monkeypatch.setattr(run_module, "_refresh_ppt_links", _unexpected_refresh)
 
-    output_paths, _ppt_result = run_module._write_outputs(
+    output_paths, ppt_result = run_module._write_outputs(
         run_dir=run_dir,
         config=config,
         as_of_date=date(2025, 12, 31),
@@ -415,7 +415,9 @@ def test_write_outputs_runs_master_refresh_even_when_refresh_generator_is_disabl
     )
 
     output_names = resolve_ppt_output_names(date(2025, 12, 31))
-    assert called["refresh"] == 1
+    assert called["refresh"] == 0
+    assert ppt_result.status is run_module.PptProcessingStatus.SKIPPED
+    assert ppt_result.error_detail == "ppt_link_refresh output generator is disabled or omitted."
     assert (run_dir / output_names.master_filename) in output_paths
     assert (run_dir / output_names.distribution_filename) in output_paths
 

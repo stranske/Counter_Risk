@@ -1,0 +1,24 @@
+{
+  "source": "src/counter_risk/pipeline/run.py",
+  "before_sha256": "c5a2d3ca3397b628948cfb9ea1d7c699b8c5e23199cb3832ed911a300f8ae3b1",
+  "restored_sha256": "c5a2d3ca3397b628948cfb9ea1d7c699b8c5e23199cb3832ed911a300f8ae3b1",
+  "command": [
+    "/Users/teacher/Library/CloudStorage/Dropbox/Learning/Code/Counter_Risk/.venv/bin/python",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_monthly_pipeline_ppt_outputs.py",
+    "-k",
+    "configured_refresh",
+    "-q"
+  ],
+  "results": [
+    {
+      "phase": "production-guard-removed",
+      "exit": 1
+    },
+    {
+      "phase": "byte-identical-restored",
+      "exit": 0
+    }
+  ]
+}

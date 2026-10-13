@@ -1,0 +1,19 @@
+{
+  "refresh-baseline.log": "5c0aff6ab9753f89d11970eedcd0080c323a7809d1349d5282b13a8ac3e531ef",
+  "refresh-baseline.xml": "8f93fbb065c43c29db75b84d0bf3508a4ef8caf91397acb93f6a93a6bdb7fdce",
+  "refresh-green.log": "20640806444897862d4ea95a3c33226cef55a6809e50620031bdc1a45c4ed6ae",
+  "refresh-green.xml": "250543f78a02fd0da2c420cb2d941f04cc2e2d920d50bb4adb02957d8d35558a",
+  "refresh-red.log": "72ba198c5823ba62713edbaad75644a1a92272abd0b77066999d157925b9d152",
+  "refresh-red.xml": "35fb08a36e30afae20fd05afed17196be58c10a7ae21fa3f8086fa14dd8135c3",
+  "refresh-restored.log": "6938c9de780602ed97009eebfbdd06c5809b0c1496fad2e3ef17453443da2ace",
+  "refresh-restored.xml": "d48e0a1df7119cfe8ff80411d071265406bdd1b263863bd3fcd1cc98649e7556",
+  "standalone-green.log": "e6bde102ec1c266795bc417cebb5e23558642b9f5af203bc243ac764a07f88ee",
+  "standalone-green.xml": "1a2e964816925ea0eb39a3378eb496922a3a7cdd534857e41c3c4dfdd52efb46",
+  "refresh-mutation.json": "904a46b8377f6c8a5d33b8d667f88076028a50b0b340d1eb1dd07893890e6b2e",
+  "refresh-mypy.log": "87e4dc994cfbd3f69613cb3bbd8ef3c599de7c1242387267ee206bdbfb9e7567",
+  "refresh-black.log": "58fecb2ac27b3410508cb4f6019893328b3632542de1b53cd52fef26b2457222",
+  "refresh-ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+  "src/counter_risk/pipeline/run.py": "c5a2d3ca3397b628948cfb9ea1d7c699b8c5e23199cb3832ed911a300f8ae3b1",
+  "tests/pipeline/test_monthly_pipeline_ppt_outputs.py": "c42ddbcb8819ccc6f11eca90c8b47d4f4aa806d6fa67abb2b1e13035ac69828f",
+  "tests/outputs/test_ppt_link_refresh.py": "f163a0938baac2afcf9d41c422a384897ea6d63c1e92f9f46b63605ca4f27fa8"
+}

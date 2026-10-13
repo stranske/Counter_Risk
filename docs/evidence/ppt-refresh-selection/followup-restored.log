@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, langsmith-0.14.8, platformdirs-4.13.0, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 31 items / 19 deselected / 12 selected
+
+tests/pipeline/test_monthly_pipeline_ppt_outputs.py ............         [100%]
+
+- generated xml file: /home/runner/work/Counter_Risk/Counter_Risk/docs/evidence/ppt-refresh-selection/followup-restored.xml -
+====================== 12 passed, 19 deselected in 1.45s =======================
