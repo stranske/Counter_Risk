@@ -11,7 +11,7 @@ anyio==4.12.1
     #   openai
 ast-serialize==0.12.1
     # via mypy
-black==26.10.0
+black==26.10.1
     # via counter-risk (pyproject.toml)
 certifi==2026.2.25
     # via
@@ -196,7 +196,7 @@ requests==2.32.5
     #   tiktoken
 requests-toolbelt==1.0.0
     # via langsmith
-ruff==0.16.10
+ruff==0.17.0
     # via counter-risk (pyproject.toml)
 six==1.17.0
     # via python-dateutil
