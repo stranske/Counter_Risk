@@ -334,3 +334,27 @@ between them. `src/counter_risk/parsers/cprs_fcm.py` is not modified by
 this follow-up; its variant Scope guards (`:152` totals, `:215` futures)
 remain the deliberate-break target already logged in
 `docs/evidence/issue-1160/muse-round-deliberate-break.log`.
+
+## Muse keepalive mapping follow-up (cprs_fcm producer boundary)
+
+The known-instance mapping is now pinned at the producer named by the task,
+`src/counter_risk/parsers/cprs_fcm.py`, by new
+`test_boundary_audit_cprs_fcm_known_instances_map_to_approved_work` in
+`tests/compute/test_limits.py`:
+
+| Known instance | Producer contract at `cprs_fcm.py` | Approved work | Uncovered gap returned |
+| --- | --- | --- | --- |
+| Registered FCM/clearing-house + counterparty alias loss | Parser preserves raw spellings (`Bank of America, NA`, `CME Clearing House`, `Citibank`/`Citigroup`) as separate signed rows; it does not merge, net (60/-40), or canonicalise | #1168 canonicalisation in `compute/limits.py` | None at parser |
+| Overlapping-subset (All Programs vs Trend/Ex Trend) scope loss | Scope guards `:152` (Trend totals empty) and `:215` (Ex Trend futures empty); retained sections carry scaled source rows; only `all_programs` reaches `_build_limit_exposure_rows` | #1170, policy #1161 | None at parser |
+
+Returned for human review, without filing issues and without bundled
+production repairs: only the pre-existing report-only unknowns U1-U5
+above. They are not parser gaps, are not reclassified as defects, and are
+not asserted by the new test. `cprs_fcm.py` itself is unchanged.
+
+Deliberate-break gate for this mapping check: disconnecting the Trend
+totals Scope guard at `cprs_fcm.py:152` made the new test fail (1 failed;
+Trend totals leaked 6000/-3000/9000 rows); restored byte-identical
+(`git diff --exit-code -- src` clean) and the full limits file reran
+**106 passed** (105 prior + 1 mapping). Recorded in
+`docs/evidence/issue-1160/muse-round-deliberate-break.log`.

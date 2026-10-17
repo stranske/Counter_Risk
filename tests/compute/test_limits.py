@@ -1018,6 +1018,70 @@ def test_boundary_audit_parser_variant_scope(
     ), f"{variant} must exclude {excluded_section} before numerical consumers receive rows"
 
 
+def test_boundary_audit_cprs_fcm_known_instances_map_to_approved_work(
+    boundary_parsed_workbooks: dict[str, dict[str, Any]],
+) -> None:
+    """Map the two known instances at their ``cprs_fcm.py`` producer boundary.
+
+    Alias instance (approved work #1168, in ``compute/limits.py``): the
+    parser must preserve raw registered-alias spellings as separate signed
+    rows; canonicalisation happens downstream, not in the parser. If the
+    parser merged, netted, or canonicalised here, the downstream alias cap
+    would see different rows. Overlapping-subset instance (approved work
+    #1170, policy #1161): the parser Scope guards at
+    ``parsers/cprs_fcm.py:152`` (Trend totals) and ``:215`` (Ex Trend
+    futures) must exclude the out-of-scope section before any consumer
+    sees it, so only All Programs rows reach limits. No uncovered parser
+    gap is returned by this mapping: U1-U5 remain report-only unknowns and
+    are not asserted here, and no production fix is bundled.
+    """
+    totals = _as_records(boundary_parsed_workbooks["all_programs"]["totals"])
+    by_counterparty = {row["counterparty"]: row for row in totals}
+    assert set(by_counterparty) == {"Citibank", "Citigroup", "Other"}, (
+        "parser must keep registered counterparty aliases as separate source rows "
+        "for downstream canonicalisation (#1168)"
+    )
+    assert by_counterparty["Citibank"]["Notional"] == pytest.approx(60.0)
+    assert by_counterparty["Citigroup"]["Notional"] == pytest.approx(-40.0), (
+        "alias rows must retain signed notionals at the parser; gross-magnitude "
+        "aggregation is a limits consumer concern, not parser netting (60 + -40 != 20 here)"
+    )
+
+    futures = _as_records(boundary_parsed_workbooks["all_programs"]["futures"])
+    assert {row["fcm"] for row in futures} == {"Bank of America, NA", "Unknown FCM"}
+    assert {row["clearing_house"] for row in futures} == {
+        "CME Clearing House",
+        "ICE Clear U.S.",
+    }, "parser must emit raw FCM/clearing-house spellings, not canonical keys (#1168)"
+
+    # Overlapping-subset Scope guards (#1170): excluded sections are empty
+    # at the parser, retained sections carry their (scaled) source rows.
+    assert _as_records(boundary_parsed_workbooks["trend"]["totals"]) == [], (
+        "Trend totals Scope guard (cprs_fcm.py:152) must exclude totals; "
+        "disconnecting it must fail this mapped-instance check"
+    )
+    assert _as_records(boundary_parsed_workbooks["ex_trend"]["futures"]) == [], (
+        "Ex Trend futures Scope guard (cprs_fcm.py:215) must exclude futures; "
+        "disconnecting it must fail this mapped-instance check"
+    )
+    assert {
+        row["counterparty"] for row in _as_records(boundary_parsed_workbooks["ex_trend"]["totals"])
+    } == {
+        "Citibank",
+        "Citigroup",
+        "Other",
+    }
+    trend_futures = _as_records(boundary_parsed_workbooks["trend"]["futures"])
+    assert {row["notional"] for row in trend_futures} == {6000.0, -4000.0}
+
+    rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+    assert rows, "All Programs parser rows must reach the limit builder"
+    assert {row["variant"] for row in rows} == {"all_programs"}, (
+        "only the All Programs subset reaches limits; overlapping Trend/Ex Trend "
+        "parser rows add no exposure (#1170)"
+    )
+
+
 @pytest.mark.parametrize(
     "entity_type, canonical", [("fcm", "bank_of_america"), ("clearing_house", "cme")]
 )

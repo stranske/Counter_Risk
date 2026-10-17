@@ -30,3 +30,12 @@ test_boundary_audit_classification_intentional_aggregation_vs_segment_partition
 Disconnecting Trend totals guard at cprs_fcm.py:152:
 test_boundary_audit_parser_variant_scope 1 failed, 1 passed;
 restored (git diff --exit-code -- src clean); full file 105 passed.
+== Mapping follow-up deliberate-break (cprs_fcm producer boundary) ==
+New test: test_boundary_audit_cprs_fcm_known_instances_map_to_approved_work
+GREEN before break: 1 passed.
+Disconnecting Trend totals Scope guard at cprs_fcm.py:152:
+1 failed (Trend totals leaked Citibank 6000 / Citigroup -3000 / Other 9000
+rows into the mapped-instance assertion); exit 1.
+Restored byte-identical (git diff --exit-code -- src clean).
+GREEN after restore (full file): python -m pytest tests/compute/test_limits.py
+-q -m "not slow" = 106 passed.
