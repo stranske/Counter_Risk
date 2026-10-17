@@ -1112,6 +1112,7 @@ def test_boundary_audit_overlap_parser_to_limit(
 
 
 def test_boundary_audit_declared_contract_alias_and_overlap_combined(
+    tmp_path: Path,
     boundary_parsed_workbooks: dict[str, dict[str, Any]],
 ) -> None:
     """Alias-only and overlapping-subset probes must hold in one limit evaluation.
@@ -1156,6 +1157,22 @@ def test_boundary_audit_declared_contract_alias_and_overlap_combined(
             },
         ],
     }
+    from openpyxl import load_workbook
+
+    # Presence in the parsed subset is the positive control for exclusion.
+    subset_path = tmp_path / "boundary-ex-trend.xlsx"
+    workbook = load_workbook(subset_path)
+    sheet = workbook.active
+    assert sheet is not None
+    sheet.cell(14, 4, "Subset Only")
+    sheet.cell(14, 7, 9000.0)
+    sheet.cell(14, 12, 9000.0)
+    workbook.save(subset_path)
+    workbook.close()
+    boundary_parsed_workbooks["ex_trend"]["totals"] = parse_fcm_totals(subset_path)
+    assert "Subset Only" in {
+        row["counterparty"] for row in _as_records(boundary_parsed_workbooks["ex_trend"]["totals"])
+    }, "subset-only coverage evidence must come from the XLSX parser"
     rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
     assert {row["variant"] for row in rows} == {"all_programs"}
     breaches = _as_records(check_limits(rows, policy))
