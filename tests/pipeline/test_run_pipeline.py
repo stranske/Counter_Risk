@@ -6158,15 +6158,24 @@ def test_write_change_attribution_split_current_conservation(tmp_path: Path, sha
     assert all(row["confidence"] == "High" for row in report_rows)
 
 
-@pytest.mark.parametrize("cash_amount,explicit", [(1234567.0, False), (7654321.0, True)])
+@pytest.mark.parametrize(
+    "cash_amount,cash_override,explicit",
+    [
+        pytest.param(1234567.0, None, False, id="source-cash"),
+        pytest.param(7654321.0, None, True, id="explicit-image"),
+        pytest.param(1234567.0, 0.0, False, id="zero-override"),
+        pytest.param(1234567.0, -1234567.0, True, id="negative-override-explicit-image"),
+    ],
+)
 def test_screenshot_repo_cash_agrees_with_historical_and_totals(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     cprs_workflow_config: WorkflowConfig,
     cash_amount: float,
+    cash_override: float | None,
     explicit: bool,
 ) -> None:
-    """Exercise the real parse/cash/history/export/PPT call path with changed cash."""
+    """Exercise source cash and overrides through parse/history/export/PPT."""
     import yaml
     from openpyxl import load_workbook
     from PIL import Image
@@ -6176,6 +6185,11 @@ def test_screenshot_repo_cash_agrees_with_historical_and_totals(
     config = cprs_workflow_config
     assert config.cash_source_path is not None
     config.cash_source_path.write_text(f"counterparty,cash_value\nCIBC,{cash_amount}\n")
+    expected_cash = cash_amount if cash_override is None else cash_override
+    if cash_override is not None:
+        overrides = tmp_path / "cash-overrides.csv"
+        overrides.write_text(f"counterparty,cash_value\nCIBC,{cash_override}\n")
+        config = config.model_copy(update={"cash_overrides_csv": overrides})
     original_hashes = {path: _sha256(path) for path in (tmp_path / "inputs").iterdir()}
     explicit_image = tmp_path / "explicit.png"
     Image.new("RGB", (20, 20), "red").save(explicit_image)
@@ -6191,7 +6205,7 @@ def test_screenshot_repo_cash_agrees_with_historical_and_totals(
             workbook = load_workbook(workbook_path, data_only=True)
             try:
                 cash = [row[3] for row in workbook[sheet_name].values if row[2] == "CIBC"]
-                assert cash == [cash_amount], "exporter input disagrees with authoritative cash"
+                assert cash == [expected_cash], "exporter input disagrees with authoritative cash"
             finally:
                 workbook.close()
         assert workbook_path.resolve().is_relative_to((tmp_path / "run").resolve())
@@ -6221,7 +6235,7 @@ def test_screenshot_repo_cash_agrees_with_historical_and_totals(
     config_path.write_text(yaml.safe_dump(config.model_dump(mode="json")))
     run_dir = run_pipeline(config_path, output_dir=tmp_path / "run")
     assert len(seen) == 6
-    assert totals_cash == [cash_amount]
+    assert totals_cash == [expected_cash]
     historical = load_workbook(run_dir / config.hist_all_programs_3yr_xlsx.name, data_only=True)
     try:
         rows = list(historical["Cash"].values)
@@ -6230,7 +6244,7 @@ def test_screenshot_repo_cash_agrees_with_historical_and_totals(
         dated_rows = [
             row for row in rows if hasattr(row[0], "date") and row[0].date() == config.as_of_date
         ]
-        assert dated_rows[-1][cash_column] == cash_amount
+        assert dated_rows[-1][cash_column] == expected_cash
     finally:
         historical.close()
     from pptx import Presentation
