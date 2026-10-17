@@ -29,7 +29,7 @@ returncode = 1
         with monkeypatch.context() as context:
             context.setattr(tempfile, "mkdtemp", lambda **kwargs: str(raw))
             spec.loader.exec_module(proof)
-    
+
         command = ["git", "diff", "--exit-code", proof.BASELINE, "--", "src"]
         rejected_baseline = subprocess.CalledProcessError(returncode, command)
         git_run = Mock(side_effect=rejected_baseline)
@@ -40,19 +40,19 @@ returncode = 1
         monkeypatch.setattr(proof, "mutate", mutate)
         monkeypatch.setattr(proof, "run_suite", run_suite)
         monkeypatch.setattr(proof, "publish", publish)
-    
+
         with pytest.raises(subprocess.CalledProcessError) as raised:
             proof.main()
-    
+
         assert raised.value is rejected_baseline
 >       git_run.assert_called_once_with(command, cwd=proof.ROOT, capture_output=True, check=True)
 
-tests/docs/test_exposure_boundary_proof.py:45: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/docs/test_exposure_boundary_proof.py:45:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 /opt/anaconda3/lib/python3.12/unittest/mock.py:956: in assert_called_once_with
     return self.assert_called_with(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = <Mock id='4423882544'>
 args = (['git', 'diff', '--exit-code', 'f8871b2971d34b6d1b26df17fea1f9ef9cf079df', '--', 'src'],)
@@ -60,7 +60,7 @@ kwargs = {'cwd': PosixPath('<REPO>'), 'capture_output': True, 'check': True}
 
     def assert_called_with(self, /, *args, **kwargs):
         """assert that the last call was made with the specified arguments.
-    
+
         Raises an AssertionError if the args and keyword args passed in are
         different to the last call to the mock."""
         if self.call_args is None:
@@ -69,7 +69,7 @@ kwargs = {'cwd': PosixPath('<REPO>'), 'capture_output': True, 'check': True}
             error_message = ('expected call not found.\nExpected: %s\n  Actual: %s'
                     % (expected, actual))
             raise AssertionError(error_message)
-    
+
         def _error_message():
             msg = self._format_mock_failure_message(args, kwargs)
             return msg
@@ -104,7 +104,7 @@ returncode = 128
         with monkeypatch.context() as context:
             context.setattr(tempfile, "mkdtemp", lambda **kwargs: str(raw))
             spec.loader.exec_module(proof)
-    
+
         command = ["git", "diff", "--exit-code", proof.BASELINE, "--", "src"]
         rejected_baseline = subprocess.CalledProcessError(returncode, command)
         git_run = Mock(side_effect=rejected_baseline)
@@ -115,19 +115,19 @@ returncode = 128
         monkeypatch.setattr(proof, "mutate", mutate)
         monkeypatch.setattr(proof, "run_suite", run_suite)
         monkeypatch.setattr(proof, "publish", publish)
-    
+
         with pytest.raises(subprocess.CalledProcessError) as raised:
             proof.main()
-    
+
         assert raised.value is rejected_baseline
 >       git_run.assert_called_once_with(command, cwd=proof.ROOT, capture_output=True, check=True)
 
-tests/docs/test_exposure_boundary_proof.py:45: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/docs/test_exposure_boundary_proof.py:45:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 /opt/anaconda3/lib/python3.12/unittest/mock.py:956: in assert_called_once_with
     return self.assert_called_with(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = <Mock id='4424009632'>
 args = (['git', 'diff', '--exit-code', 'f8871b2971d34b6d1b26df17fea1f9ef9cf079df', '--', 'src'],)
@@ -135,7 +135,7 @@ kwargs = {'cwd': PosixPath('<REPO>'), 'capture_output': True, 'check': True}
 
     def assert_called_with(self, /, *args, **kwargs):
         """assert that the last call was made with the specified arguments.
-    
+
         Raises an AssertionError if the args and keyword args passed in are
         different to the last call to the mock."""
         if self.call_args is None:
@@ -144,7 +144,7 @@ kwargs = {'cwd': PosixPath('<REPO>'), 'capture_output': True, 'check': True}
             error_message = ('expected call not found.\nExpected: %s\n  Actual: %s'
                     % (expected, actual))
             raise AssertionError(error_message)
-    
+
         def _error_message():
             msg = self._format_mock_failure_message(args, kwargs)
             return msg
