@@ -1,0 +1,21 @@
+{
+  "base_revision": "d3cf9ebb82f80c5c86f6ac5a941470431cd3018b",
+  "test_argv": [
+    "/Users/teacher/Library/CloudStorage/Dropbox/Learning/Code/Counter_Risk/.venv/bin/python",
+    "-m",
+    "pytest",
+    "tests/compute/test_limits.py",
+    "-k",
+    "registered_futures_alias or clearing_house_split_alias",
+    "-q",
+    "-o",
+    "addopts="
+  ],
+  "red_exit": 1,
+  "restored_green_exit": 0,
+  "restored_sha256": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+  "base_sha256": "aae49315d36ff9f420369a203e11e9fa7ad88d5dc8069543b74086e4ce829da1",
+  "byte_identical_restore": true,
+  "actual_changed_scope": "src/counter_risk/compute/limits.py:_canonical_entity_key",
+  "issue_misanchor": "The issue names parsers/cprs_fcm.py for the break; that parser is unchanged. This control disconnects the actual Scope change in compute/limits.py."
+}

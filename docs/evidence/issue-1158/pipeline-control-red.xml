@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="76.827" timestamp="2026-10-16T20:43:26.442397-05:00" hostname="server.trs.private"><testcase classname="tests.pipeline.test_run_pipeline" name="test_limit_alias_pipeline_csv_and_manifest_are_identical_under_strict_missing" time="76.220"><failure message="RuntimeError: Pipeline failed during limit breach stage">config_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-4396/test_limit_alias_pipeline_csv_0/alias-1.yml')
+output_dir = None, formatting_profile = None
+
+    def run_pipeline(
+        config_path: str | Path,
+        *,
+        output_dir: Path | None = None,
+        formatting_profile: str | None = None,
+    ) -&gt; Path:
+        """Run the Counter Risk pipeline and return the output run directory."""
+    
+        LOGGER.info("pipeline_start config_path=%s", config_path)
+        workflow_trace_events: list[dict[str, Any]] = []
+    
+        def _record_stage_event(stage: str, *, started_at: float, status: str) -&gt; None:
+            duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+            workflow_trace_events.append(
+                {
+                    "stage": stage,
+                    "status": status,
+                    "latency_ms": duration_ms,
+                }
+            )
+    
+        try:
+            config = load_config(config_path)
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=config_load config_path=%s", config_path)
+            raise RuntimeError(f"Pipeline failed during config load: {config_path}") from exc
+    
+        try:
+            _validate_pipeline_config(config)
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=config_validate config_path=%s", config_path)
+            raise RuntimeError(f"Pipeline failed during config validation: {config_path}") from exc
+    
+        input_paths: dict[str, Path] = {}
+        missing_inputs: dict[str, Any] = {
+            "required": list(_REQUIRED_INPUT_FIELDS),
+            "missing_required": [],
+            "optional_missing": [],
+            "is_complete": True,
+        }
+        try:
+            input_paths = _resolve_input_paths(config)
+            missing_inputs = _build_missing_inputs_summary(config=config, input_paths=input_paths)
+            _validate_input_files(input_paths)
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=input_validation config_path=%s", config_path)
+            operator_message = _build_missing_input_operator_message(
+                missing_inputs=missing_inputs,
+                input_paths=input_paths,
+            )
+            raise RuntimeError(
+                f"Pipeline failed during input validation stage. {operator_message}"
+            ) from exc
+    
+        try:
+            cprs_headers = _collect_cprs_header_candidates(config=config)
+            as_of_date_resolution = resolve_as_of_date(config, cprs_headers)
+            run_date_resolution = resolve_run_date(config)
+            as_of_date = as_of_date_resolution.value
+            run_date = run_date_resolution.value
+            run_date_for_directory = config.run_date
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=date_derivation config_path=%s", config_path)
+            raise RuntimeError("Pipeline failed during date derivation stage") from exc
+    
+        try:
+            run_dir = _create_run_directory(
+                as_of_date=as_of_date,
+                run_date=run_date_for_directory,
+                output_dir=output_dir,
+            )
+        except Exception as exc:
+            LOGGER.exception(
+                "pipeline_failed stage=run_dir_setup run_dir=%s",
+                _resolve_repo_root() / "runs" / as_of_date.isoformat(),
+            )
+            raise RuntimeError("Pipeline failed during run directory setup stage") from exc
+    
+        warnings: list[str] = []
+        if as_of_date_resolution.source != AS_OF_SOURCE_CONFIG:
+            warnings.append(_date_resolution_fallback_warning(as_of_date_resolution.source))
+        resolved_formatting_profile = normalize_formatting_profile(formatting_profile)
+        _append_missing_inputs_warnings(missing_inputs=missing_inputs, warnings=warnings)
+        runtime_config = config
+        parse_stage_started_at = time.perf_counter()
+        try:
+            runtime_config = _prepare_runtime_config(
+                config=config,
+                run_dir=run_dir,
+                as_of_date=as_of_date,
+                warnings=warnings,
+            )
+            parsed_by_variant = _parse_inputs(_resolve_input_paths(runtime_config))
+            repo_cash_summary = _apply_daily_holdings_repo_cash(
+                config=runtime_config,
+                parsed_by_variant=parsed_by_variant,
+                warnings=warnings,
+                as_of_date=as_of_date,
+                config_dir=Path(config_path).resolve().parent,
+            )
+            _validate_parsed_inputs(parsed_by_variant)
+            reconciliation_outcome = _run_reconciliation_checks(
+                run_dir=run_dir,
+                config=runtime_config,
+                parsed_by_variant=parsed_by_variant,
+                warnings=warnings,
+            )
+            if reconciliation_outcome is None:
+                reconciliation_outcome = {}
+            _record_stage_event(
+                "data-quality-summary", started_at=parse_stage_started_at, status="success"
+            )
+        except Exception as exc:
+            _record_stage_event(
+                "data-quality-summary", started_at=parse_stage_started_at, status="error"
+            )
+            LOGGER.exception("pipeline_failed stage=parse_inputs run_dir=%s", run_dir)
+            operator_message = _build_parse_stage_operator_message(exc)
+            if operator_message:
+                raise RuntimeError(f"Pipeline failed during parse stage. {operator_message}") from exc
+            raise RuntimeError("Pipeline failed during parse stage") from exc
+    
+        try:
+            top_exposures, top_changes_per_variant = _compute_metrics(parsed_by_variant)
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=compute_metrics run_dir=%s", run_dir)
+            raise RuntimeError("Pipeline failed during compute stage") from exc
+    
+        concentration_metrics_records: list[dict[str, Any]] = []
+        concentration_metrics_output_paths: list[Path] = []
+        change_attribution_output_paths: list[Path] = []
+        risk_proxy_summary: dict[str, Any] = {}
+        risk_proxy_stage_started_at = time.perf_counter()
+        try:
+            risk_output_paths = _write_risk_outputs(
+                run_dir=run_dir,
+                parsed_by_variant=parsed_by_variant,
+                warnings=warnings,
+            )
+            risk_proxy_summary = _build_risk_proxy_summary(
+                parsed_by_variant=parsed_by_variant,
+                output_paths=risk_output_paths,
+            )
+            _record_stage_event(
+                "risk-proxy-outputs", started_at=risk_proxy_stage_started_at, status="success"
+            )
+        except Exception as exc:
+            _record_stage_event(
+                "risk-proxy-outputs", started_at=risk_proxy_stage_started_at, status="error"
+            )
+            LOGGER.exception("pipeline_failed stage=write_risk_outputs run_dir=%s", run_dir)
+            raise RuntimeError("Pipeline failed during risk output stage") from exc
+    
+        concentration_stage_started_at = time.perf_counter()
+        try:
+            concentration_metrics_records = _compute_and_write_concentration_metrics(
+                parsed_by_variant=parsed_by_variant,
+                run_dir=run_dir,
+            )
+            if concentration_metrics_records:
+                concentration_metrics_output_paths = [run_dir / "concentration_metrics.csv"]
+            _record_stage_event(
+                "concentration-metrics", started_at=concentration_stage_started_at, status="success"
+            )
+        except Exception as exc:
+            _record_stage_event(
+                "concentration-metrics", started_at=concentration_stage_started_at, status="error"
+            )
+            LOGGER.exception("pipeline_failed stage=concentration_metrics run_dir=%s", run_dir)
+            raise RuntimeError("Pipeline failed during concentration metrics stage") from exc
+    
+        try:
+            change_attribution_output_paths = _write_change_attribution_outputs(
+                run_dir=run_dir,
+                parsed_by_variant=parsed_by_variant,
+                warnings=warnings,
+            )
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=change_attribution run_dir=%s", run_dir)
+            raise RuntimeError("Pipeline failed during change attribution stage") from exc
+    
+        limit_stage_started_at = time.perf_counter()
+        try:
+&gt;           limit_breaches = _compute_and_write_limit_breaches(
+                parsed_by_variant=parsed_by_variant,
+                run_dir=run_dir,
+                warnings=warnings,
+            )
+
+src/counter_risk/pipeline/run.py:549: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+parsed_by_variant = {'all_programs': {'totals': &lt;test_run_pipeline._FakeDataFrame object at 0x1625972f0&gt;, 'futures': &lt;test_run_pipeline._F...n_pipeline._FakeDataFrame object at 0x162594530&gt;, 'cprs_ch': &lt;test_run_pipeline._FakeDataFrame object at 0x1656ad0a0&gt;}}
+run_dir = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-4396/test_limit_alias_pipeline_csv_0/runs/2025-12-31_1')
+warnings = ['Input validation: optional inputs unavailable (raw_nisa_all_programs_xlsx).', 'Repo Cash source is not configured (c...series present in historical headers but missing from parsed data (CME, Goldman Sachs, ICE, ICE Euro, JP Morgan)", ...]
+
+    def _compute_and_write_limit_breaches(
+        *,
+        parsed_by_variant: dict[str, dict[str, Any]],
+        run_dir: Path,
+        warnings: list[str],
+    ) -&gt; LimitBreachEvaluation:
+        """Compute limit breaches and write limit_breaches.csv when breaches exist."""
+    
+        # In a frozen PyInstaller build the source-tree repo-root layout does not
+        # exist, so search the bundle roots; in source mode keep resolving relative
+        # to the repository root (which tests monkeypatch via _resolve_repo_root).
+        if getattr(sys, "frozen", False):
+            limits_path = resolve_runtime_path("config/limits.yml")
+        else:
+            limits_path = _resolve_repo_root() / "config" / "limits.yml"
+        if not limits_path.exists():
+            LOGGER.info("limit_breaches_skipped missing_limits_config path=%s", limits_path)
+            return LimitBreachEvaluation(csv_path=None, breach_count=0)
+    
+        limits_cfg = load_limits_config(limits_path)
+        exposure_rows = _build_limit_exposure_rows(parsed_by_variant)
+        missing_limit_entities = find_missing_limit_entities(exposure_rows, limits_cfg)
+        if missing_limit_entities:
+            warning = _format_missing_limit_entities_warning(missing_limit_entities)
+            if limits_cfg.strict_missing_entities:
+&gt;               raise RuntimeError(
+                    "Configured limit entities are missing from exposures and strict_missing_entities "
+                    f"is enabled: {warning}"
+                )
+E               RuntimeError: Configured limit entities are missing from exposures and strict_missing_entities is enabled: Limit check warning: configured limit entities missing from exposure data; clearing_house:cme
+
+src/counter_risk/pipeline/run.py:2462: RuntimeError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-4396/test_limit_alias_pipeline_csv_0')
+fake_pandas = None
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x10bbc3e30&gt;
+
+    def test_limit_alias_pipeline_csv_and_manifest_are_identical_under_strict_missing(
+        tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+    ) -&gt; None:
+        fixtures = Path("tests/fixtures")
+        limits_path = tmp_path / "config" / "limits.yml"
+        limits_path.parent.mkdir()
+        limits_path.write_text(
+            "schema_version: 1\nstrict_missing_entities: true\nlimits:\n"
+            "  - entity_type: clearing_house\n    entity_name: cme\n"
+            "    limit_value: 0.35\n    limit_kind: percent_of_total\n",
+            encoding="utf-8",
+        )
+        _use_limit_config_path(monkeypatch, limits_path)
+        monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **kwargs: [])
+        monkeypatch.setattr(
+            run_module,
+            "_write_outputs",
+            lambda **kwargs: (
+                [],
+                run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SKIPPED),
+            ),
+        )
+        inputs = {
+            "mosers_all_programs_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
+            "mosers_ex_trend_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+            "mosers_trend_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+            "hist_all_programs_3yr_xlsx": "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+            "hist_ex_llc_3yr_xlsx": "Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+            "hist_llc_3yr_xlsx": "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+            "monthly_pptx": "Monthly Counterparty Exposure Report.pptx",
+        }
+        observed = []
+        for index, clearing_rows in enumerate(
+            [
+                [("CME", 60.0), ("ICE", 40.0)],
+                [("CME Clearing House", 60.0), ("ICE Clear U.S.", 40.0)],
+                [("CME", 30.0), ("CME Clearing House", 30.0), ("ICE Clear U.S.", 40.0)],
+            ]
+        ):
+            config_path = tmp_path / f"alias-{index}.yml"
+            config_path.write_text(
+                "as_of_date: 2025-12-31\n"
+                + "".join(f"{key}: {fixtures / name}\n" for key, name in inputs.items())
+                + f"output_root: {tmp_path / str(index)}\n",
+                encoding="utf-8",
+            )
+            parsed = {
+                variant: {
+                    "totals": _FakeDataFrame(
+                        records=[], columns=["counterparty", "Notional", "NotionalChange"]
+                    ),
+                    "futures": _FakeDataFrame(
+                        records=[
+                            {
+                                "account": f"account-{row}",
+                                "description": "fixture",
+                                "class": "Rates",
+                                "fcm": "fixture-fcm",
+                                "clearing_house": label,
+                                "notional": amount,
+                            }
+                            for row, (label, amount) in enumerate(clearing_rows)
+                        ]
+                    ),
+                }
+                for variant in ("all_programs", "ex_trend", "trend")
+            }
+            monkeypatch.setattr(
+                run_module, "_parse_inputs", lambda _, parsed=parsed: _with_cprs_ch(parsed)
+            )
+&gt;           run_dir = run_pipeline(config_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/pipeline/test_run_pipeline.py:6231: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+config_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-teacher/pytest-4396/test_limit_alias_pipeline_csv_0/alias-1.yml')
+output_dir = None, formatting_profile = None
+
+    def run_pipeline(
+        config_path: str | Path,
+        *,
+        output_dir: Path | None = None,
+        formatting_profile: str | None = None,
+    ) -&gt; Path:
+        """Run the Counter Risk pipeline and return the output run directory."""
+    
+        LOGGER.info("pipeline_start config_path=%s", config_path)
+        workflow_trace_events: list[dict[str, Any]] = []
+    
+        def _record_stage_event(stage: str, *, started_at: float, status: str) -&gt; None:
+            duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+            workflow_trace_events.append(
+                {
+                    "stage": stage,
+                    "status": status,
+                    "latency_ms": duration_ms,
+                }
+            )
+    
+        try:
+            config = load_config(config_path)
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=config_load config_path=%s", config_path)
+            raise RuntimeError(f"Pipeline failed during config load: {config_path}") from exc
+    
+        try:
+            _validate_pipeline_config(config)
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=config_validate config_path=%s", config_path)
+            raise RuntimeError(f"Pipeline failed during config validation: {config_path}") from exc
+    
+        input_paths: dict[str, Path] = {}
+        missing_inputs: dict[str, Any] = {
+            "required": list(_REQUIRED_INPUT_FIELDS),
+            "missing_required": [],
+            "optional_missing": [],
+            "is_complete": True,
+        }
+        try:
+            input_paths = _resolve_input_paths(config)
+            missing_inputs = _build_missing_inputs_summary(config=config, input_paths=input_paths)
+            _validate_input_files(input_paths)
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=input_validation config_path=%s", config_path)
+            operator_message = _build_missing_input_operator_message(
+                missing_inputs=missing_inputs,
+                input_paths=input_paths,
+            )
+            raise RuntimeError(
+                f"Pipeline failed during input validation stage. {operator_message}"
+            ) from exc
+    
+        try:
+            cprs_headers = _collect_cprs_header_candidates(config=config)
+            as_of_date_resolution = resolve_as_of_date(config, cprs_headers)
+            run_date_resolution = resolve_run_date(config)
+            as_of_date = as_of_date_resolution.value
+            run_date = run_date_resolution.value
+            run_date_for_directory = config.run_date
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=date_derivation config_path=%s", config_path)
+            raise RuntimeError("Pipeline failed during date derivation stage") from exc
+    
+        try:
+            run_dir = _create_run_directory(
+                as_of_date=as_of_date,
+                run_date=run_date_for_directory,
+                output_dir=output_dir,
+            )
+        except Exception as exc:
+            LOGGER.exception(
+                "pipeline_failed stage=run_dir_setup run_dir=%s",
+                _resolve_repo_root() / "runs" / as_of_date.isoformat(),
+            )
+            raise RuntimeError("Pipeline failed during run directory setup stage") from exc
+    
+        warnings: list[str] = []
+        if as_of_date_resolution.source != AS_OF_SOURCE_CONFIG:
+            warnings.append(_date_resolution_fallback_warning(as_of_date_resolution.source))
+        resolved_formatting_profile = normalize_formatting_profile(formatting_profile)
+        _append_missing_inputs_warnings(missing_inputs=missing_inputs, warnings=warnings)
+        runtime_config = config
+        parse_stage_started_at = time.perf_counter()
+        try:
+            runtime_config = _prepare_runtime_config(
+                config=config,
+                run_dir=run_dir,
+                as_of_date=as_of_date,
+                warnings=warnings,
+            )
+            parsed_by_variant = _parse_inputs(_resolve_input_paths(runtime_config))
+            repo_cash_summary = _apply_daily_holdings_repo_cash(
+                config=runtime_config,
+                parsed_by_variant=parsed_by_variant,
+                warnings=warnings,
+                as_of_date=as_of_date,
+                config_dir=Path(config_path).resolve().parent,
+            )
+            _validate_parsed_inputs(parsed_by_variant)
+            reconciliation_outcome = _run_reconciliation_checks(
+                run_dir=run_dir,
+                config=runtime_config,
+                parsed_by_variant=parsed_by_variant,
+                warnings=warnings,
+            )
+            if reconciliation_outcome is None:
+                reconciliation_outcome = {}
+            _record_stage_event(
+                "data-quality-summary", started_at=parse_stage_started_at, status="success"
+            )
+        except Exception as exc:
+            _record_stage_event(
+                "data-quality-summary", started_at=parse_stage_started_at, status="error"
+            )
+            LOGGER.exception("pipeline_failed stage=parse_inputs run_dir=%s", run_dir)
+            operator_message = _build_parse_stage_operator_message(exc)
+            if operator_message:
+                raise RuntimeError(f"Pipeline failed during parse stage. {operator_message}") from exc
+            raise RuntimeError("Pipeline failed during parse stage") from exc
+    
+        try:
+            top_exposures, top_changes_per_variant = _compute_metrics(parsed_by_variant)
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=compute_metrics run_dir=%s", run_dir)
+            raise RuntimeError("Pipeline failed during compute stage") from exc
+    
+        concentration_metrics_records: list[dict[str, Any]] = []
+        concentration_metrics_output_paths: list[Path] = []
+        change_attribution_output_paths: list[Path] = []
+        risk_proxy_summary: dict[str, Any] = {}
+        risk_proxy_stage_started_at = time.perf_counter()
+        try:
+            risk_output_paths = _write_risk_outputs(
+                run_dir=run_dir,
+                parsed_by_variant=parsed_by_variant,
+                warnings=warnings,
+            )
+            risk_proxy_summary = _build_risk_proxy_summary(
+                parsed_by_variant=parsed_by_variant,
+                output_paths=risk_output_paths,
+            )
+            _record_stage_event(
+                "risk-proxy-outputs", started_at=risk_proxy_stage_started_at, status="success"
+            )
+        except Exception as exc:
+            _record_stage_event(
+                "risk-proxy-outputs", started_at=risk_proxy_stage_started_at, status="error"
+            )
+            LOGGER.exception("pipeline_failed stage=write_risk_outputs run_dir=%s", run_dir)
+            raise RuntimeError("Pipeline failed during risk output stage") from exc
+    
+        concentration_stage_started_at = time.perf_counter()
+        try:
+            concentration_metrics_records = _compute_and_write_concentration_metrics(
+                parsed_by_variant=parsed_by_variant,
+                run_dir=run_dir,
+            )
+            if concentration_metrics_records:
+                concentration_metrics_output_paths = [run_dir / "concentration_metrics.csv"]
+            _record_stage_event(
+                "concentration-metrics", started_at=concentration_stage_started_at, status="success"
+            )
+        except Exception as exc:
+            _record_stage_event(
+                "concentration-metrics", started_at=concentration_stage_started_at, status="error"
+            )
+            LOGGER.exception("pipeline_failed stage=concentration_metrics run_dir=%s", run_dir)
+            raise RuntimeError("Pipeline failed during concentration metrics stage") from exc
+    
+        try:
+            change_attribution_output_paths = _write_change_attribution_outputs(
+                run_dir=run_dir,
+                parsed_by_variant=parsed_by_variant,
+                warnings=warnings,
+            )
+        except Exception as exc:
+            LOGGER.exception("pipeline_failed stage=change_attribution run_dir=%s", run_dir)
+            raise RuntimeError("Pipeline failed during change attribution stage") from exc
+    
+        limit_stage_started_at = time.perf_counter()
+        try:
+            limit_breaches = _compute_and_write_limit_breaches(
+                parsed_by_variant=parsed_by_variant,
+                run_dir=run_dir,
+                warnings=warnings,
+            )
+            _record_stage_event("limit-monitoring", started_at=limit_stage_started_at, status="success")
+        except Exception as exc:
+            _record_stage_event("limit-monitoring", started_at=limit_stage_started_at, status="error")
+            LOGGER.exception("pipeline_failed stage=limit_breaches run_dir=%s", run_dir)
+&gt;           raise RuntimeError("Pipeline failed during limit breach stage") from exc
+E           RuntimeError: Pipeline failed during limit breach stage
+
+src/counter_risk/pipeline/run.py:558: RuntimeError</failure></testcase></testsuite></testsuites>

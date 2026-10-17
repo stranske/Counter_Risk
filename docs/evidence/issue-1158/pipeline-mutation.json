@@ -1,0 +1,15 @@
+{
+  "red_exit": 1,
+  "green_exit": 0,
+  "byte_identical_restore": true,
+  "fixed_sha256": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+  "argv": [
+    "/Users/teacher/Library/CloudStorage/Dropbox/Learning/Code/Counter_Risk/.venv/bin/python",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_run_pipeline.py::test_limit_alias_pipeline_csv_and_manifest_are_identical_under_strict_missing",
+    "-q",
+    "-o",
+    "addopts="
+  ]
+}
