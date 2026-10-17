@@ -6158,15 +6158,37 @@ def test_write_change_attribution_split_current_conservation(tmp_path: Path, sha
     assert all(row["confidence"] == "High" for row in report_rows)
 
 
+@pytest.mark.parametrize(
+    ("entity_type", "canonical_key", "display_name", "alias", "other_name", "other_alias"),
+    [
+        ("clearing_house", "cme", "CME", "CME Clearing House", "ICE", "ICE Clear U.S."),
+        (
+            "fcm",
+            "bank_of_america",
+            "Bank of America",
+            "Bank of America, NA",
+            "Goldman Sachs",
+            "Goldman Sachs Int'l",
+        ),
+    ],
+)
 def test_limit_alias_pipeline_csv_and_manifest_are_identical_under_strict_missing(
-    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
+    fake_pandas: None,
+    monkeypatch: pytest.MonkeyPatch,
+    entity_type: str,
+    canonical_key: str,
+    display_name: str,
+    alias: str,
+    other_name: str,
+    other_alias: str,
 ) -> None:
     fixtures = Path("tests/fixtures")
     limits_path = tmp_path / "config" / "limits.yml"
     limits_path.parent.mkdir()
     limits_path.write_text(
         "schema_version: 1\nstrict_missing_entities: true\nlimits:\n"
-        "  - entity_type: clearing_house\n    entity_name: cme\n"
+        f"  - entity_type: {entity_type}\n    entity_name: {canonical_key}\n"
         "    limit_value: 0.35\n    limit_kind: percent_of_total\n",
         encoding="utf-8",
     )
@@ -6193,11 +6215,11 @@ def test_limit_alias_pipeline_csv_and_manifest_are_identical_under_strict_missin
         "monthly_pptx": "Monthly Counterparty Exposure Report.pptx",
     }
     observed = []
-    for index, clearing_rows in enumerate(
+    for index, entity_rows in enumerate(
         [
-            [("CME", 60.0), ("ICE", 40.0)],
-            [("CME Clearing House", 60.0), ("ICE Clear U.S.", 40.0)],
-            [("CME", 30.0), ("CME Clearing House", 30.0), ("ICE Clear U.S.", 40.0)],
+            [(display_name, 60.0), (other_name, 40.0)],
+            [(alias, 60.0), (other_alias, 40.0)],
+            [(display_name, 30.0), (alias, 30.0), (other_alias, 40.0)],
         ]
     ):
         config_path = tmp_path / f"alias-{index}.yml"
@@ -6219,10 +6241,11 @@ def test_limit_alias_pipeline_csv_and_manifest_are_identical_under_strict_missin
                             "description": "fixture",
                             "class": "Rates",
                             "fcm": "fixture-fcm",
-                            "clearing_house": label,
+                            "clearing_house": "fixture-clearing-house",
+                            entity_type: label,
                             "notional": amount,
                         }
-                        for row, (label, amount) in enumerate(clearing_rows)
+                        for row, (label, amount) in enumerate(entity_rows)
                     ]
                 ),
             }
