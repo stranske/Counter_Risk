@@ -119,6 +119,20 @@ def test_generates_screenshot_for_each_configured_variant_and_table_adjusted(
     } == original_hashes
 
 
+def test_adjusted_exporter_route_keeps_deliberate_break_needle() -> None:
+    """Lock the unique loop the issue-1159 verify_break mutation rewrites."""
+    source = Path(run_module.__file__).read_bytes()
+    needle = b"    for variant, workbook_path in workbook_paths.items():\n"
+    broken_route = (
+        b"    for variant, workbook_field in _CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT.items():\n"
+        b"        workbook_path = getattr(config, workbook_field)\n"
+        b"        if workbook_path is None:\n"
+        b"            continue\n"
+    )
+    assert source.count(needle) == 1
+    assert broken_route not in source
+
+
 def test_skips_variant_without_configured_workbook(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

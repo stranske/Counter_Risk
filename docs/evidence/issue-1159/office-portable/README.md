@@ -32,12 +32,11 @@ New smoke command:
 pytest tests/test_pipeline_screenshot_replacement.py -k cash_change -m "not slow" --basetemp=/tmp/counter-risk-cash-media --junitxml=/tmp/counter-risk-cash-media.xml
 ```
 
-Result: **1 passed, 1 skipped, 12 deselected** in 189.03 seconds.
-`portable-smoke.xml` records the outcome. `cash-media-evidence.json` contains
-the two cash amounts, six unchanged input SHA-256 values and changed hashes for
-all four delivered slide images. It identifies `portable-test-double` and is
-not native rendering evidence. Complete run artifacts remain under
-`/tmp/counter-risk-cash-media/` on this execution seat.
+Result: **1 passed, 1 skipped, 12 deselected** (refreshed on current HEAD).
+`cash-media-evidence.json` now includes `literal_authoritative_cash_reference_matches`
+plus the two cash amounts, six unchanged input SHA-256 values, and changed hashes
+for all four delivered slide images. It identifies `portable-test-double` and is
+not native rendering evidence.
 
 Black's required repository-wide command passes for all 379 files (`black.log`).
 The sandbox denies default process workers and can stall event-loop wakeups.

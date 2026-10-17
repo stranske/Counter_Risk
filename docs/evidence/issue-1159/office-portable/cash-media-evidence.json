@@ -28,6 +28,5 @@
   ],
   "generated_images_embedded": true,
   "decoded_pixels_changed": true,
-  "historical_note": "Historical portable-smoke capture from before literal_authoritative_cash_reference_matches was recorded. decoded_pixels_changed remains the attested media delta; re-run the Office/portable smoke to refresh this report.",
-  "report_status": "historical"
+  "literal_authoritative_cash_reference_matches": true
 }

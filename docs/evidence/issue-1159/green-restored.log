@@ -1,25 +1,22 @@
 ============================= test session starts ==============================
-platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0 -- /opt/anaconda3/bin/python3
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.14.8/x64/bin/python
 cachedir: .pytest_cache
-hypothesis profile 'default'
-rootdir: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1159__opener
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
 configfile: pyproject.toml
-plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
-asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 10 items / 8 deselected / 2 selected
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collecting ... collected 19 items / 8 deselected / 11 selected
 
-tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted PASSED [ 50%]
-tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates PASSED [100%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[None] PASSED [  9%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[7654321] PASSED [ 18%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[0] PASSED [ 27%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[-1234567] PASSED [ 36%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates PASSED [ 45%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_snapshot_reports_missing_repo_segment PASSED [ 54%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_keeps_cash_column_when_tips_header_missing PASSED [ 63%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_reports_missing_ch_cash_and_tips_columns PASSED [ 72%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_keeps_fcm_cash_when_tips_header_missing PASSED [ 81%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_reports_missing_fcm_cash_and_tips_columns PASSED [ 90%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results PASSED [100%]
 
-=============================== warnings summary ===============================
-tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted
-  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
-    from pandas.core.computation.check import NUMEXPR_INSTALLED
-
-tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted
-  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
-    from pandas.core import (
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-- generated xml file: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1159__opener/docs/evidence/issue-1159/gate.xml -
-================= 2 passed, 8 deselected, 2 warnings in 1.66s ==================
+- generated xml file: /home/runner/work/Counter_Risk/Counter_Risk/docs/evidence/issue-1159/gate.xml -
+======================= 11 passed, 8 deselected in 4.19s =======================
