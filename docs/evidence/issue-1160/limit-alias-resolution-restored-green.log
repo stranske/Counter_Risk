@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
+rootdir: <REPO>
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 103 items / 101 deselected / 2 selected
+
+tests/compute/test_limits.py ..                                          [100%]
+
+- generated xml file: <RAW>/limit-alias-resolution-restored-green.xml -
+====================== 2 passed, 101 deselected in 2.96s =======================

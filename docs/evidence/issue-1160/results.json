@@ -1,0 +1,297 @@
+{
+  "baseline_commit": "f8871b2971d34b6d1b26df17fea1f9ef9cf079df",
+  "checkout_commit": "ac2b1fe019b3b4c773aa759f30da479912939367",
+  "rounds": [
+    {
+      "name": "baseline-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/baseline-green.xml"
+      ],
+      "tests": 103,
+      "failures": 0,
+      "exit": 0
+    },
+    {
+      "name": "parser-trend-totals-scope-red",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-trend-totals-scope-red.xml",
+        "-k",
+        "boundary_audit_parser_variant_scope and trend-totals-futures"
+      ],
+      "tests": 1,
+      "failures": 1,
+      "exit": 1
+    },
+    {
+      "name": "parser-trend-totals-scope-restored-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-trend-totals-scope-restored-green.xml",
+        "-k",
+        "boundary_audit_parser_variant_scope and trend-totals-futures"
+      ],
+      "tests": 1,
+      "failures": 0,
+      "exit": 0
+    },
+    {
+      "name": "parser-ex-trend-futures-scope-red",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-ex-trend-futures-scope-red.xml",
+        "-k",
+        "boundary_audit_parser_variant_scope and ex_trend-futures-totals"
+      ],
+      "tests": 1,
+      "failures": 1,
+      "exit": 1
+    },
+    {
+      "name": "parser-ex-trend-futures-scope-restored-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-ex-trend-futures-scope-restored-green.xml",
+        "-k",
+        "boundary_audit_parser_variant_scope and ex_trend-futures-totals"
+      ],
+      "tests": 1,
+      "failures": 0,
+      "exit": 0
+    },
+    {
+      "name": "parser-futures-identity-red",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-futures-identity-red.xml",
+        "-k",
+        "boundary_audit_alias_only"
+      ],
+      "tests": 2,
+      "failures": 2,
+      "exit": 1
+    },
+    {
+      "name": "parser-futures-identity-restored-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-futures-identity-restored-green.xml",
+        "-k",
+        "boundary_audit_alias_only"
+      ],
+      "tests": 2,
+      "failures": 0,
+      "exit": 0
+    },
+    {
+      "name": "limit-alias-resolution-red",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/limit-alias-resolution-red.xml",
+        "-k",
+        "boundary_audit_alias_only"
+      ],
+      "tests": 2,
+      "failures": 2,
+      "exit": 1
+    },
+    {
+      "name": "limit-alias-resolution-restored-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/limit-alias-resolution-restored-green.xml",
+        "-k",
+        "boundary_audit_alias_only"
+      ],
+      "tests": 2,
+      "failures": 0,
+      "exit": 0
+    },
+    {
+      "name": "original-overlap-builder-red",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/original-overlap-builder-red.xml",
+        "-k",
+        "boundary_audit_overlap"
+      ],
+      "tests": 1,
+      "failures": 1,
+      "exit": 1
+    },
+    {
+      "name": "original-overlap-builder-restored-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/original-overlap-builder-restored-green.xml",
+        "-k",
+        "boundary_audit_overlap"
+      ],
+      "tests": 1,
+      "failures": 0,
+      "exit": 0
+    },
+    {
+      "name": "parser-totals-identity-red",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-totals-identity-red.xml",
+        "-k",
+        "boundary_audit_overlap or boundary_audit_partitioned"
+      ],
+      "tests": 2,
+      "failures": 2,
+      "exit": 1
+    },
+    {
+      "name": "parser-totals-identity-restored-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-totals-identity-restored-green.xml",
+        "-k",
+        "boundary_audit_overlap or boundary_audit_partitioned"
+      ],
+      "tests": 2,
+      "failures": 0,
+      "exit": 0
+    },
+    {
+      "name": "concentration-partition-red",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/concentration-partition-red.xml",
+        "-k",
+        "boundary_audit_partitioned"
+      ],
+      "tests": 1,
+      "failures": 1,
+      "exit": 1
+    },
+    {
+      "name": "concentration-partition-restored-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/concentration-partition-restored-green.xml",
+        "-k",
+        "boundary_audit_partitioned"
+      ],
+      "tests": 1,
+      "failures": 0,
+      "exit": 0
+    },
+    {
+      "name": "acceptance-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/acceptance-green.xml"
+      ],
+      "tests": 103,
+      "failures": 0,
+      "exit": 0
+    }
+  ],
+  "restored_byte_identical": true,
+  "production_matches_git_baseline": true,
+  "source_hashes_after": {
+    "src/counter_risk/parsers/cprs_fcm.py": "fb9e3b8c9ab063d17022ff63761414800b81c25aa5831cde3aad45cac99b79d9",
+    "src/counter_risk/pipeline/run.py": "f0a6e7893025ed2246ee4120a403573fe8120fcc0f1c7dacc9457cd6b2dec1b7",
+    "src/counter_risk/compute/limits.py": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82"
+  }
+}

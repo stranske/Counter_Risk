@@ -1,0 +1,50 @@
+{
+  "mutations": [
+    {
+      "name": "missing-junit",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/docs/test_exposure_boundary_proof.py",
+        "-k",
+        "pytest_startup_failure",
+        "--no-cov",
+        "-q"
+      ],
+      "red_exit": 1,
+      "green_exit": 0,
+      "assertion_failures": 1,
+      "original_sha256": "28c055cc9af2863bceaa6a3393236ad3ced78e8bdb3d98eeca60e6ec330aad24",
+      "mutant_sha256": "a8d42f9e0ac93ade0afbd0c9c906275457c0fdb008cc1d7aad94315b6f8f17c2",
+      "restored_sha256": "28c055cc9af2863bceaa6a3393236ad3ced78e8bdb3d98eeca60e6ec330aad24",
+      "failure_testcases": [
+        "test_pytest_startup_failure_retains_status_and_published_log"
+      ]
+    },
+    {
+      "name": "source-baseline",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/docs/test_exposure_boundary_proof.py",
+        "-k",
+        "dirty_source_gate",
+        "--no-cov",
+        "-q"
+      ],
+      "red_exit": 1,
+      "green_exit": 0,
+      "assertion_failures": 2,
+      "original_sha256": "28c055cc9af2863bceaa6a3393236ad3ced78e8bdb3d98eeca60e6ec330aad24",
+      "mutant_sha256": "bdfc6de564d989f6c845bedf2093a104d15d1b02a7ab5e5ca1a4182e62a379f5",
+      "restored_sha256": "28c055cc9af2863bceaa6a3393236ad3ced78e8bdb3d98eeca60e6ec330aad24",
+      "failure_testcases": [
+        "test_dirty_source_gate_stops_before_proofs_or_publication[source-drift]",
+        "test_dirty_source_gate_stops_before_proofs_or_publication[git-error]"
+      ]
+    }
+  ],
+  "byte_identical_restoration": true
+}

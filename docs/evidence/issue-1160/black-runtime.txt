@@ -1,0 +1,17 @@
+"""Keep the asyncio selector awake when sandbox IPC cannot wake worker results."""
+import asyncio
+
+_original_new_event_loop = asyncio.new_event_loop
+
+
+def _new_event_loop():
+    loop = _original_new_event_loop()
+
+    def pulse():
+        loop.call_later(0.05, pulse)
+
+    loop.call_later(0.05, pulse)
+    return loop
+
+
+asyncio.new_event_loop = _new_event_loop

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="0.133" timestamp="2026-10-17T06:27:45.737354-05:00" hostname="&lt;HOST&gt;"><testcase classname="tests.docs.test_exposure_boundary_proof" name="test_dirty_source_gate_stops_before_proofs_or_publication[source-drift]" time="0.006"><failure message="AssertionError: expected call not found.&#10;Expected: mock(['git', 'diff', '--exit-code', 'f8871b2971d34b6d1b26df17fea1f9ef9cf079df', '--', 'src'], cwd=PosixPath('&lt;REPO&gt;'), capture_output=True, check=True)&#10;  Actual: mock(['git', 'rev-parse', 'HEAD'], cwd=PosixPath('&lt;REPO&gt;'), capture_output=True, check=True, text=True)">tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-&lt;USER&gt;/pytest-4799/test_dirty_source_gate_stops_b0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x107af35f0&gt;
+returncode = 1
+
+    @pytest.mark.parametrize("returncode", [1, 128], ids=["source-drift", "git-error"])
+    def test_dirty_source_gate_stops_before_proofs_or_publication(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, returncode: int
+    ) -&gt; None:
+        script = Path(__file__).resolve().parents[2] / "docs/evidence/issue-1160/prove_boundary.py"
+        raw = tmp_path / "raw"
+        raw.mkdir()
+        spec = importlib.util.spec_from_file_location("exposure_boundary_proof", script)
+        assert spec is not None and spec.loader is not None
+        proof = importlib.util.module_from_spec(spec)
+        # Keep import-time temporary output local to the test. Importing snapshots
+        # source bytes; main() must verify those bytes before producing evidence.
+        with monkeypatch.context() as context:
+            context.setattr(tempfile, "mkdtemp", lambda **kwargs: str(raw))
+            spec.loader.exec_module(proof)
+
+        command = ["git", "diff", "--exit-code", proof.BASELINE, "--", "src"]
+        rejected_baseline = subprocess.CalledProcessError(returncode, command)
+        git_run = Mock(side_effect=rejected_baseline)
+        mutate = Mock()
+        run_suite = Mock()
+        publish = Mock()
+        monkeypatch.setattr(proof.subprocess, "run", git_run)
+        monkeypatch.setattr(proof, "mutate", mutate)
+        monkeypatch.setattr(proof, "run_suite", run_suite)
+        monkeypatch.setattr(proof, "publish", publish)
+
+        with pytest.raises(subprocess.CalledProcessError) as raised:
+            proof.main()
+
+        assert raised.value is rejected_baseline
+&gt;       git_run.assert_called_once_with(command, cwd=proof.ROOT, capture_output=True, check=True)
+
+tests/docs/test_exposure_boundary_proof.py:45:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/anaconda3/lib/python3.12/unittest/mock.py:956: in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;Mock id='4423882544'&gt;
+args = (['git', 'diff', '--exit-code', 'f8871b2971d34b6d1b26df17fea1f9ef9cf079df', '--', 'src'],)
+kwargs = {'cwd': PosixPath('&lt;REPO&gt;'), 'capture_output': True, 'check': True}
+
+    def assert_called_with(self, /, *args, **kwargs):
+        """assert that the last call was made with the specified arguments.
+
+        Raises an AssertionError if the args and keyword args passed in are
+        different to the last call to the mock."""
+        if self.call_args is None:
+            expected = self._format_mock_call_signature(args, kwargs)
+            actual = 'not called.'
+            error_message = ('expected call not found.\nExpected: %s\n  Actual: %s'
+                    % (expected, actual))
+            raise AssertionError(error_message)
+
+        def _error_message():
+            msg = self._format_mock_failure_message(args, kwargs)
+            return msg
+        expected = self._call_matcher(_Call((args, kwargs), two=True))
+        actual = self._call_matcher(self.call_args)
+        if actual != expected:
+            cause = expected if isinstance(expected, Exception) else None
+&gt;           raise AssertionError(_error_message()) from cause
+E           AssertionError: expected call not found.
+E           Expected: mock(['git', 'diff', '--exit-code', 'f8871b2971d34b6d1b26df17fea1f9ef9cf079df', '--', 'src'], cwd=PosixPath('&lt;REPO&gt;'), capture_output=True, check=True)
+E             Actual: mock(['git', 'rev-parse', 'HEAD'], cwd=PosixPath('&lt;REPO&gt;'), capture_output=True, check=True, text=True)
+
+/opt/anaconda3/lib/python3.12/unittest/mock.py:944: AssertionError</failure></testcase><testcase classname="tests.docs.test_exposure_boundary_proof" name="test_dirty_source_gate_stops_before_proofs_or_publication[git-error]" time="0.002"><failure message="AssertionError: expected call not found.&#10;Expected: mock(['git', 'diff', '--exit-code', 'f8871b2971d34b6d1b26df17fea1f9ef9cf079df', '--', 'src'], cwd=PosixPath('&lt;REPO&gt;'), capture_output=True, check=True)&#10;  Actual: mock(['git', 'rev-parse', 'HEAD'], cwd=PosixPath('&lt;REPO&gt;'), capture_output=True, check=True, text=True)">tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-&lt;USER&gt;/pytest-4799/test_dirty_source_gate_stops_b1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x107b11130&gt;
+returncode = 128
+
+    @pytest.mark.parametrize("returncode", [1, 128], ids=["source-drift", "git-error"])
+    def test_dirty_source_gate_stops_before_proofs_or_publication(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, returncode: int
+    ) -&gt; None:
+        script = Path(__file__).resolve().parents[2] / "docs/evidence/issue-1160/prove_boundary.py"
+        raw = tmp_path / "raw"
+        raw.mkdir()
+        spec = importlib.util.spec_from_file_location("exposure_boundary_proof", script)
+        assert spec is not None and spec.loader is not None
+        proof = importlib.util.module_from_spec(spec)
+        # Keep import-time temporary output local to the test. Importing snapshots
+        # source bytes; main() must verify those bytes before producing evidence.
+        with monkeypatch.context() as context:
+            context.setattr(tempfile, "mkdtemp", lambda **kwargs: str(raw))
+            spec.loader.exec_module(proof)
+
+        command = ["git", "diff", "--exit-code", proof.BASELINE, "--", "src"]
+        rejected_baseline = subprocess.CalledProcessError(returncode, command)
+        git_run = Mock(side_effect=rejected_baseline)
+        mutate = Mock()
+        run_suite = Mock()
+        publish = Mock()
+        monkeypatch.setattr(proof.subprocess, "run", git_run)
+        monkeypatch.setattr(proof, "mutate", mutate)
+        monkeypatch.setattr(proof, "run_suite", run_suite)
+        monkeypatch.setattr(proof, "publish", publish)
+
+        with pytest.raises(subprocess.CalledProcessError) as raised:
+            proof.main()
+
+        assert raised.value is rejected_baseline
+&gt;       git_run.assert_called_once_with(command, cwd=proof.ROOT, capture_output=True, check=True)
+
+tests/docs/test_exposure_boundary_proof.py:45:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/anaconda3/lib/python3.12/unittest/mock.py:956: in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = &lt;Mock id='4424009632'&gt;
+args = (['git', 'diff', '--exit-code', 'f8871b2971d34b6d1b26df17fea1f9ef9cf079df', '--', 'src'],)
+kwargs = {'cwd': PosixPath('&lt;REPO&gt;'), 'capture_output': True, 'check': True}
+
+    def assert_called_with(self, /, *args, **kwargs):
+        """assert that the last call was made with the specified arguments.
+
+        Raises an AssertionError if the args and keyword args passed in are
+        different to the last call to the mock."""
+        if self.call_args is None:
+            expected = self._format_mock_call_signature(args, kwargs)
+            actual = 'not called.'
+            error_message = ('expected call not found.\nExpected: %s\n  Actual: %s'
+                    % (expected, actual))
+            raise AssertionError(error_message)
+
+        def _error_message():
+            msg = self._format_mock_failure_message(args, kwargs)
+            return msg
+        expected = self._call_matcher(_Call((args, kwargs), two=True))
+        actual = self._call_matcher(self.call_args)
+        if actual != expected:
+            cause = expected if isinstance(expected, Exception) else None
+&gt;           raise AssertionError(_error_message()) from cause
+E           AssertionError: expected call not found.
+E           Expected: mock(['git', 'diff', '--exit-code', 'f8871b2971d34b6d1b26df17fea1f9ef9cf079df', '--', 'src'], cwd=PosixPath('&lt;REPO&gt;'), capture_output=True, check=True)
+E             Actual: mock(['git', 'rev-parse', 'HEAD'], cwd=PosixPath('&lt;REPO&gt;'), capture_output=True, check=True, text=True)
+
+/opt/anaconda3/lib/python3.12/unittest/mock.py:944: AssertionError</failure></testcase></testsuite></testsuites>

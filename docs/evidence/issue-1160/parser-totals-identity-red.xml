@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="3.066" timestamp="2026-10-17T11:04:09.695527+00:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_overlap_parser_to_limit" time="2.073"><failure message="AssertionError: subset-only coverage evidence must come from the XLSX parser&#10;assert 'Subset Only' in {'Citibank Lost', 'Citigroup Lost', 'Subset Only Lost'}">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-13/test_boundary_audit_overlap_pa0')
+boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0   Citibank Lo...ture  ...  CME Clearing House   6000.0
+1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
+
+[2 rows x 6 columns]}}
+
+    def test_boundary_audit_overlap_parser_to_limit(
+        tmp_path: Path,
+        boundary_parsed_workbooks: dict[str, dict[str, Any]],
+    ) -&gt; None:
+        from openpyxl import load_workbook
+
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "citibank",
+                    "limit_kind": "absolute_notional",
+                    "limit_value": 125.0,
+                },
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "citibank",
+                    "limit_kind": "percent_of_total",
+                    "limit_value": 0.5,
+                },
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "subset_only",
+                    "limit_kind": "absolute_notional",
+                    "limit_value": 1.0,
+                },
+            ],
+        }
+        # A subset-only entity must supply neither denominator nor coverage.
+        subset_path = tmp_path / "boundary-ex-trend.xlsx"
+        workbook = load_workbook(subset_path)
+        sheet = workbook.active
+        assert sheet is not None
+        sheet.cell(14, 4, "Subset Only")
+        sheet.cell(14, 7, 9000.0)
+        sheet.cell(14, 12, 9000.0)
+        workbook.save(subset_path)
+        workbook.close()
+        boundary_parsed_workbooks["ex_trend"]["totals"] = parse_fcm_totals(subset_path)
+&gt;       assert "Subset Only" in {
+            row["counterparty"] for row in _as_records(boundary_parsed_workbooks["ex_trend"]["totals"])
+        }, "subset-only coverage evidence must come from the XLSX parser"
+E       AssertionError: subset-only coverage evidence must come from the XLSX parser
+E       assert 'Subset Only' in {'Citibank Lost', 'Citigroup Lost', 'Subset Only Lost'}
+
+tests/compute/test_limits.py:1086: AssertionError</failure></testcase><testcase classname="tests.compute.test_limits" name="test_boundary_audit_partitioned_concentration_control" time="0.055"><failure message="assert 0.346938775510204 == 0.5918367346938775 ± 5.9e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.346938775510204&#10;  Expected: 0.5918367346938775 ± 5.9e-07">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-13/test_boundary_audit_partitione0')
+boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0   Citibank Lo...ture  ...  CME Clearing House   6000.0
+1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
+
+[2 rows x 6 columns]}}
+
+    def test_boundary_audit_partitioned_concentration_control(
+        tmp_path: Path, boundary_parsed_workbooks: dict[str, dict[str, Any]]
+    ) -&gt; None:
+        metrics = _compute_and_write_concentration_metrics(
+            parsed_by_variant=boundary_parsed_workbooks, run_dir=tmp_path
+        )
+        by_partition = {(row["variant"], row["segment"]): row for row in metrics}
+        assert set(by_partition) == {
+            (variant, segment)
+            for variant in ("all_programs", "ex_trend")
+            for segment in ("TIPS", "Treasury", "Equity", "Commodity", "Currency", "total")
+        }, "concentration must retain variant and segment; Trend has no parsed totals"
+        for variant, expected_total in (("all_programs", 29 / 49), ("ex_trend", 0.5)):
+            for segment, expected_hhi in (
+                ("total", expected_total),
+                ("Equity", 1.0),
+                ("Treasury", 1.0),
+                ("TIPS", 0.0),
+                ("Commodity", 0.0),
+                ("Currency", 0.0),
+            ):
+                row = by_partition[variant, segment]
+&gt;               assert row["hhi"] == pytest.approx(expected_hhi)
+E               assert 0.346938775510204 == 0.5918367346938775 ± 5.9e-07
+E
+E                 comparison failed
+E                 Obtained: 0.346938775510204
+E                 Expected: 0.5918367346938775 ± 5.9e-07
+
+tests/compute/test_limits.py:1135: AssertionError</failure></testcase></testsuite></testsuites>

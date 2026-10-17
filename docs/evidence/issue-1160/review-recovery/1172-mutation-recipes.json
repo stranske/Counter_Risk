@@ -1,0 +1,23 @@
+{
+  "recipes": [
+    {
+      "name": "missing-junit",
+      "selection": "native branch run_suite missing-file guard",
+      "before": "    if not xml_path.is_file():\n        raise RuntimeError(\n            f\"{name}: pytest exited with status {code} without producing JUnit XML; \"\n            f\"see {name}.log\"\n        )\n",
+      "after": "",
+      "original_sha256": "28c055cc9af2863bceaa6a3393236ad3ced78e8bdb3d98eeca60e6ec330aad24",
+      "mutant_sha256": "a8d42f9e0ac93ade0afbd0c9c906275457c0fdb008cc1d7aad94315b6f8f17c2",
+      "restored_sha256": "28c055cc9af2863bceaa6a3393236ad3ced78e8bdb3d98eeca60e6ec330aad24"
+    },
+    {
+      "name": "source-baseline",
+      "selection": "first subprocess.run in main only; the final baseline check is retained",
+      "before": "    subprocess.run(\n        [\"git\", \"diff\", \"--exit-code\", BASELINE, \"--\", \"src\"],\n        cwd=ROOT,\n        capture_output=True,\n        check=True,\n    )\n",
+      "after": "    pass  # deliberate removal of baseline verification\n",
+      "original_sha256": "28c055cc9af2863bceaa6a3393236ad3ced78e8bdb3d98eeca60e6ec330aad24",
+      "mutant_sha256": "bdfc6de564d989f6c845bedf2093a104d15d1b02a7ab5e5ca1a4182e62a379f5",
+      "restored_sha256": "28c055cc9af2863bceaa6a3393236ad3ced78e8bdb3d98eeca60e6ec330aad24"
+    }
+  ],
+  "recipe_hashes_independently_reconstructed": true
+}

@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <REPO>
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 3 items / 2 deselected / 1 selected
+
+tests/docs/test_exposure_boundary_proof.py .                             [100%]
+
+- generated xml file: <RAW>/1172-missing-junit-restored.xml -
+======================= 1 passed, 2 deselected in 1.88s ========================

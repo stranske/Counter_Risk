@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="3.062" timestamp="2026-10-17T11:03:30.955196+00:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_alias_only_parser_to_limit[fcm-bank_of_america]" time="2.073"><failure message="AssertionError: parsed registered alias must reach the canonical cap&#10;assert 0 == 1&#10; +  where 0 = len([])">boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0     Citibank   0...  Future  Equity  Lost FCM     Lost House    6000.0
+1  acct-26      Future  Equity  Lost FCM     Lost House   -4000.0}}
+entity_type = 'fcm', canonical = 'bank_of_america'
+
+    @pytest.mark.parametrize(
+        "entity_type, canonical", [("fcm", "bank_of_america"), ("clearing_house", "cme")]
+    )
+    def test_boundary_audit_alias_only_parser_to_limit(
+        boundary_parsed_workbooks: dict[str, dict[str, Any]], entity_type: str, canonical: str
+    ) -&gt; None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_kind": "percent_of_total",
+                    "limit_value": 0.5,
+                }
+            ],
+        }
+        rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+        breaches = _as_records(check_limits(rows, policy))
+&gt;       assert len(breaches) == 1, "parsed registered alias must reach the canonical cap"
+E       AssertionError: parsed registered alias must reach the canonical cap
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/compute/test_limits.py:1039: AssertionError</failure></testcase><testcase classname="tests.compute.test_limits" name="test_boundary_audit_alias_only_parser_to_limit[clearing_house-cme]" time="0.050"><failure message="AssertionError: parsed registered alias must reach the canonical cap&#10;assert 0 == 1&#10; +  where 0 = len([])">boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0     Citibank   0...  Future  Equity  Lost FCM     Lost House    6000.0
+1  acct-26      Future  Equity  Lost FCM     Lost House   -4000.0}}
+entity_type = 'clearing_house', canonical = 'cme'
+
+    @pytest.mark.parametrize(
+        "entity_type, canonical", [("fcm", "bank_of_america"), ("clearing_house", "cme")]
+    )
+    def test_boundary_audit_alias_only_parser_to_limit(
+        boundary_parsed_workbooks: dict[str, dict[str, Any]], entity_type: str, canonical: str
+    ) -&gt; None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_kind": "percent_of_total",
+                    "limit_value": 0.5,
+                }
+            ],
+        }
+        rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+        breaches = _as_records(check_limits(rows, policy))
+&gt;       assert len(breaches) == 1, "parsed registered alias must reach the canonical cap"
+E       AssertionError: parsed registered alias must reach the canonical cap
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/compute/test_limits.py:1039: AssertionError</failure></testcase></testsuite></testsuites>

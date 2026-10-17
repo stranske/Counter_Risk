@@ -1,0 +1,87 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
+rootdir: <REPO>
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 103 items / 101 deselected / 2 selected
+
+tests/compute/test_limits.py FF                                          [100%]
+
+=================================== FAILURES ===================================
+_____ test_boundary_audit_alias_only_parser_to_limit[fcm-bank_of_america] ______
+
+boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0     Citibank   0...ture  ...  CME Clearing House   6000.0
+1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
+
+[2 rows x 6 columns]}}
+entity_type = 'fcm', canonical = 'bank_of_america'
+
+    @pytest.mark.parametrize(
+        "entity_type, canonical", [("fcm", "bank_of_america"), ("clearing_house", "cme")]
+    )
+    def test_boundary_audit_alias_only_parser_to_limit(
+        boundary_parsed_workbooks: dict[str, dict[str, Any]], entity_type: str, canonical: str
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_kind": "percent_of_total",
+                    "limit_value": 0.5,
+                }
+            ],
+        }
+        rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+        breaches = _as_records(check_limits(rows, policy))
+>       assert len(breaches) == 1, "parsed registered alias must reach the canonical cap"
+E       AssertionError: parsed registered alias must reach the canonical cap
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/compute/test_limits.py:1039: AssertionError
+______ test_boundary_audit_alias_only_parser_to_limit[clearing_house-cme] ______
+
+boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0     Citibank   0...ture  ...  CME Clearing House   6000.0
+1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
+
+[2 rows x 6 columns]}}
+entity_type = 'clearing_house', canonical = 'cme'
+
+    @pytest.mark.parametrize(
+        "entity_type, canonical", [("fcm", "bank_of_america"), ("clearing_house", "cme")]
+    )
+    def test_boundary_audit_alias_only_parser_to_limit(
+        boundary_parsed_workbooks: dict[str, dict[str, Any]], entity_type: str, canonical: str
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_kind": "percent_of_total",
+                    "limit_value": 0.5,
+                }
+            ],
+        }
+        rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+        breaches = _as_records(check_limits(rows, policy))
+>       assert len(breaches) == 1, "parsed registered alias must reach the canonical cap"
+E       AssertionError: parsed registered alias must reach the canonical cap
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/compute/test_limits.py:1039: AssertionError
+- generated xml file: <RAW>/limit-alias-resolution-red.xml -
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits.py::test_boundary_audit_alias_only_parser_to_limit[fcm-bank_of_america] - AssertionError: parsed registered alias must reach the canonical cap
+assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_boundary_audit_alias_only_parser_to_limit[clearing_house-cme] - AssertionError: parsed registered alias must reach the canonical cap
+assert 0 == 1
+ +  where 0 = len([])
+====================== 2 failed, 101 deselected in 3.06s =======================

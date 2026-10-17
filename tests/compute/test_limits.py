@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 from typing import Any, cast
 
@@ -17,7 +18,11 @@ from counter_risk.compute.limits import (
     write_limit_breaches_csv,
 )
 from counter_risk.limits_config import LimitsConfig, load_limits_config
-from counter_risk.pipeline.run import _build_limit_exposure_rows
+from counter_risk.parsers.cprs_fcm import parse_fcm_totals, parse_futures_detail
+from counter_risk.pipeline.run import (
+    _build_limit_exposure_rows,
+    _compute_and_write_concentration_metrics,
+)
 
 
 def _as_records(table: Any) -> list[dict[str, Any]]:
@@ -935,3 +940,222 @@ def test_policy_group_aliases_are_not_resolved_through_registry(entity_type: str
     assert find_missing_limit_entities(rows, policy) == [
         {"entity_type": entity_type, "entity_name": "cme"}
     ]
+
+
+@pytest.fixture
+def boundary_parsed_workbooks(
+    tmp_path: Path, registered_alias_workbook: Path
+) -> dict[str, dict[str, Any]]:
+    """Exercise actual workbook parsing before the two numerical consumers."""
+    from openpyxl import load_workbook
+
+    parsed = {}
+    for variant, citi, alias, other, futures_scale in (
+        ("all_programs", 60.0, -40.0, 40.0, 1.0),
+        ("ex_trend", 600.0, -300.0, 900.0, 10.0),
+        ("trend", 6000.0, -3000.0, 9000.0, 100.0),
+    ):
+        path = tmp_path / f"boundary-{variant.replace('_', '-')}.xlsx"
+        workbook = load_workbook(registered_alias_workbook)
+        sheet = workbook.active
+        assert sheet is not None
+        for row, name, equity, treasury in (
+            (12, "Citibank", citi, 0.0),
+            (13, "Citigroup", alias, 0.0),
+            (14, "Other", 0.0, other),
+        ):
+            sheet.cell(row, 4, name)
+            sheet.cell(row, 7, treasury)
+            sheet.cell(row, 8, equity)
+            sheet.cell(row, 12, equity + treasury)
+        for column, header in enumerate(
+            ("Account", "Description", "Class", "FCM", "Clearing House", "Notional"), 4
+        ):
+            sheet.cell(24, column, header)
+        for row, fcm, house, amount in (
+            (25, "Bank of America, NA", "CME Clearing House", 60.0),
+            (26, "Unknown FCM", "ICE Clear U.S.", -40.0),
+        ):
+            for column, value in enumerate(
+                (f"acct-{row}", "Future", "Equity", fcm, house, amount * futures_scale), 4
+            ):
+                sheet.cell(row, column, value)
+        sheet.cell(27, 4, "risk exclusive of the trend positions")
+        workbook.save(path)
+        workbook.close()
+        parsed[variant] = {
+            "totals": parse_fcm_totals(path),
+            "futures": parse_futures_detail(path),
+        }
+    return parsed
+
+
+@pytest.mark.parametrize(
+    "variant, excluded_section, retained_section",
+    [("trend", "totals", "futures"), ("ex_trend", "futures", "totals")],
+)
+def test_boundary_audit_parser_variant_scope(
+    tmp_path: Path,
+    boundary_parsed_workbooks: dict[str, dict[str, Any]],
+    variant: str,
+    excluded_section: str,
+    retained_section: str,
+) -> None:
+    """Variant exclusions must reflect scope even when both XLSX sections contain data."""
+    source = tmp_path / f"boundary-{variant.replace('_', '-')}.xlsx"
+    control = tmp_path / "scope-all-programs.xlsx"
+    control.write_bytes(source.read_bytes())
+    unscoped = {"totals": parse_fcm_totals(control), "futures": parse_futures_detail(control)}
+    parsed = boundary_parsed_workbooks[variant]
+
+    # Identical workbook bytes under All Programs prove neither section is empty
+    # or malformed. Variant selection alone must suppress the excluded section.
+    assert _as_records(unscoped[excluded_section]), "the excluded section needs real source rows"
+    assert _as_records(parsed[retained_section]) == _as_records(unscoped[retained_section])
+    assert _as_records(parsed[retained_section]), "the supported section must survive parsing"
+    assert (
+        _as_records(parsed[excluded_section]) == []
+    ), f"{variant} must exclude {excluded_section} before numerical consumers receive rows"
+
+
+@pytest.mark.parametrize(
+    "entity_type, canonical", [("fcm", "bank_of_america"), ("clearing_house", "cme")]
+)
+def test_boundary_audit_alias_only_parser_to_limit(
+    boundary_parsed_workbooks: dict[str, dict[str, Any]], entity_type: str, canonical: str
+) -> None:
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": entity_type,
+                "entity_name": canonical,
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.5,
+            }
+        ],
+    }
+    rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+    breaches = _as_records(check_limits(rows, policy))
+    assert len(breaches) == 1, "parsed registered alias must reach the canonical cap"
+    assert breaches[0]["entity_name"] == canonical
+    assert breaches[0]["actual_value"] == pytest.approx(0.6)
+    assert breaches[0]["breach_amount"] == pytest.approx(0.1)
+    assert find_missing_limit_entities(rows, policy) == []
+
+
+def test_boundary_audit_overlap_parser_to_limit(
+    tmp_path: Path,
+    boundary_parsed_workbooks: dict[str, dict[str, Any]],
+) -> None:
+    from openpyxl import load_workbook
+
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "counterparty",
+                "entity_name": "citibank",
+                "limit_kind": "absolute_notional",
+                "limit_value": 125.0,
+            },
+            {
+                "entity_type": "counterparty",
+                "entity_name": "citibank",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.5,
+            },
+            {
+                "entity_type": "counterparty",
+                "entity_name": "subset_only",
+                "limit_kind": "absolute_notional",
+                "limit_value": 1.0,
+            },
+        ],
+    }
+    # A subset-only entity must supply neither denominator nor coverage.
+    subset_path = tmp_path / "boundary-ex-trend.xlsx"
+    workbook = load_workbook(subset_path)
+    sheet = workbook.active
+    assert sheet is not None
+    sheet.cell(14, 4, "Subset Only")
+    sheet.cell(14, 7, 9000.0)
+    sheet.cell(14, 12, 9000.0)
+    workbook.save(subset_path)
+    workbook.close()
+    boundary_parsed_workbooks["ex_trend"]["totals"] = parse_fcm_totals(subset_path)
+    assert "Subset Only" in {
+        row["counterparty"] for row in _as_records(boundary_parsed_workbooks["ex_trend"]["totals"])
+    }, "subset-only coverage evidence must come from the XLSX parser"
+    for parsed in (
+        boundary_parsed_workbooks,
+        {"all_programs": boundary_parsed_workbooks["all_programs"]},
+    ):
+        rows = _build_limit_exposure_rows(parsed)
+        policy["limits"][0]["limit_value"] = 125.0
+        breaches = _as_records(check_limits(rows, policy))
+        assert len(breaches) == 1, "overlapping subsets must not manufacture an absolute breach"
+        assert breaches[0]["limit_kind"] == "percent_of_total"
+        assert breaches[0]["actual_value"] == pytest.approx(5 / 7)
+        assert breaches[0]["breach_amount"] == pytest.approx(5 / 7 - 0.5)
+        assert find_missing_limit_entities(rows, policy) == [
+            {"entity_type": "counterparty", "entity_name": "subset_only"}
+        ]
+        policy["limits"][0]["limit_value"] = 75.0
+        breaches = _as_records(check_limits(rows, policy))
+        assert len(breaches) == 2, "both caps must breach with or without overlapping subsets"
+        assert breaches[0]["limit_kind"] == "absolute_notional"
+        assert breaches[0]["actual_value"] == 100.0
+        assert breaches[0]["breach_amount"] == 25.0
+        assert breaches[1]["limit_kind"] == "percent_of_total"
+        assert breaches[1]["actual_value"] == pytest.approx(5 / 7)
+
+
+def test_boundary_audit_partitioned_concentration_control(
+    tmp_path: Path, boundary_parsed_workbooks: dict[str, dict[str, Any]]
+) -> None:
+    metrics = _compute_and_write_concentration_metrics(
+        parsed_by_variant=boundary_parsed_workbooks, run_dir=tmp_path
+    )
+    by_partition = {(row["variant"], row["segment"]): row for row in metrics}
+    assert len(metrics) == len(by_partition), "each variant/segment must have exactly one result"
+    assert set(by_partition) == {
+        (variant, segment)
+        for variant in ("all_programs", "ex_trend")
+        for segment in ("TIPS", "Treasury", "Equity", "Commodity", "Currency", "total")
+    }, "concentration must retain variant and segment; Trend has no parsed totals"
+    for variant, expected_total in (("all_programs", 29 / 49), ("ex_trend", 0.5)):
+        for segment, expected_hhi in (
+            ("total", expected_total),
+            ("Equity", 1.0),
+            ("Treasury", 1.0),
+            ("TIPS", 0.0),
+            ("Commodity", 0.0),
+            ("Currency", 0.0),
+        ):
+            row = by_partition[variant, segment]
+            assert row["hhi"] == pytest.approx(expected_hhi)
+            for metric in ("top5_share", "top10_share"):
+                assert row[metric] == pytest.approx(1.0 if expected_hhi else 0.0)
+
+    # The exported artifact must preserve the same partitions and numerical
+    # results as the records returned for the manifest.
+    with (tmp_path / "concentration_metrics.csv").open(newline="", encoding="utf-8") as output:
+        exported = list(csv.DictReader(output))
+    exported_partitions = {(row["variant"], row["segment"]): row for row in exported}
+    assert len(exported) == len(exported_partitions), "CSV must not duplicate partitions"
+    assert exported_partitions.keys() == by_partition.keys(), "CSV must retain every partition"
+    for partition, row in exported_partitions.items():
+        for metric in ("hhi", "top5_share", "top10_share"):
+            assert float(row[metric]) == pytest.approx(by_partition[partition][metric])
+
+    # The same parsed rows must produce the same concentration alone and beside
+    # overlapping portfolios. Limits intentionally select only All Programs;
+    # concentration must retain each supported portfolio's independent results.
+    for variant, parsed in boundary_parsed_workbooks.items():
+        isolated = _compute_and_write_concentration_metrics(
+            parsed_by_variant={variant: parsed}, run_dir=tmp_path / variant
+        )
+        assert isolated == [
+            row for row in metrics if row["variant"] == variant
+        ], f"{variant} concentration must be invariant to overlapping portfolios"
