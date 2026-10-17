@@ -1,0 +1,28 @@
+{
+  "base_revision": "247bb666d3e5777c8df7438d81813824cc49195c",
+  "sha256": {
+    "src/counter_risk/compute/limits.py": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+    "tests/compute/test_limits.py": "f217a206af55d617f928acd06e7537908f9f9cd768b0f84fcaeb16bdfb0e9251",
+    "tests/pipeline/test_run_pipeline.py": "457f7df928ece777483fd9abbdfd6838e3115460ca760d1d1c5695c65e85ac04",
+    "docs/limit_monitoring.md": "d4a879011fda98e0099fbab902e3c00f24b4b691bfbfb7842dc87dc2f7dc3597",
+    "docs/evidence/issue-1158/followup-validation.md": "d7390085bc669edd9085bf4422496924a7f9cf3bbadd42cac19197997dfa5868",
+    "docs/evidence/issue-1158/followup-mutation.json": "6db96a1d34739ebcf578a201b4b7702137d59b9427348d5fba1142e61117ba79",
+    "docs/evidence/issue-1158/followup-alias-green.txt": "6d22edae6a3bc35e4e7f8222d83e1f6d39f15c8803e5e1a611023450feaa036d",
+    "docs/evidence/issue-1158/followup-black.txt": "77f9543ea92ec27f1e214ad2c3f8805faafacf3fcbfce3c97dba3ad1c3520b9e",
+    "docs/evidence/issue-1158/followup-control-green.txt": "39bff2f144f0695af5d5aaab20ae49af9f6f5450407c013de68d5b12b6f15d28",
+    "docs/evidence/issue-1158/followup-control-red.txt": "55da413eda7dace43fc9494d7a6b5afddaffcb357f71933e5d525d37d9b9d066",
+    "docs/evidence/issue-1158/followup-pipeline-green.txt": "49289dd5206f3ea45a46c734c110fac79d63cddcc0df59f75c6344bbdf6c68a5",
+    "docs/evidence/issue-1158/followup-suite-green.txt": "2e59b29e221fd403ef19120df0146d9d92b488705d50f8e382e59fc047c44c3f"
+  },
+  "test_commands": [
+    "pytest tests/compute/test_limits.py -k alias -m \"not slow\" -q -o addopts=",
+    "pytest tests/pipeline/test_run_pipeline.py -k limit -m \"not slow\" -q -o addopts=",
+    "pytest tests/compute/test_limits.py tests/test_limits_config.py tests/test_name_registry.py tests/test_limit_monitoring_docs.py -m \"not slow\" -q -o addopts="
+  ],
+  "format_command": "black --check --line-length 100 --exclude '(\\.workflows-lib|node_modules)' .",
+  "format_environment": {
+    "BLACK_NUM_WORKERS": "1",
+    "PYTHONPATH": "/tmp/issue1158-black-support",
+    "note": "Runtime-only asyncio completion polling for sandbox-blocked socket wakeups"
+  }
+}

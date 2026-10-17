@@ -533,15 +533,25 @@ def test_registered_alias_triggers_canonical_limit() -> None:
 
 
 @pytest.mark.parametrize(
-    ("entity_type", "canonical", "alias"),
+    ("entity_type", "canonical", "display_name", "alias"),
     [
-        ("clearing_house", "cme", "CME Clearing House"),
-        ("clearing_house", "ice", "ICE Clear U.S."),
-        ("fcm", "bank_of_america", "Bank of America, NA"),
+        ("clearing_house", "cme", "CME", "CME Clearing House"),
+        ("clearing_house", "ice", "ICE", "ICE Clear U.S."),
+        ("fcm", "bank_of_america", "Bank of America", "Bank of America, NA"),
     ],
 )
+@pytest.mark.parametrize(
+    ("limit_kind", "limit_value", "actual_value"),
+    [("absolute_notional", 35.0, 60.0), ("percent_of_total", 0.35, 0.6)],
+)
 def test_registered_futures_alias_has_identical_limits_and_missing_results(
-    entity_type: str, canonical: str, alias: str
+    entity_type: str,
+    canonical: str,
+    display_name: str,
+    alias: str,
+    limit_kind: str,
+    limit_value: float,
+    actual_value: float,
 ) -> None:
     policy = {
         "schema_version": 1,
@@ -549,18 +559,34 @@ def test_registered_futures_alias_has_identical_limits_and_missing_results(
             {
                 "entity_type": entity_type,
                 "entity_name": canonical,
-                "limit_value": 35.0,
-                "limit_kind": "absolute_notional",
+                "limit_value": limit_value,
+                "limit_kind": limit_kind,
                 "severity": "fail",
             }
         ],
     }
-    canonical_rows = [{entity_type: canonical, "notional": 60.0}]
-    alias_rows = [{entity_type: alias, "notional": 60.0}]
+    other_row = {entity_type: "Unregistered Other Entity", "notional": 40.0}
+    canonical_rows = [{entity_type: display_name, "notional": 60.0}, other_row]
+    alias_rows = [{entity_type: alias, "notional": 60.0}, other_row]
     expected = _as_records(check_limits(canonical_rows, policy))
-    assert len(expected) == 1 and expected[0]["actual_value"] == 60.0
+    assert expected == [
+        {
+            "entity_type": entity_type,
+            "entity_name": canonical,
+            "limit_kind": limit_kind,
+            "severity": "fail",
+            "actual_value": pytest.approx(actual_value),
+            "limit_value": limit_value,
+            "breach_amount": pytest.approx(actual_value - limit_value),
+            "notes": None,
+        }
+    ]
     assert _as_records(check_limits(alias_rows, policy)) == expected
-    assert find_missing_limit_entities(alias_rows, policy) == []
+    assert (
+        find_missing_limit_entities(alias_rows, policy)
+        == find_missing_limit_entities(canonical_rows, policy)
+        == []
+    )
 
 
 def test_clearing_house_split_alias_aggregation_preserves_percent_breach() -> None:
@@ -590,7 +616,10 @@ def test_clearing_house_split_alias_aggregation_preserves_percent_breach() -> No
     assert find_missing_limit_entities(split, policy) == []
 
 
-def test_unknown_clearing_house_alias_and_disabled_limit_preserve_missing_policy() -> None:
+@pytest.mark.parametrize("disabled_alias_present", [False, True])
+def test_unknown_clearing_house_alias_and_disabled_limit_preserve_missing_policy(
+    disabled_alias_present: bool,
+) -> None:
     policy = {
         "schema_version": 1,
         "limits": [
@@ -602,7 +631,7 @@ def test_unknown_clearing_house_alias_and_disabled_limit_preserve_missing_policy
             },
             {
                 "entity_type": "clearing_house",
-                "entity_name": "disabled",
+                "entity_name": "ice",
                 "limit_value": 1.0,
                 "limit_kind": "absolute_notional",
                 "enabled": False,
@@ -610,6 +639,8 @@ def test_unknown_clearing_house_alias_and_disabled_limit_preserve_missing_policy
         ],
     }
     rows = [{"clearing_house": "Unregistered Clearing House", "notional": 60.0}]
+    if disabled_alias_present:
+        rows.append({"clearing_house": "ICE Clear U.S.", "notional": 40.0})
     assert _as_records(check_limits(rows, policy)) == []
     assert find_missing_limit_entities(rows, policy) == [
         {"entity_type": "clearing_house", "entity_name": "cme"}

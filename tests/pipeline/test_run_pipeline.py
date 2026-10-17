@@ -6171,6 +6171,9 @@ def test_limit_alias_pipeline_csv_and_manifest_are_identical_under_strict_missin
         encoding="utf-8",
     )
     _use_limit_config_path(monkeypatch, limits_path)
+    # Start from fixed parsed rows and exercise the limit CSV and manifest stages.
+    monkeypatch.setattr(run_module, "_collect_cprs_header_candidates", lambda **kwargs: [])
+    monkeypatch.setattr(run_module, "_run_reconciliation_checks", lambda **kwargs: {})
     monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **kwargs: [])
     monkeypatch.setattr(
         run_module,
@@ -6232,6 +6235,64 @@ def test_limit_alias_pipeline_csv_and_manifest_are_identical_under_strict_missin
         manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
         summary = manifest["limit_breach_summary"]
         assert summary["breach_count"] == summary["warning_breach_count"] == 1
-        assert not any("missing from exposures" in warning for warning in manifest["warnings"])
+        assert not any(
+            "configured limit entities missing" in warning for warning in manifest["warnings"]
+        )
         observed.append(((run_dir / "limit_breaches.csv").read_bytes(), summary))
     assert observed[0] == observed[1] == observed[2]
+
+
+@pytest.mark.parametrize("strict_missing_entities", [False, True])
+@pytest.mark.parametrize("enabled", [False, True])
+def test_unknown_clearing_house_limit_warns_or_raises_and_disabled_limits_are_ignored(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    strict_missing_entities: bool,
+    enabled: bool,
+) -> None:
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir()
+    limits_path.write_text(
+        "schema_version: 1\n"
+        f"strict_missing_entities: {str(strict_missing_entities).lower()}\n"
+        "limits:\n"
+        "  - entity_type: clearing_house\n    entity_name: cme\n"
+        "    limit_value: 0.35\n    limit_kind: percent_of_total\n"
+        f"    enabled: {str(enabled).lower()}\n"
+        "  - entity_type: clearing_house\n    entity_name: ice\n"
+        "    limit_value: 1\n    limit_kind: absolute_notional\n    enabled: false\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(run_module, "_resolve_repo_root", lambda: tmp_path)
+    parsed = {
+        "all_programs": {
+            "totals": [],
+            "futures": [
+                {"clearing_house": "Unregistered Clearing House", "notional": 60.0},
+                {"clearing_house": "ICE Clear U.S.", "notional": 40.0},
+            ],
+        }
+    }
+    warnings: list[str] = []
+    if enabled and strict_missing_entities:
+        with pytest.raises(RuntimeError, match="strict_missing_entities.*clearing_house:cme"):
+            run_module._compute_and_write_limit_breaches(
+                parsed_by_variant=parsed, run_dir=tmp_path, warnings=warnings
+            )
+        assert warnings == []
+    else:
+        result = run_module._compute_and_write_limit_breaches(
+            parsed_by_variant=parsed, run_dir=tmp_path, warnings=warnings
+        )
+        assert result.breach_count == 0
+        assert result.csv_path is None
+        if enabled:
+            assert warnings == [
+                "Limit check warning: configured limit entities missing from exposure data; "
+                "clearing_house:cme"
+            ]
+            assert warnings[0] in caplog.text
+        else:
+            assert warnings == []
+    assert not (tmp_path / "limit_breaches.csv").exists()

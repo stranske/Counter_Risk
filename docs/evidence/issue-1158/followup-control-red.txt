@@ -1,0 +1,632 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_registered_futures_alias_has_identical_limits_and_missing_results[absolute_notional-35.0-60.0-clearing_house-cme-CME-CME Clearing House] _
+
+entity_type = 'clearing_house', canonical = 'cme', display_name = 'CME'
+alias = 'CME Clearing House', limit_kind = 'absolute_notional'
+limit_value = 35.0, actual_value = 60.0
+
+    @pytest.mark.parametrize(
+        ("entity_type", "canonical", "display_name", "alias"),
+        [
+            ("clearing_house", "cme", "CME", "CME Clearing House"),
+            ("clearing_house", "ice", "ICE", "ICE Clear U.S."),
+            ("fcm", "bank_of_america", "Bank of America", "Bank of America, NA"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        ("limit_kind", "limit_value", "actual_value"),
+        [("absolute_notional", 35.0, 60.0), ("percent_of_total", 0.35, 0.6)],
+    )
+    def test_registered_futures_alias_has_identical_limits_and_missing_results(
+        entity_type: str,
+        canonical: str,
+        display_name: str,
+        alias: str,
+        limit_kind: str,
+        limit_value: float,
+        actual_value: float,
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_value": limit_value,
+                    "limit_kind": limit_kind,
+                    "severity": "fail",
+                }
+            ],
+        }
+        other_row = {entity_type: "Unregistered Other Entity", "notional": 40.0}
+        canonical_rows = [{entity_type: display_name, "notional": 60.0}, other_row]
+        alias_rows = [{entity_type: alias, "notional": 60.0}, other_row]
+        expected = _as_records(check_limits(canonical_rows, policy))
+        assert expected == [
+            {
+                "entity_type": entity_type,
+                "entity_name": canonical,
+                "limit_kind": limit_kind,
+                "severity": "fail",
+                "actual_value": pytest.approx(actual_value),
+                "limit_value": limit_value,
+                "breach_amount": pytest.approx(actual_value - limit_value),
+                "notes": None,
+            }
+        ]
+>       assert _as_records(check_limits(alias_rows, policy)) == expected
+E       AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+E         
+E         Right contains one more item: {'entity_type': 'clearing_house', 'entity_name': 'cme', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     {
+E         -         'entity_type': 'clearing_house',
+E         -         'entity_name': 'cme',
+E         -         'limit_kind': 'absolute_notional',
+E         -         'severity': 'fail',
+E         -         'actual_value': 60.0,
+E         -         'limit_value': 35.0,
+E         -         'breach_amount': 25.0,
+E         -         'notes': None,
+E         -     },
+E         - ]
+
+tests/compute/test_limits.py:584: AssertionError
+_ test_registered_futures_alias_has_identical_limits_and_missing_results[absolute_notional-35.0-60.0-clearing_house-ice-ICE-ICE Clear U.S.] _
+
+entity_type = 'clearing_house', canonical = 'ice', display_name = 'ICE'
+alias = 'ICE Clear U.S.', limit_kind = 'absolute_notional', limit_value = 35.0
+actual_value = 60.0
+
+    @pytest.mark.parametrize(
+        ("entity_type", "canonical", "display_name", "alias"),
+        [
+            ("clearing_house", "cme", "CME", "CME Clearing House"),
+            ("clearing_house", "ice", "ICE", "ICE Clear U.S."),
+            ("fcm", "bank_of_america", "Bank of America", "Bank of America, NA"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        ("limit_kind", "limit_value", "actual_value"),
+        [("absolute_notional", 35.0, 60.0), ("percent_of_total", 0.35, 0.6)],
+    )
+    def test_registered_futures_alias_has_identical_limits_and_missing_results(
+        entity_type: str,
+        canonical: str,
+        display_name: str,
+        alias: str,
+        limit_kind: str,
+        limit_value: float,
+        actual_value: float,
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_value": limit_value,
+                    "limit_kind": limit_kind,
+                    "severity": "fail",
+                }
+            ],
+        }
+        other_row = {entity_type: "Unregistered Other Entity", "notional": 40.0}
+        canonical_rows = [{entity_type: display_name, "notional": 60.0}, other_row]
+        alias_rows = [{entity_type: alias, "notional": 60.0}, other_row]
+        expected = _as_records(check_limits(canonical_rows, policy))
+        assert expected == [
+            {
+                "entity_type": entity_type,
+                "entity_name": canonical,
+                "limit_kind": limit_kind,
+                "severity": "fail",
+                "actual_value": pytest.approx(actual_value),
+                "limit_value": limit_value,
+                "breach_amount": pytest.approx(actual_value - limit_value),
+                "notes": None,
+            }
+        ]
+>       assert _as_records(check_limits(alias_rows, policy)) == expected
+E       AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+E         
+E         Right contains one more item: {'entity_type': 'clearing_house', 'entity_name': 'ice', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     {
+E         -         'entity_type': 'clearing_house',
+E         -         'entity_name': 'ice',
+E         -         'limit_kind': 'absolute_notional',
+E         -         'severity': 'fail',
+E         -         'actual_value': 60.0,
+E         -         'limit_value': 35.0,
+E         -         'breach_amount': 25.0,
+E         -         'notes': None,
+E         -     },
+E         - ]
+
+tests/compute/test_limits.py:584: AssertionError
+_ test_registered_futures_alias_has_identical_limits_and_missing_results[absolute_notional-35.0-60.0-fcm-bank_of_america-Bank of America-Bank of America, NA] _
+
+entity_type = 'fcm', canonical = 'bank_of_america'
+display_name = 'Bank of America', alias = 'Bank of America, NA'
+limit_kind = 'absolute_notional', limit_value = 35.0, actual_value = 60.0
+
+    @pytest.mark.parametrize(
+        ("entity_type", "canonical", "display_name", "alias"),
+        [
+            ("clearing_house", "cme", "CME", "CME Clearing House"),
+            ("clearing_house", "ice", "ICE", "ICE Clear U.S."),
+            ("fcm", "bank_of_america", "Bank of America", "Bank of America, NA"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        ("limit_kind", "limit_value", "actual_value"),
+        [("absolute_notional", 35.0, 60.0), ("percent_of_total", 0.35, 0.6)],
+    )
+    def test_registered_futures_alias_has_identical_limits_and_missing_results(
+        entity_type: str,
+        canonical: str,
+        display_name: str,
+        alias: str,
+        limit_kind: str,
+        limit_value: float,
+        actual_value: float,
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_value": limit_value,
+                    "limit_kind": limit_kind,
+                    "severity": "fail",
+                }
+            ],
+        }
+        other_row = {entity_type: "Unregistered Other Entity", "notional": 40.0}
+        canonical_rows = [{entity_type: display_name, "notional": 60.0}, other_row]
+        alias_rows = [{entity_type: alias, "notional": 60.0}, other_row]
+        expected = _as_records(check_limits(canonical_rows, policy))
+        assert expected == [
+            {
+                "entity_type": entity_type,
+                "entity_name": canonical,
+                "limit_kind": limit_kind,
+                "severity": "fail",
+                "actual_value": pytest.approx(actual_value),
+                "limit_value": limit_value,
+                "breach_amount": pytest.approx(actual_value - limit_value),
+                "notes": None,
+            }
+        ]
+>       assert _as_records(check_limits(alias_rows, policy)) == expected
+E       AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+E         
+E         Right contains one more item: {'entity_type': 'fcm', 'entity_name': 'bank_of_america', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     {
+E         -         'entity_type': 'fcm',
+E         -         'entity_name': 'bank_of_america',
+E         -         'limit_kind': 'absolute_notional',
+E         -         'severity': 'fail',
+E         -         'actual_value': 60.0,
+E         -         'limit_value': 35.0,
+E         -         'breach_amount': 25.0,
+E         -         'notes': None,
+E         -     },
+E         - ]
+
+tests/compute/test_limits.py:584: AssertionError
+_ test_registered_futures_alias_has_identical_limits_and_missing_results[percent_of_total-0.35-0.6-clearing_house-cme-CME-CME Clearing House] _
+
+entity_type = 'clearing_house', canonical = 'cme', display_name = 'CME'
+alias = 'CME Clearing House', limit_kind = 'percent_of_total'
+limit_value = 0.35, actual_value = 0.6
+
+    @pytest.mark.parametrize(
+        ("entity_type", "canonical", "display_name", "alias"),
+        [
+            ("clearing_house", "cme", "CME", "CME Clearing House"),
+            ("clearing_house", "ice", "ICE", "ICE Clear U.S."),
+            ("fcm", "bank_of_america", "Bank of America", "Bank of America, NA"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        ("limit_kind", "limit_value", "actual_value"),
+        [("absolute_notional", 35.0, 60.0), ("percent_of_total", 0.35, 0.6)],
+    )
+    def test_registered_futures_alias_has_identical_limits_and_missing_results(
+        entity_type: str,
+        canonical: str,
+        display_name: str,
+        alias: str,
+        limit_kind: str,
+        limit_value: float,
+        actual_value: float,
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_value": limit_value,
+                    "limit_kind": limit_kind,
+                    "severity": "fail",
+                }
+            ],
+        }
+        other_row = {entity_type: "Unregistered Other Entity", "notional": 40.0}
+        canonical_rows = [{entity_type: display_name, "notional": 60.0}, other_row]
+        alias_rows = [{entity_type: alias, "notional": 60.0}, other_row]
+        expected = _as_records(check_limits(canonical_rows, policy))
+        assert expected == [
+            {
+                "entity_type": entity_type,
+                "entity_name": canonical,
+                "limit_kind": limit_kind,
+                "severity": "fail",
+                "actual_value": pytest.approx(actual_value),
+                "limit_value": limit_value,
+                "breach_amount": pytest.approx(actual_value - limit_value),
+                "notes": None,
+            }
+        ]
+>       assert _as_records(check_limits(alias_rows, policy)) == expected
+E       AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+E         
+E         Right contains one more item: {'entity_type': 'clearing_house', 'entity_name': 'cme', 'limit_kind': 'percent_of_total', 'severity': 'fail', ...}
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     {
+E         -         'entity_type': 'clearing_house',
+E         -         'entity_name': 'cme',
+E         -         'limit_kind': 'percent_of_total',
+E         -         'severity': 'fail',
+E         -         'actual_value': 0.6,
+E         -         'limit_value': 0.35,
+E         -         'breach_amount': 0.25,
+E         -         'notes': None,
+E         -     },
+E         - ]
+
+tests/compute/test_limits.py:584: AssertionError
+_ test_registered_futures_alias_has_identical_limits_and_missing_results[percent_of_total-0.35-0.6-clearing_house-ice-ICE-ICE Clear U.S.] _
+
+entity_type = 'clearing_house', canonical = 'ice', display_name = 'ICE'
+alias = 'ICE Clear U.S.', limit_kind = 'percent_of_total', limit_value = 0.35
+actual_value = 0.6
+
+    @pytest.mark.parametrize(
+        ("entity_type", "canonical", "display_name", "alias"),
+        [
+            ("clearing_house", "cme", "CME", "CME Clearing House"),
+            ("clearing_house", "ice", "ICE", "ICE Clear U.S."),
+            ("fcm", "bank_of_america", "Bank of America", "Bank of America, NA"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        ("limit_kind", "limit_value", "actual_value"),
+        [("absolute_notional", 35.0, 60.0), ("percent_of_total", 0.35, 0.6)],
+    )
+    def test_registered_futures_alias_has_identical_limits_and_missing_results(
+        entity_type: str,
+        canonical: str,
+        display_name: str,
+        alias: str,
+        limit_kind: str,
+        limit_value: float,
+        actual_value: float,
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_value": limit_value,
+                    "limit_kind": limit_kind,
+                    "severity": "fail",
+                }
+            ],
+        }
+        other_row = {entity_type: "Unregistered Other Entity", "notional": 40.0}
+        canonical_rows = [{entity_type: display_name, "notional": 60.0}, other_row]
+        alias_rows = [{entity_type: alias, "notional": 60.0}, other_row]
+        expected = _as_records(check_limits(canonical_rows, policy))
+        assert expected == [
+            {
+                "entity_type": entity_type,
+                "entity_name": canonical,
+                "limit_kind": limit_kind,
+                "severity": "fail",
+                "actual_value": pytest.approx(actual_value),
+                "limit_value": limit_value,
+                "breach_amount": pytest.approx(actual_value - limit_value),
+                "notes": None,
+            }
+        ]
+>       assert _as_records(check_limits(alias_rows, policy)) == expected
+E       AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+E         
+E         Right contains one more item: {'entity_type': 'clearing_house', 'entity_name': 'ice', 'limit_kind': 'percent_of_total', 'severity': 'fail', ...}
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     {
+E         -         'entity_type': 'clearing_house',
+E         -         'entity_name': 'ice',
+E         -         'limit_kind': 'percent_of_total',
+E         -         'severity': 'fail',
+E         -         'actual_value': 0.6,
+E         -         'limit_value': 0.35,
+E         -         'breach_amount': 0.25,
+E         -         'notes': None,
+E         -     },
+E         - ]
+
+tests/compute/test_limits.py:584: AssertionError
+_ test_registered_futures_alias_has_identical_limits_and_missing_results[percent_of_total-0.35-0.6-fcm-bank_of_america-Bank of America-Bank of America, NA] _
+
+entity_type = 'fcm', canonical = 'bank_of_america'
+display_name = 'Bank of America', alias = 'Bank of America, NA'
+limit_kind = 'percent_of_total', limit_value = 0.35, actual_value = 0.6
+
+    @pytest.mark.parametrize(
+        ("entity_type", "canonical", "display_name", "alias"),
+        [
+            ("clearing_house", "cme", "CME", "CME Clearing House"),
+            ("clearing_house", "ice", "ICE", "ICE Clear U.S."),
+            ("fcm", "bank_of_america", "Bank of America", "Bank of America, NA"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        ("limit_kind", "limit_value", "actual_value"),
+        [("absolute_notional", 35.0, 60.0), ("percent_of_total", 0.35, 0.6)],
+    )
+    def test_registered_futures_alias_has_identical_limits_and_missing_results(
+        entity_type: str,
+        canonical: str,
+        display_name: str,
+        alias: str,
+        limit_kind: str,
+        limit_value: float,
+        actual_value: float,
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_value": limit_value,
+                    "limit_kind": limit_kind,
+                    "severity": "fail",
+                }
+            ],
+        }
+        other_row = {entity_type: "Unregistered Other Entity", "notional": 40.0}
+        canonical_rows = [{entity_type: display_name, "notional": 60.0}, other_row]
+        alias_rows = [{entity_type: alias, "notional": 60.0}, other_row]
+        expected = _as_records(check_limits(canonical_rows, policy))
+        assert expected == [
+            {
+                "entity_type": entity_type,
+                "entity_name": canonical,
+                "limit_kind": limit_kind,
+                "severity": "fail",
+                "actual_value": pytest.approx(actual_value),
+                "limit_value": limit_value,
+                "breach_amount": pytest.approx(actual_value - limit_value),
+                "notes": None,
+            }
+        ]
+>       assert _as_records(check_limits(alias_rows, policy)) == expected
+E       AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+E         
+E         Right contains one more item: {'entity_type': 'fcm', 'entity_name': 'bank_of_america', 'limit_kind': 'percent_of_total', 'severity': 'fail', ...}
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     {
+E         -         'entity_type': 'fcm',
+E         -         'entity_name': 'bank_of_america',
+E         -         'limit_kind': 'percent_of_total',
+E         -         'severity': 'fail',
+E         -         'actual_value': 0.6,
+E         -         'limit_value': 0.35,
+E         -         'breach_amount': 0.25,
+E         -         'notes': None,
+E         -     },
+E         - ]
+
+tests/compute/test_limits.py:584: AssertionError
+_____ test_clearing_house_split_alias_aggregation_preserves_percent_breach _____
+
+    def test_clearing_house_split_alias_aggregation_preserves_percent_breach() -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": "clearing_house",
+                    "entity_name": "cme",
+                    "limit_value": 0.35,
+                    "limit_kind": "percent_of_total",
+                }
+            ],
+        }
+        canonical = [
+            {"clearing_house": "CME", "notional": 60.0},
+            {"clearing_house": "ICE", "notional": 40.0},
+        ]
+        split = [
+            {"clearing_house": "CME", "notional": 30.0},
+            {"clearing_house": "CME Clearing House", "notional": 30.0},
+            {"clearing_house": "ICE Clear U.S.", "notional": 40.0},
+        ]
+        expected = _as_records(check_limits(canonical, policy))
+        assert expected[0]["actual_value"] == pytest.approx(0.6)
+>       assert _as_records(check_limits(split, policy)) == expected
+E       AssertionError: assert [] == [{'entity_typ...arning', ...}]
+E         
+E         Right contains one more item: {'entity_type': 'clearing_house', 'entity_name': 'cme', 'limit_kind': 'percent_of_total', 'severity': 'warning', ...}
+E         
+E         Full diff:
+E         + []
+E         - [
+E         -     {
+E         -         'entity_type': 'clearing_house',
+E         -         'entity_name': 'cme',
+E         -         'limit_kind': 'percent_of_total',
+E         -         'severity': 'warning',
+E         -         'actual_value': 0.6,
+E         -         'limit_value': 0.35,
+E         -         'breach_amount': 0.25,
+E         -         'notes': None,
+E         -     },
+E         - ]
+
+tests/compute/test_limits.py:615: AssertionError
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits.py::test_registered_futures_alias_has_identical_limits_and_missing_results[absolute_notional-35.0-60.0-clearing_house-cme-CME-CME Clearing House] - AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+  
+  Right contains one more item: {'entity_type': 'clearing_house', 'entity_name': 'cme', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+  
+  Full diff:
+  + []
+  - [
+  -     {
+  -         'entity_type': 'clearing_house',
+  -         'entity_name': 'cme',
+  -         'limit_kind': 'absolute_notional',
+  -         'severity': 'fail',
+  -         'actual_value': 60.0,
+  -         'limit_value': 35.0,
+  -         'breach_amount': 25.0,
+  -         'notes': None,
+  -     },
+  - ]
+FAILED tests/compute/test_limits.py::test_registered_futures_alias_has_identical_limits_and_missing_results[absolute_notional-35.0-60.0-clearing_house-ice-ICE-ICE Clear U.S.] - AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+  
+  Right contains one more item: {'entity_type': 'clearing_house', 'entity_name': 'ice', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+  
+  Full diff:
+  + []
+  - [
+  -     {
+  -         'entity_type': 'clearing_house',
+  -         'entity_name': 'ice',
+  -         'limit_kind': 'absolute_notional',
+  -         'severity': 'fail',
+  -         'actual_value': 60.0,
+  -         'limit_value': 35.0,
+  -         'breach_amount': 25.0,
+  -         'notes': None,
+  -     },
+  - ]
+FAILED tests/compute/test_limits.py::test_registered_futures_alias_has_identical_limits_and_missing_results[absolute_notional-35.0-60.0-fcm-bank_of_america-Bank of America-Bank of America, NA] - AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+  
+  Right contains one more item: {'entity_type': 'fcm', 'entity_name': 'bank_of_america', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+  
+  Full diff:
+  + []
+  - [
+  -     {
+  -         'entity_type': 'fcm',
+  -         'entity_name': 'bank_of_america',
+  -         'limit_kind': 'absolute_notional',
+  -         'severity': 'fail',
+  -         'actual_value': 60.0,
+  -         'limit_value': 35.0,
+  -         'breach_amount': 25.0,
+  -         'notes': None,
+  -     },
+  - ]
+FAILED tests/compute/test_limits.py::test_registered_futures_alias_has_identical_limits_and_missing_results[percent_of_total-0.35-0.6-clearing_house-cme-CME-CME Clearing House] - AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+  
+  Right contains one more item: {'entity_type': 'clearing_house', 'entity_name': 'cme', 'limit_kind': 'percent_of_total', 'severity': 'fail', ...}
+  
+  Full diff:
+  + []
+  - [
+  -     {
+  -         'entity_type': 'clearing_house',
+  -         'entity_name': 'cme',
+  -         'limit_kind': 'percent_of_total',
+  -         'severity': 'fail',
+  -         'actual_value': 0.6,
+  -         'limit_value': 0.35,
+  -         'breach_amount': 0.25,
+  -         'notes': None,
+  -     },
+  - ]
+FAILED tests/compute/test_limits.py::test_registered_futures_alias_has_identical_limits_and_missing_results[percent_of_total-0.35-0.6-clearing_house-ice-ICE-ICE Clear U.S.] - AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+  
+  Right contains one more item: {'entity_type': 'clearing_house', 'entity_name': 'ice', 'limit_kind': 'percent_of_total', 'severity': 'fail', ...}
+  
+  Full diff:
+  + []
+  - [
+  -     {
+  -         'entity_type': 'clearing_house',
+  -         'entity_name': 'ice',
+  -         'limit_kind': 'percent_of_total',
+  -         'severity': 'fail',
+  -         'actual_value': 0.6,
+  -         'limit_value': 0.35,
+  -         'breach_amount': 0.25,
+  -         'notes': None,
+  -     },
+  - ]
+FAILED tests/compute/test_limits.py::test_registered_futures_alias_has_identical_limits_and_missing_results[percent_of_total-0.35-0.6-fcm-bank_of_america-Bank of America-Bank of America, NA] - AssertionError: assert [] == [{'entity_typ... 'fail', ...}]
+  
+  Right contains one more item: {'entity_type': 'fcm', 'entity_name': 'bank_of_america', 'limit_kind': 'percent_of_total', 'severity': 'fail', ...}
+  
+  Full diff:
+  + []
+  - [
+  -     {
+  -         'entity_type': 'fcm',
+  -         'entity_name': 'bank_of_america',
+  -         'limit_kind': 'percent_of_total',
+  -         'severity': 'fail',
+  -         'actual_value': 0.6,
+  -         'limit_value': 0.35,
+  -         'breach_amount': 0.25,
+  -         'notes': None,
+  -     },
+  - ]
+FAILED tests/compute/test_limits.py::test_clearing_house_split_alias_aggregation_preserves_percent_breach - AssertionError: assert [] == [{'entity_typ...arning', ...}]
+  
+  Right contains one more item: {'entity_type': 'clearing_house', 'entity_name': 'cme', 'limit_kind': 'percent_of_total', 'severity': 'warning', ...}
+  
+  Full diff:
+  + []
+  - [
+  -     {
+  -         'entity_type': 'clearing_house',
+  -         'entity_name': 'cme',
+  -         'limit_kind': 'percent_of_total',
+  -         'severity': 'warning',
+  -         'actual_value': 0.6,
+  -         'limit_value': 0.35,
+  -         'breach_amount': 0.25,
+  -         'notes': None,
+  -     },
+  - ]
+7 failed, 48 deselected in 1.22s
