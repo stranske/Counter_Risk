@@ -243,3 +243,33 @@ Verification after the test change:
 The follow-up commit was attempted after these checks; `git add` failed because
 `.git/index.lock` cannot be created on the read-only filesystem. These test and
 evidence changes remain in the working tree pending writable Git metadata.
+
+## CSV partition control and checkbox reconciliation
+
+Reviewed the five audit commits through `bc9073a`, including the proof-script
+baseline guard and variant-isolation assertions. The remaining acceptance item
+was implemented already: the baseline limit suite collected and passed 103 tests.
+The concentration control now additionally reads the actual exported CSV and
+requires unique variant/segment pairs, the exact returned partition set, and
+matching HHI, Top-5 and Top-10 values for each partition. This extends the
+already-correct control through artifact output; U1–U5 remain unknown decisions.
+
+Verification after the CSV assertions:
+
+- `python -m pytest tests/compute/test_limits.py tests/docs/test_exposure_boundary_proof.py -q -m 'not slow'`:
+  **105 collected, 105 passed in 1.24s**.
+- Focused Ruff and Black checks passed. The required whole-tree
+  `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .`
+  passed: **383 files unchanged**, using the previously documented temporary
+  runtime helper and `BLACK_NUM_WORKERS=1` after the unpatched run stalled.
+- `git diff --check` passed; `git diff --exit-code` against baseline over `src`
+  passed. No production repair was added.
+
+PR #1172 was verified open with `draft=false`. Its remaining unchecked item
+should be checked, as reflected in `docs/evidence/issue-1160/reconciled-pr-body.md`.
+Automatic approval review rejected the live body update because the GitHub
+connector requires approval and this run's approval policy is `never`.
+
+After validation, the commit attempt failed at `git add`: Git could not create
+`.git/index.lock` on the read-only filesystem. The CSV regression and handoff
+updates remain uncommitted; no push was attempted.

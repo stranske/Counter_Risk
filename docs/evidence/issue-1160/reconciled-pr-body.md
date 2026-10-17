@@ -17,6 +17,8 @@ Inventory the CPRS-FCM parser → exposure assembly → limits seam, with canoni
 
 Add six actual-XLSX regression cases for alias-only FCM/clearing-house caps, overlapping subsets, partitioned concentration, and explicit parser variant exclusions. Production files remain byte-identical to baseline `f8871b2971d34b6d1b26df17fea1f9ef9cf079df`.
 
+The concentration control also checks that exported CSV partitions are unique and match the returned manifest records, with identical HHI, Top-5 and Top-10 values.
+
 Report: `docs/audit/2026-10-17-issue-1160-exposure-boundary.md`. Five remaining questions have explicit owners: mismatched variant provenance, staged custom-group enrichment, repeated-label evidence multiplicity, direct compute caller contracts, and raw-row top lists versus canonical concentration. These are unadjudicated questions, not newly approved defects.
 
 ## Testing
@@ -66,6 +68,6 @@ Current source readback: `src/counter_risk/parsers/cprs_fcm.py:226` at `117fc794
 <!-- auto-status-summary:end -->
 
 
-Reconciliation: reviewed `b4a55a0`, `ac2b1fe`, and `b2895ff`; all nine items verified locally. Automatic approval review again rejected publishing this body because the connector requires approval and this run uses approval policy `never`. This file is the prepared handoff body; live PR checkboxes remain unchanged.
+Reconciliation: reviewed `b4a55a0`, `ac2b1fe`, `b2895ff`, `4945a10`, and `bc9073a`; all nine items verified locally. The CSV control follow-up passes with the existing controls: `python -m pytest tests/compute/test_limits.py tests/docs/test_exposure_boundary_proof.py -q -m 'not slow'`: **105 collected, 105 passed in 1.24s**. Automatic approval review again rejected publishing the reconciled checkbox because the connector requires approval and this run uses approval policy `never`. This file is the prepared handoff body; the live PR checkbox remains unchanged. PR #1172 was verified open with `draft=false` at head `bc9073af37912e2cae88cd207f968c554e28a9b9`.
 
 Commit handoff: `git add` could not create `.git/index.lock` on the read-only filesystem. Verified changes remain uncommitted in the checkout.

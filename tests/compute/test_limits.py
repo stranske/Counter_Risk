@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 from typing import Any, cast
 
@@ -1136,6 +1137,17 @@ def test_boundary_audit_partitioned_concentration_control(
             assert row["hhi"] == pytest.approx(expected_hhi)
             for metric in ("top5_share", "top10_share"):
                 assert row[metric] == pytest.approx(1.0 if expected_hhi else 0.0)
+
+    # The exported artifact must preserve the same partitions and numerical
+    # results as the records returned for the manifest.
+    with (tmp_path / "concentration_metrics.csv").open(newline="", encoding="utf-8") as output:
+        exported = list(csv.DictReader(output))
+    exported_partitions = {(row["variant"], row["segment"]): row for row in exported}
+    assert len(exported) == len(exported_partitions), "CSV must not duplicate partitions"
+    assert exported_partitions.keys() == by_partition.keys(), "CSV must retain every partition"
+    for partition, row in exported_partitions.items():
+        for metric in ("hhi", "top5_share", "top10_share"):
+            assert float(row[metric]) == pytest.approx(by_partition[partition][metric])
 
     # The same parsed rows must produce the same concentration alone and beside
     # overlapping portfolios. Limits intentionally select only All Programs;
