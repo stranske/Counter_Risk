@@ -1117,6 +1117,7 @@ def test_boundary_audit_partitioned_concentration_control(
         parsed_by_variant=boundary_parsed_workbooks, run_dir=tmp_path
     )
     by_partition = {(row["variant"], row["segment"]): row for row in metrics}
+    assert len(metrics) == len(by_partition), "each variant/segment must have exactly one result"
     assert set(by_partition) == {
         (variant, segment)
         for variant in ("all_programs", "ex_trend")
@@ -1135,3 +1136,14 @@ def test_boundary_audit_partitioned_concentration_control(
             assert row["hhi"] == pytest.approx(expected_hhi)
             for metric in ("top5_share", "top10_share"):
                 assert row[metric] == pytest.approx(1.0 if expected_hhi else 0.0)
+
+    # The same parsed rows must produce the same concentration alone and beside
+    # overlapping portfolios. Limits intentionally select only All Programs;
+    # concentration must retain each supported portfolio's independent results.
+    for variant, parsed in boundary_parsed_workbooks.items():
+        isolated = _compute_and_write_concentration_metrics(
+            parsed_by_variant={variant: parsed}, run_dir=tmp_path / variant
+        )
+        assert isolated == [
+            row for row in metrics if row["variant"] == variant
+        ], f"{variant} concentration must be invariant to overlapping portfolios"

@@ -212,3 +212,34 @@ Current verification:
   invocation failed on the sandbox's IPC restriction.
 - `git diff --exit-code f8871b2971d34b6d1b26df17fea1f9ef9cf079df -- src`
   passed; production remains identical to the audited baseline.
+
+## Partition isolation control follow-up
+
+The remaining acceptance item already had passing alias-only and overlapping-subset
+probes. The concentration control now additionally compares every parsed variant
+in isolation against its results alongside the overlapping portfolios, including
+Trend's intentionally empty totals. It also rejects duplicate variant/segment
+results before building the lookup used by the numerical assertions. This makes
+the already-correct concentration partition contract explicit without changing
+production code or reclassifying any U1–U5 policy question as a defect.
+
+- [x] Use alias-only and overlapping-subset controls, including already-correct
+  partitioned concentration; preserve unknowns rather than inventing defects.
+
+Verification after the test change:
+
+- `python -m pytest tests/compute/test_limits.py -q -m 'not slow'`: **103 collected,
+  103 passed in 1.31s**, including the strengthened concentration control and
+  existing alias-only, overlap and parser scope assertions.
+- `ruff check tests/compute/test_limits.py` and `git diff --check` passed.
+- `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .`:
+  **383 files unchanged**, after formatting the modified test. The default
+  multiprocessing run was sandbox-denied; the passing check used
+  `BLACK_NUM_WORKERS=1` and the existing `black-runtime.txt` helper copied to
+  `/tmp/counter-risk-black-runtime/sitecustomize.py` via `PYTHONPATH`.
+- Production still matches baseline
+  `f8871b2971d34b6d1b26df17fea1f9ef9cf079df` (`git diff --exit-code` over `src`).
+
+The follow-up commit was attempted after these checks; `git add` failed because
+`.git/index.lock` cannot be created on the read-only filesystem. These test and
+evidence changes remain in the working tree pending writable Git metadata.
