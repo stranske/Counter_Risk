@@ -356,3 +356,13 @@ After 3 failures, keepalive pauses and adds `needs-human`:
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+Source report dates are checked independently of the authoritative configured
+`as_of_date`. Confirmed conflicts appear as `SOURCE_REPORT_DATE_CONFLICT` in
+`manifest.json` and a YELLOW `DATA_QUALITY_SUMMARY.txt`, with workbook/variant
+provenance. Diagnostic comparison defaults to `report_date_policy: warn`;
+`strict` opts into failure for diagnostics too. Final publication/history always
+blocks confirmed conflicts before side effects, with durable diagnostics and
+workflow CLI exit 1, unless this run supplies `--report-date-override "audit reason"`.
+See [source report-date consistency](docs/data_quality.md#source-report-date-consistency-u05)
+for bounded evidence rules, diagnostic-only settings, and override audit fields.

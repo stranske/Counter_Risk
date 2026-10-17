@@ -1,0 +1,31 @@
+{
+  "argv": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "pytest",
+    "-q",
+    "--tb=short",
+    "tests/test_dates.py",
+    "tests/pipeline/test_as_of_header_mismatch.py",
+    "tests/pipeline/test_header_extraction_boundaries.py",
+    "tests/writers/test_mosers_workbook.py",
+    "--junitxml=docs/evidence/issue-1162/acceptance-final.xml"
+  ],
+  "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1162__opener",
+  "started_at": "2026-10-17T03:08:19.536373+00:00",
+  "source_bindings": {
+    "src/counter_risk/dates.py": "40036cc4044da68e31f96517368c14ec287381b72b82fe1e816033db4b806c78",
+    "src/counter_risk/pipeline/run.py": "c4f93fde4ce043c44c0d7ed723b17ffb0b8481b2ed51faeac22e68a9997e171d",
+    "tests/test_dates.py": "1f9360b4d198a533cb9e1cb58984045751421ee3f00cfb13e6f749b57abc3d32",
+    "tests/pipeline/test_as_of_header_mismatch.py": "beda8eb55fee1114dd1430eaabf9a6d149ffa97bdd7735239d5bf13af30a3811"
+  },
+  "exit_code": 0,
+  "console_sha256": "8e7d77e8d050bbff2880aa3db070c64b843c58ac2641b9183d91f33cc7471bd6",
+  "junit_sha256": "7041c8665616e1b2438856f7dac78fb4539c0f596324b85bf79a609b44d88a58",
+  "junit_publication": {
+    "transformation": "remove-junit-suite-hostname-v1",
+    "original_sha256": "7041c8665616e1b2438856f7dac78fb4539c0f596324b85bf79a609b44d88a58",
+    "published_sha256": "a9901e926831038542047dc23840a53ac5bf2217408c7c991b68f502cff70487",
+    "removed_attributes": 1
+  }
+}

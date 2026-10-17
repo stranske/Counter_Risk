@@ -71,12 +71,13 @@ def test_limit_breach_resolution_finds_bundled_limits_config(
 
     with caplog.at_level(logging.INFO, logger="counter_risk.pipeline.run"):
         evaluation = _compute_and_write_limit_breaches(
-            parsed_by_variant={},
+            parsed_by_variant={"all_programs": {"totals": [], "futures": []}},
             run_dir=run_dir,
             warnings=warnings,
         )
 
-    # With no exposures there are no breaches, but the limits config must have
+    # With an explicitly present, empty authoritative scope there are no breaches,
+    # but the limits config must have
     # been located: the silent "missing config" skip branch must NOT fire.
     assert evaluation.csv_path is None
     assert "limit_breaches_skipped" not in caplog.text

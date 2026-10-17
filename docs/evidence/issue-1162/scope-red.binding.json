@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "pytest",
+    "-q",
+    "--tb=short",
+    "tests/test_dates.py::test_compare_source_dates_detects_later_variant_without_changing_precedence",
+    "--junitxml=docs/evidence/issue-1162/scope-red.xml"
+  ],
+  "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1162__opener",
+  "started_at": "2026-10-17T03:08:01.788216+00:00",
+  "source_bindings": {
+    "src/counter_risk/dates.py": "2f843e3da4c1304525b79faa5b262a5761abfa6468cf4ae1f66e5a00e17875d9",
+    "src/counter_risk/pipeline/run.py": "c4f93fde4ce043c44c0d7ed723b17ffb0b8481b2ed51faeac22e68a9997e171d",
+    "tests/test_dates.py": "1f9360b4d198a533cb9e1cb58984045751421ee3f00cfb13e6f749b57abc3d32",
+    "tests/pipeline/test_as_of_header_mismatch.py": "beda8eb55fee1114dd1430eaabf9a6d149ffa97bdd7735239d5bf13af30a3811"
+  },
+  "exit_code": 1,
+  "console_sha256": "29e670f990ffc755a0606e6ee03258326371bcb9677c9df5a5de1db30ccee170",
+  "junit_sha256": "406a141405d2ad9014a35fb1f4be47d8fc6ce7203b869120bb2b73259d4bb27d",
+  "junit_publication": {
+    "transformation": "remove-junit-suite-hostname-v1",
+    "original_sha256": "406a141405d2ad9014a35fb1f4be47d8fc6ce7203b869120bb2b73259d4bb27d",
+    "published_sha256": "af807b726c27b0a00e5912eb62d96d74315d921b1b062bdaf80175fed97e63a4",
+    "removed_attributes": 1
+  }
+}

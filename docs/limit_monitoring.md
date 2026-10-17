@@ -4,6 +4,23 @@ The monthly pipeline evaluates configured exposure limits during each run and
 writes breach artifacts beside the other run outputs. Limits are maintained in
 `config/limits.yml`.
 
+## Exposure universe
+
+Current limits have no variant selector. Every enabled unscoped cap uses **All
+Programs once**, selected before building limit exposure rows. Ex Trend and Trend
+are overlapping reporting subsets and contribute neither exposure nor missing-entity
+coverage to these caps. Absolute values remain gross magnitudes, including for
+negative notionals. Percentage numerators and denominators both use All Programs;
+counterparty caps use its totals and futures dimensions use its futures rows with
+the existing granularity and canonical alias resolution.
+
+If `all_programs` is absent, limit-row construction raises an explicit missing
+**authoritative All Programs** error; the full pipeline also rejects missing parsed
+variants during input validation. No subset fallback is allowed. An authoritative
+scope with empty rows remains empty: enabled targets are reported missing under
+the existing warning/strict policy. Missing limits configuration retains its
+existing logged skip behavior.
+
 ## Configuration
 
 Each `limits` entry has these fields:
@@ -85,7 +102,26 @@ banner with the highest observed severity.
 
 ## Missing Entities
 
-If a configured enabled entity is not present in the exposure rows, the default
+If a configured enabled entity is not present in the All Programs exposure rows, the default
 behavior is to add a manifest warning and continue. Set
 `strict_missing_entities: true` to fail the run instead. Disabled limits are not
 checked for missing entities.
+
+## Scope verification (U04 / issue #1161)
+
+Named gates in `tests/compute/test_limits.py` cover All Programs Citibank 200m
+plus Ex Trend 150m against a 250m fail cap (no breach), and All Programs 300m
+(50m breach). Percentage gates vary overlapping subsets across all five dimensions
+and preserve the authoritative gross denominator and actual share. Subset-only
+entities stay missing, including when the authoritative tables are empty.
+The gates also place reporting subsets before All Programs in the input mapping,
+vary matching and unrelated subset entities to challenge both sides of each share,
+and verify negative authoritative notionals against the same absolute cap.
+
+`test_all_programs_limit_scope_propagates_to_pipeline_and_exit` in
+`tests/pipeline/test_run_pipeline.py` exercises existing pipeline/CLI control flow
+with real pandas frames. A true 50m breach appears once in CSV and manifest, yields
+a fail data-quality finding and RED summary, and raises in the pipeline / returns
+CLI exit code 1. The 200m case has no breach artifact or limit failure and returns
+CLI code 0. Parser frames and Office/report output boundaries are test doubles;
+this does not claim native Office rendering or a fresh production-data run.

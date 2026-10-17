@@ -1,0 +1,11 @@
+--- src/counter_risk/dates.py
++++ src/counter_risk/dates.py
+@@ -258,7 +258,7 @@
+     return {
+         "configured_date": configured_date.isoformat() if configured_date else None,
+         "sources": sources,
+-        "has_conflict": bool(config_conflicts) or inter_variant_conflict,
++        "has_conflict": False,  # DELIBERATE BREAK: disconnect conflict signal
+         "config_conflict_variants": config_conflicts,
+         "inter_variant_conflict": inter_variant_conflict,
+         "status": (

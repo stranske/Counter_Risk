@@ -1,0 +1,38 @@
+Counterparty Risk Data Quality Summary
+
+As-of date: 2025-12-31
+Run date: 2026-10-16
+Overall status: WARN (YELLOW) - Review warnings before sending.
+
+Finding counts:
+- Total findings: 11
+- info: 0
+- warn: 11
+- fail: 0
+
+Findings by category:
+- cash: total=1 (info=0, warn=1, fail=0)
+- input: total=1 (info=0, warn=1, fail=0)
+- output_generation: total=1 (info=0, warn=1, fail=0)
+- pipeline: total=7 (info=0, warn=7, fail=0)
+- ppt: total=1 (info=0, warn=1, fail=0)
+
+Detailed findings:
+- [WARN] pipeline / INPUT_VALIDATION_OPTIONAL_INPUTS_UNAVAILABLE_RAW_NISA_ALL_PROGRA: Input validation: optional inputs unavailable (raw_nisa_all_programs_xlsx).
+- [WARN] cash / REPO_CASH_SOURCE_NOT_CONFIGURED: Repo Cash source is not configured (cash_source_type=none).
+- [WARN] pipeline / RISK_PROXY_NOTIONAL_VOLATILITY_SKIPPED_FOR_ALL_PROGRAMS_MISSING_: risk proxy notional-volatility skipped for all_programs: missing required columns (AnnualizedVolatility)
+- [WARN] pipeline / RISK_PROXY_POSITION_VOLATILITY_SKIPPED_FOR_ALL_PROGRAMS_MISSING_: risk proxy position-volatility skipped for all_programs: missing required columns (PositionUSD, Vol)
+- [WARN] pipeline / RISK_PROXY_NOTIONAL_VOLATILITY_SKIPPED_FOR_EX_TREND_MISSING_REQU: risk proxy notional-volatility skipped for ex_trend: missing required columns (AnnualizedVolatility)
+- [WARN] pipeline / RISK_PROXY_POSITION_VOLATILITY_SKIPPED_FOR_EX_TREND_MISSING_REQU: risk proxy position-volatility skipped for ex_trend: missing required columns (PositionUSD, Vol)
+- [WARN] pipeline / RISK_PROXY_NOTIONAL_VOLATILITY_SKIPPED_FOR_TREND_MISSING_REQUIRE: risk proxy notional-volatility skipped for trend: missing required columns (AnnualizedVolatility)
+- [WARN] pipeline / RISK_PROXY_POSITION_VOLATILITY_SKIPPED_FOR_TREND_MISSING_REQUIRE: risk proxy position-volatility skipped for trend: missing required columns (PositionUSD, Vol)
+- [WARN] output_generation / OUTPUT_GENERATION_SKIPPED: risk_rankings.csv skipped: missing required proxy inputs (Notional+AnnualizedVolatility and/or PositionUSD+Vol)
+- [WARN] input / MISSING_OPTIONAL_INPUTS: Optional inputs unavailable: raw_nisa_all_programs_xlsx.
+- [WARN] ppt / PPT_GENERATION_SKIPPED: PowerPoint generation was skipped.
+
+Recommended actions:
+- [WARN] pipeline: Review warnings and confirm run artifacts are acceptable.
+- [WARN] cash: Review warnings and confirm run artifacts are acceptable.
+- [WARN] output_generation: Review warnings and confirm run artifacts are acceptable.
+- [WARN] input: Review warnings and confirm run artifacts are acceptable.
+- [WARN] ppt: Verify PPT links/slides manually before distribution.

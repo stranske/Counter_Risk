@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "ruff",
+    "check",
+    "src",
+    "tests",
+    "docs/evidence/issue-1161/reproduce_scope_gate.py"
+  ],
+  "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener",
+  "started_at": "2026-10-17T02:40:54.320549+00:00",
+  "source_bindings": {
+    "src/counter_risk/pipeline/run.py": "875b7a982802bf226f0290e634d7d7895d5bc650d119f4d71351fabe0496dc92",
+    "tests/compute/test_limits.py": "1152dd9132306445b2eeb326e32a7c51eaf930917050c8aada3b7aa38f124737",
+    "tests/pipeline/test_run_pipeline.py": "e186ed8a313d1a3dcbba9d27997afadbbf744f50fdd798d057eddc698009a10c"
+  },
+  "exit_code": 0,
+  "console_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+}

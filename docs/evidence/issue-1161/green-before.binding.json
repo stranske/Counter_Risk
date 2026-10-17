@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "pytest",
+    "-vv",
+    "tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants",
+    "--junitxml=/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener/docs/evidence/issue-1161/green-before.xml"
+  ],
+  "started_at": "2026-10-17T02:42:07.213366+00:00",
+  "exit_code": 0,
+  "source_sha256": "875b7a982802bf226f0290e634d7d7895d5bc650d119f4d71351fabe0496dc92",
+  "test_sha256": "1152dd9132306445b2eeb326e32a7c51eaf930917050c8aada3b7aa38f124737",
+  "pipeline_test_sha256": "e186ed8a313d1a3dcbba9d27997afadbbf744f50fdd798d057eddc698009a10c",
+  "junit_sha256": "e1e008cb726a547454b00eb2494f1110bbfb7e352d51a58dbd1fe531122a16e7",
+  "console_sha256": "63693d43975d8a46c28e79e516170556e12619f60b83d05be9e5e04b61aefe75",
+  "tests": 2,
+  "failures": 0,
+  "errors": 0
+}

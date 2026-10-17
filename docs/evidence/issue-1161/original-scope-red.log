@@ -1,0 +1,144 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0 -- /opt/anaconda3/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 2 items
+
+tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[200000000.0-None] FAILED [ 50%]
+tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[300000000.0-300000000.0] FAILED [100%]
+
+=================================== FAILURES ===================================
+_ test_all_programs_absolute_cap_ignores_overlapping_variants[200000000.0-None] _
+
+authoritative = 200000000.0, expected_actual = None
+
+    @pytest.mark.parametrize(
+        "authoritative, expected_actual", [(200_000_000.0, None), (300_000_000.0, 300_000_000.0)]
+    )
+    def test_all_programs_absolute_cap_ignores_overlapping_variants(
+        authoritative: float, expected_actual: float | None
+    ) -> None:
+        parsed = {
+            "all_programs": {
+                "totals": [{"counterparty": "Citibank", "Notional": authoritative}],
+                "futures": [],
+            },
+            "ex_trend": {
+                "totals": [{"counterparty": "Citibank", "Notional": 150_000_000.0}],
+                "futures": [],
+            },
+            "trend": {"totals": [], "futures": []},
+        }
+        limits = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "citibank",
+                    "limit_kind": "absolute_notional",
+                    "limit_value": 250_000_000.0,
+                    "severity": "fail",
+                }
+            ],
+        }
+        breaches = _as_records(check_limits(_build_limit_exposure_rows(parsed), limits))
+        if expected_actual is None:
+>           assert breaches == []
+E           AssertionError: assert [{'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', 'actual_value': 350000000.0, 'limit_value': 250000000.0, 'breach_amount': 100000000.0, 'notes': None}] == []
+E             
+E             Left contains one more item: {'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+E             
+E             Full diff:
+E             - []
+E             + [
+E             +     {
+E             +         'entity_type': 'counterparty',
+E             +         'entity_name': 'citibank',
+E             +         'limit_kind': 'absolute_notional',
+E             +         'severity': 'fail',
+E             +         'actual_value': 350000000.0,
+E             +         'limit_value': 250000000.0,
+E             +         'breach_amount': 100000000.0,
+E             +         'notes': None,
+E             +     },
+E             + ]
+
+tests/compute/test_limits.py:566: AssertionError
+_ test_all_programs_absolute_cap_ignores_overlapping_variants[300000000.0-300000000.0] _
+
+authoritative = 300000000.0, expected_actual = 300000000.0
+
+    @pytest.mark.parametrize(
+        "authoritative, expected_actual", [(200_000_000.0, None), (300_000_000.0, 300_000_000.0)]
+    )
+    def test_all_programs_absolute_cap_ignores_overlapping_variants(
+        authoritative: float, expected_actual: float | None
+    ) -> None:
+        parsed = {
+            "all_programs": {
+                "totals": [{"counterparty": "Citibank", "Notional": authoritative}],
+                "futures": [],
+            },
+            "ex_trend": {
+                "totals": [{"counterparty": "Citibank", "Notional": 150_000_000.0}],
+                "futures": [],
+            },
+            "trend": {"totals": [], "futures": []},
+        }
+        limits = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "citibank",
+                    "limit_kind": "absolute_notional",
+                    "limit_value": 250_000_000.0,
+                    "severity": "fail",
+                }
+            ],
+        }
+        breaches = _as_records(check_limits(_build_limit_exposure_rows(parsed), limits))
+        if expected_actual is None:
+            assert breaches == []
+        else:
+            assert len(breaches) == 1
+>           assert breaches[0]["actual_value"] == expected_actual
+E           assert 450000000.0 == 300000000.0
+
+tests/compute/test_limits.py:569: AssertionError
+=============================== warnings summary ===============================
+tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[200000000.0-None]
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
+    from pandas.core.computation.check import NUMEXPR_INSTALLED
+
+tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[200000000.0-None]
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
+    from pandas.core import (
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener/docs/evidence/issue-1161/original-scope-red.xml -
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[200000000.0-None] - AssertionError: assert [{'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', 'actual_value': 350000000.0, 'limit_value': 250000000.0, 'breach_amount': 100000000.0, 'notes': None}] == []
+  
+  Left contains one more item: {'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+  
+  Full diff:
+  - []
+  + [
+  +     {
+  +         'entity_type': 'counterparty',
+  +         'entity_name': 'citibank',
+  +         'limit_kind': 'absolute_notional',
+  +         'severity': 'fail',
+  +         'actual_value': 350000000.0,
+  +         'limit_value': 250000000.0,
+  +         'breach_amount': 100000000.0,
+  +         'notes': None,
+  +     },
+  + ]
+FAILED tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[300000000.0-300000000.0] - assert 450000000.0 == 300000000.0
+======================== 2 failed, 2 warnings in 1.85s =========================

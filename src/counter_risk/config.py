@@ -87,6 +87,7 @@ class WorkflowConfig(BaseModel):
 
     as_of_date: date | None = None
     run_date: date | None = None
+    report_date_policy: Literal["warn", "strict"] = "warn"
     mosers_all_programs_xlsx: Path | None = None
     raw_nisa_all_programs_xlsx: Path | None = None
     daily_holdings_pdf: Path | None = None

@@ -1,0 +1,26 @@
+{
+  "experiment_id": "advice:b1099c7d60f9",
+  "shared_lock_denied": true,
+  "decisions": [
+    {
+      "capability_id": "deliberate-break-verifier",
+      "decision": "decline",
+      "reason": "dispatch_ready=false; use serialized manual original-builder mutation, valid JUnit, raw argv and source SHA bindings instead; no gate override"
+    },
+    {
+      "capability_id": "runtime-ac-checks",
+      "decision": "decline",
+      "reason": "dispatch_ready=false with recorded failure blocker; named real pipeline and CLI acceptance gates provide direct evidence without enabling dispatch"
+    },
+    {
+      "capability_id": "codemod-campaign",
+      "decision": "decline",
+      "reason": "precondition_unmet: one scoped semantic fix, no repeated mechanical migration"
+    },
+    {
+      "capability_id": "testgen-lane",
+      "decision": "decline",
+      "reason": "direct gate declined: bounded implementation acceptance, no coverage delta claim; named adversarial tests plus causal RED/GREEN are the required evidence; no remote writer permitted"
+    }
+  ]
+}

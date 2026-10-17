@@ -533,6 +533,194 @@ def test_registered_alias_triggers_canonical_limit() -> None:
 
 
 @pytest.mark.parametrize(
+    "authoritative, expected_actual", [(200_000_000.0, None), (300_000_000.0, 300_000_000.0)]
+)
+@pytest.mark.parametrize("sign", [1, -1])
+def test_all_programs_absolute_cap_ignores_overlapping_variants(
+    authoritative: float, expected_actual: float | None, sign: int
+) -> None:
+    parsed = {
+        "ex_trend": {
+            "totals": [{"counterparty": "Citibank", "Notional": 150_000_000.0}],
+            "futures": [],
+        },
+        "trend": {"totals": [], "futures": []},
+        "all_programs": {
+            "totals": [{"counterparty": "Citibank", "Notional": sign * authoritative}],
+            "futures": [],
+        },
+    }
+    limits = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "counterparty",
+                "entity_name": "citibank",
+                "limit_kind": "absolute_notional",
+                "limit_value": 250_000_000.0,
+                "severity": "fail",
+            }
+        ],
+    }
+    breaches = _as_records(check_limits(_build_limit_exposure_rows(parsed), limits))
+    if expected_actual is None:
+        assert breaches == []
+    else:
+        assert len(breaches) == 1
+        assert breaches[0]["actual_value"] == expected_actual
+        assert breaches[0]["breach_amount"] == 50_000_000.0
+        assert breaches[0]["severity"] == "fail"
+
+
+@pytest.mark.parametrize(
+    "subset_notional, subset_matches_target",
+    [
+        (None, False),
+        (10.0, False),
+        (900_000_000.0, False),
+        (-900_000_000.0, False),
+        (900_000_000.0, True),
+        (-900_000_000.0, True),
+    ],
+)
+@pytest.mark.parametrize(
+    "entity_type, entity_name",
+    [
+        ("counterparty", "Citibank"),
+        ("fcm", "FCM A"),
+        ("clearing_house", "CME"),
+        ("segment", "Rates"),
+        ("custom_group", "Group A"),
+    ],
+)
+def test_all_programs_percentage_universe_is_subset_invariant(
+    subset_notional: float | None,
+    subset_matches_target: bool,
+    entity_type: str,
+    entity_name: str,
+) -> None:
+    authoritative = {
+        "totals": [
+            {"counterparty": "Citibank", "Notional": 200.0},
+            {"counterparty": "Other", "Notional": -800.0},
+        ],
+        "futures": [
+            {
+                "fcm": "FCM A",
+                "clearing_house": "CME",
+                "class": "Rates",
+                "custom_group": "Group A",
+                "notional": 40.0,
+            },
+            {
+                "fcm": "FCM B",
+                "clearing_house": "ICE",
+                "class": "Credit",
+                "custom_group": "Group B",
+                "notional": -60.0,
+            },
+        ],
+    }
+    parsed = {}
+    if subset_notional is not None:
+        parsed.update(
+            {
+                name: {
+                    "totals": [
+                        {
+                            "counterparty": "Citibank" if subset_matches_target else "Other",
+                            "Notional": subset_notional,
+                        }
+                    ],
+                    "futures": [
+                        {
+                            "fcm": "FCM A" if subset_matches_target else "FCM B",
+                            "clearing_house": "CME" if subset_matches_target else "ICE",
+                            "class": "Rates" if subset_matches_target else "Credit",
+                            "custom_group": "Group A" if subset_matches_target else "Group B",
+                            "notional": subset_notional,
+                        }
+                    ],
+                }
+                for name in ("ex_trend", "trend")
+            }
+        )
+    # Select the authoritative key, even when reporting subsets appear first.
+    parsed["all_programs"] = authoritative
+    actual_share = 0.2 if entity_type == "counterparty" else 0.4
+    limits = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": entity_type,
+                "entity_name": entity_name,
+                "limit_kind": "percent_of_total",
+                "limit_value": actual_share - 0.05,
+            }
+        ],
+    }
+    rows = _build_limit_exposure_rows(parsed)
+    breaches = _as_records(check_limits(rows, limits))
+    assert len(breaches) == 1
+    assert breaches[0]["actual_value"] == pytest.approx(actual_share)
+    assert breaches[0]["breach_amount"] == pytest.approx(0.05)
+    assert rows == _build_limit_exposure_rows({"all_programs": authoritative})
+    limits["limits"][0]["limit_value"] = actual_share + 0.05
+    assert _as_records(check_limits(rows, limits)) == []
+
+
+def test_all_programs_missing_entities_cannot_be_satisfied_by_subset() -> None:
+    parsed = {
+        "all_programs": {"totals": [], "futures": []},
+        "ex_trend": {
+            "totals": [{"counterparty": "Citibank", "Notional": 150_000_000.0}],
+            "futures": [
+                {
+                    "fcm": "FCM A",
+                    "clearing_house": "CME",
+                    "class": "Rates",
+                    "custom_group": "Group A",
+                    "notional": 40.0,
+                }
+            ],
+        },
+    }
+    limits = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": kind,
+                "entity_name": name,
+                "limit_kind": "absolute_notional",
+                "limit_value": 250_000_000.0,
+            }
+            for kind, name in [
+                ("counterparty", "citibank"),
+                ("fcm", "fcm_a"),
+                ("clearing_house", "cme"),
+                ("segment", "rates"),
+                ("custom_group", "group_a"),
+            ]
+        ],
+    }
+    rows = _build_limit_exposure_rows(parsed)
+    assert rows == []
+    assert find_missing_limit_entities(rows, limits) == sorted(
+        [
+            {"entity_type": entry["entity_type"], "entity_name": entry["entity_name"]}
+            for entry in limits["limits"]
+        ],
+        key=lambda row: row["entity_type"],
+    )
+
+
+@pytest.mark.parametrize("parsed", [{}, {"ex_trend": {"totals": [], "futures": []}}])
+def test_all_programs_authority_is_required(parsed: dict[str, dict[str, Any]]) -> None:
+    with pytest.raises(ValueError, match="Missing authoritative All Programs"):
+        _build_limit_exposure_rows(parsed)
+
+
+@pytest.mark.parametrize(
     ("entity_type", "canonical", "display_name", "alias"),
     [
         ("clearing_house", "cme", "CME", "CME Clearing House"),
