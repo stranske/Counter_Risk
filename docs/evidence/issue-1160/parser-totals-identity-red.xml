@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="3.072" timestamp="2026-10-17T10:54:36.888925+00:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_overlap_parser_to_limit" time="2.079"><failure message="AssertionError: subset-only coverage evidence must come from the XLSX parser&#10;assert 'Subset Only' in {'Citibank Lost', 'Citigroup Lost', 'Subset Only Lost'}">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-9/test_boundary_audit_overlap_pa0')
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="3.066" timestamp="2026-10-17T11:04:09.695527+00:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_overlap_parser_to_limit" time="2.073"><failure message="AssertionError: subset-only coverage evidence must come from the XLSX parser&#10;assert 'Subset Only' in {'Citibank Lost', 'Citigroup Lost', 'Subset Only Lost'}">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-13/test_boundary_audit_overlap_pa0')
 boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
 0   Citibank Lo...ture  ...  CME Clearing House   6000.0
 1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
@@ -51,7 +51,7 @@ boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS 
 E       AssertionError: subset-only coverage evidence must come from the XLSX parser
 E       assert 'Subset Only' in {'Citibank Lost', 'Citigroup Lost', 'Subset Only Lost'}
 
-tests/compute/test_limits.py:1058: AssertionError</failure></testcase><testcase classname="tests.compute.test_limits" name="test_boundary_audit_partitioned_concentration_control" time="0.055"><failure message="assert 0.346938775510204 == 0.5918367346938775 ± 5.9e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.346938775510204&#10;  Expected: 0.5918367346938775 ± 5.9e-07">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-9/test_boundary_audit_partitione0')
+tests/compute/test_limits.py:1086: AssertionError</failure></testcase><testcase classname="tests.compute.test_limits" name="test_boundary_audit_partitioned_concentration_control" time="0.055"><failure message="assert 0.346938775510204 == 0.5918367346938775 ± 5.9e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.346938775510204&#10;  Expected: 0.5918367346938775 ± 5.9e-07">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-13/test_boundary_audit_partitione0')
 boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
 0   Citibank Lo...ture  ...  CME Clearing House   6000.0
 1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
@@ -87,4 +87,4 @@ E                 comparison failed
 E                 Obtained: 0.346938775510204
 E                 Expected: 0.5918367346938775 ± 5.9e-07
 
-tests/compute/test_limits.py:1107: AssertionError</failure></testcase></testsuite></testsuites>
+tests/compute/test_limits.py:1135: AssertionError</failure></testcase></testsuite></testsuites>

@@ -2,15 +2,15 @@
   "baseline_commit": "f8871b2971d34b6d1b26df17fea1f9ef9cf079df",
   "acceptance": {
     "command": "<PYTHON> -m pytest tests/compute/test_limits.py -q -m \"not slow\"",
-    "tests": 101,
+    "tests": 103,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
-  "new_cases": 4,
-  "mutants": 5,
-  "assertion_red_cases": 8,
-  "total_proof_executions": 218,
+  "new_cases": 6,
+  "mutants": 7,
+  "assertion_red_cases": 10,
+  "total_proof_executions": 226,
   "production_restored_byte_identical": true,
   "source_sha256": {
     "src/counter_risk/parsers/cprs_fcm.py": "fb9e3b8c9ab063d17022ff63761414800b81c25aa5831cde3aad45cac99b79d9",
@@ -23,21 +23,6 @@
     "mypy": "2.4.0"
   },
   "checks": [
-    {
-      "name": "ruff",
-      "command": [
-        "ruff",
-        "check",
-        "--output-format",
-        "concise",
-        "--extend-exclude",
-        ".workflows-lib",
-        "."
-      ],
-      "exit": 0,
-      "raw_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
-      "public_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
-    },
     {
       "name": "black",
       "command": [
@@ -58,18 +43,16 @@
       }
     },
     {
-      "name": "mypy",
+      "name": "ruff",
       "command": [
-        "mypy",
-        "--config-file",
-        "pyproject.toml",
-        "--exclude",
-        ".workflows-lib",
-        "src"
+        "ruff",
+        "check",
+        "tests/compute/test_limits.py",
+        "docs/evidence/issue-1160/prove_boundary.py"
       ],
       "exit": 0,
-      "raw_log_sha256": "b1db5d31d480f24cb9d45c3983bbacaed93435db305200eeaba25d77759b33a3",
-      "public_log_sha256": "b1db5d31d480f24cb9d45c3983bbacaed93435db305200eeaba25d77759b33a3"
+      "raw_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "public_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
     }
   ],
   "limitations": [
@@ -77,11 +60,11 @@
     "no source closure, merge, policy changes or new issue filing"
   ],
   "artifact_sha256": {
-    "tests/compute/test_limits.py": "5560416d9cc123b4d21b363be0b1152c46e71f5e796ded1ef2d1608ab61040b4",
-    "docs/evidence/issue-1160/prove_boundary.py": "71a953892bc1172710fbc71ad6fb177a99c7e4c9e7dbb51b8f468998ab29c3ac"
+    "tests/compute/test_limits.py": "78c785377414ee44849bc94b97e6f7b75d1be0f262942d8342c1bbb8517cc0fd",
+    "docs/evidence/issue-1160/prove_boundary.py": "a8d42f9e0ac93ade0afbd0c9c906275457c0fdb008cc1d7aad94315b6f8f17c2"
   },
   "production_matches_git_baseline": true,
-  "public_junit_validated": 12,
+  "public_junit_validated": 16,
   "initial_run_context": {
     "capability_advisor": {
       "status": "attempted_permission_denied",
@@ -112,7 +95,92 @@
       "own automation memory and ACTION C; child did not run postrun"
     ]
   },
-  "checkout_commit": "b4a55a036b70da0a5c5a5982a6d50be239017281",
+  "checkout_commit": "ac2b1fe019b3b4c773aa759f30da479912939367",
   "python_version": "3.14.8 (main, Oct  1 2026, 02:38:33) [GCC 13.3.0]",
-  "black_runtime_note": "Default workers cannot bind IPC sockets in the sandbox; single-worker mode also needs periodic asyncio selector wakeups. The configured whole-tree check passed with the external runtime helper preserved as black-runtime.txt. Reproduce by saving it as sitecustomize.py in the recorded PYTHONPATH directory. No repository or installed tool files were changed by the helper."
+  "black_runtime_note": "Default workers cannot bind IPC sockets in the sandbox; single-worker mode also needs periodic asyncio selector wakeups. The configured whole-tree check passed with the external runtime helper preserved as black-runtime.txt. Reproduce by saving it as sitecustomize.py in the recorded PYTHONPATH directory. No repository or installed tool files were changed by the helper.",
+  "prior_validation": {
+    "checkout_commit": "b4a55a036b70da0a5c5a5982a6d50be239017281",
+    "acceptance": {
+      "command": "<PYTHON> -m pytest tests/compute/test_limits.py -q -m \"not slow\"",
+      "tests": 101,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "checks": [
+      {
+        "name": "ruff",
+        "command": [
+          "ruff",
+          "check",
+          "--output-format",
+          "concise",
+          "--extend-exclude",
+          ".workflows-lib",
+          "."
+        ],
+        "exit": 0,
+        "raw_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+        "public_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      },
+      {
+        "name": "black",
+        "command": [
+          "black",
+          "--check",
+          "--line-length",
+          "100",
+          "--exclude",
+          "(\\.workflows-lib|node_modules)",
+          "."
+        ],
+        "exit": 0,
+        "raw_log_sha256": "a2a14179f51a32543986a5ba3e60151fc94c0f3b32f00b94cb17babcf7e671af",
+        "public_log_sha256": "a2a14179f51a32543986a5ba3e60151fc94c0f3b32f00b94cb17babcf7e671af",
+        "environment": {
+          "BLACK_NUM_WORKERS": "1",
+          "PYTHONPATH": "<TMP>/counter-risk-black-runtime"
+        }
+      },
+      {
+        "name": "mypy",
+        "command": [
+          "mypy",
+          "--config-file",
+          "pyproject.toml",
+          "--exclude",
+          ".workflows-lib",
+          "src"
+        ],
+        "exit": 0,
+        "raw_log_sha256": "b1db5d31d480f24cb9d45c3983bbacaed93435db305200eeaba25d77759b33a3",
+        "public_log_sha256": "b1db5d31d480f24cb9d45c3983bbacaed93435db305200eeaba25d77759b33a3"
+      }
+    ],
+    "artifact_sha256": {
+      "tests/compute/test_limits.py": "5560416d9cc123b4d21b363be0b1152c46e71f5e796ded1ef2d1608ab61040b4",
+      "docs/evidence/issue-1160/prove_boundary.py": "71a953892bc1172710fbc71ad6fb177a99c7e4c9e7dbb51b8f468998ab29c3ac"
+    },
+    "note": "Earlier validation retained for provenance; only the checks below ran in this follow-up."
+  },
+  "parser_scope_gate": {
+    "test": "tests/compute/test_limits.py::test_boundary_audit_parser_variant_scope",
+    "cases": [
+      "trend-totals-futures",
+      "ex_trend-futures-totals"
+    ],
+    "positive_control": "Identical workbook bytes parse both sections under an All Programs filename.",
+    "red_assertions_checked": true,
+    "restored_byte_identical": true
+  },
+  "pr_reconciliation": {
+    "reviewed_commits": [
+      "b4a55a0",
+      "ac2b1fe"
+    ],
+    "verified_items": 9,
+    "publication_status": "blocked: connector requires approval; approval policy is never",
+    "prepared_body": "docs/evidence/issue-1160/reconciled-pr-body.md"
+  },
+  "commit_status": "blocked: git add cannot create .git/index.lock on read-only filesystem; changes remain uncommitted"
 }

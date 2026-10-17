@@ -1,0 +1,129 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
+rootdir: <REPO>
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 103 items / 102 deselected / 1 selected
+
+tests/compute/test_limits.py F                                           [100%]
+
+=================================== FAILURES ===================================
+________ test_boundary_audit_parser_variant_scope[trend-totals-futures] ________
+
+tmp_path = PosixPath('<TMP>/pytest-of-<USER>/pytest-3/test_boundary_audit_parser_var0')
+boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0     Citibank   0...ture  ...  CME Clearing House   6000.0
+1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
+
+[2 rows x 6 columns]}}
+variant = 'trend', excluded_section = 'totals', retained_section = 'futures'
+
+    @pytest.mark.parametrize(
+        "variant, excluded_section, retained_section",
+        [("trend", "totals", "futures"), ("ex_trend", "futures", "totals")],
+    )
+    def test_boundary_audit_parser_variant_scope(
+        tmp_path: Path,
+        boundary_parsed_workbooks: dict[str, dict[str, Any]],
+        variant: str,
+        excluded_section: str,
+        retained_section: str,
+    ) -> None:
+        """Variant exclusions must reflect scope even when both XLSX sections contain data."""
+        source = tmp_path / f"boundary-{variant.replace('_', '-')}.xlsx"
+        control = tmp_path / "scope-all-programs.xlsx"
+        control.write_bytes(source.read_bytes())
+        unscoped = {"totals": parse_fcm_totals(control), "futures": parse_futures_detail(control)}
+        parsed = boundary_parsed_workbooks[variant]
+
+        # Identical workbook bytes under All Programs prove neither section is empty
+        # or malformed. Variant selection alone must suppress the excluded section.
+        assert _as_records(unscoped[excluded_section]), "the excluded section needs real source rows"
+        assert _as_records(parsed[retained_section]) == _as_records(unscoped[retained_section])
+        assert _as_records(parsed[retained_section]), "the supported section must survive parsing"
+>       assert (
+            _as_records(parsed[excluded_section]) == []
+        ), f"{variant} must exclude {excluded_section} before numerical consumers receive rows"
+E       AssertionError: trend must exclude totals before numerical consumers receive rows
+E       assert [{'counterpar...y': 0.0, ...}] == []
+E
+E         Left contains 3 more items, first extra item: {'counterparty': 'Citibank', 'TIPS': 0.0, 'Treasury': 0.0, 'Equity': 6000.0, ...}
+E
+E         Full diff:
+E         - []
+E         + [
+E         +     {
+E         +         'counterparty': 'Citibank',
+E         +         'TIPS': 0.0,
+E         +         'Treasury': 0.0,
+E         +         'Equity': 6000.0,
+E         +         'Commodity': 0.0,
+E         +         'Currency': 0.0,
+E         +         'Notional': 6000.0,
+E         +         'NotionalChange': 0.0,
+E         +     },
+E         +     {
+E         +         'counterparty': 'Citigroup',
+E         +         'TIPS': 0.0,
+E         +         'Treasury': 0.0,
+E         +         'Equity': -3000.0,
+E         +         'Commodity': 0.0,
+E         +         'Currency': 0.0,
+E         +         'Notional': -3000.0,
+E         +         'NotionalChange': 0.0,
+E         +     },
+E         +     {
+E         +         'counterparty': 'Other',
+E         +         'TIPS': 0.0,
+E         +         'Treasury': 9000.0,
+E         +         'Equity': 0.0,
+E         +         'Commodity': 0.0,
+E         +         'Currency': 0.0,
+E         +         'Notional': 9000.0,
+E         +         'NotionalChange': 0.0,
+E         +     },
+E         + ]
+
+tests/compute/test_limits.py:1015: AssertionError
+- generated xml file: <RAW>/parser-trend-totals-scope-red.xml -
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits.py::test_boundary_audit_parser_variant_scope[trend-totals-futures] - AssertionError: trend must exclude totals before numerical consumers receive rows
+assert [{'counterpar...y': 0.0, ...}] == []
+
+  Left contains 3 more items, first extra item: {'counterparty': 'Citibank', 'TIPS': 0.0, 'Treasury': 0.0, 'Equity': 6000.0, ...}
+
+  Full diff:
+  - []
+  + [
+  +     {
+  +         'counterparty': 'Citibank',
+  +         'TIPS': 0.0,
+  +         'Treasury': 0.0,
+  +         'Equity': 6000.0,
+  +         'Commodity': 0.0,
+  +         'Currency': 0.0,
+  +         'Notional': 6000.0,
+  +         'NotionalChange': 0.0,
+  +     },
+  +     {
+  +         'counterparty': 'Citigroup',
+  +         'TIPS': 0.0,
+  +         'Treasury': 0.0,
+  +         'Equity': -3000.0,
+  +         'Commodity': 0.0,
+  +         'Currency': 0.0,
+  +         'Notional': -3000.0,
+  +         'NotionalChange': 0.0,
+  +     },
+  +     {
+  +         'counterparty': 'Other',
+  +         'TIPS': 0.0,
+  +         'Treasury': 9000.0,
+  +         'Equity': 0.0,
+  +         'Commodity': 0.0,
+  +         'Currency': 0.0,
+  +         'Notional': 9000.0,
+  +         'NotionalChange': 0.0,
+  +     },
+  + ]
+====================== 1 failed, 102 deselected in 3.00s =======================

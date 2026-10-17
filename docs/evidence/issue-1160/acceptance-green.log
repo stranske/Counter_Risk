@@ -3,10 +3,10 @@ platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
 rootdir: <REPO>
 configfile: pyproject.toml
 plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
-collected 101 items
+collected 103 items
 
-tests/compute/test_limits.py ........................................... [ 42%]
-..........................................................               [100%]
+tests/compute/test_limits.py ........................................... [ 41%]
+............................................................             [100%]
 
 --- generated xml file: <RAW>/acceptance-green.xml ---
-============================= 101 passed in 3.35s ==============================
+============================= 103 passed in 3.37s ==============================

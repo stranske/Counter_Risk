@@ -1,6 +1,6 @@
 {
   "baseline_commit": "f8871b2971d34b6d1b26df17fea1f9ef9cf079df",
-  "checkout_commit": "b4a55a036b70da0a5c5a5982a6d50be239017281",
+  "checkout_commit": "ac2b1fe019b3b4c773aa759f30da479912939367",
   "rounds": [
     {
       "name": "baseline-green",
@@ -14,7 +14,79 @@
         "not slow",
         "--junitxml=<RAW>/baseline-green.xml"
       ],
-      "tests": 101,
+      "tests": 103,
+      "failures": 0,
+      "exit": 0
+    },
+    {
+      "name": "parser-trend-totals-scope-red",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-trend-totals-scope-red.xml",
+        "-k",
+        "boundary_audit_parser_variant_scope and trend-totals-futures"
+      ],
+      "tests": 1,
+      "failures": 1,
+      "exit": 1
+    },
+    {
+      "name": "parser-trend-totals-scope-restored-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-trend-totals-scope-restored-green.xml",
+        "-k",
+        "boundary_audit_parser_variant_scope and trend-totals-futures"
+      ],
+      "tests": 1,
+      "failures": 0,
+      "exit": 0
+    },
+    {
+      "name": "parser-ex-trend-futures-scope-red",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-ex-trend-futures-scope-red.xml",
+        "-k",
+        "boundary_audit_parser_variant_scope and ex_trend-futures-totals"
+      ],
+      "tests": 1,
+      "failures": 1,
+      "exit": 1
+    },
+    {
+      "name": "parser-ex-trend-futures-scope-restored-green",
+      "command": [
+        "<PYTHON>",
+        "-m",
+        "pytest",
+        "tests/compute/test_limits.py",
+        "-q",
+        "-m",
+        "not slow",
+        "--junitxml=<RAW>/parser-ex-trend-futures-scope-restored-green.xml",
+        "-k",
+        "boundary_audit_parser_variant_scope and ex_trend-futures-totals"
+      ],
+      "tests": 1,
       "failures": 0,
       "exit": 0
     },
@@ -210,7 +282,7 @@
         "not slow",
         "--junitxml=<RAW>/acceptance-green.xml"
       ],
-      "tests": 101,
+      "tests": 103,
       "failures": 0,
       "exit": 0
     }

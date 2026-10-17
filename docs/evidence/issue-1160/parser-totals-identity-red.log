@@ -3,14 +3,14 @@ platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
 rootdir: <REPO>
 configfile: pyproject.toml
 plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
-collected 101 items / 99 deselected / 2 selected
+collected 103 items / 101 deselected / 2 selected
 
 tests/compute/test_limits.py FF                                          [100%]
 
 =================================== FAILURES ===================================
 _________________ test_boundary_audit_overlap_parser_to_limit __________________
 
-tmp_path = PosixPath('<TMP>/pytest-of-<USER>/pytest-9/test_boundary_audit_overlap_pa0')
+tmp_path = PosixPath('<TMP>/pytest-of-<USER>/pytest-13/test_boundary_audit_overlap_pa0')
 boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
 0   Citibank Lo...ture  ...  CME Clearing House   6000.0
 1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
@@ -63,10 +63,10 @@ boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS 
 E       AssertionError: subset-only coverage evidence must come from the XLSX parser
 E       assert 'Subset Only' in {'Citibank Lost', 'Citigroup Lost', 'Subset Only Lost'}
 
-tests/compute/test_limits.py:1058: AssertionError
+tests/compute/test_limits.py:1086: AssertionError
 ____________ test_boundary_audit_partitioned_concentration_control _____________
 
-tmp_path = PosixPath('<TMP>/pytest-of-<USER>/pytest-9/test_boundary_audit_partitione0')
+tmp_path = PosixPath('<TMP>/pytest-of-<USER>/pytest-13/test_boundary_audit_partitione0')
 boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
 0   Citibank Lo...ture  ...  CME Clearing House   6000.0
 1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
@@ -102,7 +102,7 @@ E                 comparison failed
 E                 Obtained: 0.346938775510204
 E                 Expected: 0.5918367346938775 ± 5.9e-07
 
-tests/compute/test_limits.py:1107: AssertionError
+tests/compute/test_limits.py:1135: AssertionError
 - generated xml file: <RAW>/parser-totals-identity-red.xml -
 =========================== short test summary info ============================
 FAILED tests/compute/test_limits.py::test_boundary_audit_overlap_parser_to_limit - AssertionError: subset-only coverage evidence must come from the XLSX parser
@@ -112,4 +112,4 @@ FAILED tests/compute/test_limits.py::test_boundary_audit_partitioned_concentrati
   comparison failed
   Obtained: 0.346938775510204
   Expected: 0.5918367346938775 ± 5.9e-07
-======================= 2 failed, 99 deselected in 3.06s =======================
+====================== 2 failed, 101 deselected in 3.05s =======================

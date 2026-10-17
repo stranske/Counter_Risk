@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.008" timestamp="2026-10-17T11:03:17.980543+00:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_parser_variant_scope[ex_trend-futures-totals]" time="2.078"><failure message="AssertionError: ex_trend must exclude futures before numerical consumers receive rows&#10;assert [{'account': ...wn FCM', ...}] == []&#10;  &#10;  Left contains 2 more items, first extra item: {'account': 'acct-25', 'description': 'Future', 'class': 'Equity', 'fcm': 'Bank of America, NA', ...}&#10;  &#10;  Full diff:&#10;  - []&#10;  + [&#10;  +     {&#10;  +         'account': 'acct-25',&#10;  +         'description': 'Future',&#10;  +         'class': 'Equity',&#10;  +         'fcm': 'Bank of America, NA',&#10;  +         'clearing_house': 'CME Clearing House',&#10;  +         'notional': 600.0,&#10;  +     },&#10;  +     {&#10;  +         'account': 'acct-26',&#10;  +         'description': 'Future',&#10;  +         'class': 'Equity',&#10;  +         'fcm': 'Unknown FCM',&#10;  +         'clearing_house': 'ICE Clear U.S.',&#10;  +         'notional': -400.0,&#10;  +     },&#10;  + ]">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-5/test_boundary_audit_parser_var0')
+boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0     Citibank   0...ture  ...  CME Clearing House   6000.0
+1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
+
+[2 rows x 6 columns]}}
+variant = 'ex_trend', excluded_section = 'futures', retained_section = 'totals'
+
+    @pytest.mark.parametrize(
+        "variant, excluded_section, retained_section",
+        [("trend", "totals", "futures"), ("ex_trend", "futures", "totals")],
+    )
+    def test_boundary_audit_parser_variant_scope(
+        tmp_path: Path,
+        boundary_parsed_workbooks: dict[str, dict[str, Any]],
+        variant: str,
+        excluded_section: str,
+        retained_section: str,
+    ) -&gt; None:
+        """Variant exclusions must reflect scope even when both XLSX sections contain data."""
+        source = tmp_path / f"boundary-{variant.replace('_', '-')}.xlsx"
+        control = tmp_path / "scope-all-programs.xlsx"
+        control.write_bytes(source.read_bytes())
+        unscoped = {"totals": parse_fcm_totals(control), "futures": parse_futures_detail(control)}
+        parsed = boundary_parsed_workbooks[variant]
+
+        # Identical workbook bytes under All Programs prove neither section is empty
+        # or malformed. Variant selection alone must suppress the excluded section.
+        assert _as_records(unscoped[excluded_section]), "the excluded section needs real source rows"
+        assert _as_records(parsed[retained_section]) == _as_records(unscoped[retained_section])
+        assert _as_records(parsed[retained_section]), "the supported section must survive parsing"
+&gt;       assert (
+            _as_records(parsed[excluded_section]) == []
+        ), f"{variant} must exclude {excluded_section} before numerical consumers receive rows"
+E       AssertionError: ex_trend must exclude futures before numerical consumers receive rows
+E       assert [{'account': ...wn FCM', ...}] == []
+E
+E         Left contains 2 more items, first extra item: {'account': 'acct-25', 'description': 'Future', 'class': 'Equity', 'fcm': 'Bank of America, NA', ...}
+E
+E         Full diff:
+E         - []
+E         + [
+E         +     {
+E         +         'account': 'acct-25',
+E         +         'description': 'Future',
+E         +         'class': 'Equity',
+E         +         'fcm': 'Bank of America, NA',
+E         +         'clearing_house': 'CME Clearing House',
+E         +         'notional': 600.0,
+E         +     },
+E         +     {
+E         +         'account': 'acct-26',
+E         +         'description': 'Future',
+E         +         'class': 'Equity',
+E         +         'fcm': 'Unknown FCM',
+E         +         'clearing_house': 'ICE Clear U.S.',
+E         +         'notional': -400.0,
+E         +     },
+E         + ]
+
+tests/compute/test_limits.py:1015: AssertionError</failure></testcase></testsuite></testsuites>

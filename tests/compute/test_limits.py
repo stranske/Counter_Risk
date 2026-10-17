@@ -990,6 +990,34 @@ def boundary_parsed_workbooks(
 
 
 @pytest.mark.parametrize(
+    "variant, excluded_section, retained_section",
+    [("trend", "totals", "futures"), ("ex_trend", "futures", "totals")],
+)
+def test_boundary_audit_parser_variant_scope(
+    tmp_path: Path,
+    boundary_parsed_workbooks: dict[str, dict[str, Any]],
+    variant: str,
+    excluded_section: str,
+    retained_section: str,
+) -> None:
+    """Variant exclusions must reflect scope even when both XLSX sections contain data."""
+    source = tmp_path / f"boundary-{variant.replace('_', '-')}.xlsx"
+    control = tmp_path / "scope-all-programs.xlsx"
+    control.write_bytes(source.read_bytes())
+    unscoped = {"totals": parse_fcm_totals(control), "futures": parse_futures_detail(control)}
+    parsed = boundary_parsed_workbooks[variant]
+
+    # Identical workbook bytes under All Programs prove neither section is empty
+    # or malformed. Variant selection alone must suppress the excluded section.
+    assert _as_records(unscoped[excluded_section]), "the excluded section needs real source rows"
+    assert _as_records(parsed[retained_section]) == _as_records(unscoped[retained_section])
+    assert _as_records(parsed[retained_section]), "the supported section must survive parsing"
+    assert (
+        _as_records(parsed[excluded_section]) == []
+    ), f"{variant} must exclude {excluded_section} before numerical consumers receive rows"
+
+
+@pytest.mark.parametrize(
     "entity_type, canonical", [("fcm", "bank_of_america"), ("clearing_house", "cme")]
 )
 def test_boundary_audit_alias_only_parser_to_limit(

@@ -1,0 +1,7 @@
+{
+  "source": "src/counter_risk/parsers/cprs_fcm.py",
+  "before": "if _variant_for_path(file_path=file_path, sheet_name=sheet_name) == \"trend\":",
+  "after": "if _variant_for_path(file_path=file_path, sheet_name=sheet_name) == \"disconnected\":",
+  "original_sha256": "fb9e3b8c9ab063d17022ff63761414800b81c25aa5831cde3aad45cac99b79d9",
+  "mutant_sha256": "bd6bf6cb64473a3fea46ca46de1273cafa9237ccf79a7a58f53e86606c079e51"
+}

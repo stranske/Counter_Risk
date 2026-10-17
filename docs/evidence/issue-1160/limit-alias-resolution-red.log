@@ -3,7 +3,7 @@ platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
 rootdir: <REPO>
 configfile: pyproject.toml
 plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
-collected 101 items / 99 deselected / 2 selected
+collected 103 items / 101 deselected / 2 selected
 
 tests/compute/test_limits.py FF                                          [100%]
 
@@ -41,7 +41,7 @@ E       AssertionError: parsed registered alias must reach the canonical cap
 E       assert 0 == 1
 E        +  where 0 = len([])
 
-tests/compute/test_limits.py:1011: AssertionError
+tests/compute/test_limits.py:1039: AssertionError
 ______ test_boundary_audit_alias_only_parser_to_limit[clearing_house-cme] ______
 
 boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
@@ -75,7 +75,7 @@ E       AssertionError: parsed registered alias must reach the canonical cap
 E       assert 0 == 1
 E        +  where 0 = len([])
 
-tests/compute/test_limits.py:1011: AssertionError
+tests/compute/test_limits.py:1039: AssertionError
 - generated xml file: <RAW>/limit-alias-resolution-red.xml -
 =========================== short test summary info ============================
 FAILED tests/compute/test_limits.py::test_boundary_audit_alias_only_parser_to_limit[fcm-bank_of_america] - AssertionError: parsed registered alias must reach the canonical cap
@@ -84,4 +84,4 @@ assert 0 == 1
 FAILED tests/compute/test_limits.py::test_boundary_audit_alias_only_parser_to_limit[clearing_house-cme] - AssertionError: parsed registered alias must reach the canonical cap
 assert 0 == 1
  +  where 0 = len([])
-======================= 2 failed, 99 deselected in 3.08s =======================
+====================== 2 failed, 101 deselected in 3.06s =======================

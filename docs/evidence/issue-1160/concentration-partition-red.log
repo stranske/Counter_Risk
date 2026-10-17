@@ -3,14 +3,14 @@ platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
 rootdir: <REPO>
 configfile: pyproject.toml
 plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
-collected 101 items / 100 deselected / 1 selected
+collected 103 items / 102 deselected / 1 selected
 
 tests/compute/test_limits.py F                                           [100%]
 
 =================================== FAILURES ===================================
 ____________ test_boundary_audit_partitioned_concentration_control _____________
 
-tmp_path = PosixPath('<TMP>/pytest-of-<USER>/pytest-11/test_boundary_audit_partitione0')
+tmp_path = PosixPath('<TMP>/pytest-of-<USER>/pytest-15/test_boundary_audit_partitione0')
 boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
 0     Citibank   0...ture  ...  CME Clearing House   6000.0
 1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
@@ -33,12 +33,12 @@ E       AssertionError: concentration must retain variant and segment; Trend has
 E       assert {('all_progra...ms', 'total')} == {('all_progra...'total'), ...}
 E
 E         Extra items in the right set:
-E         ('ex_trend', 'Treasury')
-E         ('ex_trend', 'TIPS')
-E         ('ex_trend', 'total')
-E         ('ex_trend', 'Currency')
 E         ('ex_trend', 'Equity')
+E         ('ex_trend', 'total')
+E         ('ex_trend', 'TIPS')
 E         ('ex_trend', 'Commodity')
+E         ('ex_trend', 'Treasury')
+E         ('ex_trend', 'Currency')
 E
 E         Full diff:
 E           {
@@ -92,19 +92,19 @@ E         -         'total',
 E         -     ),
 E           }
 
-tests/compute/test_limits.py:1092: AssertionError
+tests/compute/test_limits.py:1120: AssertionError
 - generated xml file: <RAW>/concentration-partition-red.xml -
 =========================== short test summary info ============================
 FAILED tests/compute/test_limits.py::test_boundary_audit_partitioned_concentration_control - AssertionError: concentration must retain variant and segment; Trend has no parsed totals
 assert {('all_progra...ms', 'total')} == {('all_progra...'total'), ...}
 
   Extra items in the right set:
-  ('ex_trend', 'Treasury')
-  ('ex_trend', 'TIPS')
-  ('ex_trend', 'total')
-  ('ex_trend', 'Currency')
   ('ex_trend', 'Equity')
+  ('ex_trend', 'total')
+  ('ex_trend', 'TIPS')
   ('ex_trend', 'Commodity')
+  ('ex_trend', 'Treasury')
+  ('ex_trend', 'Currency')
 
   Full diff:
     {
@@ -157,4 +157,4 @@ assert {('all_progra...ms', 'total')} == {('all_progra...'total'), ...}
   -         'total',
   -     ),
     }
-====================== 1 failed, 100 deselected in 3.03s =======================
+====================== 1 failed, 102 deselected in 2.95s =======================

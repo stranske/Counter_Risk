@@ -1,6 +1,6 @@
 {
   "baseline_commit": "f8871b2971d34b6d1b26df17fea1f9ef9cf079df",
-  "checkout_commit": "b4a55a036b70da0a5c5a5982a6d50be239017281",
+  "checkout_commit": "ac2b1fe019b3b4c773aa759f30da479912939367",
   "python": "<PYTHON>",
   "python_version": "3.14.8 (main, Oct  1 2026, 02:38:33) [GCC 13.3.0]",
   "sources": {
@@ -8,5 +8,5 @@
     "src/counter_risk/pipeline/run.py": "f0a6e7893025ed2246ee4120a403573fe8120fcc0f1c7dacc9457cd6b2dec1b7",
     "src/counter_risk/compute/limits.py": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82"
   },
-  "test_sha256": "5560416d9cc123b4d21b363be0b1152c46e71f5e796ded1ef2d1608ab61040b4"
+  "test_sha256": "78c785377414ee44849bc94b97e6f7b75d1be0f262942d8342c1bbb8517cc0fd"
 }

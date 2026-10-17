@@ -3,14 +3,14 @@ platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
 rootdir: <REPO>
 configfile: pyproject.toml
 plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
-collected 101 items / 100 deselected / 1 selected
+collected 103 items / 102 deselected / 1 selected
 
 tests/compute/test_limits.py F                                           [100%]
 
 =================================== FAILURES ===================================
 _________________ test_boundary_audit_overlap_parser_to_limit __________________
 
-tmp_path = PosixPath('<TMP>/pytest-of-<USER>/pytest-7/test_boundary_audit_overlap_pa0')
+tmp_path = PosixPath('<TMP>/pytest-of-<USER>/pytest-11/test_boundary_audit_overlap_pa0')
 boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
 0     Citibank   0...ture  ...  CME Clearing House   6000.0
 1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
@@ -72,10 +72,10 @@ E           AssertionError: overlapping subsets must not manufacture an absolute
 E           assert 2 == 1
 E            +  where 2 = len([{'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'warning', ...ty_type': 'counterparty', 'entity_name': 'subset_only', 'limit_kind': 'absolute_notional', 'severity': 'warning', ...}])
 
-tests/compute/test_limits.py:1068: AssertionError
+tests/compute/test_limits.py:1096: AssertionError
 - generated xml file: <RAW>/original-overlap-builder-red.xml -
 =========================== short test summary info ============================
 FAILED tests/compute/test_limits.py::test_boundary_audit_overlap_parser_to_limit - AssertionError: overlapping subsets must not manufacture an absolute breach
 assert 2 == 1
  +  where 2 = len([{'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'warning', ...ty_type': 'counterparty', 'entity_name': 'subset_only', 'limit_kind': 'absolute_notional', 'severity': 'warning', ...}])
-====================== 1 failed, 100 deselected in 2.99s =======================
+====================== 1 failed, 102 deselected in 2.97s =======================

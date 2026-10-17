@@ -33,7 +33,7 @@ names; listing existing coverage does not claim it was rerun in this round.
 | Entry / source | Producer → consumer; identity and dimensions | Disposition / evidence |
 | --- | --- | --- |
 | `parsers/cprs_fcm.py:316,333,340` `_read_fcm_sheet`, `_normalize_text`, `_matching_key` | XLSX strings → section/header matchers and raw entity fields. Whitespace is cleaned; registry matching is for structural tokens, not destructive entity consolidation. | I. `tests/parsers/test_cprs_fcm.py::test_parse_fcm_with_shifted_columns`; new `boundary_parsed_workbooks` uses actual XLSX. |
-| `parsers/cprs_fcm.py:256,280,307` section locators, `_variant_for_path` | Filename/sheet text → totals/futures inclusion. Trend totals and Ex Trend futures intentionally empty; variant is not a dataframe column. | I for declared variants; U1 for inconsistent configured path identity. Existing `test_parse_fcm_totals_trend_is_empty`, `test_parse_futures_detail_ex_trend_is_empty`; new concentration control covers both. |
+| `parsers/cprs_fcm.py:256,280,307` section locators, `_variant_for_path` | Filename/sheet text → totals/futures inclusion. Trend totals and Ex Trend futures intentionally empty; variant is not a dataframe column. | I for declared variants; U1 for inconsistent configured path identity. Existing `test_parse_fcm_totals_trend_is_empty`, `test_parse_futures_detail_ex_trend_is_empty`; new `test_boundary_audit_parser_variant_scope` proves both exclusions with same-bytes positive controls; concentration control preserves the resulting partitions. |
 | `parsers/cprs_fcm.py:344,369,377,392,429,454` numeric/header/dataframe helpers | Located cells → fixed typed columns. Accounting numbers retained; extra source columns are omitted. No entity/variant grouping occurs. | I. Existing fixture numeric/dtype/shifted-column tests. U2: custom-group enrichment is not produced here. |
 | `parsers/cprs_fcm.py:99,111,142` totals parsing | Workbook → source-label rows with five asset classes, Notional and change; aliases remain separate. Zero-only rows, totals/subtotals and structural markers excluded; variant remains external. | I. New overlap and concentration checks consume parsed positive/negative registered aliases. Downstream consumers must canonicalize before entity aggregation. |
 | `parsers/cprs_fcm.py:122,127` evidence wrappers | Raw totals → source-sheet/row map keyed by source label; numeric dataframe omits provenance columns. | I for separate provenance. Repeated identical source labels overwrite earlier evidence locations; multiplicity/provenance intent U3, no demonstrated numeric loss. |
@@ -87,8 +87,10 @@ and subprocess exit status. Five serialized mutations test parser futures identi
 limit alias resolution, the actual pre-#1170 builder, parser totals identity,
 and concentration variant partitioning. All three production files are restored
 byte-for-byte in `finally`; originals and raw logs/JUnit remain outside checkout.
-The parser mutations also satisfy the issue's parser-anchor gate; the repaired
-alias and scope behaviors actually live in limits/pipeline, not solely that anchor.
+The identity mutations demonstrate identity propagation; they do not by themselves
+prove the parser's variant-scope contract. The repaired alias and overlapping-subset
+behaviors live in limits/pipeline, not solely that parser anchor. The follow-up
+below directly disconnects the parser's declared variant exclusions instead.
 
 See `../evidence/issue-1160/results.json`, `baseline.json`, `hash-mapping.json`,
 the named `*-mutation.json`, raw-normalized logs and JUnit for exact evidence.
@@ -106,7 +108,7 @@ was persisted to shared state. Parent owns canonical mirroring, handoff and
 automation memory. Validation counts and ownership limitations are recorded in
 the evidence receipt under `initial_run_context`. Hosted checks remain unclaimed.
 
-Validation: **101 passed** in the acceptance suite (four new cases; initial
+Initial validation: **101 passed** in the acceptance suite (four new cases; initial
 collection was 97). Five mutants produced **8 assertion failures**, zero errors
 and zero skips; each was restored and its selection passed. The two full runs
 and ten selected runs account for 218 executions (210 passing, 8 intentional
@@ -129,7 +131,55 @@ Verified acceptance checklist:
 - [x] Whole-tree Ruff 0.17.1 and Black 26.10.1 passed; Mypy 2.4.0 passed all
   106 source files. No ceilings changed.
 
-Follow-up handoff: validation is complete, but the requested commit could not be
-created. `git add` failed because `.git/index.lock` is on a read-only filesystem.
-The reviewed test, proof and evidence changes remain in the working tree and
-require writable Git metadata to commit.
+The earlier follow-up could not write `.git/index.lock`; its changes were
+subsequently recorded in `ac2b1fe019b3b4c773aa759f30da479912939367`.
+
+## Parser scope gate follow-up
+
+`test_boundary_audit_parser_variant_scope` adds two actual-XLSX cases in
+`tests/compute/test_limits.py`: Trend must omit totals, and Ex Trend must omit
+futures. Each copies the same workbook bytes to an All Programs filename and
+parses both sections as a positive control. Both sections contain real rows;
+the supported section survives unchanged and only the variant-excluded section
+is empty. This verifies the declared parser contract already inventoried above,
+without changing production policy or treating any unknown as a defect.
+
+The proof script now temporarily disconnects each corresponding
+`_variant_for_path(...)` guard in `src/counter_risk/parsers/cprs_fcm.py` separately.
+Each named case must fail with its precise scope assertion, rather than merely
+any assertion or collection error. The script restores original bytes in
+`finally` and reruns that case successfully. Logs, JUnit and source hashes are
+the `parser-trend-totals-scope-*` and `parser-ex-trend-futures-scope-*` artifacts.
+These gates exercise parser exclusions; the separate actual pre-#1170 builder
+mutation continues to establish the overlapping-subset limit failure.
+
+Task reconciliation after reviewing `b4a55a0` and `ac2b1fe`: the inventory,
+classification, mapping and original four regressions were already implemented
+and the 101-case suite passed again before further edits. Updating PR #1172's
+first eight checkboxes was rejected by automatic approval review: the connector
+requires approval while this run uses approval policy `never`.
+`../evidence/issue-1160/reconciled-pr-body.md` preserves the proposed PR body
+for handoff. No new issues or production repairs were made.
+
+Follow-up verification: `python -m pytest tests/compute/test_limits.py -q -m
+"not slow"` collected **103 cases, all passed**. The portable proof completed
+seven serialized mutations and 16 runs: 226 test executions, 216 passes and
+10 expected assertion failures, with zero errors/skips. Both new parser scope
+failures named the required exclusion behavior, and both restored runs passed.
+All production source files still match the fixed baseline. The configured
+whole-tree Black check passed for 382 files and focused Ruff passed for both
+changed Python files. Initial Mypy evidence remains from the earlier run;
+production code was unchanged.
+
+- [x] Inventory, classification and mapping to #1168/#1170 verified.
+- [x] Alias-only, overlapping-subset and partitioned-concentration controls pass.
+- [x] Variant-scope tests fail when their parser guards are disconnected, and
+  pass after byte-identical restoration; logs/JUnit retained.
+- [x] Remaining U1–U5 decisions stay report-only for their named human owners.
+
+All nine implementation/acceptance items are verified locally. Publishing the
+reconciled PR checkboxes is still blocked by connector approval policy.
+
+Commit handoff: the current run's `git add` also failed because `.git/index.lock`
+is on a read-only filesystem. The verified source/test and evidence changes
+remain uncommitted in the checkout; writable Git metadata is required to commit.

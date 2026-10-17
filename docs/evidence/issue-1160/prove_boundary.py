@@ -71,7 +71,13 @@ def publish(name: str, data: bytes) -> None:
     )
 
 
-def run_suite(name: str, selection: str | None, failures: int, count: int) -> None:
+def run_suite(
+    name: str,
+    selection: str | None,
+    failures: int,
+    count: int,
+    failure_message: str | None = None,
+) -> None:
     xml_path = RAW / f"{name}.xml"
     command = [
         sys.executable,
@@ -102,12 +108,22 @@ def run_suite(name: str, selection: str | None, failures: int, count: int) -> No
     assert len(failed) == failures, (name, code, len(failed))
     assert code == (1 if failures else 0), (name, code)
     assert all("AssertionError" in f.get("message", "") + (f.text or "") for f in failed)
+    if failure_message is not None:
+        assert all(failure_message in f.get("message", "") for f in failed), name
     RESULTS.append(
         {"name": name, "command": command, "tests": count, "failures": failures, "exit": code}
     )
 
 
-def mutate(name: str, path: Path, before: str, after: str, selection: str, count: int) -> None:
+def mutate(
+    name: str,
+    path: Path,
+    before: str,
+    after: str,
+    selection: str,
+    count: int,
+    failure_message: str | None = None,
+) -> None:
     original = ORIGINALS[path]
     text = original.decode()
     assert text.count(before) == 1, name
@@ -127,7 +143,7 @@ def mutate(name: str, path: Path, before: str, after: str, selection: str, count
     )
     try:
         path.write_bytes(changed)
-        run_suite(f"{name}-red", selection, count, count)
+        run_suite(f"{name}-red", selection, count, count, failure_message)
     finally:
         path.write_bytes(original)
     assert path.read_bytes() == original
@@ -163,7 +179,25 @@ def main() -> None:
             indent=2,
         ).encode(),
     )
-    run_suite("baseline-green", None, 0, 101)
+    run_suite("baseline-green", None, 0, 103)
+    mutate(
+        "parser-trend-totals-scope",
+        PARSER,
+        'if _variant_for_path(file_path=file_path, sheet_name=sheet_name) == "trend":',
+        'if _variant_for_path(file_path=file_path, sheet_name=sheet_name) == "disconnected":',
+        "boundary_audit_parser_variant_scope and trend-totals-futures",
+        1,
+        "trend must exclude totals before numerical consumers receive rows",
+    )
+    mutate(
+        "parser-ex-trend-futures-scope",
+        PARSER,
+        'if _variant_for_path(file_path=file_path, sheet_name=sheet_name) == "ex_trend":',
+        'if _variant_for_path(file_path=file_path, sheet_name=sheet_name) == "disconnected":',
+        "boundary_audit_parser_variant_scope and ex_trend-futures-totals",
+        1,
+        "ex_trend must exclude futures before numerical consumers receive rows",
+    )
     mutate(
         "parser-futures-identity",
         PARSER,
@@ -217,7 +251,7 @@ def main() -> None:
         "boundary_audit_partitioned",
         1,
     )
-    run_suite("acceptance-green", None, 0, 101)
+    run_suite("acceptance-green", None, 0, 103)
     assert all(p.read_bytes() == data for p, data in ORIGINALS.items())
     subprocess.run(
         ["git", "diff", "--exit-code", BASELINE, "--", "src"],
