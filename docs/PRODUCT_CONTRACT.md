@@ -15,6 +15,8 @@ Supply all workbook variants → run pipeline → review consolidated exposures,
 | C3 | an operator can compute concentration and sees HHI, Top-5 and Top-10 reflecting consolidated gross exposure | `counter-risk run --config <workflow.yml>` | compare concentrated/even and registered-alias split portfolios; inspect metrics CSV and manifest | WORKS (maintainer CLI) |
 | C4 | an operator can produce monthly reporting and sees newly generated, consistent report artifacts and warnings | `counter-risk run --config <workflow.yml>` | compare fixture replay to live calculation; inspect XLSX, PPTX/PDF and manifest/run folder | WORKS (maintainer CLI) |
 
+| C5 | an operator sees source report-date conflicts with workbook/variant provenance while configured `as_of_date` remains authoritative; final history/publication blocks conflicts unless a run-level reason is recorded | `counter-risk run --config <workflow.yml> [--report-date-override "audit reason"]` | vary first/later variant dates, unset config, ambiguous/generated headers, diagnostic versus strict/final mode; inspect manifest/quality summary and CLI exit | regression covered |
+
 ## Current operator gaps and boundaries
 - The Windows release bundle and final `Runner.xlsm` click behavior still require a Windows build plus the manual checks in `docs/RELEASE_CHECKLIST.md`; passing maintainer CLI coverage does not claim that operator release verification is complete.
 - `Runner.xlsm` retains the `Ask about this run` label without a bound Form Control or VBA handler. Provider-backed chat also requires configured credentials.

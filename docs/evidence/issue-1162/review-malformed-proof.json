@@ -1,0 +1,28 @@
+{
+  "kind": "native-before-after-regression",
+  "review": "r4301168987",
+  "source_path": "src/counter_risk/dates.py",
+  "before_source_sha256": "af9232acded01eaa7fbf3400df9a3127dcaab9be62c4944ed921827db01e2cff",
+  "after_source_sha256": "d13804b676c713a483ecbf21376beb03d0630b7de3ad22c80bbce71593cc1819",
+  "patch_path": "docs/evidence/issue-1162/review-malformed-fix.patch",
+  "patch_sha256": "4c862b69df26ee1860f53039a33d79c3236316534c63d22c619df2576edf80b2",
+  "red": {
+    "binding_path": "docs/evidence/issue-1162/review-malformed-red.binding.json",
+    "binding_sha256": "c77f50a91db2af733cf221e7220de473661b40b68e86d9c9fee214d0e19a496d",
+    "exit_code": 1,
+    "tests": 15,
+    "failures": 11,
+    "errors": 0,
+    "skipped": 0
+  },
+  "green": {
+    "binding_path": "docs/evidence/issue-1162/review-malformed-green.binding.json",
+    "binding_sha256": "6b7d93725882bbd469b6bdf82106ff0d46a9572751025dad2dc73ec32e89ffe6",
+    "exit_code": 0,
+    "tests": 15,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "tests_and_pipeline_unchanged_between_phases": true
+}

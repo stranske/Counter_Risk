@@ -42,7 +42,13 @@ from counter_risk.compute.rollups import (
     write_concentration_metrics_csv,
 )
 from counter_risk.config import WorkflowConfig, load_config
-from counter_risk.dates import AS_OF_SOURCE_CONFIG, resolve_as_of_date, resolve_run_date
+from counter_risk.dates import (
+    AS_OF_SOURCE_CONFIG,
+    compare_source_report_dates,
+    resolve_as_of_date,
+    resolve_run_date,
+    source_report_date_evidence,
+)
 from counter_risk.formatting import normalize_formatting_profile, resolve_formatting_policy
 from counter_risk.limits_config import load_limits_config
 from counter_risk.normalize import (
@@ -294,6 +300,7 @@ def run_pipeline_with_config(
     config_dir: Path,
     output_dir: Path | None = None,
     formatting_profile: str | None = None,
+    report_date_override: str | None = None,
 ) -> Path:
     """Run the full pipeline from an in-memory config object.
 
@@ -326,6 +333,11 @@ def run_pipeline_with_config(
             temp_config_path,
             output_dir=output_dir,
             formatting_profile=formatting_profile,
+            **(
+                {"report_date_override": report_date_override}
+                if report_date_override is not None
+                else {}
+            ),
         )
     finally:
         with contextlib.suppress(OSError):
@@ -368,8 +380,13 @@ def run_pipeline(
     *,
     output_dir: Path | None = None,
     formatting_profile: str | None = None,
+    report_date_override: str | None = None,
 ) -> Path:
     """Run the Counter Risk pipeline and return the output run directory."""
+
+    override_reason = report_date_override.strip() if report_date_override else None
+    if report_date_override is not None and not override_reason:
+        raise ValueError("report_date_override requires a non-empty audit reason")
 
     LOGGER.info("pipeline_start config_path=%s", config_path)
     workflow_trace_events: list[dict[str, Any]] = []
@@ -418,6 +435,7 @@ def run_pipeline(
         ) from exc
 
     try:
+        source_dates = _collect_source_report_dates(config=config)
         cprs_headers = _collect_cprs_header_candidates(config=config)
         as_of_date_resolution = resolve_as_of_date(config, cprs_headers)
         run_date_resolution = resolve_run_date(config)
@@ -441,7 +459,70 @@ def run_pipeline(
         )
         raise RuntimeError("Pipeline failed during run directory setup stage") from exc
 
+    date_comparison = compare_source_report_dates(
+        configured_date=config.as_of_date, evidence=source_dates
+    )
+    date_comparison["policy"] = config.report_date_policy
+    date_comparison["override"] = (
+        {
+            "reason": override_reason,
+            "run_date": run_date.isoformat(),
+            "run_dir": str(run_dir),
+            "recorded_at": utc_now_isoformat(),
+        }
+        if override_reason
+        else None
+    )
     warnings: list[str] = []
+    if date_comparison["has_conflict"]:
+        warnings.append(
+            "Source report date conflict: configured="
+            + str(date_comparison["configured_date"])
+            + "; "
+            + "; ".join(
+                f"{entry['variant']} ({entry['path']})={entry['report_date']}"
+                for entry in source_dates
+                if entry["status"] == "identified"
+            )
+            + ". Verify source periods before publication; config remains authoritative."
+        )
+        final_execution = (
+            config.enable_ppt_output
+            or config.enable_distribution_output
+            or config.export_pdf
+            or any(
+                entry.enabled and entry.stage == "historical" for entry in config.output_generators
+            )
+        )
+        if (config.report_date_policy == "strict" or final_execution) and not override_reason:
+            date_comparison["execution"] = "blocked"
+            # Write durable diagnostics before any generated workbook, history or publication.
+            builder = ManifestBuilder(
+                config=config,
+                as_of_date=as_of_date,
+                run_date=run_date,
+                as_of_date_resolution=as_of_date_resolution,
+                run_date_resolution=run_date_resolution,
+                source_report_dates=date_comparison,
+            )
+            manifest = builder.build(
+                run_dir=run_dir,
+                input_hashes={name: _sha256_file(path) for name, path in input_paths.items()},
+                output_paths=[],
+                top_exposures={},
+                top_changes_per_variant={},
+                warnings=warnings,
+                ppt_status="skipped",
+                missing_inputs=missing_inputs,
+            )
+            builder.write(run_dir=run_dir, manifest=manifest)
+            raise RuntimeError(
+                f"Source report date conflict blocks strict/final execution. Diagnostics: {run_dir}. "
+                "Correct source dates or supply a run-level report_date_override audit reason."
+            )
+    if override_reason:
+        warnings.append(f"Source report date override: {override_reason}")
+    date_comparison["execution"] = "override" if override_reason else "allowed"
     if as_of_date_resolution.source != AS_OF_SOURCE_CONFIG:
         warnings.append(_date_resolution_fallback_warning(as_of_date_resolution.source))
     resolved_formatting_profile = normalize_formatting_profile(formatting_profile)
@@ -661,6 +742,7 @@ def run_pipeline(
             run_date=run_date,
             as_of_date_resolution=as_of_date_resolution,
             run_date_resolution=run_date_resolution,
+            source_report_dates=date_comparison,
         )
         output_paths_for_manifest = [path.relative_to(run_dir) for path in output_paths]
         manifest = manifest_builder.build(
@@ -884,6 +966,28 @@ def _resolve_repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
+def _collect_source_report_dates(*, config: WorkflowConfig) -> list[dict[str, Any]]:
+    """Read original workbooks only, before config-stamped generation, within existing bounds."""
+    return [
+        source_report_date_evidence(
+            variant=variant,
+            path=str(path) if path else None,
+            headers=(
+                _extract_header_text_lines(path)
+                + _extract_header_text_lines(path, sheet_name="CPRS - CH")
+                if path
+                else []
+            ),
+            generated=getattr(config, f"raw_nisa_{variant}_xlsx") is not None,
+        )
+        for variant, path in (
+            ("all_programs", config.mosers_all_programs_xlsx),
+            ("ex_trend", config.mosers_ex_trend_xlsx),
+            ("trend", config.mosers_trend_xlsx),
+        )
+    ]
+
+
 def _collect_cprs_header_candidates(*, config: WorkflowConfig) -> list[str]:
     header_candidates: list[str] = []
     candidate_paths = [
@@ -899,7 +1003,7 @@ def _collect_cprs_header_candidates(*, config: WorkflowConfig) -> list[str]:
 
 
 def _extract_header_text_lines(
-    workbook_path: Path, *, max_rows: int = 15, max_cols: int = 6
+    workbook_path: Path, *, max_rows: int = 15, max_cols: int = 6, sheet_name: str | None = None
 ) -> list[str]:
     try:
         from openpyxl import load_workbook
@@ -913,7 +1017,9 @@ def _extract_header_text_lines(
         workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
         if not workbook.sheetnames:
             return []
-        worksheet = workbook[workbook.sheetnames[0]]
+        if sheet_name is not None and sheet_name not in workbook.sheetnames:
+            return []
+        worksheet = workbook[sheet_name or workbook.sheetnames[0]]
         lines: list[str] = []
         for row in range(1, min(int(worksheet.max_row), max_rows) + 1):
             pieces: list[str] = []

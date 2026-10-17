@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 81 items / 66 deselected / 15 selected
+
+tests/test_dates.py .............                                        [ 86%]
+tests/pipeline/test_as_of_header_mismatch.py ..                          [100%]
+
+- generated xml file: /home/runner/work/Counter_Risk/Counter_Risk/docs/evidence/issue-1162/review-malformed-green.xml -
+====================== 15 passed, 66 deselected in 0.38s =======================

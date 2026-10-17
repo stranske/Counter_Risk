@@ -29,6 +29,8 @@ _SEVERITY_BY_CODE: dict[str, Severity] = {
     "WRITEBACK_NO_WORKBOOK_MATCH": "warn",
     "MISSING_DATE_HEADER": "fail",
     "DATE_RESOLUTION_FALLBACK": "warn",
+    "SOURCE_REPORT_DATE_CONFLICT": "warn",
+    "SOURCE_REPORT_DATE_OVERRIDE": "warn",
     "REPO_CASH_SOURCE_NOT_CONFIGURED": "warn",
     "REPO_CASH_SOURCE_USED": "info",
     "REPO_CASH_OVERRIDES_APPLIED": "info",
@@ -63,6 +65,8 @@ _CATEGORY_BY_CODE: dict[str, str] = {
     "WRITEBACK_NO_WORKBOOK_MATCH": "data_validation",
     "MISSING_DATE_HEADER": "date",
     "DATE_RESOLUTION_FALLBACK": "date",
+    "SOURCE_REPORT_DATE_CONFLICT": "date",
+    "SOURCE_REPORT_DATE_OVERRIDE": "date",
     "REPO_CASH_SOURCE_NOT_CONFIGURED": "cash",
     "REPO_CASH_SOURCE_USED": "cash",
     "REPO_CASH_OVERRIDES_APPLIED": "cash",
@@ -501,6 +505,8 @@ def _recommended_action(*, category: str, severity: str) -> str:
             return "Review breach details and escalate to risk owners."
         return "Investigate and resolve failing checks before sending outputs."
     if severity == "warn":
+        if category == "date":
+            return "Confirm source report periods; correct conflicting inputs or record a run-level override before publication."
         if category == "ppt":
             return "Verify PPT links/slides manually before distribution."
         if category == "data_validation":
@@ -511,6 +517,10 @@ def _recommended_action(*, category: str, severity: str) -> str:
 
 def _code_from_message(message: str) -> str:
     message_lower = message.casefold()
+    if message_lower.startswith("source report date override:"):
+        return "SOURCE_REPORT_DATE_OVERRIDE"
+    if message_lower.startswith("source report date conflict:"):
+        return "SOURCE_REPORT_DATE_CONFLICT"
     if "dormant series (informational" in message_lower:
         return "RECONCILIATION_DORMANT_SERIES"
     if "missing a date header" in message_lower:

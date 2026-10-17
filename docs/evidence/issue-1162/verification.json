@@ -1,0 +1,43 @@
+{
+  "verified": true,
+  "gates": {
+    "scope-red": {
+      "exit_code": 1,
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "scope-green": {
+      "exit_code": 0,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "acceptance-final": {
+      "exit_code": 0,
+      "tests": 55,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "compatibility": {
+      "exit_code": 0,
+      "tests": 184,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "black": {
+      "exit_code": 0
+    },
+    "ruff": {
+      "exit_code": 0
+    },
+    "mypy": {
+      "exit_code": 0
+    }
+  },
+  "source_bindings_verified": true
+}

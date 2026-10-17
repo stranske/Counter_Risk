@@ -35,6 +35,7 @@ _DATA_QUALITY_FINDING_SCHEMA: dict[str, Any] = {
         "severity": _DATA_QUALITY_SEVERITY_SCHEMA,
         "code": {"type": "string", "minLength": 1},
         "message": {"type": "string"},
+        "details": {"type": "object"},
     },
     "additionalProperties": False,
 }
@@ -185,6 +186,7 @@ _DATE_RESOLUTION_SCHEMA: dict[str, Any] = {
     "required": ["as_of_date", "run_date"],
     "properties": {
         "as_of_date": _DATE_RESOLUTION_ENTRY_SCHEMA,
+        "source_report_dates": {"type": "object"},
         "run_date": _DATE_RESOLUTION_ENTRY_SCHEMA,
     },
     "additionalProperties": False,

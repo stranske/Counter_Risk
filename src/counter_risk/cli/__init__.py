@@ -134,6 +134,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Path to runner settings JSON written by Runner.xlsm.",
     )
+    run_parser.add_argument(
+        "--report-date-override",
+        default=None,
+        help="Run-level audit reason permitting confirmed source report-date conflicts.",
+    )
     run_parser.set_defaults(handler=_run_command)
 
     gui_parser = subparsers.add_parser("gui", help="Launch the Tkinter operator runner")
@@ -338,6 +343,11 @@ def _run_with_discovery(args: argparse.Namespace) -> int:
         config_dir=config_dir,
         output_dir=output_dir,
         formatting_profile=formatting_profile,
+        **(
+            {"report_date_override": args.report_date_override}
+            if getattr(args, "report_date_override", None) is not None
+            else {}
+        ),
     )
     if formatting_profile:
         print(
@@ -380,6 +390,11 @@ def _run_workflow_mode(args: argparse.Namespace) -> int:
             config_dir=args.config.resolve().parent,
             output_dir=getattr(args, "output_dir", None),
             formatting_profile=formatting_profile,
+            **(
+                {"report_date_override": args.report_date_override}
+                if getattr(args, "report_date_override", None) is not None
+                else {}
+            ),
         )
         if formatting_profile:
             print(
