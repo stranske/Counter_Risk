@@ -436,23 +436,65 @@ def test_resolve_screenshot_input_mapping_canonicalizes_key_stored_in_mapping(
     assert list(mapping.keys()) == ["Goldman Sachs Int'l"]
 
 
-@pytest.mark.office
-@pytest.mark.skipif(
-    sys.platform != "win32" or os.environ.get("COUNTER_RISK_OFFICE_SMOKE") != "1",
-    reason="Requires Windows Excel/PowerPoint COM and COUNTER_RISK_OFFICE_SMOKE=1",
+@pytest.mark.parametrize(
+    "native_office",
+    [
+        pytest.param(False, id="portable"),
+        pytest.param(
+            True,
+            id="office",
+            marks=[
+                pytest.mark.office,
+                pytest.mark.skipif(
+                    sys.platform != "win32" or os.environ.get("COUNTER_RISK_OFFICE_SMOKE") != "1",
+                    reason="Requires Windows Excel/PowerPoint COM and COUNTER_RISK_OFFICE_SMOKE=1",
+                ),
+            ],
+        ),
+    ],
 )
 def test_office_cash_change_updates_final_ppt_media_preserving_inputs(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
     cprs_workflow_config: WorkflowConfig,
+    native_office: bool,
 ) -> None:
-    """Real Office smoke: authoritative cash must reach both delivered PPTs."""
+    """Check both delivered PPTs with native Office or a cash-reading renderer."""
     import hashlib
+    import json
     from io import BytesIO
 
     import yaml
     from PIL import Image, ImageChops
     from pptx import Presentation
     from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    if not native_office:
+        from openpyxl import load_workbook
+        from PIL import ImageDraw
+
+        from counter_risk.integrations import excel_com
+
+        def export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
+            # Read the actual exporter-bound cells so the original-workbook
+            # route produces stale pixels and fails the shared smoke assertions.
+            workbook = load_workbook(workbook_path, data_only=True)
+            try:
+                cash = [row[3] for row in workbook[sheet_name].values if row[2] == "CIBC"]
+            finally:
+                workbook.close()
+            output_png.parent.mkdir(parents=True, exist_ok=True)
+            image = Image.new("RGB", (320, 80), "white")
+            ImageDraw.Draw(image).text((10, 10), f"{sheet_name}: CIBC cash {cash}", fill="black")
+            image.save(output_png)
+            return output_png
+
+        monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", export)
+        monkeypatch.setattr(
+            run_module,
+            "_refresh_ppt_links",
+            lambda _: PptProcessingResult(status=PptProcessingStatus.SUCCESS),
+        )
 
     config = cprs_workflow_config
     original_hashes = {
@@ -483,6 +525,11 @@ def test_office_cash_change_updates_final_ppt_media_preserving_inputs(
                 assert pictures, f"Missing CPRS image on {kind} slide {slide_number}"
                 media[kind, slide_number] = pictures[0].image.blob
                 assert media[kind, slide_number].startswith(b"\x89PNG\r\n\x1a\n")
+                table = "ch" if slide_number == 1 else "fcm"
+                generated = run_dir / "_screenshots" / f"all_programs_{table}.png"
+                assert (
+                    media[kind, slide_number] == generated.read_bytes()
+                ), f"Final {kind} slide {slide_number} must embed the generated CPRS image"
                 print(
                     index, kind, slide_number, hashlib.sha256(media[kind, slide_number]).hexdigest()
                 )
@@ -505,4 +552,28 @@ def test_office_cash_change_updates_final_ppt_media_preserving_inputs(
             ), f"Stale CPRS media: {key}"
     print(
         "unchanged input SHA-256", {str(path): digest for path, digest in original_hashes.items()}
+    )
+    (tmp_path / "cash-media-evidence.json").write_text(
+        json.dumps(
+            {
+                "renderer": "native-office" if native_office else "portable-test-double",
+                "cash_amounts": [1234567, 7654321],
+                "unchanged_input_sha256": {
+                    str(path.relative_to(tmp_path)): digest
+                    for path, digest in original_hashes.items()
+                },
+                "embedded_png_sha256_by_run": [
+                    {
+                        f"{kind}/slide{slide}": hashlib.sha256(blob).hexdigest()
+                        for (kind, slide), blob in media.items()
+                    }
+                    for media in media_by_run
+                ],
+                "generated_images_embedded": True,
+                "decoded_pixels_changed": True,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
     )

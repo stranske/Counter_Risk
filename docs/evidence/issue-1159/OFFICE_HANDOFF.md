@@ -27,6 +27,12 @@ assertion. It prints media
 SHA-256 values and verifies all six original XLSX input hashes remain unchanged
 after each run. Fixture archives are copied, never edited. Retain the XML,
 console output, both run directories, reporting XLSX files, and decks.
+The test also verifies that the PNG embedded on each checked slide matches the
+generated CPRS image. A successful run writes `cash-media-evidence.json` beneath
+the test's temporary directory, containing the renderer identity, both cash
+amounts, original input SHA-256 values, and embedded PNG hashes for both decks.
+Retain this report with the other artifacts; a native report must identify its
+renderer as `native-office`.
 
 A skipped Office test is not a pass. Native rendering remains unchecked until
 this command completes with one passing test on Windows and the evidence is
@@ -35,6 +41,16 @@ retained. The platform-handoff brief satisfies only the documented local fallbac
 The local regression uses a recording PNG exporter and real parsing, Repo Cash,
 historical writing, totals computation, and PPT replacement. That establishes
 pipeline data wiring and explicit screenshot precedence, not Office rendering.
+The same final-deck smoke assertions can now run locally with a renderer that
+reads CIBC cash from the actual exporter-bound workbook and draws it into a PNG:
+
+```text
+python -m pytest tests/test_pipeline_screenshot_replacement.py -k cash_change -m "not office and not slow" -s
+```
+
+This portable case writes `renderer: portable-test-double` in its JSON evidence.
+It verifies changed pixels in both slides of both delivered decks and unchanged
+original XLSX hashes. Its passing result does not establish native rendering.
 No-override reporting copies are byte-identical to their source workbooks;
 adjusted All Programs copies are snapshot workbooks whose cached source values
 are frozen before adjusted Repo rows and FCM totals are written. Source workbooks,
