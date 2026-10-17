@@ -62,10 +62,20 @@ only the original first-worksheet scan. Readers close on success and failure.
 
 Independent evidence must start with a report-date label (`Report Date`,
 `As Of [Date]`, including underscore/hyphen separators) immediately followed by a
-single valid ISO or US numeric date. Unrelated dates such as creation, settlement,
-or prior-report tokens do not confirm the report period. Multiple distinct dates,
-multiple tokens on one labeled line, or an invalid labeled date make the workbook
-ambiguous. Missing paths, unreadable workbooks, and absent labels are unverified.
+single valid calendar date: `YYYY-MM-DD`, `M/D/YYYY`, or `M/D/YY` (month first).
+Labels are case-insensitive; whitespace and an optional colon may separate the
+label from the date. Two-digit years `00`–`68` mean 2000–2068, and `69`–`99` mean
+1969–1999; four-digit years avoid that ambiguity. Comparisons use exact calendar
+date equality, without month-end normalization or timezone conversion.
+
+Unrelated dates such as creation, settlement, or prior-report tokens do not confirm
+the report period. Repeated labeled lines identifying the same date are accepted.
+Multiple distinct dates, multiple date-like tokens on one labeled line (even
+repeated dates), or an invalid labeled date make the workbook ambiguous. A
+malformed additional token must not be silently discarded: for example,
+`Report Date: 2026-01-31 / 2026-02-300` and
+`Report Date: 2026-01-31 / 2026-02-28T23:00:00` are ambiguous, rather than confirmed
+January dates. Missing paths, unreadable workbooks, and absent labels are unverified.
 These states cannot establish a confirmed match or mismatch. Other reliably
 identified workbooks can still conflict even if one workbook is unverified.
 

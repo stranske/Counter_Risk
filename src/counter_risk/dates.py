@@ -216,13 +216,16 @@ def source_report_date_evidence(
         label = _REPORT_DATE_LABEL.search(line)
         if label is None:
             continue
-        # Multiple dates on a labeled line are ambiguous, even if one looks plausible.
-        tokens = _REPORT_DATE_TOKEN_PATTERN.findall(line[label.end() :])
-        parsed = [_coerce_date(token) for token in tokens]
-        if len(tokens) != 1 or parsed[0] is None or not line[label.end() :].startswith(tokens[0]):
+        value_text = line[label.end() :]
+        # Count all date-like tokens before validating the leading date. Otherwise a
+        # malformed second date can be filtered out and falsely confirm the first.
+        tokens = _DATE_TOKEN_PATTERN.findall(value_text)
+        leading_date = _REPORT_DATE_TOKEN_PATTERN.match(value_text)
+        parsed = _coerce_date(leading_date.group()) if leading_date else None
+        if len(tokens) != 1 or parsed is None:
             invalid = True
             continue
-        observations.append({"date": str(parsed[0]), "header_text": line})
+        observations.append({"date": str(parsed), "header_text": line})
     dates = sorted({entry["date"] for entry in observations})
     status = (
         "generated"

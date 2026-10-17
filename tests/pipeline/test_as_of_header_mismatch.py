@@ -140,7 +140,16 @@ def test_matching_sources_have_no_conflict_finding(date_run, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "mode", ["missing", "unreadable", "ambiguous", "generated", "legacy_generated"]
+    "mode",
+    [
+        "missing",
+        "unreadable",
+        "ambiguous",
+        "malformed_match",
+        "malformed_conflict",
+        "generated",
+        "legacy_generated",
+    ],
 )
 def test_unverified_workbook_never_confirms_match_or_conflict(date_run, tmp_path, mode):
     config, _ = date_run
@@ -153,6 +162,8 @@ def test_unverified_workbook_never_confirms_match_or_conflict(date_run, tmp_path
             {
                 "missing": ["Created 2026-02-28"],
                 "ambiguous": ["Report Date: 2026-01-31", "Report Date: 2026-02-28"],
+                "malformed_match": ["Report Date: 2026-01-31 / 2026-02-300"],
+                "malformed_conflict": ["Report Date: 2026-02-28 / 2026-01-310"],
                 "generated": ["Report Date: 2026-02-28", "Generated from config as_of_date"],
                 "legacy_generated": ["CPRS CH Header Date 2026-02-28"],
             }[mode],
