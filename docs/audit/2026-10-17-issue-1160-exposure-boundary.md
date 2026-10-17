@@ -183,3 +183,32 @@ reconciled PR checkboxes is still blocked by connector approval policy.
 Commit handoff: the current run's `git add` also failed because `.git/index.lock`
 is on a read-only filesystem. The verified source/test and evidence changes
 remain uncommitted in the checkout; writable Git metadata is required to commit.
+
+## Source-baseline guard verification
+
+Reviewed `b4a55a0`, `ac2b1fe`, and `b2895ff` before continuing. The inventory,
+classification, owned-work mapping and parser scope gates are already verified;
+the live checkboxes remain stale. A new attempt to publish the reconciled body
+was rejected because the connector requires approval and this run's approval
+policy is `never`. PR #1172 was read back as open and ready for review.
+
+`tests/docs/test_exposure_boundary_proof.py` now verifies that the proof script
+stops before mutation, test execution or evidence publication when its initial
+Git baseline check reports source drift or a Git error. Both cases assert that
+source bytes remain unchanged and no raw evidence is written. These tests are
+separate from the limits acceptance suite and add no production repair.
+
+Current verification:
+
+- `python -m pytest tests/compute/test_limits.py -q -m 'not slow'`: **103 passed**.
+- `python -m pytest tests/docs/test_exposure_boundary_proof.py -q -m 'not slow'`:
+  **2 passed**.
+- `python -m pytest tests/compute/test_limits.py tests/docs/test_exposure_boundary_proof.py -q -m 'not slow'`:
+  **105 passed**, zero skips or failures.
+- Focused Ruff and `git diff --check` passed. Whole-tree
+  `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .`
+  passed: **383 files unchanged**, using the previously recorded temporary
+  asyncio runtime and `BLACK_NUM_WORKERS=1` after the default multiprocessing
+  invocation failed on the sandbox's IPC restriction.
+- `git diff --exit-code f8871b2971d34b6d1b26df17fea1f9ef9cf079df -- src`
+  passed; production remains identical to the audited baseline.

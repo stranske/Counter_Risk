@@ -25,6 +25,7 @@ Report: `docs/audit/2026-10-17-issue-1160-exposure-boundary.md`. Five remaining 
 - Seven serialized source mutations: **10 assertion failures**, zero errors/skips; every mutation restored, each selected regression returned GREEN. Actual pre-#1170 builder used for scope RED. Two full and fourteen selected runs total 226 executions: 216 passing, ten expected RED. Parser variant guards each fail their precise exclusion assertion when disconnected and pass after restoration.
 - Original source bytes and Git-baseline equality verified. Portable proof script, normalized logs/JUnit and raw/public SHA-256 mapping: `docs/evidence/issue-1160/`.
 - Whole-tree Black 26.10.1 and focused Ruff 0.17.1 passed for this follow-up. Earlier whole-tree Ruff and Mypy 2.4.0 evidence (106 source files) is retained; production source is unchanged. No ceilings changed.
+- Source-baseline guard follow-up: `python -m pytest tests/compute/test_limits.py tests/docs/test_exposure_boundary_proof.py -q -m 'not slow'`: **105 passed**. The two proof-script tests verify source drift and Git errors stop execution before mutation or evidence publication. Whole-tree Black passed for 383 files; focused Ruff passed.
 
 Local synthetic workbook evidence does not establish production-data acceptance or Office rendering. Hosted CI remains asynchronous. Capability consultation hit the sandbox-denied shared lock; PID liveness inspection was denied, while the existing dispatcher claim remained stable and matched this run. Shared audit ledger, event/workloop and automation memory are parent-owned.
 
@@ -65,6 +66,6 @@ Current source readback: `src/counter_risk/parsers/cprs_fcm.py:226` at `117fc794
 <!-- auto-status-summary:end -->
 
 
-Reconciliation: reviewed `b4a55a0` and `ac2b1fe`; all nine items verified locally. Automatic approval review rejected publishing this body because the connector requires approval and this run uses approval policy `never`. This file is the prepared handoff body; live PR checkboxes remain unchanged.
+Reconciliation: reviewed `b4a55a0`, `ac2b1fe`, and `b2895ff`; all nine items verified locally. Automatic approval review again rejected publishing this body because the connector requires approval and this run uses approval policy `never`. This file is the prepared handoff body; live PR checkboxes remain unchanged.
 
 Commit handoff: `git add` could not create `.git/index.lock` on the read-only filesystem. Verified changes remain uncommitted in the checkout.
