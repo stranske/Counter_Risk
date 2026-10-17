@@ -447,8 +447,10 @@ def test_office_cash_change_updates_final_ppt_media_preserving_inputs(
 ) -> None:
     """Real Office smoke: authoritative cash must reach both delivered PPTs."""
     import hashlib
+    from io import BytesIO
 
     import yaml
+    from PIL import Image, ImageChops
     from pptx import Presentation
     from pptx.enum.shapes import MSO_SHAPE_TYPE
 
@@ -490,7 +492,17 @@ def test_office_cash_change_updates_final_ppt_media_preserving_inputs(
         } == original_hashes
     assert media_by_run[0].keys() == media_by_run[1].keys()
     for key in media_by_run[0]:
-        assert media_by_run[0][key] != media_by_run[1][key], f"Stale CPRS media: {key}"
+        # PNG metadata or compression changes alone do not prove a cash change
+        # reached the visible table. Compare decoded pixels.
+        with (
+            Image.open(BytesIO(media_by_run[0][key])) as before,
+            Image.open(BytesIO(media_by_run[1][key])) as after,
+        ):
+            assert (
+                before.size != after.size
+                or ImageChops.difference(before.convert("RGB"), after.convert("RGB")).getbbox()
+                is not None
+            ), f"Stale CPRS media: {key}"
     print(
         "unchanged input SHA-256", {str(path): digest for path, digest in original_hashes.items()}
     )

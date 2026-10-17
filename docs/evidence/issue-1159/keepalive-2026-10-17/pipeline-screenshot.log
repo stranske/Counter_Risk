@@ -1,0 +1,12 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.14.8/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collecting ... collected 198 items / 196 deselected / 2 selected
+
+tests/pipeline/test_run_pipeline.py::test_screenshot_repo_cash_agrees_with_historical_and_totals[1234567.0-False] PASSED [ 50%]
+tests/pipeline/test_run_pipeline.py::test_screenshot_repo_cash_agrees_with_historical_and_totals[7654321.0-True] PASSED [100%]
+
+================ 2 passed, 196 deselected in 153.18s (0:02:33) =================

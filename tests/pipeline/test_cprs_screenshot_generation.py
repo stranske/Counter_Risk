@@ -38,10 +38,25 @@ def _build_config(tmp_path: Path, **overrides: Any) -> WorkflowConfig:
     return WorkflowConfig(**defaults)
 
 
+@pytest.mark.parametrize("cash_override", [None, 7654321, 0, -1234567])
 def test_generates_screenshot_for_each_configured_variant_and_table_adjusted(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cprs_workflow_config: WorkflowConfig,
+    cash_override: int | None,
 ) -> None:
+    import hashlib
+
     config = cprs_workflow_config
+    expected_cash = 1234567 if cash_override is None else cash_override
+    if cash_override is not None:
+        overrides = tmp_path / "cash-overrides.csv"
+        overrides.write_text(f"counterparty,cash_value\nCIBC,{cash_override}\n")
+        config = config.model_copy(update={"cash_overrides_csv": overrides})
+    original_hashes = {
+        path: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in (tmp_path / "inputs").iterdir()
+    }
     run_dir = tmp_path / "run"
     warnings: list[str] = []
     calls: list[dict[str, Any]] = []
@@ -62,7 +77,7 @@ def test_generates_screenshot_for_each_configured_variant_and_table_adjusted(
             try:
                 rows = list(workbook[sheet_name].values)
                 cash = [row[3] for row in rows if len(row) > 3 and row[2] == "CIBC"]
-                assert cash == [1234567], "exporter must read adjusted CIBC cash"
+                assert cash == [expected_cash], "exporter must read adjusted CIBC cash"
             finally:
                 workbook.close()
         assert workbook_path.is_relative_to(run_dir)
@@ -96,6 +111,12 @@ def test_generates_screenshot_for_each_configured_variant_and_table_adjusted(
     for path in result.values():
         assert path.is_relative_to(run_dir)
         assert path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    for variant in ("ex_trend", "trend"):
+        source = getattr(config, run_module._CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT[variant])
+        assert paths[variant].read_bytes() == source.read_bytes()
+    assert {
+        path: hashlib.sha256(path.read_bytes()).hexdigest() for path in original_hashes
+    } == original_hashes
 
 
 def test_skips_variant_without_configured_workbook(

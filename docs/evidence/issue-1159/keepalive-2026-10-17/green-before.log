@@ -1,0 +1,15 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.14.8/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collecting ... collected 13 items / 8 deselected / 5 selected
+
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[None] PASSED [ 20%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[7654321] PASSED [ 40%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[0] PASSED [ 60%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[-1234567] PASSED [ 80%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates PASSED [100%]
+
+======================= 5 passed, 8 deselected in 2.19s ========================
