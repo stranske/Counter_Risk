@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "mypy",
+    "src"
+  ],
+  "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener",
+  "started_at": "2026-10-17T02:40:54.306376+00:00",
+  "source_bindings": {
+    "src/counter_risk/pipeline/run.py": "875b7a982802bf226f0290e634d7d7895d5bc650d119f4d71351fabe0496dc92",
+    "tests/compute/test_limits.py": "1152dd9132306445b2eeb326e32a7c51eaf930917050c8aada3b7aa38f124737",
+    "tests/pipeline/test_run_pipeline.py": "e186ed8a313d1a3dcbba9d27997afadbbf744f50fdd798d057eddc698009a10c"
+  },
+  "exit_code": 0,
+  "console_sha256": "b1db5d31d480f24cb9d45c3983bbacaed93435db305200eeaba25d77759b33a3"
+}

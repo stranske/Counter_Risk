@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "pytest",
+    "-vv",
+    "tests/compute/test_limits.py",
+    "tests/pipeline/test_run_pipeline.py",
+    "-k",
+    "all_programs_ and not apply_daily and not daily_holdings and not generates_all_programs",
+    "--junitxml=/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener/docs/evidence/issue-1161/acceptance.xml"
+  ],
+  "started_at": "2026-10-17T02:42:17.940275+00:00",
+  "exit_code": 0,
+  "source_sha256": "875b7a982802bf226f0290e634d7d7895d5bc650d119f4d71351fabe0496dc92",
+  "test_sha256": "1152dd9132306445b2eeb326e32a7c51eaf930917050c8aada3b7aa38f124737",
+  "pipeline_test_sha256": "e186ed8a313d1a3dcbba9d27997afadbbf744f50fdd798d057eddc698009a10c",
+  "junit_sha256": "d8e7853567f5dceb1257d9678ed39fe948d32e223da775faf60ae2f4a9d7ed60",
+  "console_sha256": "8109db7352644c04797c7475dcd4734e945787e85a0f917e14daadf07e6a17b6",
+  "tests": 33,
+  "failures": 0,
+  "errors": 0
+}

@@ -1,0 +1,2 @@
+entity_type,entity_name,limit_kind,severity,actual_value,limit_value,breach_amount,notes
+counterparty,citibank,absolute_notional,fail,300000000.0,250000000.0,50000000.0,

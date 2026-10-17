@@ -2390,46 +2390,54 @@ def _compute_and_write_concentration_metrics(
 def _build_limit_exposure_rows(
     parsed_by_variant: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
+    """Build the single All Programs universe for current unscoped limits."""
+    if "all_programs" not in parsed_by_variant:
+        raise ValueError("Missing authoritative All Programs (all_programs) scope for limits")
+
+    # Ex Trend and Trend are overlapping reporting subsets, never extra exposure.
+    # Select before constructing rows so missing entities and both sides of share
+    # calculations use the same universe. Entity canonicalization stays downstream.
+    variant = "all_programs"
+    parsed = parsed_by_variant[variant]
     rows: list[dict[str, Any]] = []
-    for variant, parsed in parsed_by_variant.items():
-        totals_records = _records(parsed["totals"])
-        for record in totals_records:
-            counterparty = str(record.get("counterparty", "")).strip()
-            if not counterparty:
-                continue
-            notional = _to_float(record.get("Notional"))
-            rows.append(
-                {
-                    _LIMIT_GRANULARITY_KEY: _COUNTERPARTY_GRANULARITY,
-                    "variant": variant,
-                    "counterparty": counterparty,
-                    "notional": notional,
-                }
-            )
-
-        futures_records = _records(parsed["futures"])
-        for record in futures_records:
-            notional = _to_float(record.get("notional"))
-
-            exposure_row: dict[str, Any] = {
-                _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
+    totals_records = _records(parsed["totals"])
+    for record in totals_records:
+        counterparty = str(record.get("counterparty", "")).strip()
+        if not counterparty:
+            continue
+        notional = _to_float(record.get("Notional"))
+        rows.append(
+            {
+                _LIMIT_GRANULARITY_KEY: _COUNTERPARTY_GRANULARITY,
                 "variant": variant,
+                "counterparty": counterparty,
                 "notional": notional,
             }
-            for source_key, target_key in (
-                ("fcm", "fcm"),
-                ("clearing_house", "clearing_house"),
-                ("class", "segment"),
-                ("segment", "segment"),
-                ("custom_group", "custom_group"),
-                ("group", "custom_group"),
-            ):
-                value = str(record.get(source_key, "")).strip()
-                if value:
-                    exposure_row[target_key] = value
+        )
 
-            if {"fcm", "clearing_house", "segment", "custom_group"} & set(exposure_row):
-                rows.append(exposure_row)
+    futures_records = _records(parsed["futures"])
+    for record in futures_records:
+        notional = _to_float(record.get("notional"))
+
+        exposure_row: dict[str, Any] = {
+            _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
+            "variant": variant,
+            "notional": notional,
+        }
+        for source_key, target_key in (
+            ("fcm", "fcm"),
+            ("clearing_house", "clearing_house"),
+            ("class", "segment"),
+            ("segment", "segment"),
+            ("custom_group", "custom_group"),
+            ("group", "custom_group"),
+        ):
+            value = str(record.get(source_key, "")).strip()
+            if value:
+                exposure_row[target_key] = value
+
+        if {"fcm", "clearing_house", "segment", "custom_group"} & set(exposure_row):
+            rows.append(exposure_row)
 
     return rows
 

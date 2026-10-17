@@ -6156,3 +6156,203 @@ def test_write_change_attribution_split_current_conservation(tmp_path: Path, sha
     assert sum(float(row["prior_notional"]) for row in report_rows) == 250.0
     assert sum(float(row["notional_change"]) for row in report_rows) == 50.0
     assert all(row["confidence"] == "High" for row in report_rows)
+
+
+def _write_scope_workflow_config(tmp_path: Path) -> Path:
+    import yaml
+    from openpyxl import Workbook
+    from pptx import Presentation
+
+    # Tiny real input files keep unrelated historical fixture scans out of this
+    # scope gate while retaining actual config/input validation and hashing.
+    config = _minimal_workflow_config(tmp_path)
+    for field in (
+        "mosers_all_programs_xlsx",
+        "mosers_ex_trend_xlsx",
+        "mosers_trend_xlsx",
+        "hist_all_programs_3yr_xlsx",
+        "hist_ex_llc_3yr_xlsx",
+        "hist_llc_3yr_xlsx",
+    ):
+        workbook = Workbook()
+        workbook.save(getattr(config, field))
+        workbook.close()
+    Presentation().save(config.monthly_pptx)
+    config_path = tmp_path / "config.yml"
+    config_path.write_text(yaml.safe_dump(config.model_dump(mode="json")), encoding="utf-8")
+    return config_path
+
+
+@pytest.mark.parametrize("authoritative", [200_000_000.0, 300_000_000.0])
+@pytest.mark.parametrize("entrypoint", ["pipeline", "cli"])
+def test_all_programs_limit_scope_propagates_to_pipeline_and_exit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    authoritative: float,
+    entrypoint: str,
+) -> None:
+    """Use real pandas, limit evaluation, CSV, manifest, quality and CLI handling."""
+    import pandas as pd
+
+    from counter_risk.cli import main
+
+    config_path = _write_scope_workflow_config(tmp_path)
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir()
+    limits_path.write_text(
+        "schema_version: 1\nlimits:\n  - entity_type: counterparty\n"
+        "    entity_name: citibank\n    limit_kind: absolute_notional\n"
+        "    limit_value: 250000000\n    severity: fail\n",
+        encoding="utf-8",
+    )
+    parsed = {}
+    for variant, notional in (
+        ("all_programs", authoritative),
+        ("ex_trend", 150_000_000.0),
+        ("trend", 0.0),
+    ):
+        parsed[variant] = {
+            "totals": pd.DataFrame(
+                [{"counterparty": "Citibank", "Notional": notional, "NotionalChange": 0.0}]
+            ),
+            "futures": pd.DataFrame(
+                [
+                    {
+                        "account": "acct-1",
+                        "description": "desc",
+                        "class": "Treasury",
+                        "fcm": "fcm-a",
+                        "clearing_house": "ch-a",
+                        "notional": 50_000_000.0,
+                    }
+                ]
+            ),
+            "cprs_ch": pd.DataFrame(
+                [{"Segment": "totals", "Counterparty": "Citibank", "Notional": notional}]
+            ),
+        }
+    monkeypatch.setattr(run_module, "_parse_inputs", lambda _: parsed)
+    monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(
+        run_module,
+        "_write_outputs",
+        lambda **kwargs: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SKIPPED),
+        ),
+    )
+    breached = authoritative > 250_000_000.0
+    if entrypoint == "cli":
+        assert main(["run", "--config", str(config_path)]) == int(breached)
+        output = capsys.readouterr().out
+        assert ("Fail-severity limit breach" in output) == breached
+        assert ("run completed:" in output) == (not breached)
+    elif breached:
+        with pytest.raises(RuntimeError, match="Fail-severity limit breach"):
+            run_pipeline(config_path)
+    else:
+        assert run_pipeline(config_path) == tmp_path / "runs" / "2025-12-31"
+
+    run_dir = tmp_path / "runs" / "2025-12-31"
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    summary = manifest["limit_breach_summary"]
+    assert summary["has_breaches"] is breached
+    assert summary["breach_count"] == summary["fail_breach_count"] == int(breached)
+    assert summary["warning_breach_count"] == 0
+    assert summary["max_severity"] == ("fail" if breached else None)
+    csv_path = run_dir / "limit_breaches.csv"
+    assert csv_path.exists() is breached
+    assert ("limit_breaches.csv" in manifest["output_paths"]) is breached
+    findings = [
+        finding
+        for finding in manifest["data_quality"]["findings"]
+        if finding["category"] == "limits"
+    ]
+    if breached:
+        with csv_path.open(newline="", encoding="utf-8") as source:
+            rows = list(csv.DictReader(source))
+        assert len(rows) == 1
+        assert rows[0]["severity"] == "fail"
+        assert float(rows[0]["actual_value"]) == 300_000_000.0
+        assert float(rows[0]["breach_amount"]) == 50_000_000.0
+        assert any(finding["severity"] == "fail" for finding in findings)
+        assert manifest["data_quality"]["overall_status"] == "fail"
+    else:
+        assert findings == []
+        assert manifest["data_quality"]["overall_status"] != "fail"
+    quality = (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text()
+    assert ("Overall status: FAIL (RED)" in quality) is breached
+    assert ("Do not send" in quality) is breached
+
+
+@pytest.mark.parametrize("strict", [False, True])
+def test_all_programs_missing_entity_stage_ignores_subset(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    strict: bool,
+) -> None:
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir()
+    limits_path.write_text(
+        f"schema_version: 1\nstrict_missing_entities: {str(strict).lower()}\nlimits:\n"
+        "  - entity_type: counterparty\n    entity_name: citibank\n"
+        "    limit_kind: absolute_notional\n    limit_value: 250000000\n",
+        encoding="utf-8",
+    )
+    parsed = {
+        "all_programs": {"totals": [], "futures": []},
+        "ex_trend": {
+            "totals": [{"counterparty": "Citibank", "Notional": 150_000_000.0}],
+            "futures": [],
+        },
+    }
+    warnings: list[str] = []
+    if strict:
+        with pytest.raises(RuntimeError, match="Configured limit entities are missing"):
+            run_module._compute_and_write_limit_breaches(
+                parsed_by_variant=parsed, run_dir=tmp_path, warnings=warnings
+            )
+    else:
+        result = run_module._compute_and_write_limit_breaches(
+            parsed_by_variant=parsed, run_dir=tmp_path, warnings=warnings
+        )
+        assert result.breach_count == 0
+        assert any("counterparty:citibank" in warning for warning in warnings)
+    assert not (tmp_path / "limit_breaches.csv").exists()
+
+
+def test_all_programs_missing_authority_fails_limit_stage(tmp_path: Path) -> None:
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir()
+    limits_path.write_text(
+        "schema_version: 1\nlimits:\n  - entity_type: counterparty\n"
+        "    entity_name: citibank\n    limit_kind: absolute_notional\n"
+        "    limit_value: 250000000\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="Missing authoritative All Programs"):
+        run_module._compute_and_write_limit_breaches(
+            parsed_by_variant={"ex_trend": {"totals": [], "futures": []}},
+            run_dir=tmp_path,
+            warnings=[],
+        )
+    assert not (tmp_path / "limit_breaches.csv").exists()
+
+
+def test_all_programs_missing_authority_rejected_by_full_pipeline(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    config_path = _write_scope_workflow_config(tmp_path)
+    parsed = _minimal_parsed_by_variant()
+    del parsed["all_programs"]
+    monkeypatch.setattr(run_module, "_parse_inputs", lambda _: parsed)
+    with pytest.raises(RuntimeError, match="Pipeline failed during parse stage") as error:
+        run_pipeline(config_path)
+    assert isinstance(error.value.__cause__, ValueError)
+    assert "Missing parsed variants: all_programs" in str(error.value.__cause__)
+    assert "Missing parsed variants: all_programs" in caplog.text
+    assert not list((tmp_path / "runs").rglob("manifest.json"))
+    assert not list((tmp_path / "runs").rglob("limit_breaches.csv"))

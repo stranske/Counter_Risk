@@ -1,0 +1,56 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0 -- /opt/anaconda3/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 273 items / 240 deselected / 33 selected
+
+tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[200000000.0-None] PASSED [  3%]
+tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[300000000.0-300000000.0] PASSED [  6%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank-None] PASSED [  9%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank-10.0] PASSED [ 12%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank-900000000.0] PASSED [ 15%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank--900000000.0] PASSED [ 18%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A-None] PASSED [ 21%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A-10.0] PASSED [ 24%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A-900000000.0] PASSED [ 27%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A--900000000.0] PASSED [ 30%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME-None] PASSED [ 33%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME-10.0] PASSED [ 36%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME-900000000.0] PASSED [ 39%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME--900000000.0] PASSED [ 42%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates-None] PASSED [ 45%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates-10.0] PASSED [ 48%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates-900000000.0] PASSED [ 51%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates--900000000.0] PASSED [ 54%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A-None] PASSED [ 57%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A-10.0] PASSED [ 60%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A-900000000.0] PASSED [ 63%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A--900000000.0] PASSED [ 66%]
+tests/compute/test_limits.py::test_all_programs_missing_entities_cannot_be_satisfied_by_subset PASSED [ 69%]
+tests/compute/test_limits.py::test_all_programs_authority_is_required[parsed0] PASSED [ 72%]
+tests/compute/test_limits.py::test_all_programs_authority_is_required[parsed1] PASSED [ 75%]
+tests/pipeline/test_run_pipeline.py::test_all_programs_limit_scope_propagates_to_pipeline_and_exit[pipeline-200000000.0] PASSED [ 78%]
+tests/pipeline/test_run_pipeline.py::test_all_programs_limit_scope_propagates_to_pipeline_and_exit[pipeline-300000000.0] PASSED [ 81%]
+tests/pipeline/test_run_pipeline.py::test_all_programs_limit_scope_propagates_to_pipeline_and_exit[cli-200000000.0] PASSED [ 84%]
+tests/pipeline/test_run_pipeline.py::test_all_programs_limit_scope_propagates_to_pipeline_and_exit[cli-300000000.0] PASSED [ 87%]
+tests/pipeline/test_run_pipeline.py::test_all_programs_missing_entity_stage_ignores_subset[False] PASSED [ 90%]
+tests/pipeline/test_run_pipeline.py::test_all_programs_missing_entity_stage_ignores_subset[True] PASSED [ 93%]
+tests/pipeline/test_run_pipeline.py::test_all_programs_missing_authority_fails_limit_stage PASSED [ 96%]
+tests/pipeline/test_run_pipeline.py::test_all_programs_missing_authority_rejected_by_full_pipeline PASSED [100%]
+
+=============================== warnings summary ===============================
+tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[200000000.0-None]
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
+    from pandas.core.computation.check import NUMEXPR_INSTALLED
+
+tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[200000000.0-None]
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
+    from pandas.core import (
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener/docs/evidence/issue-1161/acceptance.xml -
+================ 33 passed, 240 deselected, 2 warnings in 3.43s ================

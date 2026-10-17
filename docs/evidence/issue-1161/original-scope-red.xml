@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="1.854" timestamp="2026-10-16T21:42:12.043782-05:00" hostname="server.trs.private"><testcase classname="tests.compute.test_limits" name="test_all_programs_absolute_cap_ignores_overlapping_variants[200000000.0-None]" time="1.026"><failure message="AssertionError: assert [{'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', 'actual_value': 350000000.0, 'limit_value': 250000000.0, 'breach_amount': 100000000.0, 'notes': None}] == []&#10;  &#10;  Left contains one more item: {'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}&#10;  &#10;  Full diff:&#10;  - []&#10;  + [&#10;  +     {&#10;  +         'entity_type': 'counterparty',&#10;  +         'entity_name': 'citibank',&#10;  +         'limit_kind': 'absolute_notional',&#10;  +         'severity': 'fail',&#10;  +         'actual_value': 350000000.0,&#10;  +         'limit_value': 250000000.0,&#10;  +         'breach_amount': 100000000.0,&#10;  +         'notes': None,&#10;  +     },&#10;  + ]">authoritative = 200000000.0, expected_actual = None
+
+    @pytest.mark.parametrize(
+        "authoritative, expected_actual", [(200_000_000.0, None), (300_000_000.0, 300_000_000.0)]
+    )
+    def test_all_programs_absolute_cap_ignores_overlapping_variants(
+        authoritative: float, expected_actual: float | None
+    ) -&gt; None:
+        parsed = {
+            "all_programs": {
+                "totals": [{"counterparty": "Citibank", "Notional": authoritative}],
+                "futures": [],
+            },
+            "ex_trend": {
+                "totals": [{"counterparty": "Citibank", "Notional": 150_000_000.0}],
+                "futures": [],
+            },
+            "trend": {"totals": [], "futures": []},
+        }
+        limits = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "citibank",
+                    "limit_kind": "absolute_notional",
+                    "limit_value": 250_000_000.0,
+                    "severity": "fail",
+                }
+            ],
+        }
+        breaches = _as_records(check_limits(_build_limit_exposure_rows(parsed), limits))
+        if expected_actual is None:
+&gt;           assert breaches == []
+E           AssertionError: assert [{'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', 'actual_value': 350000000.0, 'limit_value': 250000000.0, 'breach_amount': 100000000.0, 'notes': None}] == []
+E             
+E             Left contains one more item: {'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+E             
+E             Full diff:
+E             - []
+E             + [
+E             +     {
+E             +         'entity_type': 'counterparty',
+E             +         'entity_name': 'citibank',
+E             +         'limit_kind': 'absolute_notional',
+E             +         'severity': 'fail',
+E             +         'actual_value': 350000000.0,
+E             +         'limit_value': 250000000.0,
+E             +         'breach_amount': 100000000.0,
+E             +         'notes': None,
+E             +     },
+E             + ]
+
+tests/compute/test_limits.py:566: AssertionError</failure></testcase><testcase classname="tests.compute.test_limits" name="test_all_programs_absolute_cap_ignores_overlapping_variants[300000000.0-300000000.0]" time="0.003"><failure message="assert 450000000.0 == 300000000.0">authoritative = 300000000.0, expected_actual = 300000000.0
+
+    @pytest.mark.parametrize(
+        "authoritative, expected_actual", [(200_000_000.0, None), (300_000_000.0, 300_000_000.0)]
+    )
+    def test_all_programs_absolute_cap_ignores_overlapping_variants(
+        authoritative: float, expected_actual: float | None
+    ) -&gt; None:
+        parsed = {
+            "all_programs": {
+                "totals": [{"counterparty": "Citibank", "Notional": authoritative}],
+                "futures": [],
+            },
+            "ex_trend": {
+                "totals": [{"counterparty": "Citibank", "Notional": 150_000_000.0}],
+                "futures": [],
+            },
+            "trend": {"totals": [], "futures": []},
+        }
+        limits = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "citibank",
+                    "limit_kind": "absolute_notional",
+                    "limit_value": 250_000_000.0,
+                    "severity": "fail",
+                }
+            ],
+        }
+        breaches = _as_records(check_limits(_build_limit_exposure_rows(parsed), limits))
+        if expected_actual is None:
+            assert breaches == []
+        else:
+            assert len(breaches) == 1
+&gt;           assert breaches[0]["actual_value"] == expected_actual
+E           assert 450000000.0 == 300000000.0
+
+tests/compute/test_limits.py:569: AssertionError</failure></testcase></testsuite></testsuites>
