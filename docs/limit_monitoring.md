@@ -38,6 +38,10 @@ Each `limits` entry has these fields:
 Duplicate keys are rejected during config load. A key is the tuple
 `entity_type`, normalized `entity_name`, and `limit_kind`.
 
+FCM and clearing-house names are resolved through the shared name registry
+before exposure matching and missing-entity checks; segment and custom-group
+names retain their configured policy identity.
+
 ## Safe Maintainer Update Process
 
 Use this checklist when adding or revising a limit in `config/limits.yml`:

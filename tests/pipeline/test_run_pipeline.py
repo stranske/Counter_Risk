@@ -6356,3 +6356,166 @@ def test_all_programs_missing_authority_rejected_by_full_pipeline(
     assert "Missing parsed variants: all_programs" in caplog.text
     assert not list((tmp_path / "runs").rglob("manifest.json"))
     assert not list((tmp_path / "runs").rglob("limit_breaches.csv"))
+
+
+@pytest.mark.parametrize(
+    ("entity_type", "canonical_key", "display_name", "alias", "other_name", "other_alias"),
+    [
+        ("clearing_house", "cme", "CME", "CME Clearing House", "ICE", "ICE Clear U.S."),
+        (
+            "fcm",
+            "bank_of_america",
+            "Bank of America",
+            "Bank of America, NA",
+            "Goldman Sachs",
+            "Goldman Sachs Int'l",
+        ),
+    ],
+)
+def test_limit_alias_pipeline_csv_and_manifest_are_identical_under_strict_missing(
+    tmp_path: Path,
+    fake_pandas: None,
+    monkeypatch: pytest.MonkeyPatch,
+    entity_type: str,
+    canonical_key: str,
+    display_name: str,
+    alias: str,
+    other_name: str,
+    other_alias: str,
+) -> None:
+    fixtures = Path("tests/fixtures")
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir()
+    limits_path.write_text(
+        "schema_version: 1\nstrict_missing_entities: true\nlimits:\n"
+        f"  - entity_type: {entity_type}\n    entity_name: {canonical_key}\n"
+        "    limit_value: 0.35\n    limit_kind: percent_of_total\n",
+        encoding="utf-8",
+    )
+    _use_limit_config_path(monkeypatch, limits_path)
+    # Start from fixed parsed rows and exercise the limit CSV and manifest stages.
+    monkeypatch.setattr(run_module, "_collect_cprs_header_candidates", lambda **kwargs: [])
+    monkeypatch.setattr(run_module, "_run_reconciliation_checks", lambda **kwargs: {})
+    monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(
+        run_module,
+        "_write_outputs",
+        lambda **kwargs: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SKIPPED),
+        ),
+    )
+    inputs = {
+        "mosers_all_programs_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
+        "mosers_ex_trend_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+        "mosers_trend_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+        "hist_all_programs_3yr_xlsx": "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+        "hist_ex_llc_3yr_xlsx": "Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+        "hist_llc_3yr_xlsx": "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+        "monthly_pptx": "Monthly Counterparty Exposure Report.pptx",
+    }
+    observed = []
+    for index, entity_rows in enumerate(
+        [
+            [(display_name, 60.0), (other_name, 40.0)],
+            [(alias, 60.0), (other_alias, 40.0)],
+            [(display_name, 30.0), (alias, 30.0), (other_alias, 40.0)],
+        ]
+    ):
+        config_path = tmp_path / f"alias-{index}.yml"
+        config_path.write_text(
+            "as_of_date: 2025-12-31\n"
+            + "".join(f"{key}: {fixtures / name}\n" for key, name in inputs.items())
+            + f"output_root: {tmp_path / str(index)}\n",
+            encoding="utf-8",
+        )
+        parsed = {
+            variant: {
+                "totals": _FakeDataFrame(
+                    records=[], columns=["counterparty", "Notional", "NotionalChange"]
+                ),
+                "futures": _FakeDataFrame(
+                    records=[
+                        {
+                            "account": f"account-{row}",
+                            "description": "fixture",
+                            "class": "Rates",
+                            "fcm": "fixture-fcm",
+                            "clearing_house": "fixture-clearing-house",
+                            entity_type: label,
+                            "notional": amount,
+                        }
+                        for row, (label, amount) in enumerate(entity_rows)
+                    ]
+                ),
+            }
+            for variant in ("all_programs", "ex_trend", "trend")
+        }
+        monkeypatch.setattr(
+            run_module, "_parse_inputs", lambda _, parsed=parsed: _with_cprs_ch(parsed)
+        )
+        run_dir = run_pipeline(config_path)
+        manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+        summary = manifest["limit_breach_summary"]
+        assert summary["breach_count"] == summary["warning_breach_count"] == 1
+        assert not any(
+            "configured limit entities missing" in warning for warning in manifest["warnings"]
+        )
+        observed.append(((run_dir / "limit_breaches.csv").read_bytes(), summary))
+    assert observed[0] == observed[1] == observed[2]
+
+
+@pytest.mark.parametrize("strict_missing_entities", [False, True])
+@pytest.mark.parametrize("enabled", [False, True])
+def test_unknown_clearing_house_limit_warns_or_raises_and_disabled_limits_are_ignored(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    strict_missing_entities: bool,
+    enabled: bool,
+) -> None:
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir()
+    limits_path.write_text(
+        "schema_version: 1\n"
+        f"strict_missing_entities: {str(strict_missing_entities).lower()}\n"
+        "limits:\n"
+        "  - entity_type: clearing_house\n    entity_name: cme\n"
+        "    limit_value: 0.35\n    limit_kind: percent_of_total\n"
+        f"    enabled: {str(enabled).lower()}\n"
+        "  - entity_type: clearing_house\n    entity_name: ice\n"
+        "    limit_value: 1\n    limit_kind: absolute_notional\n    enabled: false\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(run_module, "_resolve_repo_root", lambda: tmp_path)
+    parsed = {
+        "all_programs": {
+            "totals": [],
+            "futures": [
+                {"clearing_house": "Unregistered Clearing House", "notional": 60.0},
+                {"clearing_house": "ICE Clear U.S.", "notional": 40.0},
+            ],
+        }
+    }
+    warnings: list[str] = []
+    if enabled and strict_missing_entities:
+        with pytest.raises(RuntimeError, match="strict_missing_entities.*clearing_house:cme"):
+            run_module._compute_and_write_limit_breaches(
+                parsed_by_variant=parsed, run_dir=tmp_path, warnings=warnings
+            )
+        assert warnings == []
+    else:
+        result = run_module._compute_and_write_limit_breaches(
+            parsed_by_variant=parsed, run_dir=tmp_path, warnings=warnings
+        )
+        assert result.breach_count == 0
+        assert result.csv_path is None
+        if enabled:
+            assert warnings == [
+                "Limit check warning: configured limit entities missing from exposure data; "
+                "clearing_house:cme"
+            ]
+            assert warnings[0] in caplog.text
+        else:
+            assert warnings == []
+    assert not (tmp_path / "limit_breaches.csv").exists()
