@@ -589,6 +589,52 @@ def test_registered_futures_alias_has_identical_limits_and_missing_results(
     )
 
 
+@pytest.mark.parametrize("entity_type", ["fcm", "clearing_house"])
+def test_new_registry_futures_aliases_aggregate_into_one_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, entity_type: str
+) -> None:
+    registry_path = tmp_path / "config" / "name_registry.yml"
+    registry_path.parent.mkdir()
+    registry_path.write_text(
+        "schema_version: 1\nentries:\n"
+        "  - canonical_key: registered_futures_entity\n"
+        "    display_name: Registered Futures Entity\n"
+        "    aliases:\n      - First Futures Alias\n      - Second Futures Alias\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": entity_type,
+                "entity_name": "registered_futures_entity",
+                "limit_value": 0.35,
+                "limit_kind": "percent_of_total",
+            }
+        ],
+    }
+    other_row = {entity_type: "Unregistered Other Entity", "notional": 40.0}
+    canonical_rows = [
+        {entity_type: "registered_futures_entity", "notional": 60.0},
+        other_row,
+    ]
+    expected = _as_records(check_limits(canonical_rows, policy))
+    assert len(expected) == 1
+    assert expected[0]["actual_value"] == pytest.approx(0.6)
+    assert expected[0]["breach_amount"] == pytest.approx(0.25)
+    for rows in (
+        [{entity_type: "Registered Futures Entity", "notional": 60.0}, other_row],
+        [
+            {entity_type: "First Futures Alias", "notional": 30.0},
+            {entity_type: "Second Futures Alias", "notional": 30.0},
+            other_row,
+        ],
+    ):
+        assert _as_records(check_limits(rows, policy)) == expected
+        assert find_missing_limit_entities(rows, policy) == []
+
+
 def test_clearing_house_split_alias_aggregation_preserves_percent_breach() -> None:
     policy = {
         "schema_version": 1,
