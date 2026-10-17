@@ -358,3 +358,36 @@ Trend totals leaked 6000/-3000/9000 rows); restored byte-identical
 (`git diff --exit-code -- src` clean) and the full limits file reran
 **106 passed** (105 prior + 1 mapping). Recorded in
 `docs/evidence/issue-1160/muse-round-deliberate-break.log`.
+
+## Muse keepalive inventory/classification follow-up
+
+The Inventory and Classification tasks are now also executable, not only
+tabular. New `test_boundary_audit_inventory_dimensions_parser_to_limits`
+traces every dimension on the bounded seam in one parsed-workbook trace:
+
+- **Producer (`parsers/cprs_fcm.py`, I):** totals columns are exactly
+  `counterparty` + five asset classes + `Notional`/`NotionalChange`;
+  futures columns are `account, description, class, fcm, clearing_house,
+  notional`. No variant or canonical column exists at the parser.
+- **Concentration reshaper/control (`pipeline/run.py`, I, control):**
+  rows are exactly `{variant, segment, counterparty, canonical_key,
+  notional}`, variants `{all_programs, ex_trend}`, segments the five
+  classes plus `total`, and `Citibank`/`Citigroup` share one
+  `canonical_key` (C, #1168 repaired downstream of the parser).
+- **Limit builder (`pipeline/run.py`, I/C #1170):** counterparty rows are
+  exactly `{granularity, variant, counterparty, notional}` with variant
+  fixed to `all_programs`; futures rows carry `fcm`, `clearing_house`,
+  and `class`→`segment`; `account`/`description`/`canonical_key` are
+  intentionally absent (canonicalisation lives in `compute/limits.py`).
+- **Limit consumer (`compute/limits.py`, I):** the `bank_of_america`
+  breach carries the canonical entity name and no `variant` or
+  `canonical_key` dimension, matching the single-universe contract.
+  Segment-as-entity partitioning remains pinned by the classification
+  test; U1–U5 remain unknown and unasserted.
+
+Acceptance evidence: `python -m pytest tests/compute/test_limits.py -q`
+= **107 passed** (nonzero collection). Deliberate-break: disconnecting
+the Trend Scope guard at `cprs_fcm.py:152` failed both the inventory and
+mapped-instances tests (2 failed); restored byte-identical and the full
+file reran 107 passed. See
+`docs/evidence/issue-1160/muse-round-deliberate-break.log`.

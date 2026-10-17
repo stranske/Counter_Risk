@@ -20,6 +20,7 @@ from counter_risk.compute.limits import (
 from counter_risk.limits_config import LimitsConfig, load_limits_config
 from counter_risk.parsers.cprs_fcm import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.run import (
+    _build_concentration_exposure_rows,
     _build_limit_exposure_rows,
     _compute_and_write_concentration_metrics,
 )
@@ -1370,3 +1371,118 @@ def test_boundary_audit_partitioned_concentration_control(
         assert isolated == [
             row for row in metrics if row["variant"] == variant
         ], f"{variant} concentration must be invariant to overlapping portfolios"
+
+
+def test_boundary_audit_inventory_dimensions_parser_to_limits(
+    boundary_parsed_workbooks: dict[str, dict[str, Any]],
+) -> None:
+    """Executable inventory of identity/variant/segment dimensions on the seam.
+
+    Producer ``parsers/cprs_fcm.py`` -> reshapers in ``pipeline/run.py`` ->
+    consumers ``compute/limits.py`` (limits) and the partitioned
+    concentration control. Classification key: I = intentional/preserved,
+    C = confirmed historical loss now repaired (#1168/#1170), U = unknown
+    (U1-U5, not asserted). Every row below is an entry from the audit
+    inventory in ``docs/audit/2026-10-17-issue-1160-exposure-boundary.md``.
+    """
+    # --- Producer: parser tables carry raw identity, no variant/canonical ---
+    # I: variant is external (filename/sheet scope guards), canonical identity
+    # is resolved downstream; asset classes are explicit totals columns.
+    totals_df = boundary_parsed_workbooks["all_programs"]["totals"]
+    assert list(totals_df.columns) == [
+        "counterparty",
+        "TIPS",
+        "Treasury",
+        "Equity",
+        "Commodity",
+        "Currency",
+        "Notional",
+        "NotionalChange",
+    ]
+    futures_df = boundary_parsed_workbooks["all_programs"]["futures"]
+    assert list(futures_df.columns) == [
+        "account",
+        "description",
+        "class",
+        "fcm",
+        "clearing_house",
+        "notional",
+    ]
+
+    # --- Concentration reshaper/control: variant+segment+canonical preserved ---
+    # I (already-correct control): every totals row expands to the five asset
+    # segments plus "total", raw label kept beside resolved canonical_key.
+    concentration_rows = _build_concentration_exposure_rows(boundary_parsed_workbooks)
+    assert concentration_rows, "concentration inventory needs parsed rows"
+    assert all(
+        set(row) == {"variant", "segment", "counterparty", "canonical_key", "notional"}
+        for row in concentration_rows
+    )
+    assert {row["variant"] for row in concentration_rows} == {"all_programs", "ex_trend"}, (
+        "concentration retains each parsed variant (Trend totals are parser-empty); "
+        "dropping variant here would break the partitioned control"
+    )
+    assert {row["segment"] for row in concentration_rows if row["variant"] == "all_programs"} == {
+        "TIPS",
+        "Treasury",
+        "Equity",
+        "Commodity",
+        "Currency",
+        "total",
+    }
+    canonical_by_label = {
+        row["counterparty"]: row["canonical_key"]
+        for row in concentration_rows
+        if row["segment"] == "total" and row["variant"] == "all_programs"
+    }
+    assert canonical_by_label["Citibank"] == canonical_by_label["Citigroup"], (
+        "C (#1168): registered counterparty aliases resolve to one canonical_key "
+        "at the reshaper, downstream of the parser"
+    )
+
+    # --- Limit builder: single All Programs universe, dimensions relabelled ---
+    # I: variant is fixed to all_programs (C scope loss repaired by #1170);
+    # futures class -> segment; account/description intentionally dropped
+    # (not limit dimensions); asset classes collapse to overall Notional.
+    limit_rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+    counterparty_rows = [
+        r for r in limit_rows if r[_LIMIT_GRANULARITY_KEY] == _COUNTERPARTY_GRANULARITY
+    ]
+    futures_rows = [r for r in limit_rows if r[_LIMIT_GRANULARITY_KEY] == _FUTURES_GRANULARITY]
+    assert counterparty_rows and futures_rows
+    assert all(
+        set(row) == {_LIMIT_GRANULARITY_KEY, "variant", "counterparty", "notional"}
+        for row in counterparty_rows
+    )
+    assert {row["variant"] for row in limit_rows} == {"all_programs"}
+    assert all(
+        {"fcm", "clearing_house", "segment"} <= set(row) for row in futures_rows
+    ), "futures limit rows must carry fcm/clearing_house and class-as-segment"
+    assert all(
+        "account" not in row and "description" not in row and "canonical_key" not in row
+        for row in limit_rows
+    ), "limit rows keep raw labels; canonicalisation is inside compute/limits.py (#1168)"
+
+    # --- Limit consumer: canonical entity, no variant partition ---
+    # I: breaches identify the canonical entity; variant is not a breach
+    # dimension because the builder supplies one universe. Segment is only
+    # an entity when a segment-typed policy selects it (classification test).
+    breaches = _as_records(
+        check_limits(
+            limit_rows,
+            {
+                "schema_version": 1,
+                "limits": [
+                    {
+                        "entity_type": "fcm",
+                        "entity_name": "bank_of_america",
+                        "limit_kind": "percent_of_total",
+                        "limit_value": 0.5,
+                    }
+                ],
+            },
+        )
+    )
+    assert len(breaches) == 1
+    assert breaches[0]["entity_name"] == "bank_of_america"
+    assert "variant" not in breaches[0] and "canonical_key" not in breaches[0]
