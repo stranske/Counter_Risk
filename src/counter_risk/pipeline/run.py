@@ -661,7 +661,14 @@ def run_pipeline(
         raise RuntimeError("Pipeline failed during historical update stage") from exc
 
     if runtime_config.enable_screenshot_replacement:
+        reporting_workbooks = _write_cprs_reporting_workbooks(
+            config=runtime_config,
+            parsed_by_variant=parsed_by_variant,
+            run_dir=run_dir,
+            repo_cash_applied=bool(repo_cash_summary.get("applied_to_totals")),
+        )
         generated_screenshot_inputs = _generate_cprs_screenshot_inputs(
+            workbook_paths=reporting_workbooks,
             config=runtime_config,
             run_dir=run_dir,
             warnings=warnings,
@@ -3245,8 +3252,183 @@ _CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT: dict[str, str] = {
 }
 
 
+def _write_cprs_reporting_workbooks(
+    *,
+    config: WorkflowConfig,
+    parsed_by_variant: Mapping[str, Mapping[str, Any]],
+    run_dir: Path,
+    repo_cash_applied: bool,
+) -> dict[str, Path]:
+    """Snapshot reporting inputs without ever saving an operator workbook.
+
+    Unadjusted variants remain byte-identical. For adjusted All Programs, freeze
+    the source's cached values so Excel cannot recalculate over the reporting
+    state, then write the same Repo rows and FCM totals used by the other outputs.
+    """
+    from openpyxl import load_workbook
+
+    from counter_risk.parsers import cprs_ch, cprs_fcm
+
+    reporting_dir = run_dir / "_cprs_reporting"
+    reporting_dir.mkdir(parents=True, exist_ok=True)
+    paths: dict[str, Path] = {}
+    for variant, field in _CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT.items():
+        source = getattr(config, field)
+        if source is None:
+            continue
+        target = reporting_dir / f"{variant}_{source.name}"
+        shutil.copyfile(source, target)
+        paths[variant] = target
+        if variant != "all_programs" or not repo_cash_applied:
+            continue
+
+        sections = parsed_by_variant[variant]
+        ch_name, ch_rows = cprs_ch._read_ch_sheet(source)
+        header = cprs_ch._find_header_row(ch_rows)
+        if header is None:
+            raise ValueError("CPRS reporting workbook is missing the CH header")
+        ch_columns = cprs_ch._build_column_map(ch_rows, header)
+        ch_columns.setdefault("Counterparty", 2)
+        # Legacy MOSERS templates leave the Cash heading blank between the name
+        # and TIPS columns. It is still the operator's Cash column. Prefer an
+        # existing Cash mapping; only derive from TIPS when Cash is absent.
+        # setdefault would eagerly evaluate TIPS and KeyError when Cash is
+        # already mapped but TIPS is missing (CH parser allows that).
+        if "Cash" not in ch_columns:
+            if "TIPS" not in ch_columns:
+                raise ValueError("CPRS reporting workbook is missing the CH Cash/TIPS columns")
+            ch_columns["Cash"] = ch_columns["TIPS"] - 1
+        segments = cprs_ch._scan_segments(ch_rows)
+        repo = next((segment for segment in segments if segment.segment_type == "repo"), None)
+        if repo is None:
+            raise ValueError("CPRS reporting workbook is missing the Repo segment")
+        repo_end = (
+            min(
+                (segment.start_row for segment in segments if segment.start_row > repo.start_row),
+                default=max(ch_rows) + 1,
+            )
+            - 1
+        )
+        original_repo = [row for row in _records(parse_cprs_ch(source)) if row["Segment"] == "repo"]
+        repo_start = min(
+            (int(row["SourceRow"]) for row in original_repo), default=repo.start_row + 1
+        )
+        repo_records = [
+            row
+            for row in _records(sections["cprs_ch"])
+            if str(row.get("Segment", "")).strip().lower() == "repo"
+        ]
+
+        fcm_name, fcm_rows = cprs_fcm._read_fcm_sheet(source)
+        fcm_header = cprs_fcm._find_totals_header_row(fcm_rows)
+        bounds = cprs_fcm._locate_totals_section(fcm_rows)
+        if fcm_header is None or bounds is None:
+            raise ValueError("CPRS reporting workbook is missing the FCM totals section")
+        fcm_columns = cprs_fcm._build_totals_column_map(fcm_rows, fcm_header)
+        # Same Cash/TIPS rule as CH: prefer an explicit Cash mapping. Do not use
+        # dict.get(..., fcm_columns["TIPS"] - 1) — the default is evaluated eagerly
+        # and KeyError's when Cash is already mapped but TIPS is absent.
+        fcm_cash = cprs_ch._build_column_map(fcm_rows, fcm_header).get("Cash")
+        if fcm_cash is not None:
+            fcm_columns["Cash"] = fcm_cash
+        elif "TIPS" not in fcm_columns:
+            raise ValueError("CPRS reporting workbook is missing the FCM Cash/TIPS columns")
+        else:
+            fcm_columns["Cash"] = fcm_columns["TIPS"] - 1
+
+        workbook = load_workbook(target, data_only=False)
+        try:
+            cached = load_workbook(target, data_only=True)
+            try:
+                # Freeze available results without erasing formulas that Excel
+                # has not cached. Literal cells and formatting stay intact.
+                for sheet in workbook:
+                    for row in sheet:
+                        for cell in row:
+                            if cell.data_type == "f":
+                                cached_cell = cached[sheet.title][cell.coordinate]
+                                if cached_cell.value is not None:
+                                    cell.value = cached_cell.value
+                                    cell.data_type = cached_cell.data_type
+            finally:
+                cached.close()
+            ch_sheet = workbook[ch_name]
+            ch_sheet.cell(header + 1, ch_columns["Cash"], "Cash")
+            _write_cprs_reporting_section(
+                worksheet=ch_sheet,
+                start=repo_start,
+                end=repo_end,
+                records=repo_records,
+                columns=ch_columns,
+            )
+            fcm_sheet = workbook[fcm_name]
+            fcm_sheet.cell(fcm_header + 1, fcm_columns["Cash"], "Cash")
+            _write_cprs_reporting_section(
+                worksheet=fcm_sheet,
+                start=bounds[0],
+                end=bounds[1],
+                records=_records(sections["totals"]),
+                columns=fcm_columns,
+            )
+            workbook.save(target)
+        finally:
+            workbook.close()
+    return paths
+
+
+def _write_cprs_reporting_section(
+    *,
+    worksheet: Any,
+    start: int,
+    end: int,
+    records: list[dict[str, Any]],
+    columns: Mapping[str, int],
+) -> None:
+    """Fit adjusted records into the existing section, carrying its presentation."""
+    from copy import copy
+
+    extra = max(0, len(records) - (end - start + 1))
+    if extra:
+        # Cached formula results have been frozen; uncached formulas remain
+        # available to Excel. openpyxl does not move merged ranges for us.
+        merged = [str(bounds) for bounds in worksheet.merged_cells.ranges]
+        for bounds in merged:
+            worksheet.unmerge_cells(bounds)
+        worksheet.insert_rows(end + 1, extra)
+        # insert_rows moves cells but leaves row dimensions at their original
+        # indices. Carry the following tables' heights, visibility and grouping
+        # with their contents, clearing dimensions from the new cash rows.
+        for row_number in sorted(worksheet.row_dimensions, reverse=True):
+            if row_number > end:
+                dimension = worksheet.row_dimensions.pop(row_number)
+                dimension.index = row_number + extra
+                worksheet.row_dimensions[row_number + extra] = dimension
+        from openpyxl.worksheet.cell_range import CellRange
+
+        for bounds in merged:
+            cell_range = CellRange(bounds)
+            if cell_range.min_row > end:
+                cell_range.shift(row_shift=extra)
+            elif cell_range.max_row > end:
+                cell_range.max_row += extra
+            worksheet.merge_cells(str(cell_range))
+        end += extra
+    styles = {column: copy(worksheet.cell(start, column)._style) for column in columns.values()}
+    for row_number in range(start, end + 1):
+        record = records[row_number - start] if row_number - start < len(records) else {}
+        for field, column in columns.items():
+            cell = worksheet.cell(row_number, column)
+            cell.value = record.get(field)
+            cell._style = copy(styles[column])
+        worksheet.row_dimensions[row_number].height = worksheet.row_dimensions[start].height
+
+
 def _generate_cprs_screenshot_inputs(
-    *, config: WorkflowConfig, run_dir: Path, warnings: list[str]
+    *,
+    workbook_paths: Mapping[str, Path],
+    config: WorkflowConfig,
+    run_dir: Path,
+    warnings: list[str],
 ) -> dict[str, Path]:
     """Generate CPRS-CH/CPRS-FCM worksheet-range screenshots for the PPT master.
 
@@ -3269,10 +3451,7 @@ def _generate_cprs_screenshot_inputs(
 
     screenshots_dir = run_dir / "_screenshots"
     generated: dict[str, Path] = {}
-    for variant, workbook_field in _CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT.items():
-        workbook_path = getattr(config, workbook_field)
-        if workbook_path is None:
-            continue
+    for variant, workbook_path in workbook_paths.items():
         slide_by_table = _CPRS_SCREENSHOT_SLIDE_BY_VARIANT_AND_TABLE[variant]
         for table, sheet_name in _CPRS_SCREENSHOT_SHEET_BY_TABLE.items():
             slide_number = slide_by_table[table]

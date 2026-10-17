@@ -1,0 +1,211 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0 -- /opt/anaconda3/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1159__opener
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 9 items / 8 deselected / 1 selected
+
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted FAILED [100%]
+
+=================================== FAILURES ===================================
+___ test_generates_screenshot_for_each_configured_variant_and_table_adjusted ___
+
+tmp_path = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2137/test_generates_screenshot_for_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x112b368d0>
+cprs_workflow_config = WorkflowConfig(as_of_date=datetime.date(2025, 12, 31), run_date=None, mosers_all_programs_xlsx=PosixPath('/Users/teach...acher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2137/test_generates_screenshot_for_0/runs'))
+
+    def test_generates_screenshot_for_each_configured_variant_and_table_adjusted(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+    ) -> None:
+        config = cprs_workflow_config
+        run_dir = tmp_path / "run"
+        warnings: list[str] = []
+        calls: list[dict[str, Any]] = []
+        parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+        run_module._apply_daily_holdings_repo_cash(
+            config=config, parsed_by_variant=parsed, warnings=warnings, as_of_date=config.as_of_date
+        )
+        paths = run_module._write_cprs_reporting_workbooks(
+            config=config, parsed_by_variant=parsed, run_dir=run_dir, repo_cash_applied=True
+        )
+        warnings.clear()
+    
+        def _fake_export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
+            from openpyxl import load_workbook
+    
+            assert workbook_path.is_relative_to(run_dir)
+            if workbook_path == paths["all_programs"]:
+                workbook = load_workbook(workbook_path, data_only=True)
+                try:
+                    rows = list(workbook[sheet_name].values)
+                    cash = [row[3] for row in rows if len(row) > 3 and row[2] == "CIBC"]
+                    assert cash == [1234567], "exporter must read adjusted CIBC cash"
+                finally:
+                    workbook.close()
+            calls.append(
+                {"workbook_path": workbook_path, "sheet_name": sheet_name, "output_png": output_png}
+            )
+            output_png.parent.mkdir(parents=True, exist_ok=True)
+            output_png.write_bytes(b"fake-png")
+            return output_png
+    
+        monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", _fake_export)
+    
+>       result = run_module._generate_cprs_screenshot_inputs(
+            workbook_paths=paths, config=config, run_dir=run_dir, warnings=warnings
+        )
+
+tests/pipeline/test_cprs_screenshot_generation.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/counter_risk/pipeline/run.py:3329: in _generate_cprs_screenshot_inputs
+    _pad_image_to_aspect_ratio(output_png, target_ratio=target_ratio)
+src/counter_risk/pipeline/run.py:3375: in _pad_image_to_aspect_ratio
+    with Image.open(image_path) as source_image:
+         ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+fp = <_io.BufferedReader name='/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2137/test_generates_screenshot_for_0/run/_screenshots/all_programs_ch.png'>
+mode = 'r', formats = ['BMP', 'DIB', 'GIF', 'JPEG', 'PPM', 'PNG', ...]
+
+    def open(
+        fp: StrOrBytesPath | IO[bytes],
+        mode: Literal["r"] = "r",
+        formats: list[str] | tuple[str, ...] | None = None,
+    ) -> ImageFile.ImageFile:
+        """
+        Opens and identifies the given image file.
+    
+        This is a lazy operation; this function identifies the file, but
+        the file remains open and the actual image data is not read from
+        the file until you try to process the data (or call the
+        :py:meth:`~PIL.Image.Image.load` method).  See
+        :py:func:`~PIL.Image.new`. See :ref:`file-handling`.
+    
+        :param fp: A filename (string), os.PathLike object or a file object.
+           The file object must implement ``file.read``,
+           ``file.seek``, and ``file.tell`` methods,
+           and be opened in binary mode. The file object will also seek to zero
+           before reading.
+        :param mode: The mode.  If given, this argument must be "r".
+        :param formats: A list or tuple of formats to attempt to load the file in.
+           This can be used to restrict the set of formats checked.
+           Pass ``None`` to try all supported formats. You can print the set of
+           available formats by running ``python3 -m PIL`` or using
+           the :py:func:`PIL.features.pilinfo` function.
+        :returns: An :py:class:`~PIL.Image.Image` object.
+        :exception FileNotFoundError: If the file cannot be found.
+        :exception PIL.UnidentifiedImageError: If the image cannot be opened and
+           identified.
+        :exception ValueError: If the ``mode`` is not "r", or if a ``StringIO``
+           instance is used for ``fp``.
+        :exception TypeError: If ``formats`` is not ``None``, a list or a tuple.
+        """
+    
+        if mode != "r":
+            msg = f"bad mode {repr(mode)}"  # type: ignore[unreachable]
+            raise ValueError(msg)
+        elif isinstance(fp, io.StringIO):
+            msg = (  # type: ignore[unreachable]
+                "StringIO cannot be used to open an image. "
+                "Binary data must be used instead."
+            )
+            raise ValueError(msg)
+    
+        if formats is None:
+            formats = ID
+        elif not isinstance(formats, (list, tuple)):
+            msg = "formats must be a list or tuple"  # type: ignore[unreachable]
+            raise TypeError(msg)
+    
+        exclusive_fp = False
+        filename: str | bytes = ""
+        if is_path(fp):
+            filename = os.fspath(fp)
+            fp = builtins.open(filename, "rb")
+            exclusive_fp = True
+        else:
+            fp = cast(IO[bytes], fp)
+    
+        try:
+            fp.seek(0)
+        except (AttributeError, io.UnsupportedOperation):
+            fp = io.BytesIO(fp.read())
+            exclusive_fp = True
+    
+        prefix = fp.read(16)
+    
+        preinit()
+    
+        warning_messages: list[str] = []
+    
+        def _open_core(
+            fp: IO[bytes],
+            filename: str | bytes,
+            prefix: bytes,
+            formats: list[str] | tuple[str, ...],
+        ) -> ImageFile.ImageFile | None:
+            for i in formats:
+                i = i.upper()
+                if i not in OPEN:
+                    init()
+                try:
+                    factory, accept = OPEN[i]
+                    result = not accept or accept(prefix)
+                    if isinstance(result, str):
+                        warning_messages.append(result)
+                    elif result:
+                        fp.seek(0)
+                        im = factory(fp, filename)
+                        _decompression_bomb_check(im.size)
+                        return im
+                except (SyntaxError, IndexError, TypeError, struct.error) as e:
+                    if WARN_POSSIBLE_FORMATS:
+                        warning_messages.append(i + " opening failed. " + str(e))
+                except BaseException:
+                    if exclusive_fp:
+                        fp.close()
+                    raise
+            return None
+    
+        im = _open_core(fp, filename, prefix, formats)
+    
+        if im is None and formats is ID:
+            checked_formats = ID.copy()
+            if init():
+                im = _open_core(
+                    fp,
+                    filename,
+                    prefix,
+                    tuple(format for format in formats if format not in checked_formats),
+                )
+    
+        if im:
+            im._exclusive_fp = exclusive_fp
+            return im
+    
+        if exclusive_fp:
+            fp.close()
+        for message in warning_messages:
+            warnings.warn(message)
+        msg = "cannot identify image file %r" % (filename if filename else fp)
+>       raise UnidentifiedImageError(msg)
+E       PIL.UnidentifiedImageError: cannot identify image file '/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2137/test_generates_screenshot_for_0/run/_screenshots/all_programs_ch.png'
+
+/opt/anaconda3/lib/python3.12/site-packages/PIL/Image.py:3560: UnidentifiedImageError
+=============================== warnings summary ===============================
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
+    from pandas.core.computation.check import NUMEXPR_INSTALLED
+
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
+    from pandas.core import (
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1159__opener/docs/evidence/issue-1159/initial-green.xml -
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted
+================= 1 failed, 8 deselected, 2 warnings in 2.50s ==================

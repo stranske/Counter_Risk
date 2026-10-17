@@ -2615,7 +2615,7 @@ def test_optional_input_provenance_hashes(
     )
 
     def generated_screenshot(
-        *, config: WorkflowConfig, run_dir: Path, warnings: list[str]
+        *, workbook_paths: Any, config: WorkflowConfig, run_dir: Path, warnings: list[str]
     ) -> dict[str, Path]:
         generated = run_dir / "_screenshots" / "internal.png"
         generated.parent.mkdir(parents=True, exist_ok=True)
@@ -6156,6 +6156,111 @@ def test_write_change_attribution_split_current_conservation(tmp_path: Path, sha
     assert sum(float(row["prior_notional"]) for row in report_rows) == 250.0
     assert sum(float(row["notional_change"]) for row in report_rows) == 50.0
     assert all(row["confidence"] == "High" for row in report_rows)
+
+
+@pytest.mark.parametrize(
+    "cash_amount,cash_override,explicit",
+    [
+        pytest.param(1234567.0, None, False, id="source-cash"),
+        pytest.param(7654321.0, None, True, id="explicit-image"),
+        pytest.param(1234567.0, 0.0, False, id="zero-override"),
+        pytest.param(1234567.0, -1234567.0, True, id="negative-override-explicit-image"),
+    ],
+)
+def test_screenshot_repo_cash_agrees_with_historical_and_totals(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cprs_workflow_config: WorkflowConfig,
+    cash_amount: float,
+    cash_override: float | None,
+    explicit: bool,
+) -> None:
+    """Exercise source cash and overrides through parse/history/export/PPT."""
+    import yaml
+    from openpyxl import load_workbook
+    from PIL import Image
+
+    from counter_risk.integrations import excel_com
+
+    config = cprs_workflow_config
+    assert config.cash_source_path is not None
+    config.cash_source_path.write_text(f"counterparty,cash_value\nCIBC,{cash_amount}\n")
+    expected_cash = cash_amount if cash_override is None else cash_override
+    if cash_override is not None:
+        overrides = tmp_path / "cash-overrides.csv"
+        overrides.write_text(f"counterparty,cash_value\nCIBC,{cash_override}\n")
+        config = config.model_copy(update={"cash_overrides_csv": overrides})
+    original_hashes = {path: _sha256(path) for path in (tmp_path / "inputs").iterdir()}
+    explicit_image = tmp_path / "explicit.png"
+    Image.new("RGB", (20, 20), "red").save(explicit_image)
+    if explicit:
+        config = config.model_copy(update={"screenshot_inputs": {"slide1": explicit_image}})
+    seen: list[Path] = []
+
+    def export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
+        seen.append(workbook_path)
+        if workbook_path == config.mosers_all_programs_xlsx or workbook_path.name.startswith(
+            "all_programs_"
+        ):
+            workbook = load_workbook(workbook_path, data_only=True)
+            try:
+                cash = [row[3] for row in workbook[sheet_name].values if row[2] == "CIBC"]
+                assert cash == [expected_cash], "exporter input disagrees with authoritative cash"
+            finally:
+                workbook.close()
+        assert workbook_path.resolve().is_relative_to((tmp_path / "run").resolve())
+        output_png.parent.mkdir(parents=True, exist_ok=True)
+        Image.new("RGB", (20, 20), "blue").save(output_png)
+        return output_png
+
+    monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", export)
+    monkeypatch.setattr(
+        run_module,
+        "_refresh_ppt_links",
+        lambda _: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+    )
+    original_compute = run_module._compute_metrics
+    totals_cash: list[float] = []
+
+    def compute(parsed: dict[str, dict[str, Any]]) -> Any:
+        totals_cash.extend(
+            float(row["Cash"])
+            for row in run_module._records(parsed["all_programs"]["totals"])
+            if row["counterparty"] == "CIBC"
+        )
+        return original_compute(parsed)
+
+    monkeypatch.setattr(run_module, "_compute_metrics", compute)
+    config_path = tmp_path / "cash-reporting.yml"
+    config_path.write_text(yaml.safe_dump(config.model_dump(mode="json")))
+    run_dir = run_pipeline(config_path, output_dir=tmp_path / "run")
+    assert len(seen) == 6
+    assert totals_cash == [expected_cash]
+    historical = load_workbook(run_dir / config.hist_all_programs_3yr_xlsx.name, data_only=True)
+    try:
+        rows = list(historical["Cash"].values)
+        header = next(row for row in rows if "CIBC" in row)
+        cash_column = header.index("CIBC")
+        dated_rows = [
+            row for row in rows if hasattr(row[0], "date") and row[0].date() == config.as_of_date
+        ]
+        assert dated_rows[-1][cash_column] == expected_cash
+    finally:
+        historical.close()
+    from pptx import Presentation
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    master = next(run_dir.glob("* (Master) - *.pptx"))
+    pictures = [
+        shape
+        for shape in Presentation(master).slides[0].shapes
+        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+    ]
+    if explicit:
+        assert pictures[0].image.blob == explicit_image.read_bytes()
+    else:
+        assert pictures[0].image.blob == (run_dir / "_screenshots/all_programs_ch.png").read_bytes()
+    assert {path: _sha256(path) for path in original_hashes} == original_hashes
 
 
 def _write_scope_workflow_config(tmp_path: Path) -> Path:

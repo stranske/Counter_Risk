@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/opt/hostedtoolcache/Python/3.14.8/x64/bin/python",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_cprs_screenshot_generation.py",
+    "-k",
+    "adjusted",
+    "--junitxml=/home/runner/work/Counter_Risk/Counter_Risk/docs/evidence/issue-1159/gate.xml"
+  ],
+  "mutation": "Restore original configured workbook route at the exporter boundary",
+  "byte_identical_restoration": true,
+  "results": {
+    "green-before": {
+      "exit_code": 0,
+      "source_sha256": "7ba8936fe0ecc55b11fa71cc8bcbb85d9b37f76e0352c20f178a147fb2381e90"
+    },
+    "red-original-route": {
+      "exit_code": 1,
+      "source_sha256": "df2d10025f74869e2b5fb3bee594a16709c1933b9bd225e3390ac3e78df6cb17"
+    },
+    "green-restored": {
+      "exit_code": 0,
+      "source_sha256": "7ba8936fe0ecc55b11fa71cc8bcbb85d9b37f76e0352c20f178a147fb2381e90"
+    }
+  },
+  "test_sha256": "7d7261f10c3914952272ec2536ee4e70053a5c97d141713401a9c536ce6a1340"
+}

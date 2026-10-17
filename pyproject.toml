@@ -85,6 +85,7 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 markers = [
+    "office: opt-in Windows Excel/PowerPoint COM smoke tests",
     "release: slow release/packaging tests (PyInstaller build + packaged executable)",
     "slow: heavyweight tests that parse real Excel fixtures or run full pipeline (skip in PR gate)",
 ]

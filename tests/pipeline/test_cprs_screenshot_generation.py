@@ -38,26 +38,62 @@ def _build_config(tmp_path: Path, **overrides: Any) -> WorkflowConfig:
     return WorkflowConfig(**defaults)
 
 
-def test_generates_screenshot_for_each_configured_variant_and_table(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize("cash_override", [None, 7654321, 0, -1234567])
+def test_generates_screenshot_for_each_configured_variant_and_table_adjusted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cprs_workflow_config: WorkflowConfig,
+    cash_override: int | None,
 ) -> None:
-    config = _build_config(tmp_path)
+    import hashlib
+
+    config = cprs_workflow_config
+    expected_cash = 1234567 if cash_override is None else cash_override
+    if cash_override is not None:
+        overrides = tmp_path / "cash-overrides.csv"
+        overrides.write_text(f"counterparty,cash_value\nCIBC,{cash_override}\n")
+        config = config.model_copy(update={"cash_overrides_csv": overrides})
+    original_hashes = {
+        path: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in (tmp_path / "inputs").iterdir()
+    }
     run_dir = tmp_path / "run"
     warnings: list[str] = []
     calls: list[dict[str, Any]] = []
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=warnings, as_of_date=config.as_of_date
+    )
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=run_dir, repo_cash_applied=True
+    )
+    warnings.clear()
 
     def _fake_export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
+        from openpyxl import load_workbook
+
+        if workbook_path in {paths["all_programs"], config.mosers_all_programs_xlsx}:
+            workbook = load_workbook(workbook_path, data_only=True)
+            try:
+                rows = list(workbook[sheet_name].values)
+                cash = [row[3] for row in rows if len(row) > 3 and row[2] == "CIBC"]
+                assert cash == [expected_cash], "exporter must read adjusted CIBC cash"
+            finally:
+                workbook.close()
+        assert workbook_path.is_relative_to(run_dir)
         calls.append(
             {"workbook_path": workbook_path, "sheet_name": sheet_name, "output_png": output_png}
         )
         output_png.parent.mkdir(parents=True, exist_ok=True)
-        output_png.write_bytes(b"fake-png")
+        from PIL import Image
+
+        Image.new("RGB", (20, 20), "blue").save(output_png)
         return output_png
 
     monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", _fake_export)
 
     result = run_module._generate_cprs_screenshot_inputs(
-        config=config, run_dir=run_dir, warnings=warnings
+        workbook_paths=paths, config=config, run_dir=run_dir, warnings=warnings
     )
 
     assert set(result) == {"slide1", "slide2", "slide6", "slide7", "slide16", "slide17"}
@@ -65,16 +101,36 @@ def test_generates_screenshot_for_each_configured_variant_and_table(
     assert len(calls) == 6
 
     call_by_sheet_and_workbook = {(call["sheet_name"], call["workbook_path"]) for call in calls}
-    assert (("CPRS - CH", config.mosers_all_programs_xlsx)) in call_by_sheet_and_workbook
-    assert (("CPRS - FCM", config.mosers_all_programs_xlsx)) in call_by_sheet_and_workbook
-    assert (("CPRS - CH", config.mosers_ex_trend_xlsx)) in call_by_sheet_and_workbook
-    assert (("CPRS - FCM", config.mosers_ex_trend_xlsx)) in call_by_sheet_and_workbook
-    assert (("CPRS - CH", config.mosers_trend_xlsx)) in call_by_sheet_and_workbook
-    assert (("CPRS - FCM", config.mosers_trend_xlsx)) in call_by_sheet_and_workbook
+    assert (("CPRS - CH", paths["all_programs"])) in call_by_sheet_and_workbook
+    assert (("CPRS - FCM", paths["all_programs"])) in call_by_sheet_and_workbook
+    assert (("CPRS - CH", paths["ex_trend"])) in call_by_sheet_and_workbook
+    assert (("CPRS - FCM", paths["ex_trend"])) in call_by_sheet_and_workbook
+    assert (("CPRS - CH", paths["trend"])) in call_by_sheet_and_workbook
+    assert (("CPRS - FCM", paths["trend"])) in call_by_sheet_and_workbook
 
     for path in result.values():
         assert path.is_relative_to(run_dir)
-        assert path.read_bytes() == b"fake-png"
+        assert path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    for variant in ("ex_trend", "trend"):
+        source = getattr(config, run_module._CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT[variant])
+        assert paths[variant].read_bytes() == source.read_bytes()
+    assert {
+        path: hashlib.sha256(path.read_bytes()).hexdigest() for path in original_hashes
+    } == original_hashes
+
+
+def test_adjusted_exporter_route_keeps_deliberate_break_needle() -> None:
+    """Lock the unique loop the issue-1159 verify_break mutation rewrites."""
+    source = Path(run_module.__file__).read_bytes()
+    needle = b"    for variant, workbook_path in workbook_paths.items():\n"
+    broken_route = (
+        b"    for variant, workbook_field in _CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT.items():\n"
+        b"        workbook_path = getattr(config, workbook_field)\n"
+        b"        if workbook_path is None:\n"
+        b"            continue\n"
+    )
+    assert source.count(needle) == 1
+    assert broken_route not in source
 
 
 def test_skips_variant_without_configured_workbook(
@@ -92,7 +148,14 @@ def test_skips_variant_without_configured_workbook(
     monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", _fake_export)
 
     result = run_module._generate_cprs_screenshot_inputs(
-        config=config, run_dir=run_dir, warnings=warnings
+        workbook_paths={
+            variant: path
+            for variant, field in run_module._CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT.items()
+            if (path := getattr(config, field)) is not None
+        },
+        config=config,
+        run_dir=run_dir,
+        warnings=warnings,
     )
 
     assert set(result) == {"slide1", "slide2", "slide6", "slide7"}
@@ -118,7 +181,14 @@ def test_export_failure_appends_warning_and_continues(
     monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", _fake_export)
 
     result = run_module._generate_cprs_screenshot_inputs(
-        config=config, run_dir=run_dir, warnings=warnings
+        workbook_paths={
+            variant: path
+            for variant, field in run_module._CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT.items()
+            if (path := getattr(config, field)) is not None
+        },
+        config=config,
+        run_dir=run_dir,
+        warnings=warnings,
     )
 
     assert "slide2" not in result
@@ -195,3 +265,349 @@ def test_picture_shape_aspect_ratio_reads_real_template(tmp_path: Path) -> None:
     ratio = run_module._picture_shape_aspect_ratio(pptx_path=pptx_path, slide_number=1)
 
     assert ratio == pytest.approx(2.0)
+
+
+def test_reporting_workbooks_without_adjustment_are_byte_identical(
+    tmp_path: Path,
+    cprs_workflow_config: WorkflowConfig,
+) -> None:
+    config = cprs_workflow_config
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant={}, run_dir=tmp_path / "run", repo_cash_applied=False
+    )
+    for variant, path in paths.items():
+        source = getattr(config, run_module._CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT[variant])
+        assert path != source
+        assert path.read_bytes() == source.read_bytes()
+
+
+def test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates(
+    tmp_path: Path,
+    cprs_workflow_config: WorkflowConfig,
+) -> None:
+    import hashlib
+
+    from openpyxl import load_workbook
+
+    from counter_risk.parsers import parse_cprs_ch, parse_fcm_totals
+
+    config = cprs_workflow_config
+    source = config.mosers_all_programs_xlsx
+    assert source is not None and config.cash_source_path is not None
+    workbook = load_workbook(source)
+    worksheet = workbook["CPRS - CH"]
+    worksheet["D6"] = "Cash"
+    worksheet["C22"] = "Morgan Stanley"
+    worksheet["D22"] = 999
+    workbook.save(source)
+    workbook.close()
+    original_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    cash = {"Morgan Stanley": 100, "CIBC": 200, "ASL": 300, "Scotia": 400, "Daiwa": 500}
+    config.cash_source_path.write_text(
+        "counterparty,cash_value\n" + "".join(f"{name},{amount}\n" for name, amount in cash.items())
+    )
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+    )
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+    )
+    repo = [
+        row
+        for row in run_module._records(parse_cprs_ch(paths["all_programs"]))
+        if row["Segment"] == "repo"
+    ]
+    for name, amount in cash.items():
+        assert [row["Cash"] for row in repo if row["Counterparty"] == name] == [amount]
+    # New FCM totals are also inside the totals section, ahead of futures detail.
+    totals = run_module._records(parse_fcm_totals(paths["all_programs"]))
+    assert next(row["Notional"] for row in totals if row["counterparty"] == "CIBC") == 200
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+@pytest.mark.parametrize("sheet_name", ["CPRS - CH", "CPRS - FCM"])
+def test_adjusted_reporting_row_growth_preserves_following_table_layout(
+    tmp_path: Path, cprs_workflow_config: WorkflowConfig, sheet_name: str
+) -> None:
+    from hashlib import sha256
+
+    from openpyxl import load_workbook
+
+    config = cprs_workflow_config
+    source = config.mosers_all_programs_xlsx
+    assert source is not None and config.cash_source_path is not None
+    workbook = load_workbook(source)
+    sheet = workbook[sheet_name]
+    # Both templates start the following table at row 23. Its layout must move
+    # with the cells when authoritative cash adds more rows than the section fits.
+    marker = sheet["B23" if sheet_name == "CPRS - CH" else "C23"].value
+    sheet.row_dimensions[23].height = 42
+    sheet.row_dimensions[23].outlineLevel = 2
+    sheet.row_dimensions[24].height = 31
+    sheet.row_dimensions[24].hidden = True
+    workbook.save(source)
+    workbook.close()
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    config.cash_source_path.write_text(
+        "counterparty,cash_value\nCIBC,200\nASL,300\nScotia,400\nDaiwa,500\n"
+    )
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+    )
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+    )
+    snapshot = load_workbook(paths["all_programs"])
+    try:
+        sheet = snapshot[sheet_name]
+        marker_row = next(cell.row for row in sheet for cell in row if cell.value == marker)
+        assert marker_row > 23, "cash rows must force the following table down"
+        assert sheet.row_dimensions[marker_row].height == 42
+        assert sheet.row_dimensions[marker_row].outlineLevel == 2
+        assert sheet.row_dimensions[marker_row + 1].height == 31
+        assert sheet.row_dimensions[marker_row + 1].hidden
+        # The hidden detail row must not hide any newly inserted cash rows.
+        assert all(not sheet.row_dimensions[row].hidden for row in range(23, marker_row))
+    finally:
+        snapshot.close()
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+def test_adjusted_reporting_snapshot_reports_missing_repo_segment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+) -> None:
+    from hashlib import sha256
+
+    from counter_risk.parsers import cprs_ch
+
+    source = cprs_workflow_config.mosers_all_programs_xlsx
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    monkeypatch.setattr(cprs_ch, "_scan_segments", lambda _rows: [])
+    with pytest.raises(ValueError, match="missing the Repo segment"):
+        run_module._write_cprs_reporting_workbooks(
+            config=cprs_workflow_config,
+            parsed_by_variant={"all_programs": {}},
+            run_dir=tmp_path / "run",
+            repo_cash_applied=True,
+        )
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+def test_adjusted_reporting_keeps_cash_column_when_tips_header_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+) -> None:
+    """Cash-present / TIPS-absent CH maps must not KeyError on the Cash fallback."""
+    from hashlib import sha256
+
+    from counter_risk.parsers import cprs_ch, parse_cprs_ch
+
+    config = cprs_workflow_config
+    source = config.mosers_all_programs_xlsx
+    assert source is not None
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+    )
+    original_build = cprs_ch._build_column_map
+
+    def _cash_without_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_build(rows, header)
+        columns.pop("TIPS", None)
+        columns.setdefault("Cash", 4)
+        return columns
+
+    monkeypatch.setattr(cprs_ch, "_build_column_map", _cash_without_tips)
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+    )
+    monkeypatch.setattr(cprs_ch, "_build_column_map", original_build)
+    repo = [
+        row
+        for row in run_module._records(parse_cprs_ch(paths["all_programs"]))
+        if row["Segment"] == "repo"
+    ]
+    assert any(row["Counterparty"] == "CIBC" for row in repo)
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+def test_adjusted_reporting_reports_missing_ch_cash_and_tips_columns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+) -> None:
+    from hashlib import sha256
+
+    from counter_risk.parsers import cprs_ch
+
+    source = cprs_workflow_config.mosers_all_programs_xlsx
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    original_build = cprs_ch._build_column_map
+
+    def _neither_cash_nor_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_build(rows, header)
+        columns.pop("Cash", None)
+        columns.pop("TIPS", None)
+        return columns
+
+    monkeypatch.setattr(cprs_ch, "_build_column_map", _neither_cash_nor_tips)
+    with pytest.raises(ValueError, match="missing the CH Cash/TIPS columns"):
+        run_module._write_cprs_reporting_workbooks(
+            config=cprs_workflow_config,
+            parsed_by_variant={"all_programs": {}},
+            run_dir=tmp_path / "run",
+            repo_cash_applied=True,
+        )
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+def test_adjusted_reporting_keeps_fcm_cash_when_tips_header_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+) -> None:
+    """FCM Cash-present / TIPS-absent maps must not KeyError on the Cash fallback."""
+    from hashlib import sha256
+
+    from counter_risk.parsers import cprs_ch, cprs_fcm, parse_fcm_totals
+
+    config = cprs_workflow_config
+    source = config.mosers_all_programs_xlsx
+    assert source is not None
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+    )
+    original_ch_build = cprs_ch._build_column_map
+    original_fcm_build = cprs_fcm._build_totals_column_map
+
+    def _fcm_cash_without_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_ch_build(rows, header)
+        columns.pop("TIPS", None)
+        columns.setdefault("Cash", 4)
+        return columns
+
+    def _totals_without_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_fcm_build(rows, header)
+        columns.pop("TIPS", None)
+        return columns
+
+    monkeypatch.setattr(cprs_ch, "_build_column_map", _fcm_cash_without_tips)
+    monkeypatch.setattr(cprs_fcm, "_build_totals_column_map", _totals_without_tips)
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+    )
+    monkeypatch.setattr(cprs_ch, "_build_column_map", original_ch_build)
+    monkeypatch.setattr(cprs_fcm, "_build_totals_column_map", original_fcm_build)
+    totals = run_module._records(parse_fcm_totals(paths["all_programs"]))
+    assert any(row["counterparty"] == "CIBC" for row in totals)
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+def test_adjusted_reporting_reports_missing_fcm_cash_and_tips_columns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+) -> None:
+    from hashlib import sha256
+
+    from counter_risk.parsers import cprs_ch, cprs_fcm
+
+    source = cprs_workflow_config.mosers_all_programs_xlsx
+    assert source is not None
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    original_ch_build = cprs_ch._build_column_map
+    original_fcm_build = cprs_fcm._build_totals_column_map
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(cprs_workflow_config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=cprs_workflow_config,
+        parsed_by_variant=parsed,
+        warnings=[],
+        as_of_date=cprs_workflow_config.as_of_date,
+    )
+    # First _build_column_map call is CH (keep Cash); second is FCM (drop both).
+    ch_map_calls = {"n": 0}
+
+    def _ch_then_fcm_without_cash_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_ch_build(rows, header)
+        ch_map_calls["n"] += 1
+        if ch_map_calls["n"] == 1:
+            columns.setdefault("Cash", 4)
+        else:
+            columns.pop("Cash", None)
+            columns.pop("TIPS", None)
+        return columns
+
+    def _totals_without_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_fcm_build(rows, header)
+        columns.pop("TIPS", None)
+        return columns
+
+    monkeypatch.setattr(cprs_ch, "_build_column_map", _ch_then_fcm_without_cash_tips)
+    monkeypatch.setattr(cprs_fcm, "_build_totals_column_map", _totals_without_tips)
+    with pytest.raises(ValueError, match="missing the FCM Cash/TIPS columns"):
+        run_module._write_cprs_reporting_workbooks(
+            config=cprs_workflow_config,
+            parsed_by_variant=parsed,
+            run_dir=tmp_path / "run",
+            repo_cash_applied=True,
+        )
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+def test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results(
+    tmp_path: Path, cprs_workflow_config: WorkflowConfig
+) -> None:
+    from hashlib import sha256
+    from zipfile import ZIP_DEFLATED, ZipFile
+
+    from openpyxl import load_workbook
+
+    config = cprs_workflow_config
+    source = config.mosers_all_programs_xlsx
+    assert source is not None
+    workbook = load_workbook(source)
+    # Outside the Repo and FCM sections, including an unrelated worksheet.
+    for name in ("CPRS - CH", "CPRS - FCM"):
+        workbook[name]["J1"] = "=1+1"
+    audit = workbook.create_sheet("Formula audit")
+    audit.append(["=2-2", "=1+2", '=IF(TRUE,"ready","")', "=4+4", "literal"])
+    workbook.save(source)
+    workbook.close()
+    # Model Excel caches, including zero and a string; D1 stays uncached.
+    with ZipFile(source) as archive:
+        entries = {name: archive.read(name) for name in archive.namelist()}
+    sheet_path = next(
+        name
+        for name, data in entries.items()
+        if name.startswith("xl/worksheets/") and b"Formula audit" not in data and b"2-2</f>" in data
+    )
+    xml = entries[sheet_path]
+    xml = xml.replace(b"<f>2-2</f><v></v>", b"<f>2-2</f><v>0</v>")
+    xml = xml.replace(b"<f>1+2</f><v></v>", b"<f>1+2</f><v>3</v>")
+    xml = xml.replace(b'r="C1"', b'r="C1" t="str"')
+    xml = xml.replace(b'<v></v></c><c r="D1"', b'<v>=ready</v></c><c r="D1"')
+    entries[sheet_path] = xml
+    with ZipFile(source, "w", ZIP_DEFLATED) as archive:
+        for name, data in entries.items():
+            archive.writestr(name, data)
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+    )
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+    )
+    snapshot = load_workbook(paths["all_programs"], data_only=False)
+    try:
+        for name in ("CPRS - CH", "CPRS - FCM"):
+            assert snapshot[name]["J1"].value == "=1+1"
+        assert [cell.value for cell in snapshot["Formula audit"][1]] == [
+            0,
+            3,
+            "=ready",
+            "=4+4",
+            "literal",
+        ]
+        assert snapshot["Formula audit"]["C1"].data_type == "s"
+    finally:
+        snapshot.close()
+    assert sha256(source.read_bytes()).hexdigest() == original_hash

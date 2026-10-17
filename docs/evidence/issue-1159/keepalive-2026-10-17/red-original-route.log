@@ -1,0 +1,125 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.14.8/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collecting ... collected 13 items / 8 deselected / 5 selected
+
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[None] FAILED [ 20%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[7654321] FAILED [ 40%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[0] FAILED [ 60%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[-1234567] FAILED [ 80%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates PASSED [100%]
+
+=================================== FAILURES ===================================
+_ test_generates_screenshot_for_each_configured_variant_and_table_adjusted[None] _
+tests/pipeline/test_cprs_screenshot_generation.py:95: in test_generates_screenshot_for_each_configured_variant_and_table_adjusted
+    result = run_module._generate_cprs_screenshot_inputs(
+src/counter_risk/pipeline/run.py:3312: in _generate_cprs_screenshot_inputs
+    export_worksheet_range_as_png(
+tests/pipeline/test_cprs_screenshot_generation.py:80: in _fake_export
+    assert cash == [expected_cash], "exporter must read adjusted CIBC cash"
+E   AssertionError: exporter must read adjusted CIBC cash
+E   assert [] == [1234567]
+E
+E     Right contains one more item: 1234567
+E
+E     Full diff:
+E     + []
+E     - [
+E     -     1234567,
+E     - ]
+_ test_generates_screenshot_for_each_configured_variant_and_table_adjusted[7654321] _
+tests/pipeline/test_cprs_screenshot_generation.py:95: in test_generates_screenshot_for_each_configured_variant_and_table_adjusted
+    result = run_module._generate_cprs_screenshot_inputs(
+src/counter_risk/pipeline/run.py:3312: in _generate_cprs_screenshot_inputs
+    export_worksheet_range_as_png(
+tests/pipeline/test_cprs_screenshot_generation.py:80: in _fake_export
+    assert cash == [expected_cash], "exporter must read adjusted CIBC cash"
+E   AssertionError: exporter must read adjusted CIBC cash
+E   assert [] == [7654321]
+E
+E     Right contains one more item: 7654321
+E
+E     Full diff:
+E     + []
+E     - [
+E     -     7654321,
+E     - ]
+_ test_generates_screenshot_for_each_configured_variant_and_table_adjusted[0] __
+tests/pipeline/test_cprs_screenshot_generation.py:95: in test_generates_screenshot_for_each_configured_variant_and_table_adjusted
+    result = run_module._generate_cprs_screenshot_inputs(
+src/counter_risk/pipeline/run.py:3312: in _generate_cprs_screenshot_inputs
+    export_worksheet_range_as_png(
+tests/pipeline/test_cprs_screenshot_generation.py:80: in _fake_export
+    assert cash == [expected_cash], "exporter must read adjusted CIBC cash"
+E   AssertionError: exporter must read adjusted CIBC cash
+E   assert [] == [0]
+E
+E     Right contains one more item: 0
+E
+E     Full diff:
+E     + []
+E     - [
+E     -     0,
+E     - ]
+_ test_generates_screenshot_for_each_configured_variant_and_table_adjusted[-1234567] _
+tests/pipeline/test_cprs_screenshot_generation.py:95: in test_generates_screenshot_for_each_configured_variant_and_table_adjusted
+    result = run_module._generate_cprs_screenshot_inputs(
+src/counter_risk/pipeline/run.py:3312: in _generate_cprs_screenshot_inputs
+    export_worksheet_range_as_png(
+tests/pipeline/test_cprs_screenshot_generation.py:80: in _fake_export
+    assert cash == [expected_cash], "exporter must read adjusted CIBC cash"
+E   AssertionError: exporter must read adjusted CIBC cash
+E   assert [] == [-1234567]
+E
+E     Right contains one more item: -1234567
+E
+E     Full diff:
+E     + []
+E     - [
+E     -     -1234567,
+E     - ]
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[None] - AssertionError: exporter must read adjusted CIBC cash
+assert [] == [1234567]
+
+  Right contains one more item: 1234567
+
+  Full diff:
+  + []
+  - [
+  -     1234567,
+  - ]
+FAILED tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[7654321] - AssertionError: exporter must read adjusted CIBC cash
+assert [] == [7654321]
+
+  Right contains one more item: 7654321
+
+  Full diff:
+  + []
+  - [
+  -     7654321,
+  - ]
+FAILED tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[0] - AssertionError: exporter must read adjusted CIBC cash
+assert [] == [0]
+
+  Right contains one more item: 0
+
+  Full diff:
+  + []
+  - [
+  -     0,
+  - ]
+FAILED tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[-1234567] - AssertionError: exporter must read adjusted CIBC cash
+assert [] == [-1234567]
+
+  Right contains one more item: -1234567
+
+  Full diff:
+  + []
+  - [
+  -     -1234567,
+  - ]
+================== 4 failed, 1 passed, 8 deselected in 1.97s ===================

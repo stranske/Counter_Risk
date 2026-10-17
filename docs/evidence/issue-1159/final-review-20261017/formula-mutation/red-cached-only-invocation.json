@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results",
+    "--junitxml=/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer/docs/evidence/issue-1159/final-review-20261017/formula-mutation/red-cached-only.xml"
+  ],
+  "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer",
+  "source_sha256": "0fec33b3e1dead781687850c6442244a96476c70e103381d03819fb029e192a6",
+  "test_sha256": "42005608471fc2ce86bde32c35d673f1b3597cb010f10eb9503f8c58b79a6e85",
+  "started_at": "2026-10-17T04:51:42.731994+00:00"
+}

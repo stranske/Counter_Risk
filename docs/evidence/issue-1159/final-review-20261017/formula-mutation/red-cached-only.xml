@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.765" timestamp="2026-10-16T23:51:43.645370-05:00" hostname="server.trs.private"><testcase classname="tests.pipeline.test_cprs_screenshot_generation" name="test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results" time="1.274"><failure message="AssertionError: assert None == '=1+1'&#10; +  where None = &lt;Cell 'CPRS - CH'.J1&gt;.value">tmp_path = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2259/test_adjusted_reporting_preser0')
+cprs_workflow_config = WorkflowConfig(as_of_date=datetime.date(2025, 12, 31), run_date=None, mosers_all_programs_xlsx=PosixPath('/Users/teach...acher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2259/test_adjusted_reporting_preser0/runs'))
+
+    def test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results(
+        tmp_path: Path, cprs_workflow_config: WorkflowConfig
+    ) -&gt; None:
+        from hashlib import sha256
+        from zipfile import ZIP_DEFLATED, ZipFile
+    
+        from openpyxl import load_workbook
+    
+        config = cprs_workflow_config
+        source = config.mosers_all_programs_xlsx
+        assert source is not None
+        workbook = load_workbook(source)
+        # Outside the Repo and FCM sections, including an unrelated worksheet.
+        for name in ("CPRS - CH", "CPRS - FCM"):
+            workbook[name]["J1"] = "=1+1"
+        audit = workbook.create_sheet("Formula audit")
+        audit.append(["=2-2", "=1+2", '=IF(TRUE,"ready","")', "=4+4", "literal"])
+        workbook.save(source)
+        workbook.close()
+        # Model Excel caches, including zero and a string; D1 stays uncached.
+        with ZipFile(source) as archive:
+            entries = {name: archive.read(name) for name in archive.namelist()}
+        sheet_path = next(
+            name
+            for name, data in entries.items()
+            if name.startswith("xl/worksheets/") and b"Formula audit" not in data and b"2-2&lt;/f&gt;" in data
+        )
+        xml = entries[sheet_path]
+        xml = xml.replace(b"&lt;f&gt;2-2&lt;/f&gt;&lt;v&gt;&lt;/v&gt;", b"&lt;f&gt;2-2&lt;/f&gt;&lt;v&gt;0&lt;/v&gt;")
+        xml = xml.replace(b"&lt;f&gt;1+2&lt;/f&gt;&lt;v&gt;&lt;/v&gt;", b"&lt;f&gt;1+2&lt;/f&gt;&lt;v&gt;3&lt;/v&gt;")
+        xml = xml.replace(b'r="C1"', b'r="C1" t="str"')
+        xml = xml.replace(b'&lt;v&gt;&lt;/v&gt;&lt;/c&gt;&lt;c r="D1"', b'&lt;v&gt;=ready&lt;/v&gt;&lt;/c&gt;&lt;c r="D1"')
+        entries[sheet_path] = xml
+        with ZipFile(source, "w", ZIP_DEFLATED) as archive:
+            for name, data in entries.items():
+                archive.writestr(name, data)
+        original_hash = sha256(source.read_bytes()).hexdigest()
+        parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+        run_module._apply_daily_holdings_repo_cash(
+            config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+        )
+        paths = run_module._write_cprs_reporting_workbooks(
+            config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+        )
+        snapshot = load_workbook(paths["all_programs"], data_only=False)
+        try:
+            for name in ("CPRS - CH", "CPRS - FCM"):
+&gt;               assert snapshot[name]["J1"].value == "=1+1"
+E               AssertionError: assert None == '=1+1'
+E                +  where None = &lt;Cell 'CPRS - CH'.J1&gt;.value
+
+tests/pipeline/test_cprs_screenshot_generation.py:382: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,41 @@
+{
+  "results": {
+    "red-cached-only": {
+      "argv": [
+        "/opt/anaconda3/bin/python3",
+        "-m",
+        "pytest",
+        "tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results",
+        "--junitxml=/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer/docs/evidence/issue-1159/final-review-20261017/formula-mutation/red-cached-only.xml"
+      ],
+      "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer",
+      "source_sha256": "0fec33b3e1dead781687850c6442244a96476c70e103381d03819fb029e192a6",
+      "test_sha256": "42005608471fc2ce86bde32c35d673f1b3597cb010f10eb9503f8c58b79a6e85",
+      "started_at": "2026-10-17T04:51:42.731994+00:00",
+      "returncode": 1,
+      "actual_failure_messages": [
+        "AssertionError: assert None == '=1+1'\n +  where None = <Cell 'CPRS - CH'.J1>.value"
+      ],
+      "junit_sha256": "8a9e30478d272f7ba5688a66792b7b4417be3132f01bfd31bdf548f10cdbc715",
+      "log_sha256": "96b7d661f521d90c509911cca128abfff308cf7cbef542d2127e3e3d9cfde500"
+    },
+    "green-restored": {
+      "argv": [
+        "/opt/anaconda3/bin/python3",
+        "-m",
+        "pytest",
+        "tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results",
+        "--junitxml=/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer/docs/evidence/issue-1159/final-review-20261017/formula-mutation/green-restored.xml"
+      ],
+      "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer",
+      "source_sha256": "95157f5a3a72a8d99524948fbce12463806aafe3b08af3b0ece864a805b01c0c",
+      "test_sha256": "42005608471fc2ce86bde32c35d673f1b3597cb010f10eb9503f8c58b79a6e85",
+      "started_at": "2026-10-17T04:51:45.661777+00:00",
+      "returncode": 0,
+      "actual_failure_messages": [],
+      "junit_sha256": "a2e1ff46949a9526cbb0474b480a58fdf0d71b3331e492a447937681792036e1",
+      "log_sha256": "79e563368f06dff8e93b839239514fedf95c7cc367d6e0f458218d6925f50a21"
+    }
+  },
+  "byte_identical_restoration": true
+}

@@ -1,0 +1,24 @@
+{
+  "results": {
+    "red-original-route": {
+      "argv": [
+        "/opt/anaconda3/bin/python3",
+        "-m",
+        "pytest",
+        "tests/pipeline/test_run_pipeline.py",
+        "-k",
+        "screenshot and 1234567",
+        "--junitxml=/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer/docs/evidence/issue-1159/final-review-20261017/cash-mutation/red-original-route.xml"
+      ],
+      "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer",
+      "started_at": "2026-10-17T04:45:13.884990+00:00",
+      "source_sha256": "3bd8f636dcef638cda2c18f9c94ff251318232aad1b65430e2dd42ca3bc5e248",
+      "test_sha256": "f9ca48b95d945e493595054a6f9f05ce7d5514fed3737baa94647998c65016df",
+      "exit_code": 1,
+      "finished_at": "2026-10-17T04:46:36.756442+00:00",
+      "junit_sha256": "83c4e24164927ecba51bbb1af60443ef3efecd4a4bbeb37abe58e9258a73707a",
+      "log_sha256": "650e40959000e2fd6896fcb06d4ce475b65f2ea5a7122ba2d70f25d0f33156b1"
+    }
+  },
+  "byte_identical_restoration": true
+}

@@ -1,0 +1,29 @@
+{
+  "command": [
+    "/opt/hostedtoolcache/Python/3.14.8/x64/bin/python",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_cprs_screenshot_generation.py",
+    "-k",
+    "adjusted",
+    "-m",
+    "not slow",
+    "--tb=short"
+  ],
+  "results": {
+    "green-before": {
+      "exit_code": 0,
+      "source_sha256": "88fd5c50cf70faf30451feb5fc6182b75a9d1fb9ab085fbae5d343e010d32128"
+    },
+    "red-original-route": {
+      "exit_code": 1,
+      "source_sha256": "f199bbea332102c95a53cbfe27bd6cc2062511dfdd9aeee60fb44c67698527de"
+    },
+    "green-restored": {
+      "exit_code": 0,
+      "source_sha256": "88fd5c50cf70faf30451feb5fc6182b75a9d1fb9ab085fbae5d343e010d32128"
+    }
+  },
+  "byte_identical_restoration": true,
+  "test_sha256": "af750c4389dc6b4bb90787e0e17f305c5b7b1070b25321a342d0ee82eceb461a"
+}

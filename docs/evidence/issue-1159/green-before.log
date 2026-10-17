@@ -1,0 +1,22 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.14.8/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collecting ... collected 19 items / 8 deselected / 11 selected
+
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[None] PASSED [  9%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[7654321] PASSED [ 18%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[0] PASSED [ 27%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted[-1234567] PASSED [ 36%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates PASSED [ 45%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_snapshot_reports_missing_repo_segment PASSED [ 54%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_keeps_cash_column_when_tips_header_missing PASSED [ 63%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_reports_missing_ch_cash_and_tips_columns PASSED [ 72%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_keeps_fcm_cash_when_tips_header_missing PASSED [ 81%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_reports_missing_fcm_cash_and_tips_columns PASSED [ 90%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results PASSED [100%]
+
+- generated xml file: /home/runner/work/Counter_Risk/Counter_Risk/docs/evidence/issue-1159/gate.xml -
+======================= 11 passed, 8 deselected in 4.09s =======================
