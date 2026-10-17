@@ -16,7 +16,7 @@ from counter_risk.compute.limits import (
     find_missing_limit_entities,
     write_limit_breaches_csv,
 )
-from counter_risk.limits_config import LimitsConfig
+from counter_risk.limits_config import LimitsConfig, load_limits_config
 from counter_risk.pipeline.run import _build_limit_exposure_rows
 
 
@@ -633,6 +633,42 @@ def test_new_registry_futures_aliases_aggregate_into_one_limit(
     ):
         assert _as_records(check_limits(rows, policy)) == expected
         assert find_missing_limit_entities(rows, policy) == []
+
+
+@pytest.mark.parametrize(
+    "clearing_rows",
+    [
+        [("CME", 60.0), ("ICE", 40.0)],
+        [("CME Clearing House", 60.0), ("ICE Clear U.S.", 40.0)],
+        [("CME", 30.0), ("CME Clearing House", 30.0), ("ICE Clear U.S.", 40.0)],
+    ],
+    ids=["canonical", "alias", "split-alias"],
+)
+def test_shipped_cme_limit_breaches_for_clearing_house_aliases(
+    clearing_rows: list[tuple[str, float]],
+) -> None:
+    policy = load_limits_config()
+    rows = _build_limit_exposure_rows(
+        {
+            "all_programs": {
+                "totals": [{"counterparty": "Citibank", "Notional": 1000.0}],
+                "futures": [
+                    {"clearing_house": label, "notional": amount} for label, amount in clearing_rows
+                ],
+            }
+        }
+    )
+
+    breaches = _as_records(check_limits(rows, policy))
+
+    assert len(breaches) == 1
+    assert breaches[0]["entity_type"] == "clearing_house"
+    assert breaches[0]["entity_name"] == "cme"
+    assert breaches[0]["limit_kind"] == "percent_of_total"
+    assert breaches[0]["limit_value"] == 0.35
+    assert breaches[0]["actual_value"] == pytest.approx(0.6)
+    assert breaches[0]["breach_amount"] == pytest.approx(0.25)
+    assert find_missing_limit_entities(rows, policy) == []
 
 
 def test_clearing_house_split_alias_aggregation_preserves_percent_breach() -> None:
