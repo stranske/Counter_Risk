@@ -32,5 +32,11 @@
   },
   "exit_code": 0,
   "console_sha256": "4d955ece5940e0144b384675917f47a558477e2d8002b64f0f69d77a16420892",
-  "junit_sha256": "a17a2fc322f973f3440dadedbb566c188b6e2c7b588d314d794c6545acf9a250"
+  "junit_sha256": "a17a2fc322f973f3440dadedbb566c188b6e2c7b588d314d794c6545acf9a250",
+  "junit_publication": {
+    "transformation": "remove-junit-suite-hostname-v1",
+    "original_sha256": "a17a2fc322f973f3440dadedbb566c188b6e2c7b588d314d794c6545acf9a250",
+    "published_sha256": "14e29312c75b86ff3b47eeb7a61a739882f00f7c0305243ed6396538a3512973",
+    "removed_attributes": 1
+  }
 }

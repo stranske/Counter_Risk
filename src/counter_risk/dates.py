@@ -195,6 +195,13 @@ _REPORT_DATE_LABEL = re.compile(
 )
 
 _REPORT_DATE_TOKEN_PATTERN = re.compile(rf"(?:{_DATE_TOKEN_PATTERN.pattern})(?![\w/-])")
+# Evidence counts incomplete numeric dates too; only the leading complete token
+# can identify a period. Keep this separate from the legacy fallback grammar.
+_REPORT_DATE_CANDIDATE_PATTERN = re.compile(r"\d{4}-\d*(?:-\d*)?|\d{1,2}/\d*(?:/\d*)?")
+_GENERATED_REPORT_DATE_MARKER = re.compile(
+    r"^\s*(?:Generated from config as_of_date\b|Counter-risk generated\b|CPRS CH Header Date\b)",
+    re.IGNORECASE,
+)
 
 
 def source_report_date_evidence(
@@ -202,14 +209,7 @@ def source_report_date_evidence(
 ) -> dict[str, Any]:
     """Classify bounded source headers; unverified evidence never confirms a match."""
     lines = list(headers)
-    generated = generated or any(
-        re.search(
-            r"generated.*config|config.*(?:stamp|generated)|counter-risk generated|^\s*CPRS CH Header Date\b",
-            line,
-            re.I,
-        )
-        for line in lines
-    )
+    generated = generated or any(_GENERATED_REPORT_DATE_MARKER.match(line) for line in lines)
     observations: list[dict[str, str]] = []
     invalid = False
     for line in lines:
@@ -219,7 +219,7 @@ def source_report_date_evidence(
         value_text = line[label.end() :]
         # Count all date-like tokens before validating the leading date. Otherwise a
         # malformed second date can be filtered out and falsely confirm the first.
-        tokens = _DATE_TOKEN_PATTERN.findall(value_text)
+        tokens = _REPORT_DATE_CANDIDATE_PATTERN.findall(value_text)
         leading_date = _REPORT_DATE_TOKEN_PATTERN.match(value_text)
         parsed = _coerce_date(leading_date.group()) if leading_date else None
         if len(tokens) != 1 or parsed is None:

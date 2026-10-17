@@ -139,6 +139,21 @@ def test_matching_sources_have_no_conflict_finding(date_run, tmp_path):
     )
 
 
+def test_config_team_notes_do_not_hide_later_variant_conflict(date_run, tmp_path):
+    config, _ = date_run
+    _set_header(
+        config.mosers_trend_xlsx,
+        ["Report Date: 2026-02-28", "Report generated for Config Team"],
+    )
+    run_dir, manifest, comparison = _manifest(config, tmp_path)
+    assert manifest["as_of_date"] == "2026-01-31"
+    assert comparison["sources"][2]["status"] == "identified"
+    assert comparison["config_conflict_variants"] == ["trend"]
+    assert comparison["inter_variant_conflict"] is True
+    assert "SOURCE_REPORT_DATE_CONFLICT" in (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text()
+    assert "YELLOW" in (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text()
+
+
 @pytest.mark.parametrize(
     "mode",
     [
@@ -147,6 +162,8 @@ def test_matching_sources_have_no_conflict_finding(date_run, tmp_path):
         "ambiguous",
         "malformed_match",
         "malformed_conflict",
+        "partial_match",
+        "partial_conflict",
         "generated",
         "legacy_generated",
     ],
@@ -164,6 +181,8 @@ def test_unverified_workbook_never_confirms_match_or_conflict(date_run, tmp_path
                 "ambiguous": ["Report Date: 2026-01-31", "Report Date: 2026-02-28"],
                 "malformed_match": ["Report Date: 2026-01-31 / 2026-02-300"],
                 "malformed_conflict": ["Report Date: 2026-02-28 / 2026-01-310"],
+                "partial_match": ["Report Date: 2026-01-31 /2026-02-3"],
+                "partial_conflict": ["Report Date: 2026-02-28 /2026-01-3"],
                 "generated": ["Report Date: 2026-02-28", "Generated from config as_of_date"],
                 "legacy_generated": ["CPRS CH Header Date 2026-02-28"],
             }[mode],
@@ -243,23 +262,26 @@ def test_run_level_override_is_audited_and_reaches_final_stages(date_run, tmp_pa
     assert calls == ["history", "publication"]
 
 
-def test_blank_override_cannot_bypass_conflict(date_run, tmp_path, capsys):
+@pytest.mark.parametrize("reason", ["", "   ", "\t\n"])
+@pytest.mark.parametrize("explicit_output", [False, True])
+def test_blank_override_cannot_bypass_conflict(date_run, tmp_path, capsys, reason, explicit_output):
     config, calls = date_run
     _set_header(config.mosers_trend_xlsx, ["Report Date: 2026-02-28"])
-    assert (
-        main(
-            [
-                "run",
-                "--config",
-                str(_write_config(config, tmp_path / "config.yml")),
-                "--report-date-override",
-                "   ",
-            ]
-        )
-        == 1
-    )
+    args = [
+        "run",
+        "--config",
+        str(_write_config(config, tmp_path / "config.yml")),
+        "--report-date-override",
+        reason,
+    ]
+    explicit_parent = tmp_path / "new-output-parent"
+    if explicit_output:
+        args.extend(["--output-dir", str(explicit_parent / "run")])
+    assert main(args) == 1
     assert calls == []
     assert "non-empty audit reason" in capsys.readouterr().out
+    assert not config.output_root.exists()
+    assert not explicit_parent.exists()
 
 
 def test_real_pipeline_parsers_and_outputs_keep_date_conflict_diagnostics(tmp_path):

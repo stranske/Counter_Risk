@@ -212,12 +212,59 @@ def test_unverified_source_dates_never_confirm_match_or_conflict(headers, status
 
 
 @pytest.mark.parametrize(
+    "note",
+    [
+        "Report generated for Config Team",
+        "Config Team stamped report review",
+        "Config Team generated these report notes",
+        "Generated report reviewed by Configuration Team",
+    ],
+)
+@pytest.mark.parametrize("report_date", ["2026-01-31", "2026-02-28"])
+def test_config_team_notes_do_not_suppress_source_date(note: str, report_date: str) -> None:
+    from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+
+    evidence = source_report_date_evidence(
+        variant="trend", path="trend.xlsx", headers=[f"Report Date: {report_date}", note]
+    )
+    assert evidence["status"] == "identified"
+    assert evidence["report_date"] == report_date
+    result = compare_source_report_dates(configured_date=date(2026, 1, 31), evidence=[evidence])
+    assert result["has_conflict"] is (report_date == "2026-02-28")
+
+
+def test_config_team_notes_do_not_suppress_ambiguous_dates() -> None:
+    from counter_risk.dates import source_report_date_evidence
+
+    evidence = source_report_date_evidence(
+        variant="trend",
+        path="trend.xlsx",
+        headers=[
+            "Report Date: 2026-01-31",
+            "Report Date: 2026-02-28",
+            "Report generated for Config Team",
+        ],
+    )
+    assert evidence["status"] == "ambiguous"
+    assert evidence["report_date"] is None
+
+
+@pytest.mark.parametrize(
     "header",
     [
         "Report Date: 2026-02-28 / 2026-01-310",
         "Report Date: 2026-01-31 / 2026-02-28T23:00:00",
         "Report Date: 01/31/2026 / 02/28/20260",
         "Report Date: 2026-01-31 / 2026-02-28_extra",
+        "Report Date: 2026-01-31 /2026-02-3",
+        "Report Date: 2026-02-28 /2026-01-3",
+        "Report Date: 2026-01-31 /2026-2-03",
+        "Report Date: 2026-01-31 /2026-02",
+        "Report Date: 2026-01-31 /2026-02-",
+        "Report Date: 2026-01-31 /2026-",
+        "Report Date: 2026-01-31 /02/3",
+        "Report Date: 2026-01-31 /02/3/",
+        "Report Date: 2026-01-31 /02/",
     ],
 )
 def test_malformed_additional_date_cannot_confirm_source_period(header: str) -> None:

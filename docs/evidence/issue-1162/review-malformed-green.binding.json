@@ -1,0 +1,33 @@
+{
+  "argv": [
+    "/opt/hostedtoolcache/Python/3.14.8/x64/bin/python",
+    "-m",
+    "pytest",
+    "tests/test_dates.py",
+    "tests/pipeline/test_as_of_header_mismatch.py",
+    "-k",
+    "malformed_additional_date or partial_match or partial_conflict",
+    "-m",
+    "not slow",
+    "-q",
+    "--tb=short",
+    "--junitxml=docs/evidence/issue-1162/review-malformed-green.xml"
+  ],
+  "cwd": "/home/runner/work/Counter_Risk/Counter_Risk",
+  "started_at": "2026-10-17T04:01:46.647094+00:00",
+  "source_bindings": {
+    "src/counter_risk/dates.py": "d13804b676c713a483ecbf21376beb03d0630b7de3ad22c80bbce71593cc1819",
+    "src/counter_risk/pipeline/run.py": "8cf609776f6a9e6e756944789835cd9db1754b1139ff30b063f86fa50db9942e",
+    "tests/test_dates.py": "f458331edbc4cf85acfff6376800bd23f0b29728eff0658f64d71330440c90c5",
+    "tests/pipeline/test_as_of_header_mismatch.py": "bb8793c245edacffe6d63be08d3c721bc00dedc2d29c52ca19c2caa8913ba2f8"
+  },
+  "exit_code": 0,
+  "console_sha256": "081c40c315f67db0e237dbcda26b127306674a6d4945293485f618b57a959250",
+  "junit_sha256": "6d24e292ffc99d11c56dac0efb9cf06c0085046e3b49a627ed88a028a3c147a5",
+  "junit_publication": {
+    "transformation": "remove-junit-suite-hostname-v1",
+    "original_sha256": "6d24e292ffc99d11c56dac0efb9cf06c0085046e3b49a627ed88a028a3c147a5",
+    "published_sha256": "1475054d9415ec20c1a3e2458686d17f4cedfe609238aa990288eec091405f84",
+    "removed_attributes": 1
+  }
+}

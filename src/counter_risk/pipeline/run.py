@@ -384,6 +384,10 @@ def run_pipeline(
 ) -> Path:
     """Run the Counter Risk pipeline and return the output run directory."""
 
+    override_reason = report_date_override.strip() if report_date_override else None
+    if report_date_override is not None and not override_reason:
+        raise ValueError("report_date_override requires a non-empty audit reason")
+
     LOGGER.info("pipeline_start config_path=%s", config_path)
     workflow_trace_events: list[dict[str, Any]] = []
 
@@ -458,9 +462,6 @@ def run_pipeline(
     date_comparison = compare_source_report_dates(
         configured_date=config.as_of_date, evidence=source_dates
     )
-    override_reason = report_date_override.strip() if report_date_override else None
-    if report_date_override is not None and not override_reason:
-        raise ValueError("report_date_override requires a non-empty audit reason")
     date_comparison["policy"] = config.report_date_policy
     date_comparison["override"] = (
         {

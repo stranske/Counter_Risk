@@ -75,7 +75,9 @@ repeated dates), or an invalid labeled date make the workbook ambiguous. A
 malformed additional token must not be silently discarded: for example,
 `Report Date: 2026-01-31 / 2026-02-300` and
 `Report Date: 2026-01-31 / 2026-02-28T23:00:00` are ambiguous, rather than confirmed
-January dates. Missing paths, unreadable workbooks, and absent labels are unverified.
+January dates. Incomplete secondary dates such as `/2026-02-3`, `/2026-02`,
+and `/02/3` are also ambiguous; candidate counting does not require a complete,
+parsable second date. Missing paths, unreadable workbooks, and absent labels are unverified.
 These states cannot establish a confirmed match or mismatch. Other reliably
 identified workbooks can still conflict even if one workbook is unverified.
 
@@ -84,6 +86,10 @@ variants, headers explicitly marked generated from config, and the writer's
 reserved legacy `CPRS CH Header Date` stamp are classified `generated`. New stamps
 also carry an explicit provenance notice in C3. This conservative treatment of
 legacy stamps prevents older generated files from validating their own config date.
+Text recognition requires a line starting with `Generated from config as_of_date`,
+`Counter-risk generated`, or the reserved legacy label. Ordinary notes such as
+`Report generated for Config Team` or `Config Team stamped report review` do not
+establish config provenance and cannot suppress identified dates or ambiguity.
 
 `date_resolution.source_report_dates` in `manifest.json` records all source
 classifications, configured date, conflict variants, inter-variant conflict, policy,
