@@ -21,3 +21,12 @@ restored byte-identical
 .............................................................            [100%]
 
 ============================= 104 passed in 1.34s ==============================
+== Classification deliberate-break (limits alias resolution) ==
+Disconnecting _canonical_entity_key in src/counter_risk/compute/limits.py:
+test_boundary_audit_classification_intentional_aggregation_vs_segment_partition
+1 failed (bank_of_america breach missing); restored byte-identical
+(git diff --exit-code clean); rerun 1 passed.
+== Parser Scope deliberate-break re-run (this round) ==
+Disconnecting Trend totals guard at cprs_fcm.py:152:
+test_boundary_audit_parser_variant_scope 1 failed, 1 passed;
+restored (git diff --exit-code -- src clean); full file 105 passed.

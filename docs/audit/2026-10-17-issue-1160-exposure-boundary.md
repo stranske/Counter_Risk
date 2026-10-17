@@ -301,3 +301,36 @@ Delivery evidence (`docs/evidence/issue-1160/muse-round-deliberate-break.log`):
   `test_boundary_audit_parser_variant_scope[trend]` fail (1 failed, 1 passed,
   exit 1); the file was restored byte-identical (`git diff --exit-code`) and
   the full file reran **104 passed**.
+
+## Muse keepalive classification follow-up
+
+Classification is now executable, not only tabular. New
+`test_boundary_audit_classification_intentional_aggregation_vs_segment_partition`
+in `tests/compute/test_limits.py` separates the three dispositions at the
+`compute/limits.py` boundary:
+
+- **Intentional aggregation (I):** an unscoped `fcm` cap for
+  `bank_of_america` sums two registered alias spellings
+  (`Bank of America, NA` in Equity, `Bank of America NA` in Treasury) across
+  segments to 0.6 of the futures universe. Segment is aggregated only
+  because the policy entity type does not select it.
+- **Preserved dimension / control:** a `segment`-typed cap still partitions
+  -- Equity breaches at 0.7 while Treasury (0.3) does not -- matching the
+  already-correct partitioned concentration control
+  (`pipeline/run.py:2431,2478` grouping by variant/segment), which remains
+  unchanged and passing.
+- **Confirmed alias loss (C, repaired):** the same test fails when canonical
+  alias resolution in `compute/limits.py:_canonical_entity_key` is
+  disconnected (deliberate-break: 1 failed, `bank_of_america` breach
+  missing; restored byte-identical, 1 passed). This is the #1168 repair
+  surface; no new production fix is bundled.
+- **Unknown (U):** U1-U5 above remain report-only. This test asserts nothing
+  about them; no issue is filed and no defect is invented for them.
+
+Known-instance mapping is unchanged: alias loss -> #1168, overlapping-subset
+scope loss -> #1170 (policy #1161), both merged. The new test returns no
+uncovered gap: it only pins the intentional-vs-preserved classification
+between them. `src/counter_risk/parsers/cprs_fcm.py` is not modified by
+this follow-up; its variant Scope guards (`:152` totals, `:215` futures)
+remain the deliberate-break target already logged in
+`docs/evidence/issue-1160/muse-round-deliberate-break.log`.

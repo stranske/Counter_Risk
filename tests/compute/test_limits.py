@@ -1194,6 +1194,70 @@ def test_boundary_audit_declared_contract_alias_and_overlap_combined(
     ]
 
 
+def test_boundary_audit_classification_intentional_aggregation_vs_segment_partition() -> None:
+    """Classify segment handling at the limit boundary.
+
+    Intentional aggregation: an unscoped ``fcm`` cap sums its canonical
+    entity across segments, so two registered alias spellings in different
+    segments reach one cap. Preserved dimension: a ``segment``-typed cap
+    still partitions by segment, so the segment is not lost -- it is only
+    aggregated when the policy entity type does not select it. Unknown
+    boundaries (U1-U5 in the audit doc) are not asserted here.
+    """
+    rows = [
+        {
+            _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
+            "fcm": "Bank of America, NA",
+            "segment": "Equity",
+            "notional": 30.0,
+        },
+        {
+            _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
+            "fcm": "Bank of America NA",
+            "segment": "Treasury",
+            "notional": 30.0,
+        },
+        {
+            _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
+            "fcm": "Unknown FCM",
+            "segment": "Equity",
+            "notional": 40.0,
+        },
+    ]
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "fcm",
+                "entity_name": "bank_of_america",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.5,
+            },
+            {
+                "entity_type": "segment",
+                "entity_name": "Equity",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.65,
+            },
+            {
+                "entity_type": "segment",
+                "entity_name": "Treasury",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.65,
+            },
+        ],
+    }
+    breaches = _as_records(check_limits(rows, policy))
+    by_key = {(row["entity_type"], row["entity_name"]): row for row in breaches}
+    assert set(by_key) == {
+        ("fcm", "bank_of_america"),
+        ("segment", "equity"),
+    }, "unscoped FCM cap aggregates across segments; only the Equity segment cap breaches"
+    assert by_key[("fcm", "bank_of_america")]["actual_value"] == pytest.approx(0.6)
+    assert by_key[("segment", "equity")]["actual_value"] == pytest.approx(0.7)
+    assert find_missing_limit_entities(rows, policy) == []
+
+
 def test_boundary_audit_partitioned_concentration_control(
     tmp_path: Path, boundary_parsed_workbooks: dict[str, dict[str, Any]]
 ) -> None:
