@@ -1,0 +1,15 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 19 items / 18 deselected / 1 selected
+
+tests/pipeline/test_cprs_screenshot_generation.py F                      [100%]
+
+=================================== FAILURES ===================================
+E   KeyError: 'TIPS'
+/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py:3329: KeyError: 'TIPS'
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_keeps_fcm_cash_when_tips_header_missing - KeyError: 'TIPS'
+======================= 1 failed, 18 deselected in 0.79s =======================

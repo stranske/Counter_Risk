@@ -40,9 +40,9 @@
   "docs/evidence/issue-1159/verify_break.py": "69b7cd0ca86ae460d403f501e84a6551f614ba19c5b32ef7627e33b43d40f444",
   "docs/evidence/issue-1159/verify_pipeline_break.py": "6caae2079fc7e241c4b7e089d4a0cece6dc510481cf474f84a17b212b2cee440",
   "pyproject.toml": "d6ac38f5642fbed4ec977303c1fce89b4d08b19a647a65fe2dbf58db0cb99642",
-  "src/counter_risk/pipeline/run.py": "9c4125eb7df5b2d8f7013ed0e46f8f26b49a78eb133f7ae6cfa32fd7c8f9aa7d",
+  "src/counter_risk/pipeline/run.py": "7ba8936fe0ecc55b11fa71cc8bcbb85d9b37f76e0352c20f178a147fb2381e90",
   "tests/conftest.py": "5e5b5ebe1e92df6159195e4946277b0c07bc108830fa1f270aa22a5b0dbe1f77",
-  "tests/pipeline/test_cprs_screenshot_generation.py": "472d6a7050d340025d9053e3c09bab1f18373d7910e405af41a299e4aa5f912e",
+  "tests/pipeline/test_cprs_screenshot_generation.py": "7d7261f10c3914952272ec2536ee4e70053a5c97d141713401a9c536ce6a1340",
   "tests/pipeline/test_run_pipeline.py": "287bcaee1f6c5b2072e5d87075fc4ca9960344c34fef5a4029359ed1712380de",
   "tests/test_pipeline_screenshot_replacement.py": "a4ecd31cbaa1c11cfee737009eadbfb027337ba751ca08a54aecd3bffae12ec4"
 }

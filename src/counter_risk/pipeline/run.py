@@ -3325,9 +3325,16 @@ def _write_cprs_reporting_workbooks(
         if fcm_header is None or bounds is None:
             raise ValueError("CPRS reporting workbook is missing the FCM totals section")
         fcm_columns = cprs_fcm._build_totals_column_map(fcm_rows, fcm_header)
-        fcm_columns["Cash"] = cprs_ch._build_column_map(fcm_rows, fcm_header).get(
-            "Cash", fcm_columns["TIPS"] - 1
-        )
+        # Same Cash/TIPS rule as CH: prefer an explicit Cash mapping. Do not use
+        # dict.get(..., fcm_columns["TIPS"] - 1) — the default is evaluated eagerly
+        # and KeyError's when Cash is already mapped but TIPS is absent.
+        fcm_cash = cprs_ch._build_column_map(fcm_rows, fcm_header).get("Cash")
+        if fcm_cash is not None:
+            fcm_columns["Cash"] = fcm_cash
+        elif "TIPS" not in fcm_columns:
+            raise ValueError("CPRS reporting workbook is missing the FCM Cash/TIPS columns")
+        else:
+            fcm_columns["Cash"] = fcm_columns["TIPS"] - 1
 
         workbook = load_workbook(target, data_only=False)
         try:

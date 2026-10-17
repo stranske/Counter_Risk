@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 19 items / 15 deselected / 4 selected
+
+tests/pipeline/test_cprs_screenshot_generation.py ....                   [100%]
+
+======================= 4 passed, 15 deselected in 1.27s =======================

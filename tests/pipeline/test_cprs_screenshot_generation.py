@@ -398,6 +398,97 @@ def test_adjusted_reporting_reports_missing_ch_cash_and_tips_columns(
     assert sha256(source.read_bytes()).hexdigest() == original_hash
 
 
+def test_adjusted_reporting_keeps_fcm_cash_when_tips_header_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+) -> None:
+    """FCM Cash-present / TIPS-absent maps must not KeyError on the Cash fallback."""
+    from hashlib import sha256
+
+    from counter_risk.parsers import cprs_ch, cprs_fcm, parse_fcm_totals
+
+    config = cprs_workflow_config
+    source = config.mosers_all_programs_xlsx
+    assert source is not None
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+    )
+    original_ch_build = cprs_ch._build_column_map
+    original_fcm_build = cprs_fcm._build_totals_column_map
+
+    def _fcm_cash_without_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_ch_build(rows, header)
+        columns.pop("TIPS", None)
+        columns.setdefault("Cash", 4)
+        return columns
+
+    def _totals_without_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_fcm_build(rows, header)
+        columns.pop("TIPS", None)
+        return columns
+
+    monkeypatch.setattr(cprs_ch, "_build_column_map", _fcm_cash_without_tips)
+    monkeypatch.setattr(cprs_fcm, "_build_totals_column_map", _totals_without_tips)
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+    )
+    monkeypatch.setattr(cprs_ch, "_build_column_map", original_ch_build)
+    monkeypatch.setattr(cprs_fcm, "_build_totals_column_map", original_fcm_build)
+    totals = run_module._records(parse_fcm_totals(paths["all_programs"]))
+    assert any(row["counterparty"] == "CIBC" for row in totals)
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+def test_adjusted_reporting_reports_missing_fcm_cash_and_tips_columns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+) -> None:
+    from hashlib import sha256
+
+    from counter_risk.parsers import cprs_ch, cprs_fcm
+
+    source = cprs_workflow_config.mosers_all_programs_xlsx
+    assert source is not None
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    original_ch_build = cprs_ch._build_column_map
+    original_fcm_build = cprs_fcm._build_totals_column_map
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(cprs_workflow_config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=cprs_workflow_config,
+        parsed_by_variant=parsed,
+        warnings=[],
+        as_of_date=cprs_workflow_config.as_of_date,
+    )
+    # First _build_column_map call is CH (keep Cash); second is FCM (drop both).
+    ch_map_calls = {"n": 0}
+
+    def _ch_then_fcm_without_cash_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_ch_build(rows, header)
+        ch_map_calls["n"] += 1
+        if ch_map_calls["n"] == 1:
+            columns.setdefault("Cash", 4)
+        else:
+            columns.pop("Cash", None)
+            columns.pop("TIPS", None)
+        return columns
+
+    def _totals_without_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_fcm_build(rows, header)
+        columns.pop("TIPS", None)
+        return columns
+
+    monkeypatch.setattr(cprs_ch, "_build_column_map", _ch_then_fcm_without_cash_tips)
+    monkeypatch.setattr(cprs_fcm, "_build_totals_column_map", _totals_without_tips)
+    with pytest.raises(ValueError, match="missing the FCM Cash/TIPS columns"):
+        run_module._write_cprs_reporting_workbooks(
+            config=cprs_workflow_config,
+            parsed_by_variant=parsed,
+            run_dir=tmp_path / "run",
+            repo_cash_applied=True,
+        )
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
 def test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results(
     tmp_path: Path, cprs_workflow_config: WorkflowConfig
 ) -> None:
