@@ -3290,8 +3290,14 @@ def _write_cprs_reporting_workbooks(
         ch_columns = cprs_ch._build_column_map(ch_rows, header)
         ch_columns.setdefault("Counterparty", 2)
         # Legacy MOSERS templates leave the Cash heading blank between the name
-        # and TIPS columns. It is still the operator's Cash column.
-        ch_columns.setdefault("Cash", ch_columns["TIPS"] - 1)
+        # and TIPS columns. It is still the operator's Cash column. Prefer an
+        # existing Cash mapping; only derive from TIPS when Cash is absent.
+        # setdefault would eagerly evaluate TIPS and KeyError when Cash is
+        # already mapped but TIPS is missing (CH parser allows that).
+        if "Cash" not in ch_columns:
+            if "TIPS" not in ch_columns:
+                raise ValueError("CPRS reporting workbook is missing the CH Cash/TIPS columns")
+            ch_columns["Cash"] = ch_columns["TIPS"] - 1
         segments = cprs_ch._scan_segments(ch_rows)
         repo = next((segment for segment in segments if segment.segment_type == "repo"), None)
         if repo is None:

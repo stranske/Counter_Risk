@@ -332,6 +332,72 @@ def test_adjusted_reporting_snapshot_reports_missing_repo_segment(
     assert sha256(source.read_bytes()).hexdigest() == original_hash
 
 
+def test_adjusted_reporting_keeps_cash_column_when_tips_header_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+) -> None:
+    """Cash-present / TIPS-absent CH maps must not KeyError on the Cash fallback."""
+    from hashlib import sha256
+
+    from counter_risk.parsers import cprs_ch, parse_cprs_ch
+
+    config = cprs_workflow_config
+    source = config.mosers_all_programs_xlsx
+    assert source is not None
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+    )
+    original_build = cprs_ch._build_column_map
+
+    def _cash_without_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_build(rows, header)
+        columns.pop("TIPS", None)
+        columns.setdefault("Cash", 4)
+        return columns
+
+    monkeypatch.setattr(cprs_ch, "_build_column_map", _cash_without_tips)
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+    )
+    monkeypatch.setattr(cprs_ch, "_build_column_map", original_build)
+    repo = [
+        row
+        for row in run_module._records(parse_cprs_ch(paths["all_programs"]))
+        if row["Segment"] == "repo"
+    ]
+    assert any(row["Counterparty"] == "CIBC" for row in repo)
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+def test_adjusted_reporting_reports_missing_ch_cash_and_tips_columns(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+) -> None:
+    from hashlib import sha256
+
+    from counter_risk.parsers import cprs_ch
+
+    source = cprs_workflow_config.mosers_all_programs_xlsx
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    original_build = cprs_ch._build_column_map
+
+    def _neither_cash_nor_tips(rows: Any, header: int) -> dict[str, int]:
+        columns = original_build(rows, header)
+        columns.pop("Cash", None)
+        columns.pop("TIPS", None)
+        return columns
+
+    monkeypatch.setattr(cprs_ch, "_build_column_map", _neither_cash_nor_tips)
+    with pytest.raises(ValueError, match="missing the CH Cash/TIPS columns"):
+        run_module._write_cprs_reporting_workbooks(
+            config=cprs_workflow_config,
+            parsed_by_variant={"all_programs": {}},
+            run_dir=tmp_path / "run",
+            repo_cash_applied=True,
+        )
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
 def test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results(
     tmp_path: Path, cprs_workflow_config: WorkflowConfig
 ) -> None:
