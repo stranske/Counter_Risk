@@ -273,3 +273,31 @@ connector requires approval and this run's approval policy is `never`.
 After validation, the commit attempt failed at `git add`: Git could not create
 `.git/index.lock` on the read-only filesystem. The CSV regression and handoff
 updates remain uncommitted; no push was attempted.
+
+## Muse keepalive follow-up: combined declared-contract check
+
+Re-verified the bounded seam at current HEAD (`a904171`, which already merged
+the audit above): `parsers/cprs_fcm.py:152,215` variant Scope guards →
+`pipeline/run.py:2503` `_build_limit_exposure_rows` (All Programs only) and
+`:2431,2478` partitioned concentration control → `compute/limits.py` canonical
+alias resolution and granularity denominators. Dispositions unchanged:
+alias/scope losses are confirmed-historical and repaired by #1168/#1170,
+concentration is the already-correct control, and U1–U5 remain unknown
+(report-only, no issue filed, no production fix bundled).
+
+New `test_boundary_audit_declared_contract_alias_and_overlap_combined` in
+`tests/compute/test_limits.py` exercises alias-only and overlapping-subset
+probes in a single evaluation: futures FCM/clearing-house shares (0.6) and the
+counterparty share (5/7) breach simultaneously without denominator
+contamination, the 125 absolute cap stays clean, and `subset_only` stays
+missing.
+
+Delivery evidence (`docs/evidence/issue-1160/muse-round-deliberate-break.log`):
+
+- `python -m pytest tests/compute/test_limits.py -q -m "not slow"`: **104
+  passed** (103 prior + 1 combined).
+- Deliberate-break gate: disconnecting the Trend totals Scope guard at
+  `src/counter_risk/parsers/cprs_fcm.py:152` made
+  `test_boundary_audit_parser_variant_scope[trend]` fail (1 failed, 1 passed,
+  exit 1); the file was restored byte-identical (`git diff --exit-code`) and
+  the full file reran **104 passed**.

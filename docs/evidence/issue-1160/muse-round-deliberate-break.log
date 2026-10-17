@@ -1,0 +1,23 @@
+== GREEN before break ==
+tests/compute/test_limits.py ...                                         [100%]
+
+============================== 3 passed in 0.79s ===============================
+== RED after disconnecting Scope guard at src/counter_risk/parsers/cprs_fcm.py (trend totals) ==
+  +     {
+  +         'counterparty': 'Other',
+  +         'TIPS': 0.0,
+  +         'Treasury': 9000.0,
+  +         'Equity': 0.0,
+  +         'Commodity': 0.0,
+  +         'Currency': 0.0,
+  +         'Notional': 9000.0,
+  +         'NotionalChange': 0.0,
+  +     },
+  + ]
+========================= 1 failed, 1 passed in 0.87s ==========================
+exit=1
+restored byte-identical
+== GREEN after restore (full file) ==
+.............................................................            [100%]
+
+============================= 104 passed in 1.34s ==============================

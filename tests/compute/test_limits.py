@@ -1111,6 +1111,72 @@ def test_boundary_audit_overlap_parser_to_limit(
         assert breaches[1]["actual_value"] == pytest.approx(5 / 7)
 
 
+def test_boundary_audit_declared_contract_alias_and_overlap_combined(
+    boundary_parsed_workbooks: dict[str, dict[str, Any]],
+) -> None:
+    """Alias-only and overlapping-subset probes must hold in one limit evaluation.
+
+    The futures (FCM/clearing-house) and counterparty denominators are different
+    granularities: a registered futures alias reaching its canonical cap and an
+    All Programs counterparty cap must not contaminate each other's share, and
+    the overlapping Ex Trend/Trend subsets must add no exposure to either.
+    """
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "fcm",
+                "entity_name": "bank_of_america",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.5,
+            },
+            {
+                "entity_type": "clearing_house",
+                "entity_name": "cme",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.5,
+            },
+            {
+                "entity_type": "counterparty",
+                "entity_name": "citibank",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.5,
+            },
+            {
+                "entity_type": "counterparty",
+                "entity_name": "citibank",
+                "limit_kind": "absolute_notional",
+                "limit_value": 125.0,
+            },
+            {
+                "entity_type": "counterparty",
+                "entity_name": "subset_only",
+                "limit_kind": "absolute_notional",
+                "limit_value": 1.0,
+            },
+        ],
+    }
+    rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+    assert {row["variant"] for row in rows} == {"all_programs"}
+    breaches = _as_records(check_limits(rows, policy))
+    by_key = {(row["entity_type"], row["entity_name"], row["limit_kind"]): row for row in breaches}
+    assert set(by_key) == {
+        ("fcm", "bank_of_america", "percent_of_total"),
+        ("clearing_house", "cme", "percent_of_total"),
+        ("counterparty", "citibank", "percent_of_total"),
+    }, "alias-only futures caps and the counterparty share cap breach; the 125 cap does not"
+    for key in (("fcm", "bank_of_america"), ("clearing_house", "cme")):
+        breach = by_key[(*key, "percent_of_total")]
+        assert breach["actual_value"] == pytest.approx(0.6)
+        assert breach["breach_amount"] == pytest.approx(0.1)
+    counterparty_breach = by_key[("counterparty", "citibank", "percent_of_total")]
+    assert counterparty_breach["actual_value"] == pytest.approx(5 / 7)
+    assert counterparty_breach["breach_amount"] == pytest.approx(5 / 7 - 0.5)
+    assert find_missing_limit_entities(rows, policy) == [
+        {"entity_type": "counterparty", "entity_name": "subset_only"}
+    ]
+
+
 def test_boundary_audit_partitioned_concentration_control(
     tmp_path: Path, boundary_parsed_workbooks: dict[str, dict[str, Any]]
 ) -> None:
