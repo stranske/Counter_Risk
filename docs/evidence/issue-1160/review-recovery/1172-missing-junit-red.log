@@ -1,0 +1,50 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <REPO>
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 3 items / 2 deselected / 1 selected
+
+tests/docs/test_exposure_boundary_proof.py F                             [100%]
+
+=================================== FAILURES ===================================
+_________ test_pytest_startup_failure_retains_status_and_published_log _________
+
+tmp_path = PosixPath('/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-<USER>/pytest-4797/test_pytest_startup_failure_re0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10608d3d0>
+
+    def test_pytest_startup_failure_retains_status_and_published_log(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        script = Path(__file__).resolve().parents[2] / "docs/evidence/issue-1160/prove_boundary.py"
+        raw = tmp_path / "raw"
+        public = tmp_path / "public"
+        raw.mkdir()
+        public.mkdir()
+        spec = importlib.util.spec_from_file_location("exposure_boundary_startup", script)
+        assert spec is not None and spec.loader is not None
+        proof = importlib.util.module_from_spec(spec)
+        with monkeypatch.context() as context:
+            context.setattr(tempfile, "mkdtemp", lambda **kwargs: str(raw))
+            spec.loader.exec_module(proof)
+        monkeypatch.setattr(proof, "PUBLIC", public)
+        # Exercise a real pre-session pytest failure, which cannot write JUnit XML.
+        monkeypatch.setenv("PYTEST_ADDOPTS", "--nonexistent-audit-startup-option")
+        error: Exception | None = None
+        try:
+            proof.run_suite("startup-failure", None, 0, 1)
+        except Exception as exc:
+            error = exc
+>       assert isinstance(error, RuntimeError), (
+            "pytest startup diagnostics must retain the subprocess status and published log; "
+            f"got {type(error).__name__}: {error}"
+        )
+E       AssertionError: pytest startup diagnostics must retain the subprocess status and published log; got FileNotFoundError: [Errno 2] No such file or directory: '/private/var/folders/qm/w0dtc0j132gd6ymf1hxtd2p00000gp/T/pytest-of-<USER>/pytest-4797/test_pytest_startup_failure_re0/raw/startup-failure.xml'
+E       assert False
+E        +  where False = isinstance(FileNotFoundError(2, 'No such file or directory'), RuntimeError)
+
+tests/docs/test_exposure_boundary_proof.py:75: AssertionError
+- generated xml file: <RAW>/1172-missing-junit-red.xml -
+=========================== short test summary info ============================
+FAILED tests/docs/test_exposure_boundary_proof.py::test_pytest_startup_failure_retains_status_and_published_log
+======================= 1 failed, 2 deselected in 1.93s ========================

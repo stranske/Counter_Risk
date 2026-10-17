@@ -98,6 +98,11 @@ def run_suite(
     except subprocess.CalledProcessError as exc:
         code, output = exc.returncode, exc.stdout + exc.stderr
     publish(f"{name}.log", output)
+    if not xml_path.is_file():
+        raise RuntimeError(
+            f"{name}: pytest exited with status {code} without producing JUnit XML; "
+            f"see {name}.log"
+        )
     publish(f"{name}.xml", xml_path.read_bytes())
     tree = ET.parse(xml_path)
     suites = list(tree.getroot().iter("testsuite"))

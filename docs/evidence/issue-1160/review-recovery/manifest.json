@@ -1,0 +1,68 @@
+{
+  "base_head": "7bf73b2d22ace03314db13b9267737bccbd6d740",
+  "original_audit_baseline": "f8871b2971d34b6d1b26df17fea1f9ef9cf079df",
+  "proof_script_sha256": "28c055cc9af2863bceaa6a3393236ad3ced78e8bdb3d98eeca60e6ec330aad24",
+  "test_module_sha256": "6b405ecb40c2b07fadc821770dd81acb4c23f9e914be47144b366cb207a96b66",
+  "artifacts": [
+    {
+      "artifact": "1172-proof-green.log",
+      "raw_sha256": "64c24439315ae46f10307bd2e1219dd7512c46d97d5b8fc7a5c0a2adfdb9c735",
+      "published_sha256": "7b12529f86297171f65202185d313fb87b80123deeeb41e9a37363f79840c6d2"
+    },
+    {
+      "artifact": "1172-proof-green.xml",
+      "raw_sha256": "69476ed0eb9cf079dcea3f05ae30fddd36dd597facd113149bacec96a049f3d1",
+      "published_sha256": "2467591542598f9cef9860fea9c557163e675fb398d881670e44c271b45b2562"
+    },
+    {
+      "artifact": "1172-missing-junit-red.log",
+      "raw_sha256": "71abe45e93f4137aa6e602a28194f11186666a428aa3e17c97a7860a1c7044e4",
+      "published_sha256": "ccd9341e1b5fdedbb8f2a4f74b4d7e30d921c633239079e6c9a5e54e048979f9"
+    },
+    {
+      "artifact": "1172-missing-junit-red.xml",
+      "raw_sha256": "4894a362509742f08bcd76b65c445566a635b1dd5df46f4eedc273d8f3881891",
+      "published_sha256": "7662b64a7bc7328e973722e45ad3b38ec118d628f481f465ceab366ba6ff7c00"
+    },
+    {
+      "artifact": "1172-missing-junit-restored.log",
+      "raw_sha256": "ff27364653e7f3d2a482e4adadd7c378287d1991590eeacd4e243cd04be86561",
+      "published_sha256": "8f91c49edd99f0d60892df1ccc7796cbe2e85217121161734dc416a361c75a5a"
+    },
+    {
+      "artifact": "1172-missing-junit-restored.xml",
+      "raw_sha256": "64ec6e6171b6beddf762e0c671d3970e704c63681ec747952257aeab9f6c05af",
+      "published_sha256": "336e44bb27979c1076fa4f1c2dca94256e3e5bd5d04d28630ba2de7cf11035a6"
+    },
+    {
+      "artifact": "1172-source-baseline-red.log",
+      "raw_sha256": "3d1e7248f497eecaaa77fcb6db6341f13d58f9acefb13b7a1cc055b57dd413e6",
+      "published_sha256": "bef479650e0ce278749c3ecfeb69ee42b268d2e20022104da68057d59e43043f"
+    },
+    {
+      "artifact": "1172-source-baseline-red.xml",
+      "raw_sha256": "826f706534fd12028141f8ce38e47b23029f9ff54bdff078f90859ab3a98a3a9",
+      "published_sha256": "5f37f56b158e77ea55b1f3f3bcfe7f7329030bcc1b8ce451a181bed95d6230e9"
+    },
+    {
+      "artifact": "1172-source-baseline-restored.log",
+      "raw_sha256": "70f974ea5930a5b784ba9d288574fcd2f9584b9173ff7e4b3097b03cbf2b9bf1",
+      "published_sha256": "e79e76b9c8c874388cf0b7e2d6a7a7cb16a6b25c73796d86e7b6e0b6926dfe4a"
+    },
+    {
+      "artifact": "1172-source-baseline-restored.xml",
+      "raw_sha256": "902ef9ad4d85d7bd0347c4ce3de34b6ad3d07d62968d487b46c0cfce0317c08b",
+      "published_sha256": "30d8f049b258f600996d6501601b08174ca80e2701fe8676fceb9589111bac8f"
+    },
+    {
+      "artifact": "1172-recovery-causal.json",
+      "raw_sha256": "42c3e93daf87c92a65ef7eb9a333eb5c85b57cc86d953c625d2265e645ecc04b",
+      "published_sha256": "33b297023d173eb71c389a472e58fa98bb018ad42d665efec0546f1842760714"
+    }
+  ],
+  "raw_originals_retained": true,
+  "production_unchanged": true,
+  "green_command": "<PYTHON> -m pytest tests/docs/test_exposure_boundary_proof.py tests/compute/test_limits.py -m \"not slow\" --no-cov -q",
+  "green_tests": 106,
+  "causal_controls": "missing-JUnit guard removal:1 assertion RED/restored1PASS; source-baseline first-guard removal:2 assertion RED/restored2PASS"
+}
