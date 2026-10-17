@@ -330,3 +330,64 @@ def test_adjusted_reporting_snapshot_reports_missing_repo_segment(
             repo_cash_applied=True,
         )
     assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+def test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results(
+    tmp_path: Path, cprs_workflow_config: WorkflowConfig
+) -> None:
+    from hashlib import sha256
+    from zipfile import ZIP_DEFLATED, ZipFile
+
+    from openpyxl import load_workbook
+
+    config = cprs_workflow_config
+    source = config.mosers_all_programs_xlsx
+    assert source is not None
+    workbook = load_workbook(source)
+    # Outside the Repo and FCM sections, including an unrelated worksheet.
+    for name in ("CPRS - CH", "CPRS - FCM"):
+        workbook[name]["J1"] = "=1+1"
+    audit = workbook.create_sheet("Formula audit")
+    audit.append(["=2-2", "=1+2", '=IF(TRUE,"ready","")', "=4+4", "literal"])
+    workbook.save(source)
+    workbook.close()
+    # Model Excel caches, including zero and a string; D1 stays uncached.
+    with ZipFile(source) as archive:
+        entries = {name: archive.read(name) for name in archive.namelist()}
+    sheet_path = next(
+        name
+        for name, data in entries.items()
+        if name.startswith("xl/worksheets/") and b"Formula audit" not in data and b"2-2</f>" in data
+    )
+    xml = entries[sheet_path]
+    xml = xml.replace(b"<f>2-2</f><v></v>", b"<f>2-2</f><v>0</v>")
+    xml = xml.replace(b"<f>1+2</f><v></v>", b"<f>1+2</f><v>3</v>")
+    xml = xml.replace(b'r="C1"', b'r="C1" t="str"')
+    xml = xml.replace(b'<v></v></c><c r="D1"', b'<v>=ready</v></c><c r="D1"')
+    entries[sheet_path] = xml
+    with ZipFile(source, "w", ZIP_DEFLATED) as archive:
+        for name, data in entries.items():
+            archive.writestr(name, data)
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+    )
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+    )
+    snapshot = load_workbook(paths["all_programs"], data_only=False)
+    try:
+        for name in ("CPRS - CH", "CPRS - FCM"):
+            assert snapshot[name]["J1"].value == "=1+1"
+        assert [cell.value for cell in snapshot["Formula audit"][1]] == [
+            0,
+            3,
+            "=ready",
+            "=4+4",
+            "literal",
+        ]
+        assert snapshot["Formula audit"]["C1"].data_type == "s"
+    finally:
+        snapshot.close()
+    assert sha256(source.read_bytes()).hexdigest() == original_hash

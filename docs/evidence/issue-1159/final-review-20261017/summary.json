@@ -1,0 +1,21 @@
+{
+  "adopted_head": "6b91a68a88acf98bc7ecb1ece2a35996299f2455",
+  "final_production_sha256": "95157f5a3a72a8d99524948fbce12463806aafe3b08af3b0ece864a805b01c0c",
+  "findings": {
+    "r4301415246": {
+      "adjudication": "valid",
+      "proof": "cash-mutation-final/proof.json",
+      "oracle": "JUnit failure message attribute",
+      "insufficient_attempt_retained": "cash-mutation/"
+    },
+    "r4301415251": {
+      "adjudication": "valid",
+      "proof": "formula-mutation/proof.json",
+      "regression": "test_adjusted_reporting_preserves_uncached_formulas_and_freezes_cached_results",
+      "preserves": "uncached formulas, cached values and cell types, literals, source bytes"
+    }
+  },
+  "historic_raw_evidence": "unchanged; old cash-specific inference superseded",
+  "native_office": "UNKNOWN; executable OFFICE_HANDOFF.md retained",
+  "source_acceptance": "not granted"
+}

@@ -1,0 +1,46 @@
+{
+  "results": {
+    "red-original-route": {
+      "argv": [
+        "/opt/anaconda3/bin/python3",
+        "-m",
+        "pytest",
+        "tests/pipeline/test_run_pipeline.py",
+        "-k",
+        "screenshot and 1234567",
+        "--junitxml=/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer/docs/evidence/issue-1159/final-review-20261017/cash-mutation-confirmed/red-original-route.xml"
+      ],
+      "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer",
+      "started_at": "2026-10-17T04:46:55.445301+00:00",
+      "source_sha256": "3bd8f636dcef638cda2c18f9c94ff251318232aad1b65430e2dd42ca3bc5e248",
+      "test_sha256": "5554c5342b3b610190f98e9091daaede576856dd6dd12ea6c0f9ec4ffb6628b4",
+      "exit_code": 1,
+      "finished_at": "2026-10-17T04:47:59.267989+00:00",
+      "junit_sha256": "fa978a9f3fe1ec9ff7b2f2298a704029eb87e557029c209d45fa3d5a2acc2915",
+      "log_sha256": "d2f51fb8cf2a63abd370eafc72bbb556c99450676dc9a447a4c70ba9f47fcdbd",
+      "actual_cash_failure_messages": [
+        "AssertionError: exporter input disagrees with authoritative cash\nassert [] == [1234567.0]\n  \n  Right contains one more item: 1234567.0\n  \n  Full diff:\n  + []\n  - [\n  -     1234567.0,\n  - ]"
+      ]
+    },
+    "green-restored": {
+      "argv": [
+        "/opt/anaconda3/bin/python3",
+        "-m",
+        "pytest",
+        "tests/pipeline/test_run_pipeline.py",
+        "-k",
+        "screenshot and 1234567",
+        "--junitxml=/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer/docs/evidence/issue-1159/final-review-20261017/cash-mutation-confirmed/green-restored.xml"
+      ],
+      "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer",
+      "started_at": "2026-10-17T04:47:59.269526+00:00",
+      "source_sha256": "96ffac169633ee9d20769f7b20e157ef208ca0a75438064aea280366988c06e8",
+      "test_sha256": "5554c5342b3b610190f98e9091daaede576856dd6dd12ea6c0f9ec4ffb6628b4",
+      "exit_code": 0,
+      "finished_at": "2026-10-17T04:49:12.015952+00:00",
+      "junit_sha256": "d751220ff868ebbadd64973f9ea3d1b569b1fece5644f6e6d581d79dd3579b3a",
+      "log_sha256": "207004716f9eedadaebe466d886e490ce1e3ec809cf00de396518db074357f36"
+    }
+  },
+  "byte_identical_restoration": true
+}

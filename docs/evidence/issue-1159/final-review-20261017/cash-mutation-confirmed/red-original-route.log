@@ -1,0 +1,133 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0 -- /opt/anaconda3/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 204 items / 203 deselected / 1 selected
+
+tests/pipeline/test_run_pipeline.py::test_screenshot_repo_cash_agrees_with_historical_and_totals[1234567.0-False] FAILED [100%]
+
+=================================== FAILURES ===================================
+_ test_screenshot_repo_cash_agrees_with_historical_and_totals[1234567.0-False] _
+
+tmp_path = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2256/test_screenshot_repo_cash_agre0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ea34a10>
+cprs_workflow_config = WorkflowConfig(as_of_date=datetime.date(2025, 12, 31), run_date=None, mosers_all_programs_xlsx=PosixPath('/Users/teach...acher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2256/test_screenshot_repo_cash_agre0/runs'))
+cash_amount = 1234567.0, explicit = False
+
+    @pytest.mark.parametrize("cash_amount,explicit", [(1234567.0, False), (7654321.0, True)])
+    def test_screenshot_repo_cash_agrees_with_historical_and_totals(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        cprs_workflow_config: WorkflowConfig,
+        cash_amount: float,
+        explicit: bool,
+    ) -> None:
+        """Exercise the real parse/cash/history/export/PPT call path with changed cash."""
+        import yaml
+        from openpyxl import load_workbook
+        from PIL import Image
+    
+        from counter_risk.integrations import excel_com
+    
+        config = cprs_workflow_config
+        assert config.cash_source_path is not None
+        config.cash_source_path.write_text(f"counterparty,cash_value\nCIBC,{cash_amount}\n")
+        original_hashes = {path: _sha256(path) for path in (tmp_path / "inputs").iterdir()}
+        explicit_image = tmp_path / "explicit.png"
+        Image.new("RGB", (20, 20), "red").save(explicit_image)
+        if explicit:
+            config = config.model_copy(update={"screenshot_inputs": {"slide1": explicit_image}})
+        seen: list[Path] = []
+    
+        def export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
+            seen.append(workbook_path)
+            if workbook_path == config.mosers_all_programs_xlsx or workbook_path.name.startswith(
+                "all_programs_"
+            ):
+                workbook = load_workbook(workbook_path, data_only=True)
+                try:
+                    cash = [row[3] for row in workbook[sheet_name].values if row[2] == "CIBC"]
+                    assert cash == [cash_amount], "exporter input disagrees with authoritative cash"
+                finally:
+                    workbook.close()
+            assert workbook_path.resolve().is_relative_to((tmp_path / "run").resolve())
+            output_png.parent.mkdir(parents=True, exist_ok=True)
+            Image.new("RGB", (20, 20), "blue").save(output_png)
+            return output_png
+    
+        monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", export)
+        monkeypatch.setattr(
+            run_module,
+            "_refresh_ppt_links",
+            lambda _: run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        )
+        original_compute = run_module._compute_metrics
+        totals_cash: list[float] = []
+    
+        def compute(parsed: dict[str, dict[str, Any]]) -> Any:
+            totals_cash.extend(
+                float(row["Cash"])
+                for row in run_module._records(parsed["all_programs"]["totals"])
+                if row["counterparty"] == "CIBC"
+            )
+            return original_compute(parsed)
+    
+        monkeypatch.setattr(run_module, "_compute_metrics", compute)
+        config_path = tmp_path / "cash-reporting.yml"
+        config_path.write_text(yaml.safe_dump(config.model_dump(mode="json")))
+>       run_dir = run_pipeline(config_path, output_dir=tmp_path / "run")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/pipeline/test_run_pipeline.py:6222: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/counter_risk/pipeline/run.py:589: in run_pipeline
+    generated_screenshot_inputs = _generate_cprs_screenshot_inputs(
+src/counter_risk/pipeline/run.py:3327: in _generate_cprs_screenshot_inputs
+    export_worksheet_range_as_png(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workbook_path = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2256/test_screenshot_repo_cash_agre0/inputs/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx')
+sheet_name = 'CPRS - CH'
+output_png = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2256/test_screenshot_repo_cash_agre0/run/_screenshots/all_programs_ch.png')
+
+    def export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
+        seen.append(workbook_path)
+        if workbook_path == config.mosers_all_programs_xlsx or workbook_path.name.startswith(
+            "all_programs_"
+        ):
+            workbook = load_workbook(workbook_path, data_only=True)
+            try:
+                cash = [row[3] for row in workbook[sheet_name].values if row[2] == "CIBC"]
+>               assert cash == [cash_amount], "exporter input disagrees with authoritative cash"
+E               AssertionError: exporter input disagrees with authoritative cash
+E               assert [] == [1234567.0]
+E                 
+E                 Right contains one more item: 1234567.0
+E                 
+E                 Full diff:
+E                 + []
+E                 - [
+E                 -     1234567.0,
+E                 - ]
+
+tests/pipeline/test_run_pipeline.py:6194: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  counter_risk.pipeline.run:run.py:4522 historical_update_unmatched_series variant=all_programs sheets=['Total', 'Total x-clearing', 'Cash', 'Class', 'TIPS', 'Nominal', 'Equity', 'Commodity', 'Currency'] series=['Synthetic fixture note; no production data.']
+=============================== warnings summary ===============================
+tests/pipeline/test_run_pipeline.py::test_screenshot_repo_cash_agrees_with_historical_and_totals[1234567.0-False]
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
+    from pandas.core.computation.check import NUMEXPR_INSTALLED
+
+tests/pipeline/test_run_pipeline.py::test_screenshot_repo_cash_agrees_with_historical_and_totals[1234567.0-False]
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
+    from pandas.core import (
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer/docs/evidence/issue-1159/final-review-20261017/cash-mutation-confirmed/red-original-route.xml -
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_pipeline.py::test_screenshot_repo_cash_agrees_with_historical_and_totals[1234567.0-False]
+=========== 1 failed, 203 deselected, 2 warnings in 62.77s (0:01:02) ===========

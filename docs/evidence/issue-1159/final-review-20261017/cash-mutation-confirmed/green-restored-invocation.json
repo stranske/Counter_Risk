@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_run_pipeline.py",
+    "-k",
+    "screenshot and 1234567",
+    "--junitxml=/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer/docs/evidence/issue-1159/final-review-20261017/cash-mutation-confirmed/green-restored.xml"
+  ],
+  "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1169__closer",
+  "started_at": "2026-10-17T04:47:59.269526+00:00",
+  "source_sha256": "96ffac169633ee9d20769f7b20e157ef208ca0a75438064aea280366988c06e8",
+  "test_sha256": "5554c5342b3b610190f98e9091daaede576856dd6dd12ea6c0f9ec4ffb6628b4"
+}

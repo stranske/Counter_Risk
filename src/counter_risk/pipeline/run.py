@@ -3209,8 +3209,22 @@ def _write_cprs_reporting_workbooks(
             "Cash", fcm_columns["TIPS"] - 1
         )
 
-        workbook = load_workbook(target, data_only=True)
+        workbook = load_workbook(target, data_only=False)
         try:
+            cached = load_workbook(target, data_only=True)
+            try:
+                # Freeze available results without erasing formulas that Excel
+                # has not cached. Literal cells and formatting stay intact.
+                for sheet in workbook:
+                    for row in sheet:
+                        for cell in row:
+                            if cell.data_type == "f":
+                                cached_cell = cached[sheet.title][cell.coordinate]
+                                if cached_cell.value is not None:
+                                    cell.value = cached_cell.value
+                                    cell.data_type = cached_cell.data_type
+            finally:
+                cached.close()
             ch_sheet = workbook[ch_name]
             ch_sheet.cell(header + 1, ch_columns["Cash"], "Cash")
             _write_cprs_reporting_section(
@@ -3248,8 +3262,8 @@ def _write_cprs_reporting_section(
 
     extra = max(0, len(records) - (end - start + 1))
     if extra:
-        # Formula results have been frozen, so moving rows cannot leave stale
-        # formula references. openpyxl does not move merged ranges for us.
+        # Cached formula results have been frozen; uncached formulas remain
+        # available to Excel. openpyxl does not move merged ranges for us.
         merged = [str(bounds) for bounds in worksheet.merged_cells.ranges]
         for bounds in merged:
             worksheet.unmerge_cells(bounds)

@@ -6185,14 +6185,16 @@ def test_screenshot_repo_cash_agrees_with_historical_and_totals(
 
     def export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
         seen.append(workbook_path)
-        assert workbook_path.resolve().is_relative_to((tmp_path / "run").resolve())
-        if "all_programs" in workbook_path.name:
+        if workbook_path == config.mosers_all_programs_xlsx or workbook_path.name.startswith(
+            "all_programs_"
+        ):
             workbook = load_workbook(workbook_path, data_only=True)
             try:
                 cash = [row[3] for row in workbook[sheet_name].values if row[2] == "CIBC"]
                 assert cash == [cash_amount], "exporter input disagrees with authoritative cash"
             finally:
                 workbook.close()
+        assert workbook_path.resolve().is_relative_to((tmp_path / "run").resolve())
         output_png.parent.mkdir(parents=True, exist_ok=True)
         Image.new("RGB", (20, 20), "blue").save(output_png)
         return output_png
