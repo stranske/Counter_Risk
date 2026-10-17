@@ -8,11 +8,12 @@ from datetime import date
 
 import pytest
 import yaml
-from openpyxl import Workbook
 
 from counter_risk.cli import main
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline import run as pipeline
+
+Workbook = pytest.importorskip("openpyxl", reason="XLSX date safeguards require openpyxl").Workbook
 
 
 @pytest.fixture
