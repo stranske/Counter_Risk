@@ -1016,8 +1016,11 @@ def test_boundary_audit_alias_only_parser_to_limit(
 
 
 def test_boundary_audit_overlap_parser_to_limit(
+    tmp_path: Path,
     boundary_parsed_workbooks: dict[str, dict[str, Any]],
 ) -> None:
+    from openpyxl import load_workbook
+
     policy = {
         "schema_version": 1,
         "limits": [
@@ -1042,15 +1045,25 @@ def test_boundary_audit_overlap_parser_to_limit(
         ],
     }
     # A subset-only entity must supply neither denominator nor coverage.
-    boundary_parsed_workbooks["ex_trend"]["totals"] = [
-        {"counterparty": "Citigroup", "Notional": 900.0},
-        {"counterparty": "Subset Only", "Notional": 9000.0},
-    ]
+    subset_path = tmp_path / "boundary-ex-trend.xlsx"
+    workbook = load_workbook(subset_path)
+    sheet = workbook.active
+    assert sheet is not None
+    sheet.cell(14, 4, "Subset Only")
+    sheet.cell(14, 7, 9000.0)
+    sheet.cell(14, 12, 9000.0)
+    workbook.save(subset_path)
+    workbook.close()
+    boundary_parsed_workbooks["ex_trend"]["totals"] = parse_fcm_totals(subset_path)
+    assert "Subset Only" in {
+        row["counterparty"] for row in _as_records(boundary_parsed_workbooks["ex_trend"]["totals"])
+    }, "subset-only coverage evidence must come from the XLSX parser"
     for parsed in (
         boundary_parsed_workbooks,
         {"all_programs": boundary_parsed_workbooks["all_programs"]},
     ):
         rows = _build_limit_exposure_rows(parsed)
+        policy["limits"][0]["limit_value"] = 125.0
         breaches = _as_records(check_limits(rows, policy))
         assert len(breaches) == 1, "overlapping subsets must not manufacture an absolute breach"
         assert breaches[0]["limit_kind"] == "percent_of_total"
@@ -1059,10 +1072,14 @@ def test_boundary_audit_overlap_parser_to_limit(
         assert find_missing_limit_entities(rows, policy) == [
             {"entity_type": "counterparty", "entity_name": "subset_only"}
         ]
-    policy["limits"][0]["limit_value"] = 75.0
-    breaches = _as_records(check_limits(rows, policy))
-    assert breaches[0]["actual_value"] == 100.0
-    assert breaches[0]["breach_amount"] == 25.0
+        policy["limits"][0]["limit_value"] = 75.0
+        breaches = _as_records(check_limits(rows, policy))
+        assert len(breaches) == 2, "both caps must breach with or without overlapping subsets"
+        assert breaches[0]["limit_kind"] == "absolute_notional"
+        assert breaches[0]["actual_value"] == 100.0
+        assert breaches[0]["breach_amount"] == 25.0
+        assert breaches[1]["limit_kind"] == "percent_of_total"
+        assert breaches[1]["actual_value"] == pytest.approx(5 / 7)
 
 
 def test_boundary_audit_partitioned_concentration_control(

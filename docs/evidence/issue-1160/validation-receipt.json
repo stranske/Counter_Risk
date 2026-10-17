@@ -1,7 +1,7 @@
 {
   "baseline_commit": "f8871b2971d34b6d1b26df17fea1f9ef9cf079df",
   "acceptance": {
-    "command": "<PYTHON> -m pytest tests/compute/test_limits.py -q",
+    "command": "<PYTHON> -m pytest tests/compute/test_limits.py -q -m \"not slow\"",
     "tests": 101,
     "failures": 0,
     "errors": 0,
@@ -26,8 +26,6 @@
     {
       "name": "ruff",
       "command": [
-        "<PYTHON>",
-        "-m",
         "ruff",
         "check",
         "--output-format",
@@ -43,25 +41,25 @@
     {
       "name": "black",
       "command": [
-        "<PYTHON>",
-        "-m",
         "black",
         "--check",
         "--line-length",
         "100",
         "--exclude",
-        "(\\.venv|\\.workflows-lib|node_modules)",
+        "(\\.workflows-lib|node_modules)",
         "."
       ],
       "exit": 0,
       "raw_log_sha256": "a2a14179f51a32543986a5ba3e60151fc94c0f3b32f00b94cb17babcf7e671af",
-      "public_log_sha256": "a2a14179f51a32543986a5ba3e60151fc94c0f3b32f00b94cb17babcf7e671af"
+      "public_log_sha256": "a2a14179f51a32543986a5ba3e60151fc94c0f3b32f00b94cb17babcf7e671af",
+      "environment": {
+        "BLACK_NUM_WORKERS": "1",
+        "PYTHONPATH": "<TMP>/counter-risk-black-runtime"
+      }
     },
     {
       "name": "mypy",
       "command": [
-        "<PYTHON>",
-        "-m",
         "mypy",
         "--config-file",
         "pyproject.toml",
@@ -74,43 +72,47 @@
       "public_log_sha256": "b1db5d31d480f24cb9d45c3983bbacaed93435db305200eeaba25d77759b33a3"
     }
   ],
-  "capability_advisor": {
-    "status": "attempted_permission_denied",
-    "task": "bounded issue 1160 audit and focused parser/limit/concentration proof, no agents or assessors",
-    "arguments": "--json --lane opener --surface opener-lane --repository stranske/Counter_Risk",
-    "reason": "shared capabilities.json.lock write denied by sandbox",
-    "decline_persisted": false
-  },
-  "ownership": {
-    "run_id": "stranske__Counter_Risk_1160-codex-1792233399088614000",
-    "claim_pid": 60227,
-    "claim": "existing dispatcher claim matches worktree and run; stable rechecked before writing",
-    "process_liveness": "UNKNOWN: kill(0) and ps sandbox-denied; no terminality inferred",
-    "native_issue_comments": 1,
-    "native_recorded_reservations": 0,
-    "active_native_runs_before_write": 0,
-    "opener_cap_before_write": 7,
-    "prepublication_gate_utc": "2026-10-17T10:48:41Z",
-    "opener_cap_before_publication": 7,
-    "claim_stable_before_publication": true,
-    "native_recorded_reservations_before_publication": 0,
-    "native_active_runs_before_publication": 0,
-    "check_linked_before_publication": "FREE"
-  },
-  "parent_actions": [
-    "mirror report into canonical Code/Audits and ledger",
-    "persist pr_opened event and workloop from publication receipt",
-    "own automation memory and ACTION C; child did not run postrun"
-  ],
   "limitations": [
-    "local synthetic workbook proof only; hosted CI pending at publication",
-    "optional pandas numexpr/bottleneck accelerator version warnings",
+    "local synthetic workbook proof only; hosted CI unclaimed",
     "no source closure, merge, policy changes or new issue filing"
   ],
   "artifact_sha256": {
-    "tests/compute/test_limits.py": "06e3388ada719c6831c72770ad6efce9d54b8b3818a1387abaa81b0e6aa44026",
-    "docs/evidence/issue-1160/prove_boundary.py": "cce9df82a54c850b550667226df9940feaf259d09468a6c087bb74d9da71cd1a"
+    "tests/compute/test_limits.py": "5560416d9cc123b4d21b363be0b1152c46e71f5e796ded1ef2d1608ab61040b4",
+    "docs/evidence/issue-1160/prove_boundary.py": "71a953892bc1172710fbc71ad6fb177a99c7e4c9e7dbb51b8f468998ab29c3ac"
   },
   "production_matches_git_baseline": true,
-  "public_junit_validated": 12
+  "public_junit_validated": 12,
+  "initial_run_context": {
+    "capability_advisor": {
+      "status": "attempted_permission_denied",
+      "task": "bounded issue 1160 audit and focused parser/limit/concentration proof, no agents or assessors",
+      "arguments": "--json --lane opener --surface opener-lane --repository stranske/Counter_Risk",
+      "reason": "shared capabilities.json.lock write denied by sandbox",
+      "decline_persisted": false
+    },
+    "ownership": {
+      "run_id": "stranske__Counter_Risk_1160-codex-1792233399088614000",
+      "claim_pid": 60227,
+      "claim": "existing dispatcher claim matches worktree and run; stable rechecked before writing",
+      "process_liveness": "UNKNOWN: kill(0) and ps sandbox-denied; no terminality inferred",
+      "native_issue_comments": 1,
+      "native_recorded_reservations": 0,
+      "active_native_runs_before_write": 0,
+      "opener_cap_before_write": 7,
+      "prepublication_gate_utc": "2026-10-17T10:48:41Z",
+      "opener_cap_before_publication": 7,
+      "claim_stable_before_publication": true,
+      "native_recorded_reservations_before_publication": 0,
+      "native_active_runs_before_publication": 0,
+      "check_linked_before_publication": "FREE"
+    },
+    "parent_actions": [
+      "mirror report into canonical Code/Audits and ledger",
+      "persist pr_opened event and workloop from publication receipt",
+      "own automation memory and ACTION C; child did not run postrun"
+    ]
+  },
+  "checkout_commit": "b4a55a036b70da0a5c5a5982a6d50be239017281",
+  "python_version": "3.14.8 (main, Oct  1 2026, 02:38:33) [GCC 13.3.0]",
+  "black_runtime_note": "Default workers cannot bind IPC sockets in the sandbox; single-worker mode also needs periodic asyncio selector wakeups. The configured whole-tree check passed with the external runtime helper preserved as black-runtime.txt. Reproduce by saving it as sitecustomize.py in the recorded PYTHONPATH directory. No repository or installed tool files were changed by the helper."
 }

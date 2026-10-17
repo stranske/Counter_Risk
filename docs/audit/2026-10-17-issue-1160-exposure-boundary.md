@@ -74,6 +74,9 @@ New checks in `tests/compute/test_limits.py`: alias-only parser→limit (two
 parameter cases), overlapping-subset parser→limit, partitioned concentration.
 They parse actual small XLSX files derived from the existing registered-alias
 fixture; no parser doubles, empty helper checks, or copied production algorithms.
+The overlap case also writes its subset-only entity into the Ex Trend XLSX and
+reparses it, then verifies both absolute thresholds with and without overlapping
+variants; no hand-built rows replace the parser's subset totals.
 Numerical oracles: FCM/house share 0.6; canonical counterparty gross 100 of 140;
 125 cap clean, 75 cap breached by 25; concentration total HHI 29/49 vs 1/2 in
 separate variants, equity/treasury HHI 1, empty segments 0.
@@ -91,20 +94,42 @@ See `../evidence/issue-1160/results.json`, `baseline.json`, `hash-mapping.json`,
 the named `*-mutation.json`, raw-normalized logs and JUnit for exact evidence.
 Public paths/hostname are replaced by `<REPO>`, `<RAW>`, `<PYTHON>`, `<HOME>`,
 `<HOST>`, `<PYTHON_ENV>`, `<TMP>`; mapping records SHA-256 of both original and public bytes. Public logs
-are normalized transcripts, not represented as byte-identical raw logs.
+also trim trailing whitespace and are normalized transcripts, not represented as
+byte-identical raw logs. The proof checks all tracked `src/` files against the
+fixed Git baseline before and after mutation testing, separately from restoring
+the three mutated files. Each pytest command explicitly selects `not slow`.
 
-Capability consultation was attempted for this exact bounded task before
-validation, but shared `capabilities.json.lock` write was sandbox-denied. No
+During initial validation, capability consultation was attempted for this exact
+bounded task, but shared `capabilities.json.lock` write was sandbox-denied. No
 capability was invoked, no extra assessor/agent was launched, and no decline
 was persisted to shared state. Parent owns canonical mirroring, handoff and
 automation memory. Validation counts and ownership limitations are recorded in
-the evidence receipt. Hosted checks remain asynchronous and unclaimed.
+the evidence receipt under `initial_run_context`. Hosted checks remain unclaimed.
 
 Validation: **101 passed** in the acceptance suite (four new cases; initial
 collection was 97). Five mutants produced **8 assertion failures**, zero errors
 and zero skips; each was restored and its selection passed. The two full runs
 and ten selected runs account for 218 executions (210 passing, 8 intentional
 RED). Configured whole-tree Ruff 0.17.1 and Black 26.10.1 passed; Mypy 2.4.0
-passed all 106 source files. Tools were installed to an external temporary target,
-without changing repository dependencies or ceilings. Existing optional pandas
-accelerator-version warnings remain. See `validation-receipt.json`.
+passed all 106 source files. The follow-up reran the same preinstalled tool
+versions on Linux/Python 3.14.8 without changing dependencies or ceilings.
+Black's default multiprocessing IPC is blocked in this sandbox; a temporary
+single-worker runtime with periodic asyncio wakeups completed the configured
+whole-tree check for all 382 files. Its exact environment and portable helper
+(`black-runtime.txt`, saved externally as `sitecustomize.py`) are recorded in
+`validation-receipt.json`; no formatter checks were disabled.
+
+Verified acceptance checklist:
+
+- [x] Limits suite: 101 passed (97 existing, four XLSX regression cases).
+- [x] Five serialized mutations: eight assertion failures, zero errors/skips;
+  all restored selections green; two full and ten selected runs, 218 executions.
+- [x] Original bytes restored and production equals fixed Git baseline;
+  portable proof, normalized logs/JUnit and raw/public SHA-256 mapping retained.
+- [x] Whole-tree Ruff 0.17.1 and Black 26.10.1 passed; Mypy 2.4.0 passed all
+  106 source files. No ceilings changed.
+
+Follow-up handoff: validation is complete, but the requested commit could not be
+created. `git add` failed because `.git/index.lock` is on a read-only filesystem.
+The reviewed test, proof and evidence changes remain in the working tree and
+require writable Git metadata to commit.

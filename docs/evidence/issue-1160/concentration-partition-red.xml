@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.347" timestamp="2026-10-17T05:42:58.936466-05:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_partitioned_concentration_control" time="1.749"><failure message="AssertionError: concentration must retain variant and segment; Trend has no parsed totals&#10;assert {('all_progra...ms', 'total')} == {('all_progra...'total'), ...}&#10;  &#10;  Extra items in the right set:&#10;  ('ex_trend', 'Commodity')&#10;  ('ex_trend', 'Currency')&#10;  ('ex_trend', 'Treasury')&#10;  ('ex_trend', 'Equity')&#10;  ('ex_trend', 'total')&#10;  ('ex_trend', 'TIPS')&#10;  Use -v to get more diff">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-2368/test_boundary_audit_partitione0')
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.046" timestamp="2026-10-17T10:54:49.851666+00:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_partitioned_concentration_control" time="2.124"><failure message="AssertionError: concentration must retain variant and segment; Trend has no parsed totals&#10;assert {('all_progra...ms', 'total')} == {('all_progra...'total'), ...}&#10;  &#10;  Extra items in the right set:&#10;  ('ex_trend', 'Treasury')&#10;  ('ex_trend', 'TIPS')&#10;  ('ex_trend', 'total')&#10;  ('ex_trend', 'Currency')&#10;  ('ex_trend', 'Equity')&#10;  ('ex_trend', 'Commodity')&#10;  &#10;  Full diff:&#10;    {&#10;        (&#10;            'all_programs',&#10;            'Commodity',&#10;        ),&#10;        (&#10;            'all_programs',&#10;            'Currency',&#10;        ),&#10;        (&#10;            'all_programs',&#10;            'Equity',&#10;        ),&#10;        (&#10;            'all_programs',&#10;            'TIPS',&#10;        ),&#10;        (&#10;            'all_programs',&#10;            'Treasury',&#10;        ),&#10;        (&#10;            'all_programs',&#10;            'total',&#10;        ),&#10;  -     (&#10;  -         'ex_trend',&#10;  -         'Commodity',&#10;  -     ),&#10;  -     (&#10;  -         'ex_trend',&#10;  -         'Currency',&#10;  -     ),&#10;  -     (&#10;  -         'ex_trend',&#10;  -         'Equity',&#10;  -     ),&#10;  -     (&#10;  -         'ex_trend',&#10;  -         'TIPS',&#10;  -     ),&#10;  -     (&#10;  -         'ex_trend',&#10;  -         'Treasury',&#10;  -     ),&#10;  -     (&#10;  -         'ex_trend',&#10;  -         'total',&#10;  -     ),&#10;    }">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-11/test_boundary_audit_partitione0')
 boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
 0     Citibank   0...ture  ...  CME Clearing House   6000.0
 1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
@@ -19,14 +19,65 @@ boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Tr
         }, "concentration must retain variant and segment; Trend has no parsed totals"
 E       AssertionError: concentration must retain variant and segment; Trend has no parsed totals
 E       assert {('all_progra...ms', 'total')} == {('all_progra...'total'), ...}
-E         
+E
 E         Extra items in the right set:
-E         ('ex_trend', 'Commodity')
-E         ('ex_trend', 'Currency')
 E         ('ex_trend', 'Treasury')
-E         ('ex_trend', 'Equity')
-E         ('ex_trend', 'total')
 E         ('ex_trend', 'TIPS')
-E         Use -v to get more diff
+E         ('ex_trend', 'total')
+E         ('ex_trend', 'Currency')
+E         ('ex_trend', 'Equity')
+E         ('ex_trend', 'Commodity')
+E
+E         Full diff:
+E           {
+E               (
+E                   'all_programs',
+E                   'Commodity',
+E               ),
+E               (
+E                   'all_programs',
+E                   'Currency',
+E               ),
+E               (
+E                   'all_programs',
+E                   'Equity',
+E               ),
+E               (
+E                   'all_programs',
+E                   'TIPS',
+E               ),
+E               (
+E                   'all_programs',
+E                   'Treasury',
+E               ),
+E               (
+E                   'all_programs',
+E                   'total',
+E               ),
+E         -     (
+E         -         'ex_trend',
+E         -         'Commodity',
+E         -     ),
+E         -     (
+E         -         'ex_trend',
+E         -         'Currency',
+E         -     ),
+E         -     (
+E         -         'ex_trend',
+E         -         'Equity',
+E         -     ),
+E         -     (
+E         -         'ex_trend',
+E         -         'TIPS',
+E         -     ),
+E         -     (
+E         -         'ex_trend',
+E         -         'Treasury',
+E         -     ),
+E         -     (
+E         -         'ex_trend',
+E         -         'total',
+E         -     ),
+E           }
 
-tests/compute/test_limits.py:1075: AssertionError</failure></testcase></testsuite></testsuites>
+tests/compute/test_limits.py:1092: AssertionError</failure></testcase></testsuite></testsuites>

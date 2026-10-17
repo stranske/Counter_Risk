@@ -1,12 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.598" timestamp="2026-10-17T05:42:34.463201-05:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_overlap_parser_to_limit" time="1.839"><failure message="AssertionError: overlapping subsets must not manufacture an absolute breach&#10;assert 2 == 1&#10; +  where 2 = len([{'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'warning', ...ty_type': 'counterparty', 'entity_name': 'subset_only', 'limit_kind': 'absolute_notional', 'severity': 'warning', ...}])">boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.005" timestamp="2026-10-17T10:54:23.842303+00:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_overlap_parser_to_limit" time="2.101"><failure message="AssertionError: overlapping subsets must not manufacture an absolute breach&#10;assert 2 == 1&#10; +  where 2 = len([{'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'warning', ...ty_type': 'counterparty', 'entity_name': 'subset_only', 'limit_kind': 'absolute_notional', 'severity': 'warning', ...}])">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-7/test_boundary_audit_overlap_pa0')
+boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
 0     Citibank   0...ture  ...  CME Clearing House   6000.0
 1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
 
 [2 rows x 6 columns]}}
 
     def test_boundary_audit_overlap_parser_to_limit(
+        tmp_path: Path,
         boundary_parsed_workbooks: dict[str, dict[str, Any]],
     ) -&gt; None:
+        from openpyxl import load_workbook
+
         policy = {
             "schema_version": 1,
             "limits": [
@@ -31,19 +35,29 @@
             ],
         }
         # A subset-only entity must supply neither denominator nor coverage.
-        boundary_parsed_workbooks["ex_trend"]["totals"] = [
-            {"counterparty": "Citigroup", "Notional": 900.0},
-            {"counterparty": "Subset Only", "Notional": 9000.0},
-        ]
+        subset_path = tmp_path / "boundary-ex-trend.xlsx"
+        workbook = load_workbook(subset_path)
+        sheet = workbook.active
+        assert sheet is not None
+        sheet.cell(14, 4, "Subset Only")
+        sheet.cell(14, 7, 9000.0)
+        sheet.cell(14, 12, 9000.0)
+        workbook.save(subset_path)
+        workbook.close()
+        boundary_parsed_workbooks["ex_trend"]["totals"] = parse_fcm_totals(subset_path)
+        assert "Subset Only" in {
+            row["counterparty"] for row in _as_records(boundary_parsed_workbooks["ex_trend"]["totals"])
+        }, "subset-only coverage evidence must come from the XLSX parser"
         for parsed in (
             boundary_parsed_workbooks,
             {"all_programs": boundary_parsed_workbooks["all_programs"]},
         ):
             rows = _build_limit_exposure_rows(parsed)
+            policy["limits"][0]["limit_value"] = 125.0
             breaches = _as_records(check_limits(rows, policy))
 &gt;           assert len(breaches) == 1, "overlapping subsets must not manufacture an absolute breach"
 E           AssertionError: overlapping subsets must not manufacture an absolute breach
 E           assert 2 == 1
 E            +  where 2 = len([{'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'warning', ...ty_type': 'counterparty', 'entity_name': 'subset_only', 'limit_kind': 'absolute_notional', 'severity': 'warning', ...}])
 
-tests/compute/test_limits.py:1055: AssertionError</failure></testcase></testsuite></testsuites>
+tests/compute/test_limits.py:1068: AssertionError</failure></testcase></testsuite></testsuites>

@@ -19,6 +19,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
+BASELINE = "f8871b2971d34b6d1b26df17fea1f9ef9cf079df"
 PUBLIC = Path(__file__).resolve().parent
 RAW = Path(tempfile.mkdtemp(prefix="counter-risk-1160-"))
 PARSER = ROOT / "src/counter_risk/parsers/cprs_fcm.py"
@@ -49,6 +50,7 @@ def publish(name: str, data: bytes) -> None:
         (f"pytest-of-{getpass.getuser()}", "pytest-of-<USER>"),
     ):
         text = text.replace(local, portable)
+    text = "\n".join(line.rstrip() for line in text.split("\n"))
     if name.endswith(".xml"):
         for token in (
             "<REPO>",
@@ -71,7 +73,16 @@ def publish(name: str, data: bytes) -> None:
 
 def run_suite(name: str, selection: str | None, failures: int, count: int) -> None:
     xml_path = RAW / f"{name}.xml"
-    command = [sys.executable, "-m", "pytest", TEST, "-q", f"--junitxml={xml_path}"]
+    command = [
+        sys.executable,
+        "-m",
+        "pytest",
+        TEST,
+        "-q",
+        "-m",
+        "not slow",
+        f"--junitxml={xml_path}",
+    ]
     if selection:
         command += ["-k", selection]
     env = dict(os.environ, PYTHONPYCACHEPREFIX=str(RAW / f"cache-{name}"))
@@ -124,16 +135,24 @@ def mutate(name: str, path: Path, before: str, after: str, selection: str, count
 
 
 def main() -> None:
+    # Restoration alone cannot prove the checkout started at the accepted source.
+    subprocess.run(
+        ["git", "diff", "--exit-code", BASELINE, "--", "src"],
+        cwd=ROOT,
+        capture_output=True,
+        check=True,
+    )
     for path, data in ORIGINALS.items():
         (RAW / path.name).write_bytes(data)
-    baseline = subprocess.run(
+    checkout = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, check=True, text=True
     ).stdout.strip()
     publish(
         "baseline.json",
         json.dumps(
             {
-                "baseline_commit": baseline,
+                "baseline_commit": BASELINE,
+                "checkout_commit": checkout,
                 "python": sys.executable,
                 "python_version": sys.version,
                 "sources": {
@@ -200,13 +219,21 @@ def main() -> None:
     )
     run_suite("acceptance-green", None, 0, 101)
     assert all(p.read_bytes() == data for p, data in ORIGINALS.items())
+    subprocess.run(
+        ["git", "diff", "--exit-code", BASELINE, "--", "src"],
+        cwd=ROOT,
+        capture_output=True,
+        check=True,
+    )
     publish(
         "results.json",
         json.dumps(
             {
-                "baseline_commit": baseline,
+                "baseline_commit": BASELINE,
+                "checkout_commit": checkout,
                 "rounds": RESULTS,
                 "restored_byte_identical": True,
+                "production_matches_git_baseline": True,
                 "source_hashes_after": {
                     str(p.relative_to(ROOT)): digest(p.read_bytes()) for p in SOURCES
                 },

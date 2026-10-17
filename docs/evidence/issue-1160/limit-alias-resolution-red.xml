@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="2.430" timestamp="2026-10-17T05:42:21.948328-05:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_alias_only_parser_to_limit[fcm-bank_of_america]" time="1.756"><failure message="AssertionError: parsed registered alias must reach the canonical cap&#10;assert 0 == 1&#10; +  where 0 = len([])">boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="3.095" timestamp="2026-10-17T10:54:10.498478+00:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_alias_only_parser_to_limit[fcm-bank_of_america]" time="2.087"><failure message="AssertionError: parsed registered alias must reach the canonical cap&#10;assert 0 == 1&#10; +  where 0 = len([])">boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
 0     Citibank   0...ture  ...  CME Clearing House   6000.0
 1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
 
@@ -29,7 +29,7 @@ E       AssertionError: parsed registered alias must reach the canonical cap
 E       assert 0 == 1
 E        +  where 0 = len([])
 
-tests/compute/test_limits.py:1011: AssertionError</failure></testcase><testcase classname="tests.compute.test_limits" name="test_boundary_audit_alias_only_parser_to_limit[clearing_house-cme]" time="0.037"><failure message="AssertionError: parsed registered alias must reach the canonical cap&#10;assert 0 == 1&#10; +  where 0 = len([])">boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+tests/compute/test_limits.py:1011: AssertionError</failure></testcase><testcase classname="tests.compute.test_limits" name="test_boundary_audit_alias_only_parser_to_limit[clearing_house-cme]" time="0.050"><failure message="AssertionError: parsed registered alias must reach the canonical cap&#10;assert 0 == 1&#10; +  where 0 = len([])">boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
 0     Citibank   0...ture  ...  CME Clearing House   6000.0
 1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
 
