@@ -110,6 +110,9 @@ plus Ex Trend 150m against a 250m fail cap (no breach), and All Programs 300m
 (50m breach). Percentage gates vary overlapping subsets across all five dimensions
 and preserve the authoritative gross denominator and actual share. Subset-only
 entities stay missing, including when the authoritative tables are empty.
+The gates also place reporting subsets before All Programs in the input mapping,
+vary matching and unrelated subset entities to challenge both sides of each share,
+and verify negative authoritative notionals against the same absolute cap.
 
 `test_all_programs_limit_scope_propagates_to_pipeline_and_exit` in
 `tests/pipeline/test_run_pipeline.py` exercises existing pipeline/CLI control flow

@@ -6,6 +6,27 @@ or stacked. Canonicalization and policy amounts were unchanged.
 
 ## Causal proof
 
+The archived results below describe the initial 33-case run. Follow-up checks
+expand the absolute/share matrix to 34 cases: positive and negative authoritative
+notionals, subset-first input order, and matching/unrelated subset entities across
+all five dimensions. `followup-scope.txt` captures 34 GREEN, 29 RED with five
+subset-free controls passing, and 34 GREEN after byte-identical source restoration.
+The reproduction helper now derives the expected RED case count from its GREEN
+run and always excludes slow tests. Running it with its output directory under
+`/tmp/counter-risk-scope-followup/` verified four absolute cases RED/GREEN and all
+45 named scope cases GREEN. Broader verification passed 284 tests:
+
+```sh
+pytest tests/compute/test_limits.py tests/test_limits_config.py tests/test_limit_monitoring_docs.py tests/pipeline/test_run_pipeline.py -m "not slow" -q
+```
+
+Verified acceptance:
+
+- [x] The 200m + 150m overlap does not breach the 250m cap; authoritative 300m produces a 50m breach.
+- [x] Matching and unrelated futures subsets cannot change All Programs percentage numerators or denominators.
+- [x] CSV, manifest, data quality, RED status and exits agree; missing authority fails explicitly.
+- [x] Restoring the original builder fails the scope gates; restoring fixed source bytes passes them.
+
 Run `/opt/anaconda3/bin/python3 docs/evidence/issue-1161/reproduce_scope_gate.py`
 from the repository root. It performs these steps serially:
 

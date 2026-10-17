@@ -1,5 +1,5 @@
 {
-  "README.md": "5138a7e2d8b9a33fe4dc88e3d4b5530689f16e6be069054417dffa46c9ef4e00",
+  "README.md": "abafebba5158b0caa5d84c8e0f3056fb71b52855875ae243efb79694268a36c5",
   "acceptance.binding.json": "90fe41c239402dc8969088b5d9812d9752ce0f15d9d3b652d8a627bbab974cf7",
   "acceptance.log": "8109db7352644c04797c7475dcd4734e945787e85a0f917e14daadf07e6a17b6",
   "acceptance.xml": "d8e7853567f5dceb1257d9678ed39fe948d32e223da775faf60ae2f4a9d7ed60",
@@ -9,6 +9,7 @@
   "compute-config.binding.json": "b413f03a4402ca6ee8d55c79c9f3e806dfc75ad85e1a6ab5e298537afb8d654d",
   "compute-config.log": "7426e8c4e211770d8d96da2a163eef862bfda8411876ae64eca51c8aef150f52",
   "compute-config.xml": "6654ec41e12fba36df022886485b665105c370e1b234bc1aeaac8fedf9fd8ae5",
+  "followup-scope.txt": "1bd160adf7e25585e8add9bc0fa12c9f368bd5d7c9b99f967650e2e1dc094089",
   "green-before.binding.json": "873ba9b0d74bef6554070ec0bc1db0a4b7c651e494e2e42bba7167ffac7bbd19",
   "green-before.log": "63693d43975d8a46c28e79e516170556e12619f60b83d05be9e5e04b61aefe75",
   "green-before.xml": "e1e008cb726a547454b00eb2494f1110bbfb7e352d51a58dbd1fe531122a16e7",
@@ -32,7 +33,7 @@
   "pipeline-compatibility.log": "844bf5218d9ab80f7d918d025f2945ccb0595e0e0386fc82375f3f8ef6bd7fe1",
   "pipeline-compatibility.xml": "a5a2eb808ee2c953ff91069efd8300221aec7ef9184bf4e5f48526d531f52a51",
   "proof.json": "8ec82250e619cb79b351b0d6a737627f0adf3359f5df008418e9ac0ef816831e",
-  "reproduce_scope_gate.py": "e605a793b1f3fd2c106d5d976f0fb74bf9199755da799439b28e1365a5e9e444",
+  "reproduce_scope_gate.py": "991131c07cd8678b8591424c78df3208b9b9c68814a675fed0ce574a894e2940",
   "restored-green.binding.json": "ea2f6d1b918bafce8e67aea079b3e0a5124c9d5b393efe2cd03c79b2e4aaacca",
   "restored-green.log": "4015ce161d0dae49c87dd55a9683d1ce5ac06d19363230ab5f7c92735b26949b",
   "restored-green.xml": "d3562618e0cdf0fc852756ba878207afc80d6762710590e0da2d333ce010c76a",

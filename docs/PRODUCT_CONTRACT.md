@@ -39,3 +39,11 @@ subset changes. Serialized original-builder RED and byte-identical restored GREE
 evidence is retained in `docs/evidence/issue-1161/`. These gates use real limit and
 pipeline orchestration with synthetic parsed frames and report-output doubles;
 CI, native Office rendering and production-data acceptance are separate boundaries.
+
+Follow-up verification covers subset-first input order, negative authoritative
+notionals and subsets matching either the capped entity or an unrelated entity.
+All 34 absolute/share cases pass; restoring the original builder causes 29 failures
+with five subset-free controls still passing, then restoring the fixed bytes returns
+all 34 to green (`docs/evidence/issue-1161/followup-scope.txt`). The complete named
+scope suite passes 45 cases, and the broader limit/configuration/pipeline checks
+pass 284 cases with `-m "not slow"`.

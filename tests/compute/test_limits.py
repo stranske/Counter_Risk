@@ -535,19 +535,20 @@ def test_registered_alias_triggers_canonical_limit() -> None:
 @pytest.mark.parametrize(
     "authoritative, expected_actual", [(200_000_000.0, None), (300_000_000.0, 300_000_000.0)]
 )
+@pytest.mark.parametrize("sign", [1, -1])
 def test_all_programs_absolute_cap_ignores_overlapping_variants(
-    authoritative: float, expected_actual: float | None
+    authoritative: float, expected_actual: float | None, sign: int
 ) -> None:
     parsed = {
-        "all_programs": {
-            "totals": [{"counterparty": "Citibank", "Notional": authoritative}],
-            "futures": [],
-        },
         "ex_trend": {
             "totals": [{"counterparty": "Citibank", "Notional": 150_000_000.0}],
             "futures": [],
         },
         "trend": {"totals": [], "futures": []},
+        "all_programs": {
+            "totals": [{"counterparty": "Citibank", "Notional": sign * authoritative}],
+            "futures": [],
+        },
     }
     limits = {
         "schema_version": 1,
@@ -571,7 +572,17 @@ def test_all_programs_absolute_cap_ignores_overlapping_variants(
         assert breaches[0]["severity"] == "fail"
 
 
-@pytest.mark.parametrize("subset_notional", [None, 10.0, 900_000_000.0, -900_000_000.0])
+@pytest.mark.parametrize(
+    "subset_notional, subset_matches_target",
+    [
+        (None, False),
+        (10.0, False),
+        (900_000_000.0, False),
+        (-900_000_000.0, False),
+        (900_000_000.0, True),
+        (-900_000_000.0, True),
+    ],
+)
 @pytest.mark.parametrize(
     "entity_type, entity_name",
     [
@@ -583,7 +594,10 @@ def test_all_programs_absolute_cap_ignores_overlapping_variants(
     ],
 )
 def test_all_programs_percentage_universe_is_subset_invariant(
-    subset_notional: float | None, entity_type: str, entity_name: str
+    subset_notional: float | None,
+    subset_matches_target: bool,
+    entity_type: str,
+    entity_name: str,
 ) -> None:
     authoritative = {
         "totals": [
@@ -607,18 +621,23 @@ def test_all_programs_percentage_universe_is_subset_invariant(
             },
         ],
     }
-    parsed = {"all_programs": authoritative}
+    parsed = {}
     if subset_notional is not None:
         parsed.update(
             {
                 name: {
-                    "totals": [{"counterparty": "Citibank", "Notional": subset_notional}],
+                    "totals": [
+                        {
+                            "counterparty": "Citibank" if subset_matches_target else "Other",
+                            "Notional": subset_notional,
+                        }
+                    ],
                     "futures": [
                         {
-                            "fcm": "FCM B",
-                            "clearing_house": "ICE",
-                            "class": "Credit",
-                            "custom_group": "Group B",
+                            "fcm": "FCM A" if subset_matches_target else "FCM B",
+                            "clearing_house": "CME" if subset_matches_target else "ICE",
+                            "class": "Rates" if subset_matches_target else "Credit",
+                            "custom_group": "Group A" if subset_matches_target else "Group B",
                             "notional": subset_notional,
                         }
                     ],
@@ -626,6 +645,8 @@ def test_all_programs_percentage_universe_is_subset_invariant(
                 for name in ("ex_trend", "trend")
             }
         )
+    # Select the authoritative key, even when reporting subsets appear first.
+    parsed["all_programs"] = authoritative
     actual_share = 0.2 if entity_type == "counterparty" else 0.4
     limits = {
         "schema_version": 1,

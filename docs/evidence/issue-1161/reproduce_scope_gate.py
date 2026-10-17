@@ -25,9 +25,11 @@ def sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def run(name: str, args: list[str], expected_rc: int) -> dict[str, object]:
+def run(
+    name: str, args: list[str], expected_rc: int, *, expected_failures: int = 0
+) -> dict[str, object]:
     xml = OUT / f"{name}.xml"
-    argv = [sys.executable, "-m", "pytest", "-vv", *args, f"--junitxml={xml}"]
+    argv = [sys.executable, "-m", "pytest", "-vv", *args, "-m", "not slow", f"--junitxml={xml}"]
     source_before, test_before = SOURCE.read_bytes(), TEST.read_bytes()
     started = datetime.now(UTC).isoformat()
     result = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
@@ -55,7 +57,7 @@ def run(name: str, args: list[str], expected_rc: int) -> dict[str, object]:
     assert result.returncode == expected_rc, result.stdout.decode()
     assert len(cases) > 0 and not errors
     if expected_rc:
-        assert len(cases) == len(failures) == 2
+        assert len(cases) == len(failures) == expected_failures
         assert b"350000000.0" in result.stdout
         assert b"450000000.0" in result.stdout
     else:
@@ -83,7 +85,9 @@ def main() -> None:
         (OUT / "original-builder.txt").write_bytes(
             original[original.index(start) : original.index(end)]
         )
-        records.append(run("original-scope-red", [NODE], 1))
+        records.append(
+            run("original-scope-red", [NODE], 1, expected_failures=int(records[0]["tests"]))
+        )
     finally:
         SOURCE.write_bytes(restored)
     assert SOURCE.read_bytes() == restored
