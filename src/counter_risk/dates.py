@@ -186,3 +186,84 @@ def _normalize_label(value: Any) -> str:
     if not isinstance(value, str):
         return ""
     return " ".join(value.lower().replace("-", " ").split())
+
+
+# Independent evidence deliberately uses a narrower grammar than legacy fallback.
+_REPORT_DATE_LABEL = re.compile(
+    r"^\s*(?:as[ _-]+of(?:[ _-]+date)?|report[ _-]+date|cprs[ _-]+ch[ _-]+header[ _-]+date)\s*:?\s*",
+    re.IGNORECASE,
+)
+
+_REPORT_DATE_TOKEN_PATTERN = re.compile(rf"(?:{_DATE_TOKEN_PATTERN.pattern})(?![\w/-])")
+
+
+def source_report_date_evidence(
+    *, variant: str, path: str | None, headers: Iterable[str], generated: bool = False
+) -> dict[str, Any]:
+    """Classify bounded source headers; unverified evidence never confirms a match."""
+    lines = list(headers)
+    generated = generated or any(
+        re.search(
+            r"generated.*config|config.*(?:stamp|generated)|counter-risk generated|^\s*CPRS CH Header Date\b",
+            line,
+            re.I,
+        )
+        for line in lines
+    )
+    observations: list[dict[str, str]] = []
+    invalid = False
+    for line in lines:
+        label = _REPORT_DATE_LABEL.search(line)
+        if label is None:
+            continue
+        # Multiple dates on a labeled line are ambiguous, even if one looks plausible.
+        tokens = _REPORT_DATE_TOKEN_PATTERN.findall(line[label.end() :])
+        parsed = [_coerce_date(token) for token in tokens]
+        if len(tokens) != 1 or parsed[0] is None or not line[label.end() :].startswith(tokens[0]):
+            invalid = True
+            continue
+        observations.append({"date": str(parsed[0]), "header_text": line})
+    dates = sorted({entry["date"] for entry in observations})
+    status = (
+        "generated"
+        if generated
+        else (
+            "ambiguous"
+            if invalid or len(dates) > 1
+            else "identified" if len(dates) == 1 else "unverified"
+        )
+    )
+    return {
+        "variant": variant,
+        "path": path,
+        "status": status,
+        "report_date": dates[0] if status == "identified" else None,
+        "observations": observations,
+    }
+
+
+def compare_source_report_dates(
+    *, configured_date: date | None, evidence: Iterable[dict[str, Any]]
+) -> dict[str, Any]:
+    """Compare every reliable source, independently of authoritative date resolution."""
+    sources = list(evidence)
+    identified = [entry for entry in sources if entry["status"] == "identified"]
+    dates = {entry["report_date"] for entry in identified}
+    inter_variant_conflict = len(dates) > 1
+    config_conflicts = [
+        entry["variant"]
+        for entry in identified
+        if configured_date is not None and entry["report_date"] != configured_date.isoformat()
+    ]
+    return {
+        "configured_date": configured_date.isoformat() if configured_date else None,
+        "sources": sources,
+        "has_conflict": bool(config_conflicts) or inter_variant_conflict,
+        "config_conflict_variants": config_conflicts,
+        "inter_variant_conflict": inter_variant_conflict,
+        "status": (
+            "conflict"
+            if config_conflicts or inter_variant_conflict
+            else "consistent" if len(identified) == len(sources) and identified else "unverified"
+        ),
+    }

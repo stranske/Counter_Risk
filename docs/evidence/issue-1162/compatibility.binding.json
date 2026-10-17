@@ -1,0 +1,36 @@
+{
+  "argv": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "pytest",
+    "-q",
+    "--tb=short",
+    "tests/test_config.py",
+    "tests/test_counter_risk_cli.py",
+    "tests/pipeline/test_manifest.py",
+    "tests/pipeline/test_manifest_data_quality.py",
+    "tests/pipeline/test_manifest_data_quality_entries.py",
+    "tests/pipeline/test_manifest_schema.py",
+    "tests/pipeline/test_manifest_schema_conformance.py",
+    "tests/pipeline/test_manifest_structured_warnings.py",
+    "tests/pipeline/test_manifest_provenance.py",
+    "tests/pipeline/test_run_pipeline.py::test_run_pipeline_fails_when_as_of_date_is_not_derivable",
+    "tests/pipeline/test_run_pipeline.py::test_run_pipeline_passes_as_of_date_and_parsed_inputs_to_historical_update",
+    "tests/test_historical_update.py::test_resolve_append_date_prefers_explicit_date",
+    "tests/test_historical_update.py::test_resolve_append_date_uses_config_when_explicit_is_not_provided",
+    "tests/test_historical_update.py::test_resolve_append_date_infers_from_cprs_ch_header_when_other_sources_missing",
+    "tests/test_historical_update.py::test_resolve_append_date_raises_dedicated_error_when_all_sources_missing",
+    "--junitxml=docs/evidence/issue-1162/compatibility.xml"
+  ],
+  "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1162__opener",
+  "started_at": "2026-10-17T03:08:49.835056+00:00",
+  "source_bindings": {
+    "src/counter_risk/dates.py": "40036cc4044da68e31f96517368c14ec287381b72b82fe1e816033db4b806c78",
+    "src/counter_risk/pipeline/run.py": "c4f93fde4ce043c44c0d7ed723b17ffb0b8481b2ed51faeac22e68a9997e171d",
+    "tests/test_dates.py": "1f9360b4d198a533cb9e1cb58984045751421ee3f00cfb13e6f749b57abc3d32",
+    "tests/pipeline/test_as_of_header_mismatch.py": "beda8eb55fee1114dd1430eaabf9a6d149ffa97bdd7735239d5bf13af30a3811"
+  },
+  "exit_code": 0,
+  "console_sha256": "4d955ece5940e0144b384675917f47a558477e2d8002b64f0f69d77a16420892",
+  "junit_sha256": "a17a2fc322f973f3440dadedbb566c188b6e2c7b588d314d794c6545acf9a250"
+}

@@ -1,0 +1,16 @@
+{
+  "scope_sha256": "eae261b8d126160a03fe8889b5149613cd48fe348291c5d1e067f49570c4b15c",
+  "source_path": "src/counter_risk/dates.py",
+  "test_node": "tests/test_dates.py::test_compare_source_dates_detects_later_variant_without_changing_precedence",
+  "before_source_sha256": "40036cc4044da68e31f96517368c14ec287381b72b82fe1e816033db4b806c78",
+  "test_sha256": "1f9360b4d198a533cb9e1cb58984045751421ee3f00cfb13e6f749b57abc3d32",
+  "broken_source_sha256": "2f843e3da4c1304525b79faa5b262a5761abfa6468cf4ae1f66e5a00e17875d9",
+  "base_head": "4c4a11d36b7a368524b26eee30d120efe3cb591b",
+  "red_exit_code": 1,
+  "red_failures": 1,
+  "red_errors": 0,
+  "restored_source_sha256": "40036cc4044da68e31f96517368c14ec287381b72b82fe1e816033db4b806c78",
+  "restored_test_sha256": "1f9360b4d198a533cb9e1cb58984045751421ee3f00cfb13e6f749b57abc3d32",
+  "green_exit_code": 0,
+  "byte_identical_restore": true
+}
