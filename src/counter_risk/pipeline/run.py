@@ -3395,6 +3395,14 @@ def _write_cprs_reporting_section(
         for bounds in merged:
             worksheet.unmerge_cells(bounds)
         worksheet.insert_rows(end + 1, extra)
+        # insert_rows moves cells but leaves row dimensions at their original
+        # indices. Carry the following tables' heights, visibility and grouping
+        # with their contents, clearing dimensions from the new cash rows.
+        for row_number in sorted(worksheet.row_dimensions, reverse=True):
+            if row_number > end:
+                dimension = worksheet.row_dimensions.pop(row_number)
+                dimension.index = row_number + extra
+                worksheet.row_dimensions[row_number + extra] = dimension
         from openpyxl.worksheet.cell_range import CellRange
 
         for bounds in merged:

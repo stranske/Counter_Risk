@@ -326,6 +326,55 @@ def test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates(
     assert hashlib.sha256(source.read_bytes()).hexdigest() == original_hash
 
 
+@pytest.mark.parametrize("sheet_name", ["CPRS - CH", "CPRS - FCM"])
+def test_adjusted_reporting_row_growth_preserves_following_table_layout(
+    tmp_path: Path, cprs_workflow_config: WorkflowConfig, sheet_name: str
+) -> None:
+    from hashlib import sha256
+
+    from openpyxl import load_workbook
+
+    config = cprs_workflow_config
+    source = config.mosers_all_programs_xlsx
+    assert source is not None and config.cash_source_path is not None
+    workbook = load_workbook(source)
+    sheet = workbook[sheet_name]
+    # Both templates start the following table at row 23. Its layout must move
+    # with the cells when authoritative cash adds more rows than the section fits.
+    marker = sheet["B23" if sheet_name == "CPRS - CH" else "C23"].value
+    sheet.row_dimensions[23].height = 42
+    sheet.row_dimensions[23].outlineLevel = 2
+    sheet.row_dimensions[24].height = 31
+    sheet.row_dimensions[24].hidden = True
+    workbook.save(source)
+    workbook.close()
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    config.cash_source_path.write_text(
+        "counterparty,cash_value\nCIBC,200\nASL,300\nScotia,400\nDaiwa,500\n"
+    )
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+    )
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+    )
+    snapshot = load_workbook(paths["all_programs"])
+    try:
+        sheet = snapshot[sheet_name]
+        marker_row = next(cell.row for row in sheet for cell in row if cell.value == marker)
+        assert marker_row > 23, "cash rows must force the following table down"
+        assert sheet.row_dimensions[marker_row].height == 42
+        assert sheet.row_dimensions[marker_row].outlineLevel == 2
+        assert sheet.row_dimensions[marker_row + 1].height == 31
+        assert sheet.row_dimensions[marker_row + 1].hidden
+        # The hidden detail row must not hide any newly inserted cash rows.
+        assert all(not sheet.row_dimensions[row].hidden for row in range(23, marker_row))
+    finally:
+        snapshot.close()
+    assert sha256(source.read_bytes()).hexdigest() == original_hash
+
+
 def test_adjusted_reporting_snapshot_reports_missing_repo_segment(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
 ) -> None:
