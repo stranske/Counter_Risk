@@ -21,3 +21,31 @@ Supply all workbook variants → run pipeline → review consolidated exposures,
 - The Windows release bundle and final `Runner.xlsm` click behavior still require a Windows build plus the manual checks in `docs/RELEASE_CHECKLIST.md`; passing maintainer CLI coverage does not claim that operator release verification is complete.
 - `Runner.xlsm` retains the `Ask about this run` label without a bound Form Control or VBA handler. Provider-backed chat also requires configured credentials.
 - `counter-risk run --fixture-replay` is a packaging-validation path that copies checked-in fixtures by design. Monthly operators use workflow mode for current calculations.
+
+## Accepted unscoped limit universe (U04 / #1161)
+
+Current unscoped caps evaluate All Programs exactly once. Ex Trend and Trend
+remain reporting variants; their overlapping positions cannot change a cap's
+absolute exposure, percentage numerator/denominator, or missing-entity coverage.
+Missing authoritative All Programs fails explicitly; an empty authoritative table
+uses the existing missing-entity warning/strict policy and never substitutes a
+subset. Existing canonical alias resolution, cap amounts, gross-notional semantics,
+concentration metrics, historical reporting and operator release exclusions remain
+in force. No per-variant policy schema is introduced.
+
+Observable verification: named `all_programs_` compute and pipeline scope gates
+prove 200m All Programs + 150m Ex Trend does not breach a 250m cap, while 300m
+All Programs writes one 50m fail breach, consistent manifest/data-quality RED
+status and pipeline failure / CLI exit 1. Percentage shares stay invariant under
+subset changes. Serialized original-builder RED and byte-identical restored GREEN
+evidence is retained in `docs/evidence/issue-1161/`. These gates use real limit and
+pipeline orchestration with synthetic parsed frames and report-output doubles;
+CI, native Office rendering and production-data acceptance are separate boundaries.
+
+Follow-up verification covers subset-first input order, negative authoritative
+notionals and subsets matching either the capped entity or an unrelated entity.
+All 34 absolute/share cases pass; restoring the original builder causes 29 failures
+with five subset-free controls still passing, then restoring the fixed bytes returns
+all 34 to green (`docs/evidence/issue-1161/followup-scope.txt`). The complete named
+scope suite passes 45 cases, and the broader limit/configuration/pipeline checks
+pass 284 cases with `-m "not slow"`.

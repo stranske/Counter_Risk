@@ -1,0 +1,2 @@
+pyproject.toml: note: unused section(s): module = ['pandas.*', 'pdfplumber', 'pypdf', 'scripts.*', 'stranske_pdf_extract', 'tests.*']
+Success: no issues found in 106 source files

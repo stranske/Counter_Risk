@@ -1,0 +1,122 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0 -- /opt/anaconda3/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 99 items
+
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[Notional-None] PASSED [  1%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[Notional-] PASSED [  2%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[Notional- \t ] PASSED [  3%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[exposure-None] PASSED [  4%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[exposure-] PASSED [  5%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[exposure- \t ] PASSED [  6%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[total-None] PASSED [  7%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[total-] PASSED [  8%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[total- \t ] PASSED [  9%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[amount-None] PASSED [ 10%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[amount-] PASSED [ 11%]
+tests/compute/test_limits.py::test_find_notional_skips_blank_aliases[amount- \t ] PASSED [ 12%]
+tests/compute/test_limits.py::test_find_notional_rejects_boolean_aliases[notional-True] PASSED [ 13%]
+tests/compute/test_limits.py::test_find_notional_rejects_boolean_aliases[notional-False] PASSED [ 14%]
+tests/compute/test_limits.py::test_find_notional_rejects_boolean_aliases[Notional-True] PASSED [ 15%]
+tests/compute/test_limits.py::test_find_notional_rejects_boolean_aliases[Notional-False] PASSED [ 16%]
+tests/compute/test_limits.py::test_find_notional_rejects_boolean_aliases[exposure-True] PASSED [ 17%]
+tests/compute/test_limits.py::test_find_notional_rejects_boolean_aliases[exposure-False] PASSED [ 18%]
+tests/compute/test_limits.py::test_find_notional_rejects_boolean_aliases[total-True] PASSED [ 19%]
+tests/compute/test_limits.py::test_find_notional_rejects_boolean_aliases[total-False] PASSED [ 20%]
+tests/compute/test_limits.py::test_find_notional_rejects_boolean_aliases[amount-True] PASSED [ 21%]
+tests/compute/test_limits.py::test_find_notional_rejects_boolean_aliases[amount-False] PASSED [ 22%]
+tests/compute/test_limits.py::test_find_notional_preserves_precedence_zero_and_invalid_value_rejection PASSED [ 23%]
+tests/compute/test_limits.py::test_find_notional_rejects_rows_without_usable_aliases[row0] PASSED [ 24%]
+tests/compute/test_limits.py::test_find_notional_rejects_rows_without_usable_aliases[row1] PASSED [ 25%]
+tests/compute/test_limits.py::test_check_limits_uses_fallback_notional_for_breaches_and_denominator PASSED [ 26%]
+tests/compute/test_limits.py::test_finite_limit_preserves_breach_and_disabled_behavior[True] PASSED [ 27%]
+tests/compute/test_limits.py::test_finite_limit_preserves_breach_and_disabled_behavior[False] PASSED [ 28%]
+tests/compute/test_limits.py::test_check_limits_rejects_non_finite_policy_before_evaluation[inf-absolute_notional] PASSED [ 29%]
+tests/compute/test_limits.py::test_check_limits_rejects_non_finite_policy_before_evaluation[inf-percent_of_total] PASSED [ 30%]
+tests/compute/test_limits.py::test_check_limits_rejects_non_finite_policy_before_evaluation[-inf-absolute_notional] PASSED [ 31%]
+tests/compute/test_limits.py::test_check_limits_rejects_non_finite_policy_before_evaluation[-inf-percent_of_total] PASSED [ 32%]
+tests/compute/test_limits.py::test_check_limits_rejects_non_finite_policy_before_evaluation[nan-absolute_notional] PASSED [ 33%]
+tests/compute/test_limits.py::test_check_limits_rejects_non_finite_policy_before_evaluation[nan-percent_of_total] PASSED [ 34%]
+tests/compute/test_limits.py::test_check_limits_detects_absolute_and_percent_breaches_across_entity_types PASSED [ 35%]
+tests/compute/test_limits.py::test_percent_of_total_scopes_denominator_to_matching_granularity PASSED [ 36%]
+tests/compute/test_limits.py::test_check_limits_is_deterministic_for_reversed_rows PASSED [ 37%]
+tests/compute/test_limits.py::test_check_limits_accepts_limits_config_object PASSED [ 38%]
+tests/compute/test_limits.py::test_check_limits_validates_exposures_input PASSED [ 39%]
+tests/compute/test_limits.py::test_check_limits_validates_limits_cfg_input PASSED [ 40%]
+tests/compute/test_limits.py::test_write_limit_breaches_csv_writes_expected_rows PASSED [ 41%]
+tests/compute/test_limits.py::test_find_missing_limit_entities_returns_sorted_missing_targets PASSED [ 42%]
+tests/compute/test_limits.py::test_check_limits_skips_disabled_limits_for_breaches_and_missing_entities PASSED [ 43%]
+tests/compute/test_limits.py::test_registered_alias_triggers_canonical_limit PASSED [ 44%]
+tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[200000000.0-None] PASSED [ 45%]
+tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[300000000.0-300000000.0] PASSED [ 46%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank-None] PASSED [ 47%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank-10.0] PASSED [ 48%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank-900000000.0] PASSED [ 49%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank--900000000.0] PASSED [ 50%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A-None] PASSED [ 51%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A-10.0] PASSED [ 52%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A-900000000.0] PASSED [ 53%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A--900000000.0] PASSED [ 54%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME-None] PASSED [ 55%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME-10.0] PASSED [ 56%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME-900000000.0] PASSED [ 57%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME--900000000.0] PASSED [ 58%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates-None] PASSED [ 59%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates-10.0] PASSED [ 60%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates-900000000.0] PASSED [ 61%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates--900000000.0] PASSED [ 62%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A-None] PASSED [ 63%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A-10.0] PASSED [ 64%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A-900000000.0] PASSED [ 65%]
+tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A--900000000.0] PASSED [ 66%]
+tests/compute/test_limits.py::test_all_programs_missing_entities_cannot_be_satisfied_by_subset PASSED [ 67%]
+tests/compute/test_limits.py::test_all_programs_authority_is_required[parsed0] PASSED [ 68%]
+tests/compute/test_limits.py::test_all_programs_authority_is_required[parsed1] PASSED [ 69%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[inf-True-absolute_notional] PASSED [ 70%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[inf-True-percent_of_total] PASSED [ 71%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[inf-False-absolute_notional] PASSED [ 72%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[inf-False-percent_of_total] PASSED [ 73%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[-inf-True-absolute_notional] PASSED [ 74%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[-inf-True-percent_of_total] PASSED [ 75%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[-inf-False-absolute_notional] PASSED [ 76%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[-inf-False-percent_of_total] PASSED [ 77%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[nan-True-absolute_notional] PASSED [ 78%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[nan-True-percent_of_total] PASSED [ 79%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[nan-False-absolute_notional] PASSED [ 80%]
+tests/test_limits_config.py::test_limit_entry_rejects_non_finite_values[nan-False-percent_of_total] PASSED [ 81%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[.inf-True-absolute_notional] PASSED [ 82%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[.inf-True-percent_of_total] PASSED [ 83%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[.inf-False-absolute_notional] PASSED [ 84%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[.inf-False-percent_of_total] PASSED [ 85%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[-.inf-True-absolute_notional] PASSED [ 86%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[-.inf-True-percent_of_total] PASSED [ 87%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[-.inf-False-absolute_notional] PASSED [ 88%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[-.inf-False-percent_of_total] PASSED [ 89%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[.nan-True-absolute_notional] PASSED [ 90%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[.nan-True-percent_of_total] PASSED [ 91%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[.nan-False-absolute_notional] PASSED [ 92%]
+tests/test_limits_config.py::test_load_limits_config_rejects_non_finite_yaml[.nan-False-percent_of_total] PASSED [ 93%]
+tests/test_limits_config.py::test_load_limits_config_default_file PASSED [ 94%]
+tests/test_limits_config.py::test_load_limits_config_supports_optional_notes PASSED [ 95%]
+tests/test_limits_config.py::test_load_limits_config_rejects_missing_required_fields PASSED [ 96%]
+tests/test_limits_config.py::test_load_limits_config_rejects_invalid_types_and_values PASSED [ 97%]
+tests/test_limits_config.py::test_load_limits_config_rejects_duplicate_limit_keys PASSED [ 98%]
+tests/test_limits_config.py::test_load_limits_config_rejects_duplicate_yaml_keys PASSED [100%]
+
+=============================== warnings summary ===============================
+tests/compute/test_limits.py::test_check_limits_uses_fallback_notional_for_breaches_and_denominator
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
+    from pandas.core.computation.check import NUMEXPR_INSTALLED
+
+tests/compute/test_limits.py::test_check_limits_uses_fallback_notional_for_breaches_and_denominator
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
+    from pandas.core import (
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener/docs/evidence/issue-1161/compute-config.xml -
+======================== 99 passed, 2 warnings in 3.23s ========================

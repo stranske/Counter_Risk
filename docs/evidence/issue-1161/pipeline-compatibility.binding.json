@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_run_pipeline.py::test_limit_exposure_rows_scope_clearing_house_percent_to_futures_rows",
+    "tests/pipeline/test_run_pipeline.py::test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist",
+    "tests/pipeline/test_run_pipeline.py::test_run_pipeline_limit_breach_summary_uses_warning_severity_when_no_fail_breaches",
+    "tests/pipeline/test_run_pipeline.py::test_run_pipeline_warns_on_missing_limit_entities_by_default",
+    "tests/pipeline/test_run_pipeline.py::test_run_pipeline_strict_missing_limit_entities_fails",
+    "--junitxml=docs/evidence/issue-1161/pipeline-compatibility.xml"
+  ],
+  "cwd": "/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1161__opener",
+  "started_at": "2026-10-17T02:41:04.347241+00:00",
+  "source_bindings": {
+    "src/counter_risk/pipeline/run.py": "875b7a982802bf226f0290e634d7d7895d5bc650d119f4d71351fabe0496dc92",
+    "tests/compute/test_limits.py": "1152dd9132306445b2eeb326e32a7c51eaf930917050c8aada3b7aa38f124737",
+    "tests/pipeline/test_run_pipeline.py": "e186ed8a313d1a3dcbba9d27997afadbbf744f50fdd798d057eddc698009a10c"
+  },
+  "exit_code": 0,
+  "console_sha256": "844bf5218d9ab80f7d918d025f2945ccb0595e0e0386fc82375f3f8ef6bd7fe1"
+}

@@ -1,0 +1,325 @@
+Fixed scope GREEN
+Command: /opt/hostedtoolcache/Python/3.14.8/x64/bin/python -m pytest tests/compute/test_limits.py -k 'test_all_programs_absolute_cap_ignores_overlapping_variants or test_all_programs_percentage_universe_is_subset_invariant' -m 'not slow' -q --tb=line
+Source SHA-256: 875b7a982802bf226f0290e634d7d7895d5bc650d119f4d71351fabe0496dc92
+Test SHA-256: 8c327364af9491fb4b656048bc1980022b7b3fa7267427864b65b0ef3f441bee
+Exit code: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 81 items / 47 deselected / 34 selected
+
+tests/compute/test_limits.py ..................................          [100%]
+
+====================== 34 passed, 47 deselected in 0.66s =======================
+
+
+Original builder RED
+Command: /opt/hostedtoolcache/Python/3.14.8/x64/bin/python -m pytest tests/compute/test_limits.py -k 'test_all_programs_absolute_cap_ignores_overlapping_variants or test_all_programs_percentage_universe_is_subset_invariant' -m 'not slow' -q --tb=line
+Source SHA-256: f835664f465c1ff1eee49b2de1dbaec40133c416f56ebf64b03ec47856f63b0b
+Test SHA-256: 8c327364af9491fb4b656048bc1980022b7b3fa7267427864b65b0ef3f441bee
+Exit code: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 81 items / 47 deselected / 34 selected
+
+tests/compute/test_limits.py FFFF.FFFFF.FFFFF.FFFFF.FFFFF.FFFFF          [100%]
+
+=================================== FAILURES ===================================
+E   AssertionError: assert [{'entity_typ... 'fail', ...}] == []
+      
+      Left contains one more item: {'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+      
+      Full diff:
+      - []
+      + [
+      +     {
+      +         'entity_type': 'counterparty',
+      +         'entity_name': 'citibank',
+      +         'limit_kind': 'absolute_notional',
+      +         'severity': 'fail',
+      +         'actual_value': 350000000.0,
+      +         'limit_value': 250000000.0,
+      +         'breach_amount': 100000000.0,
+      +         'notes': None,
+      +     },
+      + ]
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:567: AssertionError: assert [{'entity_typ... 'fail', ...}] == []
+E   assert 450000000.0 == 300000000.0
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:570: assert 450000000.0 == 300000000.0
+E   AssertionError: assert [{'entity_typ... 'fail', ...}] == []
+      
+      Left contains one more item: {'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+      
+      Full diff:
+      - []
+      + [
+      +     {
+      +         'entity_type': 'counterparty',
+      +         'entity_name': 'citibank',
+      +         'limit_kind': 'absolute_notional',
+      +         'severity': 'fail',
+      +         'actual_value': 350000000.0,
+      +         'limit_value': 250000000.0,
+      +         'breach_amount': 100000000.0,
+      +         'notes': None,
+      +     },
+      + ]
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:567: AssertionError: assert [{'entity_typ... 'fail', ...}] == []
+E   assert 450000000.0 == 300000000.0
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:570: assert 450000000.0 == 300000000.0
+E   assert 0.19607843137254902 == 0.2 ± 2.0e-07
+      
+      comparison failed
+      Obtained: 0.19607843137254902
+      Expected: 0.2 ± 2.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.19607843137254902 == 0.2 ± 2.0e-07
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0.9999995555558024 == 0.2 ± 2.0e-07
+      
+      comparison failed
+      Obtained: 0.9999995555558024
+      Expected: 0.2 ± 2.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.9999995555558024 == 0.2 ± 2.0e-07
+E   assert 0.9999995555558024 == 0.2 ± 2.0e-07
+      
+      comparison failed
+      Obtained: 0.9999995555558024
+      Expected: 0.2 ± 2.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.9999995555558024 == 0.2 ± 2.0e-07
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0.9999999666666686 == 0.4 ± 4.0e-07
+      
+      comparison failed
+      Obtained: 0.9999999666666686
+      Expected: 0.4 ± 4.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.9999999666666686 == 0.4 ± 4.0e-07
+E   assert 0.9999999666666686 == 0.4 ± 4.0e-07
+      
+      comparison failed
+      Obtained: 0.9999999666666686
+      Expected: 0.4 ± 4.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.9999999666666686 == 0.4 ± 4.0e-07
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0.9999999666666686 == 0.4 ± 4.0e-07
+      
+      comparison failed
+      Obtained: 0.9999999666666686
+      Expected: 0.4 ± 4.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.9999999666666686 == 0.4 ± 4.0e-07
+E   assert 0.9999999666666686 == 0.4 ± 4.0e-07
+      
+      comparison failed
+      Obtained: 0.9999999666666686
+      Expected: 0.4 ± 4.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.9999999666666686 == 0.4 ± 4.0e-07
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0.9999999666666686 == 0.4 ± 4.0e-07
+      
+      comparison failed
+      Obtained: 0.9999999666666686
+      Expected: 0.4 ± 4.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.9999999666666686 == 0.4 ± 4.0e-07
+E   assert 0.9999999666666686 == 0.4 ± 4.0e-07
+      
+      comparison failed
+      Obtained: 0.9999999666666686
+      Expected: 0.4 ± 4.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.9999999666666686 == 0.4 ± 4.0e-07
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0 == 1
+     +  where 0 = len([])
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:664: assert 0 == 1
+E   assert 0.9999999666666686 == 0.4 ± 4.0e-07
+      
+      comparison failed
+      Obtained: 0.9999999666666686
+      Expected: 0.4 ± 4.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.9999999666666686 == 0.4 ± 4.0e-07
+E   assert 0.9999999666666686 == 0.4 ± 4.0e-07
+      
+      comparison failed
+      Obtained: 0.9999999666666686
+      Expected: 0.4 ± 4.0e-07
+/home/runner/work/Counter_Risk/Counter_Risk/tests/compute/test_limits.py:665: assert 0.9999999666666686 == 0.4 ± 4.0e-07
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[1-200000000.0-None] - AssertionError: assert [{'entity_typ... 'fail', ...}] == []
+  
+  Left contains one more item: {'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+  
+  Full diff:
+  - []
+  + [
+  +     {
+  +         'entity_type': 'counterparty',
+  +         'entity_name': 'citibank',
+  +         'limit_kind': 'absolute_notional',
+  +         'severity': 'fail',
+  +         'actual_value': 350000000.0,
+  +         'limit_value': 250000000.0,
+  +         'breach_amount': 100000000.0,
+  +         'notes': None,
+  +     },
+  + ]
+FAILED tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[1-300000000.0-300000000.0] - assert 450000000.0 == 300000000.0
+FAILED tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[-1-200000000.0-None] - AssertionError: assert [{'entity_typ... 'fail', ...}] == []
+  
+  Left contains one more item: {'entity_type': 'counterparty', 'entity_name': 'citibank', 'limit_kind': 'absolute_notional', 'severity': 'fail', ...}
+  
+  Full diff:
+  - []
+  + [
+  +     {
+  +         'entity_type': 'counterparty',
+  +         'entity_name': 'citibank',
+  +         'limit_kind': 'absolute_notional',
+  +         'severity': 'fail',
+  +         'actual_value': 350000000.0,
+  +         'limit_value': 250000000.0,
+  +         'breach_amount': 100000000.0,
+  +         'notes': None,
+  +     },
+  + ]
+FAILED tests/compute/test_limits.py::test_all_programs_absolute_cap_ignores_overlapping_variants[-1-300000000.0-300000000.0] - assert 450000000.0 == 300000000.0
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank-10.0-False] - assert 0.19607843137254902 == 0.2 ± 2.0e-07
+  
+  comparison failed
+  Obtained: 0.19607843137254902
+  Expected: 0.2 ± 2.0e-07
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank-900000000.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank--900000000.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank-900000000.0-True] - assert 0.9999995555558024 == 0.2 ± 2.0e-07
+  
+  comparison failed
+  Obtained: 0.9999995555558024
+  Expected: 0.2 ± 2.0e-07
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[counterparty-Citibank--900000000.0-True] - assert 0.9999995555558024 == 0.2 ± 2.0e-07
+  
+  comparison failed
+  Obtained: 0.9999995555558024
+  Expected: 0.2 ± 2.0e-07
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A-10.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A-900000000.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A--900000000.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A-900000000.0-True] - assert 0.9999999666666686 == 0.4 ± 4.0e-07
+  
+  comparison failed
+  Obtained: 0.9999999666666686
+  Expected: 0.4 ± 4.0e-07
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[fcm-FCM A--900000000.0-True] - assert 0.9999999666666686 == 0.4 ± 4.0e-07
+  
+  comparison failed
+  Obtained: 0.9999999666666686
+  Expected: 0.4 ± 4.0e-07
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME-10.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME-900000000.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME--900000000.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME-900000000.0-True] - assert 0.9999999666666686 == 0.4 ± 4.0e-07
+  
+  comparison failed
+  Obtained: 0.9999999666666686
+  Expected: 0.4 ± 4.0e-07
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[clearing_house-CME--900000000.0-True] - assert 0.9999999666666686 == 0.4 ± 4.0e-07
+  
+  comparison failed
+  Obtained: 0.9999999666666686
+  Expected: 0.4 ± 4.0e-07
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates-10.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates-900000000.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates--900000000.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates-900000000.0-True] - assert 0.9999999666666686 == 0.4 ± 4.0e-07
+  
+  comparison failed
+  Obtained: 0.9999999666666686
+  Expected: 0.4 ± 4.0e-07
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[segment-Rates--900000000.0-True] - assert 0.9999999666666686 == 0.4 ± 4.0e-07
+  
+  comparison failed
+  Obtained: 0.9999999666666686
+  Expected: 0.4 ± 4.0e-07
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A-10.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A-900000000.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A--900000000.0-False] - assert 0 == 1
+ +  where 0 = len([])
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A-900000000.0-True] - assert 0.9999999666666686 == 0.4 ± 4.0e-07
+  
+  comparison failed
+  Obtained: 0.9999999666666686
+  Expected: 0.4 ± 4.0e-07
+FAILED tests/compute/test_limits.py::test_all_programs_percentage_universe_is_subset_invariant[custom_group-Group A--900000000.0-True] - assert 0.9999999666666686 == 0.4 ± 4.0e-07
+  
+  comparison failed
+  Obtained: 0.9999999666666686
+  Expected: 0.4 ± 4.0e-07
+================= 29 failed, 5 passed, 47 deselected in 0.68s ==================
+
+
+Byte-identical restored GREEN
+Command: /opt/hostedtoolcache/Python/3.14.8/x64/bin/python -m pytest tests/compute/test_limits.py -k 'test_all_programs_absolute_cap_ignores_overlapping_variants or test_all_programs_percentage_universe_is_subset_invariant' -m 'not slow' -q --tb=line
+Source SHA-256: 875b7a982802bf226f0290e634d7d7895d5bc650d119f4d71351fabe0496dc92
+Test SHA-256: 8c327364af9491fb4b656048bc1980022b7b3fa7267427864b65b0ef3f441bee
+Exit code: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 81 items / 47 deselected / 34 selected
+
+tests/compute/test_limits.py ..................................          [100%]
+
+====================== 34 passed, 47 deselected in 0.70s =======================
+
+
+Production source and test bytes restored unchanged after the deliberate break.
