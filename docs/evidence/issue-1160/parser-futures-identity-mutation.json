@@ -1,0 +1,7 @@
+{
+  "source": "src/counter_risk/parsers/cprs_fcm.py",
+  "before": "\"fcm\": fcm,\n                \"clearing_house\": clearing_house,",
+  "after": "\"fcm\": \"Lost FCM\",\n                \"clearing_house\": \"Lost House\",",
+  "original_sha256": "fb9e3b8c9ab063d17022ff63761414800b81c25aa5831cde3aad45cac99b79d9",
+  "mutant_sha256": "358fb5bafcda4bd6c784ae952842e96decf3e1cb3ab3d9c9102a6f9e131fb506"
+}

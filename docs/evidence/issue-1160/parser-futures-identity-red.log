@@ -1,0 +1,90 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <REPO>
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 101 items / 99 deselected / 2 selected
+
+tests/compute/test_limits.py FF                                          [100%]
+
+=================================== FAILURES ===================================
+_____ test_boundary_audit_alias_only_parser_to_limit[fcm-bank_of_america] ______
+
+boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0     Citibank   0...  Future  Equity  Lost FCM     Lost House    6000.0
+1  acct-26      Future  Equity  Lost FCM     Lost House   -4000.0}}
+entity_type = 'fcm', canonical = 'bank_of_america'
+
+    @pytest.mark.parametrize(
+        "entity_type, canonical", [("fcm", "bank_of_america"), ("clearing_house", "cme")]
+    )
+    def test_boundary_audit_alias_only_parser_to_limit(
+        boundary_parsed_workbooks: dict[str, dict[str, Any]], entity_type: str, canonical: str
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_kind": "percent_of_total",
+                    "limit_value": 0.5,
+                }
+            ],
+        }
+        rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+        breaches = _as_records(check_limits(rows, policy))
+>       assert len(breaches) == 1, "parsed registered alias must reach the canonical cap"
+E       AssertionError: parsed registered alias must reach the canonical cap
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/compute/test_limits.py:1011: AssertionError
+______ test_boundary_audit_alias_only_parser_to_limit[clearing_house-cme] ______
+
+boundary_parsed_workbooks = {'all_programs': {'totals':   counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0     Citibank   0...  Future  Equity  Lost FCM     Lost House    6000.0
+1  acct-26      Future  Equity  Lost FCM     Lost House   -4000.0}}
+entity_type = 'clearing_house', canonical = 'cme'
+
+    @pytest.mark.parametrize(
+        "entity_type, canonical", [("fcm", "bank_of_america"), ("clearing_house", "cme")]
+    )
+    def test_boundary_audit_alias_only_parser_to_limit(
+        boundary_parsed_workbooks: dict[str, dict[str, Any]], entity_type: str, canonical: str
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": entity_type,
+                    "entity_name": canonical,
+                    "limit_kind": "percent_of_total",
+                    "limit_value": 0.5,
+                }
+            ],
+        }
+        rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+        breaches = _as_records(check_limits(rows, policy))
+>       assert len(breaches) == 1, "parsed registered alias must reach the canonical cap"
+E       AssertionError: parsed registered alias must reach the canonical cap
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/compute/test_limits.py:1011: AssertionError
+=============================== warnings summary ===============================
+tests/compute/test_limits.py::test_boundary_audit_alias_only_parser_to_limit[fcm-bank_of_america]
+  <PYTHON_ENV>/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
+    from pandas.core.computation.check import NUMEXPR_INSTALLED
+
+tests/compute/test_limits.py::test_boundary_audit_alias_only_parser_to_limit[fcm-bank_of_america]
+  <PYTHON_ENV>/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
+    from pandas.core import (
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: <RAW>/parser-futures-identity-red.xml -
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits.py::test_boundary_audit_alias_only_parser_to_limit[fcm-bank_of_america]
+FAILED tests/compute/test_limits.py::test_boundary_audit_alias_only_parser_to_limit[clearing_house-cme]
+================= 2 failed, 99 deselected, 2 warnings in 4.01s =================

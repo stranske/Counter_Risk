@@ -1,0 +1,116 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: <REPO>
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 101 items / 99 deselected / 2 selected
+
+tests/compute/test_limits.py FF                                          [100%]
+
+=================================== FAILURES ===================================
+_________________ test_boundary_audit_overlap_parser_to_limit __________________
+
+boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0   Citibank Lo...ture  ...  CME Clearing House   6000.0
+1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
+
+[2 rows x 6 columns]}}
+
+    def test_boundary_audit_overlap_parser_to_limit(
+        boundary_parsed_workbooks: dict[str, dict[str, Any]],
+    ) -> None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "citibank",
+                    "limit_kind": "absolute_notional",
+                    "limit_value": 125.0,
+                },
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "citibank",
+                    "limit_kind": "percent_of_total",
+                    "limit_value": 0.5,
+                },
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "subset_only",
+                    "limit_kind": "absolute_notional",
+                    "limit_value": 1.0,
+                },
+            ],
+        }
+        # A subset-only entity must supply neither denominator nor coverage.
+        boundary_parsed_workbooks["ex_trend"]["totals"] = [
+            {"counterparty": "Citigroup", "Notional": 900.0},
+            {"counterparty": "Subset Only", "Notional": 9000.0},
+        ]
+        for parsed in (
+            boundary_parsed_workbooks,
+            {"all_programs": boundary_parsed_workbooks["all_programs"]},
+        ):
+            rows = _build_limit_exposure_rows(parsed)
+            breaches = _as_records(check_limits(rows, policy))
+>           assert len(breaches) == 1, "overlapping subsets must not manufacture an absolute breach"
+E           AssertionError: overlapping subsets must not manufacture an absolute breach
+E           assert 0 == 1
+E            +  where 0 = len([])
+
+tests/compute/test_limits.py:1055: AssertionError
+____________ test_boundary_audit_partitioned_concentration_control _____________
+
+tmp_path = PosixPath('<TMP>/pytest-of-<USER>/pytest-2366/test_boundary_audit_partitione0')
+boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0   Citibank Lo...ture  ...  CME Clearing House   6000.0
+1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
+
+[2 rows x 6 columns]}}
+
+    def test_boundary_audit_partitioned_concentration_control(
+        tmp_path: Path, boundary_parsed_workbooks: dict[str, dict[str, Any]]
+    ) -> None:
+        metrics = _compute_and_write_concentration_metrics(
+            parsed_by_variant=boundary_parsed_workbooks, run_dir=tmp_path
+        )
+        by_partition = {(row["variant"], row["segment"]): row for row in metrics}
+        assert set(by_partition) == {
+            (variant, segment)
+            for variant in ("all_programs", "ex_trend")
+            for segment in ("TIPS", "Treasury", "Equity", "Commodity", "Currency", "total")
+        }, "concentration must retain variant and segment; Trend has no parsed totals"
+        for variant, expected_total in (("all_programs", 29 / 49), ("ex_trend", 0.5)):
+            for segment, expected_hhi in (
+                ("total", expected_total),
+                ("Equity", 1.0),
+                ("Treasury", 1.0),
+                ("TIPS", 0.0),
+                ("Commodity", 0.0),
+                ("Currency", 0.0),
+            ):
+                row = by_partition[variant, segment]
+>               assert row["hhi"] == pytest.approx(expected_hhi)
+E               assert 0.346938775510204 == 0.5918367346938775 ± 5.9e-07
+E                 
+E                 comparison failed
+E                 Obtained: 0.346938775510204
+E                 Expected: 0.5918367346938775 ± 5.9e-07
+
+tests/compute/test_limits.py:1090: AssertionError
+=============================== warnings summary ===============================
+tests/compute/test_limits.py::test_boundary_audit_overlap_parser_to_limit
+  <PYTHON_ENV>/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
+    from pandas.core.computation.check import NUMEXPR_INSTALLED
+
+tests/compute/test_limits.py::test_boundary_audit_overlap_parser_to_limit
+  <PYTHON_ENV>/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
+    from pandas.core import (
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: <RAW>/parser-totals-identity-red.xml -
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits.py::test_boundary_audit_overlap_parser_to_limit
+FAILED tests/compute/test_limits.py::test_boundary_audit_partitioned_concentration_control
+================= 2 failed, 99 deselected, 2 warnings in 2.91s =================

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="2.422" timestamp="2026-10-17T05:42:47.274702-05:00" hostname="&lt;HOST&gt;"><testcase classname="tests.compute.test_limits" name="test_boundary_audit_overlap_parser_to_limit" time="1.619"><failure message="AssertionError: overlapping subsets must not manufacture an absolute breach&#10;assert 0 == 1&#10; +  where 0 = len([])">boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0   Citibank Lo...ture  ...  CME Clearing House   6000.0
+1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
+
+[2 rows x 6 columns]}}
+
+    def test_boundary_audit_overlap_parser_to_limit(
+        boundary_parsed_workbooks: dict[str, dict[str, Any]],
+    ) -&gt; None:
+        policy = {
+            "schema_version": 1,
+            "limits": [
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "citibank",
+                    "limit_kind": "absolute_notional",
+                    "limit_value": 125.0,
+                },
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "citibank",
+                    "limit_kind": "percent_of_total",
+                    "limit_value": 0.5,
+                },
+                {
+                    "entity_type": "counterparty",
+                    "entity_name": "subset_only",
+                    "limit_kind": "absolute_notional",
+                    "limit_value": 1.0,
+                },
+            ],
+        }
+        # A subset-only entity must supply neither denominator nor coverage.
+        boundary_parsed_workbooks["ex_trend"]["totals"] = [
+            {"counterparty": "Citigroup", "Notional": 900.0},
+            {"counterparty": "Subset Only", "Notional": 9000.0},
+        ]
+        for parsed in (
+            boundary_parsed_workbooks,
+            {"all_programs": boundary_parsed_workbooks["all_programs"]},
+        ):
+            rows = _build_limit_exposure_rows(parsed)
+            breaches = _as_records(check_limits(rows, policy))
+&gt;           assert len(breaches) == 1, "overlapping subsets must not manufacture an absolute breach"
+E           AssertionError: overlapping subsets must not manufacture an absolute breach
+E           assert 0 == 1
+E            +  where 0 = len([])
+
+tests/compute/test_limits.py:1055: AssertionError</failure></testcase><testcase classname="tests.compute.test_limits" name="test_boundary_audit_partitioned_concentration_control" time="0.030"><failure message="assert 0.346938775510204 == 0.5918367346938775 ± 5.9e-07&#10;  &#10;  comparison failed&#10;  Obtained: 0.346938775510204&#10;  Expected: 0.5918367346938775 ± 5.9e-07">tmp_path = PosixPath('&lt;TMP&gt;/pytest-of-&lt;USER&gt;/pytest-2366/test_boundary_audit_partitione0')
+boundary_parsed_workbooks = {'all_programs': {'totals':      counterparty  TIPS  Treasury  ...  Currency  Notional  NotionalChange
+0   Citibank Lo...ture  ...  CME Clearing House   6000.0
+1  acct-26      Future  ...      ICE Clear U.S.  -4000.0
+
+[2 rows x 6 columns]}}
+
+    def test_boundary_audit_partitioned_concentration_control(
+        tmp_path: Path, boundary_parsed_workbooks: dict[str, dict[str, Any]]
+    ) -&gt; None:
+        metrics = _compute_and_write_concentration_metrics(
+            parsed_by_variant=boundary_parsed_workbooks, run_dir=tmp_path
+        )
+        by_partition = {(row["variant"], row["segment"]): row for row in metrics}
+        assert set(by_partition) == {
+            (variant, segment)
+            for variant in ("all_programs", "ex_trend")
+            for segment in ("TIPS", "Treasury", "Equity", "Commodity", "Currency", "total")
+        }, "concentration must retain variant and segment; Trend has no parsed totals"
+        for variant, expected_total in (("all_programs", 29 / 49), ("ex_trend", 0.5)):
+            for segment, expected_hhi in (
+                ("total", expected_total),
+                ("Equity", 1.0),
+                ("Treasury", 1.0),
+                ("TIPS", 0.0),
+                ("Commodity", 0.0),
+                ("Currency", 0.0),
+            ):
+                row = by_partition[variant, segment]
+&gt;               assert row["hhi"] == pytest.approx(expected_hhi)
+E               assert 0.346938775510204 == 0.5918367346938775 ± 5.9e-07
+E                 
+E                 comparison failed
+E                 Obtained: 0.346938775510204
+E                 Expected: 0.5918367346938775 ± 5.9e-07
+
+tests/compute/test_limits.py:1090: AssertionError</failure></testcase></testsuite></testsuites>

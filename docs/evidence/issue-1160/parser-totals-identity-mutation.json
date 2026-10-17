@@ -1,0 +1,7 @@
+{
+  "source": "src/counter_risk/parsers/cprs_fcm.py",
+  "before": "\"counterparty\": counterparty,\n                \"TIPS\":",
+  "after": "\"counterparty\": counterparty + \" Lost\",\n                \"TIPS\":",
+  "original_sha256": "fb9e3b8c9ab063d17022ff63761414800b81c25aa5831cde3aad45cac99b79d9",
+  "mutant_sha256": "71c7a6d9138cbad9a5a112798ac5479a268d18fc0b0c06a081ec233d798c71b8"
+}

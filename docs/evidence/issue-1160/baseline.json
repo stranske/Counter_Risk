@@ -1,0 +1,11 @@
+{
+  "baseline_commit": "f8871b2971d34b6d1b26df17fea1f9ef9cf079df",
+  "python": "<PYTHON>",
+  "python_version": "3.12.2 | packaged by conda-forge | (main, Feb 16 2024, 20:54:21) [Clang 16.0.6 ]",
+  "sources": {
+    "src/counter_risk/parsers/cprs_fcm.py": "fb9e3b8c9ab063d17022ff63761414800b81c25aa5831cde3aad45cac99b79d9",
+    "src/counter_risk/pipeline/run.py": "f0a6e7893025ed2246ee4120a403573fe8120fcc0f1c7dacc9457cd6b2dec1b7",
+    "src/counter_risk/compute/limits.py": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82"
+  },
+  "test_sha256": "06e3388ada719c6831c72770ad6efce9d54b8b3818a1387abaa81b0e6aa44026"
+}

@@ -1,0 +1,7 @@
+{
+  "source": "src/counter_risk/compute/limits.py",
+  "before": "if entity_type in {\"counterparty\", \"fcm\", \"clearing_house\"}:",
+  "after": "if entity_type == \"counterparty\":",
+  "original_sha256": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+  "mutant_sha256": "6aca8e4922af2241225ea287a2446f542dc7d5809bedd895460456f7830b7b5f"
+}
