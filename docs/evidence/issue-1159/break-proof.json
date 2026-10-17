@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/opt/anaconda3/bin/python3",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_cprs_screenshot_generation.py",
+    "-k",
+    "adjusted",
+    "--junitxml=/Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1159__opener/docs/evidence/issue-1159/gate.xml"
+  ],
+  "mutation": "Restore original configured workbook route at the exporter boundary",
+  "byte_identical_restoration": true,
+  "results": {
+    "green-before": {
+      "exit_code": 0,
+      "source_sha256": "88fd5c50cf70faf30451feb5fc6182b75a9d1fb9ab085fbae5d343e010d32128"
+    },
+    "red-original-route": {
+      "exit_code": 1,
+      "source_sha256": "f199bbea332102c95a53cbfe27bd6cc2062511dfdd9aeee60fb44c67698527de"
+    },
+    "green-restored": {
+      "exit_code": 0,
+      "source_sha256": "88fd5c50cf70faf30451feb5fc6182b75a9d1fb9ab085fbae5d343e010d32128"
+    }
+  },
+  "test_sha256": "20b15205a80c8c083abce39e840807472275117dc6301fc4e324a9ddf363e9f2"
+}

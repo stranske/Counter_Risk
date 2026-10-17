@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import date
@@ -432,3 +434,63 @@ def test_resolve_screenshot_input_mapping_canonicalizes_key_stored_in_mapping(
 
     # Canonical form: ASCII apostrophe, collapsed whitespace
     assert list(mapping.keys()) == ["Goldman Sachs Int'l"]
+
+
+@pytest.mark.office
+@pytest.mark.skipif(
+    sys.platform != "win32" or os.environ.get("COUNTER_RISK_OFFICE_SMOKE") != "1",
+    reason="Requires Windows Excel/PowerPoint COM and COUNTER_RISK_OFFICE_SMOKE=1",
+)
+def test_office_cash_change_updates_final_ppt_media_preserving_inputs(
+    tmp_path: Path,
+    cprs_workflow_config: WorkflowConfig,
+) -> None:
+    """Real Office smoke: authoritative cash must reach both delivered PPTs."""
+    import hashlib
+
+    import yaml
+    from pptx import Presentation
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+    config = cprs_workflow_config
+    original_hashes = {
+        path: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in (tmp_path / "inputs").glob("*.xlsx")
+    }
+    media_by_run: list[dict[tuple[str, int], bytes]] = []
+    assert config.cash_source_path is not None
+    for index, amount in enumerate((1234567, 7654321)):
+        config.cash_source_path.write_text(f"counterparty,cash_value\nCIBC,{amount}\n")
+        config_path = tmp_path / f"office-{index}.yml"
+        config_path.write_text(yaml.safe_dump(config.model_dump(mode="json")))
+        run_dir = run_module.run_pipeline(config_path, output_dir=tmp_path / f"office-{index}")
+        media: dict[tuple[str, int], bytes] = {}
+        for kind, filename in (
+            ("master", "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx"),
+            ("distribution", "Monthly Counterparty Exposure Report - 2025-12-31.pptx"),
+        ):
+            deck = run_dir / filename
+            assert deck.exists(), f"Office did not deliver {kind}: inspect run warnings"
+            presentation = Presentation(deck)
+            for slide_number in (1, 2):
+                pictures = [
+                    shape
+                    for shape in presentation.slides[slide_number - 1].shapes
+                    if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+                ]
+                assert pictures, f"Missing CPRS image on {kind} slide {slide_number}"
+                media[kind, slide_number] = pictures[0].image.blob
+                assert media[kind, slide_number].startswith(b"\x89PNG\r\n\x1a\n")
+                print(
+                    index, kind, slide_number, hashlib.sha256(media[kind, slide_number]).hexdigest()
+                )
+        media_by_run.append(media)
+        assert {
+            path: hashlib.sha256(path.read_bytes()).hexdigest() for path in original_hashes
+        } == original_hashes
+    assert media_by_run[0].keys() == media_by_run[1].keys()
+    for key in media_by_run[0]:
+        assert media_by_run[0][key] != media_by_run[1][key], f"Stale CPRS media: {key}"
+    print(
+        "unchanged input SHA-256", {str(path): digest for path, digest in original_hashes.items()}
+    )

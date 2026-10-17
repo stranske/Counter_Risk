@@ -1,0 +1,108 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0 -- /opt/anaconda3/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1159__opener
+configfile: pyproject.toml
+plugins: langsmith-0.10.9, cov-7.1.0, xdist-3.8.0, rerunfailures-16.3, datadir-1.8.0, typeguard-4.5.1, asyncio-1.3.0, pytest_httpserver-1.1.3, hypothesis-6.155.7, regressions-2.11.0, Faker-40.39.0, anyio-4.13.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 10 items / 8 deselected / 2 selected
+
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted FAILED [ 50%]
+tests/pipeline/test_cprs_screenshot_generation.py::test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates PASSED [100%]
+
+=================================== FAILURES ===================================
+___ test_generates_screenshot_for_each_configured_variant_and_table_adjusted ___
+
+tmp_path = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2142/test_generates_screenshot_for_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11204e690>
+cprs_workflow_config = WorkflowConfig(as_of_date=datetime.date(2025, 12, 31), run_date=None, mosers_all_programs_xlsx=PosixPath('/Users/teach...acher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2142/test_generates_screenshot_for_0/runs'))
+
+    def test_generates_screenshot_for_each_configured_variant_and_table_adjusted(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+    ) -> None:
+        config = cprs_workflow_config
+        run_dir = tmp_path / "run"
+        warnings: list[str] = []
+        calls: list[dict[str, Any]] = []
+        parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+        run_module._apply_daily_holdings_repo_cash(
+            config=config, parsed_by_variant=parsed, warnings=warnings, as_of_date=config.as_of_date
+        )
+        paths = run_module._write_cprs_reporting_workbooks(
+            config=config, parsed_by_variant=parsed, run_dir=run_dir, repo_cash_applied=True
+        )
+        warnings.clear()
+    
+        def _fake_export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
+            from openpyxl import load_workbook
+    
+            if workbook_path in {paths["all_programs"], config.mosers_all_programs_xlsx}:
+                workbook = load_workbook(workbook_path, data_only=True)
+                try:
+                    rows = list(workbook[sheet_name].values)
+                    cash = [row[3] for row in rows if len(row) > 3 and row[2] == "CIBC"]
+                    assert cash == [1234567], "exporter must read adjusted CIBC cash"
+                finally:
+                    workbook.close()
+            assert workbook_path.is_relative_to(run_dir)
+            calls.append(
+                {"workbook_path": workbook_path, "sheet_name": sheet_name, "output_png": output_png}
+            )
+            output_png.parent.mkdir(parents=True, exist_ok=True)
+            from PIL import Image
+    
+            Image.new("RGB", (20, 20), "blue").save(output_png)
+            return output_png
+    
+        monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", _fake_export)
+    
+>       result = run_module._generate_cprs_screenshot_inputs(
+            workbook_paths=paths, config=config, run_dir=run_dir, warnings=warnings
+        )
+
+tests/pipeline/test_cprs_screenshot_generation.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/counter_risk/pipeline/run.py:3312: in _generate_cprs_screenshot_inputs
+    export_worksheet_range_as_png(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workbook_path = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2142/test_generates_screenshot_for_0/inputs/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx')
+sheet_name = 'CPRS - CH'
+output_png = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2142/test_generates_screenshot_for_0/run/_screenshots/all_programs_ch.png')
+
+    def _fake_export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
+        from openpyxl import load_workbook
+    
+        if workbook_path in {paths["all_programs"], config.mosers_all_programs_xlsx}:
+            workbook = load_workbook(workbook_path, data_only=True)
+            try:
+                rows = list(workbook[sheet_name].values)
+                cash = [row[3] for row in rows if len(row) > 3 and row[2] == "CIBC"]
+>               assert cash == [1234567], "exporter must read adjusted CIBC cash"
+E               AssertionError: exporter must read adjusted CIBC cash
+E               assert [] == [1234567]
+E                 
+E                 Right contains one more item: 1234567
+E                 
+E                 Full diff:
+E                 + []
+E                 - [
+E                 -     1234567,
+E                 - ]
+
+tests/pipeline/test_cprs_screenshot_generation.py:65: AssertionError
+=============================== warnings summary ===============================
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.7' currently installed).
+    from pandas.core.computation.check import NUMEXPR_INSTALLED
+
+tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted
+  /opt/anaconda3/lib/python3.12/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.7' currently installed).
+    from pandas.core import (
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /Users/teacher/.codex/orchestrator/worktrees/stranske__Counter_Risk__1159__opener/docs/evidence/issue-1159/gate.xml -
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_cprs_screenshot_generation.py::test_generates_screenshot_for_each_configured_variant_and_table_adjusted
+============ 1 failed, 1 passed, 8 deselected, 2 warnings in 1.69s =============

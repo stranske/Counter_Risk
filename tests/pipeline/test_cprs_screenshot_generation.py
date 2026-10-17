@@ -38,26 +38,47 @@ def _build_config(tmp_path: Path, **overrides: Any) -> WorkflowConfig:
     return WorkflowConfig(**defaults)
 
 
-def test_generates_screenshot_for_each_configured_variant_and_table(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_generates_screenshot_for_each_configured_variant_and_table_adjusted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
 ) -> None:
-    config = _build_config(tmp_path)
+    config = cprs_workflow_config
     run_dir = tmp_path / "run"
     warnings: list[str] = []
     calls: list[dict[str, Any]] = []
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=warnings, as_of_date=config.as_of_date
+    )
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=run_dir, repo_cash_applied=True
+    )
+    warnings.clear()
 
     def _fake_export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
+        from openpyxl import load_workbook
+
+        if workbook_path in {paths["all_programs"], config.mosers_all_programs_xlsx}:
+            workbook = load_workbook(workbook_path, data_only=True)
+            try:
+                rows = list(workbook[sheet_name].values)
+                cash = [row[3] for row in rows if len(row) > 3 and row[2] == "CIBC"]
+                assert cash == [1234567], "exporter must read adjusted CIBC cash"
+            finally:
+                workbook.close()
+        assert workbook_path.is_relative_to(run_dir)
         calls.append(
             {"workbook_path": workbook_path, "sheet_name": sheet_name, "output_png": output_png}
         )
         output_png.parent.mkdir(parents=True, exist_ok=True)
-        output_png.write_bytes(b"fake-png")
+        from PIL import Image
+
+        Image.new("RGB", (20, 20), "blue").save(output_png)
         return output_png
 
     monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", _fake_export)
 
     result = run_module._generate_cprs_screenshot_inputs(
-        config=config, run_dir=run_dir, warnings=warnings
+        workbook_paths=paths, config=config, run_dir=run_dir, warnings=warnings
     )
 
     assert set(result) == {"slide1", "slide2", "slide6", "slide7", "slide16", "slide17"}
@@ -65,16 +86,16 @@ def test_generates_screenshot_for_each_configured_variant_and_table(
     assert len(calls) == 6
 
     call_by_sheet_and_workbook = {(call["sheet_name"], call["workbook_path"]) for call in calls}
-    assert (("CPRS - CH", config.mosers_all_programs_xlsx)) in call_by_sheet_and_workbook
-    assert (("CPRS - FCM", config.mosers_all_programs_xlsx)) in call_by_sheet_and_workbook
-    assert (("CPRS - CH", config.mosers_ex_trend_xlsx)) in call_by_sheet_and_workbook
-    assert (("CPRS - FCM", config.mosers_ex_trend_xlsx)) in call_by_sheet_and_workbook
-    assert (("CPRS - CH", config.mosers_trend_xlsx)) in call_by_sheet_and_workbook
-    assert (("CPRS - FCM", config.mosers_trend_xlsx)) in call_by_sheet_and_workbook
+    assert (("CPRS - CH", paths["all_programs"])) in call_by_sheet_and_workbook
+    assert (("CPRS - FCM", paths["all_programs"])) in call_by_sheet_and_workbook
+    assert (("CPRS - CH", paths["ex_trend"])) in call_by_sheet_and_workbook
+    assert (("CPRS - FCM", paths["ex_trend"])) in call_by_sheet_and_workbook
+    assert (("CPRS - CH", paths["trend"])) in call_by_sheet_and_workbook
+    assert (("CPRS - FCM", paths["trend"])) in call_by_sheet_and_workbook
 
     for path in result.values():
         assert path.is_relative_to(run_dir)
-        assert path.read_bytes() == b"fake-png"
+        assert path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
 def test_skips_variant_without_configured_workbook(
@@ -92,7 +113,14 @@ def test_skips_variant_without_configured_workbook(
     monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", _fake_export)
 
     result = run_module._generate_cprs_screenshot_inputs(
-        config=config, run_dir=run_dir, warnings=warnings
+        workbook_paths={
+            variant: path
+            for variant, field in run_module._CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT.items()
+            if (path := getattr(config, field)) is not None
+        },
+        config=config,
+        run_dir=run_dir,
+        warnings=warnings,
     )
 
     assert set(result) == {"slide1", "slide2", "slide6", "slide7"}
@@ -118,7 +146,14 @@ def test_export_failure_appends_warning_and_continues(
     monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", _fake_export)
 
     result = run_module._generate_cprs_screenshot_inputs(
-        config=config, run_dir=run_dir, warnings=warnings
+        workbook_paths={
+            variant: path
+            for variant, field in run_module._CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT.items()
+            if (path := getattr(config, field)) is not None
+        },
+        config=config,
+        run_dir=run_dir,
+        warnings=warnings,
     )
 
     assert "slide2" not in result
@@ -195,3 +230,62 @@ def test_picture_shape_aspect_ratio_reads_real_template(tmp_path: Path) -> None:
     ratio = run_module._picture_shape_aspect_ratio(pptx_path=pptx_path, slide_number=1)
 
     assert ratio == pytest.approx(2.0)
+
+
+def test_reporting_workbooks_without_adjustment_are_byte_identical(
+    tmp_path: Path,
+    cprs_workflow_config: WorkflowConfig,
+) -> None:
+    config = cprs_workflow_config
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant={}, run_dir=tmp_path / "run", repo_cash_applied=False
+    )
+    for variant, path in paths.items():
+        source = getattr(config, run_module._CPRS_SCREENSHOT_WORKBOOK_FIELD_BY_VARIANT[variant])
+        assert path != source
+        assert path.read_bytes() == source.read_bytes()
+
+
+def test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates(
+    tmp_path: Path,
+    cprs_workflow_config: WorkflowConfig,
+) -> None:
+    import hashlib
+
+    from openpyxl import load_workbook
+
+    from counter_risk.parsers import parse_cprs_ch, parse_fcm_totals
+
+    config = cprs_workflow_config
+    source = config.mosers_all_programs_xlsx
+    assert source is not None and config.cash_source_path is not None
+    workbook = load_workbook(source)
+    worksheet = workbook["CPRS - CH"]
+    worksheet["D6"] = "Cash"
+    worksheet["C22"] = "Morgan Stanley"
+    worksheet["D22"] = 999
+    workbook.save(source)
+    workbook.close()
+    original_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+    cash = {"Morgan Stanley": 100, "CIBC": 200, "ASL": 300, "Scotia": 400, "Daiwa": 500}
+    config.cash_source_path.write_text(
+        "counterparty,cash_value\n" + "".join(f"{name},{amount}\n" for name, amount in cash.items())
+    )
+    parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+    run_module._apply_daily_holdings_repo_cash(
+        config=config, parsed_by_variant=parsed, warnings=[], as_of_date=config.as_of_date
+    )
+    paths = run_module._write_cprs_reporting_workbooks(
+        config=config, parsed_by_variant=parsed, run_dir=tmp_path / "run", repo_cash_applied=True
+    )
+    repo = [
+        row
+        for row in run_module._records(parse_cprs_ch(paths["all_programs"]))
+        if row["Segment"] == "repo"
+    ]
+    for name, amount in cash.items():
+        assert [row["Cash"] for row in repo if row["Counterparty"] == name] == [amount]
+    # New FCM totals are also inside the totals section, ahead of futures detail.
+    totals = run_module._records(parse_fcm_totals(paths["all_programs"]))
+    assert next(row["Notional"] for row in totals if row["counterparty"] == "CIBC") == 200
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == original_hash

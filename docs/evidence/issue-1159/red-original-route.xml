@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="1.616" timestamp="2026-10-16T21:22:11.403112-05:00" hostname="server.trs.private"><testcase classname="tests.pipeline.test_cprs_screenshot_generation" name="test_generates_screenshot_for_each_configured_variant_and_table_adjusted" time="0.878"><failure message="AssertionError: exporter must read adjusted CIBC cash&#10;assert [] == [1234567]&#10;  &#10;  Right contains one more item: 1234567&#10;  &#10;  Full diff:&#10;  + []&#10;  - [&#10;  -     1234567,&#10;  - ]">tmp_path = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2142/test_generates_screenshot_for_0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x11204e690&gt;
+cprs_workflow_config = WorkflowConfig(as_of_date=datetime.date(2025, 12, 31), run_date=None, mosers_all_programs_xlsx=PosixPath('/Users/teach...acher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2142/test_generates_screenshot_for_0/runs'))
+
+    def test_generates_screenshot_for_each_configured_variant_and_table_adjusted(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+    ) -&gt; None:
+        config = cprs_workflow_config
+        run_dir = tmp_path / "run"
+        warnings: list[str] = []
+        calls: list[dict[str, Any]] = []
+        parsed = run_module._parse_inputs(run_module._resolve_input_paths(config))
+        run_module._apply_daily_holdings_repo_cash(
+            config=config, parsed_by_variant=parsed, warnings=warnings, as_of_date=config.as_of_date
+        )
+        paths = run_module._write_cprs_reporting_workbooks(
+            config=config, parsed_by_variant=parsed, run_dir=run_dir, repo_cash_applied=True
+        )
+        warnings.clear()
+    
+        def _fake_export(*, workbook_path: Path, sheet_name: str, output_png: Path) -&gt; Path:
+            from openpyxl import load_workbook
+    
+            if workbook_path in {paths["all_programs"], config.mosers_all_programs_xlsx}:
+                workbook = load_workbook(workbook_path, data_only=True)
+                try:
+                    rows = list(workbook[sheet_name].values)
+                    cash = [row[3] for row in rows if len(row) &gt; 3 and row[2] == "CIBC"]
+                    assert cash == [1234567], "exporter must read adjusted CIBC cash"
+                finally:
+                    workbook.close()
+            assert workbook_path.is_relative_to(run_dir)
+            calls.append(
+                {"workbook_path": workbook_path, "sheet_name": sheet_name, "output_png": output_png}
+            )
+            output_png.parent.mkdir(parents=True, exist_ok=True)
+            from PIL import Image
+    
+            Image.new("RGB", (20, 20), "blue").save(output_png)
+            return output_png
+    
+        monkeypatch.setattr(excel_com, "export_worksheet_range_as_png", _fake_export)
+    
+&gt;       result = run_module._generate_cprs_screenshot_inputs(
+            workbook_paths=paths, config=config, run_dir=run_dir, warnings=warnings
+        )
+
+tests/pipeline/test_cprs_screenshot_generation.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/counter_risk/pipeline/run.py:3312: in _generate_cprs_screenshot_inputs
+    export_worksheet_range_as_png(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+workbook_path = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2142/test_generates_screenshot_for_0/inputs/MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx')
+sheet_name = 'CPRS - CH'
+output_png = PosixPath('/Users/teacher/.codex/orchestrator/agent-runtime/codex/tmp/pytest-of-teacher/pytest-2142/test_generates_screenshot_for_0/run/_screenshots/all_programs_ch.png')
+
+    def _fake_export(*, workbook_path: Path, sheet_name: str, output_png: Path) -&gt; Path:
+        from openpyxl import load_workbook
+    
+        if workbook_path in {paths["all_programs"], config.mosers_all_programs_xlsx}:
+            workbook = load_workbook(workbook_path, data_only=True)
+            try:
+                rows = list(workbook[sheet_name].values)
+                cash = [row[3] for row in rows if len(row) &gt; 3 and row[2] == "CIBC"]
+&gt;               assert cash == [1234567], "exporter must read adjusted CIBC cash"
+E               AssertionError: exporter must read adjusted CIBC cash
+E               assert [] == [1234567]
+E                 
+E                 Right contains one more item: 1234567
+E                 
+E                 Full diff:
+E                 + []
+E                 - [
+E                 -     1234567,
+E                 - ]
+
+tests/pipeline/test_cprs_screenshot_generation.py:65: AssertionError</failure></testcase><testcase classname="tests.pipeline.test_cprs_screenshot_generation" name="test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates" time="0.230" /></testsuite></testsuites>

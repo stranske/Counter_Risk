@@ -56,3 +56,37 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
             continue
         if "integration" in relative_parts and "tests" in relative_parts:
             item.add_marker(slow)
+
+
+@pytest.fixture
+def cprs_workflow_config(tmp_path: Path):
+    """Real reporting inputs copied away from the immutable fixture archive."""
+    import shutil
+    from datetime import date
+
+    from counter_risk.config import WorkflowConfig
+
+    fixtures = Path(__file__).parent / "fixtures"
+    names = {
+        "mosers_all_programs_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
+        "mosers_ex_trend_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+        "mosers_trend_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+        "hist_all_programs_3yr_xlsx": "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+        "hist_ex_llc_3yr_xlsx": "Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+        "hist_llc_3yr_xlsx": "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+        "monthly_pptx": "Monthly Counterparty Exposure Report.pptx",
+    }
+    inputs = tmp_path / "inputs"
+    inputs.mkdir()
+    for name in names.values():
+        shutil.copyfile(fixtures / name, inputs / name)
+    cash = tmp_path / "repo-cash.csv"
+    cash.write_text("counterparty,cash_value\nCIBC,1234567\n")
+    return WorkflowConfig(
+        **{field: inputs / name for field, name in names.items()},
+        as_of_date=date(2025, 12, 31),
+        cash_source_type="csv",
+        cash_source_path=cash,
+        enable_screenshot_replacement=True,
+        output_root=tmp_path / "runs",
+    )

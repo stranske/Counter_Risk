@@ -1,0 +1,15 @@
+{
+  "repository": "stranske/Counter_Risk",
+  "issue": 1159,
+  "surface": "opener-lane",
+  "experiment_id": "advice:365e87490d54",
+  "recommendation": "deliberate-break-verifier",
+  "dispatch_ready": false,
+  "decision": "declined gated local_verify.py invocation; used its causal-proof concept in serialized verify_break.py with raw logs, JUnit and byte-restoration hashes",
+  "not_applicable": {
+    "codemod-campaign": "One finite pipeline bug, no multi-step migration",
+    "runtime-ac-checks": "No dispatch-ready match; exact pytest gates plus an explicit Office platform handoff used"
+  },
+  "advisor_limit": "Direct live-registry command denied capabilities.json.lock write. Identical CLI ran against a temporary snapshot via ORCH_CAPABILITIES_PATH and ORCH_LOCAL_RUNTIME. This is advisory evidence, not a live-registry recording.",
+  "pr_binding": "The eventual PR body records this disposition; exact URL is recorded in the publication receipt."
+}
