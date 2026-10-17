@@ -6156,3 +6156,82 @@ def test_write_change_attribution_split_current_conservation(tmp_path: Path, sha
     assert sum(float(row["prior_notional"]) for row in report_rows) == 250.0
     assert sum(float(row["notional_change"]) for row in report_rows) == 50.0
     assert all(row["confidence"] == "High" for row in report_rows)
+
+
+def test_limit_alias_pipeline_csv_and_manifest_are_identical_under_strict_missing(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fixtures = Path("tests/fixtures")
+    limits_path = tmp_path / "config" / "limits.yml"
+    limits_path.parent.mkdir()
+    limits_path.write_text(
+        "schema_version: 1\nstrict_missing_entities: true\nlimits:\n"
+        "  - entity_type: clearing_house\n    entity_name: cme\n"
+        "    limit_value: 0.35\n    limit_kind: percent_of_total\n",
+        encoding="utf-8",
+    )
+    _use_limit_config_path(monkeypatch, limits_path)
+    monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(
+        run_module,
+        "_write_outputs",
+        lambda **kwargs: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SKIPPED),
+        ),
+    )
+    inputs = {
+        "mosers_all_programs_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx",
+        "mosers_ex_trend_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx",
+        "mosers_trend_xlsx": "MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx",
+        "hist_all_programs_3yr_xlsx": "Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx",
+        "hist_ex_llc_3yr_xlsx": "Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx",
+        "hist_llc_3yr_xlsx": "Historical Counterparty Risk Graphs - LLC 3 Year.xlsx",
+        "monthly_pptx": "Monthly Counterparty Exposure Report.pptx",
+    }
+    observed = []
+    for index, clearing_rows in enumerate(
+        [
+            [("CME", 60.0), ("ICE", 40.0)],
+            [("CME Clearing House", 60.0), ("ICE Clear U.S.", 40.0)],
+            [("CME", 30.0), ("CME Clearing House", 30.0), ("ICE Clear U.S.", 40.0)],
+        ]
+    ):
+        config_path = tmp_path / f"alias-{index}.yml"
+        config_path.write_text(
+            "as_of_date: 2025-12-31\n"
+            + "".join(f"{key}: {fixtures / name}\n" for key, name in inputs.items())
+            + f"output_root: {tmp_path / str(index)}\n",
+            encoding="utf-8",
+        )
+        parsed = {
+            variant: {
+                "totals": _FakeDataFrame(
+                    records=[], columns=["counterparty", "Notional", "NotionalChange"]
+                ),
+                "futures": _FakeDataFrame(
+                    records=[
+                        {
+                            "account": f"account-{row}",
+                            "description": "fixture",
+                            "class": "Rates",
+                            "fcm": "fixture-fcm",
+                            "clearing_house": label,
+                            "notional": amount,
+                        }
+                        for row, (label, amount) in enumerate(clearing_rows)
+                    ]
+                ),
+            }
+            for variant in ("all_programs", "ex_trend", "trend")
+        }
+        monkeypatch.setattr(
+            run_module, "_parse_inputs", lambda _, parsed=parsed: _with_cprs_ch(parsed)
+        )
+        run_dir = run_pipeline(config_path)
+        manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+        summary = manifest["limit_breach_summary"]
+        assert summary["breach_count"] == summary["warning_breach_count"] == 1
+        assert not any("missing from exposures" in warning for warning in manifest["warnings"])
+        observed.append(((run_dir / "limit_breaches.csv").read_bytes(), summary))
+    assert observed[0] == observed[1] == observed[2]

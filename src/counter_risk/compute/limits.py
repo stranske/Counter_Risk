@@ -11,7 +11,7 @@ from typing import Any, cast
 from pydantic import ValidationError
 
 from counter_risk.limits_config import LimitEntry, LimitsConfig
-from counter_risk.normalize import resolve_counterparty
+from counter_risk.normalize import resolve_clearing_house, resolve_counterparty
 
 _NOTIONAL_KEYS = ("notional", "Notional", "exposure", "total", "amount")
 _LIMIT_GRANULARITY_KEY = "_limit_granularity"
@@ -91,8 +91,11 @@ def _normalize_entity_key(value: object) -> str:
 
 
 def _canonical_entity_key(entity_type: str, entity_name: str) -> str:
-    if entity_type == "counterparty":
-        resolution = resolve_counterparty(entity_name)
+    if entity_type in {"counterparty", "fcm", "clearing_house"}:
+        resolver = (
+            resolve_clearing_house if entity_type == "clearing_house" else resolve_counterparty
+        )
+        resolution = resolver(entity_name)
         if resolution.canonical_key is not None:
             return _normalize_entity_key(resolution.canonical_key)
     return _normalize_entity_key(entity_name)

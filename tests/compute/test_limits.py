@@ -530,3 +530,107 @@ def test_registered_alias_triggers_canonical_limit() -> None:
     assert find_missing_limit_entities(unknown_exposures, limits_cfg) == [
         {"entity_type": "counterparty", "entity_name": "bank_of_america"}
     ]
+
+
+@pytest.mark.parametrize(
+    ("entity_type", "canonical", "alias"),
+    [
+        ("clearing_house", "cme", "CME Clearing House"),
+        ("clearing_house", "ice", "ICE Clear U.S."),
+        ("fcm", "bank_of_america", "Bank of America, NA"),
+    ],
+)
+def test_registered_futures_alias_has_identical_limits_and_missing_results(
+    entity_type: str, canonical: str, alias: str
+) -> None:
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": entity_type,
+                "entity_name": canonical,
+                "limit_value": 35.0,
+                "limit_kind": "absolute_notional",
+                "severity": "fail",
+            }
+        ],
+    }
+    canonical_rows = [{entity_type: canonical, "notional": 60.0}]
+    alias_rows = [{entity_type: alias, "notional": 60.0}]
+    expected = _as_records(check_limits(canonical_rows, policy))
+    assert len(expected) == 1 and expected[0]["actual_value"] == 60.0
+    assert _as_records(check_limits(alias_rows, policy)) == expected
+    assert find_missing_limit_entities(alias_rows, policy) == []
+
+
+def test_clearing_house_split_alias_aggregation_preserves_percent_breach() -> None:
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "clearing_house",
+                "entity_name": "cme",
+                "limit_value": 0.35,
+                "limit_kind": "percent_of_total",
+            }
+        ],
+    }
+    canonical = [
+        {"clearing_house": "CME", "notional": 60.0},
+        {"clearing_house": "ICE", "notional": 40.0},
+    ]
+    split = [
+        {"clearing_house": "CME", "notional": 30.0},
+        {"clearing_house": "CME Clearing House", "notional": 30.0},
+        {"clearing_house": "ICE Clear U.S.", "notional": 40.0},
+    ]
+    expected = _as_records(check_limits(canonical, policy))
+    assert expected[0]["actual_value"] == pytest.approx(0.6)
+    assert _as_records(check_limits(split, policy)) == expected
+    assert find_missing_limit_entities(split, policy) == []
+
+
+def test_unknown_clearing_house_alias_and_disabled_limit_preserve_missing_policy() -> None:
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "clearing_house",
+                "entity_name": "cme",
+                "limit_value": 35.0,
+                "limit_kind": "absolute_notional",
+            },
+            {
+                "entity_type": "clearing_house",
+                "entity_name": "disabled",
+                "limit_value": 1.0,
+                "limit_kind": "absolute_notional",
+                "enabled": False,
+            },
+        ],
+    }
+    rows = [{"clearing_house": "Unregistered Clearing House", "notional": 60.0}]
+    assert _as_records(check_limits(rows, policy)) == []
+    assert find_missing_limit_entities(rows, policy) == [
+        {"entity_type": "clearing_house", "entity_name": "cme"}
+    ]
+
+
+@pytest.mark.parametrize("entity_type", ["segment", "custom_group"])
+def test_policy_group_aliases_are_not_resolved_through_registry(entity_type: str) -> None:
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": entity_type,
+                "entity_name": "cme",
+                "limit_value": 35.0,
+                "limit_kind": "absolute_notional",
+            }
+        ],
+    }
+    rows = [{entity_type: "CME Clearing House", "notional": 60.0}]
+    assert _as_records(check_limits(rows, policy)) == []
+    assert find_missing_limit_entities(rows, policy) == [
+        {"entity_type": entity_type, "entity_name": "cme"}
+    ]
