@@ -310,3 +310,23 @@ def test_adjusted_reporting_handles_new_rows_and_collapsed_duplicates(
     totals = run_module._records(parse_fcm_totals(paths["all_programs"]))
     assert next(row["Notional"] for row in totals if row["counterparty"] == "CIBC") == 200
     assert hashlib.sha256(source.read_bytes()).hexdigest() == original_hash
+
+
+def test_adjusted_reporting_snapshot_reports_missing_repo_segment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cprs_workflow_config: WorkflowConfig
+) -> None:
+    from hashlib import sha256
+
+    from counter_risk.parsers import cprs_ch
+
+    source = cprs_workflow_config.mosers_all_programs_xlsx
+    original_hash = sha256(source.read_bytes()).hexdigest()
+    monkeypatch.setattr(cprs_ch, "_scan_segments", lambda _rows: [])
+    with pytest.raises(ValueError, match="missing the Repo segment"):
+        run_module._write_cprs_reporting_workbooks(
+            config=cprs_workflow_config,
+            parsed_by_variant={"all_programs": {}},
+            run_dir=tmp_path / "run",
+            repo_cash_applied=True,
+        )
+    assert sha256(source.read_bytes()).hexdigest() == original_hash

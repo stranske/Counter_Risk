@@ -3179,7 +3179,9 @@ def _write_cprs_reporting_workbooks(
         # and TIPS columns. It is still the operator's Cash column.
         ch_columns.setdefault("Cash", ch_columns["TIPS"] - 1)
         segments = cprs_ch._scan_segments(ch_rows)
-        repo = next(segment for segment in segments if segment.segment_type == "repo")
+        repo = next((segment for segment in segments if segment.segment_type == "repo"), None)
+        if repo is None:
+            raise ValueError("CPRS reporting workbook is missing the Repo segment")
         repo_end = (
             min(
                 (segment.start_row for segment in segments if segment.start_row > repo.start_row),

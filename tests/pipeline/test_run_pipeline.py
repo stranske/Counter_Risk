@@ -6185,7 +6185,7 @@ def test_screenshot_repo_cash_agrees_with_historical_and_totals(
 
     def export(*, workbook_path: Path, sheet_name: str, output_png: Path) -> Path:
         seen.append(workbook_path)
-        assert workbook_path.is_relative_to(tmp_path / "run")
+        assert workbook_path.resolve().is_relative_to((tmp_path / "run").resolve())
         if "all_programs" in workbook_path.name:
             workbook = load_workbook(workbook_path, data_only=True)
             try:

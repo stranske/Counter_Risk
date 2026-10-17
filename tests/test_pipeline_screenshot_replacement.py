@@ -508,6 +508,42 @@ def test_office_cash_change_updates_final_ppt_media_preserving_inputs(
         config_path = tmp_path / f"office-{index}.yml"
         config_path.write_text(yaml.safe_dump(config.model_dump(mode="json")))
         run_dir = run_module.run_pipeline(config_path, output_dir=tmp_path / f"office-{index}")
+        # Build a reference with the literal authoritative cash amount, independently
+        # of the pipeline's adjusted values. Reuse layout/styles only; never derive
+        # the expected amount from actual pixels or the reporting cell's value.
+        from openpyxl import load_workbook
+
+        from counter_risk.integrations import excel_com
+
+        snapshot = (
+            run_dir / "_cprs_reporting" / ("all_programs_" + config.mosers_all_programs_xlsx.name)
+        )
+        expected_workbook = run_dir / "expected-authoritative-cash.xlsx"
+        workbook = load_workbook(snapshot, data_only=True)
+        try:
+            for sheet_name in ("CPRS - CH", "CPRS - FCM"):
+                sheet = workbook[sheet_name]
+                cash_cells = [sheet.cell(row[0].row, 4) for row in sheet if row[2].value == "CIBC"]
+                assert len(cash_cells) == 1
+                assert (
+                    cash_cells[0].value == amount
+                ), f"{sheet_name} must contain authoritative cash {amount}"
+                cash_cells[0].value = amount
+            workbook.save(expected_workbook)
+        finally:
+            workbook.close()
+        expected_media: dict[int, bytes] = {}
+        for slide_number, sheet_name in ((1, "CPRS - CH"), (2, "CPRS - FCM")):
+            expected_png = run_dir / f"expected-authoritative-cash-{slide_number}.png"
+            excel_com.export_worksheet_range_as_png(
+                workbook_path=expected_workbook, sheet_name=sheet_name, output_png=expected_png
+            )
+            target_ratio = run_module._picture_shape_aspect_ratio(
+                pptx_path=config.monthly_pptx, slide_number=slide_number
+            )
+            if target_ratio is not None:
+                run_module._pad_image_to_aspect_ratio(expected_png, target_ratio=target_ratio)
+            expected_media[slide_number] = expected_png.read_bytes()
         media: dict[tuple[str, int], bytes] = {}
         for kind, filename in (
             ("master", "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx"),
@@ -530,6 +566,17 @@ def test_office_cash_change_updates_final_ppt_media_preserving_inputs(
                 assert (
                     media[kind, slide_number] == generated.read_bytes()
                 ), f"Final {kind} slide {slide_number} must embed the generated CPRS image"
+                with (
+                    Image.open(BytesIO(media[kind, slide_number])) as actual_image,
+                    Image.open(BytesIO(expected_media[slide_number])) as expected_image,
+                ):
+                    assert actual_image.size == expected_image.size
+                    assert (
+                        ImageChops.difference(
+                            actual_image.convert("RGB"), expected_image.convert("RGB")
+                        ).getbbox()
+                        is None
+                    ), f"Final {kind} slide {slide_number} must visibly render cash {amount}"
                 print(
                     index, kind, slide_number, hashlib.sha256(media[kind, slide_number]).hexdigest()
                 )
@@ -571,6 +618,7 @@ def test_office_cash_change_updates_final_ppt_media_preserving_inputs(
                 ],
                 "generated_images_embedded": True,
                 "decoded_pixels_changed": True,
+                "literal_authoritative_cash_reference_matches": True,
             },
             indent=2,
         )
