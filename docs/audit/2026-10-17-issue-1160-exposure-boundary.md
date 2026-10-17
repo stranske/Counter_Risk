@@ -273,3 +273,121 @@ connector requires approval and this run's approval policy is `never`.
 After validation, the commit attempt failed at `git add`: Git could not create
 `.git/index.lock` on the read-only filesystem. The CSV regression and handoff
 updates remain uncommitted; no push was attempted.
+
+## Muse keepalive follow-up: combined declared-contract check
+
+Re-verified the bounded seam at current HEAD (`a904171`, which already merged
+the audit above): `parsers/cprs_fcm.py:152,215` variant Scope guards →
+`pipeline/run.py:2503` `_build_limit_exposure_rows` (All Programs only) and
+`:2431,2478` partitioned concentration control → `compute/limits.py` canonical
+alias resolution and granularity denominators. Dispositions unchanged:
+alias/scope losses are confirmed-historical and repaired by #1168/#1170,
+concentration is the already-correct control, and U1–U5 remain unknown
+(report-only, no issue filed, no production fix bundled).
+
+New `test_boundary_audit_declared_contract_alias_and_overlap_combined` in
+`tests/compute/test_limits.py` exercises alias-only and overlapping-subset
+probes in a single evaluation: futures FCM/clearing-house shares (0.6) and the
+counterparty share (5/7) breach simultaneously without denominator
+contamination, the 125 absolute cap stays clean, and `subset_only` stays
+missing.
+
+Delivery evidence (`docs/evidence/issue-1160/muse-round-deliberate-break.log`):
+
+- `python -m pytest tests/compute/test_limits.py -q -m "not slow"`: **104
+  passed** (103 prior + 1 combined).
+- Deliberate-break gate: disconnecting the Trend totals Scope guard at
+  `src/counter_risk/parsers/cprs_fcm.py:152` made
+  `test_boundary_audit_parser_variant_scope[trend]` fail (1 failed, 1 passed,
+  exit 1); the file was restored byte-identical (`git diff --exit-code`) and
+  the full file reran **104 passed**.
+
+## Muse keepalive classification follow-up
+
+Classification is now executable, not only tabular. New
+`test_boundary_audit_classification_intentional_aggregation_vs_segment_partition`
+in `tests/compute/test_limits.py` separates the three dispositions at the
+`compute/limits.py` boundary:
+
+- **Intentional aggregation (I):** an unscoped `fcm` cap for
+  `bank_of_america` sums two registered alias spellings
+  (`Bank of America, NA` in Equity, `Bank of America NA` in Treasury) across
+  segments to 0.6 of the futures universe. Segment is aggregated only
+  because the policy entity type does not select it.
+- **Preserved dimension / control:** a `segment`-typed cap still partitions
+  -- Equity breaches at 0.7 while Treasury (0.3) does not -- matching the
+  already-correct partitioned concentration control
+  (`pipeline/run.py:2431,2478` grouping by variant/segment), which remains
+  unchanged and passing.
+- **Confirmed alias loss (C, repaired):** the same test fails when canonical
+  alias resolution in `compute/limits.py:_canonical_entity_key` is
+  disconnected (deliberate-break: 1 failed, `bank_of_america` breach
+  missing; restored byte-identical, 1 passed). This is the #1168 repair
+  surface; no new production fix is bundled.
+- **Unknown (U):** U1-U5 above remain report-only. This test asserts nothing
+  about them; no issue is filed and no defect is invented for them.
+
+Known-instance mapping is unchanged: alias loss -> #1168, overlapping-subset
+scope loss -> #1170 (policy #1161), both merged. The new test returns no
+uncovered gap: it only pins the intentional-vs-preserved classification
+between them. `src/counter_risk/parsers/cprs_fcm.py` is not modified by
+this follow-up; its variant Scope guards (`:152` totals, `:215` futures)
+remain the deliberate-break target already logged in
+`docs/evidence/issue-1160/muse-round-deliberate-break.log`.
+
+## Muse keepalive mapping follow-up (cprs_fcm producer boundary)
+
+The known-instance mapping is now pinned at the producer named by the task,
+`src/counter_risk/parsers/cprs_fcm.py`, by new
+`test_boundary_audit_cprs_fcm_known_instances_map_to_approved_work` in
+`tests/compute/test_limits.py`:
+
+| Known instance | Producer contract at `cprs_fcm.py` | Approved work | Uncovered gap returned |
+| --- | --- | --- | --- |
+| Registered FCM/clearing-house + counterparty alias loss | Parser preserves raw spellings (`Bank of America, NA`, `CME Clearing House`, `Citibank`/`Citigroup`) as separate signed rows; it does not merge, net (60/-40), or canonicalise | #1168 canonicalisation in `compute/limits.py` | None at parser |
+| Overlapping-subset (All Programs vs Trend/Ex Trend) scope loss | Scope guards `:152` (Trend totals empty) and `:215` (Ex Trend futures empty); retained sections carry scaled source rows; only `all_programs` reaches `_build_limit_exposure_rows` | #1170, policy #1161 | None at parser |
+
+Returned for human review, without filing issues and without bundled
+production repairs: only the pre-existing report-only unknowns U1-U5
+above. They are not parser gaps, are not reclassified as defects, and are
+not asserted by the new test. `cprs_fcm.py` itself is unchanged.
+
+Deliberate-break gate for this mapping check: disconnecting the Trend
+totals Scope guard at `cprs_fcm.py:152` made the new test fail (1 failed;
+Trend totals leaked 6000/-3000/9000 rows); restored byte-identical
+(`git diff --exit-code -- src` clean) and the full limits file reran
+**106 passed** (105 prior + 1 mapping). Recorded in
+`docs/evidence/issue-1160/muse-round-deliberate-break.log`.
+
+## Muse keepalive inventory/classification follow-up
+
+The Inventory and Classification tasks are now also executable, not only
+tabular. New `test_boundary_audit_inventory_dimensions_parser_to_limits`
+traces every dimension on the bounded seam in one parsed-workbook trace:
+
+- **Producer (`parsers/cprs_fcm.py`, I):** totals columns are exactly
+  `counterparty` + five asset classes + `Notional`/`NotionalChange`;
+  futures columns are `account, description, class, fcm, clearing_house,
+  notional`. No variant or canonical column exists at the parser.
+- **Concentration reshaper/control (`pipeline/run.py`, I, control):**
+  rows are exactly `{variant, segment, counterparty, canonical_key,
+  notional}`, variants `{all_programs, ex_trend}`, segments the five
+  classes plus `total`, and `Citibank`/`Citigroup` share one
+  `canonical_key` (C, #1168 repaired downstream of the parser).
+- **Limit builder (`pipeline/run.py`, I/C #1170):** counterparty rows are
+  exactly `{granularity, variant, counterparty, notional}` with variant
+  fixed to `all_programs`; futures rows carry `fcm`, `clearing_house`,
+  and `class`→`segment`; `account`/`description`/`canonical_key` are
+  intentionally absent (canonicalisation lives in `compute/limits.py`).
+- **Limit consumer (`compute/limits.py`, I):** the `bank_of_america`
+  breach carries the canonical entity name and no `variant` or
+  `canonical_key` dimension, matching the single-universe contract.
+  Segment-as-entity partitioning remains pinned by the classification
+  test; U1–U5 remain unknown and unasserted.
+
+Acceptance evidence: `python -m pytest tests/compute/test_limits.py -q`
+= **107 passed** (nonzero collection). Deliberate-break: disconnecting
+the Trend Scope guard at `cprs_fcm.py:152` failed both the inventory and
+mapped-instances tests (2 failed); restored byte-identical and the full
+file reran 107 passed. See
+`docs/evidence/issue-1160/muse-round-deliberate-break.log`.

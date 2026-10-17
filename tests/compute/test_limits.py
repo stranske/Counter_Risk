@@ -20,6 +20,7 @@ from counter_risk.compute.limits import (
 from counter_risk.limits_config import LimitsConfig, load_limits_config
 from counter_risk.parsers.cprs_fcm import parse_fcm_totals, parse_futures_detail
 from counter_risk.pipeline.run import (
+    _build_concentration_exposure_rows,
     _build_limit_exposure_rows,
     _compute_and_write_concentration_metrics,
 )
@@ -1018,6 +1019,70 @@ def test_boundary_audit_parser_variant_scope(
     ), f"{variant} must exclude {excluded_section} before numerical consumers receive rows"
 
 
+def test_boundary_audit_cprs_fcm_known_instances_map_to_approved_work(
+    boundary_parsed_workbooks: dict[str, dict[str, Any]],
+) -> None:
+    """Map the two known instances at their ``cprs_fcm.py`` producer boundary.
+
+    Alias instance (approved work #1168, in ``compute/limits.py``): the
+    parser must preserve raw registered-alias spellings as separate signed
+    rows; canonicalisation happens downstream, not in the parser. If the
+    parser merged, netted, or canonicalised here, the downstream alias cap
+    would see different rows. Overlapping-subset instance (approved work
+    #1170, policy #1161): the parser Scope guards at
+    ``parsers/cprs_fcm.py:152`` (Trend totals) and ``:215`` (Ex Trend
+    futures) must exclude the out-of-scope section before any consumer
+    sees it, so only All Programs rows reach limits. No uncovered parser
+    gap is returned by this mapping: U1-U5 remain report-only unknowns and
+    are not asserted here, and no production fix is bundled.
+    """
+    totals = _as_records(boundary_parsed_workbooks["all_programs"]["totals"])
+    by_counterparty = {row["counterparty"]: row for row in totals}
+    assert set(by_counterparty) == {"Citibank", "Citigroup", "Other"}, (
+        "parser must keep registered counterparty aliases as separate source rows "
+        "for downstream canonicalisation (#1168)"
+    )
+    assert by_counterparty["Citibank"]["Notional"] == pytest.approx(60.0)
+    assert by_counterparty["Citigroup"]["Notional"] == pytest.approx(-40.0), (
+        "alias rows must retain signed notionals at the parser; gross-magnitude "
+        "aggregation is a limits consumer concern, not parser netting (60 + -40 != 20 here)"
+    )
+
+    futures = _as_records(boundary_parsed_workbooks["all_programs"]["futures"])
+    assert {row["fcm"] for row in futures} == {"Bank of America, NA", "Unknown FCM"}
+    assert {row["clearing_house"] for row in futures} == {
+        "CME Clearing House",
+        "ICE Clear U.S.",
+    }, "parser must emit raw FCM/clearing-house spellings, not canonical keys (#1168)"
+
+    # Overlapping-subset Scope guards (#1170): excluded sections are empty
+    # at the parser, retained sections carry their (scaled) source rows.
+    assert _as_records(boundary_parsed_workbooks["trend"]["totals"]) == [], (
+        "Trend totals Scope guard (cprs_fcm.py:152) must exclude totals; "
+        "disconnecting it must fail this mapped-instance check"
+    )
+    assert _as_records(boundary_parsed_workbooks["ex_trend"]["futures"]) == [], (
+        "Ex Trend futures Scope guard (cprs_fcm.py:215) must exclude futures; "
+        "disconnecting it must fail this mapped-instance check"
+    )
+    assert {
+        row["counterparty"] for row in _as_records(boundary_parsed_workbooks["ex_trend"]["totals"])
+    } == {
+        "Citibank",
+        "Citigroup",
+        "Other",
+    }
+    trend_futures = _as_records(boundary_parsed_workbooks["trend"]["futures"])
+    assert {row["notional"] for row in trend_futures} == {6000.0, -4000.0}
+
+    rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+    assert rows, "All Programs parser rows must reach the limit builder"
+    assert {row["variant"] for row in rows} == {"all_programs"}, (
+        "only the All Programs subset reaches limits; overlapping Trend/Ex Trend "
+        "parser rows add no exposure (#1170)"
+    )
+
+
 @pytest.mark.parametrize(
     "entity_type, canonical", [("fcm", "bank_of_america"), ("clearing_house", "cme")]
 )
@@ -1111,6 +1176,153 @@ def test_boundary_audit_overlap_parser_to_limit(
         assert breaches[1]["actual_value"] == pytest.approx(5 / 7)
 
 
+def test_boundary_audit_declared_contract_alias_and_overlap_combined(
+    tmp_path: Path,
+    boundary_parsed_workbooks: dict[str, dict[str, Any]],
+) -> None:
+    """Alias-only and overlapping-subset probes must hold in one limit evaluation.
+
+    The futures (FCM/clearing-house) and counterparty denominators are different
+    granularities: a registered futures alias reaching its canonical cap and an
+    All Programs counterparty cap must not contaminate each other's share, and
+    the overlapping Ex Trend/Trend subsets must add no exposure to either.
+    """
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "fcm",
+                "entity_name": "bank_of_america",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.5,
+            },
+            {
+                "entity_type": "clearing_house",
+                "entity_name": "cme",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.5,
+            },
+            {
+                "entity_type": "counterparty",
+                "entity_name": "citibank",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.5,
+            },
+            {
+                "entity_type": "counterparty",
+                "entity_name": "citibank",
+                "limit_kind": "absolute_notional",
+                "limit_value": 125.0,
+            },
+            {
+                "entity_type": "counterparty",
+                "entity_name": "subset_only",
+                "limit_kind": "absolute_notional",
+                "limit_value": 1.0,
+            },
+        ],
+    }
+    from openpyxl import load_workbook
+
+    # Presence in the parsed subset is the positive control for exclusion.
+    subset_path = tmp_path / "boundary-ex-trend.xlsx"
+    workbook = load_workbook(subset_path)
+    sheet = workbook.active
+    assert sheet is not None
+    sheet.cell(14, 4, "Subset Only")
+    sheet.cell(14, 7, 9000.0)
+    sheet.cell(14, 12, 9000.0)
+    workbook.save(subset_path)
+    workbook.close()
+    boundary_parsed_workbooks["ex_trend"]["totals"] = parse_fcm_totals(subset_path)
+    assert "Subset Only" in {
+        row["counterparty"] for row in _as_records(boundary_parsed_workbooks["ex_trend"]["totals"])
+    }, "subset-only coverage evidence must come from the XLSX parser"
+    rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+    assert {row["variant"] for row in rows} == {"all_programs"}
+    breaches = _as_records(check_limits(rows, policy))
+    by_key = {(row["entity_type"], row["entity_name"], row["limit_kind"]): row for row in breaches}
+    assert set(by_key) == {
+        ("fcm", "bank_of_america", "percent_of_total"),
+        ("clearing_house", "cme", "percent_of_total"),
+        ("counterparty", "citibank", "percent_of_total"),
+    }, "alias-only futures caps and the counterparty share cap breach; the 125 cap does not"
+    for key in (("fcm", "bank_of_america"), ("clearing_house", "cme")):
+        breach = by_key[(*key, "percent_of_total")]
+        assert breach["actual_value"] == pytest.approx(0.6)
+        assert breach["breach_amount"] == pytest.approx(0.1)
+    counterparty_breach = by_key[("counterparty", "citibank", "percent_of_total")]
+    assert counterparty_breach["actual_value"] == pytest.approx(5 / 7)
+    assert counterparty_breach["breach_amount"] == pytest.approx(5 / 7 - 0.5)
+    assert find_missing_limit_entities(rows, policy) == [
+        {"entity_type": "counterparty", "entity_name": "subset_only"}
+    ]
+
+
+def test_boundary_audit_classification_intentional_aggregation_vs_segment_partition() -> None:
+    """Classify segment handling at the limit boundary.
+
+    Intentional aggregation: an unscoped ``fcm`` cap sums its canonical
+    entity across segments, so two registered alias spellings in different
+    segments reach one cap. Preserved dimension: a ``segment``-typed cap
+    still partitions by segment, so the segment is not lost -- it is only
+    aggregated when the policy entity type does not select it. Unknown
+    boundaries (U1-U5 in the audit doc) are not asserted here.
+    """
+    rows = [
+        {
+            _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
+            "fcm": "Bank of America, NA",
+            "segment": "Equity",
+            "notional": 30.0,
+        },
+        {
+            _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
+            "fcm": "Bank of America NA",
+            "segment": "Treasury",
+            "notional": 30.0,
+        },
+        {
+            _LIMIT_GRANULARITY_KEY: _FUTURES_GRANULARITY,
+            "fcm": "Unknown FCM",
+            "segment": "Equity",
+            "notional": 40.0,
+        },
+    ]
+    policy = {
+        "schema_version": 1,
+        "limits": [
+            {
+                "entity_type": "fcm",
+                "entity_name": "bank_of_america",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.5,
+            },
+            {
+                "entity_type": "segment",
+                "entity_name": "Equity",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.65,
+            },
+            {
+                "entity_type": "segment",
+                "entity_name": "Treasury",
+                "limit_kind": "percent_of_total",
+                "limit_value": 0.65,
+            },
+        ],
+    }
+    breaches = _as_records(check_limits(rows, policy))
+    by_key = {(row["entity_type"], row["entity_name"]): row for row in breaches}
+    assert set(by_key) == {
+        ("fcm", "bank_of_america"),
+        ("segment", "equity"),
+    }, "unscoped FCM cap aggregates across segments; only the Equity segment cap breaches"
+    assert by_key[("fcm", "bank_of_america")]["actual_value"] == pytest.approx(0.6)
+    assert by_key[("segment", "equity")]["actual_value"] == pytest.approx(0.7)
+    assert find_missing_limit_entities(rows, policy) == []
+
+
 def test_boundary_audit_partitioned_concentration_control(
     tmp_path: Path, boundary_parsed_workbooks: dict[str, dict[str, Any]]
 ) -> None:
@@ -1159,3 +1371,118 @@ def test_boundary_audit_partitioned_concentration_control(
         assert isolated == [
             row for row in metrics if row["variant"] == variant
         ], f"{variant} concentration must be invariant to overlapping portfolios"
+
+
+def test_boundary_audit_inventory_dimensions_parser_to_limits(
+    boundary_parsed_workbooks: dict[str, dict[str, Any]],
+) -> None:
+    """Executable inventory of identity/variant/segment dimensions on the seam.
+
+    Producer ``parsers/cprs_fcm.py`` -> reshapers in ``pipeline/run.py`` ->
+    consumers ``compute/limits.py`` (limits) and the partitioned
+    concentration control. Classification key: I = intentional/preserved,
+    C = confirmed historical loss now repaired (#1168/#1170), U = unknown
+    (U1-U5, not asserted). Every row below is an entry from the audit
+    inventory in ``docs/audit/2026-10-17-issue-1160-exposure-boundary.md``.
+    """
+    # --- Producer: parser tables carry raw identity, no variant/canonical ---
+    # I: variant is external (filename/sheet scope guards), canonical identity
+    # is resolved downstream; asset classes are explicit totals columns.
+    totals_df = boundary_parsed_workbooks["all_programs"]["totals"]
+    assert list(totals_df.columns) == [
+        "counterparty",
+        "TIPS",
+        "Treasury",
+        "Equity",
+        "Commodity",
+        "Currency",
+        "Notional",
+        "NotionalChange",
+    ]
+    futures_df = boundary_parsed_workbooks["all_programs"]["futures"]
+    assert list(futures_df.columns) == [
+        "account",
+        "description",
+        "class",
+        "fcm",
+        "clearing_house",
+        "notional",
+    ]
+
+    # --- Concentration reshaper/control: variant+segment+canonical preserved ---
+    # I (already-correct control): every totals row expands to the five asset
+    # segments plus "total", raw label kept beside resolved canonical_key.
+    concentration_rows = _build_concentration_exposure_rows(boundary_parsed_workbooks)
+    assert concentration_rows, "concentration inventory needs parsed rows"
+    assert all(
+        set(row) == {"variant", "segment", "counterparty", "canonical_key", "notional"}
+        for row in concentration_rows
+    )
+    assert {row["variant"] for row in concentration_rows} == {"all_programs", "ex_trend"}, (
+        "concentration retains each parsed variant (Trend totals are parser-empty); "
+        "dropping variant here would break the partitioned control"
+    )
+    assert {row["segment"] for row in concentration_rows if row["variant"] == "all_programs"} == {
+        "TIPS",
+        "Treasury",
+        "Equity",
+        "Commodity",
+        "Currency",
+        "total",
+    }
+    canonical_by_label = {
+        row["counterparty"]: row["canonical_key"]
+        for row in concentration_rows
+        if row["segment"] == "total" and row["variant"] == "all_programs"
+    }
+    assert canonical_by_label["Citibank"] == canonical_by_label["Citigroup"], (
+        "C (#1168): registered counterparty aliases resolve to one canonical_key "
+        "at the reshaper, downstream of the parser"
+    )
+
+    # --- Limit builder: single All Programs universe, dimensions relabelled ---
+    # I: variant is fixed to all_programs (C scope loss repaired by #1170);
+    # futures class -> segment; account/description intentionally dropped
+    # (not limit dimensions); asset classes collapse to overall Notional.
+    limit_rows = _build_limit_exposure_rows(boundary_parsed_workbooks)
+    counterparty_rows = [
+        r for r in limit_rows if r[_LIMIT_GRANULARITY_KEY] == _COUNTERPARTY_GRANULARITY
+    ]
+    futures_rows = [r for r in limit_rows if r[_LIMIT_GRANULARITY_KEY] == _FUTURES_GRANULARITY]
+    assert counterparty_rows and futures_rows
+    assert all(
+        set(row) == {_LIMIT_GRANULARITY_KEY, "variant", "counterparty", "notional"}
+        for row in counterparty_rows
+    )
+    assert {row["variant"] for row in limit_rows} == {"all_programs"}
+    assert all(
+        {"fcm", "clearing_house", "segment"} <= set(row) for row in futures_rows
+    ), "futures limit rows must carry fcm/clearing_house and class-as-segment"
+    assert all(
+        "account" not in row and "description" not in row and "canonical_key" not in row
+        for row in limit_rows
+    ), "limit rows keep raw labels; canonicalisation is inside compute/limits.py (#1168)"
+
+    # --- Limit consumer: canonical entity, no variant partition ---
+    # I: breaches identify the canonical entity; variant is not a breach
+    # dimension because the builder supplies one universe. Segment is only
+    # an entity when a segment-typed policy selects it (classification test).
+    breaches = _as_records(
+        check_limits(
+            limit_rows,
+            {
+                "schema_version": 1,
+                "limits": [
+                    {
+                        "entity_type": "fcm",
+                        "entity_name": "bank_of_america",
+                        "limit_kind": "percent_of_total",
+                        "limit_value": 0.5,
+                    }
+                ],
+            },
+        )
+    )
+    assert len(breaches) == 1
+    assert breaches[0]["entity_name"] == "bank_of_america"
+    assert "variant" not in breaches[0] and "canonical_key" not in breaches[0]

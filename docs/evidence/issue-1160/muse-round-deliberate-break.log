@@ -1,0 +1,50 @@
+== GREEN before break ==
+tests/compute/test_limits.py ...                                         [100%]
+
+============================== 3 passed in 0.79s ===============================
+== RED after disconnecting Scope guard at src/counter_risk/parsers/cprs_fcm.py (trend totals) ==
+  +     {
+  +         'counterparty': 'Other',
+  +         'TIPS': 0.0,
+  +         'Treasury': 9000.0,
+  +         'Equity': 0.0,
+  +         'Commodity': 0.0,
+  +         'Currency': 0.0,
+  +         'Notional': 9000.0,
+  +         'NotionalChange': 0.0,
+  +     },
+  + ]
+========================= 1 failed, 1 passed in 0.87s ==========================
+exit=1
+restored byte-identical
+== GREEN after restore (full file) ==
+.............................................................            [100%]
+
+============================= 104 passed in 1.34s ==============================
+== Classification deliberate-break (limits alias resolution) ==
+Disconnecting _canonical_entity_key in src/counter_risk/compute/limits.py:
+test_boundary_audit_classification_intentional_aggregation_vs_segment_partition
+1 failed (bank_of_america breach missing); restored byte-identical
+(git diff --exit-code clean); rerun 1 passed.
+== Parser Scope deliberate-break re-run (this round) ==
+Disconnecting Trend totals guard at cprs_fcm.py:152:
+test_boundary_audit_parser_variant_scope 1 failed, 1 passed;
+restored (git diff --exit-code -- src clean); full file 105 passed.
+== Mapping follow-up deliberate-break (cprs_fcm producer boundary) ==
+New test: test_boundary_audit_cprs_fcm_known_instances_map_to_approved_work
+GREEN before break: 1 passed.
+Disconnecting Trend totals Scope guard at cprs_fcm.py:152:
+1 failed (Trend totals leaked Citibank 6000 / Citigroup -3000 / Other 9000
+rows into the mapped-instance assertion); exit 1.
+Restored byte-identical (git diff --exit-code -- src clean).
+GREEN after restore (full file): python -m pytest tests/compute/test_limits.py
+-q -m "not slow" = 106 passed.
+== Inventory follow-up deliberate-break ==
+New test: test_boundary_audit_inventory_dimensions_parser_to_limits
+GREEN before break: 1 passed.
+Disconnecting Trend totals Scope guard at cprs_fcm.py:152:
+inventory + mapped-instances tests 2 failed (Trend totals leaked into
+concentration variants / limit inventory); restored byte-identical
+(git diff --exit-code -- src clean).
+GREEN after restore: python -m pytest tests/compute/test_limits.py -q
+= 107 passed (nonzero collection, all scope-specific assertions pass).
