@@ -41,6 +41,7 @@ class ManifestBuilder:
     run_date: date
     as_of_date_resolution: DateResolution | None = None
     run_date_resolution: DateResolution | None = None
+    source_report_dates: dict[str, Any] | None = None
 
     def build(
         self,
@@ -132,6 +133,11 @@ class ManifestBuilder:
             "missing_inputs": resolved_missing_inputs,
             "reconciliation_results": resolved_reconciliation_results,
         }
+        if self.source_report_dates is not None:
+            manifest["date_resolution"]["source_report_dates"] = self.source_report_dates
+            for finding in manifest["data_quality"]["findings"]:
+                if finding["code"] == "SOURCE_REPORT_DATE_CONFLICT":
+                    finding["details"] = self.source_report_dates
         if ppt_outputs:
             manifest["ppt_outputs"] = ppt_outputs
         if concentration_metrics is not None:

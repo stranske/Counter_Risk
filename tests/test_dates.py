@@ -164,3 +164,144 @@ def test_resolve_as_of_date_to_manifest_entry_is_json_friendly() -> None:
             "raw_value": "02/28/2026",
         },
     }
+
+
+def test_compare_source_dates_detects_later_variant_without_changing_precedence() -> None:
+    from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+
+    config = _config(as_of_date=date(2026, 1, 31))
+    evidence = [
+        source_report_date_evidence(
+            variant=variant, path=f"{variant}.xlsx", headers=[f"Report Date: {value}"]
+        )
+        for variant, value in (("all_programs", "2026-01-31"), ("trend", "2026-02-28"))
+    ]
+    comparison = compare_source_report_dates(configured_date=config.as_of_date, evidence=evidence)
+    assert comparison["has_conflict"] is True
+    assert comparison["config_conflict_variants"] == ["trend"]
+    assert comparison["inter_variant_conflict"] is True
+    assert comparison["sources"][1]["path"] == "trend.xlsx"
+    assert resolve_as_of_date(config, ["Report Date: 2026-02-28"]).value == date(2026, 1, 31)
+
+
+@pytest.mark.parametrize(
+    "headers,status",
+    [
+        ([], "unverified"),
+        (["Created 2026-02-28", "Settlement 2026-01-31"], "unverified"),
+        (["Prior report date: 2026-02-28"], "unverified"),
+        (["Report date: missing; last updated 2026-02-28"], "ambiguous"),
+        (["Report date: 2026-01-310"], "ambiguous"),
+        (["Report date: 2026-01-31T23:00:00"], "ambiguous"),
+        (["Report date: 2026-01-31", "As of date: 2026-02-28"], "ambiguous"),
+        (["Report date: 2026-01-31 / 2026-02-28"], "ambiguous"),
+        (["Report date: 2026-01-31", "Report date: invalid"], "ambiguous"),
+        (["CPRS CH Header Date 2026-01-31"], "generated"),
+        (["Report date: 2026-01-31", "Generated from config as_of_date"], "generated"),
+    ],
+)
+def test_unverified_source_dates_never_confirm_match_or_conflict(headers, status) -> None:
+    from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+
+    evidence = source_report_date_evidence(variant="trend", path="trend.xlsx", headers=headers)
+    assert evidence["status"] == status
+    assert evidence["report_date"] is None
+    result = compare_source_report_dates(configured_date=date(2026, 1, 31), evidence=[evidence])
+    assert result["has_conflict"] is False
+    assert result["status"] == "unverified"
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "Report generated for Config Team",
+        "Config Team stamped report review",
+        "Config Team generated these report notes",
+        "Generated report reviewed by Configuration Team",
+    ],
+)
+@pytest.mark.parametrize("report_date", ["2026-01-31", "2026-02-28"])
+def test_config_team_notes_do_not_suppress_source_date(note: str, report_date: str) -> None:
+    from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+
+    evidence = source_report_date_evidence(
+        variant="trend", path="trend.xlsx", headers=[f"Report Date: {report_date}", note]
+    )
+    assert evidence["status"] == "identified"
+    assert evidence["report_date"] == report_date
+    result = compare_source_report_dates(configured_date=date(2026, 1, 31), evidence=[evidence])
+    assert result["has_conflict"] is (report_date == "2026-02-28")
+
+
+def test_config_team_notes_do_not_suppress_ambiguous_dates() -> None:
+    from counter_risk.dates import source_report_date_evidence
+
+    evidence = source_report_date_evidence(
+        variant="trend",
+        path="trend.xlsx",
+        headers=[
+            "Report Date: 2026-01-31",
+            "Report Date: 2026-02-28",
+            "Report generated for Config Team",
+        ],
+    )
+    assert evidence["status"] == "ambiguous"
+    assert evidence["report_date"] is None
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        "Report Date: 2026-02-28 / 2026-01-310",
+        "Report Date: 2026-01-31 / 2026-02-28T23:00:00",
+        "Report Date: 01/31/2026 / 02/28/20260",
+        "Report Date: 2026-01-31 / 2026-02-28_extra",
+        "Report Date: 2026-01-31 /2026-02-3",
+        "Report Date: 2026-02-28 /2026-01-3",
+        "Report Date: 2026-01-31 /2026-2-03",
+        "Report Date: 2026-01-31 /2026-02",
+        "Report Date: 2026-01-31 /2026-02-",
+        "Report Date: 2026-01-31 /2026-",
+        "Report Date: 2026-01-31 /02/3",
+        "Report Date: 2026-01-31 /02/3/",
+        "Report Date: 2026-01-31 /02/",
+    ],
+)
+def test_malformed_additional_date_cannot_confirm_source_period(header: str) -> None:
+    from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+
+    evidence = source_report_date_evidence(variant="trend", path="trend.xlsx", headers=[header])
+    assert evidence["status"] == "ambiguous"
+    assert evidence["report_date"] is None
+    comparison = compare_source_report_dates(configured_date=date(2026, 1, 31), evidence=[evidence])
+    assert comparison["status"] == "unverified"
+    assert comparison["has_conflict"] is False
+    # The narrower evidence grammar must not change config or legacy fallback resolution.
+    assert resolve_as_of_date(_config(as_of_date=date(2026, 1, 31)), [header]).value == date(
+        2026, 1, 31
+    )
+    expected_fallback = (
+        date(2026, 2, 28) if header.startswith("Report Date: 2026-02") else date(2026, 1, 31)
+    )
+    assert resolve_as_of_date(_config(as_of_date=None), [header]).value == expected_fallback
+
+
+@pytest.mark.parametrize(
+    "header,expected",
+    [
+        ("Report Date: 2026-01-31", date(2026, 1, 31)),
+        ("REPORT_DATE 1/31/2026", date(2026, 1, 31)),
+        ("as-of-date: 01/31/26", date(2026, 1, 31)),
+        ("As Of 1/31/68", date(2068, 1, 31)),
+        ("Report-Date: 1/31/69", date(1969, 1, 31)),
+    ],
+)
+def test_source_date_formats_compare_as_calendar_dates(header: str, expected: date) -> None:
+    from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+
+    evidence = source_report_date_evidence(variant="trend", path="trend.xlsx", headers=[header])
+    assert evidence["status"] == "identified"
+    assert evidence["report_date"] == expected.isoformat()
+    comparison = compare_source_report_dates(configured_date=expected, evidence=[evidence])
+    assert comparison["status"] == "consistent"
+    assert comparison["has_conflict"] is False

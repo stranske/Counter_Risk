@@ -56,6 +56,7 @@ def _stamp_as_of_date_on_workbook(workbook: _WorkbookLike, as_of_date: date) -> 
     worksheet = workbook[_CPRS_CH_SHEET]
     worksheet[_CPRS_CH_HEADER_DATE_LABEL_CELL] = _CPRS_CH_HEADER_DATE_LABEL
     worksheet[_CPRS_CH_HEADER_DATE_VALUE_CELL] = as_of_date
+    worksheet["C3"] = "Generated from config as_of_date (not independent source evidence)"
 
 
 def generate_mosers_workbook(

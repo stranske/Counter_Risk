@@ -1,0 +1,124 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: regressions-2.11.0, datadir-1.8.0, platformdirs-4.13.3, langsmith-0.14.11, cov-7.1.0, xdist-3.8.0, anyio-4.15.1
+collected 34 items / 30 deselected / 4 selected
+
+tests/test_dates.py FFFF                                                 [100%]
+
+=================================== FAILURES ===================================
+_ test_malformed_additional_date_cannot_confirm_source_period[Report Date: 2026-02-28 / 2026-01-310] _
+
+header = 'Report Date: 2026-02-28 / 2026-01-310'
+
+    @pytest.mark.parametrize(
+        "header",
+        [
+            "Report Date: 2026-02-28 / 2026-01-310",
+            "Report Date: 2026-01-31 / 2026-02-28T23:00:00",
+            "Report Date: 01/31/2026 / 02/28/20260",
+            "Report Date: 2026-01-31 / 2026-02-28_extra",
+        ],
+    )
+    def test_malformed_additional_date_cannot_confirm_source_period(header: str) -> None:
+        from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+    
+        evidence = source_report_date_evidence(variant="trend", path="trend.xlsx", headers=[header])
+>       assert evidence["status"] == "ambiguous"
+E       AssertionError: assert 'identified' == 'ambiguous'
+E         
+E         - ambiguous
+E         + identified
+
+tests/test_dates.py:227: AssertionError
+_ test_malformed_additional_date_cannot_confirm_source_period[Report Date: 2026-01-31 / 2026-02-28T23:00:00] _
+
+header = 'Report Date: 2026-01-31 / 2026-02-28T23:00:00'
+
+    @pytest.mark.parametrize(
+        "header",
+        [
+            "Report Date: 2026-02-28 / 2026-01-310",
+            "Report Date: 2026-01-31 / 2026-02-28T23:00:00",
+            "Report Date: 01/31/2026 / 02/28/20260",
+            "Report Date: 2026-01-31 / 2026-02-28_extra",
+        ],
+    )
+    def test_malformed_additional_date_cannot_confirm_source_period(header: str) -> None:
+        from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+    
+        evidence = source_report_date_evidence(variant="trend", path="trend.xlsx", headers=[header])
+>       assert evidence["status"] == "ambiguous"
+E       AssertionError: assert 'identified' == 'ambiguous'
+E         
+E         - ambiguous
+E         + identified
+
+tests/test_dates.py:227: AssertionError
+_ test_malformed_additional_date_cannot_confirm_source_period[Report Date: 01/31/2026 / 02/28/20260] _
+
+header = 'Report Date: 01/31/2026 / 02/28/20260'
+
+    @pytest.mark.parametrize(
+        "header",
+        [
+            "Report Date: 2026-02-28 / 2026-01-310",
+            "Report Date: 2026-01-31 / 2026-02-28T23:00:00",
+            "Report Date: 01/31/2026 / 02/28/20260",
+            "Report Date: 2026-01-31 / 2026-02-28_extra",
+        ],
+    )
+    def test_malformed_additional_date_cannot_confirm_source_period(header: str) -> None:
+        from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+    
+        evidence = source_report_date_evidence(variant="trend", path="trend.xlsx", headers=[header])
+>       assert evidence["status"] == "ambiguous"
+E       AssertionError: assert 'identified' == 'ambiguous'
+E         
+E         - ambiguous
+E         + identified
+
+tests/test_dates.py:227: AssertionError
+_ test_malformed_additional_date_cannot_confirm_source_period[Report Date: 2026-01-31 / 2026-02-28_extra] _
+
+header = 'Report Date: 2026-01-31 / 2026-02-28_extra'
+
+    @pytest.mark.parametrize(
+        "header",
+        [
+            "Report Date: 2026-02-28 / 2026-01-310",
+            "Report Date: 2026-01-31 / 2026-02-28T23:00:00",
+            "Report Date: 01/31/2026 / 02/28/20260",
+            "Report Date: 2026-01-31 / 2026-02-28_extra",
+        ],
+    )
+    def test_malformed_additional_date_cannot_confirm_source_period(header: str) -> None:
+        from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+    
+        evidence = source_report_date_evidence(variant="trend", path="trend.xlsx", headers=[header])
+>       assert evidence["status"] == "ambiguous"
+E       AssertionError: assert 'identified' == 'ambiguous'
+E         
+E         - ambiguous
+E         + identified
+
+tests/test_dates.py:227: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_dates.py::test_malformed_additional_date_cannot_confirm_source_period[Report Date: 2026-02-28 / 2026-01-310] - AssertionError: assert 'identified' == 'ambiguous'
+  
+  - ambiguous
+  + identified
+FAILED tests/test_dates.py::test_malformed_additional_date_cannot_confirm_source_period[Report Date: 2026-01-31 / 2026-02-28T23:00:00] - AssertionError: assert 'identified' == 'ambiguous'
+  
+  - ambiguous
+  + identified
+FAILED tests/test_dates.py::test_malformed_additional_date_cannot_confirm_source_period[Report Date: 01/31/2026 / 02/28/20260] - AssertionError: assert 'identified' == 'ambiguous'
+  
+  - ambiguous
+  + identified
+FAILED tests/test_dates.py::test_malformed_additional_date_cannot_confirm_source_period[Report Date: 2026-01-31 / 2026-02-28_extra] - AssertionError: assert 'identified' == 'ambiguous'
+  
+  - ambiguous
+  + identified
+======================= 4 failed, 30 deselected in 0.14s =======================
