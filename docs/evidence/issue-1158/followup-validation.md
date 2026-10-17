@@ -48,3 +48,17 @@ outside the repository and does not change formatting behavior.
 The `followup-*.txt` files capture test and formatting output. The accompanying
 manifest binds these results to the current source and tests. No hosted CI or
 review result is implied by these local checks.
+
+Final acceptance follow-up:
+
+- [x] `rg -n "resolve_clearing_house" src/counter_risk/compute/limits.py`
+  returns matches at lines 14 and 96, satisfying the remaining acceptance item.
+- Expanded the registered futures alias regression to include all supported
+  clearing-house columns (`clearing_house`, `clearinghouse`, `ch`) and FCM columns
+  (`fcm`, `fcm_name`) for absolute and percentage limits.
+- Disconnecting registry resolution in `compute/limits.py` yields 16 failures;
+  restoring the exact original source yields 16 passes.
+- Verification: 51 alias tests, 127 compute/configuration/registry tests, and
+  8 pipeline limit tests pass with `-m "not slow"`. Ruff and `git diff --check`
+  pass. Black's repository-wide check passes for all 377 files using a serial
+  formatting dispatcher to avoid the sandbox's executor restrictions.

@@ -533,11 +533,18 @@ def test_registered_alias_triggers_canonical_limit() -> None:
 
 
 @pytest.mark.parametrize(
-    ("entity_type", "canonical", "display_name", "alias"),
+    ("entity_type", "entity_column", "canonical", "display_name", "alias"),
     [
-        ("clearing_house", "cme", "CME", "CME Clearing House"),
-        ("clearing_house", "ice", "ICE", "ICE Clear U.S."),
-        ("fcm", "bank_of_america", "Bank of America", "Bank of America, NA"),
+        ("clearing_house", column, canonical, display_name, alias)
+        for column in ("clearing_house", "clearinghouse", "ch")
+        for canonical, display_name, alias in (
+            ("cme", "CME", "CME Clearing House"),
+            ("ice", "ICE", "ICE Clear U.S."),
+        )
+    ]
+    + [
+        ("fcm", column, "bank_of_america", "Bank of America", "Bank of America, NA")
+        for column in ("fcm", "fcm_name")
     ],
 )
 @pytest.mark.parametrize(
@@ -546,6 +553,7 @@ def test_registered_alias_triggers_canonical_limit() -> None:
 )
 def test_registered_futures_alias_has_identical_limits_and_missing_results(
     entity_type: str,
+    entity_column: str,
     canonical: str,
     display_name: str,
     alias: str,
@@ -565,9 +573,9 @@ def test_registered_futures_alias_has_identical_limits_and_missing_results(
             }
         ],
     }
-    other_row = {entity_type: "Unregistered Other Entity", "notional": 40.0}
-    canonical_rows = [{entity_type: display_name, "notional": 60.0}, other_row]
-    alias_rows = [{entity_type: alias, "notional": 60.0}, other_row]
+    other_row = {entity_column: "Unregistered Other Entity", "notional": 40.0}
+    canonical_rows = [{entity_column: display_name, "notional": 60.0}, other_row]
+    alias_rows = [{entity_column: alias, "notional": 60.0}, other_row]
     expected = _as_records(check_limits(canonical_rows, policy))
     assert expected == [
         {
