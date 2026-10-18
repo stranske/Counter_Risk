@@ -82,6 +82,38 @@ scenarios:
     patch:
       - {op: set_notional, segment: equity, counterparty: cp_a, value: 900.0}
 
+  # Spread Treasury across more than ten positive names so top5/top10 shares drop
+  # below 1.0 relative to the three-name base segment.
+  - id: treasury_dispersed
+    patch:
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_d, notional: 55.0}
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_e, notional: 55.0}
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_f, notional: 55.0}
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_g, notional: 55.0}
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_h, notional: 55.0}
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_i, notional: 55.0}
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_j, notional: 55.0}
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_k, notional: 55.0}
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_l, notional: 55.0}
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_m, notional: 55.0}
+      - {op: add_row, variant: all_programs, segment: treasury, counterparty: cp_n, notional: 55.0}
+
+  # Spread Equity across more than ten positive names so top5/top10 shares drop
+  # below 1.0 relative to the two-name base segment.
+  - id: equity_dispersed
+    patch:
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_c, notional: 40.0}
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_d, notional: 40.0}
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_e, notional: 40.0}
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_f, notional: 40.0}
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_g, notional: 40.0}
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_h, notional: 40.0}
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_i, notional: 40.0}
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_j, notional: 40.0}
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_k, notional: 40.0}
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_l, notional: 40.0}
+      - {op: add_row, variant: all_programs, segment: equity, counterparty: cp_m, notional: 40.0}
+
 # ---------------------------------------------------------------------------
 # Directional checks: variant vs control (base) on a flat metric key.
 # direction is from baseline_kit.DIRECTIONS (left=variant, right=control).
@@ -145,6 +177,34 @@ directionals:
     metric: all_programs.equity.hhi
     direction: increase
     enforce: true
+  # Treasury dispersion lowers Treasury top-5 share below the saturated base.
+  - id: treasury_dispersed_lowers_top5
+    scenario: treasury_dispersed
+    control: base
+    metric: all_programs.treasury.top5_share
+    direction: decrease
+    enforce: true
+  # Treasury dispersion lowers Treasury top-10 share below the saturated base.
+  - id: treasury_dispersed_lowers_top10
+    scenario: treasury_dispersed
+    control: base
+    metric: all_programs.treasury.top10_share
+    direction: decrease
+    enforce: true
+  # Equity dispersion lowers Equity top-5 share below the saturated base.
+  - id: equity_dispersed_lowers_top5
+    scenario: equity_dispersed
+    control: base
+    metric: all_programs.equity.top5_share
+    direction: decrease
+    enforce: true
+  # Equity dispersion lowers Equity top-10 share below the saturated base.
+  - id: equity_dispersed_lowers_top10
+    scenario: equity_dispersed
+    control: base
+    metric: all_programs.equity.top10_share
+    direction: decrease
+    enforce: true
 
 # ---------------------------------------------------------------------------
 # Coverage manifest: every metric the surface produces must be exercised by a
@@ -155,4 +215,8 @@ priority_metrics:
   - all_programs.total.top5_share
   - all_programs.total.top10_share
   - all_programs.treasury.hhi
+  - all_programs.treasury.top5_share
+  - all_programs.treasury.top10_share
   - all_programs.equity.hhi
+  - all_programs.equity.top5_share
+  - all_programs.equity.top10_share
