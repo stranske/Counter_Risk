@@ -27,13 +27,14 @@ definitions and the HHI scaling are in `docs/concentration_metrics.md`.
 ## Layout
 
 ```
-adapter.py                # exposure fixture + patch -> flat metrics dict (the only app glue)
-catalog.yaml              # base exposure table + scenario patches + directional checks
-invariants.py             # economic bounds -> baseline_kit.InvariantResult
-test_golden.py            # golden master of each scenario's flattened metrics
-test_directional.py       # metamorphic checks (concentrate -> HHI up, disperse -> down...)
-test_invariants.py        # invariants on base + every scenario
-test_coverage_manifest.py # metric-key coverage -> docs/reports/baseline-coverage.md
+adapter.py                   # exposure fixture + patch -> flat metrics dict (the only app glue)
+catalog.yaml                 # base exposure table + scenario patches + directional checks
+invariants.py                # economic bounds -> baseline_kit.InvariantResult
+test_golden.py               # golden master of each scenario's flattened metrics
+test_directional.py          # metamorphic checks (concentrate -> HHI up, disperse -> down...)
+test_invariants.py           # invariants on base + every scenario
+test_coverage_manifest.py    # metric-key coverage -> docs/reports/baseline-coverage.md
+test_segment_dispersion.py   # hand-check shares + control-segment isolation (#1163)
 ```
 
 ## Scenario model
@@ -44,6 +45,32 @@ supports `set_notional`, `scale_notional`, `add_row`, `drop_counterparty`,
 `zero_segment`, `keep_only` — enough to make each variant directionally
 predictable (shift mass onto one name → more concentrated; spread it → more
 dispersed).
+
+### Segment top-share dispersion (issue #1163)
+
+The base Treasury (3 names) and Equity (2 names) segments are saturated:
+`top5_share` / `top10_share` are always `1.0`, so equality assertions on those
+values do not prove sensitivity. Catalog scenarios `treasury_dispersed` and
+`equity_dispersed` add enough positive-notional counterparties to cross both
+cutoffs (`N > 10`) while leaving the other segments untouched. Hand-checkable
+expected shares are documented in `catalog.yaml` and locked by
+`test_segment_dispersion.py`. Four enforced directionals cover
+`all_programs.{treasury,equity}.{top5_share,top10_share}`; all nine flat
+concentration keys are listed under `priority_metrics`.
+
+Observable verification (not production wiring instrumentation):
+
+- Deleting any of the four segment-share directionals opens a
+  `test_priority_metrics_covered` gap.
+- Freezing a dispersed variant share at constant `1.0` fails its decrease
+  directional (`test_constant_one_mutation_fails_segment_share_directional`).
+- `docs/reports/baseline-coverage.md` reports **9 of 9** declared directional
+  keys. The report's "Observed read at runtime: 0" line is expected: coverage
+  here is catalog-declared, not a runtime-read probe of production code paths.
+
+Compatibility preserved: existing golden CSVs for pre-#1163 scenarios are not
+re-blessed; only new golden entries are added for the dispersion scenarios.
+`compute_concentration_metrics` is unchanged.
 
 ## Running
 
