@@ -399,6 +399,48 @@ Public Sub RunTrend_Click()
     RunModeClick "Trend"
 End Sub
 
+Public Sub DryRunDiscovery_Click()
+    On Error GoTo DryRunDiscoveryError
+
+    Dim parsedDate As Date
+    Dim settingsPath As String
+    Dim command As String
+    Dim status As LaunchStatus
+
+    parsedDate = ParseAsOfMonth(ReadSelectedDate())
+    settingsPath = ResolveSettingsFilePath()
+    WriteSettingsFile settingsPath, BuildSettingsJson()
+    command = "run --config " & QuoteArg(ResolveConfigPath(RunnerModeAllPrograms)) & _
+              " --settings " & QuoteArg(settingsPath) & _
+              " --dry-run-discovery --as-of-month " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd"))
+    WriteStatus PRE_LAUNCH_STATUS
+    status = ExecuteRunnerCommand(ResolveExecutablePath(), command)
+    WriteStatus POST_LAUNCH_STATUS
+    WriteLaunchResult status
+    Exit Sub
+
+DryRunDiscoveryError:
+    WriteStatus "Error"
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
+Public Sub AskAbout_Click()
+    On Error GoTo AskAboutError
+
+    Dim runFolder As String
+    Dim guidance As String
+
+    runFolder = ResolveExistingOutputDir(ResolveRepoRoot(), ReadSelectedDate())
+    guidance = "Run Q&A is not available directly in Excel. Open counter-risk gui for runner controls. Selected run folder: " & runFolder & _
+               ". Provider-backed chat requires configured credentials."
+    MsgBox guidance, vbInformation, "Ask about this run"
+    WriteResult guidance
+    Exit Sub
+
+AskAboutError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
 Public Sub OpenOutputFolder_Click()
     On Error GoTo OpenOutputFolderError
 

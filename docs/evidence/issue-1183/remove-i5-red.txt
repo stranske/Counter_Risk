@@ -1,0 +1,88 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/cr-1183-runner-actions
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 13 items
+
+tests/test_runner_workbook.py .F.F.........                              [100%]
+
+=================================== FAILURES ===================================
+_____ test_runner_workbook_has_required_ooxml_structure_and_content_types ______
+
+    def test_runner_workbook_has_required_ooxml_structure_and_content_types() -> None:
+        workbook_path = Path("Runner.xlsm")
+        with ZipFile(workbook_path) as zip_file:
+            members = set(zip_file.namelist())
+            expected_members = {
+                "[Content_Types].xml",
+                "_rels/.rels",
+                "docProps/app.xml",
+                "docProps/core.xml",
+                "xl/workbook.xml",
+                "xl/_rels/workbook.xml.rels",
+                "xl/styles.xml",
+                "xl/vbaProject.bin",
+                "xl/worksheets/sheet1.xml",
+                "xl/worksheets/_rels/sheet1.xml.rels",
+                "xl/worksheets/sheet2.xml",
+                "xl/worksheets/sheet3.xml",
+                "xl/worksheets/sheet4.xml",
+                "xl/drawings/vmlDrawing1.vml",
+            }
+            expected_members.update(
+                f"xl/ctrlProps/{ctrl_prop_name}"
+                for *_, ctrl_prop_name in EXPECTED_RUNNER_BUTTONS.values()
+            )
+>           assert expected_members.issubset(members)
+E           AssertionError: assert False
+E            +  where False = <built-in method issubset of set object at 0x10519fbc0>({'[Content_Types].xml', '_rels/.rels', 'docProps/app.xml', 'docProps/core.xml', 'xl/_rels/workbook.xml.rels', 'xl/ctrlProps/ctrlProp1.xml', ...})
+E            +    where <built-in method issubset of set object at 0x10519fbc0> = {'[Content_Types].xml', '_rels/.rels', 'docProps/app.xml', 'docProps/core.xml', 'xl/_rels/workbook.xml.rels', 'xl/ctrlProps/ctrlProp1.xml', ...}.issubset
+
+tests/test_runner_workbook.py:143: AssertionError
+__________________ test_runner_workbook_contains_run_controls __________________
+
+    def test_runner_workbook_contains_run_controls() -> None:
+        workbook_path = Path("Runner.xlsm")
+        with ZipFile(workbook_path) as zip_file:
+            workbook_root = _read_xml(zip_file, "xl/workbook.xml")
+            workbook_rels_root = _read_xml(zip_file, "xl/_rels/workbook.xml.rels")
+    
+            sheets = workbook_root.findall("ss:sheets/ss:sheet", NAMESPACES)
+            sheet_by_name = {sheet.attrib["name"]: sheet for sheet in sheets}
+            rel_target_by_id = {
+                rel.attrib["Id"]: rel.attrib["Target"]
+                for rel in workbook_rels_root.findall("pr:Relationship", NAMESPACES)
+            }
+    
+            runner_sheet_target = rel_target_by_id[
+                sheet_by_name["Runner"].attrib[f"{{{RELATIONSHIP_NS}}}id"]
+            ]
+            runner_sheet_root = _read_xml(zip_file, f"xl/{runner_sheet_target}")
+    
+            for cell_ref, expected_text in EXPECTED_RUNNER_ACTION_CELLS.items():
+                node = runner_sheet_root.find(
+                    f"ss:sheetData/ss:row[@r='5']/ss:c[@r='{cell_ref}']/ss:is/ss:t",
+                    NAMESPACES,
+                )
+                assert node is not None
+                assert node.text == expected_text
+    
+            legacy_drawing = runner_sheet_root.find("ss:legacyDrawing", NAMESPACES)
+            assert legacy_drawing is not None
+            assert legacy_drawing.attrib[f"{{{RELATIONSHIP_NS}}}id"] == "rId1"
+    
+            controls = runner_sheet_root.findall(
+                "ss:controls/mc:AlternateContent/mc:Choice/ss:control",
+                NAMESPACES,
+            )
+>           assert len(controls) == len(EXPECTED_RUNNER_BUTTONS)
+E           AssertionError: assert 8 == 9
+E            +  where 8 = len([<Element '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}control' at 0x105232a20>, <Element '{http://sche...l' at 0x105243f60>, <Element '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}control' at 0x105243740>, ...])
+E            +  and   9 = len({'A5': ('Run All', 'RunAll_Click', 1025, 'rId2', 'ctrlProp1.xml'), 'B5': ('Run Ex Trend', 'RunExTrend_Click', 1026, 'r..., 'rId4', 'ctrlProp3.xml'), 'E5': ('Open Output Folder', 'OpenOutputFolder_Click', 1028, 'rId5', 'ctrlProp4.xml'), ...})
+
+tests/test_runner_workbook.py:334: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_runner_workbook.py::test_runner_workbook_has_required_ooxml_structure_and_content_types
+FAILED tests/test_runner_workbook.py::test_runner_workbook_contains_run_controls
+========================= 2 failed, 11 passed in 0.58s =========================

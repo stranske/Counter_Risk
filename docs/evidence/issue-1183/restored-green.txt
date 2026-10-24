@@ -1,0 +1,15 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/teacher/.codex/automations/pd-workloop-resume/worktrees/cr-1183-runner-actions
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, langsmith-0.12.3, datadir-1.8.0, regressions-2.11.0, anyio-4.15.1
+collected 49 items
+
+tests/test_runner_workbook.py .............                              [ 26%]
+tests/test_runner_vba_module.py ................                         [ 59%]
+tests/test_extract_vba_modules.py ......                                 [ 71%]
+tests/test_build_xlsm.py ........                                        [ 87%]
+tests/test_vba_runnerlaunch_signature.py ..                              [ 91%]
+tests/spec/test_macro_spec_doc.py ....                                   [100%]
+
+============================== 49 passed in 0.46s ==============================

@@ -63,6 +63,23 @@ Runs the counter-risk pipeline in **Trend** mode for the month selected on the
 `Runner` sheet. It follows the same launch flow as the other run macros, but uses
 the Trend configuration.
 
+### `DryRunDiscovery_Click`
+
+Spec ID: `MS-DRY-RUN-DISCOVERY`
+
+Runs All Programs discovery for `Runner!B3` using the current settings JSON,
+`--dry-run-discovery --as-of-month`, and the existing structured launch/error
+result. It does not allocate a new output folder.
+
+### `AskAbout_Click`
+
+Spec ID: `MS-ASK-ABOUT`
+
+Shows the selected month's latest run folder and explains that Q&A is unavailable
+directly in Excel, naming `counter-risk gui` for runner controls. This guidance
+performs no provider call. Native Excel execution remains a release check;
+the readable embedded VBA fixture is not proof of a compiled project.
+
 ### `OpenOutputFolder_Click`
 
 Spec ID: `MS-OPEN-OUTPUT`

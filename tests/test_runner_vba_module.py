@@ -113,6 +113,31 @@ def test_runner_vba_module_has_stub_friendly_shell_and_filesystem_boundaries() -
     assert "Dir$(directoryPath, vbDirectory)" in module_source
 
 
+def test_runner_dry_run_uses_discovery_command_and_current_settings() -> None:
+    source = (
+        _module_source().split("Public Sub DryRunDiscovery_Click()", 1)[1].split("End Sub", 1)[0]
+    )
+    assert "ParseAsOfMonth(ReadSelectedDate())" in source
+    assert "WriteSettingsFile settingsPath, BuildSettingsJson()" in source
+    assert "ResolveConfigPath(RunnerModeAllPrograms)" in source
+    assert '" --settings " & QuoteArg(settingsPath)' in source
+    assert '" --dry-run-discovery --as-of-month "' in source
+    assert "ExecuteRunnerCommand(ResolveExecutablePath(), command)" in source
+    assert "WriteLaunchResult status" in source
+    assert "DryRunDiscoveryError:" in source
+    assert "--output-dir" not in source
+
+
+def test_runner_ask_about_names_gui_and_selected_run_without_spending() -> None:
+    source = _module_source().split("Public Sub AskAbout_Click()", 1)[1].split("End Sub", 1)[0]
+    assert "ResolveExistingOutputDir(ResolveRepoRoot(), ReadSelectedDate())" in source
+    assert "counter-risk gui" in source
+    assert "configured credentials" in source
+    assert "MsgBox guidance" in source
+    assert "WriteResult guidance" in source
+    assert "ExecuteRunnerCommand" not in source
+
+
 def test_runner_vba_module_reads_data_quality_status_and_writes_colored_cell() -> None:
     module_source = _module_source()
 

@@ -60,6 +60,8 @@ EXPECTED_RUNNER_BUTTONS = {
     "F5": ("Open Manifest", "OpenManifest_Click", 1029, "rId6", "ctrlProp5.xml"),
     "G5": ("Open Summary", "OpenSummary_Click", 1030, "rId7", "ctrlProp6.xml"),
     "H5": ("Open PPT Folder", "OpenPPTFolder_Click", 1031, "rId8", "ctrlProp7.xml"),
+    "D5": ("Dry-Run Discovery", "DryRunDiscovery_Click", 1032, "rId9", "ctrlProp8.xml"),
+    "I5": ("Ask about this run", "AskAbout_Click", 1033, "rId10", "ctrlProp9.xml"),
 }
 PUBLIC_SUB_PATTERN = re.compile(r"^Public Sub ([A-Za-z0-9_]+)\(\)", re.MULTILINE)
 
@@ -514,6 +516,8 @@ def test_build_runner_workbook_extracts_searchable_vba_text(tmp_path: Path) -> N
     assert "Public Sub RunAll_Click()" in vba_text
     assert "Public Sub RunExTrend_Click()" in vba_text
     assert "Public Sub RunTrend_Click()" in vba_text
+    assert "Public Sub DryRunDiscovery_Click()" in vba_text
+    assert "Public Sub AskAbout_Click()" in vba_text
     assert "OpenOutputFolder_Click" in vba_text
     assert "BuildRunArguments" in vba_text
     assert "BuildExecutableCommand" in vba_text

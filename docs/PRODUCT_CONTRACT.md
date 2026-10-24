@@ -19,7 +19,7 @@ Supply all workbook variants → run pipeline → review consolidated exposures,
 
 ## Current operator gaps and boundaries
 - The Windows release bundle and final `Runner.xlsm` click behavior still require a Windows build plus the manual checks in `docs/RELEASE_CHECKLIST.md`; passing maintainer CLI coverage does not claim that operator release verification is complete.
-- `Runner.xlsm` retains the `Ask about this run` label without a bound Form Control or VBA handler. Provider-backed chat also requires configured credentials.
+- `Runner.xlsm` binds Dry-Run Discovery and Ask about this run to VBA handlers. Dry-run uses the selected month and settings; Ask-about shows the selected run folder and names `counter-risk gui` for runner controls (Q&A is not available directly in Excel). Provider-backed chat requires configured credentials. Headless OOXML/source-mirror tests do not establish compiled VBA or desktop click behavior.
 - `counter-risk run --fixture-replay` is a packaging-validation path that copies checked-in fixtures by design. Monthly operators use workflow mode for current calculations.
 
 ## Accepted unscoped limit universe (U04 / #1161)
