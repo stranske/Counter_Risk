@@ -1,5 +1,7 @@
 # Audit: calc-core (economic core)
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 Summary line: The calculations are largely correct and well-documented for the **non-negative-notional** case, with careful NaN/blank/division-by-zero handling in `futures_delta` and `limits`. The main numeric-correctness risk is **mixed-sign (short) notionals**: `compute_concentration_metrics` (HHI / Top5 / Top10) is mathematically wrong when any notional is negative, and it is inconsistent with the rest of the subsystem (`top_exposures`, `check_limits`), which deliberately use `abs()`. Secondary risks: silent NaN propagation into WAL via the parser, and an unused `px_date` parameter in WAL.
 
 Files reviewed:

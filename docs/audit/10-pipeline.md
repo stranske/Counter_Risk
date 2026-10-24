@@ -1,5 +1,7 @@
 # Pipeline Subsystem Audit
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 Summary: Orchestration in `run.py` is disciplined and consistent (every stage wrapped in try/except, stage-event recording, RuntimeError re-raise with operator messages). Manifest construction, schema validation, and reconciliation are high quality. The two material issues are (1) a green/yellow/red gap where a *fail*-severity limit breach never escalates the data-quality `overall_status` to RED, and (2) a dead, stale, buggy duplicate of `run_fixture_replay` in the shadowed top-level `pipeline.py` module. A fragile test-injection monkeypatch leaks into production reconciliation code.
 
 ## Summary

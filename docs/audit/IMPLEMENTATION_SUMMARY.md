@@ -1,5 +1,7 @@
 # Counter_Risk audit-fix implementation — summary
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 Branch: **`audit-fixes`** → PR https://github.com/stranske/Counter_Risk/pull/732. Base: `main`.
 
 **All 27 audit items now implemented** (the 3 initially-deferred MINORs were completed in a follow-up

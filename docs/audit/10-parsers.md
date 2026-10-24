@@ -1,5 +1,7 @@
 # Parsers Subsystem Audit
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 Summary: The parser subsystem is generally well-structured, defensive, and fails loudly on missing sheets/headers/segments rather than silently producing wrong numbers. The main robustness gap is a **UTF-8 BOM bug** that breaks CSV/overrides ingestion exactly on the Windows operator path (Excel "CSV UTF-8" exports). Secondary risks: locale/number-format assumptions (US-only, no European decimal-comma support) and the CPRS-FCM parser's reliance on hard-coded column indices instead of a header map (unlike CPRS-CH). There is substantial, low-risk duplication across the two XML-reading parsers and the four `_coerce_float`/`_extract_numeric` helpers that could be consolidated.
 
 ## Summary

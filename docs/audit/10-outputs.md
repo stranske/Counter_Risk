@@ -1,5 +1,7 @@
 # Outputs Subsystem Audit
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 Summary line: The outputs subsystem is well-structured, well-typed, and platform-safe (COM is correctly Windows-gated with graceful fallbacks), but it carries a few real correctness/usability traps — most notably a silently-ignored `as_of_date`, a confusing screenshot-replacement failure mode tied to hardcoded slide geometry, and a dead `OutputContext.warnings` channel — plus a moderate amount of mechanical duplication across the three reporting "variants."
 
 ## Summary

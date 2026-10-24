@@ -1,5 +1,7 @@
 # Audit 23 — Windows Local-Implementation Readiness
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 **Summary line:** A fresh Windows PC cannot today go from zero to a complete report
 package without a dev toolchain. The PyInstaller bundle ships, but the frozen `.exe`
 crashes during reconciliation because `name_registry.yml` is resolved via a

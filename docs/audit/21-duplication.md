@@ -1,5 +1,7 @@
 # Audit 21: Repo-Wide Duplication (src/counter_risk/)
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 Summary: The single largest, highest-payoff duplication is a hand-rolled raw-XLSX
 reader (zip + XML + shared-strings) copied near-byte-identically between the two
 CPRS parsers. A second meaningful cluster is the "parse a messy accounting string
