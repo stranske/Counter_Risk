@@ -1,5 +1,7 @@
 # Functionality & Parameter Wiring Audit
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 Summary line: Most parameters are correctly loaded, validated, and wired to economically-correct consumers (limits, HHI, series inclusion, reconciliation all move outputs in the right direction). One BLOCKER: the `percent_of_total` limit denominator is built from a mixed-granularity row set, so clearing-house / segment percentage limits are silently diluted by counterparty-totals notional and will under-report breaches.
 
 ## Summary

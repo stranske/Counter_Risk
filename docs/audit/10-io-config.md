@@ -1,5 +1,7 @@
 # io-config Subsystem Audit
 
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+
 Summary: The configuration-loading and name-canonicalization substrate is in good shape overall — Pydantic models with `extra="forbid"` mean typo/unknown YAML keys are reliably caught at load time, and validation/error reporting is uniform and operator-friendly. The main weaknesses are (1) inconsistent strictness across the three structurally-identical YAML loaders (only `limits_config` rejects duplicate keys; `config` and `name_registry` silently take "last wins"), and (2) substantial structural duplication: three copies of the load+validate+error-format scaffold, two copies of the apostrophe/dash canonicalization regexes, and two dead/unused symbols.
 
 ## Summary

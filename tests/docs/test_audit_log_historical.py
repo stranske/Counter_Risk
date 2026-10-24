@@ -15,3 +15,29 @@ def test_in_repo_audit_logs_marked_historical() -> None:
     assert HISTORICAL_BANNER in remaining_work
     assert "docs/PRODUCT_CONTRACT.md" in audit_report
     assert "docs/PRODUCT_CONTRACT.md" in remaining_work
+
+
+def test_dimension_audit_logs_marked_historical() -> None:
+    """Dimension audit snapshots must carry the shared historical banner on line 3."""
+    repo_root = Path(__file__).resolve().parents[2]
+    audit_files = (
+        "10-calc-core.md",
+        "10-io-config.md",
+        "10-outputs.md",
+        "10-parsers.md",
+        "10-pipeline.md",
+        "10-ui.md",
+        "20-functionality-wiring.md",
+        "21-duplication.md",
+        "22-design-ux.md",
+        "23-windows-readiness.md",
+        "IMPLEMENTATION_SUMMARY.md",
+    )
+    for filename in audit_files:
+        content = (repo_root / "docs/audit" / filename).read_text(encoding="utf-8")
+        lines = content.splitlines()
+        assert len(lines) >= 3, filename
+        assert HISTORICAL_BANNER in lines[2], filename
+        assert "docs/PRODUCT_CONTRACT.md" in content, filename
+        if filename == "22-design-ux.md":
+            assert "The “Ask about this run” action remains unbound" in lines[2]
