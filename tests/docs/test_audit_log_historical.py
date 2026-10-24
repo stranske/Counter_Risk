@@ -18,6 +18,7 @@ def test_in_repo_audit_logs_marked_historical() -> None:
 
 
 def test_dimension_audit_logs_marked_historical() -> None:
+    """Dimension audit snapshots must carry the shared historical banner on line 3."""
     repo_root = Path(__file__).resolve().parents[2]
     audit_files = (
         "10-calc-core.md",
@@ -34,5 +35,7 @@ def test_dimension_audit_logs_marked_historical() -> None:
     )
     for filename in audit_files:
         content = (repo_root / "docs/audit" / filename).read_text(encoding="utf-8")
-        assert HISTORICAL_BANNER in content, filename
+        lines = content.splitlines()
+        assert len(lines) >= 3, filename
+        assert HISTORICAL_BANNER in lines[2], filename
         assert "docs/PRODUCT_CONTRACT.md" in content, filename
