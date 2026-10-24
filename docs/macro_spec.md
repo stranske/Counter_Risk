@@ -95,6 +95,22 @@ Opens the run output directory for the selected reporting month. That directory
 contains the manifest-registered PPT deliverables. If the directory is missing, it
 reports an error in the result cell instead of silently succeeding.
 
+### `DryRunDiscovery_Click`
+
+Spec ID: `MS-DRY-RUN-DISCOVERY`
+
+Lists the input files discovery would select for the selected reporting month without
+running the workflow. It launches the same `counter-risk run --dry-run-discovery`
+path as the Tk runner, captures the CLI output to a temp file, shows it in a message
+box, and writes `Success` or the exit-code error to the result cell.
+
+### `AskAbout_Click`
+
+Spec ID: `MS-ASK-ABOUT`
+
+Run Q&A is not available inside Excel. The button tells the operator so, names the
+selected month's run folder, and points to `counter-risk gui` instead of doing nothing.
+
 ## Per-Macro Requirements
 
 ### `RunAll_Click`
@@ -278,6 +294,42 @@ Output expectations (ranges affected, invariants):
 - Attempts to open the folder
 - If folder missing, writes an error to `Runner!B8` instead of silent success
 - Does not mutate MOSERS workbook ranges
+
+### `DryRunDiscovery_Click`
+
+Spec ID: `MS-DRY-RUN-DISCOVERY`
+
+Fixture sources:
+- VBA module fixture: `assets/vba/RunnerLaunch.bas`
+- CLI path exercised: `counter-risk run --config config\all_programs.yml --settings <temp settings> --dry-run-discovery --as-of-month <month-end>`
+
+Required inputs (sheet names, columns):
+- Sheet `Runner`
+- Cell `B3` selected month text (`MM/YYYY`)
+- Cell `B7` status output target (constant `STATUS_CELL`)
+- Cell `B8` result output target (constant `RESULT_CELL`)
+
+Output expectations (ranges affected, invariants):
+- Writes runner settings JSON to the temp settings file, as the run macros do
+- Captures CLI stdout/stderr to `%TEMP%\counter-risk-dry-run-discovery.txt` and shows it
+- Writes `Success` or `Error <code>: Dry-run discovery exited with code <n>` to `Runner!B8`
+- Does not create a run folder or mutate MOSERS workbook ranges
+
+### `AskAbout_Click`
+
+Spec ID: `MS-ASK-ABOUT`
+
+Fixture sources:
+- VBA module fixture: `assets/vba/RunnerLaunch.bas`
+
+Required inputs (sheet names, columns):
+- Sheet `Runner`
+- Cell `B3` selected month text (`MM/YYYY`) for run folder resolution
+
+Output expectations (ranges affected, invariants):
+- Shows a message that run Q&A is unavailable in Excel, naming the run folder and `counter-risk gui`
+- Writes `Ask about this run: use counter-risk gui` to `Runner!B8`
+- Launches no process and does not mutate MOSERS workbook ranges
 
 ## Known-Acceptable Drift
 
