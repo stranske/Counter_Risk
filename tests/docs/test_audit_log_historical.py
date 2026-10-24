@@ -39,3 +39,5 @@ def test_dimension_audit_logs_marked_historical() -> None:
         assert len(lines) >= 3, filename
         assert HISTORICAL_BANNER in lines[2], filename
         assert "docs/PRODUCT_CONTRACT.md" in content, filename
+        if filename == "22-design-ux.md":
+            assert "The “Ask about this run” action remains unbound" in lines[2]

@@ -1,6 +1,6 @@
 # 22 — Design & Ease of Use Audit: Local Operator Surfaces
 
-> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
+> **Historical audit snapshot (superseded 2026-09-23):** The BLOCKER-class findings in this report were addressed on `main` in merged PRs #1081–#1090 and #1103–#1107. The “Ask about this run” action remains unbound (see #1183), an exception to that resolution summary. For the current core-function list and open gaps, see `docs/PRODUCT_CONTRACT.md` and GitHub issues — do not treat the narrative below as live operator state.
 
 Summary line: The tkinter GUI is the clearly more operator-ready surface; the shipped `Runner.xlsm` has labeled "buttons" that are inert cell text (no clickable controls wired to the VBA macros), which is a BLOCKER for a non-technical operator.
 
