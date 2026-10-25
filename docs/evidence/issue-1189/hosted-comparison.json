@@ -1,0 +1,222 @@
+{
+  "before": {
+    "run_id": 40160750372,
+    "head_sha": "76eb6c448f463fba90e6793b63c0e52e098d4b42",
+    "run_started_at": "2026-10-25T04:07:50Z",
+    "last_job_completed_at": "2026-10-25T04:33:12Z",
+    "referenced_workflows": [
+      {
+        "path": "stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main",
+        "sha": "58ff03379b271c51f941d6c6fe42636f2947c4a8",
+        "ref": "refs/heads/main"
+      }
+    ],
+    "elapsed_seconds": 1522,
+    "jobs": [
+      {
+        "id": 121071597676,
+        "name": "classify changed paths",
+        "conclusion": "success",
+        "started_at": "2026-10-25T04:07:52Z",
+        "completed_at": "2026-10-25T04:07:57Z",
+        "elapsed_seconds": 5
+      },
+      {
+        "id": 121071618541,
+        "name": "Python CI / Validate inputs",
+        "conclusion": "success",
+        "started_at": "2026-10-25T04:07:59Z",
+        "completed_at": "2026-10-25T04:08:03Z",
+        "elapsed_seconds": 4
+      },
+      {
+        "id": 121071638597,
+        "name": "Python CI / select reusable CI scope",
+        "conclusion": "success",
+        "started_at": "2026-10-25T04:08:06Z",
+        "completed_at": "2026-10-25T04:08:12Z",
+        "elapsed_seconds": 6
+      },
+      {
+        "id": 121071638605,
+        "name": "Python CI / lint-ruff",
+        "conclusion": "success",
+        "started_at": "2026-10-25T04:08:05Z",
+        "completed_at": "2026-10-25T04:08:31Z",
+        "elapsed_seconds": 26
+      },
+      {
+        "id": 121071638620,
+        "name": "Python CI / typecheck-mypy",
+        "conclusion": "success",
+        "started_at": "2026-10-25T04:08:06Z",
+        "completed_at": "2026-10-25T04:08:51Z",
+        "elapsed_seconds": 45
+      },
+      {
+        "id": 121071639637,
+        "name": "Python CI / lint-format",
+        "conclusion": "skipped",
+        "started_at": "2026-10-25T04:08:04Z",
+        "completed_at": "2026-10-25T04:08:04Z",
+        "elapsed_seconds": 0
+      },
+      {
+        "id": 121071664950,
+        "name": "Python CI / python 3.13",
+        "conclusion": "success",
+        "started_at": "2026-10-25T04:08:14Z",
+        "completed_at": "2026-10-25T04:19:38Z",
+        "elapsed_seconds": 684
+      },
+      {
+        "id": 121071665022,
+        "name": "Python CI / python 3.14",
+        "conclusion": "success",
+        "started_at": "2026-10-25T04:08:14Z",
+        "completed_at": "2026-10-25T04:32:52Z",
+        "elapsed_seconds": 1478,
+        "steps": [
+          {
+            "name": "Install dependencies",
+            "started_at": "2026-10-25T04:08:41Z",
+            "completed_at": "2026-10-25T04:12:53Z",
+            "elapsed_seconds": 252
+          },
+          {
+            "name": "Pytest (unit tests with coverage)",
+            "started_at": "2026-10-25T04:13:02Z",
+            "completed_at": "2026-10-25T04:32:42Z",
+            "elapsed_seconds": 1180
+          }
+        ]
+      },
+      {
+        "id": 121076151117,
+        "name": "Python CI / logs summary",
+        "conclusion": "success",
+        "started_at": "2026-10-25T04:32:54Z",
+        "completed_at": "2026-10-25T04:33:03Z",
+        "elapsed_seconds": 9
+      },
+      {
+        "id": 121076183035,
+        "name": "gate-summary",
+        "conclusion": "success",
+        "started_at": "2026-10-25T04:33:05Z",
+        "completed_at": "2026-10-25T04:33:12Z",
+        "elapsed_seconds": 7
+      }
+    ]
+  },
+  "after": {
+    "run_id": 40210271632,
+    "head_sha": "fb3122ff892cafc0b6130f49b5675d8dd631530b",
+    "run_started_at": "2026-10-25T16:08:42Z",
+    "last_job_completed_at": "2026-10-25T16:27:07Z",
+    "referenced_workflows": [
+      {
+        "path": "stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main",
+        "sha": "056470c8ef75118cade2f9d5fb438907d1ff2dad",
+        "ref": "refs/heads/main"
+      }
+    ],
+    "elapsed_seconds": 1105,
+    "jobs": [
+      {
+        "id": 121219808836,
+        "name": "classify changed paths",
+        "conclusion": "success",
+        "started_at": "2026-10-25T16:08:45Z",
+        "completed_at": "2026-10-25T16:08:51Z",
+        "elapsed_seconds": 6
+      },
+      {
+        "id": 121219839332,
+        "name": "Python CI / Validate inputs",
+        "conclusion": "success",
+        "started_at": "2026-10-25T16:08:53Z",
+        "completed_at": "2026-10-25T16:08:57Z",
+        "elapsed_seconds": 4
+      },
+      {
+        "id": 121219864513,
+        "name": "Python CI / lint-ruff",
+        "conclusion": "success",
+        "started_at": "2026-10-25T16:08:59Z",
+        "completed_at": "2026-10-25T16:09:24Z",
+        "elapsed_seconds": 25
+      },
+      {
+        "id": 121219864598,
+        "name": "Python CI / select reusable CI scope",
+        "conclusion": "success",
+        "started_at": "2026-10-25T16:09:00Z",
+        "completed_at": "2026-10-25T16:09:06Z",
+        "elapsed_seconds": 6
+      },
+      {
+        "id": 121219864696,
+        "name": "Python CI / typecheck-mypy",
+        "conclusion": "success",
+        "started_at": "2026-10-25T16:08:59Z",
+        "completed_at": "2026-10-25T16:09:28Z",
+        "elapsed_seconds": 29
+      },
+      {
+        "id": 121219866142,
+        "name": "Python CI / lint-format",
+        "conclusion": "skipped",
+        "started_at": "2026-10-25T16:08:58Z",
+        "completed_at": "2026-10-25T16:08:58Z",
+        "elapsed_seconds": 0
+      },
+      {
+        "id": 121219896398,
+        "name": "Python CI / python 3.14",
+        "conclusion": "success",
+        "started_at": "2026-10-25T16:09:08Z",
+        "completed_at": "2026-10-25T16:25:25Z",
+        "elapsed_seconds": 977,
+        "steps": [
+          {
+            "name": "Install dependencies",
+            "started_at": "2026-10-25T16:09:47Z",
+            "completed_at": "2026-10-25T16:12:51Z",
+            "elapsed_seconds": 184
+          },
+          {
+            "name": "Pytest (unit tests with coverage)",
+            "started_at": "2026-10-25T16:12:58Z",
+            "completed_at": "2026-10-25T16:25:16Z",
+            "elapsed_seconds": 738
+          }
+        ]
+      },
+      {
+        "id": 121219896528,
+        "name": "Python CI / python 3.13",
+        "conclusion": "success",
+        "started_at": "2026-10-25T16:09:08Z",
+        "completed_at": "2026-10-25T16:26:45Z",
+        "elapsed_seconds": 1057
+      },
+      {
+        "id": 121224103249,
+        "name": "Python CI / logs summary",
+        "conclusion": "success",
+        "started_at": "2026-10-25T16:26:46Z",
+        "completed_at": "2026-10-25T16:26:56Z",
+        "elapsed_seconds": 10
+      },
+      {
+        "id": 121224150936,
+        "name": "gate-summary",
+        "conclusion": "success",
+        "started_at": "2026-10-25T16:26:59Z",
+        "completed_at": "2026-10-25T16:27:07Z",
+        "elapsed_seconds": 8
+      }
+    ]
+  }
+}

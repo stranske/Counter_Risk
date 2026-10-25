@@ -2750,6 +2750,18 @@ def test_optional_input_provenance_hashes(
     workbook.active.cell(row=100, column=20, value="provenance-change")
     workbook.save(maturity_workbook)
     workbook.close()
+    workbook_changed = manifest_for(
+        wal_active=True, screenshot_active=True, run_name="workbook-changed"
+    )
+    assert (
+        workbook_changed["exposure_summary_xlsx"]
+        == _sha256(maturity_workbook)
+        != original["exposure_summary_xlsx"]
+    )
+    assert workbook_changed["screenshot_inputs.slide1"] == original["screenshot_inputs.slide1"]
+
+    # Mutate each optional source separately so a manifest regression cannot
+    # accidentally couple screenshot hashes to workbook bytes (or vice versa).
     shutil.copyfile(fixtures / "screenshots/slide_2.png", screenshot)
     changed = manifest_for(wal_active=True, screenshot_active=True, run_name="changed")
     assert (
@@ -2762,6 +2774,7 @@ def test_optional_input_provenance_hashes(
         == _sha256(screenshot)
         != original["screenshot_inputs.slide1"]
     )
+    assert changed["exposure_summary_xlsx"] == workbook_changed["exposure_summary_xlsx"]
 
     disabled = manifest_for(wal_active=False, screenshot_active=False, run_name="disabled")
     assert "exposure_summary_xlsx" not in disabled
