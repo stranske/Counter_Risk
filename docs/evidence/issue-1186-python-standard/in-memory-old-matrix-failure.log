@@ -1,0 +1,7 @@
+In-memory mutation only; workflow files were not edited.
+Traceback (most recent call last):
+  File "<stdin>", line 21, in <module>
+  File "/home/runner/work/Counter_Risk/Counter_Risk/tests/test_ci_python_standard.py", line 61, in test_workflow_python_pins_follow_standard
+    assert not offenders, f"Python 3.12 runtime pins remain: {offenders}"
+           ^^^^^^^^^^^^^
+AssertionError: Python 3.12 runtime pins remain: ['ci.yml.jobs.python.with.python-versions']
