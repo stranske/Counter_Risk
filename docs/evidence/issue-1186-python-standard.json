@@ -1,0 +1,122 @@
+{
+  "issue": "stranske/Counter_Risk#1186",
+  "command": "<repository-selected .venv/bin/python> -m pytest -q tests/test_ci_python_standard.py",
+  "before": "1 failed; actual ci.yml and pr-00-gate.yml Python3.12 matrices detected",
+  "fixed": "1 passed",
+  "mutation": "Restoring3.12 only in ci.yml caused1failed at ci.yml.jobs.python.with.python-versions",
+  "restored": "Exact original fixed bytes restored;1passed",
+  "checks": [
+    "BlackPASS",
+    "RuffPASS",
+    "git diff --checkPASS"
+  ],
+  "limits": [
+    "Local selected interpreterPython3.12.2 proves configuration assertions only. Hosted3.13/3.14 matrix and postmerge coverage guard remain pending.",
+    "Package support floor, synced agent/coverage workflows and existing test selection/coverage settings preserved. Both CI runtimes remain coverage-instrumented;3.14 is primary artifact runtime."
+  ],
+  "hashes": {
+    ".github/workflows/ci.yml": "ec7c13cceed0907bda7308e5ebad3a7e3bb166474c131f5b59ada148b458d002",
+    ".github/workflows/pr-00-gate.yml": "9f74a78c9608e4402b0f5473bc5ed4570167efa23b073f9387d9609fcda9845a",
+    "tests/test_ci_python_standard.py": "9d576c8f36d8e119c104cffcebfb5587579d5b7fff88576f91f7ef9ebe298afb"
+  },
+  "followup": {
+    "interpreter": "3.14.8",
+    "results": {
+      "named-regression": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.8/x64/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "tests/test_ci_python_standard.py",
+          "-m",
+          "not slow"
+        ],
+        "exit_code": 0,
+        "output": "docs/evidence/issue-1186-python-standard/named-regression.log"
+      },
+      "mutation-tests": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.8/x64/bin/python",
+          "-m",
+          "pytest",
+          "-q",
+          "tests/test_ci_python_standard_mutations.py",
+          "-m",
+          "not slow"
+        ],
+        "exit_code": 0,
+        "output": "docs/evidence/issue-1186-python-standard/mutation-tests.log"
+      },
+      "ruff": {
+        "command": [
+          "ruff",
+          "check",
+          "tests/test_ci_python_standard.py",
+          "tests/test_ci_python_standard_mutations.py"
+        ],
+        "exit_code": 0,
+        "output": "docs/evidence/issue-1186-python-standard/ruff.log"
+      },
+      "black": {
+        "command": [
+          "black",
+          "--check",
+          "--line-length",
+          "100",
+          "--exclude",
+          "(\\.workflows-lib|node_modules)",
+          "."
+        ],
+        "environment": {
+          "BLACK_NUM_WORKERS": "1",
+          "BLACK_CACHE_DIR": "/tmp/counter-risk-black-cache"
+        },
+        "exit_code": 0,
+        "output": "docs/evidence/issue-1186-python-standard/black.log"
+      }
+    },
+    "mutation_method": "Path.read_text is patched in memory; workflow bytes are never modified. Both caller matrices fail when 3.12 is restored in the read result, and pass after the read result is restored. These are simulated mutations, not the requested on-disk deliberate-break/revert.",
+    "hosted_gate": {
+      "head_sha": "b0012df9fc8d76be4732662e38c8ad213b439025",
+      "run_id": 40156613521,
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/40156613521",
+      "conclusion": "success",
+      "python_3_13_job": {
+        "id": 121059320070,
+        "conclusion": "success"
+      },
+      "python_3_14_job": {
+        "id": 121059320130,
+        "conclusion": "success"
+      },
+      "root_cause": "No failing Python 3.14 dependency or test was observed in this Gate run; no compatibility repair was needed.",
+      "scope": "Hosted results apply to the existing PR head, before the follow-up mutation tests are committed."
+    },
+    "pending": [
+      "Hosted Gate execution of the follow-up commit and passing coverage guard have not been verified.",
+      "The exact on-disk restore-3.12 acceptance step requires workflow edits prohibited in agent-standard.",
+      "The 2026-11-07 GitHub API recheck remains pending; this run is dated 2026-10-25."
+    ],
+    "assertion_failure_output": "docs/evidence/issue-1186-python-standard/in-memory-old-matrix-failure.log",
+    "verified_tasks": [
+      {
+        "task": 1,
+        "verified": true,
+        "evidence": "ci.yml python-versions is exactly [\"3.13\", \"3.14\"]."
+      },
+      {
+        "task": 2,
+        "verified": true,
+        "evidence": "pr-00-gate.yml python-versions is exactly [\"3.13\", \"3.14\"]."
+      },
+      {
+        "task": 3,
+        "verified": true,
+        "evidence": "The named regression passes, collecting exactly one test; 34 additional mutation tests pass."
+      }
+    ],
+    "github_write_blocker": "GitHub label, comment and PR-body update tools all rejected the requested actions: approval is required, but the approval policy is never. Verified checklist state is retained locally; a proposed PR body is available at /tmp/counter-risk-1187-body.md.",
+    "commit_blocker": "git add/commit failed: Unable to create .git/index.lock: Read-only file system. Changes remain uncommitted."
+  }
+}
