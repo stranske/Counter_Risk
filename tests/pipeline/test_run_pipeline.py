@@ -2607,6 +2607,10 @@ def test_optional_input_provenance_hashes(
 
     openpyxl = pytest.importorskip("openpyxl")
     fixtures = Path("tests/fixtures").resolve()
+    # The hashing contract needs real readable inputs, not the archive's large
+    # style tables. Keep production header/date reads and manifest construction,
+    # using the same small XLSX/PPTX inputs as the other focused pipeline gates.
+    input_config = run_module.load_config(_write_scope_workflow_config(tmp_path))
     screenshot = tmp_path / "external.png"
     shutil.copyfile(fixtures / "screenshots/slide_1.png", screenshot)
     maturity_workbook = tmp_path / "exposure-maturity.xlsx"
@@ -2663,13 +2667,13 @@ def test_optional_input_provenance_hashes(
         config_path = tmp_path / f"{run_name}.yml"
         config_lines = [
             "as_of_date: 2025-12-31",
-            f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
-            f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
-            f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
-            f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
-            f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
-            f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
-            f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+            f"mosers_all_programs_xlsx: {input_config.mosers_all_programs_xlsx}",
+            f"mosers_ex_trend_xlsx: {input_config.mosers_ex_trend_xlsx}",
+            f"mosers_trend_xlsx: {input_config.mosers_trend_xlsx}",
+            f"hist_all_programs_3yr_xlsx: {input_config.hist_all_programs_3yr_xlsx}",
+            f"hist_ex_llc_3yr_xlsx: {input_config.hist_ex_llc_3yr_xlsx}",
+            f"hist_llc_3yr_xlsx: {input_config.hist_llc_3yr_xlsx}",
+            f"monthly_pptx: {input_config.monthly_pptx}",
             f"exposure_summary_xlsx: {maturity_workbook}",
             "enable_screenshot_replacement: true",
             "screenshot_inputs:",
