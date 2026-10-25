@@ -1,0 +1,6 @@
+Repository-wide check attempts (summary, not a passing check):
+black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .
+Default process pool: exit 1, PermissionError binding forkserver socket.
+BLACK_NUM_WORKERS=1: stalled; interrupted, exit 130.
+Explicit fork with two workers: stalled; interrupted, exit 130.
+Explicit spawn with two workers and timeout 45s: exit 124.

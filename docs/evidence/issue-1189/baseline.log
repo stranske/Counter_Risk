@@ -1,0 +1,13 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.14.8/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, platformdirs-4.13.5, regressions-2.11.0, langsmith-0.14.12, anyio-4.15.1, datadir-1.8.0
+collecting ... collected 1 item
+
+tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes PASSED [100%]
+
+============================= slowest 1 durations ==============================
+211.24s call     tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes
+======================== 1 passed in 212.14s (0:03:32) =========================

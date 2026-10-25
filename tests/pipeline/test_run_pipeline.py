@@ -2607,6 +2607,22 @@ def test_optional_input_provenance_hashes(
 
     openpyxl = pytest.importorskip("openpyxl")
     fixtures = Path("tests/fixtures").resolve()
+    # The hashing contract needs real readable inputs, not the archive's large
+    # style tables. Keep production header/date reads and manifest construction,
+    # using the same small XLSX/PPTX inputs as the other focused pipeline gates.
+    input_config = run_module.load_config(_write_scope_workflow_config(tmp_path))
+    required_hashes = {
+        field: _sha256(getattr(input_config, field))
+        for field in (
+            "mosers_all_programs_xlsx",
+            "mosers_ex_trend_xlsx",
+            "mosers_trend_xlsx",
+            "hist_all_programs_3yr_xlsx",
+            "hist_ex_llc_3yr_xlsx",
+            "hist_llc_3yr_xlsx",
+            "monthly_pptx",
+        )
+    }
     screenshot = tmp_path / "external.png"
     shutil.copyfile(fixtures / "screenshots/slide_1.png", screenshot)
     maturity_workbook = tmp_path / "exposure-maturity.xlsx"
@@ -2663,13 +2679,13 @@ def test_optional_input_provenance_hashes(
         config_path = tmp_path / f"{run_name}.yml"
         config_lines = [
             "as_of_date: 2025-12-31",
-            f"mosers_all_programs_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - All Programs.xlsx'}",
-            f"mosers_ex_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Ex Trend.xlsx'}",
-            f"mosers_trend_xlsx: {fixtures / 'MOSERS Counterparty Risk Summary 12-31-2025 - Trend.xlsx'}",
-            f"hist_all_programs_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - All Programs 3 Year.xlsx'}",
-            f"hist_ex_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'}",
-            f"hist_llc_3yr_xlsx: {fixtures / 'Historical Counterparty Risk Graphs - LLC 3 Year.xlsx'}",
-            f"monthly_pptx: {fixtures / 'Monthly Counterparty Exposure Report.pptx'}",
+            f"mosers_all_programs_xlsx: {input_config.mosers_all_programs_xlsx}",
+            f"mosers_ex_trend_xlsx: {input_config.mosers_ex_trend_xlsx}",
+            f"mosers_trend_xlsx: {input_config.mosers_trend_xlsx}",
+            f"hist_all_programs_3yr_xlsx: {input_config.hist_all_programs_3yr_xlsx}",
+            f"hist_ex_llc_3yr_xlsx: {input_config.hist_ex_llc_3yr_xlsx}",
+            f"hist_llc_3yr_xlsx: {input_config.hist_llc_3yr_xlsx}",
+            f"monthly_pptx: {input_config.monthly_pptx}",
             f"exposure_summary_xlsx: {maturity_workbook}",
             "enable_screenshot_replacement: true",
             "screenshot_inputs:",
@@ -2696,7 +2712,16 @@ def test_optional_input_provenance_hashes(
         ]
         config_path.write_text("\n".join(config_lines) + "\n", encoding="utf-8")
         run_dir = run_pipeline(config_path, output_dir=tmp_path / run_name)
-        return json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["input_hashes"]
+        hashes = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["input_hashes"]
+        # Each optional-input scenario must retain all seven real source hashes
+        # and include only the optional sources consumed by its active outputs.
+        expected_hashes = dict(required_hashes)
+        if wal_active:
+            expected_hashes["exposure_summary_xlsx"] = _sha256(maturity_workbook)
+        if screenshot_active:
+            expected_hashes["screenshot_inputs.slide1"] = _sha256(screenshot)
+        assert hashes == expected_hashes
+        return hashes
 
     original = manifest_for(wal_active=True, screenshot_active=True, run_name="original")
     assert original["exposure_summary_xlsx"] == _sha256(maturity_workbook)
@@ -2725,6 +2750,18 @@ def test_optional_input_provenance_hashes(
     workbook.active.cell(row=100, column=20, value="provenance-change")
     workbook.save(maturity_workbook)
     workbook.close()
+    workbook_changed = manifest_for(
+        wal_active=True, screenshot_active=True, run_name="workbook-changed"
+    )
+    assert (
+        workbook_changed["exposure_summary_xlsx"]
+        == _sha256(maturity_workbook)
+        != original["exposure_summary_xlsx"]
+    )
+    assert workbook_changed["screenshot_inputs.slide1"] == original["screenshot_inputs.slide1"]
+
+    # Mutate each optional source separately so a manifest regression cannot
+    # accidentally couple screenshot hashes to workbook bytes (or vice versa).
     shutil.copyfile(fixtures / "screenshots/slide_2.png", screenshot)
     changed = manifest_for(wal_active=True, screenshot_active=True, run_name="changed")
     assert (
@@ -2737,6 +2774,7 @@ def test_optional_input_provenance_hashes(
         == _sha256(screenshot)
         != original["screenshot_inputs.slide1"]
     )
+    assert changed["exposure_summary_xlsx"] == workbook_changed["exposure_summary_xlsx"]
 
     disabled = manifest_for(wal_active=False, screenshot_active=False, run_name="disabled")
     assert "exposure_summary_xlsx" not in disabled
