@@ -49,7 +49,8 @@ def _contains_old_runtime(value: Any) -> bool:
 def test_workflow_python_pins_follow_standard() -> None:
     workflows = {
         path.name: yaml.safe_load(path.read_text(encoding="utf-8"))
-        for path in sorted(WORKFLOWS.glob("*.yml"))
+        for path in sorted(WORKFLOWS.iterdir())
+        if path.is_file() and path.suffix in {".yml", ".yaml"}
     }
     assert workflows, "No workflow YAML was inspected"
     offenders = [
@@ -62,4 +63,5 @@ def test_workflow_python_pins_follow_standard() -> None:
     for filename, job in (("ci.yml", "python"), ("pr-00-gate.yml", "python-ci")):
         config = workflows[filename]["jobs"][job]
         assert json.loads(config["with"]["python-versions"]) == ["3.13", "3.14"]
+        assert config["with"]["primary-python-version"] == "3.14"
         assert not config.get("continue-on-error", False)
