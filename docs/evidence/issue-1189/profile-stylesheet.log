@@ -1,0 +1,17 @@
+Sun Oct 25 15:59:26 2026    /tmp/provenance-baseline.prof
+
+         125298224 function calls (119385666 primitive calls) in 55.268 seconds
+
+   Ordered by: cumulative time
+   List reduced from 7749 to 9 due to restriction <'stylesheet'>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        4    0.192    0.048   41.548   10.387 /opt/hostedtoolcache/Python/3.14.8/x64/lib/python3.14/site-packages/openpyxl/styles/stylesheet.py:199(apply_stylesheet)
+   119488    0.436    0.000   29.609    0.000 /opt/hostedtoolcache/Python/3.14.8/x64/lib/python3.14/site-packages/openpyxl/styles/stylesheet.py:119(_expand_named_style)
+        4    0.103    0.026   28.970    7.243 /opt/hostedtoolcache/Python/3.14.8/x64/lib/python3.14/site-packages/openpyxl/styles/stylesheet.py:99(from_tree)
+        4    0.001    0.000   24.424    6.106 /opt/hostedtoolcache/Python/3.14.8/x64/lib/python3.14/site-packages/openpyxl/styles/stylesheet.py:58(__init__)
+        4    0.061    0.015   19.926    4.982 /opt/hostedtoolcache/Python/3.14.8/x64/lib/python3.14/site-packages/openpyxl/styles/stylesheet.py:108(_merge_named_styles)
+        4    0.001    0.000    0.003    0.001 /opt/hostedtoolcache/Python/3.14.8/x64/lib/python3.14/site-packages/openpyxl/styles/stylesheet.py:165(_normalise_numbers)
+      216    0.001    0.000    0.001    0.000 /opt/hostedtoolcache/Python/3.14.8/x64/lib/python3.14/site-packages/openpyxl/styles/stylesheet.py:160(custom_formats)
+        1    0.000    0.000    0.001    0.001 /opt/hostedtoolcache/Python/3.14.8/x64/lib/python3.14/site-packages/openpyxl/styles/stylesheet.py:1(<module>)
+        1    0.000    0.000    0.000    0.000 /opt/hostedtoolcache/Python/3.14.8/x64/lib/python3.14/site-packages/openpyxl/styles/stylesheet.py:39(Stylesheet)

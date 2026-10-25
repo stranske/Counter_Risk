@@ -2611,6 +2611,18 @@ def test_optional_input_provenance_hashes(
     # style tables. Keep production header/date reads and manifest construction,
     # using the same small XLSX/PPTX inputs as the other focused pipeline gates.
     input_config = run_module.load_config(_write_scope_workflow_config(tmp_path))
+    required_hashes = {
+        field: _sha256(getattr(input_config, field))
+        for field in (
+            "mosers_all_programs_xlsx",
+            "mosers_ex_trend_xlsx",
+            "mosers_trend_xlsx",
+            "hist_all_programs_3yr_xlsx",
+            "hist_ex_llc_3yr_xlsx",
+            "hist_llc_3yr_xlsx",
+            "monthly_pptx",
+        )
+    }
     screenshot = tmp_path / "external.png"
     shutil.copyfile(fixtures / "screenshots/slide_1.png", screenshot)
     maturity_workbook = tmp_path / "exposure-maturity.xlsx"
@@ -2700,7 +2712,16 @@ def test_optional_input_provenance_hashes(
         ]
         config_path.write_text("\n".join(config_lines) + "\n", encoding="utf-8")
         run_dir = run_pipeline(config_path, output_dir=tmp_path / run_name)
-        return json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["input_hashes"]
+        hashes = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["input_hashes"]
+        # Each optional-input scenario must retain all seven real source hashes
+        # and include only the optional sources consumed by its active outputs.
+        expected_hashes = dict(required_hashes)
+        if wal_active:
+            expected_hashes["exposure_summary_xlsx"] = _sha256(maturity_workbook)
+        if screenshot_active:
+            expected_hashes["screenshot_inputs.slide1"] = _sha256(screenshot)
+        assert hashes == expected_hashes
+        return hashes
 
     original = manifest_for(wal_active=True, screenshot_active=True, run_name="original")
     assert original["exposure_summary_xlsx"] == _sha256(maturity_workbook)

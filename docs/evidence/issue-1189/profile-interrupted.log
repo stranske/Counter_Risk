@@ -1,0 +1,14 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.14.8/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, platformdirs-4.13.5, regressions-2.11.0, langsmith-0.14.12, anyio-4.15.1, datadir-1.8.0
+collecting ... collected 1 item
+
+tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/opt/hostedtoolcache/Python/3.14.8/x64/lib/python3.14/site-packages/openpyxl/descriptors/base.py:164: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+============================ no tests ran in 52.82s ============================

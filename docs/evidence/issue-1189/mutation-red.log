@@ -1,0 +1,244 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.8, pytest-9.1.1, pluggy-1.7.0 -- /opt/hostedtoolcache/Python/3.14.8/x64/bin/python
+cachedir: .pytest_cache
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: cov-7.1.0, xdist-3.8.0, platformdirs-4.13.5, regressions-2.11.0, langsmith-0.14.12, anyio-4.15.1, datadir-1.8.0
+collecting ... collected 1 item
+
+tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes FAILED [100%]
+
+=================================== FAILURES ===================================
+____________________ test_optional_input_provenance_hashes _____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-3/test_optional_input_provenance0')
+fake_pandas = None
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1348bc3950>
+
+    def test_optional_input_provenance_hashes(
+        tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Manifest hashes track active external sources, not generated images or idle options."""
+
+        openpyxl = pytest.importorskip("openpyxl")
+        fixtures = Path("tests/fixtures").resolve()
+        # The hashing contract needs real readable inputs, not the archive's large
+        # style tables. Keep production header/date reads and manifest construction,
+        # using the same small XLSX/PPTX inputs as the other focused pipeline gates.
+        input_config = run_module.load_config(_write_scope_workflow_config(tmp_path))
+        required_hashes = {
+            field: _sha256(getattr(input_config, field))
+            for field in (
+                "mosers_all_programs_xlsx",
+                "mosers_ex_trend_xlsx",
+                "mosers_trend_xlsx",
+                "hist_all_programs_3yr_xlsx",
+                "hist_ex_llc_3yr_xlsx",
+                "hist_llc_3yr_xlsx",
+                "monthly_pptx",
+            )
+        }
+        screenshot = tmp_path / "external.png"
+        shutil.copyfile(fixtures / "screenshots/slide_1.png", screenshot)
+        maturity_workbook = tmp_path / "exposure-maturity.xlsx"
+        shutil.copyfile(
+            fixtures / "nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx", maturity_workbook
+        )
+
+        def generated_screenshot(
+            *, workbook_paths: Any, config: WorkflowConfig, run_dir: Path, warnings: list[str]
+        ) -> dict[str, Path]:
+            generated = run_dir / "_screenshots" / "internal.png"
+            generated.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(fixtures / "screenshots/slide_2.png", generated)
+            # Exercise the production merge rule as well as generated-only input:
+            # the explicit slide1 source must win this collision.
+            return {"slide1": generated, "slide2": generated}
+
+        monkeypatch.setattr(run_module, "_generate_cprs_screenshot_inputs", generated_screenshot)
+        # Keep the production config loading, optional-input validation, generated-image
+        # merge, hashing, and manifest write boundary. Stub unrelated report calculations
+        # and writers so repeated byte-mutation runs stay focused and fast.
+        monkeypatch.setattr(run_module, "_parse_inputs", lambda _: _minimal_parsed_by_variant())
+        monkeypatch.setattr(run_module, "_validate_parsed_inputs", lambda _: None)
+        monkeypatch.setattr(run_module, "_run_reconciliation_checks", lambda **kwargs: {})
+        monkeypatch.setattr(run_module, "_compute_metrics", lambda _: ({}, {}))
+        monkeypatch.setattr(run_module, "_write_risk_outputs", lambda **kwargs: [])
+        monkeypatch.setattr(run_module, "_compute_and_write_concentration_metrics", lambda **kwargs: [])
+        monkeypatch.setattr(run_module, "_write_change_attribution_outputs", lambda **kwargs: [])
+        monkeypatch.setattr(
+            run_module,
+            "_compute_and_write_limit_breaches",
+            lambda **kwargs: run_module.LimitBreachEvaluation(csv_path=None, breach_count=0),
+        )
+        monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **kwargs: [])
+
+        validated_screenshot_inputs: dict[str, dict[str, Path]] = {}
+
+        def validate_screenshot_inputs_at_report_boundary(
+            *, run_dir: Path, config: WorkflowConfig, **_: Any
+        ) -> tuple[list[Path], run_module.PptProcessingResult]:
+            if run_module._ppt_screenshot_output_active(config):
+                validated_screenshot_inputs[run_dir.name] = (
+                    run_module._resolve_screenshot_input_mapping(config)
+                )
+            return [], run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS)
+
+        monkeypatch.setattr(
+            run_module,
+            "_call_write_outputs",
+            validate_screenshot_inputs_at_report_boundary,
+        )
+
+        def manifest_for(*, wal_active: bool, screenshot_active: bool, run_name: str) -> dict[str, Any]:
+            config_path = tmp_path / f"{run_name}.yml"
+            config_lines = [
+                "as_of_date: 2025-12-31",
+                f"mosers_all_programs_xlsx: {input_config.mosers_all_programs_xlsx}",
+                f"mosers_ex_trend_xlsx: {input_config.mosers_ex_trend_xlsx}",
+                f"mosers_trend_xlsx: {input_config.mosers_trend_xlsx}",
+                f"hist_all_programs_3yr_xlsx: {input_config.hist_all_programs_3yr_xlsx}",
+                f"hist_ex_llc_3yr_xlsx: {input_config.hist_ex_llc_3yr_xlsx}",
+                f"hist_llc_3yr_xlsx: {input_config.hist_llc_3yr_xlsx}",
+                f"monthly_pptx: {input_config.monthly_pptx}",
+                f"exposure_summary_xlsx: {maturity_workbook}",
+                "enable_screenshot_replacement: true",
+                "screenshot_inputs:",
+                f"  slide1: {screenshot}",
+                f"output_root: {tmp_path / run_name}",
+                "output_generators:",
+                "  - name: historical_workbook",
+                "    registration: builtin:historical_workbook",
+                "    stage: historical",
+                "  - name: historical_wal_workbook",
+                "    registration: builtin:historical_wal_workbook",
+                "    stage: historical",
+                f"    enabled: {str(wal_active).lower()}",
+                "  - name: ppt_screenshot",
+                "    registration: builtin:ppt_screenshot",
+                "    stage: ppt_master",
+                f"    enabled: {str(screenshot_active).lower()}",
+                "  - name: ppt_link_refresh",
+                "    registration: builtin:ppt_link_refresh",
+                "    stage: ppt_refresh",
+                "  - name: pdf_export",
+                "    registration: builtin:pdf_export",
+                "    stage: ppt_post_distribution",
+            ]
+            config_path.write_text("\n".join(config_lines) + "\n", encoding="utf-8")
+            run_dir = run_pipeline(config_path, output_dir=tmp_path / run_name)
+            hashes = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["input_hashes"]
+            # Each optional-input scenario must retain all seven real source hashes
+            # and include only the optional sources consumed by its active outputs.
+            expected_hashes = dict(required_hashes)
+            if wal_active:
+                expected_hashes["exposure_summary_xlsx"] = _sha256(maturity_workbook)
+            if screenshot_active:
+                expected_hashes["screenshot_inputs.slide1"] = _sha256(screenshot)
+            assert hashes == expected_hashes
+            return hashes
+
+>       original = manifest_for(wal_active=True, screenshot_active=True, run_name="original")
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/pipeline/test_run_pipeline.py:2726:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+wal_active = True, screenshot_active = True, run_name = 'original'
+
+    def manifest_for(*, wal_active: bool, screenshot_active: bool, run_name: str) -> dict[str, Any]:
+        config_path = tmp_path / f"{run_name}.yml"
+        config_lines = [
+            "as_of_date: 2025-12-31",
+            f"mosers_all_programs_xlsx: {input_config.mosers_all_programs_xlsx}",
+            f"mosers_ex_trend_xlsx: {input_config.mosers_ex_trend_xlsx}",
+            f"mosers_trend_xlsx: {input_config.mosers_trend_xlsx}",
+            f"hist_all_programs_3yr_xlsx: {input_config.hist_all_programs_3yr_xlsx}",
+            f"hist_ex_llc_3yr_xlsx: {input_config.hist_ex_llc_3yr_xlsx}",
+            f"hist_llc_3yr_xlsx: {input_config.hist_llc_3yr_xlsx}",
+            f"monthly_pptx: {input_config.monthly_pptx}",
+            f"exposure_summary_xlsx: {maturity_workbook}",
+            "enable_screenshot_replacement: true",
+            "screenshot_inputs:",
+            f"  slide1: {screenshot}",
+            f"output_root: {tmp_path / run_name}",
+            "output_generators:",
+            "  - name: historical_workbook",
+            "    registration: builtin:historical_workbook",
+            "    stage: historical",
+            "  - name: historical_wal_workbook",
+            "    registration: builtin:historical_wal_workbook",
+            "    stage: historical",
+            f"    enabled: {str(wal_active).lower()}",
+            "  - name: ppt_screenshot",
+            "    registration: builtin:ppt_screenshot",
+            "    stage: ppt_master",
+            f"    enabled: {str(screenshot_active).lower()}",
+            "  - name: ppt_link_refresh",
+            "    registration: builtin:ppt_link_refresh",
+            "    stage: ppt_refresh",
+            "  - name: pdf_export",
+            "    registration: builtin:pdf_export",
+            "    stage: ppt_post_distribution",
+        ]
+        config_path.write_text("\n".join(config_lines) + "\n", encoding="utf-8")
+        run_dir = run_pipeline(config_path, output_dir=tmp_path / run_name)
+        hashes = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))["input_hashes"]
+        # Each optional-input scenario must retain all seven real source hashes
+        # and include only the optional sources consumed by its active outputs.
+        expected_hashes = dict(required_hashes)
+        if wal_active:
+            expected_hashes["exposure_summary_xlsx"] = _sha256(maturity_workbook)
+        if screenshot_active:
+            expected_hashes["screenshot_inputs.slide1"] = _sha256(screenshot)
+>       assert hashes == expected_hashes
+E       AssertionError: assert {'exposure_su...4944157', ...} == {'mosers_all_...4944157', ...}
+E
+E         Omitting 8 identical items, use -vv to show
+E         Right contains 1 more item:
+E         {'screenshot_inputs.slide1': '5eb5f2081421a3e4ed6f5df86b73326919aa0b3d93fbb9f92dc11482f672912b'}
+E
+E         Full diff:
+E           {
+E         +     'exposure_summary_xlsx': 'f2d0c5f96fd392175a0c58805bae49d2b8ec636c7c1e5d8796a985772e66ade9',
+E         -     'mosers_all_programs_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+E         -     'mosers_ex_trend_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+E         -     'mosers_trend_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+E               'hist_all_programs_3yr_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+E               'hist_ex_llc_3yr_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+E               'hist_llc_3yr_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+E               'monthly_pptx': '6a531faadd9c391a50fa7788fad18f2d1675c2392b97bc222b8995fd30bfa1a2',
+E         -     'exposure_summary_xlsx': 'f2d0c5f96fd392175a0c58805bae49d2b8ec636c7c1e5d8796a985772e66ade9',
+E         -     'screenshot_inputs.slide1': '5eb5f2081421a3e4ed6f5df86b73326919aa0b3d93fbb9f92dc11482f672912b',
+E         +     'mosers_all_programs_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+E         +     'mosers_ex_trend_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+E         +     'mosers_trend_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+E           }
+
+tests/pipeline/test_run_pipeline.py:2723: AssertionError
+============================= slowest 1 durations ==============================
+0.24s call     tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes - AssertionError: assert {'exposure_su...4944157', ...} == {'mosers_all_...4944157', ...}
+
+  Omitting 8 identical items, use -vv to show
+  Right contains 1 more item:
+  {'screenshot_inputs.slide1': '5eb5f2081421a3e4ed6f5df86b73326919aa0b3d93fbb9f92dc11482f672912b'}
+
+  Full diff:
+    {
+  +     'exposure_summary_xlsx': 'f2d0c5f96fd392175a0c58805bae49d2b8ec636c7c1e5d8796a985772e66ade9',
+  -     'mosers_all_programs_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+  -     'mosers_ex_trend_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+  -     'mosers_trend_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+        'hist_all_programs_3yr_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+        'hist_ex_llc_3yr_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+        'hist_llc_3yr_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+        'monthly_pptx': '6a531faadd9c391a50fa7788fad18f2d1675c2392b97bc222b8995fd30bfa1a2',
+  -     'exposure_summary_xlsx': 'f2d0c5f96fd392175a0c58805bae49d2b8ec636c7c1e5d8796a985772e66ade9',
+  -     'screenshot_inputs.slide1': '5eb5f2081421a3e4ed6f5df86b73326919aa0b3d93fbb9f92dc11482f672912b',
+  +     'mosers_all_programs_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+  +     'mosers_ex_trend_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+  +     'mosers_trend_xlsx': '3080cd52bb0a69f7114343fdb166337a644239d489efa05d6cbbe98b84944157',
+    }
+============================== 1 failed in 0.85s ===============================
