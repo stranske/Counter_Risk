@@ -62,5 +62,10 @@ def test_gate_pytest_args_do_not_use_loadscope() -> None:
 
 
 def test_pandas_lock_has_cp314_wheels() -> None:
-    for lock_name in ("requirements.lock", "requirements-dev.lock"):
-        assert _lock_pandas_version(lock_name) >= MIN_PANDAS_LOCK
+    versions = {
+        lock_name: _lock_pandas_version(lock_name)
+        for lock_name in ("requirements.lock", "requirements-dev.lock")
+    }
+    assert all(version >= MIN_PANDAS_LOCK for version in versions.values())
+    # Keep the two lock files on the same pandas pin so CI and local sync agree.
+    assert len(set(versions.values())) == 1
