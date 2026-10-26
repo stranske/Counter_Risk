@@ -49,6 +49,8 @@ def test_gate_pytest_args_do_not_use_loadscope() -> None:
     gate_args = _pytest_args("pr-00-gate.yml", "python-ci")
     ci_args = _pytest_args("ci.yml", "python")
 
+    # Gate and main CI must stay on the same measured winner.
+    assert GATE_DIST == MAIN_CI_DIST == "load"
     assert f"--dist {GATE_DIST}" in gate_args
     assert f"--dist {MAIN_CI_DIST}" in ci_args
     assert "loadscope" not in gate_args
