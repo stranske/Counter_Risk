@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import shlex
 from pathlib import Path
 
 import yaml
@@ -45,14 +46,34 @@ def _lock_pandas_version(lock_name: str) -> tuple[int, ...]:
     return _version_tuple(match.group(1))
 
 
+def _dist_values(args: str) -> list[str]:
+    """Every value given to `--dist`, in both `--dist X` and `--dist=X` forms."""
+    tokens = shlex.split(args)
+    values = []
+    for index, token in enumerate(tokens):
+        if token == "--dist" and index + 1 < len(tokens):
+            values.append(tokens[index + 1])
+        elif token.startswith("--dist="):
+            values.append(token.split("=", 1)[1])
+    return values
+
+
+def test_dist_option_is_parsed_by_exact_value_not_substring() -> None:
+    assert _dist_values("-n auto --dist load") == ["load"]
+    assert _dist_values("-n auto --dist=load") == ["load"]
+    assert _dist_values("-n auto --dist loadfile") == ["loadfile"]
+    assert _dist_values("--dist load --dist loadscope") == ["load", "loadscope"]
+
+
 def test_gate_pytest_args_do_not_use_loadscope() -> None:
     gate_args = _pytest_args("pr-00-gate.yml", "python-ci")
     ci_args = _pytest_args("ci.yml", "python")
 
     # Gate and main CI must stay on the same measured winner.
     assert GATE_DIST == MAIN_CI_DIST == "load"
-    assert f"--dist {GATE_DIST}" in gate_args
-    assert f"--dist {MAIN_CI_DIST}" in ci_args
+    # Exactly one --dist option, with exactly the measured value (no substring match, no duplicates).
+    assert _dist_values(gate_args) == [GATE_DIST]
+    assert _dist_values(ci_args) == [MAIN_CI_DIST]
     assert "loadscope" not in gate_args
     assert "loadscope" not in ci_args
     assert "--durations" not in gate_args
