@@ -24,4 +24,5 @@ def test_gate_pytest_args_do_not_use_loadscope() -> None:
     assert f"--dist {MAIN_CI_DIST}" in ci_args
     assert "loadscope" not in gate_args
     assert "loadscope" not in ci_args
-    assert "--durations" not in gate_args
+    # TEMP (#1193 measurement): allow --durations while Gate captures slow-test ranking.
+    # Restore `assert "--durations" not in gate_args` when measurement flags are removed.
