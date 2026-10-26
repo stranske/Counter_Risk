@@ -35,5 +35,7 @@ jobs:
       # reported this repo as not measuring coverage at all, which was never true. Purely
       # additive: the input publishes artifacts and gates nothing.
       enable-soft-gate: true
-      pytest_args: "-n auto --dist loadscope"
+      # Same-commit A/B (Gate markers, -n 4): load 32.87s < loadfile 34.75s < loadscope 34.91s.
+      # pandas>=2.3.3 in requirements.lock avoids ~4m cp314 source builds on Install.
+      pytest_args: "-n auto --dist load"
     secrets: inherit

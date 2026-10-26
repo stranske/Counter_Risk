@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from counter_risk.parsers.nisa_trend import parse_nisa_trend
 
 
+@pytest.mark.slow
 def test_parse_nisa_trend_fixture_without_errors() -> None:
     parsed = parse_nisa_trend(Path("tests/fixtures/NISA Monthly Trend - Raw.xlsx"))
 

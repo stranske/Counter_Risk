@@ -44,6 +44,7 @@ def test_all_programs_transformation_scope_defines_core_mappings() -> None:
     assert scope.underflow_policy == "clear_remaining_cells"
 
 
+@pytest.mark.slow
 def test_all_programs_fixture_generates_using_documented_layout_contract() -> None:
     fixture_path = Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx")
     structure = get_mosers_all_programs_output_structure()
@@ -81,6 +82,7 @@ def test_all_programs_fixture_generates_using_documented_layout_contract() -> No
         workbook.close()
 
 
+@pytest.mark.slow
 def test_all_programs_metric_columns_follow_header_aliases_when_shifted(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

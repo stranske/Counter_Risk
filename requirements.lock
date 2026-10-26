@@ -108,7 +108,7 @@ packaging==25.0
     #   langsmith
     #   pytesseract
     #   pytest
-pandas==2.3.0
+pandas==2.3.3
     # via counter-risk (pyproject.toml)
 pathspec==1.0.4
     # via

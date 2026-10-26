@@ -282,6 +282,7 @@ def test_generate_mosers_workbook_applies_documented_plug_values_mappings() -> N
         ),
     ],
 )
+@pytest.mark.slow
 def test_generate_mosers_workbook_variants_apply_plug_values_consistently(
     fixture_path: Path,
     parser: Any,
@@ -327,6 +328,7 @@ def test_generate_mosers_workbook_variants_apply_plug_values_consistently(
         workbook.close()
 
 
+@pytest.mark.slow
 def test_generate_mosers_workbook_ex_trend_populates_values_from_ex_trend_fixture() -> None:
     fixture_path = Path("tests/fixtures/NISA Monthly Ex Trend - Raw.xlsx")
     parsed = parse_nisa_ex_trend(fixture_path)
@@ -349,6 +351,7 @@ def test_generate_mosers_workbook_ex_trend_populates_values_from_ex_trend_fixtur
         workbook.close()
 
 
+@pytest.mark.slow
 def test_generate_mosers_workbook_trend_populates_values_from_trend_fixture() -> None:
     fixture_path = Path("tests/fixtures/NISA Monthly Trend - Raw.xlsx")
     parsed = parse_nisa_trend(fixture_path)
@@ -407,6 +410,7 @@ def test_generate_mosers_workbook_trend_populates_values_from_trend_fixture() ->
         ),
     ],
 )
+@pytest.mark.slow
 def test_generated_pipeline_named_workbooks_are_accepted_by_current_parsers(
     tmp_path: Path,
     raw_input_path: Path,

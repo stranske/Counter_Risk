@@ -284,6 +284,7 @@ def test_blank_override_cannot_bypass_conflict(date_run, tmp_path, capsys, reaso
     assert not explicit_parent.exists()
 
 
+@pytest.mark.slow
 def test_real_pipeline_parsers_and_outputs_keep_date_conflict_diagnostics(tmp_path):
     """Exercise U05 through the real pipeline without replacing calculation/output stages."""
     from pathlib import Path

@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from counter_risk.parsers.nisa_all_programs import parse_nisa_all_programs
 
 
+@pytest.mark.slow
 def test_parse_nisa_all_programs_fixture_without_errors() -> None:
     parsed = parse_nisa_all_programs(Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx"))
 
