@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 from counter_risk.parsers.nisa_all_programs import (
     get_nisa_all_programs_input_structure,

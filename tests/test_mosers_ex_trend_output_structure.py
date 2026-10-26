@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 from counter_risk.mosers.workbook_generation import (
     generate_mosers_workbook_ex_trend,
