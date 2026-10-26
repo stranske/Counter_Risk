@@ -6,7 +6,6 @@ import re
 from pathlib import Path
 
 import yaml
-from packaging.version import Version
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
@@ -21,7 +20,7 @@ MAIN_CI_DIST = "load"
 
 # pandas 2.3.0 has no cp314 wheels; Gate 3.14 spent ~4m building from source.
 # 2.3.3+ ships manylinux cp314 wheels (Install dropped 245s → 4s on run 40260367717).
-MIN_PANDAS_LOCK = Version("2.3.3")
+MIN_PANDAS_LOCK = (2, 3, 3)
 
 
 def _pytest_args(workflow_name: str, job_key: str) -> str:
@@ -29,11 +28,21 @@ def _pytest_args(workflow_name: str, job_key: str) -> str:
     return str(workflow["jobs"][job_key]["with"]["pytest_args"])
 
 
-def _lock_pandas_version(lock_name: str) -> Version:
+def _version_tuple(version: str) -> tuple[int, ...]:
+    parts: list[int] = []
+    for piece in version.split("."):
+        digits = re.match(r"([0-9]+)", piece)
+        if digits is None:
+            break
+        parts.append(int(digits.group(1)))
+    return tuple(parts)
+
+
+def _lock_pandas_version(lock_name: str) -> tuple[int, ...]:
     text = (REPO_ROOT / lock_name).read_text(encoding="utf-8")
     match = re.search(r"^pandas==([0-9][^\s#]+)", text, flags=re.MULTILINE)
     assert match is not None, f"pandas pin missing from {lock_name}"
-    return Version(match.group(1))
+    return _version_tuple(match.group(1))
 
 
 def test_gate_pytest_args_do_not_use_loadscope() -> None:
