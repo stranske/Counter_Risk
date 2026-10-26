@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from pathlib import Path
 
 from counter_risk.mosers.workbook_generation import (
@@ -36,6 +38,7 @@ def test_trend_transformation_scope_defines_core_mappings() -> None:
     assert scope.underflow_policy == "clear_remaining_cells"
 
 
+@pytest.mark.slow
 def test_trend_fixture_generates_using_documented_layout_contract() -> None:
     fixture_path = Path("tests/fixtures/NISA Monthly Trend - Raw.xlsx")
     structure = get_mosers_trend_output_structure()

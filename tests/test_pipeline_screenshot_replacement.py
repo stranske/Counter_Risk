@@ -436,6 +436,7 @@ def test_resolve_screenshot_input_mapping_canonicalizes_key_stored_in_mapping(
     assert list(mapping.keys()) == ["Goldman Sachs Int'l"]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "native_office",
     [

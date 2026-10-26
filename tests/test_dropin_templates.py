@@ -516,6 +516,7 @@ def _find_metric_columns(worksheet: Any) -> dict[str, int]:
     return columns
 
 
+@pytest.mark.slow
 def test_fill_dropin_template_populates_all_programs_fixture_counterparty_rows(
     tmp_path: Path,
 ) -> None:
@@ -885,6 +886,7 @@ def test_fill_dropin_template_populates_trend_fixture_notional_breakdown_row(
     workbook.close()
 
 
+@pytest.mark.slow
 def test_fill_dropin_template_generated_workbooks_reopen_cleanly_for_all_variants(
     tmp_path: Path,
 ) -> None:

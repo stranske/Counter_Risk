@@ -47,6 +47,7 @@ def test_web_demo_import_does_not_load_chat_runtime() -> None:
     assert result.returncode == 0, result.stderr
 
 
+@pytest.mark.slow
 def test_web_demo_artifact_uses_fixture_data_and_disables_chat(tmp_path: Path) -> None:
     run_dir = run_web_demo_pipeline(
         config_path=Path("config/fixture_replay.yml"),
