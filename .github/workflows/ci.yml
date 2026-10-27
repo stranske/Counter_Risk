@@ -29,6 +29,9 @@ jobs:
       primary-python-version: '3.14'
       typecheck: true
       coverage: true
+      # Coverage only on the primary runtime: instrumenting 3.13 too cost ~+36% wall time and
+      # held that leg at 42 min (run 40344564212). Must equal primary-python-version.
+      coverage-python-version: '3.14'
       coverage-min: '80'
       # Publishes the coverage TREND artifact. Maint Coverage Guard requires a trend beside
       # the coverage payload and skips any run carrying only one -- so without this the guard

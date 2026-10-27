@@ -24,9 +24,13 @@ MAIN_CI_DIST = "load"
 MIN_PANDAS_LOCK = (2, 3, 3)
 
 
-def _pytest_args(workflow_name: str, job_key: str) -> str:
+def _job_inputs(workflow_name: str, job_key: str) -> dict:
     workflow = yaml.safe_load((WORKFLOWS / workflow_name).read_text(encoding="utf-8"))
-    return str(workflow["jobs"][job_key]["with"]["pytest_args"])
+    return dict(workflow["jobs"][job_key]["with"])
+
+
+def _pytest_args(workflow_name: str, job_key: str) -> str:
+    return str(_job_inputs(workflow_name, job_key)["pytest_args"])
 
 
 def _version_tuple(version: str) -> tuple[int, ...]:
@@ -90,3 +94,13 @@ def test_pandas_lock_has_cp314_wheels() -> None:
     assert all(version >= MIN_PANDAS_LOCK for version in versions.values())
     # Keep the two lock files on the same pandas pin so CI and local sync agree.
     assert len(set(versions.values())) == 1
+
+
+def test_main_ci_measures_coverage_on_primary_runtime_only() -> None:
+    inputs = _job_inputs("ci.yml", "python")
+
+    # Without coverage-python-version the reusable workflow instruments every leg; the 3.13
+    # leg then ran 42 min on main (run 40344564212). Coverage belongs on the primary runtime.
+    assert inputs.get("coverage") is True
+    assert "coverage-python-version" in inputs
+    assert str(inputs["coverage-python-version"]) == str(inputs["primary-python-version"])
