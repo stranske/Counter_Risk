@@ -104,3 +104,26 @@ def test_main_ci_measures_coverage_on_primary_runtime_only() -> None:
     assert inputs.get("coverage") is True
     assert "coverage-python-version" in inputs
     assert str(inputs["coverage-python-version"]) == str(inputs["primary-python-version"])
+
+
+def test_main_ci_timing_jobs_generate_metrics() -> None:
+    workflow = yaml.safe_load((WORKFLOWS / "ci.yml").read_text(encoding="utf-8"))
+    timing_jobs = {
+        name: job["with"]
+        for name, job in workflow["jobs"].items()
+        if "slow-test-top" in job.get("with", {})
+    }
+    assert timing_jobs, "main CI must retain primary-runtime timing evidence"
+    for name, inputs in timing_jobs.items():
+        assert inputs.get("enable-metrics") is True, f"{name} cannot emit its timing artifact"
+
+
+def test_main_ci_reusable_jobs_have_distinct_artifact_prefixes() -> None:
+    workflow = yaml.safe_load((WORKFLOWS / "ci.yml").read_text(encoding="utf-8"))
+    prefixes = [
+        job.get("with", {}).get("artifact-prefix", "gate-")
+        for job in workflow["jobs"].values()
+        if "reusable-10-ci-python.yml" in job.get("uses", "")
+    ]
+    # Coverage-disabled calls still upload test results with overwrite enabled.
+    assert len(prefixes) == len(set(prefixes)), "parallel jobs can overwrite CI evidence"

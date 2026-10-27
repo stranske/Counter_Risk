@@ -43,7 +43,8 @@ jobs:
       pytest_args: "-n auto --dist load"
       # Heavy `slow`-marked tests run in the python-slow-* jobs below so no job nears 10 minutes.
       pytest_markers: 'not slow'
-      # Records the 25 slowest tests in the job summary for the #1200 timing table.
+      # Metrics on the primary runtime retain the 25 slowest tests for #1200.
+      enable-metrics: true
       slow-test-top: '25'
     secrets: inherit
 
@@ -59,6 +60,8 @@ jobs:
       primary-python-version: '3.14'
       typecheck: false
       coverage: false
+      artifact-prefix: 'slow-run-pipeline-'
+      enable-metrics: true
       pytest_markers: 'slow'
       pytest_args: "tests/pipeline/test_run_pipeline.py"
       slow-test-top: '25'
@@ -72,6 +75,8 @@ jobs:
       primary-python-version: '3.14'
       typecheck: false
       coverage: false
+      artifact-prefix: 'slow-pipeline-integration-'
+      enable-metrics: true
       pytest_markers: 'slow'
       pytest_args: "tests/pipeline tests/integration tests/spec --ignore=tests/pipeline/test_run_pipeline.py"
       slow-test-top: '25'
@@ -85,6 +90,8 @@ jobs:
       primary-python-version: '3.14'
       typecheck: false
       coverage: false
+      artifact-prefix: 'slow-other-'
+      enable-metrics: true
       pytest_markers: 'slow'
       pytest_args: "tests --ignore=tests/pipeline --ignore=tests/integration --ignore=tests/spec"
       slow-test-top: '25'
