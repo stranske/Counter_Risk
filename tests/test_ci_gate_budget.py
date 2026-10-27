@@ -118,6 +118,17 @@ def test_main_ci_timing_jobs_generate_metrics() -> None:
         assert inputs.get("enable-metrics") is True, f"{name} cannot emit its timing artifact"
 
 
+def test_main_ci_requests_25_slowest_tests_for_every_shard() -> None:
+    workflow = yaml.safe_load((WORKFLOWS / "ci.yml").read_text(encoding="utf-8"))
+    for name, job in workflow["jobs"].items():
+        if "reusable-10-ci-python.yml" not in job.get("uses", ""):
+            continue
+        inputs = job["with"]
+        # Checking only jobs that still have slow-test-top misses a removed primary-job
+        # setting: the remaining slow shards would keep the metrics test above green.
+        assert str(inputs.get("slow-test-top")) == "25", f"{name} must retain 25 timings"
+
+
 def test_main_ci_reusable_jobs_have_distinct_artifact_prefixes() -> None:
     workflow = yaml.safe_load((WORKFLOWS / "ci.yml").read_text(encoding="utf-8"))
     prefixes = [
