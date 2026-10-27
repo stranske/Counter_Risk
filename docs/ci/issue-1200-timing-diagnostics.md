@@ -1,3 +1,51 @@
+# Issue #1200: measured Python 3.14 timing diagnostics
+
+Measured primary-runtime timings from diagnostic run [40538600983](https://github.com/stranske/Counter_Risk/actions/runs/40538600983) at `2990bfda5ad2ec6157f0dc7d9a96ca6532e7ece5`. These are retained JUnit testcase elapsed times from the four `*-ci-metrics` artifacts, not estimates from console order. All four primary-runtime shards retained at least their 25 slowest tests (or every test when fewer than 25).
+
+| Seconds | Test | Artifact |
+| ---: | --- | --- |
+| 328.384 | `tests.test_pipeline_screenshot_replacement::test_office_cash_change_updates_final_ppt_media_preserving_inputs[portable]` | `slow-other-ci-metrics` |
+| 239.163 | `tests.spec.test_macro_spec_fixtures::test_macro_spec_range_level_outputs_match_expected_mosers_format` | `slow-pipeline-integration-ci-metrics` |
+| 234.635 | `tests.spec.test_macro_spec_fixtures::test_macro_spec_cell_by_cell_transformations_match_expected_values[E]` | `slow-pipeline-integration-ci-metrics` |
+| 232.842 | `tests.pipeline.test_monthly_pipeline_ppt_outputs::test_final_concentration_slide_precedes_pdf_export[True-False-24]` | `slow-pipeline-integration-ci-metrics` |
+| 232.702 | `tests.pipeline.test_monthly_pipeline_ppt_outputs::test_final_concentration_slide_precedes_pdf_export[False-True-23]` | `slow-pipeline-integration-ci-metrics` |
+| 230.124 | `tests.integration.test_cli_run::test_cli_run_workflow_mode_writes_manifest_and_data_quality_summary` | `slow-pipeline-integration-ci-metrics` |
+| 229.934 | `tests.pipeline.test_monthly_pipeline_ppt_outputs::test_final_concentration_slide_precedes_pdf_export[True-True-24]` | `slow-pipeline-integration-ci-metrics` |
+| 211.491 | `tests.pipeline.test_run_pipeline::test_screenshot_repo_cash_agrees_with_historical_and_totals[zero-override]` | `slow-run-pipeline-ci-metrics` |
+| 207.992 | `tests.pipeline.test_run_pipeline::test_screenshot_repo_cash_agrees_with_historical_and_totals[source-cash]` | `slow-run-pipeline-ci-metrics` |
+| 198.610 | `tests.pipeline.test_run_pipeline::test_run_pipeline_manifest_includes_pdf_skip_warning_when_com_unavailable` | `slow-run-pipeline-ci-metrics` |
+| 197.361 | `tests.pipeline.test_run_pipeline::test_run_pipeline_manifest_includes_distribution_static_warning` | `slow-run-pipeline-ci-metrics` |
+| 196.187 | `tests.pipeline.test_run_pipeline::test_run_pipeline_writes_expected_outputs_and_manifest` | `slow-run-pipeline-ci-metrics` |
+| 190.011 | `tests.pipeline.test_run_pipeline::test_screenshot_repo_cash_agrees_with_historical_and_totals[negative-override-explicit-image]` | `slow-run-pipeline-ci-metrics` |
+| 180.697 | `tests.pipeline.test_run_pipeline::test_run_pipeline_generates_all_programs_mosers_from_raw_nisa_input` | `slow-run-pipeline-ci-metrics` |
+| 179.720 | `tests.pipeline.test_run_pipeline::test_screenshot_repo_cash_agrees_with_historical_and_totals[explicit-image]` | `slow-run-pipeline-ci-metrics` |
+| 171.678 | `tests.pipeline.test_as_of_header_mismatch::test_real_pipeline_parsers_and_outputs_keep_date_conflict_diagnostics` | `slow-pipeline-integration-ci-metrics` |
+| 153.050 | `tests.test_web_demo_smoke::test_web_demo_artifact_uses_fixture_data_and_disables_chat` | `slow-other-ci-metrics` |
+| 146.352 | `tests.pipeline.test_run_pipeline::test_run_pipeline_wraps_output_write_errors` | `slow-run-pipeline-ci-metrics` |
+| 146.088 | `tests.pipeline.test_run_pipeline::test_run_pipeline_limit_breach_summary_uses_warning_severity_when_no_fail_breaches` | `slow-run-pipeline-ci-metrics` |
+| 145.705 | `tests.pipeline.test_run_pipeline::test_run_pipeline_generates_ex_trend_and_trend_mosers_from_raw_nisa_inputs` | `slow-run-pipeline-ci-metrics` |
+| 145.272 | `tests.pipeline.test_run_pipeline::test_run_pipeline_passes_as_of_date_and_parsed_inputs_to_historical_update` | `slow-run-pipeline-ci-metrics` |
+| 145.224 | `tests.pipeline.test_run_pipeline::test_run_pipeline_invalid_limits_config_fails_during_limit_breach_stage` | `slow-run-pipeline-ci-metrics` |
+| 144.997 | `tests.pipeline.test_run_pipeline::test_run_pipeline_writes_limit_breaches_csv_when_breaches_exist` | `slow-run-pipeline-ci-metrics` |
+| 144.995 | `tests.pipeline.test_run_pipeline::test_run_pipeline_ignores_config_output_root_for_run_directory` | `slow-run-pipeline-ci-metrics` |
+| 144.988 | `tests.pipeline.test_run_pipeline::test_run_pipeline_warns_on_missing_limit_entities_by_default` | `slow-run-pipeline-ci-metrics` |
+
+All diagnostic jobs passed, but actual Python job wall times were 130 s (not slow), 626 s (pipeline/integration), 686 s (remaining), and 1170 s (run pipeline) on 3.14; the 3.13 run-pipeline job took 1350 s. Therefore the 600-second criterion remains unproved and failed on this diagnostic. The current proposal subdivides the slow partitions while preserving their full selected collection and the 80% coverage floor. Future push-to-main runtime acceptance remains pending.
+
+## Required workflow continuation
+
+The path split retains all tests but does not meet the runtime budget. The measured slow partitions contain 38 tests (run pipeline), 20 tests (pipeline/integration/spec), and 29 tests (remaining); the fast partition contains 2,453 tests. Divide the run-pipeline partition into four balanced, exhaustive subpartitions, and each other slow partition into two. Each subpartition needs a distinct artifact prefix and the existing primary-runtime metrics. Prove the selected node-ID union equals the original collection with no duplicates or omissions before running diagnostic CI again. Keep both Python versions, every test, and the 80% coverage floor. Estimates do not prove the 600-second limit.
+
+The repository security contract in `.github/codex/AGENT_INSTRUCTIONS.md` requires explicit `agent-high-privilege` environment approval for the current run before editing `.github/workflows/**`. No such approval is recorded for this opener run. The existing source #1200/PR #1201 owner must obtain that approval and perform the protected workflow change. Ordinary keepalive retries cannot cross this boundary. The measured table is complete; sharding/runtime acceptance and the November 7 push-to-main observation remain pending.
+
+## Retained deliberate-break proof
+
+The named coverage-runtime regression and prior defect-restoration evidence are recorded in the PR recovery comments at `2990bfda5ad2ec6157f0dc7d9a96ca6532e7ece5`. The current opener reruns the focused tests and retains a delete-coverage-input -> named-test-fails -> byte-restoration -> focused-tests-pass receipt in its run evidence. This verifies the regression, not hosted runtime acceptance.
+
+## Historical console-derived estimates
+
+The earlier implementation retained the following estimates before the measured artifacts were recovered. Their download/access limitations describe that earlier runner, not the present opener. They do not supersede the measured table above.
+
 # Issue #1200: retained Python 3.14 timing diagnostics
 
 Recovered diagnostic evidence for #1200 from [push-to-main run 40344564212, Python 3.14 job 121648074591](https://github.com/stranske/Counter_Risk/actions/runs/40344564212/job/121648074591).
