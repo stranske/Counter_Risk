@@ -1,0 +1,58 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_optional_input_provenance_hashes _____________________
+tests/pipeline/test_run_pipeline.py:2730: in test_optional_input_provenance_hashes
+    original = manifest_for(wal_active=True, screenshot_active=True, run_name="original")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/pipeline/test_run_pipeline.py:2727: in manifest_for
+    assert hashes == expected_hashes
+E   AssertionError: assert {'exposure_su...080740b', ...} == {'mosers_all_...080740b', ...}
+E
+E     Omitting 8 identical items, use -vv to show
+E     Right contains 1 more item:
+E     {'screenshot_inputs.slide1': '5eb5f2081421a3e4ed6f5df86b73326919aa0b3d93fbb9f92dc11482f672912b'}
+E
+E     Full diff:
+E       {
+E     +     'exposure_summary_xlsx': 'f2d0c5f96fd392175a0c58805bae49d2b8ec636c7c1e5d8796a985772e66ade9',
+E     -     'mosers_all_programs_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+E     -     'mosers_ex_trend_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+E     -     'mosers_trend_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+E           'hist_all_programs_3yr_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+E           'hist_ex_llc_3yr_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+E           'hist_llc_3yr_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+E           'monthly_pptx': 'a959ba3c7bd0a40f12c40191b92d1fbcd4ecd03c737204b693c9a4b8432114f2',
+E     -     'exposure_summary_xlsx': 'f2d0c5f96fd392175a0c58805bae49d2b8ec636c7c1e5d8796a985772e66ade9',
+E     -     'screenshot_inputs.slide1': '5eb5f2081421a3e4ed6f5df86b73326919aa0b3d93fbb9f92dc11482f672912b',
+E     +     'mosers_all_programs_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+E     +     'mosers_ex_trend_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+E     +     'mosers_trend_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+E       }
+============================= slowest 3 durations ==============================
+0.25s call     tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes
+
+(2 durations < 0.005s hidden.  Use -vv to show these durations.)
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes - AssertionError: assert {'exposure_su...080740b', ...} == {'mosers_all_...080740b', ...}
+
+  Omitting 8 identical items, use -vv to show
+  Right contains 1 more item:
+  {'screenshot_inputs.slide1': '5eb5f2081421a3e4ed6f5df86b73326919aa0b3d93fbb9f92dc11482f672912b'}
+
+  Full diff:
+    {
+  +     'exposure_summary_xlsx': 'f2d0c5f96fd392175a0c58805bae49d2b8ec636c7c1e5d8796a985772e66ade9',
+  -     'mosers_all_programs_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+  -     'mosers_ex_trend_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+  -     'mosers_trend_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+        'hist_all_programs_3yr_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+        'hist_ex_llc_3yr_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+        'hist_llc_3yr_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+        'monthly_pptx': 'a959ba3c7bd0a40f12c40191b92d1fbcd4ecd03c737204b693c9a4b8432114f2',
+  -     'exposure_summary_xlsx': 'f2d0c5f96fd392175a0c58805bae49d2b8ec636c7c1e5d8796a985772e66ade9',
+  -     'screenshot_inputs.slide1': '5eb5f2081421a3e4ed6f5df86b73326919aa0b3d93fbb9f92dc11482f672912b',
+  +     'mosers_all_programs_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+  +     'mosers_ex_trend_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+  +     'mosers_trend_xlsx': 'e81e88a83cb2737385764e8e2cb7bf5ba3795b2d52d56a3de3333fa20080740b',
+    }
+1 failed in 0.88s

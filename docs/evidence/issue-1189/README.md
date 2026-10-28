@@ -115,3 +115,50 @@ the existing remote head and leaves the seven-day Health 85 criterion open.
 Publishing that body would attach the hosted measurements; it does not claim
 the uncommitted follow-up already passed hosted Gate. No protected files were
 changed.
+
+## 2026-10-28 cursor opener
+
+Hosted Codex keepalive on PR #1207 failed twice with `No output captured` on
+head `5edf461` (terminal runner errors, zero task progress). Cursor opener
+re-ran the named acceptance command locally: **3.09s call**, 1 passed. Updated
+PR checklist and applied `agent:retry`. Gate Followups requires a separate
+manual `agents-81-gate-followups.yml` dispatch with `pr_number=1207` and
+`force_retry=true`; full Python 3.14 Gate re-run requested via branch sync.
+
+After merge to `main` at head `5aa464b`, Gate run
+[40733914407](https://github.com/stranske/Counter_Risk/actions/runs/40733914407)
+passed with **Python CI skipped** (merge commit touched docs only). PR #1207
+carries `verify:full`; a follow-up commit touching the provenance test path
+re-triggers full Python 3.14. Hosted Codex on `5aa464b` failed three times
+with `No output captured` (reservations through 2026-10-28T17:31Z); cursor
+opener owns bounded recovery without overlapping writers.
+
+## 2026-10-28T19:15Z cursor opener — `verify:full` removed
+
+Gate run [40743163671](https://github.com/stranske/Counter_Risk/actions/runs/40743163671)
+on head `9ede890` reported `force-full` classification: every category including
+`is-docs-only` was true, so **Python CI / python 3.14** was skipped despite the
+`verify:full` label. Counter_Risk `path-classifier` treats `force-full` as
+all categories enabled; `pr-00-gate.yml` still requires `is_docs_only != true`
+for Python CI. Remove `verify:full` from PR #1207, then push a substantive
+follow-up commit to the same PR branch to trigger a fresh `pull_request`
+`synchronize` event. That event classifies the complete PR diff
+(`tests/pipeline/test_run_pipeline.py` + evidence docs) normally and runs hosted
+Python 3.14. Do not use a manual Gate dispatch for this validation:
+`pr-00-gate.yml` also enables `force-full` for every `workflow_dispatch` event,
+even without the label, so that path still skips Python CI. Local named test: **8.49s call**, 1 passed
+(cursor opener, 2026-10-28). Keepalive Codex on `365cb6ce` failed at **Setup
+Codex auth** (fleet `CODEX_AUTH_JSON` refresh — Workflows #4281); no overlapping
+writer; cursor recovery only.
+
+
+## 2026-10-28 Codex opener — hosted validation receipt
+
+The ordinary PR event at head `d36ae9a49e9041eed8a007012123d4f890f5971b`
+produced [Gate 40752236077](https://github.com/stranske/Counter_Risk/actions/runs/40752236077).
+Both `Python CI / python 3.13` and `Python CI / python 3.14`, Ruff, mypy,
+`gate-summary`, and `Gate / gate` completed successfully. This is executed
+Python CI evidence, rather than a skipped-job or manual-dispatch receipt.
+The recovery instructions above now distinguish the PR synchronization event
+from the manual Gate path. The seven daily Health 85 p50 measurements remain
+pending on source issue #1189.

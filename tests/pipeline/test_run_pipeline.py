@@ -2603,7 +2603,10 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
 def test_optional_input_provenance_hashes(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Manifest hashes track active external sources, not generated images or idle options."""
+    """Manifest hashes track active external sources, not generated images or idle options.
+
+    Issue #1189 / PR #1207: minimal real fixtures keep this test fast for Gate p50 work.
+    """
 
     openpyxl = pytest.importorskip("openpyxl")
     fixtures = Path("tests/fixtures").resolve()
@@ -2629,13 +2632,14 @@ def test_optional_input_provenance_hashes(
     shutil.copyfile(
         fixtures / "nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx", maturity_workbook
     )
+    generated_source = fixtures / "screenshots/slide_2.png"
 
     def generated_screenshot(
         *, workbook_paths: Any, config: WorkflowConfig, run_dir: Path, warnings: list[str]
     ) -> dict[str, Path]:
         generated = run_dir / "_screenshots" / "internal.png"
         generated.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(fixtures / "screenshots/slide_2.png", generated)
+        shutil.copyfile(generated_source, generated)
         # Exercise the production merge rule as well as generated-only input:
         # the explicit slide1 source must win this collision.
         return {"slide1": generated, "slide2": generated}
@@ -2735,6 +2739,17 @@ def test_optional_input_provenance_hashes(
     assert {key for key in original if key.startswith("screenshot_inputs.")} == {
         "screenshot_inputs.slide1"
     }
+
+    # A regenerated intermediate must not alter provenance or override the
+    # colliding external slide1 source, even when its image bytes change.
+    generated_source = fixtures / "screenshots/slide_1.png"
+    generated_changed = manifest_for(
+        wal_active=True, screenshot_active=True, run_name="generated-changed"
+    )
+    regenerated_input = validated_screenshot_inputs["generated-changed"]["slide2"]
+    assert _sha256(regenerated_input) != _sha256(generated_input)
+    assert validated_screenshot_inputs["generated-changed"]["slide1"] == screenshot.resolve()
+    assert generated_changed == original
 
     wal_disabled = manifest_for(wal_active=False, screenshot_active=True, run_name="wal-disabled")
     assert "exposure_summary_xlsx" not in wal_disabled
