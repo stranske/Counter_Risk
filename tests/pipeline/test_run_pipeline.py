@@ -2603,7 +2603,10 @@ def test_run_pipeline_writes_expected_outputs_and_manifest(
 def test_optional_input_provenance_hashes(
     tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Manifest hashes track active external sources, not generated images or idle options."""
+    """Manifest hashes track active external sources, not generated images or idle options.
+
+    Issue #1189 / PR #1207: minimal real fixtures keep this test fast for Gate p50 work.
+    """
 
     openpyxl = pytest.importorskip("openpyxl")
     fixtures = Path("tests/fixtures").resolve()

@@ -121,5 +121,14 @@ changed.
 Hosted Codex keepalive on PR #1207 failed twice with `No output captured` on
 head `5edf461` (terminal runner errors, zero task progress). Cursor opener
 re-ran the named acceptance command locally: **3.09s call**, 1 passed. Updated
-PR checklist and redispatched Gate Followups (`agent:retry`); full Python 3.14
-Gate re-run requested via branch sync.
+PR checklist and applied `agent:retry`. Gate Followups requires a separate
+manual `agents-81-gate-followups.yml` dispatch with `pr_number=1207` and
+`force_retry=true`; full Python 3.14 Gate re-run requested via branch sync.
+
+After merge to `main` at head `5aa464b`, Gate run
+[40733914407](https://github.com/stranske/Counter_Risk/actions/runs/40733914407)
+passed with **Python CI skipped** (merge commit touched docs only). PR #1207
+carries `verify:full`; a follow-up commit touching the provenance test path
+re-triggers full Python 3.14. Hosted Codex on `5aa464b` failed three times
+with `No output captured` (reservations through 2026-10-28T17:31Z); cursor
+opener owns bounded recovery without overlapping writers.
