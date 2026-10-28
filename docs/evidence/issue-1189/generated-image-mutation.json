@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes",
+    "-q",
+    "-o",
+    "addopts=",
+    "--durations=3",
+    "-m",
+    "not slow",
+    "--tb=short"
+  ],
+  "before": "runtime_config, external_screenshot_inputs=config.screenshot_inputs",
+  "after": "runtime_config, external_screenshot_inputs={}",
+  "original_sha256": "6932dff548065ef429e7d99f645900884c4aa0d80d2fc4d6f13d1febeed745b4",
+  "restored_sha256": "6932dff548065ef429e7d99f645900884c4aa0d80d2fc4d6f13d1febeed745b4",
+  "red_exit_code": 1,
+  "restored_green_exit_code": 0
+}

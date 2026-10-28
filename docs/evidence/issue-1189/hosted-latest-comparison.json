@@ -1,0 +1,131 @@
+{
+  "before": {
+    "run_id": 40160750372,
+    "url": "https://github.com/stranske/Counter_Risk/actions/runs/40160750372",
+    "elapsed_seconds": 1522,
+    "python314_seconds": 1478,
+    "python314_pytest_seconds": 1180,
+    "python314_dependency_seconds": 252
+  },
+  "after": {
+    "run_id": 40752236077,
+    "url": "https://github.com/stranske/Counter_Risk/actions/runs/40752236077",
+    "head_sha": "d36ae9a49e9041eed8a007012123d4f890f5971b",
+    "run_started_at": "2026-10-28T19:12:45Z",
+    "last_job_completed_at": "2026-10-28T19:16:00Z",
+    "elapsed_seconds": 195,
+    "referenced_workflows": [
+      {
+        "path": "stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main",
+        "sha": "826ecfe743dc198aafb1b19c7d9b0b0ac4ff554e",
+        "ref": "refs/heads/main"
+      }
+    ],
+    "jobs": [
+      {
+        "id": 123041994996,
+        "name": "Python CI / typecheck-mypy",
+        "conclusion": "success",
+        "started_at": "2026-10-28T19:13:19Z",
+        "completed_at": "2026-10-28T19:13:55Z",
+        "elapsed_seconds": 36,
+        "steps": [
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9,
+            "started_at": "2026-10-28T19:13:48Z",
+            "completed_at": "2026-10-28T19:13:50Z",
+            "elapsed_seconds": 2
+          }
+        ]
+      },
+      {
+        "id": 123041995533,
+        "name": "Python CI / lint-ruff",
+        "conclusion": "success",
+        "started_at": "2026-10-28T19:13:20Z",
+        "completed_at": "2026-10-28T19:13:59Z",
+        "elapsed_seconds": 39,
+        "steps": [
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8,
+            "started_at": "2026-10-28T19:13:54Z",
+            "completed_at": "2026-10-28T19:13:55Z",
+            "elapsed_seconds": 1
+          }
+        ]
+      },
+      {
+        "id": 123042069414,
+        "name": "Python CI / python 3.13",
+        "conclusion": "success",
+        "started_at": "2026-10-28T19:13:28Z",
+        "completed_at": "2026-10-28T19:15:39Z",
+        "elapsed_seconds": 131,
+        "steps": [
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-10-28T19:14:05Z",
+            "completed_at": "2026-10-28T19:14:08Z",
+            "elapsed_seconds": 3
+          },
+          {
+            "name": "Pytest (unit tests with coverage)",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20,
+            "started_at": "2026-10-28T19:14:17Z",
+            "completed_at": "2026-10-28T19:15:29Z",
+            "elapsed_seconds": 72
+          }
+        ]
+      },
+      {
+        "id": 123042069509,
+        "name": "Python CI / python 3.14",
+        "conclusion": "success",
+        "started_at": "2026-10-28T19:13:28Z",
+        "completed_at": "2026-10-28T19:15:14Z",
+        "elapsed_seconds": 106,
+        "steps": [
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11,
+            "started_at": "2026-10-28T19:14:02Z",
+            "completed_at": "2026-10-28T19:14:05Z",
+            "elapsed_seconds": 3
+          },
+          {
+            "name": "Pytest (unit tests with coverage)",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20,
+            "started_at": "2026-10-28T19:14:11Z",
+            "completed_at": "2026-10-28T19:15:05Z",
+            "elapsed_seconds": 54
+          }
+        ]
+      },
+      {
+        "id": 123043384324,
+        "name": "gate-summary",
+        "conclusion": "success",
+        "started_at": "2026-10-28T19:15:54Z",
+        "completed_at": "2026-10-28T19:16:00Z",
+        "elapsed_seconds": 6,
+        "steps": []
+      }
+    ]
+  },
+  "caveat": "Different workflow revisions, dependency/cache timings, and collected test counts (baseline 2454 passed, 2 skipped; latest Python 3.14 2434 passed, 1 skipped). This is observational hosted timing, not fixture-only causation or seven-day Health 85 p50 acceptance. The local generated-image test follow-up is not included in this hosted run."
+}
