@@ -7,6 +7,60 @@ from pathlib import Path
 import pytest
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--slow-shard",
+        default=None,
+        metavar="I/N",
+        help="run only shard I of N (1-based) of the tests selected by -m/paths, split round-robin "
+        "over the sorted node IDs so the N shards are disjoint and together select every test",
+    )
+
+
+def parse_shard(spec: str) -> tuple[int, int]:
+    """`I/N` -> (I, N); a malformed or out-of-range spec raises instead of selecting nothing."""
+    try:
+        index_text, count_text = spec.split("/")
+        index, count = int(index_text), int(count_text)
+    except ValueError as exc:
+        raise pytest.UsageError(f"--slow-shard expects I/N, got {spec!r}") from exc
+    if not 1 <= index <= count:
+        raise pytest.UsageError(f"--slow-shard {spec!r}: need 1 <= I <= N")
+    return index, count
+
+
+class _SlowShardPlugin:
+    """Keep shard I of N of what -m/paths already selected.
+
+    A separate plugin so its hook can be `trylast`: marker deselection must have run first, or the
+    shards would be cut from the whole suite instead of from the slow tests they are meant to split.
+    """
+
+    def __init__(self, index: int, count: int) -> None:
+        self.index, self.count = index, count
+
+    @pytest.hookimpl(trylast=True)
+    def pytest_collection_modifyitems(
+        self, config: pytest.Config, items: list[pytest.Item]
+    ) -> None:
+        ordered = sorted(items, key=lambda item: item.nodeid)
+        keep = {
+            id(item)
+            for position, item in enumerate(ordered)
+            if position % self.count == self.index - 1
+        }
+        dropped = [item for item in items if id(item) not in keep]
+        items[:] = [item for item in items if id(item) in keep]
+        config.hook.pytest_deselected(items=dropped)
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    spec = config.getoption("--slow-shard")
+    if spec is not None:
+        index, count = parse_shard(spec)
+        config.pluginmanager.register(_SlowShardPlugin(index, count), "slow-shard")
+
+
 @pytest.fixture
 def registered_alias_workbook(tmp_path: Path) -> Path:
     """Real CPRS-FCM input whose two labels represent one registered entity."""
