@@ -35,7 +35,7 @@ drainable_in: 7 days.
 
 #### Acceptance criteria
 - [x] `PYTHONPATH=src python -m pytest tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes -q -o addopts= --durations=3` collects one passing test, records a measured before/after duration reduction in the PR, and still fails when external screenshot hashing is temporarily disconnected; restore and pass again.
-- [ ] `.github/workflows/pr-00-gate.yml` passes with required checks preserved after the change.
+- [x] `.github/workflows/pr-00-gate.yml` passes with required checks preserved after the change: exact-head run 40762075834 on `8a17e09` (job links below).
 - [ ] Health 85 reports trailing-seven-day Gate p50 at or below 10 min for seven consecutive daily measurements, then closes this issue with the dated p50 series.
 
 <!-- auto-status-summary:end -->
@@ -56,7 +56,7 @@ repeated openpyxl stylesheet reads in the provenance test.
 - [x] Compare hosted durations and record run URLs and measurements below.
 - [x] Verify the named test passes, detects disconnected screenshot hashing,
   and passes again after exact-byte production restoration.
-- [ ] Run hosted Gate on this follow-up test change.
+- [x] Run hosted Gate on this follow-up test change: exact-head run 40762075834 on `8a17e09` (job links below).
 - [x] Complete the required repository-wide Black gate and commit the source change.
 - [ ] Observe seven consecutive daily Health 85 trailing-seven-day p50 values
   at or below ten minutes before source issue #1189 closes.
@@ -118,6 +118,11 @@ The five evidence links above use immutable repository blob URLs so they also
 resolve when this template is published as a GitHub PR description. The earlier
 no-commit and unrun-hosted notes describe the producer sandbox at that time;
 its delivered follow-up is now commit `8a17e09feac778dc73621c404cab85e7b70200b8`.
-Hosted Python 3.13/3.14 and Gate passed at that commit. This documentation-only
+The exact-head [Gate run 40762075834](https://github.com/stranske/Counter_Risk/actions/runs/40762075834)
+completed successfully on that commit: [Python 3.13](https://github.com/stranske/Counter_Risk/actions/runs/40762075834/job/123076644630),
+[Python 3.14](https://github.com/stranske/Counter_Risk/actions/runs/40762075834/job/123076644605),
+and [gate-summary](https://github.com/stranske/Counter_Risk/actions/runs/40762075834/job/123077873430)
+all executed and passed. This is the follow-up validation; the duration table
+above remains the earlier measured comparison on `d36ae9a`. This documentation-only
 follow-up requires its own checks. Source issue #1189 remains open for the seven
 consecutive daily Health 85 p50 observations.
