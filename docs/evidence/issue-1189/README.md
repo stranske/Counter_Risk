@@ -115,3 +115,11 @@ the existing remote head and leaves the seven-day Health 85 criterion open.
 Publishing that body would attach the hosted measurements; it does not claim
 the uncommitted follow-up already passed hosted Gate. No protected files were
 changed.
+
+## 2026-10-28 cursor opener
+
+Hosted Codex keepalive on PR #1207 failed twice with `No output captured` on
+head `5edf461` (terminal runner errors, zero task progress). Cursor opener
+re-ran the named acceptance command locally: **3.09s call**, 1 passed. Updated
+PR checklist and redispatched Gate Followups (`agent:retry`); full Python 3.14
+Gate re-run requested via branch sync.
