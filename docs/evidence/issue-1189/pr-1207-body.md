@@ -72,16 +72,16 @@ Validation on Python 3.14.9:
 
 - Before this follow-up, the named minimal-fixture test passed at 0.44s call /
   1.61s total. The existing archive-input baseline is 211.24s call /
-  212.14s total in [baseline.log](baseline.log), recorded on Python 3.14.8;
+  212.14s total in [baseline.log](https://github.com/stranske/Counter_Risk/blob/8a17e09feac778dc73621c404cab85e7b70200b8/docs/evidence/issue-1189/baseline.log), recorded on Python 3.14.8;
   this is not a fresh same-host comparison.
 - All 11 focused provenance, limit-scope and header-boundary cases pass in
   2.23s; the strengthened provenance test takes 0.48s call.
 - Temporarily disconnecting external screenshot hashing produces the expected
   missing `screenshot_inputs.slide1` failure, exit 1
-  ([red log](generated-image-mutation-red.log)).
+  ([red log](https://github.com/stranske/Counter_Risk/blob/8a17e09feac778dc73621c404cab85e7b70200b8/docs/evidence/issue-1189/generated-image-mutation-red.log)).
   Exact-byte restoration passes at 0.49s call / 0.86s total
-  ([green log](generated-image-restored-green.log)).
-  [Mutation metadata](generated-image-mutation.json) records the command,
+  ([green log](https://github.com/stranske/Counter_Risk/blob/8a17e09feac778dc73621c404cab85e7b70200b8/docs/evidence/issue-1189/generated-image-restored-green.log)).
+  [Mutation metadata](https://github.com/stranske/Counter_Risk/blob/8a17e09feac778dc73621c404cab85e7b70200b8/docs/evidence/issue-1189/generated-image-mutation.json) records the command,
   exit codes and matching production SHA-256 values.
 - Changed-file Black 26.10.1 and Ruff pass.
 - Required repository-wide Black fails with `PermissionError: [Errno 1]
@@ -102,7 +102,7 @@ Validation on Python 3.14.9:
 | Python 3.14 dependency installation | 4m12s | 3s |
 | Python 3.13 job | 11m24s | 2m11s |
 
-[Latest comparison data](hosted-latest-comparison.json) records source head,
+[Latest comparison data](https://github.com/stranske/Counter_Risk/blob/8a17e09feac778dc73621c404cab85e7b70200b8/docs/evidence/issue-1189/hosted-latest-comparison.json) records source head,
 workflow revision, timestamps and job conclusions. The latest run on
 `d36ae9a49e9041eed8a007012123d4f890f5971b` passed both Python versions, Ruff,
 mypy, gate-summary and `Gate / gate`. It predates this local test change.
@@ -110,3 +110,14 @@ Workflow revisions, dependency/cache timings and collected test counts differ
 (baseline Python 3.14: 2454 passed, 2 skipped; latest: 2434 passed, 1 skipped).
 The full improvement cannot be attributed to this fixture change alone.
 One hosted run below ten minutes does not satisfy the seven-day p50 criterion.
+
+
+### Published evidence-link correction (2026-10-28)
+
+The five evidence links above use immutable repository blob URLs so they also
+resolve when this template is published as a GitHub PR description. The earlier
+no-commit and unrun-hosted notes describe the producer sandbox at that time;
+its delivered follow-up is now commit `8a17e09feac778dc73621c404cab85e7b70200b8`.
+Hosted Python 3.13/3.14 and Gate passed at that commit. This documentation-only
+follow-up requires its own checks. Source issue #1189 remains open for the seven
+consecutive daily Health 85 p50 observations.
