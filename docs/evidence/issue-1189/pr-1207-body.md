@@ -57,7 +57,7 @@ repeated openpyxl stylesheet reads in the provenance test.
 - [x] Verify the named test passes, detects disconnected screenshot hashing,
   and passes again after exact-byte production restoration.
 - [ ] Run hosted Gate on this follow-up test change.
-- [ ] Complete the required repository-wide Black gate and commit the source change.
+- [x] Complete the required repository-wide Black gate and commit the source change.
 - [ ] Observe seven consecutive daily Health 85 trailing-seven-day p50 values
   at or below ten minutes before source issue #1189 closes.
 
