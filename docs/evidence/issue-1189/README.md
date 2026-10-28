@@ -140,9 +140,25 @@ on head `9ede890` reported `force-full` classification: every category including
 `is-docs-only` was true, so **Python CI / python 3.14** was skipped despite the
 `verify:full` label. Counter_Risk `path-classifier` treats `force-full` as
 all categories enabled; `pr-00-gate.yml` still requires `is_docs_only != true`
-for Python CI. Removed `verify:full` from PR #1207 and re-dispatch Gate so the
-PR diff (`tests/pipeline/test_run_pipeline.py` + evidence docs) classifies
-normally and runs hosted Python 3.14. Local named test: **8.49s call**, 1 passed
+for Python CI. Remove `verify:full` from PR #1207, then push a substantive
+follow-up commit to the same PR branch to trigger a fresh `pull_request`
+`synchronize` event. That event classifies the complete PR diff
+(`tests/pipeline/test_run_pipeline.py` + evidence docs) normally and runs hosted
+Python 3.14. Do not use a manual Gate dispatch for this validation:
+`pr-00-gate.yml` also enables `force-full` for every `workflow_dispatch` event,
+even without the label, so that path still skips Python CI. Local named test: **8.49s call**, 1 passed
 (cursor opener, 2026-10-28). Keepalive Codex on `365cb6ce` failed at **Setup
 Codex auth** (fleet `CODEX_AUTH_JSON` refresh — Workflows #4281); no overlapping
 writer; cursor recovery only.
+
+
+## 2026-10-28 Codex opener — hosted validation receipt
+
+The ordinary PR event at head `d36ae9a49e9041eed8a007012123d4f890f5971b`
+produced [Gate 40752236077](https://github.com/stranske/Counter_Risk/actions/runs/40752236077).
+Both `Python CI / python 3.13` and `Python CI / python 3.14`, Ruff, mypy,
+`gate-summary`, and `Gate / gate` completed successfully. This is executed
+Python CI evidence, rather than a skipped-job or manual-dispatch receipt.
+The recovery instructions above now distinguish the PR synchronization event
+from the manual Gate path. The seven daily Health 85 p50 measurements remain
+pending on source issue #1189.
