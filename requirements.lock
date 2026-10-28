@@ -108,7 +108,7 @@ packaging==25.0
     #   langsmith
     #   pytesseract
     #   pytest
-pandas==2.3.0
+pandas==2.3.3
     # via counter-risk (pyproject.toml)
 pathspec==1.0.4
     # via
@@ -196,7 +196,7 @@ requests==2.32.5
     #   tiktoken
 requests-toolbelt==1.0.0
     # via langsmith
-ruff==0.17.2
+ruff==0.17.3
     # via counter-risk (pyproject.toml)
 six==1.17.0
     # via python-dateutil

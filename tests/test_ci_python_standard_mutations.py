@@ -34,7 +34,7 @@ def test_restored_old_matrix_fails_then_restored_standard_passes(
     original = workflow_documents[path]
     original_bytes = path.read_bytes()
     matrix = '["3.13", "3.14"]'
-    assert original.count(matrix) == 1
+    assert matrix in original  # ci.yml carries it once per job (python + slow shards)
     workflow_documents[path] = original.replace(matrix, '["3.12", "3.14"]')
 
     with pytest.raises(AssertionError, match="Python 3\\.12 runtime pins remain") as failure:

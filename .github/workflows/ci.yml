@@ -29,11 +29,180 @@ jobs:
       primary-python-version: '3.14'
       typecheck: true
       coverage: true
+      # Coverage only on the primary runtime: instrumenting 3.13 too cost ~+36% wall time and
+      # held that leg at 42 min (run 40344564212). Must equal primary-python-version.
+      coverage-python-version: '3.14'
       coverage-min: '80'
       # Publishes the coverage TREND artifact. Maint Coverage Guard requires a trend beside
       # the coverage payload and skips any run carrying only one -- so without this the guard
       # reported this repo as not measuring coverage at all, which was never true. Purely
       # additive: the input publishes artifacts and gates nothing.
       enable-soft-gate: true
-      pytest_args: "-n auto --dist loadscope"
+      # Same-commit A/B (Gate markers, -n 4): load 32.87s < loadfile 34.75s < loadscope 34.91s.
+      # pandas>=2.3.3 in requirements.lock avoids ~4m cp314 source builds on Install.
+      pytest_args: "-n auto --dist load"
+      # Heavy `slow`-marked tests run in the python-slow-* jobs below so no job nears 10 minutes.
+      pytest_markers: 'not slow'
+      # Metrics on the primary runtime retain the 25 slowest tests for #1200.
+      enable-metrics: true
+      slow-test-top: '25'
+    secrets: inherit
+
+  # Post-merge split (#1200): the reusable workflow has no shard input, so the `slow` marker is
+  # partitioned by path and then by `--slow-shard I/N` (tests/conftest.py: round-robin over the sorted
+  # node IDs of the tests -m/paths selected). Together with the `not slow` job above they select
+  # every test; tests/test_ci_gate_budget.py proves the union is exact and disjoint. Coverage (and its
+  # 80% floor) stays on the `not slow` job, which measures ~89% on its own, so these jobs run
+  # without instrumentation. Measured 3.14 wall before the split (run 40538600983): run pipeline
+  # 1170 s, pipeline/integration 626 s, remaining 686 s.
+  python-slow-run-pipeline-1:
+    name: Python CI (slow - run pipeline 1/4)
+    uses: stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main
+    with:
+      python-versions: '["3.13", "3.14"]'
+      primary-python-version: '3.14'
+      typecheck: false
+      # The `python` job above lints and format-checks once; repeating both in all eight shards
+      # only burns runner time (the reusable workflow defaults both to true).
+      lint: false
+      format_check: false
+      coverage: false
+      artifact-prefix: 'slow-run-pipeline-1-'
+      enable-metrics: true
+      pytest_markers: 'slow'
+      pytest_args: "tests/pipeline/test_run_pipeline.py --slow-shard 1/4"
+      slow-test-top: '25'
+    secrets: inherit
+
+  python-slow-run-pipeline-2:
+    name: Python CI (slow - run pipeline 2/4)
+    uses: stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main
+    with:
+      python-versions: '["3.13", "3.14"]'
+      primary-python-version: '3.14'
+      typecheck: false
+      # The `python` job above lints and format-checks once; repeating both in all eight shards
+      # only burns runner time (the reusable workflow defaults both to true).
+      lint: false
+      format_check: false
+      coverage: false
+      artifact-prefix: 'slow-run-pipeline-2-'
+      enable-metrics: true
+      pytest_markers: 'slow'
+      pytest_args: "tests/pipeline/test_run_pipeline.py --slow-shard 2/4"
+      slow-test-top: '25'
+    secrets: inherit
+
+  python-slow-run-pipeline-3:
+    name: Python CI (slow - run pipeline 3/4)
+    uses: stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main
+    with:
+      python-versions: '["3.13", "3.14"]'
+      primary-python-version: '3.14'
+      typecheck: false
+      # The `python` job above lints and format-checks once; repeating both in all eight shards
+      # only burns runner time (the reusable workflow defaults both to true).
+      lint: false
+      format_check: false
+      coverage: false
+      artifact-prefix: 'slow-run-pipeline-3-'
+      enable-metrics: true
+      pytest_markers: 'slow'
+      pytest_args: "tests/pipeline/test_run_pipeline.py --slow-shard 3/4"
+      slow-test-top: '25'
+    secrets: inherit
+
+  python-slow-run-pipeline-4:
+    name: Python CI (slow - run pipeline 4/4)
+    uses: stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main
+    with:
+      python-versions: '["3.13", "3.14"]'
+      primary-python-version: '3.14'
+      typecheck: false
+      # The `python` job above lints and format-checks once; repeating both in all eight shards
+      # only burns runner time (the reusable workflow defaults both to true).
+      lint: false
+      format_check: false
+      coverage: false
+      artifact-prefix: 'slow-run-pipeline-4-'
+      enable-metrics: true
+      pytest_markers: 'slow'
+      pytest_args: "tests/pipeline/test_run_pipeline.py --slow-shard 4/4"
+      slow-test-top: '25'
+    secrets: inherit
+
+  python-slow-pipeline-integration-1:
+    name: Python CI (slow - pipeline/integration/spec 1/2)
+    uses: stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main
+    with:
+      python-versions: '["3.13", "3.14"]'
+      primary-python-version: '3.14'
+      typecheck: false
+      # The `python` job above lints and format-checks once; repeating both in all eight shards
+      # only burns runner time (the reusable workflow defaults both to true).
+      lint: false
+      format_check: false
+      coverage: false
+      artifact-prefix: 'slow-pipeline-integration-1-'
+      enable-metrics: true
+      pytest_markers: 'slow'
+      pytest_args: "tests/pipeline tests/integration tests/spec --ignore=tests/pipeline/test_run_pipeline.py --slow-shard 1/2"
+      slow-test-top: '25'
+    secrets: inherit
+
+  python-slow-pipeline-integration-2:
+    name: Python CI (slow - pipeline/integration/spec 2/2)
+    uses: stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main
+    with:
+      python-versions: '["3.13", "3.14"]'
+      primary-python-version: '3.14'
+      typecheck: false
+      # The `python` job above lints and format-checks once; repeating both in all eight shards
+      # only burns runner time (the reusable workflow defaults both to true).
+      lint: false
+      format_check: false
+      coverage: false
+      artifact-prefix: 'slow-pipeline-integration-2-'
+      enable-metrics: true
+      pytest_markers: 'slow'
+      pytest_args: "tests/pipeline tests/integration tests/spec --ignore=tests/pipeline/test_run_pipeline.py --slow-shard 2/2"
+      slow-test-top: '25'
+    secrets: inherit
+
+  python-slow-other-1:
+    name: Python CI (slow - remaining 1/2)
+    uses: stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main
+    with:
+      python-versions: '["3.13", "3.14"]'
+      primary-python-version: '3.14'
+      typecheck: false
+      # The `python` job above lints and format-checks once; repeating both in all eight shards
+      # only burns runner time (the reusable workflow defaults both to true).
+      lint: false
+      format_check: false
+      coverage: false
+      artifact-prefix: 'slow-other-1-'
+      enable-metrics: true
+      pytest_markers: 'slow'
+      pytest_args: "tests --ignore=tests/pipeline --ignore=tests/integration --ignore=tests/spec --slow-shard 1/2"
+      slow-test-top: '25'
+    secrets: inherit
+
+  python-slow-other-2:
+    name: Python CI (slow - remaining 2/2)
+    uses: stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main
+    with:
+      python-versions: '["3.13", "3.14"]'
+      primary-python-version: '3.14'
+      typecheck: false
+      # The `python` job above lints and format-checks once; repeating both in all eight shards
+      # only burns runner time (the reusable workflow defaults both to true).
+      lint: false
+      format_check: false
+      coverage: false
+      artifact-prefix: 'slow-other-2-'
+      enable-metrics: true
+      pytest_markers: 'slow'
+      pytest_args: "tests --ignore=tests/pipeline --ignore=tests/integration --ignore=tests/spec --slow-shard 2/2"
+      slow-test-top: '25'
     secrets: inherit

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from counter_risk.parsers.nisa_all_programs import (
     get_nisa_all_programs_input_structure,
     parse_nisa_all_programs,
@@ -37,6 +39,7 @@ def test_all_programs_input_structure_defines_required_fields() -> None:
     assert structure.segment_aliases["futures / cdx"] == "futures_cdx"
 
 
+@pytest.mark.slow
 def test_all_programs_fixture_parses_with_documented_structure() -> None:
     structure = get_nisa_all_programs_input_structure()
     parsed = parse_nisa_all_programs(Path("tests/fixtures/NISA Monthly All Programs - Raw.xlsx"))

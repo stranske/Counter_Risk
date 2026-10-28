@@ -16,6 +16,7 @@ from counter_risk.writers.mosers_workbook import (
 )
 
 
+@pytest.mark.slow
 def test_generate_mosers_workbook_creates_new_file_with_required_sheets(tmp_path: Path) -> None:
     destination = tmp_path / "MOSERS Generated - All Programs.xlsx"
     output_path = generate_mosers_workbook(
@@ -36,6 +37,7 @@ def test_generate_mosers_workbook_creates_new_file_with_required_sheets(tmp_path
         workbook.close()
 
 
+@pytest.mark.slow
 def test_generate_mosers_workbook_stamps_as_of_date_into_cprs_ch_header(tmp_path: Path) -> None:
     destination = tmp_path / "MOSERS Generated - All Programs.xlsx"
     as_of = date(2025, 12, 31)
@@ -60,6 +62,7 @@ def test_generate_mosers_workbook_stamps_as_of_date_into_cprs_ch_header(tmp_path
         workbook.close()
 
 
+@pytest.mark.slow
 def test_generate_mosers_workbook_output_is_parseable_by_existing_milestone_one_parsers(
     tmp_path: Path,
 ) -> None:
@@ -120,6 +123,7 @@ def test_generate_mosers_workbook_output_is_parseable_by_existing_milestone_one_
         ),
     ],
 )
+@pytest.mark.slow
 def test_generate_variant_mosers_workbook_outputs_are_parseable_by_milestone_one_parsers(
     tmp_path: Path,
     generator: Callable[..., Path],

@@ -6196,6 +6196,7 @@ def test_write_change_attribution_split_current_conservation(tmp_path: Path, sha
     assert all(row["confidence"] == "High" for row in report_rows)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "cash_amount,cash_override,explicit",
     [
@@ -6501,6 +6502,7 @@ def test_all_programs_missing_authority_rejected_by_full_pipeline(
     assert not list((tmp_path / "runs").rglob("limit_breaches.csv"))
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     ("entity_type", "canonical_key", "display_name", "alias", "other_name", "other_alias"),
     [

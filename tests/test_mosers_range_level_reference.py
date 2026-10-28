@@ -27,6 +27,7 @@ def test_mosers_reference_outputs_exist_for_each_variant() -> None:
             workbook.close()
 
 
+@pytest.mark.slow
 def test_all_programs_generated_output_matches_reference_for_scoped_label_ranges(
     tmp_path: Path,
 ) -> None:
@@ -65,6 +66,7 @@ def test_all_programs_generated_output_matches_reference_for_scoped_label_ranges
     assert differences == []
 
 
+@pytest.mark.slow
 def test_ex_trend_generated_output_matches_reference_for_scoped_label_ranges(
     tmp_path: Path,
 ) -> None:
@@ -109,6 +111,7 @@ def test_ex_trend_generated_output_matches_reference_for_scoped_label_ranges(
     assert differences == []
 
 
+@pytest.mark.slow
 def test_trend_generated_output_matches_reference_for_scoped_label_ranges(
     tmp_path: Path,
 ) -> None:
