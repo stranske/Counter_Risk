@@ -373,6 +373,7 @@ Private Const DQ_STATUS_CELL As String = "B9"
 Private Const SETTINGS_TEMP_FILENAME As String = "counter-risk-runner-settings.json"
 Private Const MANIFEST_FILENAME As String = "manifest.json"
 Private Const DRY_RUN_OUTPUT_FILENAME As String = "counter-risk-dry-run-discovery.txt"
+Private Const MSGBOX_PROMPT_MAX_CHARS As Long = 1024
 Private Const ASK_ABOUT_UNAVAILABLE_MESSAGE As String = "Asking questions about a run is not available from Excel. " & _
     "Review this run with the operator runner: counter-risk gui"
 
@@ -538,7 +539,7 @@ Public Sub DryRunDiscovery_Click()
     Else
         WriteResult "Success"
     End If
-    MsgBox discoveryOutput, vbInformation, "Dry-Run Discovery"
+    ShowDryRunDiscoveryOutput outputPath, discoveryOutput
     Exit Sub
 
 DryRunDiscoveryError:
@@ -888,6 +889,25 @@ Private Function OpenDirectory(ByVal directoryPath As String) As LaunchStatus
 OpenDirectoryError:
     OpenDirectory = BuildErrorStatus(directoryPath, Err.Number, Err.Description)
 End Function
+
+Private Sub ShowDryRunDiscoveryOutput(ByVal outputPath As String, ByVal discoveryOutput As String)
+    Dim openStatus As LaunchStatus
+
+    If Len(discoveryOutput) <= MSGBOX_PROMPT_MAX_CHARS Then
+        MsgBox discoveryOutput, vbInformation, "Dry-Run Discovery"
+        Exit Sub
+    End If
+
+    openStatus = OpenFile(outputPath)
+    If openStatus.Success Then
+        MsgBox "Discovery output is too long for a message box." & vbCrLf & vbCrLf & _
+               "Opened: " & outputPath, vbInformation, "Dry-Run Discovery"
+        Exit Sub
+    End If
+
+    MsgBox "Discovery output is too long for a message box." & vbCrLf & vbCrLf & _
+           "Full output saved to:" & vbCrLf & outputPath, vbInformation, "Dry-Run Discovery"
+End Sub
 
 Private Function OpenFile(ByVal filePath As String) As LaunchStatus
     Dim status As LaunchStatus
