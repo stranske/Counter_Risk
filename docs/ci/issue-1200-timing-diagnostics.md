@@ -32,11 +32,17 @@ Measured primary-runtime timings from diagnostic run [40538600983](https://githu
 
 All diagnostic jobs passed, but actual Python job wall times were 130 s (not slow), 626 s (pipeline/integration), 686 s (remaining), and 1170 s (run pipeline) on 3.14; the 3.13 run-pipeline job took 1350 s. Therefore the 600-second criterion remains unproved and failed on this diagnostic. The current proposal subdivides the slow partitions while preserving their full selected collection and the 80% coverage floor. Future push-to-main runtime acceptance remains pending.
 
-## Required workflow continuation
+## Workflow continuation (applied)
 
-The path split retains all tests but does not meet the runtime budget. The measured slow partitions contain 38 tests (run pipeline), 20 tests (pipeline/integration/spec), and 29 tests (remaining); the fast partition contains 2,453 tests. Divide the run-pipeline partition into four balanced, exhaustive subpartitions, and each other slow partition into two. Each subpartition needs a distinct artifact prefix and the existing primary-runtime metrics. Prove the selected node-ID union equals the original collection with no duplicates or omissions before running diagnostic CI again. Keep both Python versions, every test, and the 80% coverage floor. Estimates do not prove the 600-second limit.
-
-The repository security contract in `.github/codex/AGENT_INSTRUCTIONS.md` requires explicit `agent-high-privilege` environment approval for the current run before editing `.github/workflows/**`. No such approval is recorded for this opener run. The existing source #1200/PR #1201 owner must obtain that approval and perform the protected workflow change. Ordinary keepalive retries cannot cross this boundary. The measured table is complete; sharding/runtime acceptance and the November 7 push-to-main observation remain pending.
+The path split did not meet the budget (3.14 wall: run pipeline 1170 s, pipeline/integration 626 s,
+remaining 686 s; 3.13 run pipeline 1350 s). `ci.yml` now cuts those slow partitions with
+`--slow-shard I/N` (tests/conftest.py, round-robin over sorted node IDs): run pipeline 4 shards
+(38 tests: 10/10/9/9), pipeline/integration/spec 2 shards, remaining 2 shards. Both Python
+versions, every test and the 80% coverage floor (on the `not slow` job) are kept.
+`tests/test_ci_gate_budget.py::test_main_ci_slow_shards_partition_each_selection_exactly` and
+`::test_main_ci_fast_and_slow_jobs_select_every_test_once` prove the selected node-ID union is exact
+and disjoint. Runtime acceptance is NOT yet proved: it needs a push-to-main run with every job at or
+under 600 s.
 
 ## Retained deliberate-break proof
 

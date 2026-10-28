@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 import shlex
+import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -138,3 +140,62 @@ def test_main_ci_reusable_jobs_have_distinct_artifact_prefixes() -> None:
     ]
     # Coverage-disabled calls still upload test results with overwrite enabled.
     assert len(prefixes) == len(set(prefixes)), "parallel jobs can overwrite CI evidence"
+
+
+def _collect(*args: str) -> list[str]:
+    proc = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-qq", "-p", "no:cacheprovider", *args],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=300,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stdout[-800:] + proc.stderr[-800:]
+    return [line for line in proc.stdout.splitlines() if "::" in line]
+
+
+def _slow_shard_groups() -> dict[str, dict[int, list[str]]]:
+    """ci.yml slow jobs grouped by their shared (markers, paths) selection, keyed by shard index."""
+    workflow = yaml.safe_load((WORKFLOWS / "ci.yml").read_text(encoding="utf-8"))
+    groups: dict[str, dict[int, list[str]]] = {}
+    for name, job in workflow["jobs"].items():
+        inputs = job.get("with", {})
+        if inputs.get("pytest_markers") != "slow":
+            continue
+        args = shlex.split(str(inputs["pytest_args"]))
+        assert "--slow-shard" in args, f"{name}: slow job without --slow-shard is unsplit"
+        position = args.index("--slow-shard")
+        index_text, count_text = args[position + 1].split("/")
+        base = " ".join(args[:position] + args[position + 2 :])
+        shards = groups.setdefault(f"{count_text}|{base}", {})
+        assert int(index_text) not in shards, f"{name}: duplicate shard {index_text}/{count_text}"
+        shards[int(index_text)] = args
+    return groups
+
+
+def test_main_ci_slow_shards_partition_each_selection_exactly() -> None:
+    groups = _slow_shard_groups()
+    assert groups, "main CI must keep its slow partitions"
+    for key, shards in groups.items():
+        count = int(key.split("|", 1)[0])
+        assert sorted(shards) == list(range(1, count + 1)), f"{key}: missing shard indices"
+        base_args = [a for a in shards[1] if a not in ("--slow-shard", f"1/{count}")]
+        whole = _collect("-m", "slow", *base_args)
+        assert whole, f"{key}: selects nothing"
+        parts = [_collect("-m", "slow", *base_args, "--slow-shard", f"{i}/{count}") for i in shards]
+        union = [node for part in parts for node in part]
+        assert all(parts), f"{key}: an empty shard burns a runner for no test"
+        assert len(union) == len(set(union)), f"{key}: a test runs in two shards"
+        assert sorted(union) == sorted(whole), f"{key}: shards omit or invent tests"
+
+
+def test_main_ci_fast_and_slow_jobs_select_every_test_once() -> None:
+    selected = _collect("-m", "not slow", "tests")
+    for key, shards in _slow_shard_groups().items():
+        count = int(key.split("|", 1)[0])
+        base_args = [a for a in shards[1] if a not in ("--slow-shard", f"1/{count}")]
+        selected += _collect("-m", "slow", *base_args)
+    everything = _collect("tests")
+    assert len(selected) == len(set(selected)), "a test is selected by two main-CI job groups"
+    assert sorted(selected) == sorted(everything), "a test is selected by no main-CI job"
