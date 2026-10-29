@@ -1828,5 +1828,98 @@
     "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
     "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
     "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1951,7 +1951,7 @@\n         ]\n \n         change_column = \"NotionalChange\"\n-        if not all(change_column in record for record in totals_records):\n+        if False:\n             top_changes_per_variant[variant] = []\n             continue\n \n"
+  },
+  {
+    "mutation": "Generated futures schema drift is accepted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_validate_milestone_one_parser_contract",
+    "edits": [
+      [
+        "if futures_columns != _EXPECTED_FUTURES_COLUMN_ORDER:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_generated_futures_schema_drift_is_rejected[missing]",
+      "tests/pipeline/test_run_coverage_round.py::test_generated_futures_schema_drift_is_rejected[reordered]",
+      "tests/pipeline/test_run_coverage_round.py::test_generated_futures_schema_drift_is_rejected[extra]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_generated_futures_schema_drift_is_rejected[missing]",
+      "test_generated_futures_schema_drift_is_rejected[reordered]",
+      "test_generated_futures_schema_drift_is_rejected[extra]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1815,7 +1815,7 @@\n             f\"for variant {variant!r}. Expected columns {_EXPECTED_TOTAL_COLUMN_ORDER!r}, \"\n             f\"got {totals_columns!r}\"\n         )\n-    if futures_columns != _EXPECTED_FUTURES_COLUMN_ORDER:\n+    if False:\n         raise ValueError(\n             \"Generated MOSERS workbook does not match Milestone 1 futures parser contract \"\n             f\"for variant {variant!r}. Expected columns {_EXPECTED_FUTURES_COLUMN_ORDER!r}, \"\n"
+  },
+  {
+    "mutation": "Missing risk proxy is ranked as zero",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_rank_proxy_rows",
+    "edits": [
+      [
+        "if raw_value is None:\n            raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\")",
+        "if raw_value is None:\n            return 0.0"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_risk_ranking_rejects_nonnumeric_proxy_values[missing]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_risk_ranking_rejects_nonnumeric_proxy_values[missing]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2287,7 +2287,7 @@\n     def finite_proxy_value(record: Mapping[str, Any]) -> float:\n         raw_value = record.get(proxy_column)\n         if raw_value is None:\n-            raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\")\n+            return 0.0\n         try:\n             value = float(raw_value)\n         except (TypeError, ValueError) as exc:\n"
+  },
+  {
+    "mutation": "Nonnumeric risk proxy is ranked as zero",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_rank_proxy_rows",
+    "edits": [
+      [
+        "except (TypeError, ValueError) as exc:\n            raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\") from exc",
+        "except (TypeError, ValueError):\n            return 0.0"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_risk_ranking_rejects_nonnumeric_proxy_values[invalid-text]",
+      "tests/pipeline/test_run_coverage_round.py::test_risk_ranking_rejects_nonnumeric_proxy_values[invalid-type]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_risk_ranking_rejects_nonnumeric_proxy_values[invalid-text]",
+      "test_risk_ranking_rejects_nonnumeric_proxy_values[invalid-type]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2290,8 +2290,8 @@\n             raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\")\n         try:\n             value = float(raw_value)\n-        except (TypeError, ValueError) as exc:\n-            raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\") from exc\n+        except (TypeError, ValueError):\n+            return 0.0\n         if not math.isfinite(value):\n             raise ValueError(f\"Risk proxy {proxy_column!r} must be finite, got {raw_value!r}\")\n         return value\n"
   }
 ]

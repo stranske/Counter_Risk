@@ -1,0 +1,135 @@
+{
+  "starting_head": "84f5ead4ffc95074300aafdd7800a9b226a3401f",
+  "ranking_source": "https://github.com/stranske/Counter_Risk/issues/1214",
+  "target_selection": "CLI first (1 escaped-defect signal, churn 1, 19 CI uncovered units), then pipeline (churn 15, 302 CI uncovered units). CLI is 100% locally; continue pipeline.",
+  "authoritative_issue_baseline_percent": 89.32,
+  "metric": "Local whole non-slow suite, line-only, limited to ranked targets. Not comparable to blended CI baseline.",
+  "whole_suite_command": "COVERAGE_FILE=<isolated-file> pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:<report> -m \"not slow\" -q -o addopts=",
+  "baseline": {
+    "passed": 2622,
+    "skipped": 1,
+    "deselected": 87,
+    "seconds": 177.92,
+    "exit_code": 0
+  },
+  "final": {
+    "passed": 2628,
+    "skipped": 1,
+    "deselected": 87,
+    "seconds": 160.09,
+    "exit_code": 0
+  },
+  "targets": {
+    "src/counter_risk/cli/__init__.py": {
+      "before": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "after": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      }
+    },
+    "src/counter_risk/pipeline/run.py": {
+      "before": {
+        "covered_lines": 2547,
+        "num_statements": 2636,
+        "percent_covered": 96.6236722306525,
+        "percent_covered_display": "97",
+        "missing_lines": 89,
+        "excluded_lines": 14,
+        "percent_statements_covered": 96.6236722306525,
+        "percent_statements_covered_display": "97"
+      },
+      "after": {
+        "covered_lines": 2552,
+        "num_statements": 2636,
+        "percent_covered": 96.8133535660091,
+        "percent_covered_display": "97",
+        "missing_lines": 84,
+        "excluded_lines": 14,
+        "percent_statements_covered": 96.8133535660091,
+        "percent_statements_covered_display": "97"
+      }
+    }
+  },
+  "newly_covered_lines": [
+    1818,
+    1819,
+    2290,
+    2293,
+    2294
+  ],
+  "targeted_command": "COVERAGE_FILE=/tmp/1217-guards-targeted.cov pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing --cov-report=json:/tmp/1217-guards-targeted.json -m \"not slow\" -q -o addopts=",
+  "targeted": {
+    "passed": 135,
+    "exit_code": 0,
+    "pipeline_summary": {
+      "covered_lines": 1112,
+      "num_statements": 2636,
+      "percent_covered": 42.18512898330804,
+      "percent_covered_display": "42",
+      "missing_lines": 1524,
+      "excluded_lines": 14,
+      "percent_statements_covered": 42.18512898330804,
+      "percent_statements_covered_display": "42"
+    }
+  },
+  "new_cases_proven": 6,
+  "new_mutations": 3,
+  "case_audit": {
+    "mutations": 66,
+    "collected_cases": 150,
+    "proven_cases": 150,
+    "omissions": [],
+    "uncollected_cases": [],
+    "duplicates": [],
+    "mutated_restored_exit_pairs": [
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  "source_sha256_before_and_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+  "production_changes_this_round": false,
+  "reconciliation": "At starting head, all five unchecked contract items were verified by recent commits and the 144-case/63-proof registry audit. Local PR body checks them; attempted live update rejected before continuing.",
+  "formatting": {
+    "changed_file_black": "passed: black --line-length 100 tests/pipeline/test_run_coverage_round.py",
+    "repository_black_command": "black --check --line-length 100 --exclude '(\\.workflows-lib|node_modules)' .",
+    "ci_black_command": "black --check --line-length 100 --exclude '(\\.venv|\\.workflows-lib|node_modules)' .",
+    "repository_and_ci_black": "passed: 398 files unchanged",
+    "black_environment_workaround": "Ordinary Black failed starting a process pool (sandbox PermissionError); BLACK_NUM_WORKERS=1 timed out after 30 seconds. Both required checks passed using BLACK_NUM_WORKERS=1 and a temporary sitecustomize bounding EpollSelector.select to 0.1 seconds. Formatting behavior unchanged.",
+    "black_helper_source": "\"\"\"Bound selector polling to accommodate sandbox wakeup behavior during Black.\"\"\"\nimport selectors\n\n_original_select = selectors.EpollSelector.select\n\n\ndef _bounded_select(self, timeout=None):\n    return _original_select(self, 0.1 if timeout is None else min(timeout, 0.1))\n\n\nselectors.EpollSelector.select = _bounded_select\n",
+    "ruff_command": "ruff check --output-format github --extend-exclude .workflows-lib .",
+    "ruff": "passed",
+    "git_diff_check": "passed"
+  },
+  "delivery": {
+    "earlier_commits": "Starting PR head 84f5ead contains the previously recorded verified tests and evidence.",
+    "workspace_git_add": "blocked: .git/index.lock read-only filesystem",
+    "git_transport": "blocked: Could not resolve host: github.com",
+    "pr_body_update": "automatic approval review rejected: MCP tool call requires approval, but approval policy is never",
+    "blocker_comment": "same automatic approval rejection",
+    "needs_human_label": "same automatic approval rejection",
+    "isolated_git_directory": "/tmp/1217-numeric-schema.git",
+    "patch": "/tmp/1217-numeric-schema.patch",
+    "pr_number": 1217,
+    "published_head_ci_for_new_cases": "pending publication; no CI success claimed for this round",
+    "verified_pr_state": "open",
+    "isDraft": false,
+    "verified_published_head": "84f5ead4ffc95074300aafdd7800a9b226a3401f"
+  }
+}

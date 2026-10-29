@@ -1139,6 +1139,80 @@ def test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures(missi
     assert "NotionalChange" not in rows[missing_row]
 
 
+@pytest.mark.parametrize("drift", ["missing", "reordered", "extra"])
+def test_generated_futures_schema_drift_is_rejected(tmp_path, monkeypatch, drift) -> None:
+    """Valid totals must not hide a changed futures schema in generated workbooks."""
+    workbook_path = tmp_path / "generated.xlsx"
+    workbook_path.write_bytes(b"generated workbook remains unchanged")
+    totals_columns = [
+        "counterparty",
+        "TIPS",
+        "Treasury",
+        "Equity",
+        "Commodity",
+        "Currency",
+        "Notional",
+        "NotionalChange",
+    ]
+    futures_columns = ["account", "description", "class", "fcm", "clearing_house", "notional"]
+    totals_parser = Mock(return_value=SimpleNamespace(columns=totals_columns))
+    futures_parser = Mock(return_value=SimpleNamespace(columns=futures_columns))
+    monkeypatch.setattr(run_module, "parse_fcm_totals", totals_parser)
+    monkeypatch.setattr(run_module, "parse_futures_detail", futures_parser)
+
+    run_module._validate_milestone_one_parser_contract(workbook_path=workbook_path, variant="trend")
+    if drift == "missing":
+        changed_columns = futures_columns[:-1]
+    elif drift == "reordered":
+        changed_columns = [*futures_columns[:-2], "notional", "clearing_house"]
+    else:
+        changed_columns = [*futures_columns, "unexpected"]
+    futures_parser.return_value = SimpleNamespace(columns=changed_columns)
+
+    with pytest.raises(ValueError) as raised:
+        run_module._validate_milestone_one_parser_contract(
+            workbook_path=workbook_path, variant="trend"
+        )
+
+    assert str(raised.value) == (
+        "Generated MOSERS workbook does not match Milestone 1 futures parser contract "
+        f"for variant 'trend'. Expected columns {tuple(futures_columns)!r}, "
+        f"got {tuple(changed_columns)!r}"
+    )
+    assert totals_parser.call_args_list == [((workbook_path,), {}), ((workbook_path,), {})]
+    assert futures_parser.call_args_list == totals_parser.call_args_list
+    assert workbook_path.read_bytes() == b"generated workbook remains unchanged"
+
+
+@pytest.mark.parametrize(
+    ("invalid_value", "cause_type"),
+    [(None, None), ("not a number", ValueError), ({}, TypeError)],
+    ids=["missing", "invalid-text", "invalid-type"],
+)
+def test_risk_ranking_rejects_nonnumeric_proxy_values(invalid_value, cause_type) -> None:
+    """Malformed proxy values must never become a zero exposure in risk rankings."""
+    proxy_column = "risk_proxy_position_usd_vol"
+    records = [
+        {"counterparty": "Valid", proxy_column: 12.0},
+        {"counterparty": "Invalid", proxy_column: invalid_value},
+    ]
+
+    with pytest.raises(ValueError) as raised:
+        run_module._rank_proxy_rows(
+            variant="all_programs", records=records, proxy_column=proxy_column
+        )
+
+    assert str(raised.value) == f"Risk proxy {proxy_column!r} must be numeric"
+    if cause_type is None:
+        assert raised.value.__cause__ is None
+    else:
+        assert isinstance(raised.value.__cause__, cause_type)
+    assert records == [
+        {"counterparty": "Valid", proxy_column: 12.0},
+        {"counterparty": "Invalid", proxy_column: invalid_value},
+    ]
+
+
 def _config():
     from counter_risk.config import WorkflowConfig
 
