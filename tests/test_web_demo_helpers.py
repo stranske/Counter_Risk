@@ -13,6 +13,24 @@ import yaml
 
 import counter_risk.web_demo as web_demo
 
+_FIXTURE_SOURCE_FIELDS = (
+    "mosers_all_programs_xlsx",
+    "raw_nisa_all_programs_xlsx",
+    "mosers_ex_trend_xlsx",
+    "raw_nisa_ex_trend_xlsx",
+    "mosers_trend_xlsx",
+    "raw_nisa_trend_xlsx",
+    "daily_holdings_pdf",
+    "cash_source_path",
+    "cash_overrides_csv",
+    "dropin_all_programs_template_xlsx",
+    "exposure_summary_xlsx",
+    "hist_all_programs_3yr_xlsx",
+    "hist_ex_llc_3yr_xlsx",
+    "hist_llc_3yr_xlsx",
+    "monthly_pptx",
+)
+
 
 def test_resolve_config_path_prefers_absolute_config_then_test_fixture(tmp_path: Path) -> None:
     absolute = tmp_path / "absolute.csv"
@@ -96,13 +114,7 @@ def test_materialize_config_preserves_local_config_and_rejects_non_mapping(tmp_p
 
 @pytest.mark.parametrize(
     "local_key",
-    [
-        "monthly_pptx",
-        "cash_source_path",
-        "exposure_summary_xlsx",
-        "screenshot_inputs",
-        "input_discovery",
-    ],
+    [*_FIXTURE_SOURCE_FIELDS, "screenshot_inputs", "input_discovery"],
 )
 def test_relocated_config_preserves_config_relative_fixture_sources(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, local_key: str
@@ -139,7 +151,9 @@ def test_relocated_config_preserves_config_relative_fixture_sources(
     def run_pipeline(
         config: web_demo.WorkflowConfig, *, config_dir: Path, output_dir: Path
     ) -> Path:
-        assert config.hist_all_programs_3yr_xlsx == history
+        assert config.hist_all_programs_3yr_xlsx == (
+            local_source if local_key == "hist_all_programs_3yr_xlsx" else history
+        )
         if local_key == "screenshot_inputs":
             assert config.screenshot_inputs["cprs_ch"] == local_source
         elif local_key == "input_discovery":
@@ -354,8 +368,7 @@ def test_pipeline_checks_runtime_transition_before_publishing_demo_annotations(
 @pytest.mark.parametrize(
     "source_key",
     [
-        "cash_source_path",
-        "exposure_summary_xlsx",
+        *_FIXTURE_SOURCE_FIELDS,
         "screenshot_inputs.cprs_ch",
         "input_discovery.directory_roots.monthly_inputs",
     ],
