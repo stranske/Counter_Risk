@@ -416,10 +416,18 @@ def test_validate_manifest_data_quality_reports_action_contract_failures(
     assert reason == expected
 
 
+def test_validate_manifest_data_quality_rejects_absent_section() -> None:
+    assert validate_manifest_data_quality({}) == (
+        False,
+        "Manifest must include data_quality object.",
+    )
+
+
 @pytest.mark.parametrize(
     ("value", "schema", "expected"),
     [
         ("anything", {"type": "future-type"}, None),
+        (["unconstrained"], {}, None),
         ("wrong", {"enum": ["right"]}, "value must be one of: 'right'"),
         (-1, {"minimum": 0}, "value must be >= 0"),
         ("", {"minLength": 1}, "value must have at least 1 character(s)"),
