@@ -9,7 +9,11 @@ from zipfile import ZipFile
 
 import pytest
 
-from counter_risk.parsers.nisa_all_programs import NisaAllProgramsData, parse_nisa_all_programs
+from counter_risk.parsers.nisa_all_programs import (
+    NisaAllProgramsData,
+    get_nisa_all_programs_input_structure,
+    parse_nisa_all_programs,
+)
 
 _CANONICAL_HEADERS: tuple[str, ...] = (
     "counterparty",
@@ -493,3 +497,38 @@ def test_parser_reads_workbook_without_dimension_record(tmp_path: Path) -> None:
             destination.writestr(entry, data)
 
     _assert_expected_rows(parse_nisa_all_programs(path))
+
+
+@pytest.mark.parametrize(
+    "stop_marker", ["total current exposure", "mosers program", "notional breakdown"]
+)
+def test_published_input_contract_describes_parseable_workbook(
+    tmp_path: Path, stop_marker: str
+) -> None:
+    import openpyxl
+
+    structure = get_nisa_all_programs_input_structure()
+    assert set(structure.required_headers) == set(_CANONICAL_HEADERS) - {"counterparty"}
+    assert stop_marker in structure.totals_stop_markers
+    assert structure.segment_aliases["futures / cdx"] == "futures_cdx"
+
+    path = _build_raw_nisa_workbook(tmp_path / "published-contract.xlsx")
+    workbook = openpyxl.load_workbook(path)
+    try:
+        worksheet = workbook.active
+        for column, header in enumerate(_CANONICAL_HEADERS, start=2):
+            worksheet.cell(4, column).value = structure.header_aliases[header][0]
+        worksheet.cell(6, 1).value = "Futures / CDX"
+        worksheet.cell(24, 2).value = structure.totals_marker
+        worksheet.cell(26, 2).value = stop_marker.title()
+        worksheet.cell(27, 2).value = "Later Section Bank"
+        worksheet.cell(27, 9).value = 999
+        workbook.save(path)
+    finally:
+        workbook.close()
+
+    parsed = parse_nisa_all_programs(path)
+    assert [row.segment for row in parsed.ch_rows] == ["futures_cdx", "futures_cdx"]
+    assert [row.notional for row in parsed.ch_rows] == pytest.approx([210, 21])
+    assert [row.counterparty for row in parsed.totals_rows] == ["Alpha Bank"]
+    assert parsed.totals_rows[0].notional == pytest.approx(210)
