@@ -293,6 +293,44 @@ def test_manifest_preserves_confidence_bounds_and_null(
 
 
 @pytest.mark.parametrize(
+    ("count", "diagnostic"),
+    [
+        pytest.param(-1, "must be >= 0", id="negative-count"),
+        pytest.param(True, "must be of type integer, got bool", id="boolean-count"),
+    ],
+)
+def test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+    tmp_path: Path,
+    count: int | bool,
+    diagnostic: str,
+) -> None:
+    builder, manifest = numeric_manifest
+    counts = manifest["data_quality"]["counts"]
+    counts["total_findings"] = 1
+    counts["by_severity"] = {"info": 0, "warn": 1, "fail": 0}
+    counts["by_category"] = {
+        "source": {"info": 0, "warn": 1, "fail": 0, "total": 1},
+        "mapping": {"info": 0, "warn": 0, "fail": 0, "total": 0},
+    }
+    # A valid first category must not hide a malformed later category in this
+    # schema-object map. Save usable output before attempting the invalid write.
+    assert validate_manifest(manifest) == (True, None)
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+    counts["by_category"]["mapping"]["total"] = count
+
+    assert validate_manifest(manifest) == (
+        False,
+        f"manifest.data_quality.counts.by_category.mapping.total {diagnostic}",
+    )
+    with pytest.raises(ValueError, match="mapping.total " + diagnostic):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
+
+
+@pytest.mark.parametrize(
     ("confidence", "diagnostic"),
     [
         pytest.param(-5e-324, "must be >= 0", id="next-float-below-zero"),
