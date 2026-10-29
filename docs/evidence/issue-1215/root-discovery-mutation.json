@@ -1,0 +1,23 @@
+{
+  "source": "src/counter_risk/writers/historical_update.py",
+  "before": "return Path(__file__).resolve().parents[3]",
+  "mutation": "return Path.cwd()",
+  "command": [
+    "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+    "-m",
+    "pytest",
+    "tests/writers/test_historical_update_boundaries.py",
+    "-k",
+    "test_default_workbook_is_opened_relative_to_module_not_current_directory",
+    "-m",
+    "not slow",
+    "-q",
+    "-o",
+    "addopts="
+  ],
+  "red_exit": 1,
+  "red_result": "2 failed",
+  "green_exit": 0,
+  "green_result": "2 passed",
+  "source_restored": true
+}

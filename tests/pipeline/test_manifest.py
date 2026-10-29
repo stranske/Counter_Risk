@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import subprocess
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -85,3 +88,271 @@ def test_build_ppt_outputs_keeps_distribution_success_when_ppt_status_success(
     ppt_outputs = manifest["ppt_outputs"]
     assert ppt_outputs["master"]["status"] == "success"
     assert ppt_outputs["distribution"]["status"] == "success"
+
+
+def test_build_rejects_unknown_ppt_status(tmp_path, builder_with_both_ppt_artifacts):
+    builder, paths = builder_with_both_ppt_artifacts
+    with pytest.raises(ValueError, match="Invalid ppt_status 'pending'"):
+        _build(builder, tmp_path, paths, "pending")
+
+
+def test_config_snapshot_round_trips_nested_screenshot_paths(
+    tmp_path, builder_with_both_ppt_artifacts
+):
+    builder, paths = builder_with_both_ppt_artifacts
+    screenshots = {
+        "slide1": tmp_path / "screenshots" / "CPRS CH.png",
+        "slide2": tmp_path / "screenshots" / "CPRS FCM.png",
+    }
+    config_values = builder.config.model_dump()
+    config_values["screenshot_inputs"] = screenshots
+    config = WorkflowConfig.model_validate(config_values)
+    builder = replace(builder, config=config)
+
+    manifest = _build(builder, tmp_path, paths, "success")
+    expected_paths = {name: str(path) for name, path in screenshots.items()}
+    assert manifest["config_snapshot"]["screenshot_inputs"] == expected_paths
+    builder.write(run_dir=tmp_path, manifest=manifest)
+
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert saved["config_snapshot"]["screenshot_inputs"] == expected_paths
+    assert saved["config_snapshot"]["as_of_date"] == AS_OF_DATE.isoformat()
+    assert saved["config_snapshot"]["output_root"] == str(tmp_path)
+    # Serializing the snapshot must not convert the caller's live config values.
+    assert config.screenshot_inputs == screenshots
+    assert all(isinstance(path, Path) for path in config.screenshot_inputs.values())
+    assert config.as_of_date == AS_OF_DATE
+
+
+@pytest.mark.parametrize("failed_name", ["manifest.json", "DATA_QUALITY_SUMMARY.txt"])
+def test_write_wraps_filesystem_errors(
+    tmp_path, builder_with_both_ppt_artifacts, monkeypatch, failed_name
+):
+    builder, paths = builder_with_both_ppt_artifacts
+    manifest = _build(builder, tmp_path, paths, "success")
+    original_write = Path.write_text
+    failure = OSError("disk is full")
+
+    def write_text(path, *args, **kwargs):
+        if path.name == failed_name:
+            raise failure
+        return original_write(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", write_text)
+    with pytest.raises(RuntimeError, match="Failed to write manifest file:") as caught:
+        builder.write(run_dir=tmp_path, manifest=manifest)
+    assert caught.value.__cause__ is failure
+
+
+@pytest.mark.parametrize("output_paths", [None, "artifact.xlsx", ["DATA_QUALITY_SUMMARY.txt"]])
+def test_summary_registration_preserves_invalid_or_existing_paths(
+    builder_with_both_ppt_artifacts, output_paths
+):
+    builder, _ = builder_with_both_ppt_artifacts
+    manifest = {"output_paths": output_paths}
+    builder._register_summary_artifact(manifest)
+    assert manifest["output_paths"] == output_paths
+    if isinstance(output_paths, list):
+        assert output_paths == ["DATA_QUALITY_SUMMARY.txt"]
+
+
+@pytest.mark.parametrize("data_quality", [None, {}, {"overall_status": "unrecognized"}])
+def test_summary_without_findings_uses_safe_defaults(builder_with_both_ppt_artifacts, data_quality):
+    builder, _ = builder_with_both_ppt_artifacts
+    summary = builder._build_data_quality_summary({"data_quality": data_quality})
+    assert "Overall status: INFO (GREEN) - Safe to send." in summary
+    assert "- Total findings: 0\n- info: 0\n- warn: 0\n- fail: 0" in summary
+    for section in ("Findings by category:", "Detailed findings:", "Recommended actions:"):
+        assert f"{section}\n- none\n" in summary
+
+
+def test_summary_sanitizes_counts_and_ignores_malformed_entries(builder_with_both_ppt_artifacts):
+    builder, _ = builder_with_both_ppt_artifacts
+    summary = builder._build_data_quality_summary(
+        {
+            "data_quality": {
+                "overall_status": " FAIL ",
+                "counts": {
+                    "total_findings": "bad",
+                    "by_severity": {"info": None, "warn": "bad", "fail": "2"},
+                    "by_category": {
+                        "ignore": None,
+                        "source": {"info": None, "warn": "bad", "fail": "2", "total": "2"},
+                    },
+                },
+                "findings": [None],
+                "recommended_actions": [None],
+            }
+        }
+    )
+    assert "Overall status: FAIL (RED) - Do not send until failing checks are resolved." in summary
+    assert "- Total findings: 0\n- info: 0\n- warn: 0\n- fail: 2" in summary
+    assert "- source: total=2 (info=0, warn=0, fail=2)" in summary
+    assert "ignore" not in summary
+
+
+@pytest.mark.parametrize("counts", [None, {"total_findings": 0}])
+def test_summary_derives_counts_with_normalized_finding_categories(
+    builder_with_both_ppt_artifacts, counts
+):
+    builder, _ = builder_with_both_ppt_artifacts
+    summary = builder._build_data_quality_summary(
+        {
+            "data_quality": {
+                "counts": counts,
+                "findings": [
+                    {"category": "  ", "severity": "unexpected"},
+                    {"category": " INPUT ", "severity": " FAIL "},
+                    {"category": "input", "severity": "info"},
+                ],
+            }
+        }
+    )
+    assert "- Total findings: 3\n- info: 1\n- warn: 1\n- fail: 1" in summary
+    assert "- input: total=2 (info=1, warn=0, fail=1)" in summary
+    assert "- pipeline: total=1 (info=0, warn=1, fail=0)" in summary
+
+
+@pytest.mark.parametrize(
+    ("warning", "message", "structured"),
+    [
+        ({"message": " only message "}, "only message", {"message": "only message"}),
+        (
+            {"message": " ", "code": "WARN", "row_idx": 0},
+            "code=WARN, row_idx=0",
+            {"message": "code=WARN, row_idx=0", "code": "WARN", "row_idx": 0},
+        ),
+        ({"message": " ", "code": None}, None, None),
+        (42, "42", {"message": "42"}),
+    ],
+)
+def test_warning_normalization_preserves_metadata_without_a_message(
+    builder_with_both_ppt_artifacts, warning, message, structured
+):
+    builder, _ = builder_with_both_ppt_artifacts
+    assert builder._normalize_warning(warning) == message
+    assert builder._normalize_warning_structured(warning) == structured
+
+
+def test_artifact_path_cannot_reference_run_directory(tmp_path, builder_with_both_ppt_artifacts):
+    builder, _ = builder_with_both_ppt_artifacts
+    with pytest.raises(ValueError, match="must reference a file, not run_dir itself"):
+        builder._to_relative_artifact_path(run_dir=tmp_path, artifact_path=Path("."))
+
+
+@pytest.mark.parametrize("stdout", ["", " \n", " abc123\n"])
+def test_git_sha_normalizes_empty_and_padded_output(monkeypatch, stdout):
+    monkeypatch.setattr(
+        subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args, 0, stdout)
+    )
+    assert ManifestBuilder._resolve_git_sha() == (stdout.strip() or None)
+
+
+def test_summary_artifact_is_registered_once_across_repeated_writes(
+    tmp_path, builder_with_both_ppt_artifacts
+):
+    builder, paths = builder_with_both_ppt_artifacts
+    manifest = _build(builder, tmp_path, paths, "success")
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert saved["output_paths"].count("DATA_QUALITY_SUMMARY.txt") == 1
+
+
+def test_source_date_conflicts_retain_report_evidence_after_writing(
+    tmp_path, builder_with_both_ppt_artifacts
+):
+    builder, paths = builder_with_both_ppt_artifacts
+    source_dates = {
+        "all_programs": {"value": "2026-01-31", "source": "worksheet"},
+        "trend": {"value": "2025-12-31", "source": "filename"},
+    }
+    builder = replace(builder, source_report_dates=source_dates)
+    manifest = builder.build(
+        run_dir=tmp_path,
+        input_hashes={},
+        output_paths=paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[
+            {"code": "SOURCE_REPORT_DATE_CONFLICT", "message": "Source periods disagree"},
+            {"code": "MISSING_NOTIONAL", "message": "Review notional", "row_idx": 3},
+        ],
+    )
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert saved["date_resolution"]["source_report_dates"] == source_dates
+    findings = {finding["code"]: finding for finding in saved["data_quality"]["findings"]}
+    assert findings["SOURCE_REPORT_DATE_CONFLICT"]["details"] == source_dates
+    assert "details" not in findings["MISSING_NOTIONAL"]
+
+
+def test_explicit_ppt_outputs_override_filename_inference(
+    tmp_path, builder_with_both_ppt_artifacts
+):
+    builder, paths = builder_with_both_ppt_artifacts
+    # Both deck files exist, but the caller knows generation failed. Preserve
+    # those explicit statuses instead of inferring success from their filenames.
+    explicit = {
+        role: {
+            "role": "maintainer_master" if role == "master" else "distribution",
+            "status": "failed",
+            "path": path.name,
+            "generation_step": f"ppt_{role}",
+        }
+        for role, path in zip(("master", "distribution"), paths, strict=True)
+    }
+    manifest = builder.build(
+        run_dir=tmp_path,
+        input_hashes={},
+        output_paths=paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_status="failed",
+        ppt_outputs=explicit,
+    )
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert saved["ppt_outputs"] == explicit
+    assert any(
+        finding["code"] == "PPT_GENERATION_FAILED" for finding in saved["data_quality"]["findings"]
+    )
+
+
+def test_disabled_ppt_omits_even_explicit_outputs(tmp_path, builder_with_both_ppt_artifacts):
+    builder, paths = builder_with_both_ppt_artifacts
+    builder = replace(
+        builder, config=builder.config.model_copy(update={"enable_ppt_output": False})
+    )
+    manifest = builder.build(
+        run_dir=tmp_path,
+        input_hashes={},
+        output_paths=paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_outputs={"master": {"status": "failed"}},
+    )
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert "ppt_outputs" not in saved
+
+
+def test_master_only_output_records_distribution_as_skipped(
+    tmp_path, builder_with_both_ppt_artifacts
+):
+    builder, paths = builder_with_both_ppt_artifacts
+    paths[1].unlink()
+    manifest = _build(builder, tmp_path, paths[:1], "success")
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert saved["ppt_outputs"]["master"]["status"] == "success"
+    assert saved["ppt_outputs"]["distribution"] == {
+        "role": "distribution",
+        "status": "skipped",
+        "path": paths[1].name,
+        "generation_step": "ppt_distribution",
+        "skipped_reason": "Distribution output disabled for this run.",
+    }
+    assert paths[1].name not in saved["output_paths"]

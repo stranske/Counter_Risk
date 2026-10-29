@@ -1,0 +1,13 @@
+$ black --check --line-length 100 --exclude (\.workflows-lib|node_modules) .
+All done! ✨ 🍰 ✨
+401 files would be left unchanged.
+
+$ black --check --line-length 100 --exclude (\.venv|\.workflows-lib|node_modules) .
+All done! ✨ 🍰 ✨
+401 files would be left unchanged.
+
+$ ruff check --output-format github --extend-exclude .workflows-lib .
+
+$ git diff --check
+
+$ git diff --exit-code -- src

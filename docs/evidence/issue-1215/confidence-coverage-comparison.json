@@ -1,0 +1,96 @@
+{
+  "metric": "line coverage, matching current CI configuration; branch=false",
+  "base": "faad152",
+  "candidate": "e186f35 plus the maximum-bound fix and four confidence cases",
+  "command": "pytest tests/ -n 2 -m 'not slow' --cov=counter_risk.name_registry --cov=counter_risk.observability.langsmith_fleet --cov=counter_risk.parsers.cprs_ch --cov=counter_risk.parsers.cprs_fcm --cov=counter_risk.pipeline.manifest --cov=counter_risk.pipeline.manifest_schema --cov=counter_risk.pipeline.reconciliation --cov=counter_risk.writers.historical_update --cov-report=term-missing --cov-report=json:/tmp/1215-confidence-coverage.json -q",
+  "result": "2628 passed, 1 skipped",
+  "targets": [
+    {
+      "file": "src/counter_risk/name_registry.py",
+      "statements": 104,
+      "base_missing_lines": 8,
+      "previous_missing_lines": 3,
+      "current_missing_lines": [
+        50,
+        63,
+        98
+      ],
+      "current_percent": 97.11538461538461
+    },
+    {
+      "file": "src/counter_risk/observability/langsmith_fleet.py",
+      "statements": 182,
+      "base_missing_lines": 15,
+      "previous_missing_lines": 0,
+      "current_missing_lines": [],
+      "current_percent": 100.0
+    },
+    {
+      "file": "src/counter_risk/parsers/cprs_ch.py",
+      "statements": 256,
+      "base_missing_lines": 52,
+      "previous_missing_lines": 1,
+      "current_missing_lines": [
+        273
+      ],
+      "current_percent": 99.609375
+    },
+    {
+      "file": "src/counter_risk/parsers/cprs_fcm.py",
+      "statements": 230,
+      "base_missing_lines": 23,
+      "previous_missing_lines": 2,
+      "current_missing_lines": [
+        162,
+        176
+      ],
+      "current_percent": 99.1304347826087
+    },
+    {
+      "file": "src/counter_risk/pipeline/manifest.py",
+      "statements": 286,
+      "base_missing_lines": 21,
+      "previous_missing_lines": 2,
+      "current_missing_lines": [
+        450,
+        452
+      ],
+      "current_percent": 99.3006993006993
+    },
+    {
+      "file": "src/counter_risk/pipeline/manifest_schema.py",
+      "statements": 149,
+      "base_missing_lines": 14,
+      "previous_missing_lines": 0,
+      "current_missing_lines": [],
+      "current_percent": 100.0
+    },
+    {
+      "file": "src/counter_risk/pipeline/reconciliation.py",
+      "statements": 190,
+      "base_missing_lines": 21,
+      "previous_missing_lines": 0,
+      "current_missing_lines": [],
+      "current_percent": 100.0
+    },
+    {
+      "file": "src/counter_risk/writers/historical_update.py",
+      "statements": 360,
+      "base_missing_lines": 36,
+      "previous_missing_lines": 5,
+      "current_missing_lines": [
+        208,
+        212,
+        271,
+        621,
+        789
+      ],
+      "current_percent": 98.61111111111111
+    }
+  ],
+  "reduction_in_missing_original_lines_from_base": 177,
+  "new_covered_production_statements": 2,
+  "remaining_missing_lines": 13,
+  "shortfall_from_180_unit_aim": 3,
+  "ci_baseline_is_authoritative": true
+}

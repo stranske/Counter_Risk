@@ -508,7 +508,7 @@ def _check_node(value: Any, schema: Mapping[str, Any], path: str) -> str | None:
     Returns a deterministic, human-readable reason on the first failure, or
     ``None`` when the node (and its descendants) conform. Supports the subset of
     JSON Schema the manifest schema actually uses: ``type`` (including union
-    types like ``["string", "null"]``), ``required``, ``enum``, ``minimum``,
+    types like ``["string", "null"]``), ``required``, ``enum``, ``minimum``, ``maximum``,
     ``minLength``, ``minItems``, nested ``properties``, array ``items``, and
     ``additionalProperties`` in all three forms the manifest schema relies on:
     ``False`` (reject unknown keys), ``True`` (accept any), and the schema-object
@@ -534,6 +534,14 @@ def _check_node(value: Any, schema: Mapping[str, Any], path: str) -> str | None:
         and value < schema["minimum"]
     ):
         return f"{path} must be >= {schema['minimum']}"
+
+    if (
+        "maximum" in schema
+        and isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and value > schema["maximum"]
+    ):
+        return f"{path} must be <= {schema['maximum']}"
 
     if "minLength" in schema and isinstance(value, str) and len(value) < schema["minLength"]:
         return f"{path} must have at least {schema['minLength']} character(s)"
