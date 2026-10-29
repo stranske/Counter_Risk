@@ -13,10 +13,11 @@ Tests exposed two real bugs, fixed with narrow production changes:
   The strengthened regression failed against the original code and all 62 focused
   reconciliation/boundary/manifest tests passed after the fix (commit `bdf0a05`).
 
-The latest follow-up adds three evidence row cases in the first-ranked target.
-Null and row 1 round-trip; zero, booleans, and fractional rows are rejected with
-a precise diagnostic while both saved output files remain intact. No production
-change or line-coverage gain was needed for this follow-up.
+The latest follow-up adds two cases for the recent reconciliation resolver fix.
+Warning and strict policies must preserve multiple raw aliases, including their
+original spacing, while reusing the first resolution pass for raw metadata.
+Both cases fail if metadata resolves names again or strips original spacing.
+No production change or line-coverage gain was needed for this follow-up.
 
 ## Coverage and shortfall
 
@@ -44,39 +45,39 @@ Remaining paths cannot be meaningfully covered through the current public contra
 - `name_registry.py:50,63,98`: Pydantic rejects these types before field validators run.
 - `cprs_ch.py:273`: parsed records already supply the output fields, including empty frames.
 
-Counts and commands: [coverage comparison](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/evidence-row-coverage-comparison.json).
+Counts and commands: [coverage comparison](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/resolver-alias-coverage-comparison.json).
 
 ## Actual break-and-revert proof
 
-Prior evidence covers 161 collected cases added earlier in this PR. The three
-latest cases each failed at assertions when their evidence row constraint was
-weakened, and each passed after byte-for-byte source restoration:
+Prior evidence covers 164 collected cases added earlier in this PR. The two
+latest cases each failed at assertions under both deliberate source changes,
+and each passed after byte-for-byte source restoration:
 
-| Row schema mutation | Broken | Restored |
+| Resolver metadata mutation | Broken | Restored |
 | --- | --- | --- |
-| Lower row minimum from 1 to 0 | zero-row: 1 failed | 1 passed |
-| Allow boolean rows | boolean-row: 1 failed | 1 passed |
-| Allow fractional number rows | fractional-row: 1 failed | 1 passed |
+| Resolve names again instead of reusing first-pass canonical names | 2 failed | 2 passed |
+| Strip original raw label spacing | 2 failed | 2 passed |
 
 Exact commands, failed assertions, and source hashes:
-[evidence-row-mutations.json](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/evidence-row-mutations.json),
-[actual transcript](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/evidence-row-mutation-transcript.txt).
+[resolver-alias-mutations.json](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/resolver-alias-mutations.json),
+[actual transcript](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/resolver-alias-mutation-transcript.txt).
 Earlier proof remains in `mutation-results.json`, `manifest-contract-mutations.json`,
 `root-discovery-mutation.json`, `confidence-mutations.json`,
 `confidence-domain-mutations.json`, `action-validation-mutations.json`,
 `category-count-mutations.json`, `config-snapshot-mutation.json`, and
-`later-exposure-mutation.json` in the same evidence directory.
+`later-exposure-mutation.json`, and `evidence-row-mutations.json` in the same evidence directory.
 
 ## Validation
 
-- Whole non-slow suite: **2642 passed, 1 skipped**, 87 deselected, 210.61 seconds. Eight targets: **1761 statements, 14 missing, 99%** line coverage. The original-gap reduction is **176 lines**, **four short of 180**; this follow-up adds no line-coverage gain.
+- Whole non-slow suite: **2644 passed, 1 skipped**, 87 deselected, 191.67 seconds. Eight targets: **1761 statements, 14 missing, 99%** line coverage. The original-gap reduction is **176 lines**, **four short of 180**; this follow-up adds no line-coverage gain.
 - Focused schema/conformance suite: **92 passed**, `manifest_schema.py` **100% lines
   and branches** (149 statements, 100 branches, 0 missing or partial).
+- Focused reconciliation/boundary/manifest suite: **83 passed**, **96%** line and branch coverage for reconciliation.
 - Required and CI repository-wide Black checks passed (**401 files unchanged**).
   Ruff with CI flags and whitespace checks passed. Production source is unchanged
-  from `4eefcbe` in this follow-up.
+  from `297f840` in this follow-up.
 - These are local results. Hosted checks at the delivered head remain authoritative.
-  [Validation and delivery notes](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/evidence-row-validation.md).
+  [Validation and delivery notes](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/resolver-alias-validation.md).
 
 ## Verified contract tasks
 
@@ -87,5 +88,7 @@ Earlier proof remains in `mutation-results.json`, `manifest-contract-mutations.j
 - [x] Keep one PR for this chunk: #1216, open and ready for review (`draft=false`).
 
 Coverage remains a disclosed partial delivery. No repository-wide 90% claim is made.
+
+The live checklist update was rejected by automatic approval review because MCP writes require approval and this run has approval policy `never`. The checked contract tasks above are a prepared reconciliation, not a claim that the remote checkboxes changed.
 
 Closes #1215

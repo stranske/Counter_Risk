@@ -1,0 +1,36 @@
+{
+  "source": "src/counter_risk/pipeline/reconciliation.py",
+  "source_sha256": "e247f421450118e6e85866ea581d00107d62d288d77f56a185ce0019e1a94ae4",
+  "command": [
+    "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_reconciliation_boundaries.py::test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again",
+    "-m",
+    "not slow",
+    "-q",
+    "--tb=short"
+  ],
+  "mutations": [
+    {
+      "mutation": "resolve-metadata-again",
+      "original": "            normalized_names_by_raw_name=normalized_names_by_raw_name,",
+      "replacement": "            normalized_names_by_raw_name=None,",
+      "broken_exit": 1,
+      "broken_result": "2 failed at assertions",
+      "restored_exit": 0,
+      "restored_result": "2 passed",
+      "source_restored_byte_for_byte": true
+    },
+    {
+      "mutation": "discard-original-spacing",
+      "original": "        normalized_to_raw.setdefault(normalized_name, set()).add(raw_name)",
+      "replacement": "        normalized_to_raw.setdefault(normalized_name, set()).add(raw_name.strip())",
+      "broken_exit": 1,
+      "broken_result": "2 failed at assertions",
+      "restored_exit": 0,
+      "restored_result": "2 passed",
+      "source_restored_byte_for_byte": true
+    }
+  ]
+}

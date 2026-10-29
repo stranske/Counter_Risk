@@ -46,6 +46,53 @@ def test_strict_custom_resolver_preserves_original_raw_counterparty():
     assert caught.value.raw_counterparty == "CIBC"
 
 
+@pytest.mark.parametrize("fail_policy", ["warn", "strict"])
+def test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again(fail_policy):
+    raw_names = ["  CIBC  ", "Canadian Imperial Bank of Commerce"]
+    calls = []
+
+    def resolver(name):
+        calls.append(name)
+        # A second metadata pass must reuse the first pass's canonical keys,
+        # even if an injected resolver would now return a different result.
+        canonical_name = "custom" if len(calls) <= len(raw_names) else "changed"
+        return SimpleNamespace(canonical_name=canonical_name, source="registry")
+
+    arguments = {
+        "parsed_data_by_sheet": {
+            "Total": {"totals": [{"counterparty": name} for name in raw_names], "futures": []}
+        },
+        "historical_series_headers_by_sheet": {"Total": []},
+        "counterparty_resolver": resolver,
+        "fail_policy": fail_policy,
+    }
+    if fail_policy == "strict":
+        with pytest.raises(UnmappedCounterpartyError) as caught:
+            reconcile.reconcile_series_coverage(**arguments)
+        assert caught.value.normalized_counterparty == "custom"
+        assert caught.value.raw_counterparty == raw_names[0]
+    else:
+        result = reconcile.reconcile_series_coverage(**arguments)
+        unmapped = [
+            entry
+            for entry in result["missing_series"]
+            if entry.get("error_type") == "unmapped_counterparty"
+        ]
+        assert unmapped == [
+            {
+                "variant": None,
+                "sheet": "Total",
+                "error_type": "unmapped_counterparty",
+                "raw_counterparties": raw_names,
+                "normalized_counterparties": ["custom"],
+            }
+        ]
+        assert [error.raw_counterparty for error in result["exceptions"]] == raw_names
+        assert {error.normalized_counterparty for error in result["exceptions"]} == {"custom"}
+
+    assert calls == [name.strip() for name in raw_names]
+
+
 def test_section_mapping_is_required_before_reconciling():
     with pytest.raises(ParsedDataInvalidShapeError, match="expected a mapping/object"):
         reconcile.reconcile_series_coverage(
