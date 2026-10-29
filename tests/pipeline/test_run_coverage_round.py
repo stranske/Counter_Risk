@@ -6,7 +6,7 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 
@@ -558,6 +558,39 @@ def test_historical_helpers_report_unavailable_reader(monkeypatch, tmp_path) -> 
 
 def test_prior_populated_series_falls_back_when_workbook_is_unreadable(tmp_path) -> None:
     assert run_module._extract_prior_populated_series_by_sheet(tmp_path / "missing.xlsx") is None
+
+
+@pytest.mark.parametrize("failure", [RuntimeError(), IndexError("broken shared string table")])
+def test_historical_header_read_failure_preserves_context_cause_and_closes_workbook(
+    tmp_path, monkeypatch, failure
+) -> None:
+    """Unexpected cell errors retain their type and location and release the workbook."""
+    path = tmp_path / "history.xlsx"
+
+    def read_cell(*, row, column):
+        assert row == 1
+        if column == 1:
+            return SimpleNamespace(value="Date")
+        raise failure
+
+    worksheet = SimpleNamespace(title="Total", max_row=1, max_column=2, cell=read_cell)
+    workbook = MagicMock(sheetnames=["Total"])
+    workbook.__getitem__.return_value = worksheet
+    load = Mock(return_value=workbook)
+    monkeypatch.setattr("openpyxl.load_workbook", load)
+
+    with pytest.raises(
+        type(failure), match="Unexpected error while reading historical series headers"
+    ) as raised:
+        run_module._extract_historical_series_headers_by_sheet(path)
+
+    assert raised.value.__cause__ is failure
+    expected = f"Unexpected error while reading historical series headers in workbook {path}, sheet 'Total'"
+    if str(failure):
+        expected += f": {failure}"
+    assert str(raised.value) == expected
+    load.assert_called_once_with(filename=path, read_only=True, data_only=True)
+    workbook.close.assert_called_once_with()
 
 
 def _config():

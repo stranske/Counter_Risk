@@ -6,6 +6,7 @@ import argparse
 from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -212,3 +213,30 @@ def test_workflow_mode_applies_as_of_date_override(tmp_path: Path, monkeypatch) 
     assert captured[0].as_of_date == date(2026, 1, 31)
     assert captured[0].export_pdf is True
     assert config.as_of_date == date(2025, 12, 31)
+
+
+@pytest.mark.parametrize("failing_stage", ["config", "pipeline"])
+def test_workflow_mode_reports_failure_and_returns_nonzero(
+    tmp_path: Path, monkeypatch, capsys, failing_stage
+) -> None:
+    """Report dependency failures to the operator and return a failing process status."""
+    config = WorkflowConfig(
+        hist_all_programs_3yr_xlsx=Path("all.xlsx"),
+        hist_ex_llc_3yr_xlsx=Path("ex.xlsx"),
+        hist_llc_3yr_xlsx=Path("trend.xlsx"),
+        monthly_pptx=Path("report.pptx"),
+    )
+    load = Mock(return_value=config)
+    run = Mock(return_value=tmp_path / "run")
+    failure = OSError(f"{failing_stage} input is unreadable")
+    (load if failing_stage == "config" else run).side_effect = failure
+    monkeypatch.setattr(cli, "_load_config_with_runner_settings", load)
+    monkeypatch.setattr(cli, "run_pipeline_with_config", run)
+
+    assert cli.main(["run", "--config", str(tmp_path / "config.yml")]) == 1
+    assert capsys.readouterr().out == f"Counter Risk run failed: {failure}\n"
+    load.assert_called_once()
+    if failing_stage == "config":
+        run.assert_not_called()
+    else:
+        run.assert_called_once()
