@@ -599,6 +599,106 @@ def test_screenshot_generator_rejects_ambiguous_master_before_refresh(
     assert not list(run_dir.glob("*.pptx"))
 
 
+@pytest.mark.parametrize("auxiliary_output", [False, True], ids=["no-generators", "auxiliary-only"])
+def test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages(
+    monkeypatch, tmp_path, auxiliary_output
+) -> None:
+    inputs = {}
+    expected_workbooks = []
+    for variant in ("all_programs", "ex_trend", "trend"):
+        source = tmp_path / f"{variant}-source.xlsx"
+        source.write_bytes(variant.encode())
+        inputs[f"mosers_{variant}_xlsx"] = source
+        expected_workbooks.append(tmp_path / "run" / f"{variant}-mosers-input.xlsx")
+    config = _config().model_copy(update=inputs)
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    generator = Mock()
+    generator.name = "auxiliary"
+    auxiliary_path = run_dir / "auxiliary.csv"
+    generator.generate.return_value = (auxiliary_path,)
+    registry = Mock()
+    registry.load.return_value = [generator] if auxiliary_output else []
+    monkeypatch.setattr(run_module, "_build_output_generator_registry", lambda **kwargs: registry)
+    refresh = Mock(side_effect=AssertionError("no Master exists to refresh"))
+    derive = Mock(side_effect=AssertionError("no Master exists to distribute"))
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", refresh)
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", derive)
+    warnings = []
+
+    paths, result = run_module._write_outputs(
+        run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=warnings
+    )
+
+    assert paths == expected_workbooks + ([auxiliary_path] if auxiliary_output else [])
+    assert [path.read_bytes() for path in expected_workbooks] == [
+        variant.encode() for variant in ("all_programs", "ex_trend", "trend")
+    ]
+    assert result.status is run_module.PptProcessingStatus.SKIPPED
+    assert result.ppt_outputs is None
+    assert warnings == []
+    registry.load.assert_called_once()
+    assert registry.load.call_args.kwargs["stage"] == "ppt_master"
+    if auxiliary_output:
+        generator.generate.assert_called_once()
+    else:
+        generator.generate.assert_not_called()
+    refresh.assert_not_called()
+    derive.assert_not_called()
+    assert not list(run_dir.glob("*.pptx"))
+    assert not (run_dir / "README.txt").exists()
+
+
+@pytest.mark.parametrize("detail", ["Office unavailable", ""], ids=["with-detail", "no-detail"])
+def test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution(
+    monkeypatch, tmp_path, detail
+) -> None:
+    inputs = {}
+    for variant in ("all_programs", "ex_trend", "trend"):
+        source = tmp_path / f"{variant}-source.xlsx"
+        source.write_bytes(variant.encode())
+        inputs[f"mosers_{variant}_xlsx"] = source
+    config = _config().model_copy(update=inputs)
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    master = run_dir / "master.pptx"
+    master.write_bytes(b"master")
+    generator = Mock()
+    generator.name = "ppt_screenshot"
+    generator.generate.return_value = (master,)
+    registry = Mock()
+    registry.load.side_effect = [[generator], []]
+    monkeypatch.setattr(run_module, "_build_output_generator_registry", lambda **kwargs: registry)
+    refresh = Mock(side_effect=RuntimeError(detail))
+    derive = Mock(side_effect=AssertionError("failed Master must not be distributed"))
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", refresh)
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", derive)
+    warnings = []
+
+    paths, result = run_module._write_outputs(
+        run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=warnings
+    )
+
+    refresh.assert_called_once_with(master)
+    derive.assert_not_called()
+    assert [call.kwargs["stage"] for call in registry.load.call_args_list] == [
+        "ppt_master",
+        "ppt_refresh",
+    ]
+    assert warnings == [f"PPT links refresh failed; {detail or 'COM refresh encountered an error'}"]
+    assert result.status is run_module.PptProcessingStatus.FAILED
+    assert result.error_detail == detail
+    assert result.ppt_outputs["master"]["status"] == "failed"
+    assert result.ppt_outputs["distribution"]["status"] == "skipped"
+    assert result.ppt_outputs["distribution"]["skipped_reason"] == (
+        "Master PPT refresh failed; distribution PPT derivation skipped."
+    )
+    assert len(paths) == 4
+    assert paths[-1] == master
+    assert list(run_dir.glob("*.pptx")) == [master]
+    assert not (run_dir / "README.txt").exists()
+
+
 def test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one(
     monkeypatch, tmp_path
 ) -> None:

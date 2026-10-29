@@ -846,3 +846,109 @@ Exit: 0
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 1 passed, 13 warnings in 0.25s
+
+Generator absence and refresh-fallback mutations
+
+Mutation: Proceed without a Master output
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-generator-0-mutated.xml']
+Exit: 1
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[no-generators] _
+tests/pipeline/test_run_coverage_round.py:629: in test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages
+    paths, result = run_module._write_outputs(
+src/counter_risk/pipeline/run.py:2898: in _write_outputs
+    master=target_master_ppt.relative_to(run_dir),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'relative_to'
+_ test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[auxiliary-only] _
+tests/pipeline/test_run_coverage_round.py:629: in test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages
+    paths, result = run_module._write_outputs(
+src/counter_risk/pipeline/run.py:2898: in _write_outputs
+    master=target_master_ppt.relative_to(run_dir),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'relative_to'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[no-generators] - AttributeError: 'NoneType' object has no attribute 'relative_to'
+FAILED tests/pipeline/test_run_coverage_round.py::test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[auxiliary-only] - AttributeError: 'NoneType' object has no attribute 'relative_to'
+2 failed, 13 warnings in 0.47s
+
+Mutation: Proceed without a Master output
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-generator-0-restored.xml']
+Exit: 0
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.27s
+
+Mutation: Skip enabled refresh fallback when no refresh generator is loaded
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-generator-1-mutated.xml']
+Exit: 1
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[with-detail] _
+tests/pipeline/test_run_coverage_round.py:678: in test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution
+    paths, result = run_module._write_outputs(
+src/counter_risk/pipeline/run.py:2997: in _write_outputs
+    _derive_distribution_ppt(
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1241: in _execute_mock_call
+    raise effect
+E   AssertionError: failed Master must not be distributed
+_ test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[no-detail] _
+tests/pipeline/test_run_coverage_round.py:678: in test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution
+    paths, result = run_module._write_outputs(
+src/counter_risk/pipeline/run.py:2997: in _write_outputs
+    _derive_distribution_ppt(
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1241: in _execute_mock_call
+    raise effect
+E   AssertionError: failed Master must not be distributed
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[with-detail] - AssertionError: failed Master must not be distributed
+FAILED tests/pipeline/test_run_coverage_round.py::test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[no-detail] - AssertionError: failed Master must not be distributed
+2 failed, 13 warnings in 0.51s
+
+Mutation: Skip enabled refresh fallback when no refresh generator is loaded
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-generator-1-restored.xml']
+Exit: 0
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.26s
+
+Restored source SHA256: a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791

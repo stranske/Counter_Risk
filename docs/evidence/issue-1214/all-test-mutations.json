@@ -1386,5 +1386,71 @@
       "test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one"
     ],
     "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3966,7 +3966,7 @@\n         return None\n \n     if len(generated_paths) != 1:\n-        raise RuntimeError(\"PDF export output generator must produce at most one PDF output\")\n+        pass\n \n     return generated_paths[0]\n \n"
+  },
+  {
+    "mutation": "Proceed without a Master output",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_write_outputs",
+    "edits": [
+      [
+        "if target_master_ppt is None:",
+        "if False:"
+      ]
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short",
+      "--junitxml=/tmp/1217-generator-0-restored.xml"
+    ],
+    "failed_then_passed_cases": [
+      "test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[auxiliary-only]",
+      "test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[no-generators]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2890,7 +2890,7 @@\n                 )\n             target_master_ppt = generated_paths[0]\n \n-    if target_master_ppt is None:\n+    if False:\n         LOGGER.info(\"write_outputs_skip_ppt_no_master_generator run_dir=%s\", run_dir)\n         return output_paths, PptProcessingResult(status=PptProcessingStatus.SKIPPED)\n \n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Skip enabled refresh fallback when no refresh generator is loaded",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_write_outputs",
+    "edits": [
+      [
+        "if not ran_master_refresh and refresh_enabled:",
+        "if False:"
+      ]
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short",
+      "--junitxml=/tmp/1217-generator-1-restored.xml"
+    ],
+    "failed_then_passed_cases": [
+      "test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[no-detail]",
+      "test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[with-detail]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2934,7 +2934,7 @@\n             refresh_result = _to_ppt_processing_result(getattr(generator, \"last_result\", None))\n             ran_master_refresh = True\n \n-    if not ran_master_refresh and refresh_enabled:\n+    if False:\n         try:\n             refresh_result = _refresh_ppt_links(target_master_ppt)\n         except Exception as exc:\n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
   }
 ]
