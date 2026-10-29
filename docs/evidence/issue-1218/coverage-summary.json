@@ -2,7 +2,8 @@
   "base_sha": "faad15275296e77105016b3f1861e017838826f6",
   "reviewed_commits": [
     "3456860abdb9d78cd98fbb1e7c18d4611513c7b9",
-    "edc500f44edb22520fae766a4776743e23354342"
+    "edc500f44edb22520fae766a4776743e23354342",
+    "0054b34c9bd62391c40dd42d57ae113f0b4ff67f"
   ],
   "python": "3.14.9",
   "command": "python -m pytest tests/ -m \"not slow\" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>",
@@ -22,7 +23,7 @@
     }
   },
   "candidate": {
-    "passed": 2553,
+    "passed": 2555,
     "skipped": 1,
     "totals": {
       "covered_lines": 11109,

@@ -1,0 +1,733 @@
+[
+  {
+    "label": "nisa-ch-cash-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_ch_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"cash\"]",
+        "header_columns[\"tips\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-ch-tips-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_ch_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"tips\"]",
+        "header_columns[\"cash\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-ch-treasury-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_ch_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"treasury\"]",
+        "header_columns[\"cash\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-ch-equity-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_ch_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"equity\"]",
+        "header_columns[\"cash\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-ch-commodity-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_ch_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"commodity\"]",
+        "header_columns[\"cash\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-ch-currency-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_ch_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"currency\"]",
+        "header_columns[\"cash\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-ch-notional-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_ch_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"notional\"]",
+        "header_columns[\"cash\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-ch-notional_change-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_ch_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"notional_change\"]",
+        "header_columns[\"cash\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-ch-annualized_volatility-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_ch_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"annualized_volatility\"]",
+        "header_columns[\"cash\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-totals-tips-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_totals_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"tips\"]",
+        "header_columns[\"treasury\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-totals-treasury-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_totals_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"treasury\"]",
+        "header_columns[\"tips\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-totals-equity-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_totals_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"equity\"]",
+        "header_columns[\"tips\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-totals-commodity-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_totals_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"commodity\"]",
+        "header_columns[\"tips\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-totals-currency-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_totals_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"currency\"]",
+        "header_columns[\"tips\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-totals-notional-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_totals_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"notional\"]",
+        "header_columns[\"tips\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-totals-notional_change-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_totals_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"notional_change\"]",
+        "header_columns[\"tips\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  },
+  {
+    "label": "nisa-totals-annualized_volatility-mapping",
+    "source": "src/counter_risk/parsers/nisa.py",
+    "function": "_parse_totals_rows",
+    "test_file": "tests/test_nisa_all_programs_parser.py",
+    "tests": [
+      "test_parser_preserves_each_numeric_field_in_ch_and_totals"
+    ],
+    "edits": [
+      [
+        "header_columns[\"annualized_volatility\"]",
+        "header_columns[\"tips\"]"
+      ]
+    ],
+    "source_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+    "red": {
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "failed"
+        }
+      ]
+    },
+    "green": {
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[standard-columns]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_parser_preserves_each_numeric_field_in_ch_and_totals[reversed-columns]",
+          "outcome": "passed"
+        }
+      ]
+    }
+  }
+]

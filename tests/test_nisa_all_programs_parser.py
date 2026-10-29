@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
@@ -342,6 +343,63 @@ def test_parser_handles_reordered_columns(tmp_path: Path) -> None:
 
     parsed = parse_nisa_all_programs(workbook_path)
     _assert_expected_rows(parsed)
+
+
+@pytest.mark.parametrize(
+    "header_order",
+    [_CANONICAL_HEADERS, tuple(reversed(_CANONICAL_HEADERS))],
+    ids=["standard-columns", "reversed-columns"],
+)
+def test_parser_preserves_each_numeric_field_in_ch_and_totals(
+    tmp_path: Path, header_order: tuple[str, ...]
+) -> None:
+    import openpyxl
+
+    path = _build_raw_nisa_workbook(tmp_path / "numeric-fields.xlsx", header_order=header_order)
+    ch_values = {
+        "cash": 101.25,
+        "tips": 202.5,
+        "treasury": 303.75,
+        "equity": 404.25,
+        "commodity": 505.5,
+        "currency": 606.75,
+        "notional": 707.25,
+        "notional_change": -808.5,
+        "annualized_volatility": 0.125,
+    }
+    totals_values = {
+        "tips": -1202.5,
+        "treasury": 1303.75,
+        "equity": 1404.25,
+        "commodity": 1505.5,
+        "currency": 1606.75,
+        "notional": 1707.25,
+        "notional_change": -1808.5,
+        "annualized_volatility": 0.25,
+    }
+    workbook = openpyxl.load_workbook(path)
+    try:
+        for column, header in enumerate(header_order, start=2):
+            if header in ch_values:
+                workbook.active.cell(6, column).value = ch_values[header]
+            if header in totals_values:
+                value = totals_values[header]
+                # Totals exported by Excel can use accounting parentheses and grouping.
+                workbook.active.cell(25, column).value = (
+                    f"({-value:,.3f})" if value < 0 else f"{value:,.3f}"
+                )
+        workbook.save(path)
+    finally:
+        workbook.close()
+
+    parsed = parse_nisa_all_programs(path)
+
+    assert asdict(parsed.ch_rows[0]) == {
+        "segment": "swaps",
+        "counterparty": "Alpha Bank",
+        **ch_values,
+    }
+    assert asdict(parsed.totals_rows[0]) == {"counterparty": "Alpha Bank", **totals_values}
 
 
 def test_parser_raises_explicit_missing_headers_error(tmp_path: Path) -> None:

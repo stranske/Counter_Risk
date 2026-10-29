@@ -1,15 +1,15 @@
 ## Summary
 
-Add 75 regression cases across ten test modules for the targets in issue #1218, in its specified escaped-defect/churn/uncovered-mass order. The follow-up covers the public NISA input contract with a real XLSX, all three totals-section stop markers, and the Futures/CDX alias. No production bug was found; production files are byte-identical to the PR base.
+Add 77 regression cases across ten test modules for the targets in issue #1218, in its specified escaped-defect/churn/uncovered-mass order. The follow-up covers the public NISA input contract with a real XLSX, all three totals-section stop markers, and the Futures/CDX alias. No production bug was found; production files are byte-identical to the PR base.
 
-Reconciliation: reviewed `3456860` and `edc500f`. The latter already delivered the remaining ranked modules, rather than just NISA as the old PR body stated. All 49 newly added test functions (75 parametrized cases) now have fresh, per-case break-and-revert verification. This remains one ready-for-review PR for one coverage chunk.
+Reconciliation: reviewed `3456860`, `edc500f`, and `0054b34`. The latter already delivered the remaining ranked modules, rather than just NISA as the old PR body stated. The previous iteration verified 49 added test functions (75 parametrized cases) with per-case break-and-revert runs. This follow-up adds one function (two column-layout cases), verified against 17 independent field-mapping mutations. This remains one ready-for-review PR for one coverage chunk.
 
 ## Coverage
 
 Matched whole-suite measurements on Python 3.14.9, using `python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>`:
 
 - PR base `faad152`: **2,478 passed, 1 skipped**, 10,911/12,216 statements covered, **89.3173%**.
-- Candidate: **2,553 passed, 1 skipped**, 11,109/12,216 statements covered, **90.9381%**.
+- Candidate: **2,555 passed, 1 skipped**, 11,109/12,216 statements covered, **90.9381%**.
 - **198 fewer uncovered statements**, all within the issue's ranked targets; no coverage exclusions or thresholds changed.
 
 The measured baseline agrees with the issue's 89.32% rounded figure. The repository actually sets `branch = false`, so these are line-only results, not blended line+branch results. Gate explicitly disables coverage (`pr-00-gate.yml`); there is no Gate coverage artifact to claim. The table below comes from matched local whole-suite runs with the same non-slow selection as main's coverage job.
@@ -37,21 +37,27 @@ The issue lists 205 gaps; 198 are covered, exceeding its approximate 180-unit go
 
 ## Break-and-revert proof
 
-Executed **49 source-mutation scenarios** in an isolated checkout, covering **every one of the 75 newly added cases**. For each scenario, selected cases failed with pytest exit 1, original source bytes were restored, and the same cases passed with exit 0. The 78 RED and 78 GREEN executions include three NISA contract cases exercised against two separate mutations. No collection errors or skips count as proof.
+The previous iteration executed **49 source-mutation scenarios** in an isolated checkout, covering **every one of the 75 newly added cases**. For each scenario, selected cases failed with pytest exit 1, original source bytes were restored, and the same cases passed with exit 0. The 78 RED and 78 GREEN executions include three NISA contract cases exercised against two separate mutations. No collection errors or skips count as proof.
 
 `docs/evidence/issue-1218/mutation-receipts.json` records every exact source edit, selected test name and parametrization, RED/GREEN outcomes, and matching original/restored SHA-256 values. The complete added-function inventory was compared with receipt coverage: 49/49 functions, 75/75 cases. Mutations disconnect path/error guards, section stops and published headers, row validation and numeric guards, fallback behavior, output schemas, shell status messages, metadata filtering, temporary-file cleanup, relationship rewriting, and Config-sheet content.
 
 One attempted malformed-XML mutation injected an unused relationship ID and did not change observable output. It was not counted: removing the ParseError catch instead failed the preservation test, then passed after restoration.
 
+## Numeric-field verification follow-up
+
+The first ranked target, NISA, had numeric-field execution coverage but only a few field-value assertions. Two new cases assert all nine CH numeric fields and all eight totals numeric fields with distinct values, using standard and reversed columns. The totals inputs also include grouped numbers and accounting negatives. This strengthens regression detection without adding production changes or claiming additional covered statements.
+
+Executed 17 mutations, independently redirecting each numeric field's column lookup within `_parse_ch_rows` or `_parse_totals_rows`. Each mutation produced **2 failed tests** (exit 1); exact source restoration produced **2 passed tests** (exit 0). That is **34 RED and 34 GREEN case executions**. `docs/evidence/issue-1218/numeric-mutation-receipts.json` records the edits, cases, outcomes, and matching restoration hashes. Together with the prior receipts, all 77 added cases have break-and-revert evidence.
+
 ## Validation
 
-- Full candidate suite: **2,553 passed, 1 skipped**, `-m "not slow"`; source unchanged after all mutation runs.
-- Focused NISA: `python -m pytest tests/test_nisa_all_programs_parser.py -m "not slow" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q`: **18 passed**, 216/218 statements (**99.08%**).
-- Existing remote head `edc500f`: [Gate run 40836922603](https://github.com/stranske/Counter_Risk/actions/runs/40836922603) passed on Python 3.13 and 3.14. This local follow-up has not run in hosted CI yet.
+- Full candidate suite: **2,555 passed, 1 skipped**, `-m "not slow"`; source unchanged after all mutation runs.
+- Focused NISA: `python -m pytest tests/test_nisa_all_programs_parser.py -m "not slow" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q`: **20 passed**, 216/218 statements (**99.08%**).
+- Existing remote head `0054b34`: [Gate run 40839407519](https://github.com/stranske/Counter_Risk/actions/runs/40839407519) passed. The two new numeric-field cases have not run in hosted CI yet.
 - One earlier local whole-suite run was discarded because tests were added during its nested collection check and a concurrent targeted run shared its coverage data. Final measurements above used stable files and separate coverage data.
 
 Closes #1218
-- Black **26.10.1**: formatted the changed file at line length 100; the required whole-tree `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .` and CI's additional `.venv` exclusion both passed for **395 files**. The default multiprocessing setup was blocked; single-worker execution needed periodic event-loop wakeups in this sandbox. The successful commands used `BLACK_NUM_WORKERS=1` plus a temporary Python startup shim that polls the asyncio loop every 10ms. Formatting, parse validation, exclusions and repository configuration were unchanged.
+- Black **26.10.1**: formatted the changed file at line length 100; the required whole-tree `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .` and CI's additional `.venv` exclusion both passed for **395 files**. The default multiprocessing setup was blocked; single-worker execution needed periodic event-loop wakeups in this sandbox. Both iterations passed the required whole-tree check. The successful commands used `BLACK_NUM_WORKERS=1` plus a temporary Python startup shim that polls the asyncio loop every 10ms. Formatting, parse validation, exclusions and repository configuration were unchanged.
 - Ruff **0.17.3**: `ruff check --output-format github --extend-exclude .workflows-lib .` passed for the whole tree.
 - `git diff --check` and production-byte comparison against the PR base passed.
 
