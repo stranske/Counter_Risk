@@ -20,7 +20,7 @@ DEFAULT_WORKFLOW_PATH = Path(".github/workflows/release.yml")
 MIN_CHECKOUT_MAJOR = 3
 MIN_SETUP_PYTHON_MAJOR = 4
 MIN_UPLOAD_ARTIFACT_MAJOR = 3
-MIN_PYTHON_VERSION = (3, 8)
+MIN_PYTHON_VERSION = (3, 13)
 
 
 class ValidationError(Exception):
@@ -137,7 +137,7 @@ def validate_release_workflow(path: Path) -> list[str]:
                 "actions/setup-python must define with.python-version as an explicit major.minor value"
             )
         elif parsed_version < MIN_PYTHON_VERSION:
-            errors.append("actions/setup-python python-version must be 3.8 or later")
+            errors.append("actions/setup-python python-version must be 3.13 or later")
 
     for snippet in REQUIRED_RUN_SNIPPETS:
         if not any(snippet in run for run in run_steps):
