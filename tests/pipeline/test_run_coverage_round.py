@@ -1085,6 +1085,60 @@ def test_empty_repo_cash_source_obeys_policy_and_preserves_totals(
     assert overrides.read_text(encoding="utf-8") == "counterparty,cash_value,note\n"
 
 
+@pytest.mark.parametrize("table_type", ["records", "dataframe"])
+def test_compute_metrics_keeps_empty_variants_and_continues(table_type) -> None:
+    """Empty source totals stay explicit without hiding later variants' metrics."""
+    totals = []
+    if table_type == "dataframe":
+        from pandas import DataFrame
+
+        totals = DataFrame(columns=["counterparty", "Notional", "NotionalChange"])
+    parsed = {
+        "all_programs": {"totals": totals},
+        "trend": {"totals": [{"counterparty": "Active", "Notional": -25, "NotionalChange": -5}]},
+    }
+
+    exposures, changes = run_module._compute_metrics(parsed)
+
+    assert exposures["all_programs"] == []
+    assert changes == {
+        "all_programs": [],
+        "trend": [{"counterparty": "Active", "notional_change": -5.0}],
+    }
+    assert [(row["counterparty"], row["notional"]) for row in exposures["trend"]] == [
+        ("Active", -25.0)
+    ]
+
+
+@pytest.mark.parametrize("missing_row", [0, 1])
+def test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures(missing_row) -> None:
+    """A partial change column must not present missing data as a zero change."""
+    rows = [
+        {"counterparty": "Positive", "Notional": 10, "NotionalChange": 2},
+        {"counterparty": "Negative", "Notional": -30, "NotionalChange": -7},
+    ]
+    del rows[missing_row]["NotionalChange"]
+    parsed = {
+        "all_programs": {"totals": rows},
+        "trend": {"totals": [{"counterparty": "Active", "Notional": 40, "NotionalChange": 3}]},
+    }
+
+    exposures, changes = run_module._compute_metrics(parsed)
+
+    assert changes == {
+        "all_programs": [],
+        "trend": [{"counterparty": "Active", "notional_change": 3.0}],
+    }
+    assert [(row["counterparty"], row["notional"]) for row in exposures["all_programs"]] == [
+        ("Negative", -30.0),
+        ("Positive", 10.0),
+    ]
+    assert [(row["counterparty"], row["notional"]) for row in exposures["trend"]] == [
+        ("Active", 40.0)
+    ]
+    assert "NotionalChange" not in rows[missing_row]
+
+
 def _config():
     from counter_risk.config import WorkflowConfig
 

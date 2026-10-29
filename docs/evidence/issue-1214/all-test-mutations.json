@@ -1764,5 +1764,69 @@
     "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
     "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
     "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1497,7 +1497,7 @@\n             fail_policy=fail_policy,\n         )\n \n-    if not repo_cash_by_counterparty:\n+    if False:  # mutation: silently accept an empty configured cash source\n         finding_message = (\n             f\"Repo Cash source '{source_label}' did not yield any counterparty values.\"\n         )\n"
+  },
+  {
+    "mutation": "Empty totals abort all later variants",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_compute_metrics",
+    "edits": [
+      [
+        "        if not totals_records:\n            top_exposures[variant] = []\n            top_changes_per_variant[variant] = []\n            continue",
+        "        if not totals_records:\n            top_exposures[variant] = []\n            top_changes_per_variant[variant] = []\n            return top_exposures, top_changes_per_variant"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_compute_metrics_keeps_empty_variants_and_continues",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_compute_metrics_keeps_empty_variants_and_continues[records]",
+      "test_compute_metrics_keeps_empty_variants_and_continues[dataframe]"
+    ],
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1923,7 +1923,7 @@\n         if not totals_records:\n             top_exposures[variant] = []\n             top_changes_per_variant[variant] = []\n-            continue\n+            return top_exposures, top_changes_per_variant\n \n         sorted_exposures = sorted(\n             totals_records,\n"
+  },
+  {
+    "mutation": "Incomplete changes are ranked with fabricated zero values",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_compute_metrics",
+    "edits": [
+      [
+        "if not all(change_column in record for record in totals_records):",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[0]",
+      "test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[1]"
+    ],
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1951,7 +1951,7 @@\n         ]\n \n         change_column = \"NotionalChange\"\n-        if not all(change_column in record for record in totals_records):\n+        if False:\n             top_changes_per_variant[variant] = []\n             continue\n \n"
   }
 ]

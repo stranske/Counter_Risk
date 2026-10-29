@@ -1743,3 +1743,299 @@ Coverage JSON written to file /tmp/1217-round-final.json
 Targeted command: COVERAGE_FILE=/tmp/1217-round-targeted.cov pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing --cov-report=json:/tmp/1217-round-targeted.json -m "not slow" -q -o addopts=
 125 passed; pipeline Cover column 41% (1069/2636); exit 0. Whole-suite target coverage is reported above.
 Black required and CI checks: exit 0, 398 files unchanged; temporary EpollSelector timeout bound and BLACK_NUM_WORKERS=1, matching earlier rounds. Ruff repository check and git diff --check passed.
+
+
+Metrics guard round at 5179e87: four cases, two mutations
+Full clean before/after reports use distinct COVERAGE_FILE paths. Initial overlapping shared-file reports are discarded.
+Empty totals abort all later variants
+MUTATED (exit 1)
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_compute_metrics_keeps_empty_variants_and_continues[records] _______
+tests/pipeline/test_run_coverage_round.py:1104: in test_compute_metrics_keeps_empty_variants_and_continues
+    assert changes == {
+E   AssertionError: assert {'all_programs': []} == {'all_program...ange': -5.0}]}
+E
+E     Omitting 1 identical items, use -vv to show
+E     Right contains 1 more item:
+E     {'trend': [{'counterparty': 'Active', 'notional_change': -5.0}]}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E           'all_programs': [],
+E     -     'trend': [
+E     -         {
+E     -             'counterparty': 'Active',
+E     -             'notional_change': -5.0,
+E     -         },
+E     -     ],
+E       }
+______ test_compute_metrics_keeps_empty_variants_and_continues[dataframe] ______
+tests/pipeline/test_run_coverage_round.py:1104: in test_compute_metrics_keeps_empty_variants_and_continues
+    assert changes == {
+E   AssertionError: assert {'all_programs': []} == {'all_program...ange': -5.0}]}
+E
+E     Omitting 1 identical items, use -vv to show
+E     Right contains 1 more item:
+E     {'trend': [{'counterparty': 'Active', 'notional_change': -5.0}]}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E           'all_programs': [],
+E     -     'trend': [
+E     -         {
+E     -             'counterparty': 'Active',
+E     -             'notional_change': -5.0,
+E     -         },
+E     -     ],
+E       }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_compute_metrics_keeps_empty_variants_and_continues[records] - AssertionError: assert {'all_programs': []} == {'all_program...ange': -5.0}]}
+
+  Omitting 1 identical items, use -vv to show
+  Right contains 1 more item:
+  {'trend': [{'counterparty': 'Active', 'notional_change': -5.0}]}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+        'all_programs': [],
+  -     'trend': [
+  -         {
+  -             'counterparty': 'Active',
+  -             'notional_change': -5.0,
+  -         },
+  -     ],
+    }
+FAILED tests/pipeline/test_run_coverage_round.py::test_compute_metrics_keeps_empty_variants_and_continues[dataframe] - AssertionError: assert {'all_programs': []} == {'all_program...ange': -5.0}]}
+
+  Omitting 1 identical items, use -vv to show
+  Right contains 1 more item:
+  {'trend': [{'counterparty': 'Active', 'notional_change': -5.0}]}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+        'all_programs': [],
+  -     'trend': [
+  -         {
+  -             'counterparty': 'Active',
+  -             'notional_change': -5.0,
+  -         },
+  -     ],
+    }
+2 failed, 13 warnings in 0.74s
+
+RESTORED (exit 0)
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.61s
+
+Incomplete changes are ranked with fabricated zero values
+MUTATED (exit 1)
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__ test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[0] ___
+tests/pipeline/test_run_coverage_round.py:1128: in test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures
+    assert changes == {
+E   AssertionError: assert {'all_program...hange': 3.0}]} == {'all_program...hange': 3.0}]}
+E
+E     Omitting 1 identical items, use -vv to show
+E     Differing items:
+E     {'all_programs': [{'counterparty': 'Negative', 'notional_change': -7.0}, {'counterparty': 'Positive', 'notional_change': 0.0}]} != {'all_programs': []}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E     -     'all_programs': [],
+E     ?                      --
+E     +     'all_programs': [
+E     +         {
+E     +             'counterparty': 'Negative',
+E     +             'notional_change': -7.0,
+E     +         },
+E     +         {
+E     +             'counterparty': 'Positive',
+E     +             'notional_change': 0.0,
+E     +         },
+E     +     ],
+E           'trend': [
+E               {
+E                   'counterparty': 'Active',
+E                   'notional_change': 3.0,
+E               },
+E           ],
+E       }
+__ test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[1] ___
+tests/pipeline/test_run_coverage_round.py:1128: in test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures
+    assert changes == {
+E   AssertionError: assert {'all_program...hange': 3.0}]} == {'all_program...hange': 3.0}]}
+E
+E     Omitting 1 identical items, use -vv to show
+E     Differing items:
+E     {'all_programs': [{'counterparty': 'Positive', 'notional_change': 2.0}, {'counterparty': 'Negative', 'notional_change': 0.0}]} != {'all_programs': []}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E     -     'all_programs': [],
+E     ?                      --
+E     +     'all_programs': [
+E     +         {
+E     +             'counterparty': 'Positive',
+E     +             'notional_change': 2.0,
+E     +         },
+E     +         {
+E     +             'counterparty': 'Negative',
+E     +             'notional_change': 0.0,
+E     +         },
+E     +     ],
+E           'trend': [
+E               {
+E                   'counterparty': 'Active',
+E                   'notional_change': 3.0,
+E               },
+E           ],
+E       }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[0] - AssertionError: assert {'all_program...hange': 3.0}]} == {'all_program...hange': 3.0}]}
+
+  Omitting 1 identical items, use -vv to show
+  Differing items:
+  {'all_programs': [{'counterparty': 'Negative', 'notional_change': -7.0}, {'counterparty': 'Positive', 'notional_change': 0.0}]} != {'all_programs': []}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+  -     'all_programs': [],
+  ?                      --
+  +     'all_programs': [
+  +         {
+  +             'counterparty': 'Negative',
+  +             'notional_change': -7.0,
+  +         },
+  +         {
+  +             'counterparty': 'Positive',
+  +             'notional_change': 0.0,
+  +         },
+  +     ],
+        'trend': [
+            {
+                'counterparty': 'Active',
+                'notional_change': 3.0,
+            },
+        ],
+    }
+FAILED tests/pipeline/test_run_coverage_round.py::test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[1] - AssertionError: assert {'all_program...hange': 3.0}]} == {'all_program...hange': 3.0}]}
+
+  Omitting 1 identical items, use -vv to show
+  Differing items:
+  {'all_programs': [{'counterparty': 'Positive', 'notional_change': 2.0}, {'counterparty': 'Negative', 'notional_change': 0.0}]} != {'all_programs': []}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+  -     'all_programs': [],
+  ?                      --
+  +     'all_programs': [
+  +         {
+  +             'counterparty': 'Positive',
+  +             'notional_change': 2.0,
+  +         },
+  +         {
+  +             'counterparty': 'Negative',
+  +             'notional_change': 0.0,
+  +         },
+  +     ],
+        'trend': [
+            {
+                'counterparty': 'Active',
+                'notional_change': 3.0,
+            },
+        ],
+    }
+2 failed, 13 warnings in 0.46s
+
+RESTORED (exit 0)
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.34s
+
+
+Clean before coverage
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/counter_risk/cli/__init__.py                237      0   100%
+src/counter_risk/cli/__main__.py                  2      2     0%   3-5
+src/counter_risk/cli/mapping_diff_report.py      98     12    88%   85, 90, 93, 103, 106, 110, 113, 116, 178-181
+src/counter_risk/pipeline/run.py               2636     94    96%   566, 1007, 1092, 1250, 1534, 1568, 1590-1591, 1674, 1818-1819, 1924-1926, 1955-1956, 1992, 2190, 2225, 2237, 2245-2246, 2270, 2290, 2293-2294, 2410, 2494, 2597, 2681, 2700, 2756, 2774, 3022-3024, 3054-3055, 3115-3116, 3148, 3166, 3176-3177, 3185-3186, 3209-3210, 3278, 3289, 3326, 3413, 3502, 3508, 3531, 3652-3653, 3666, 3975-3977, 4146, 4164, 4169, 4477, 4560, 4726, 4846, 4859, 4872, 4892, 4977, 5061, 5197, 5203, 5223, 5231, 5357, 5416, 5433, 5581, 5600, 5603, 5614, 5626, 5632, 5655, 5667, 5790-5791, 5897, 5913, 5943, 5963, 5974
+---------------------------------------------------------------------------
+TOTAL                                          2973    108    96%
+Coverage JSON written to file /tmp/1217-metrics-before.json
+2618 passed, 1 skipped, 91 deselected, 13 warnings in 240.33s (0:04:00)
+
+Clean after coverage
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/counter_risk/cli/__init__.py                237      0   100%
+src/counter_risk/cli/__main__.py                  2      2     0%   3-5
+src/counter_risk/cli/mapping_diff_report.py      98     12    88%   85, 90, 93, 103, 106, 110, 113, 116, 178-181
+src/counter_risk/pipeline/run.py               2636     89    97%   566, 1007, 1092, 1250, 1534, 1568, 1590-1591, 1674, 1818-1819, 1992, 2190, 2225, 2237, 2245-2246, 2270, 2290, 2293-2294, 2410, 2494, 2597, 2681, 2700, 2756, 2774, 3022-3024, 3054-3055, 3115-3116, 3148, 3166, 3176-3177, 3185-3186, 3209-3210, 3278, 3289, 3326, 3413, 3502, 3508, 3531, 3652-3653, 3666, 3975-3977, 4146, 4164, 4169, 4477, 4560, 4726, 4846, 4859, 4872, 4892, 4977, 5061, 5197, 5203, 5223, 5231, 5357, 5416, 5433, 5581, 5600, 5603, 5614, 5626, 5632, 5655, 5667, 5790-5791, 5897, 5913, 5943, 5963, 5974
+---------------------------------------------------------------------------
+TOTAL                                          2973    103    97%
+Coverage JSON written to file /tmp/1217-metrics-after.json
+2622 passed, 1 skipped, 87 deselected, 13 warnings in 235.78s (0:03:55)
+
+Clean targeted-clean coverage
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                               Stmts   Miss  Cover   Missing
+----------------------------------------------------------------
+src/counter_risk/pipeline/run.py    2636   1545    41%   149, 294, 389, 478-519, 524, 527, 566, 607, 664-682, 702, 714, 779-783, 837, 840, 843-844, 847, 858, 872, 875, 878, 886, 888, 891, 911-921, 927-967, 978, 999-1009, 1015-1047, 1080, 1085, 1091-1093, 1104-1115, 1217, 1248-1275, 1287-1326, 1358-1361, 1364, 1370-1382, 1404-1423, 1446-1456, 1466-1477, 1483-1494, 1523, 1534, 1547, 1558-1573, 1588-1591, 1597-1614, 1646, 1650, 1670-1677, 1686, 1690, 1703, 1712-1714, 1732, 1752-1804, 1808-1819, 1827-1853, 1861, 1879-1893, 1982-2133, 2154-2173, 2187-2228, 2234-2260, 2266-2281, 2287-2318, 2322-2324, 2330-2359, 2365-2394, 2398-2401, 2405-2411, 2415-2419, 2442-2475, 2484-2500, 2507-2555, 2569-2610, 2620-2623, 2637-2639, 2663, 2681, 2690, 2700, 2739-2749, 2753-2756, 2762-2783, 2794-2806, 2858, 2861-2862, 2932-2935, 2965-3066, 3068-3085, 3110-3187, 3193-3210, 3219-3229, 3236, 3268-3376, 3388-3423, 3450-3484, 3495-3516, 3526-3547, 3559, 3564, 3568, 3573, 3578, 3599-3613, 3643-3653, 3658-3670, 3685-3731, 3744-3798, 3811-3873, 3895, 3898-3903, 3907-3908, 3911-3916, 3935-3936, 3966, 3971, 3975-3977, 3997-4033, 4055-4134, 4145-4155, 4161-4170, 4176-4182, 4194-4217, 4226, 4271, 4277, 4281-4285, 4293-4295, 4308-4310, 4321-4323, 4335-4337, 4346-4348, 4458-4462, 4470-4481, 4560, 4567, 4619-4632, 4650-4661, 4710, 4726, 4737, 4743, 4763-4765, 4773, 4833, 4837-4841, 4846, 4859, 4872, 4887, 4891-4893, 4903-5033, 5040-5053, 5059-5132, 5136-5142, 5146-5157, 5163-5289, 5293-5331, 5335-5342, 5348-5389, 5411-5437, 5445-5502, 5510-5518, 5525-5538, 5546-5552, 5560-5582, 5598-5640, 5649-5656, 5661, 5664, 5667, 5677-5683, 5693-5697, 5719-5720, 5730-5733, 5743-5746, 5790-5791, 5873-5986, 5996-6002, 6009, 6017
+----------------------------------------------------------------
+TOTAL                               2636   1545    41%
+Coverage JSON written to file /tmp/1217-metrics-targeted-clean.json
+129 passed, 13 warnings in 3.71s
+
+Mutation case audit
+{
+  "mutations": 63,
+  "collected_cases": 144,
+  "proven_cases": 144,
+  "omissions": [],
+  "uncollected_cases": [],
+  "duplicates": [],
+  "mutated_restored_exit_pairs": [
+    [
+      1,
+      0
+    ]
+  ]
+}
+
+Both Black checks pass: 398 files unchanged. Ruff repository check and git diff --check pass.
+Black sandbox helper: ordinary command timed out after 30s; checks pass with BLACK_NUM_WORKERS=1 and a temporary 0.1-second EpollSelector timeout bound, preserving formatter behavior.
+Publication blocked: read-only workspace Git directory, GitHub DNS failure, and automatic approval rejection of tree creation, PR-body update, blocker comment, and needs-human label (approval policy never).

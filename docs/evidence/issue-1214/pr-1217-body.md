@@ -1,34 +1,36 @@
 ## Summary
 
-Add focused CLI and pipeline regression tests. This round covers header-only and missing-cash CSV inputs under both warning and strict reconciliation policies. It verifies empty-source findings, empty override warnings, and preservation of existing totals and source files. No production change was needed this round.
+Add focused CLI and pipeline regression tests, with one previously recorded production fix for historical row-date detection. This round adds four cases for empty totals and incomplete prior-month change data. It checks that later variants still produce metrics, that valid exposures remain available, and that missing changes are not presented as zero changes. No additional production change was needed.
 
 ## Ranked selection and task reconciliation
 
 [Issue #1214](https://github.com/stranske/Counter_Risk/issues/1214) ranks CLI first (one escaped-defect signal, churn 1, 19 CI uncovered units), then pipeline (churn 15, 302 CI uncovered units). CLI is fully covered locally; this round continues with pipeline. The reserved GUI runner is untouched.
 
-Reviewed recent commits through `f59df61`. The PR's three added test modules collect **140 cases**, matching **61 executed mutations** with no omissions, duplicates, or uncollected cases. Every mutated run exits 1 and every restored run exits 0. Contract items 1–5 below are verified and checked locally. Automatic approval review rejected the remote PR-body reconciliation, so the remote checkboxes remain stale.
+The PR's three added test modules collect **144 cases**. The evidence registry contains **63 executed mutation proofs**, with no missing, duplicate, or uncollected cases. This round adds two mutation proofs covering all four new cases: every broken case failed and every restored case passed. Contract items 1–5 below are verified locally. This remains the sole PR for the chunk.
 
 ## Coverage
 
-The authoritative issue baseline remains **89.32% blended CI coverage**. The local configuration measures lines only; these target-limited whole-suite reports cannot establish a blended CI reduction.
+The authoritative issue baseline remains **89.32% blended CI coverage**. The current local configuration measures lines only; these target-limited whole-suite reports cannot establish a blended CI reduction.
 
 | Target | Existing tests before PR | All PR tests | Missing lines |
 |---|---:|---:|---:|
 | `src/counter_risk/cli/__init__.py` | 218/237 (91.98%) | 237/237 (100.00%) | 19 → 0 |
-| `src/counter_risk/pipeline/run.py` | 2334/2636 (88.54%) | 2542/2636 (96.43%) | 302 → 94 |
+| `src/counter_risk/pipeline/run.py` | 2334/2636 (88.54%) | 2547/2636 (96.62%) | 302 → 89 |
 
-This round covers **4 additional statements**: 1428, 1501, 1504, 1511. Pipeline missing lines fall from 98 to 94. The PR's total local reduction is **227 lines**. The existing-tests baseline excludes the three PR-added modules and uses the final production source.
+This round covers **5 additional statements**: 1924–1926, 1955–1956. Pipeline missing lines fall from 94 to 89; this round's whole-suite baseline excludes only its four new cases. The PR's total local reduction is **232 lines**. The existing-tests baseline for the full PR excludes the three PR-added modules and uses the final production source; it is preserved in earlier evidence.
 
-CLI has no local missing lines. Pipeline retains 94, including invalid-data guards, alternative output backends, and filesystem/Office failure paths; these remain test candidates. The roughly 180-unit blended CI reduction is unverified, with conservatively up to 180 CI units unconfirmed because the local line-only metric is not comparable. This remains a partial delivery pending publication and comparable Gate coverage. Exact summaries are in `empty-repo-cash-summary.json`.
+CLI has no local missing lines. Pipeline retains 89, including invalid-data guards, alternative output backends, and filesystem/Office failure paths; these remain test candidates. The roughly 180-unit blended CI reduction remains unverified, with up to 180 comparable CI units unconfirmed because the metrics differ. This is a partial delivery pending publication and comparable CI coverage. Gate currently disables coverage, so its success alone cannot establish that reduction.
 
 ## Verification and break-and-revert
 
-- Whole non-slow suite: **2618 passed, 1 skipped, 87 deselected**, exit 0. Baseline: **2614 passed, 1 skipped, 87 deselected**. Command: `pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing -m "not slow" -q -o addopts=`.
-- Required targeted check: `pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing -m "not slow" -q -o addopts=`: **125 passed**, exit 0; standalone pipeline Cover column **41%**. The whole-suite pipeline result is **96.43%** above.
-- Disabled the empty-source safeguard: **all four new cases failed**, exit 1. Restored it: **all four passed**, exit 0. Production SHA256 is identical before and after. `all-test-mutations.json` records all 61 mutations; `break-and-revert.txt` preserves failure/restoration output and the final coverage table.
-- Formatted the changed Python file with `black --line-length 100`. Required repository-wide Black check and CI's check including `.venv` in the exclusion passed across **398 files**. The ordinary check timed out after 25s; both checks passed with `BLACK_NUM_WORKERS=1` and the temporary `EpollSelector.select` timeout bound documented in earlier rounds. Formatter behavior was unchanged.
-- `ruff check --output-format github --extend-exclude .workflows-lib .` and `git diff --check` passed.
-- Published-head [Gate 40853397510](https://github.com/stranske/Counter_Risk/actions/runs/40853397510) succeeded at `f59df61`. The four newest cases still require publication and CI.
+- Clean whole non-slow suite: **2622 passed, 1 skipped, 87 deselected**, exit 0. Baseline excluding the four new cases: **2618 passed, 1 skipped, 91 deselected**, exit 0. Both run `pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing -m "not slow" -q -o addopts=` with separate coverage files.
+- Required targeted check: `pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing -m "not slow" -q -o addopts=`: **129 passed**, exit 0. The pipeline Cover column is **41%** standalone; the whole-suite result is **96.62%** above.
+- Changed the empty-totals branch to return before processing later variants: **both new cases failed**, exit 1. Restored it: **both passed**, exit 0.
+- Disabled the incomplete-change-column safeguard: **both new cases failed** because absent changes became zero values, exit 1. Restored it: **both passed**, exit 0. Production SHA256 is identical before and after both mutations.
+- `all-test-mutations.json` records all 63 proofs. `break-and-revert.txt` preserves failure/restoration output and final coverage tables. Exact clean coverage summaries and the case audit are in `metrics-guards-summary.json`. An initial pair of overlapping runs shared a coverage file; their coverage reports were discarded and replaced by the isolated clean runs above.
+- Formatted the changed Python file with `black --line-length 100`. Both the required repository-wide Black check and CI's check including `.venv` in the exclusion passed across **398 files**. The ordinary check timed out after 30 seconds; both checks passed with `BLACK_NUM_WORKERS=1` and the temporary `EpollSelector.select` timeout bound documented in earlier rounds. Formatter behavior was unchanged.
+- CI's `ruff check --output-format github --extend-exclude .workflows-lib .` and `git diff --check` passed.
+- The new cases have passed locally; published-head CI remains pending publication.
 
 ## Production bug fixed earlier in this PR
 
@@ -36,10 +38,10 @@ Commit `0777d42` changes only the row-date predicate in `_extract_prior_populate
 
 ## Delivery blockers
 
-- Workspace `git add` fails with `.git/index.lock: Read-only file system`. A Git directory under `/tmp` preserves a local commit of the verified source and evidence; `/tmp/1217-empty-repo-cash.patch` is the handoff patch. The workspace branch cannot be advanced here.
+- Workspace `git add` fails with `.git/index.lock: Read-only file system`. `/tmp/1217-metrics.git` preserves a commit of the verified source and evidence. `/tmp/1217-metrics.patch` is the handoff patch; the workspace branch cannot be advanced here.
 - Git transport fails with `Could not resolve host: github.com`, preventing push.
-- Automatic approval review rejected PR-body reconciliation, the blocker comment, and the `needs-human` label because **MCP tool call requires approval, but approval policy is never**. The replacement body and checked contract items are preserved locally.
-- PR #1217 is the sole PR for this chunk and remains open and ready for review (`isDraft=false`).
+- Automatic approval review rejected creating a GitHub tree for the updated test file because **MCP tool call requires approval, but approval policy is never**. Reconciliation outcomes are recorded in `metrics-guards-summary.json`.
+- PR #1217 is open and ready for review (`isDraft=false`).
 
 Closes #1214
 
