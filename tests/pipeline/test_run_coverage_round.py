@@ -1030,6 +1030,61 @@ def test_static_distribution_failure_warns_and_stops_before_publishing(
         stages["scrub"].assert_not_called()
 
 
+@pytest.mark.parametrize("fail_policy", ["warn", "strict"])
+@pytest.mark.parametrize("source_rows", ["", "CIBC,\n"], ids=["header-only", "missing-cash"])
+def test_empty_repo_cash_source_obeys_policy_and_preserves_totals(
+    tmp_path, fail_policy, source_rows
+) -> None:
+    """An empty configured source must be distinguished from a skipped cash import."""
+    source = tmp_path / "cash.csv"
+    source_text = f"counterparty,cash_value\n{source_rows}"
+    source.write_text(source_text, encoding="utf-8")
+    overrides = tmp_path / "overrides.csv"
+    overrides.write_text("counterparty,cash_value,note\n", encoding="utf-8")
+    config = _config()
+    config = config.model_copy(
+        update={
+            "cash_source_type": "csv",
+            "cash_source_path": source,
+            "cash_overrides_csv": overrides,
+            "reconciliation": config.reconciliation.model_copy(update={"fail_policy": fail_policy}),
+        }
+    )
+    parsed = {"all_programs": {"totals": [{"Counterparty": "CIBC", "Cash": 25.0}]}}
+    warnings = ["earlier warning"]
+    message = f"Repo Cash source 'csv:{source}' did not yield any counterparty values."
+
+    if fail_policy == "strict":
+        with pytest.raises(ValueError) as raised:
+            run_module._apply_daily_holdings_repo_cash(
+                config=config, parsed_by_variant=parsed, warnings=warnings
+            )
+        assert str(raised.value) == message
+    else:
+        summary = run_module._apply_daily_holdings_repo_cash(
+            config=config, parsed_by_variant=parsed, warnings=warnings
+        )
+        assert summary["reconciliation_findings"] == [
+            {"code": "empty_cash_source", "severity": "warn", "message": message}
+        ]
+        assert summary["skipped_reason"] is None
+        assert summary["applied_to_totals"] is False
+        assert summary["counterparty_count"] == 0
+        assert summary["total_cash"] == 0.0
+        assert summary["overrides_path"] == str(overrides)
+        assert summary["applied_override_count"] == 0
+        assert summary["override_audit_rows"] == []
+
+    assert warnings == [
+        "earlier warning",
+        f"Repo Cash source used: csv:{source}",
+        f"Repo Cash overrides file present but empty: {overrides}",
+    ] + ([message] if fail_policy == "warn" else [])
+    assert parsed == {"all_programs": {"totals": [{"Counterparty": "CIBC", "Cash": 25.0}]}}
+    assert source.read_text(encoding="utf-8") == source_text
+    assert overrides.read_text(encoding="utf-8") == "counterparty,cash_value,note\n"
+
+
 def _config():
     from counter_risk.config import WorkflowConfig
 

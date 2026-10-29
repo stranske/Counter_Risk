@@ -1606,3 +1606,140 @@ All done! ✨ 🍰 ✨
 CI Black check (exit 0, helper described in PR body):
 All done! ✨ 🍰 ✨
 398 files would be left unchanged.
+
+
+Empty configured Repo Cash source: warning/strict policies with real CSVs
+Command: ['pytest', 'tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short']
+Mutated exit: 1
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_empty_repo_cash_source_obeys_policy_and_preserves_totals[header-only-warn] _
+tests/pipeline/test_run_coverage_round.py:1067: in test_empty_repo_cash_source_obeys_policy_and_preserves_totals
+    assert summary["reconciliation_findings"] == [
+E   assert [] == [{'code': 'em...rty values.'}]
+E
+E     Right contains one more item: {'code': 'empty_cash_source', 'severity': 'warn', 'message': "Repo Cash source 'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob0/cash.csv' did not yield any counterparty values."}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + []
+E     - [
+E     -     {
+E     -         'code': 'empty_cash_source',
+E     -         'severity': 'warn',
+E     -         'message': 'Repo Cash source '
+E     -         "'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob0/cash.csv' "
+E     -         'did not yield any counterparty values.',
+E     -     },
+E     - ]
+_ test_empty_repo_cash_source_obeys_policy_and_preserves_totals[header-only-strict] _
+tests/pipeline/test_run_coverage_round.py:1058: in test_empty_repo_cash_source_obeys_policy_and_preserves_totals
+    with pytest.raises(ValueError) as raised:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_empty_repo_cash_source_obeys_policy_and_preserves_totals[missing-cash-warn] _
+tests/pipeline/test_run_coverage_round.py:1067: in test_empty_repo_cash_source_obeys_policy_and_preserves_totals
+    assert summary["reconciliation_findings"] == [
+E   assert [] == [{'code': 'em...rty values.'}]
+E
+E     Right contains one more item: {'code': 'empty_cash_source', 'severity': 'warn', 'message': "Repo Cash source 'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob2/cash.csv' did not yield any counterparty values."}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + []
+E     - [
+E     -     {
+E     -         'code': 'empty_cash_source',
+E     -         'severity': 'warn',
+E     -         'message': 'Repo Cash source '
+E     -         "'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob2/cash.csv' "
+E     -         'did not yield any counterparty values.',
+E     -     },
+E     - ]
+_ test_empty_repo_cash_source_obeys_policy_and_preserves_totals[missing-cash-strict] _
+tests/pipeline/test_run_coverage_round.py:1058: in test_empty_repo_cash_source_obeys_policy_and_preserves_totals
+    with pytest.raises(ValueError) as raised:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals[header-only-warn] - assert [] == [{'code': 'em...rty values.'}]
+
+  Right contains one more item: {'code': 'empty_cash_source', 'severity': 'warn', 'message': "Repo Cash source 'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob0/cash.csv' did not yield any counterparty values."}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  + []
+  - [
+  -     {
+  -         'code': 'empty_cash_source',
+  -         'severity': 'warn',
+  -         'message': 'Repo Cash source '
+  -         "'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob0/cash.csv' "
+  -         'did not yield any counterparty values.',
+  -     },
+  - ]
+FAILED tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals[header-only-strict] - Failed: DID NOT RAISE ValueError
+FAILED tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals[missing-cash-warn] - assert [] == [{'code': 'em...rty values.'}]
+
+  Right contains one more item: {'code': 'empty_cash_source', 'severity': 'warn', 'message': "Repo Cash source 'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob2/cash.csv' did not yield any counterparty values."}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  + []
+  - [
+  -     {
+  -         'code': 'empty_cash_source',
+  -         'severity': 'warn',
+  -         'message': 'Repo Cash source '
+  -         "'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob2/cash.csv' "
+  -         'did not yield any counterparty values.',
+  -     },
+  - ]
+FAILED tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals[missing-cash-strict] - Failed: DID NOT RAISE ValueError
+4 failed, 13 warnings in 1.24s
+
+Restored exit: 0
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 13 warnings in 0.30s
+
+Case audit: {
+  "mutations": 61,
+  "collected_cases": 140,
+  "proven_cases": 140,
+  "omissions": [],
+  "uncollected_cases": [],
+  "duplicates": [],
+  "mutated_restored_exit_pairs": [
+    [
+      1,
+      0
+    ]
+  ]
+}
+
+Final full-suite command: COVERAGE_FILE=/tmp/1217-round-final.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-round-final.json -m "not slow" -q -o addopts=
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/counter_risk/cli/__init__.py                237      0   100%
+src/counter_risk/cli/__main__.py                  2      2     0%   3-5
+src/counter_risk/cli/mapping_diff_report.py      98     12    88%   85, 90, 93, 103, 106, 110, 113, 116, 178-181
+src/counter_risk/pipeline/run.py               2636     94    96%   566, 1007, 1092, 1250, 1534, 1568, 1590-1591, 1674, 1818-1819, 1924-1926, 1955-1956, 1992, 2190, 2225, 2237, 2245-2246, 2270, 2290, 2293-2294, 2410, 2494, 2597, 2681, 2700, 2756, 2774, 3022-3024, 3054-3055, 3115-3116, 3148, 3166, 3176-3177, 3185-3186, 3209-3210, 3278, 3289, 3326, 3413, 3502, 3508, 3531, 3652-3653, 3666, 3975-3977, 4146, 4164, 4169, 4477, 4560, 4726, 4846, 4859, 4872, 4892, 4977, 5061, 5197, 5203, 5223, 5231, 5357, 5416, 5433, 5581, 5600, 5603, 5614, 5626, 5632, 5655, 5667, 5790-5791, 5897, 5913, 5943, 5963, 5974
+---------------------------------------------------------------------------
+TOTAL                                          2973    108    96%
+Coverage JSON written to file /tmp/1217-round-final.json
+2618 passed, 1 skipped, 87 deselected, 13 warnings in 165.71s (0:02:45)
+
+Targeted command: COVERAGE_FILE=/tmp/1217-round-targeted.cov pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing --cov-report=json:/tmp/1217-round-targeted.json -m "not slow" -q -o addopts=
+125 passed; pipeline Cover column 41% (1069/2636); exit 0. Whole-suite target coverage is reported above.
+Black required and CI checks: exit 0, 398 files unchanged; temporary EpollSelector timeout bound and BLACK_NUM_WORKERS=1, matching earlier rounds. Ruff repository check and git diff --check passed.

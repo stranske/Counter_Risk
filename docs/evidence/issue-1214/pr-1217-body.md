@@ -1,53 +1,45 @@
 ## Summary
 
-- Add CLI discovery, GUI callback, settings, and failure-reporting tests, plus focused pipeline orchestration, historical-workbook, screenshot, and Office failure coverage.
-- This round adds three static-distribution cases for failed slide export, deck rebuild, and external-link removal. Each verifies a warning retaining the failure detail, no returned deliverable, preserved source bytes, and no later stage calls.
-- No production change in this round. The PR's only production change is the earlier one-line historical-footer fix described below.
+Add focused CLI and pipeline regression tests. This round covers header-only and missing-cash CSV inputs under both warning and strict reconciliation policies. It verifies empty-source findings, empty override warnings, and preservation of existing totals and source files. No production change was needed this round.
 
-## Target selection and contract reconciliation
+## Ranked selection and task reconciliation
 
-[Issue #1214](https://github.com/stranske/Counter_Risk/issues/1214) ranks CLI first (one escaped-defect signal, churn 1, 19 CI uncovered units), then pipeline (churn 15, 302 CI uncovered units). CLI is fully covered locally, so this round continues with pipeline. The reserved GUI runner is untouched.
+[Issue #1214](https://github.com/stranske/Counter_Risk/issues/1214) ranks CLI first (one escaped-defect signal, churn 1, 19 CI uncovered units), then pipeline (churn 15, 302 CI uncovered units). CLI is fully covered locally; this round continues with pipeline. The reserved GUI runner is untouched.
 
-Reviewed recent commits through `f76abc5` and audited all three PR-added test modules: **136 collected cases match 60 executed mutations**, without omissions, duplicates, or uncollected cases. All recorded mutated exits are 1 and restored exits are 0. This verifies nested contract items 1–5: ranked selection, executed break-and-revert proofs, a minimal fix for the one real bug found, low blast radius, and one existing PR. Their local checkboxes below are checked; automatic approval review rejected the remote reconciliation update.
+Reviewed recent commits through `f59df61`. The PR's three added test modules collect **140 cases**, matching **61 executed mutations** with no omissions, duplicates, or uncollected cases. Every mutated run exits 1 and every restored run exits 0. Contract items 1–5 below are verified and checked locally. Automatic approval review rejected the remote PR-body reconciliation, so the remote checkboxes remain stale.
 
 ## Coverage
 
-The authoritative issue baseline remains **89.32% blended CI coverage**. Local configuration measures lines only; target-limited reports over the whole non-slow suite do not establish a blended CI reduction.
+The authoritative issue baseline remains **89.32% blended CI coverage**. The local configuration measures lines only; these target-limited whole-suite reports cannot establish a blended CI reduction.
 
-| Target | Existing tests, before PR | With all PR tests | Missing lines |
+| Target | Existing tests before PR | All PR tests | Missing lines |
 |---|---:|---:|---:|
-| `src/counter_risk/cli/__init__.py` | 218/237 (91.98%) | 237/237 (100.00%) | 19 -> 0 |
-| `src/counter_risk/pipeline/run.py` | 2334/2636 (88.54%) | 2538/2636 (96.28%) | 302 -> 98 |
+| `src/counter_risk/cli/__init__.py` | 218/237 (91.98%) | 237/237 (100.00%) | 19 → 0 |
+| `src/counter_risk/pipeline/run.py` | 2334/2636 (88.54%) | 2542/2636 (96.43%) | 302 → 94 |
 
-The earlier existing-tests baseline excludes the PR's three added modules and uses the final production source. Across the PR, local missing lines decrease by **223** (19 CLI + 204 pipeline). This round adds **three** covered lines (3938–3940), changing pipeline coverage from 2535/2636 (96.17%, 101 missing) to 2538/2636 (96.28%, 98 missing). Exact summaries are in `static-distribution-failures-summary.json`.
+This round covers **4 additional statements**: 1428, 1501, 1504, 1511. Pipeline missing lines fall from 98 to 94. The PR's total local reduction is **227 lines**. The existing-tests baseline excludes the three PR-added modules and uses the final production source.
 
-CLI has no remaining local missing lines. Pipeline still has 98, including invalid-data guards, alternative output backends, and filesystem/Office failure paths. These are further test candidates, not declared untestable. The approximately 180-unit blended CI reduction remains unverified: its shortfall cannot be calculated from local line-only reports, so conservatively up to 180 CI units remain unconfirmed. This is a bounded partial delivery pending publication and comparable Gate coverage.
+CLI has no local missing lines. Pipeline retains 94, including invalid-data guards, alternative output backends, and filesystem/Office failure paths; these remain test candidates. The roughly 180-unit blended CI reduction is unverified, with conservatively up to 180 CI units unconfirmed because the local line-only metric is not comparable. This remains a partial delivery pending publication and comparable Gate coverage. Exact summaries are in `empty-repo-cash-summary.json`.
 
-## Verification
+## Verification and break-and-revert
 
-- Full non-slow suite: `COVERAGE_FILE=/tmp/1217-static-full.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-static-full.json -m "not slow" -q -o addopts=`: **2614 passed, 1 skipped, 87 deselected**, 230.64s, exit 0.
-- Required targeted check: `COVERAGE_FILE=/tmp/1217-static-targeted.cov pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing --cov-report=json:/tmp/1217-static-targeted.json -m "not slow" -q -o addopts=`: **121 passed**, 1.79s, exit 0. The standalone test module's pipeline Cover column is **39%**; the comparable whole-suite result is **96.28%** above.
-- Earlier existing-tests baseline: `pytest tests/ --ignore=tests/pipeline/test_run_link_refresh_failures.py --ignore=tests/pipeline/test_run_coverage_round.py --ignore=tests/test_cli_coverage_round.py --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing -m "not slow" -q`: **2478 passed, 1 skipped, 87 deselected**.
-- Published-head Gate [40851726293](https://github.com/stranske/Counter_Risk/actions/runs/40851726293) succeeded at `f76abc5c3cd581b0e8618c27ddc196ae03c45cd3`. Python 3.14 job `123372866760` reports **2584 passed, 1 skipped**, `COVERAGE_ENABLED=false`, and `COVERAGE_MIN_OUTCOME=skipped`. The three newest cases still need publication and CI.
-- Ran `black --line-length 100 tests/pipeline/test_run_coverage_round.py`. Both repository-wide checks passed across **398 files**: `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .` and CI's `black --check --line-length 100 --exclude '(\.venv|\.workflows-lib|node_modules)' .`. The ordinary command stalled and timed out after 25s; as in earlier rounds, both commands passed with `BLACK_NUM_WORKERS=1` and a temporary `sitecustomize` bounding `EpollSelector.select` waits to 0.1 seconds. Formatter behavior was unchanged.
+- Whole non-slow suite: **2618 passed, 1 skipped, 87 deselected**, exit 0. Baseline: **2614 passed, 1 skipped, 87 deselected**. Command: `pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing -m "not slow" -q -o addopts=`.
+- Required targeted check: `pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing -m "not slow" -q -o addopts=`: **125 passed**, exit 0; standalone pipeline Cover column **41%**. The whole-suite pipeline result is **96.43%** above.
+- Disabled the empty-source safeguard: **all four new cases failed**, exit 1. Restored it: **all four passed**, exit 0. Production SHA256 is identical before and after. `all-test-mutations.json` records all 61 mutations; `break-and-revert.txt` preserves failure/restoration output and the final coverage table.
+- Formatted the changed Python file with `black --line-length 100`. Required repository-wide Black check and CI's check including `.venv` in the exclusion passed across **398 files**. The ordinary check timed out after 25s; both checks passed with `BLACK_NUM_WORKERS=1` and the temporary `EpollSelector.select` timeout bound documented in earlier rounds. Formatter behavior was unchanged.
 - `ruff check --output-format github --extend-exclude .workflows-lib .` and `git diff --check` passed.
-
-## Break-and-revert proof
-
-`all-test-mutations.json` records **60 executed mutations covering all 136 collected cases**. `break-and-revert.txt` preserves the commands, failures, passing restorations, and full-suite output.
-
-This round suppresses the static-distribution failure warning: all three export/rebuild/scrub failure cases fail (exit 1). After restoring the warning, all three pass (exit 0). The production source SHA256 is identical before and after, and no production mutation diff remains.
+- Published-head [Gate 40853397510](https://github.com/stranske/Counter_Risk/actions/runs/40853397510) succeeded at `f59df61`. The four newest cases still require publication and CI.
 
 ## Production bug fixed earlier in this PR
 
-Commit `0777d42` changes only the row-date predicate in `_extract_prior_populated_series_by_sheet`: a non-date footer previously replaced the last dated row, erasing the prior populated-series set used to detect dropped positions. The real-workbook regression test fails with the old predicate and passes with `_coerce_historical_row_date`. No additional production defect was found in this round. The final full non-slow suite passes.
+Commit `0777d42` changes only the row-date predicate in `_extract_prior_populated_series_by_sheet`: a non-date footer previously replaced the last dated row, erasing the prior populated-series set used to detect dropped positions. The real-workbook regression fails with the old predicate and passes with `_coerce_historical_row_date`. No additional production defect was found. All other changes are focused tests and evidence in this one PR.
 
 ## Delivery blockers
 
-- Workspace `git add` failed: `.git/index.lock: Read-only file system`. A separate local Git directory under `/tmp` preserves a commit of the verified source and evidence; `/tmp/1217-static-distribution.patch` is the handoff patch. The workspace branch cannot be advanced here.
-- Git transport is unavailable: `git ls-remote` failed with `Could not resolve host: github.com`, so pushing the isolated commit is unavailable.
-- Automatic approval review rejected the PR-body reconciliation, blocker comment, and `needs-human` label: **MCP tool call requires approval, but approval policy is never**. The replacement body and checked contract items are preserved locally; the remote body remains unchanged.
-- PR #1217 remains the sole PR for this chunk, open and ready for review (`isDraft=false`) at `f76abc5c3cd581b0e8618c27ddc196ae03c45cd3`.
+- Workspace `git add` fails with `.git/index.lock: Read-only file system`. A Git directory under `/tmp` preserves a local commit of the verified source and evidence; `/tmp/1217-empty-repo-cash.patch` is the handoff patch. The workspace branch cannot be advanced here.
+- Git transport fails with `Could not resolve host: github.com`, preventing push.
+- Automatic approval review rejected PR-body reconciliation, the blocker comment, and the `needs-human` label because **MCP tool call requires approval, but approval policy is never**. The replacement body and checked contract items are preserved locally.
+- PR #1217 is the sole PR for this chunk and remains open and ready for review (`isDraft=false`).
 
 Closes #1214
 
