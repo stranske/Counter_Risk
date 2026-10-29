@@ -1921,5 +1921,67 @@
       "test_risk_ranking_rejects_nonnumeric_proxy_values[invalid-type]"
     ],
     "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2290,8 +2290,8 @@\n             raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\")\n         try:\n             value = float(raw_value)\n-        except (TypeError, ValueError) as exc:\n-            raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\") from exc\n+        except (TypeError, ValueError):\n+            return 0.0\n         if not math.isfinite(value):\n             raise ValueError(f\"Risk proxy {proxy_column!r} must be finite, got {raw_value!r}\")\n         return value\n"
+  },
+  {
+    "mutation": "Chart rebuilding loses collected slide fallback paths",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_apply_chart_replacement",
+    "edits": [
+      [
+        "fallback_slide_images[slide_idx] = img_path",
+        "pass  # deliberately drop fallback path"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[success-linked]",
+      "tests/pipeline/test_run_coverage_round.py::test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[success-static]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[success-linked]",
+      "test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[success-static]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3145,7 +3145,7 @@\n                 try:\n                     # Slides(idx) is 1-based; Slides[idx] would be 0-based (pywin32).\n                     presentation.Slides(slide_idx).Export(str(img_path), \"PNG\")\n-                    fallback_slide_images[slide_idx] = img_path\n+                    pass  # deliberately drop fallback path\n                 except Exception as exc:\n                     warnings.append(\n                         f\"chart_replacement fallback slide export failed (slide {slide_idx}): {exc}\"\n"
+  },
+  {
+    "mutation": "Chart rebuild failure warning loses the original error",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_apply_chart_replacement",
+    "edits": [
+      [
+        "warnings.append(f\"chart_replacement failed: {exc}\")",
+        "warnings.append(\"chart_replacement failed\")"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[rebuild-failure-linked]",
+      "tests/pipeline/test_run_coverage_round.py::test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[rebuild-failure-static]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[rebuild-failure-linked]",
+      "test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[rebuild-failure-static]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3183,7 +3183,7 @@\n             LOGGER.info(\"chart_replacement_deferred_to_static_rebuild: %s\", exc)\n         else:\n             LOGGER.warning(\"chart_replacement_failed exc=%s\", exc)\n-            warnings.append(f\"chart_replacement failed: {exc}\")\n+            warnings.append(\"chart_replacement failed\")\n         return False\n \n \n"
   }
 ]

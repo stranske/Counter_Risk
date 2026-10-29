@@ -1213,6 +1213,87 @@ def test_risk_ranking_rejects_nonnumeric_proxy_values(invalid_value, cause_type)
     ]
 
 
+@pytest.mark.parametrize("static_mode", [False, True], ids=["linked", "static"])
+@pytest.mark.parametrize("rebuild_fails", [False, True], ids=["success", "rebuild-failure"])
+def test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild(
+    monkeypatch, tmp_path: Path, static_mode: bool, rebuild_fails: bool
+) -> None:
+    """Chart rebuilding gets every slide fallback after the COM session is released."""
+    source = tmp_path / "master.pptx"
+    source.write_bytes(b"master must remain unchanged")
+    output = tmp_path / "distribution.pptx"
+    chart_image = tmp_path / "chart.png"
+    chart_images = {(2, "Chart 1"): chart_image}
+    warnings: list[str] = []
+    slide_images_dir = tmp_path / "_chart_images"
+    expected_fallbacks = {
+        index: slide_images_dir / f"fallback_slide_{index:04d}.png" for index in (1, 2)
+    }
+
+    slides = {index: Mock() for index in (1, 2)}
+    for index, slide in slides.items():
+        slide.Export.side_effect = lambda path, fmt, index=index: Path(path).write_bytes(
+            f"slide {index}".encode()
+        )
+    presentation = Mock()
+    presentation.Slides.Count = 2
+    presentation.Slides.side_effect = slides.__getitem__
+    app = Mock()
+    app.Presentations.Open.return_value = presentation
+    client = SimpleNamespace(DispatchEx=Mock(return_value=app))
+    monkeypatch.setitem(sys.modules, "win32com", SimpleNamespace(client=client))
+    monkeypatch.setitem(sys.modules, "win32com.client", client)
+    monkeypatch.setattr(run_module.platform, "system", lambda: "Windows")
+    export_charts = Mock(return_value=chart_images)
+    monkeypatch.setattr(run_module, "_export_chart_shapes_as_images", export_charts)
+
+    def rebuild(**kwargs) -> None:
+        presentation.Close.assert_called_once_with()
+        app.Quit.assert_called_once_with()
+        if rebuild_fails:
+            raise RuntimeError("chart image unreadable")
+        output.write_bytes(b"rebuilt deck")
+
+    rebuild_mock = Mock(side_effect=rebuild)
+    monkeypatch.setattr(run_module, "_rebuild_pptx_replacing_charts", rebuild_mock)
+
+    result = run_module._apply_chart_replacement(
+        master_pptx_path=source,
+        output_path=output,
+        run_dir=tmp_path,
+        static_mode=static_mode,
+        warnings=warnings,
+    )
+
+    assert result is (not rebuild_fails)
+    assert source.read_bytes() == b"master must remain unchanged"
+    client.DispatchEx.assert_called_once_with("PowerPoint.Application")
+    assert app.Visible is False
+    app.Presentations.Open.assert_called_once_with(str(source), WithWindow=False)
+    presentation.Close.assert_called_once_with()
+    app.Quit.assert_called_once_with()
+    assert presentation.Slides.call_args_list == [((1,), {}), ((2,), {})]
+    for index, slide in slides.items():
+        slide.Export.assert_called_once_with(str(expected_fallbacks[index]), "PNG")
+        assert expected_fallbacks[index].read_bytes() == f"slide {index}".encode()
+    export_charts.assert_called_once_with(
+        com_presentation=presentation, slide_images_dir=slide_images_dir, warnings=warnings
+    )
+    rebuild_mock.assert_called_once_with(
+        source_pptx=source,
+        output_path=output,
+        chart_images=chart_images,
+        fallback_slide_images=expected_fallbacks,
+        fallback_to_full_deck_rebuild=static_mode,
+    )
+    if rebuild_fails:
+        assert warnings == ["chart_replacement failed: chart image unreadable"]
+        assert not output.exists()
+    else:
+        assert warnings == []
+        assert output.read_bytes() == b"rebuilt deck"
+
+
 def _config():
     from counter_risk.config import WorkflowConfig
 
