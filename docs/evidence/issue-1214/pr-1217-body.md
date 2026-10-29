@@ -1,47 +1,47 @@
 ## Summary
 
 - Add discriminating CLI discovery, GUI callback, settings, and failure-reporting tests.
-- Add pipeline stage-failure, workbook-recovery, historical-series, link-refresh, and output-validation coverage. This round adds four cases for absent Master generators and refresh-fallback failures, including empty error details.
-- The only production change is the earlier one-line historical-footer bug fix. This round adds tests and verification evidence.
+- Add pipeline stage-failure, workbook-recovery, historical-series, link-refresh, and output-validation coverage. This round verifies published absolute class values in a real historical workbook, invalid screenshot inputs, unsupported screenshot backends, and image replacement in a real PPTX.
+- The only production change is the earlier one-line historical-footer bug fix. This round adds seven test cases and verification evidence, with no production diff.
 
 ## Task reconciliation
 
-- Reviewed commits `5e49832`, `0777d42`, `ec7ee71`, `aedfd82`, `16b0262`, and `6243688`, including source changes and mutation records.
-- Issue #1214 ranks CLI first (one escaped-defect signal, churn 1, 19 CI uncovered units), then pipeline (churn 15, 302 CI uncovered units). CLI is fully covered locally, so this round continues with pipeline. The reserved GUI runner remains untouched.
-- Before implementing this round, matched all 117 previously added cases to 49 executed mutations, with no duplicates or omissions. Nested contract items 1–5 are verified; their reconciled checkboxes are below.
-- Attempted the required PR-body reconciliation before continuing. The GitHub connector rejected it because writes require approval and this run's approval policy is `never`. This file preserves the replacement body; remote checkboxes remain stale.
+- Reviewed commits `5e49832`, `0777d42`, `ec7ee71`, `aedfd82`, `16b0262`, `6243688`, and `1cf2d4c`, including source changes and mutation records.
+- [Issue #1214](https://github.com/stranske/Counter_Risk/issues/1214) ranks CLI first (one escaped-defect signal, churn 1, 19 CI uncovered units), then pipeline (churn 15, 302 CI uncovered units). CLI is fully covered locally, so this round continues with pipeline. The reserved GUI runner remains untouched.
+- Reconciled the 121 previously added cases against 51 executed mutations before proceeding. The final audit matches all 128 collected PR cases to 57 executed mutations, with no duplicates or omissions. Nested contract items 1–5 are verified; their reconciled checkboxes are below.
+- Attempted the required PR-body reconciliation before implementing this round. Automatic approval review rejected it because writes require approval and this run's approval policy is `never`. This file preserves the replacement body; remote checkboxes remain stale.
 
 ## Coverage
 
 Issue #1214's authoritative baseline remains **89.32% blended CI coverage**. Local configuration measures lines only; these target-limited reports over the whole non-slow suite do not establish a blended CI reduction.
 
-The existing-tests baseline excludes this PR's three added test modules and reproduces the issue's target missing counts. The final suite includes them. Both use the final production source. Across the PR, local missing lines decrease by **206** (19 CLI + 187 pipeline).
+The earlier existing-tests baseline excludes this PR's three added test modules and reproduces the issue's target missing counts. The final suite includes them. Both use the final production source. Across the PR, local missing lines decrease by **218** (19 CLI + 199 pipeline).
 
 | Target | Existing tests | With PR tests | Missing lines |
 |---|---:|---:|---:|
 | `src/counter_risk/cli/__init__.py` | 218/237 (91.98%) | 237/237 (100.00%) | 19 -> 0 |
-| `src/counter_risk/pipeline/run.py` | 2334/2636 (88.54%) | 2521/2636 (95.64%) | 302 -> 115 |
+| `src/counter_risk/pipeline/run.py` | 2334/2636 (88.54%) | 2533/2636 (96.09%) | 302 -> 103 |
 
-- This round changes pipeline coverage from 2515/2636 (95.41%, 121 missing) to 2521/2636 (95.64%, 115 missing), adding **6** covered lines. Exact line numbers and both report summaries are in `generator-fallback-summary.json`.
-- CLI remains fully covered locally. Pipeline still has 115 uncovered lines, including invalid-data guards, alternative output backends, and filesystem/Office failure paths. They need additional discriminating tests and are not claimed to be untestable.
-- The approximately 180-unit CI reduction remains unverified. Its exact shortfall cannot be calculated from local line-only reports; conservatively, up to 180 CI units remain unconfirmed. This is a partial delivery pending publication and comparable Gate results.
+- This round changes pipeline coverage from 2521/2636 (95.64%, 115 missing) to 2533/2636 (96.09%, 103 missing), adding **12** covered lines. Exact line numbers and report summaries are in `screenshot-history-summary.json`.
+- CLI remains fully covered locally. Pipeline still has 103 uncovered lines, including invalid-data guards, alternative output backends, and filesystem/Office failure paths. They need further discriminating tests and are not claimed to be untestable. This delivery is bounded to the verified work, with publication blocked below.
+- The approximately 180-unit CI reduction remains unverified. Its exact shortfall cannot be calculated from local line-only reports; conservatively, up to 180 CI units remain unconfirmed. This is a partial delivery pending publication and comparable Gate coverage.
 
 ## Verification
 
-- Current-round baseline: `COVERAGE_FILE=/tmp/1217-next-baseline.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-next-baseline.json -m "not slow" -q -o addopts=`: **2595 passed, 1 skipped, 87 deselected**, 147.72s.
-- Current-round final: `COVERAGE_FILE=/tmp/1217-next-final.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-next-final.json -m "not slow" -q -o addopts=`: **2599 passed, 1 skipped, 87 deselected**, 130.97s. Actual target coverage is in the table above.
-- Required targeted verification: `COVERAGE_FILE=/tmp/1217-generator-targeted.cov pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing -m "not slow" -q -o addopts=`: **106 passed**, pipeline **37%** in this standalone module. This standalone percentage is not the whole-suite result.
+- Current-round baseline: `COVERAGE_FILE=/tmp/1217-round-baseline.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-round-baseline.json -m "not slow" -q -o addopts=`: **2599 passed, 1 skipped, 87 deselected**, 219.13s.
+- Current-round final: `COVERAGE_FILE=/tmp/1217-round-final.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-round-final.json -m "not slow" -q -o addopts=`: **2606 passed, 1 skipped, 87 deselected**, 222.78s. Actual target coverage is in the table above.
+- Required targeted verification: `COVERAGE_FILE=/tmp/1217-round-targeted.cov pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing --cov-report=json:/tmp/1217-round-targeted.json -m "not slow" -q -o addopts=`: **113 passed**, pipeline **38%** in this standalone module. This standalone percentage is not the whole-suite result.
 - Earlier existing-tests baseline: `COVERAGE_FILE=/tmp/1217-existing-tests.cov pytest tests/ --ignore=tests/pipeline/test_run_link_refresh_failures.py --ignore=tests/pipeline/test_run_coverage_round.py --ignore=tests/test_cli_coverage_round.py --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-existing-tests-coverage.json -m "not slow" -q`: **2478 passed, 1 skipped, 87 deselected**, 188.34s.
-- Published-head Gate [40843822529](https://github.com/stranske/Counter_Risk/actions/runs/40843822529) succeeded at `62436883c9a64dabd92c7ad789c39ccac6b60009`. Python 3.14 job `123346586079` reports **2568 passed, 1 skipped**, `COVERAGE_ENABLED=false`, and `COVERAGE_MIN_OUTCOME=skipped`. It verifies the published tests passed but supplies no current coverage measurement. This round's four local cases still require publication and CI.
+- Published-head Gate [40845618999](https://github.com/stranske/Counter_Risk/actions/runs/40845618999) succeeded at `1cf2d4c8b806de84b1723e3c7dcea4022fce9a23`. Python 3.14 job `123352483086` reports **2572 passed, 1 skipped**, `COVERAGE_ENABLED=false`, and `COVERAGE_MIN_OUTCOME=skipped`. It verifies the published tests passed but supplies no current coverage measurement. This round's seven local cases still require publication and CI.
 - `ruff check --output-format github --extend-exclude .workflows-lib .` passed.
-- Both repository-wide Black checks passed across **398 files**: `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .` and CI's `black --check --line-length 100 --exclude '(\.venv|\.workflows-lib|node_modules)' .`. Ran Black on the changed test file first. The unmodified repository-wide check stalled in this sandbox; `BLACK_NUM_WORKERS=1` and a temporary runtime helper limiting selector waits to 0.1 seconds allowed both checks to finish, with formatter behavior unchanged.
+- Ran `black --line-length 100 tests/pipeline/test_run_coverage_round.py` first. Both repository-wide checks then passed across **398 files**: `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .` and CI's `black --check --line-length 100 --exclude '(\.venv|\.workflows-lib|node_modules)' .`. The unmodified repository check timed out after reporting all files unchanged. As in the previous round, `BLACK_NUM_WORKERS=1` and a temporary `sitecustomize` helper limiting `selectors.EpollSelector.select` waits to 0.1 seconds allowed both checks to exit 0; formatter behavior was unchanged.
 
 ## Break-and-revert proof
 
-- `all-test-mutations.json` records **51 executed mutations covering all 121 collected cases** across the PR's three added modules, with no duplicate or omitted cases. All recorded mutated exits are 1 and restored exits are 0.
-- This round's first mutation removes the no-Master early return. Both new absent-Master cases fail, then pass after restoration. They check preserved workbook bytes and output paths, retained auxiliary output paths, skipped PPT status, and no later refresh/distribution stages.
-- The second mutation skips the enabled refresh fallback. Both failure-detail cases fail, then pass after restoration. They check the attempted refresh, failed Master status, skipped distribution, exact warning text, and absence of distribution artifacts.
-- `break-and-revert.txt` records executed commands, failures, and passing restorations. Both mutations record matching source SHA256 values before and after; this round leaves no production diff.
+- `all-test-mutations.json` records **57 executed mutations covering all 128 collected cases** across the PR's three added modules, with no duplicate or omitted cases. All recorded mutated exits are 1 and restored exits are 0.
+- This round's six mutations ignore the published class mix, accept blank screenshot keys, accept missing/non-file images, accept empty enabled screenshot mappings, silently choose a backend for an unsupported name, and drop the image mapping passed to the Python PPTX writer. Each corresponding test fails; both missing/non-file cases fail under the shared mutation. All seven pass after restoration.
+- The workbook test checks published values against deliberately conflicting signed totals, zero defaults for absent classes, unchanged prior rows, and preserved header order. The PPTX test checks exact replacement image bytes, preserved geometry/title/count, and unchanged source bytes.
+- `break-and-revert.txt` records executed commands, failures, and passing restorations. Each new mutation records matching source SHA256 values before and after; this round leaves no production diff.
 
 ## Production bug fixed in the earlier round
 
@@ -49,9 +49,9 @@ Commit `0777d42` changes only the row-date predicate in `_extract_prior_populate
 
 ## Delivery blockers
 
-- Staging was attempted after the targeted tests, mutation checks, Black, and Ruff passed. It failed with `fatal: Unable to create .git/index.lock: Read-only file system`. Commit/push are unavailable; verified edits remain in the workspace for automation handoff.
-- The GitHub connector rejected the PR-body update, blocker comment, and `needs-human` label: **MCP tool call requires approval, but approval policy is never**. This replacement body has not been published remotely.
-- PR readback: #1217 is **open**, `isDraft=false`, at `62436883c9a64dabd92c7ad789c39ccac6b60009`. No new PR was created.
+- After tests, mutation checks, Black, and Ruff passed, `git add tests/pipeline/test_run_coverage_round.py` failed with `fatal: Unable to create .git/index.lock: Read-only file system`. Commit/push are unavailable; verified edits remain in the workspace for automation handoff.
+- Automatic approval review rejected the PR-body update, blocker comment, and `needs-human` label: **MCP tool call requires approval, but approval policy is never**. This replacement body has not been published remotely.
+- PR readback: #1217 is **open**, `isDraft=false`, at `1cf2d4c8b806de84b1723e3c7dcea4022fce9a23`. No new PR was created.
 
 Closes #1214
 

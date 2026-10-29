@@ -310,6 +310,43 @@ def test_historical_class_mix_falls_back_to_rollup_records(tmp_path, total_notio
         updated.close()
 
 
+def test_historical_class_mix_prefers_published_absolute_values_and_defaults_missing_classes(
+    tmp_path,
+) -> None:
+    from openpyxl import Workbook, load_workbook
+
+    path = tmp_path / "history.xlsx"
+    book = Workbook()
+    sheet = book.active
+    sheet.title = "Class"
+    sheet.append(["Date", "Equity", "Treasury"])
+    sheet.append([date(2025, 11, 30), 0.25, 0.75])
+    book.save(path)
+    book.close()
+    warnings = []
+
+    run_module._merge_historical_workbook(
+        workbook_path=path,
+        variant="trend",
+        as_of_date=date(2025, 12, 31),
+        cprs_ch_records=[{"Segment": "totals", "Notional": 100, "Equity": -25, "Treasury": 125}],
+        class_breakdown={"Equity": 0.8},
+        warnings=warnings,
+    )
+
+    updated = load_workbook(path)
+    try:
+        rows = list(updated["Class"].values)
+        assert len(rows) == 3
+        assert rows[0] == ("Date", "Equity", "Treasury")
+        assert rows[1][1:] == (0.25, 0.75)
+        assert rows[2][0].date() == date(2025, 12, 31)
+        assert rows[2][1:] == (0.8, 0)
+    finally:
+        updated.close()
+    assert warnings == []
+
+
 @pytest.mark.parametrize(
     ("value", "expected"),
     [
@@ -521,6 +558,78 @@ def test_zip_screenshot_keys_reject_invalid_slide_or_picture_numbers(key) -> Non
 @pytest.mark.parametrize(("key", "expected"), [(" SLIDE 2 : 3 ", (2, 3)), ("4", (4, 0))])
 def test_zip_screenshot_keys_preserve_slide_and_picture_numbers(key, expected) -> None:
     assert run_module._parse_zip_screenshot_key(key) == expected
+
+
+@pytest.mark.parametrize("invalid_input", ["blank-key", "missing-file", "directory", "empty"])
+def test_screenshot_mapping_rejects_unusable_inputs(tmp_path, invalid_input) -> None:
+    image = tmp_path / "image.png"
+    inputs = {"all programs": image}
+    if invalid_input == "blank-key":
+        image.write_bytes(b"unchanged image")
+        inputs = {" \t ": image}
+        error, message = ValueError, "Screenshot input keys must be non-empty"
+    elif invalid_input == "empty":
+        inputs = {}
+        error, message = ValueError, (
+            "Screenshot replacement is enabled but no screenshot_inputs were provided"
+        )
+    else:
+        if invalid_input == "directory":
+            image.mkdir()
+        error, message = FileNotFoundError, (
+            f"Screenshot input 'all programs' file does not exist: {image}"
+        )
+    config = _config().model_copy(
+        update={"enable_screenshot_replacement": True, "screenshot_inputs": inputs}
+    )
+    with pytest.raises(error) as raised:
+        run_module._resolve_screenshot_input_mapping(config)
+    assert str(raised.value) == message
+    if invalid_input == "blank-key":
+        assert image.read_bytes() == b"unchanged image"
+
+
+def test_screenshot_replacer_rejects_unknown_backend() -> None:
+    with pytest.raises(
+        ValueError, match="^Unsupported screenshot replacement implementation: typo$"
+    ):
+        run_module._get_screenshot_replacer("typo")
+
+
+def test_python_pptx_screenshot_backend_replaces_image_and_preserves_source(tmp_path) -> None:
+    from PIL import Image
+    from pptx import Presentation
+    from pptx.util import Inches
+
+    old_image = tmp_path / "old.png"
+    new_image = tmp_path / "new.png"
+    Image.new("RGB", (20, 20), "red").save(old_image)
+    Image.new("RGB", (20, 20), "blue").save(new_image)
+    source = tmp_path / "source.pptx"
+    output = tmp_path / "output.pptx"
+    deck = Presentation()
+    slide = deck.slides.add_slide(deck.slide_layouts[5])
+    slide.shapes.title.text = "Custom section"
+    picture = slide.shapes.add_picture(str(old_image), Inches(1), Inches(2), Inches(3))
+    geometry = (picture.left, picture.top, picture.width, picture.height)
+    deck.save(source)
+    source_bytes = source.read_bytes()
+
+    replacer = run_module._get_screenshot_replacer("python-pptx")
+    replacer(source, output, {"Custom section": new_image})
+
+    assert source.read_bytes() == source_bytes
+    updated_slide = Presentation(output).slides[0]
+    assert updated_slide.shapes.title.text == "Custom section"
+    assert len(updated_slide.shapes) == 2
+    updated_picture = updated_slide.shapes[1]
+    assert updated_picture.image.blob == new_image.read_bytes()
+    assert (
+        updated_picture.left,
+        updated_picture.top,
+        updated_picture.width,
+        updated_picture.height,
+    ) == geometry
 
 
 @pytest.mark.parametrize(

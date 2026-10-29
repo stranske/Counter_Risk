@@ -1452,5 +1452,199 @@
     "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2934,7 +2934,7 @@\n             refresh_result = _to_ppt_processing_result(getattr(generator, \"last_result\", None))\n             ran_master_refresh = True\n \n-    if not ran_master_refresh and refresh_enabled:\n+    if False:\n         try:\n             refresh_result = _refresh_ppt_links(target_master_ppt)\n         except Exception as exc:\n",
     "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
     "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Published class mix ignored in favor of signed record totals",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_merge_historical_workbook",
+    "edits": [
+      [
+        "if class_breakdown:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_historical_class_mix_prefers_published_absolute_values_and_defaults_missing_classes",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-52.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_historical_class_mix_prefers_published_absolute_values_and_defaults_missing_classes"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4591,7 +4591,7 @@\n                 # clearing house before those rows are written -- so they must come\n                 # from the published row. Falls back to the record-derived mix when\n                 # no breakdown row is present.\n-                if class_breakdown:\n+                if False:\n                     for raw_column_name in _CLASS_BREAKDOWN_COLUMNS:\n                         normalized_label = _normalize_series_label_for_matching(raw_column_name)\n                         column_index = column_by_series.get(normalized_label)\n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Blank screenshot keys accepted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_resolve_screenshot_input_mapping",
+    "edits": [
+      [
+        "if not key:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[blank-key]",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-53.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_screenshot_mapping_rejects_unusable_inputs[blank-key]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3553,7 +3553,7 @@\n     seen_keys: set[str] = set()\n     for raw_key, raw_path in raw_inputs.items():\n         key = canonicalize_name(str(raw_key))\n-        if not key:\n+        if False:\n             raise ValueError(\"Screenshot input keys must be non-empty\")\n         if key in seen_keys:\n             raise ValueError(f\"Screenshot input key is duplicated after normalization: {key!r}\")\n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Missing or non-file screenshots accepted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_resolve_screenshot_input_mapping",
+    "edits": [
+      [
+        "if not image_path.exists() or not image_path.is_file():",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[missing-file]",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[directory]",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-54.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_screenshot_mapping_rejects_unusable_inputs[missing-file]",
+      "test_screenshot_mapping_rejects_unusable_inputs[directory]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3562,7 +3562,7 @@\n         image_path = Path(raw_path).expanduser().resolve()\n         if image_path.suffix.lower() != \".png\":\n             raise ValueError(f\"Screenshot input '{key}' must point to a PNG file: {image_path}\")\n-        if not image_path.exists() or not image_path.is_file():\n+        if False:\n             raise FileNotFoundError(f\"Screenshot input '{key}' file does not exist: {image_path}\")\n \n         normalized_pairs.append((key, image_path))\n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Enabled screenshot replacement accepts an empty mapping",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_resolve_screenshot_input_mapping",
+    "edits": [
+      [
+        "if config.enable_screenshot_replacement and not normalized:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[empty]",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-55.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_screenshot_mapping_rejects_unusable_inputs[empty]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3568,7 +3568,7 @@\n         normalized_pairs.append((key, image_path))\n \n     normalized = dict(sorted(normalized_pairs, key=lambda item: item[0]))\n-    if config.enable_screenshot_replacement and not normalized:\n+    if False:\n         raise ValueError(\"Screenshot replacement is enabled but no screenshot_inputs were provided\")\n     return normalized\n \n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Unsupported screenshot backend silently selects zip",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_get_screenshot_replacer",
+    "edits": [
+      [
+        "raise ValueError(f\"Unsupported screenshot replacement implementation: {implementation}\")",
+        "return _replace_screenshots_with_zip_backend"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_replacer_rejects_unknown_backend",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-56.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_screenshot_replacer_rejects_unknown_backend"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3578,7 +3578,7 @@\n         return _replace_screenshots_with_zip_backend\n     if implementation == \"python-pptx\":\n         return _replace_screenshots_with_python_pptx_backend\n-    raise ValueError(f\"Unsupported screenshot replacement implementation: {implementation}\")\n+    return _replace_screenshots_with_zip_backend\n \n \n def _replace_screenshots_with_python_pptx_backend(\n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Python PPTX adapter drops the image mapping",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_replace_screenshots_with_python_pptx_backend",
+    "edits": [
+      [
+        "images_by_section=screenshot_inputs,",
+        "images_by_section={},"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_python_pptx_screenshot_backend_replaces_image_and_preserves_source",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-57.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_python_pptx_screenshot_backend_replaces_image_and_preserves_source"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3588,7 +3588,7 @@\n \n     replace_screenshot_pictures(\n         pptx_in=source_pptx_path,\n-        images_by_section=screenshot_inputs,\n+        images_by_section={},\n         pptx_out=output_pptx_path,\n     )\n \n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
   }
 ]
