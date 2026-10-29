@@ -1,0 +1,644 @@
+{
+  "base_sha": "faad15275296e77105016b3f1861e017838826f6",
+  "reviewed_commits": [
+    "3456860abdb9d78cd98fbb1e7c18d4611513c7b9",
+    "edc500f44edb22520fae766a4776743e23354342",
+    "0054b34c9bd62391c40dd42d57ae113f0b4ff67f",
+    "d843da80d3d8f60cdc0d1b10a9b6f1c65f195dc1",
+    "e7a1c323221d073c4557b5c33d1c06d09a7182d4",
+    "9cc0e39dd8f464cb8b542f09a99fa42845984520"
+  ],
+  "python": "3.14.9",
+  "command": "python -m pytest tests/ -m \"not slow\" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>",
+  "measurement": "line-only; branch=false; all non-slow tests; 4 xdist workers",
+  "baseline": {
+    "passed": 2478,
+    "skipped": 1,
+    "totals": {
+      "covered_lines": 10911,
+      "num_statements": 12216,
+      "percent_covered": 89.3172888015717,
+      "percent_covered_display": "89",
+      "missing_lines": 1305,
+      "excluded_lines": 84,
+      "percent_statements_covered": 89.3172888015717,
+      "percent_statements_covered_display": "89"
+    }
+  },
+  "candidate": {
+    "passed": 2569,
+    "skipped": 1,
+    "totals": {
+      "covered_lines": 11109,
+      "num_statements": 12216,
+      "percent_covered": 90.93811394891945,
+      "percent_covered_display": "91",
+      "missing_lines": 1107,
+      "excluded_lines": 84,
+      "percent_statements_covered": 90.93811394891945,
+      "percent_statements_covered_display": "91"
+    }
+  },
+  "targets_in_issue_order": [
+    {
+      "path": "src/counter_risk/parsers/nisa.py",
+      "baseline": {
+        "covered_lines": 188,
+        "num_statements": 218,
+        "percent_covered": 86.23853211009174,
+        "percent_covered_display": "86",
+        "missing_lines": 30,
+        "excluded_lines": 2,
+        "percent_statements_covered": 86.23853211009174,
+        "percent_statements_covered_display": "86"
+      },
+      "candidate": {
+        "covered_lines": 216,
+        "num_statements": 218,
+        "percent_covered": 99.08256880733946,
+        "percent_covered_display": "99",
+        "missing_lines": 2,
+        "excluded_lines": 2,
+        "percent_statements_covered": 99.08256880733946,
+        "percent_statements_covered_display": "99"
+      },
+      "baseline_missing_lines": [
+        77,
+        79,
+        150,
+        152,
+        161,
+        162,
+        166,
+        172,
+        188,
+        190,
+        214,
+        239,
+        304,
+        305,
+        306,
+        307,
+        309,
+        310,
+        311,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        353,
+        437,
+        439
+      ],
+      "candidate_missing_lines": [
+        239,
+        311
+      ]
+    },
+    {
+      "path": "src/counter_risk/compute/rollups.py",
+      "baseline": {
+        "covered_lines": 295,
+        "num_statements": 311,
+        "percent_covered": 94.85530546623794,
+        "percent_covered_display": "95",
+        "missing_lines": 16,
+        "excluded_lines": 0,
+        "percent_statements_covered": 94.85530546623794,
+        "percent_statements_covered_display": "95"
+      },
+      "candidate": {
+        "covered_lines": 311,
+        "num_statements": 311,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "baseline_missing_lines": [
+        92,
+        103,
+        125,
+        126,
+        142,
+        143,
+        194,
+        263,
+        275,
+        284,
+        340,
+        372,
+        384,
+        413,
+        422,
+        423
+      ],
+      "candidate_missing_lines": []
+    },
+    {
+      "path": "src/counter_risk/runner_launch.py",
+      "baseline": {
+        "covered_lines": 179,
+        "num_statements": 193,
+        "percent_covered": 92.74611398963731,
+        "percent_covered_display": "93",
+        "missing_lines": 14,
+        "excluded_lines": 8,
+        "percent_statements_covered": 92.74611398963731,
+        "percent_statements_covered_display": "93"
+      },
+      "candidate": {
+        "covered_lines": 193,
+        "num_statements": 193,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 8,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "baseline_missing_lines": [
+        51,
+        73,
+        81,
+        111,
+        152,
+        153,
+        303,
+        351,
+        384,
+        385,
+        394,
+        395,
+        402,
+        440
+      ],
+      "candidate_missing_lines": []
+    },
+    {
+      "path": "src/counter_risk/cli/mapping_diff_report.py",
+      "baseline": {
+        "covered_lines": 86,
+        "num_statements": 98,
+        "percent_covered": 87.75510204081633,
+        "percent_covered_display": "88",
+        "missing_lines": 12,
+        "excluded_lines": 2,
+        "percent_statements_covered": 87.75510204081633,
+        "percent_statements_covered_display": "88"
+      },
+      "candidate": {
+        "covered_lines": 97,
+        "num_statements": 98,
+        "percent_covered": 98.9795918367347,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 2,
+        "percent_statements_covered": 98.9795918367347,
+        "percent_statements_covered_display": "99"
+      },
+      "baseline_missing_lines": [
+        85,
+        90,
+        93,
+        103,
+        106,
+        110,
+        113,
+        116,
+        178,
+        179,
+        180,
+        181
+      ],
+      "candidate_missing_lines": [
+        90
+      ]
+    },
+    {
+      "path": "src/counter_risk/reports/mapping_diff.py",
+      "baseline": {
+        "covered_lines": 87,
+        "num_statements": 99,
+        "percent_covered": 87.87878787878788,
+        "percent_covered_display": "88",
+        "missing_lines": 12,
+        "excluded_lines": 0,
+        "percent_statements_covered": 87.87878787878788,
+        "percent_statements_covered_display": "88"
+      },
+      "candidate": {
+        "covered_lines": 99,
+        "num_statements": 99,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "baseline_missing_lines": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        86,
+        111,
+        163
+      ],
+      "candidate_missing_lines": []
+    },
+    {
+      "path": "src/counter_risk/chat/providers/langchain_runtime.py",
+      "baseline": {
+        "covered_lines": 226,
+        "num_statements": 235,
+        "percent_covered": 96.17021276595744,
+        "percent_covered_display": "96",
+        "missing_lines": 9,
+        "excluded_lines": 0,
+        "percent_statements_covered": 96.17021276595744,
+        "percent_statements_covered_display": "96"
+      },
+      "candidate": {
+        "covered_lines": 233,
+        "num_statements": 235,
+        "percent_covered": 99.14893617021276,
+        "percent_covered_display": "99",
+        "missing_lines": 2,
+        "excluded_lines": 0,
+        "percent_statements_covered": 99.14893617021276,
+        "percent_statements_covered_display": "99"
+      },
+      "baseline_missing_lines": [
+        132,
+        135,
+        136,
+        191,
+        192,
+        250,
+        251,
+        254,
+        366
+      ],
+      "candidate_missing_lines": [
+        191,
+        192
+      ]
+    },
+    {
+      "path": "src/counter_risk/normalize.py",
+      "baseline": {
+        "covered_lines": 107,
+        "num_statements": 112,
+        "percent_covered": 95.53571428571429,
+        "percent_covered_display": "96",
+        "missing_lines": 5,
+        "excluded_lines": 0,
+        "percent_statements_covered": 95.53571428571429,
+        "percent_statements_covered_display": "96"
+      },
+      "candidate": {
+        "covered_lines": 112,
+        "num_statements": 112,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "baseline_missing_lines": [
+        116,
+        131,
+        132,
+        137,
+        302
+      ],
+      "candidate_missing_lines": []
+    },
+    {
+      "path": "src/counter_risk/limits_config.py",
+      "baseline": {
+        "covered_lines": 54,
+        "num_statements": 57,
+        "percent_covered": 94.73684210526316,
+        "percent_covered_display": "95",
+        "missing_lines": 3,
+        "excluded_lines": 0,
+        "percent_statements_covered": 94.73684210526316,
+        "percent_statements_covered_display": "95"
+      },
+      "candidate": {
+        "covered_lines": 57,
+        "num_statements": 57,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "baseline_missing_lines": [
+        34,
+        41,
+        44
+      ],
+      "candidate_missing_lines": []
+    },
+    {
+      "path": "src/counter_risk/chat/providers/base.py",
+      "baseline": {
+        "covered_lines": 160,
+        "num_statements": 162,
+        "percent_covered": 98.76543209876543,
+        "percent_covered_display": "99",
+        "missing_lines": 2,
+        "excluded_lines": 0,
+        "percent_statements_covered": 98.76543209876543,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate": {
+        "covered_lines": 160,
+        "num_statements": 162,
+        "percent_covered": 98.76543209876543,
+        "percent_covered_display": "99",
+        "missing_lines": 2,
+        "excluded_lines": 0,
+        "percent_statements_covered": 98.76543209876543,
+        "percent_statements_covered_display": "99"
+      },
+      "baseline_missing_lines": [
+        178,
+        179
+      ],
+      "candidate_missing_lines": [
+        178,
+        179
+      ]
+    },
+    {
+      "path": "src/counter_risk/ppt/pptx_postprocess.py",
+      "baseline": {
+        "covered_lines": 107,
+        "num_statements": 161,
+        "percent_covered": 66.45962732919254,
+        "percent_covered_display": "66",
+        "missing_lines": 54,
+        "excluded_lines": 0,
+        "percent_statements_covered": 66.45962732919254,
+        "percent_statements_covered_display": "66"
+      },
+      "candidate": {
+        "covered_lines": 161,
+        "num_statements": 161,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "baseline_missing_lines": [
+        104,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        148,
+        149,
+        151,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        164,
+        165,
+        166,
+        167,
+        169,
+        170,
+        171,
+        173,
+        174,
+        176,
+        182,
+        183,
+        184,
+        185,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        201,
+        210,
+        211,
+        219,
+        271,
+        272
+      ],
+      "candidate_missing_lines": []
+    },
+    {
+      "path": "src/counter_risk/build/xlsm.py",
+      "baseline": {
+        "covered_lines": 73,
+        "num_statements": 121,
+        "percent_covered": 60.33057851239669,
+        "percent_covered_display": "60",
+        "missing_lines": 48,
+        "excluded_lines": 2,
+        "percent_statements_covered": 60.33057851239669,
+        "percent_statements_covered_display": "60"
+      },
+      "candidate": {
+        "covered_lines": 121,
+        "num_statements": 121,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 2,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "baseline_missing_lines": [
+        82,
+        91,
+        99,
+        103,
+        120,
+        125,
+        134,
+        135,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        155,
+        156,
+        157,
+        160,
+        161,
+        164,
+        167,
+        168,
+        172,
+        175,
+        176,
+        177,
+        179,
+        185,
+        186,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        204,
+        281,
+        282,
+        283
+      ],
+      "candidate_missing_lines": []
+    }
+  ],
+  "sheet_selection_followup": {
+    "new_cases": 4,
+    "mutation_scenarios": 2,
+    "red_cases": 4,
+    "restored_green_cases": 4,
+    "receipts": "docs/evidence/issue-1218/sheet-selection-mutation-receipts.json",
+    "targeted_coverage_command": "python -m pytest tests/test_nisa_all_programs_parser.py -m \"not slow\" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q",
+    "targeted_passed": 24,
+    "targeted_cover_column": "99%",
+    "additional_covered_statements": 0,
+    "existing_head_ci": {
+      "sha": "d843da80d3d8f60cdc0d1b10a9b6f1c65f195dc1",
+      "gate_run_id": 40840937953,
+      "python_3_13": "success",
+      "python_3_14": "success"
+    },
+    "candidate_hosted_ci": "pending publication"
+  },
+  "segment_followup": {
+    "new_cases": 2,
+    "mutation_scenarios": 3,
+    "receipt_file": "docs/evidence/issue-1218/segment-mutation-receipts.json",
+    "full_suite_passed": 2561,
+    "full_suite_skipped": 1,
+    "full_suite_seconds": 97.19,
+    "additional_covered_statements": 0
+  },
+  "completeness_followup": {
+    "new_cases": 4,
+    "mutation_scenarios": 1,
+    "receipt_file": "docs/evidence/issue-1218/completeness-mutation-receipt.json",
+    "targeted_coverage_command": "python -m pytest tests/test_nisa_all_programs_parser.py -m \"not slow\" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q",
+    "targeted_passed": 30,
+    "targeted_cover_column": "99%",
+    "full_suite_passed": 2565,
+    "full_suite_skipped": 1,
+    "full_suite_seconds": 163.67,
+    "additional_covered_statements": 0,
+    "prior_head_ci": {
+      "sha": "9cc0e39dd8f464cb8b542f09a99fa42845984520",
+      "gate_run_id": 40843725927,
+      "python_3_13": "success",
+      "python_3_14": "success"
+    },
+    "candidate_hosted_ci": "pending publication",
+    "live_pr_reconciliation": "blocked: MCP tool call requires approval, but approval policy is never"
+  },
+  "cleanup_followup": {
+    "new_cases": 0,
+    "existing_cases_strengthened": 3,
+    "mutation_scenarios": 1,
+    "receipt_file": "docs/evidence/issue-1218/cleanup-mutation-receipt.json",
+    "targeted_coverage_command": "python -m pytest tests/test_nisa_all_programs_parser.py -m \"not slow\" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q",
+    "targeted_passed": 30,
+    "targeted_cover_column": "99%",
+    "additional_covered_statements": 0,
+    "prior_head_ci": {
+      "sha": "3b633ea36b7bfc4dc3b888c8a942e52ca523ac6a",
+      "gate_run_id": 40845103822,
+      "python_3_13": "success",
+      "python_3_14": "success"
+    },
+    "candidate_hosted_ci": "pending publication",
+    "live_pr_reconciliation": "blocked: automatic approval review rejected the update: MCP tool call requires approval, but approval policy is never",
+    "full_suite_passed": 2565,
+    "full_suite_skipped": 1,
+    "full_suite_seconds": 155.05,
+    "full_suite_covered_statements": 11109,
+    "full_suite_total_statements": 12216,
+    "full_suite_percent_covered": 90.93811394891945,
+    "publication_blockers": [
+      "Main checkout .git is read-only; commit and verified bundle saved in /tmp/counter-risk-1218-close",
+      "Git push failed: Could not resolve host: github.com",
+      "Automatic approval review rejected PR-body update and needs-human label: MCP tool call requires approval, but approval policy is never"
+    ]
+  },
+  "stop_marker_followup": {
+    "new_cases": 3,
+    "mutation_scenarios": 1,
+    "prior_cases_survived_mutation": 31,
+    "red_cases": 3,
+    "restored_green_cases": 6,
+    "receipt_file": "docs/evidence/issue-1218/stop-marker-mutation-receipt.json",
+    "targeted_coverage_command": "python -m pytest tests/test_nisa_all_programs_parser.py -m \"not slow\" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q",
+    "targeted_passed": 34,
+    "targeted_cover_column": "99%",
+    "full_suite_passed": 2569,
+    "full_suite_skipped": 1,
+    "full_suite_seconds": 85.34,
+    "additional_covered_statements": 0,
+    "prior_head_ci": {
+      "sha": "c34cb8a0dcc502d3ed3e9d0ccbd634d09148cb08",
+      "gate_run_id": 40856352591,
+      "conclusion": "success"
+    },
+    "candidate_hosted_ci": "pending publication",
+    "live_pr_reconciliation": "blocked: automatic approval review rejected the PR-body update, blocker comment, and needs-human label: MCP tool call requires approval, but approval policy is never"
+  }
+}

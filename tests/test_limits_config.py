@@ -9,6 +9,28 @@ import pytest
 from counter_risk.limits_config import LimitEntry, LimitsConfig, load_limits_config
 
 
+def test_limit_entry_rejects_whitespace_only_entity_name() -> None:
+    with pytest.raises(ValueError, match="entity_name cannot be blank"):
+        LimitEntry(
+            entity_type="counterparty",
+            entity_name=" \t\n",
+            limit_value=1,
+            limit_kind="absolute_notional",
+        )
+
+
+@pytest.mark.parametrize("notes", [None, " \t\n"])
+def test_limit_entry_normalizes_empty_notes_to_none(notes: str | None) -> None:
+    entry = LimitEntry(
+        entity_type="counterparty",
+        entity_name="Alpha",
+        limit_value=1,
+        limit_kind="absolute_notional",
+        notes=notes,
+    )
+    assert entry.notes is None
+
+
 @pytest.mark.parametrize("limit_kind", ["absolute_notional", "percent_of_total"])
 @pytest.mark.parametrize("enabled", [True, False])
 @pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])

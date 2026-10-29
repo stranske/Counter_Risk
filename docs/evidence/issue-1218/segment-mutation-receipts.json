@@ -1,0 +1,126 @@
+{
+  "source": "src/counter_risk/parsers/nisa.py",
+  "new_cases": 2,
+  "mutations": [
+    {
+      "name": "freeze-first-segment",
+      "before": "if mapped_segment is not None:",
+      "after": "if mapped_segment is not None and not current_segment:",
+      "nodes": [
+        "tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows"
+      ],
+      "red": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+          "-m",
+          "pytest",
+          "tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows",
+          "-m",
+          "not slow",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 1,
+        "stdout": "============================= test session starts ==============================\nplatform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0\nrootdir: /tmp/counter-risk-1218-segments\nconfigfile: pyproject.toml\nplugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1\ncollected 2 items\n\ntests/test_nisa_all_programs_parser.py FF                                [100%]\n\n=================================== FAILURES ===================================\n_ test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[first-column] _\ntests/test_nisa_all_programs_parser.py:427: in test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows\n    assert [(row.segment, row.counterparty, row.notional) for row in parsed.ch_rows] == [\nE   AssertionError: assert [('swaps', 'A...', 89.0), ...] == [('swaps', 'A...nk', 89), ...]\nE     \nE     At index 2 diff: ('swaps', 'Repo Bank', 123.0) != ('repo', 'Repo Bank', 123)\nE     \nE     Full diff: (-: missing in left side, +: extra in left side)\nE       [\nE           (\nE               'swaps',\nE               'Alpha Bank',\nE     -         210,\nE     +         210.0,\nE     ?            ++\nE           ),\nE           (\nE               'swaps',\nE               'Beta Bank',\nE     -         21,\nE     +         21.0,\nE     ?           ++\nE           ),\nE           (\nE     -         'repo',\nE     ?          ^^ ^\nE     +         'swaps',\nE     ?          ^^^ ^\nE               'Repo Bank',\nE     -         123,\nE     +         123.0,\nE     ?            ++\nE           ),\nE           (\nE     -         'repo',\nE     ?          ^^ ^\nE     +         'swaps',\nE     ?          ^^^ ^\nE               'Repo Continuation',\nE     -         -45,\nE     +         -45.0,\nE     ?            ++\nE           ),\nE           (\nE     -         'futures',\nE     +         'swaps',\nE               'Futures Bank',\nE     -         67,\nE     +         67.0,\nE     ?           ++\nE           ),\nE           (\nE     -         'futures_cdx',\nE     +         'swaps',\nE               'CDX Bank',\nE     -         89,\nE     +         89.0,\nE     ?           ++\nE           ),\nE           (\nE     -         'futures_cdx',\nE     +         'swaps',\nE               'CDX Continuation',\nE     -         90,\nE     +         90.0,\nE     ?           ++\nE           ),\nE       ]\n_ test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[adjacent-column] _\ntests/test_nisa_all_programs_parser.py:427: in test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows\n    assert [(row.segment, row.counterparty, row.notional) for row in parsed.ch_rows] == [\nE   AssertionError: assert [('swaps', 'A...', 89.0), ...] == [('swaps', 'A...nk', 89), ...]\nE     \nE     At index 2 diff: ('swaps', 'Repo Bank', 123.0) != ('repo', 'Repo Bank', 123)\nE     \nE     Full diff: (-: missing in left side, +: extra in left side)\nE       [\nE           (\nE               'swaps',\nE               'Alpha Bank',\nE     -         210,\nE     +         210.0,\nE     ?            ++\nE           ),\nE           (\nE               'swaps',\nE               'Beta Bank',\nE     -         21,\nE     +         21.0,\nE     ?           ++\nE           ),\nE           (\nE     -         'repo',\nE     ?          ^^ ^\nE     +         'swaps',\nE     ?          ^^^ ^\nE               'Repo Bank',\nE     -         123,\nE     +         123.0,\nE     ?            ++\nE           ),\nE           (\nE     -         'repo',\nE     ?          ^^ ^\nE     +         'swaps',\nE     ?          ^^^ ^\nE               'Repo Continuation',\nE     -         -45,\nE     +         -45.0,\nE     ?            ++\nE           ),\nE           (\nE     -         'futures',\nE     +         'swaps',\nE               'Futures Bank',\nE     -         67,\nE     +         67.0,\nE     ?           ++\nE           ),\nE           (\nE     -         'futures_cdx',\nE     +         'swaps',\nE               'CDX Bank',\nE     -         89,\nE     +         89.0,\nE     ?           ++\nE           ),\nE           (\nE     -         'futures_cdx',\nE     +         'swaps',\nE               'CDX Continuation',\nE     -         90,\nE     +         90.0,\nE     ?           ++\nE           ),\nE       ]\n=============================== warnings summary ===============================\n../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[first-column] - AssertionError: assert [('swaps', 'A...', 89.0), ...] == [('swaps', 'A...nk', 89), ...]\n  \n  At index 2 diff: ('swaps', 'Repo Bank', 123.0) != ('repo', 'Repo Bank', 123)\n  \n  Full diff: (-: missing in left side, +: extra in left side)\n    [\n        (\n            'swaps',\n            'Alpha Bank',\n  -         210,\n  +         210.0,\n  ?            ++\n        ),\n        (\n            'swaps',\n            'Beta Bank',\n  -         21,\n  +         21.0,\n  ?           ++\n        ),\n        (\n  -         'repo',\n  ?          ^^ ^\n  +         'swaps',\n  ?          ^^^ ^\n            'Repo Bank',\n  -         123,\n  +         123.0,\n  ?            ++\n        ),\n        (\n  -         'repo',\n  ?          ^^ ^\n  +         'swaps',\n  ?          ^^^ ^\n            'Repo Continuation',\n  -         -45,\n  +         -45.0,\n  ?            ++\n        ),\n        (\n  -         'futures',\n  +         'swaps',\n            'Futures Bank',\n  -         67,\n  +         67.0,\n  ?           ++\n        ),\n        (\n  -         'futures_cdx',\n  +         'swaps',\n            'CDX Bank',\n  -         89,\n  +         89.0,\n  ?           ++\n        ),\n        (\n  -         'futures_cdx',\n  +         'swaps',\n            'CDX Continuation',\n  -         90,\n  +         90.0,\n  ?           ++\n        ),\n    ]\nFAILED tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[adjacent-column] - AssertionError: assert [('swaps', 'A...', 89.0), ...] == [('swaps', 'A...nk', 89), ...]\n  \n  At index 2 diff: ('swaps', 'Repo Bank', 123.0) != ('repo', 'Repo Bank', 123)\n  \n  Full diff: (-: missing in left side, +: extra in left side)\n    [\n        (\n            'swaps',\n            'Alpha Bank',\n  -         210,\n  +         210.0,\n  ?            ++\n        ),\n        (\n            'swaps',\n            'Beta Bank',\n  -         21,\n  +         21.0,\n  ?           ++\n        ),\n        (\n  -         'repo',\n  ?          ^^ ^\n  +         'swaps',\n  ?          ^^^ ^\n            'Repo Bank',\n  -         123,\n  +         123.0,\n  ?            ++\n        ),\n        (\n  -         'repo',\n  ?          ^^ ^\n  +         'swaps',\n  ?          ^^^ ^\n            'Repo Continuation',\n  -         -45,\n  +         -45.0,\n  ?            ++\n        ),\n        (\n  -         'futures',\n  +         'swaps',\n            'Futures Bank',\n  -         67,\n  +         67.0,\n  ?           ++\n        ),\n        (\n  -         'futures_cdx',\n  +         'swaps',\n            'CDX Bank',\n  -         89,\n  +         89.0,\n  ?           ++\n        ),\n        (\n  -         'futures_cdx',\n  +         'swaps',\n            'CDX Continuation',\n  -         90,\n  +         90.0,\n  ?           ++\n        ),\n    ]\n======================== 2 failed, 13 warnings in 0.57s ========================\n",
+        "stderr": ""
+      },
+      "green": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+          "-m",
+          "pytest",
+          "tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows",
+          "-m",
+          "not slow",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 0,
+        "stdout": "============================= test session starts ==============================\nplatform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0\nrootdir: /tmp/counter-risk-1218-segments\nconfigfile: pyproject.toml\nplugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1\ncollected 2 items\n\ntests/test_nisa_all_programs_parser.py ..                                [100%]\n\n=============================== warnings summary ===============================\n../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n======================== 2 passed, 13 warnings in 1.48s ========================\n",
+        "stderr": ""
+      },
+      "original_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+      "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72"
+    },
+    {
+      "name": "remove-first-column-fallback",
+      "before": "candidates = (max(1, counterparty_column - 1), 1)",
+      "after": "candidates = (max(1, counterparty_column - 1),)",
+      "nodes": [
+        "tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[first-column]"
+      ],
+      "red": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+          "-m",
+          "pytest",
+          "tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[first-column]",
+          "-m",
+          "not slow",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 1,
+        "stdout": "============================= test session starts ==============================\nplatform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0\nrootdir: /tmp/counter-risk-1218-segments\nconfigfile: pyproject.toml\nplugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1\ncollected 1 item\n\ntests/test_nisa_all_programs_parser.py F                                 [100%]\n\n=================================== FAILURES ===================================\n_ test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[first-column] _\ntests/test_nisa_all_programs_parser.py:425: in test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows\n    parsed = parse_nisa_all_programs(path)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsrc/counter_risk/parsers/nisa.py:188: in parse_nisa_all_programs\n    raise ValueError(\"NISA workbook parser produced no CPRS-CH rows\")\nE   ValueError: NISA workbook parser produced no CPRS-CH rows\n=============================== warnings summary ===============================\n../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[first-column] - ValueError: NISA workbook parser produced no CPRS-CH rows\n======================== 1 failed, 13 warnings in 0.71s ========================\n",
+        "stderr": ""
+      },
+      "green": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+          "-m",
+          "pytest",
+          "tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[first-column]",
+          "-m",
+          "not slow",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 0,
+        "stdout": "============================= test session starts ==============================\nplatform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0\nrootdir: /tmp/counter-risk-1218-segments\nconfigfile: pyproject.toml\nplugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1\ncollected 1 item\n\ntests/test_nisa_all_programs_parser.py .                                 [100%]\n\n=============================== warnings summary ===============================\n../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n======================== 1 passed, 13 warnings in 0.63s ========================\n",
+        "stderr": ""
+      },
+      "original_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+      "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72"
+    },
+    {
+      "name": "ignore-adjacent-column",
+      "before": "candidates = (max(1, counterparty_column - 1), 1)",
+      "after": "candidates = (1,)",
+      "nodes": [
+        "tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[adjacent-column]"
+      ],
+      "red": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+          "-m",
+          "pytest",
+          "tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[adjacent-column]",
+          "-m",
+          "not slow",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 1,
+        "stdout": "============================= test session starts ==============================\nplatform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0\nrootdir: /tmp/counter-risk-1218-segments\nconfigfile: pyproject.toml\nplugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1\ncollected 1 item\n\ntests/test_nisa_all_programs_parser.py F                                 [100%]\n\n=================================== FAILURES ===================================\n_ test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[adjacent-column] _\ntests/test_nisa_all_programs_parser.py:425: in test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows\n    parsed = parse_nisa_all_programs(path)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsrc/counter_risk/parsers/nisa.py:188: in parse_nisa_all_programs\n    raise ValueError(\"NISA workbook parser produced no CPRS-CH rows\")\nE   ValueError: NISA workbook parser produced no CPRS-CH rows\n=============================== warnings summary ===============================\n../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[adjacent-column] - ValueError: NISA workbook parser produced no CPRS-CH rows\n======================== 1 failed, 13 warnings in 0.63s ========================\n",
+        "stderr": ""
+      },
+      "green": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+          "-m",
+          "pytest",
+          "tests/test_nisa_all_programs_parser.py::test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows[adjacent-column]",
+          "-m",
+          "not slow",
+          "-q",
+          "--tb=short"
+        ],
+        "exit_code": 0,
+        "stdout": "============================= test session starts ==============================\nplatform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0\nrootdir: /tmp/counter-risk-1218-segments\nconfigfile: pyproject.toml\nplugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1\ncollected 1 item\n\ntests/test_nisa_all_programs_parser.py .                                 [100%]\n\n=============================== warnings summary ===============================\n../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n======================== 1 passed, 13 warnings in 0.86s ========================\n",
+        "stderr": ""
+      },
+      "original_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+      "restored_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72"
+    }
+  ]
+}

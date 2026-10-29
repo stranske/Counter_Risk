@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, date, datetime
 from pathlib import Path
 from zipfile import ZipFile
@@ -9,6 +10,91 @@ from zipfile import ZipFile
 import pytest
 
 from counter_risk.build import xlsm
+
+
+def _write_legacy_template(path: Path) -> None:
+    """Create the supported two-sheet template that predates Config inputs."""
+    with (
+        ZipFile("assets/templates/counter_risk_template.xlsm") as source,
+        ZipFile(path, "w") as output,
+    ):
+        for info in source.infolist():
+            if info.filename == "xl/worksheets/sheet3.xml":
+                continue
+            data = source.read(info.filename)
+            if info.filename == "xl/workbook.xml":
+                data = re.sub(rb'    <sheet name="Config"[^>]*/>\n', b"", data)
+                data = re.sub(rb"  <definedNames>.*?</definedNames>\n", b"", data, flags=re.DOTALL)
+            elif info.filename == "xl/_rels/workbook.xml.rels":
+                data = re.sub(rb'  <Relationship Id="rId5"[^>]*/>\n', b"", data)
+            elif info.filename == "[Content_Types].xml":
+                data = re.sub(
+                    rb'  <Override PartName="/xl/worksheets/sheet3.xml"[^>]*/>\n', b"", data
+                )
+            output.writestr(info, data)
+
+
+@pytest.mark.parametrize("via_cli", [False, True])
+def test_config_sheet_injection_preserves_legacy_workbook_and_is_idempotent(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], via_cli: bool
+) -> None:
+    import openpyxl
+
+    path = tmp_path / "legacy.xlsm"
+    _write_legacy_template(path)
+    with ZipFile(path) as archive:
+        original = {
+            info.filename: (info, archive.read(info.filename)) for info in archive.infolist()
+        }
+
+    if via_cli:
+        assert xlsm.main(["--template-path", str(path), "--inject-config-sheet"]) == 0
+        assert capsys.readouterr().out == f"Config sheet injected into: {path}\n"
+    else:
+        xlsm.inject_config_sheet(path)
+
+    workbook = openpyxl.load_workbook(path, keep_vba=True)
+    try:
+        assert workbook.sheetnames == ["Runner", "ControlData", "Config"]
+        assert workbook["Config"]["A1"].value == "Counter Risk — File Path Configuration"
+        expected_labels = [
+            "MOSERS All Programs (.xlsx)",
+            "MOSERS Ex-Trend (.xlsx)",
+            "MOSERS Trend (.xlsx)",
+            "Historical All Programs – 3yr (.xlsx)",
+            "Historical Ex-LLC – 3yr (.xlsx)",
+            "Historical LLC – 3yr (.xlsx)",
+            "Monthly Report Template (.pptx)",
+        ]
+        for row, label in enumerate(expected_labels, start=4):
+            assert workbook["Config"].cell(row, 1).value == label
+            assert workbook["Config"].cell(row, 2).value is None
+        assert {
+            name: list(value.destinations) for name, value in workbook.defined_names.items()
+        } == {
+            "RunnerConfig_MosersAllPrograms": [("Config", "$B$4")],
+            "RunnerConfig_MosersExTrend": [("Config", "$B$5")],
+            "RunnerConfig_MosersTrend": [("Config", "$B$6")],
+            "RunnerConfig_HistAllPrograms3yr": [("Config", "$B$7")],
+            "RunnerConfig_HistExLlc3yr": [("Config", "$B$8")],
+            "RunnerConfig_HistLlc3yr": [("Config", "$B$9")],
+            "RunnerConfig_MonthlyPptx": [("Config", "$B$10")],
+        }
+    finally:
+        workbook.close()
+
+    modified_parts = {"xl/workbook.xml", "xl/_rels/workbook.xml.rels", "[Content_Types].xml"}
+    with ZipFile(path) as archive:
+        assert set(archive.namelist()) == {*original, "xl/worksheets/sheet3.xml"}
+        for name, (info, data) in original.items():
+            if name not in modified_parts:
+                assert archive.read(name) == data
+            assert archive.getinfo(name).date_time == info.date_time
+            assert archive.getinfo(name).compress_type == info.compress_type
+
+    injected = path.read_bytes()
+    xlsm.inject_config_sheet(path)
+    assert path.read_bytes() == injected
 
 
 def _read_zip_text(path: Path, member: str) -> str:
