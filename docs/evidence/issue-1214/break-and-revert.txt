@@ -400,3 +400,258 @@ tests/pipeline/test_run_coverage_round.py .                              [100%]
 ======================== 1 passed, 13 warnings in 0.50s ========================
 
 
+
+
+## Link preparation discards the original cause: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_link_preparation_failure_stops_refresh_and_preserves_cause', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/0-mutated.xml']
+Exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_link_refresh_failures.py FF                      [100%]
+
+=================================== FAILURES ===================================
+___ test_link_preparation_failure_stops_refresh_and_preserves_cause[resave] ____
+tests/pipeline/test_run_link_refresh_failures.py:43: in test_link_preparation_failure_stops_refresh_and_preserves_cause
+    assert raised.value.__cause__ is failure
+E   assert None is OSError('historical link source is unreadable')
+E    +  where None = RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable").__cause__
+E    +    where RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable") = <ExceptionInfo RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable") tblen=2>.value
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:3839 ppt_link_prep_failed file=/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx
+Traceback (most recent call last):
+  File "/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py", line 3829, in _refresh_ppt_links
+    resaved = _ole_safe_resave_historical_workbooks(run_dir)
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: historical link source is unreadable
+___ test_link_preparation_failure_stops_refresh_and_preserves_cause[repoint] ___
+tests/pipeline/test_run_link_refresh_failures.py:43: in test_link_preparation_failure_stops_refresh_and_preserves_cause
+    assert raised.value.__cause__ is failure
+E   assert None is OSError('historical link source is unreadable')
+E    +  where None = RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable").__cause__
+E    +    where RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable") = <ExceptionInfo RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable") tblen=2>.value
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:3839 ppt_link_prep_failed file=/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx
+Traceback (most recent call last):
+  File "/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py", line 3830, in _refresh_ppt_links
+    repointed, axes_removed = _repoint_and_autoscale_ppt_charts(pptx_path, run_dir)
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: historical link source is unreadable
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/0-mutated.xml ------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_link_refresh_failures.py::test_link_preparation_failure_stops_refresh_and_preserves_cause[resave] - assert None is OSError('historical link source is unreadable')
+ +  where None = RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable").__cause__
+ +    where RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable") = <ExceptionInfo RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable") tblen=2>.value
+FAILED tests/pipeline/test_run_link_refresh_failures.py::test_link_preparation_failure_stops_refresh_and_preserves_cause[repoint] - assert None is OSError('historical link source is unreadable')
+ +  where None = RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable").__cause__
+ +    where RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable") = <ExceptionInfo RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable") tblen=2>.value
+======================== 2 failed, 13 warnings in 1.34s ========================
+
+
+## Link preparation discards the original cause: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_link_preparation_failure_stops_refresh_and_preserves_cause', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/0-restored.xml']
+Exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_link_refresh_failures.py ..                      [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/0-restored.xml -----
+======================== 2 passed, 13 warnings in 0.35s ========================
+
+
+## Missing Office client incorrectly reports success: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_missing_office_client_skips_refresh_before_preparing_files', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/1-mutated.xml']
+Exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py F                       [100%]
+
+=================================== FAILURES ===================================
+_______ test_missing_office_client_skips_refresh_before_preparing_files ________
+tests/pipeline/test_run_link_refresh_failures.py:61: in test_missing_office_client_skips_refresh_before_preparing_files
+    assert result.status is run_module.PptProcessingStatus.SKIPPED
+E   AssertionError: assert <PptProcessingStatus.SUCCESS: 'success'> is <PptProcessingStatus.SKIPPED: 'skipped'>
+E    +  where <PptProcessingStatus.SUCCESS: 'success'> = PptProcessingResult(status=<PptProcessingStatus.SUCCESS: 'success'>, error_detail='win32com unavailable', ppt_outputs=None).status
+E    +  and   <PptProcessingStatus.SKIPPED: 'skipped'> = <enum 'PptProcessingStatus'>.SKIPPED
+E    +    where <enum 'PptProcessingStatus'> = run_module.PptProcessingStatus
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/1-mutated.xml ------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_link_refresh_failures.py::test_missing_office_client_skips_refresh_before_preparing_files - AssertionError: assert <PptProcessingStatus.SUCCESS: 'success'> is <PptProcessingStatus.SKIPPED: 'skipped'>
+ +  where <PptProcessingStatus.SUCCESS: 'success'> = PptProcessingResult(status=<PptProcessingStatus.SUCCESS: 'success'>, error_detail='win32com unavailable', ppt_outputs=None).status
+ +  and   <PptProcessingStatus.SKIPPED: 'skipped'> = <enum 'PptProcessingStatus'>.SKIPPED
+ +    where <enum 'PptProcessingStatus'> = run_module.PptProcessingStatus
+======================== 1 failed, 13 warnings in 0.38s ========================
+
+
+## Missing Office client incorrectly reports success: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_missing_office_client_skips_refresh_before_preparing_files', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/1-restored.xml']
+Exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py .                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/1-restored.xml -----
+======================== 1 passed, 13 warnings in 0.34s ========================
+
+
+## Refresh omits individual linked shapes: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_refresh_continues_after_unlinked_shape_and_bulk_update_failures', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/2-mutated.xml']
+Exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py F                       [100%]
+
+=================================== FAILURES ===================================
+_____ test_refresh_continues_after_unlinked_shape_and_bulk_update_failures _____
+tests/pipeline/test_run_link_refresh_failures.py:88: in test_refresh_continues_after_unlinked_shape_and_bulk_update_failures
+    failed_shape.LinkFormat.Update.assert_called_once_with()
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:997: in assert_called_once_with
+    raise AssertionError(msg)
+E   AssertionError: Expected 'Update' to be called once. Called 0 times.
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/2-mutated.xml ------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_link_refresh_failures.py::test_refresh_continues_after_unlinked_shape_and_bulk_update_failures - AssertionError: Expected 'Update' to be called once. Called 0 times.
+======================== 1 failed, 13 warnings in 0.43s ========================
+
+
+## Refresh omits individual linked shapes: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_refresh_continues_after_unlinked_shape_and_bulk_update_failures', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/2-restored.xml']
+Exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py .                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/2-restored.xml -----
+======================== 1 passed, 13 warnings in 0.34s ========================
+
+
+## Refresh never saves the presentation: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_refresh_save_failure_preserves_cause_and_releases_office', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/3-mutated.xml']
+Exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py F                       [100%]
+
+=================================== FAILURES ===================================
+________ test_refresh_save_failure_preserves_cause_and_releases_office _________
+tests/pipeline/test_run_link_refresh_failures.py:106: in test_refresh_save_failure_preserves_cause_and_releases_office
+    with pytest.raises(RuntimeError, match="PPT link refresh failed") as raised:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE RuntimeError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/3-mutated.xml ------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_link_refresh_failures.py::test_refresh_save_failure_preserves_cause_and_releases_office - Failed: DID NOT RAISE RuntimeError
+======================== 1 failed, 13 warnings in 0.39s ========================
+
+
+## Refresh never saves the presentation: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_refresh_save_failure_preserves_cause_and_releases_office', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/3-restored.xml']
+Exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py .                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/3-restored.xml -----
+======================== 1 passed, 13 warnings in 0.35s ========================

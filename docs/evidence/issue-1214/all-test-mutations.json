@@ -1135,5 +1135,114 @@
       "test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure1]"
     ],
     "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -5775,7 +5775,7 @@\n             headers_by_sheet[sheet_name] = tuple(headers)\n         return headers_by_sheet\n     finally:\n-        workbook_obj.close()\n+        pass\n \n \n def _historical_cell_has_value(value: Any) -> bool:\n"
+  },
+  {
+    "mutation": "Link preparation discards the original cause",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_refresh_ppt_links",
+    "edits": [
+      [
+        "raise RuntimeError(f\"PPT link prep failed for '{pptx_path}': {exc}\") from exc",
+        "raise RuntimeError(f\"PPT link prep failed for '{pptx_path}': {exc}\")"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_link_refresh_failures.py::test_link_preparation_failure_stops_refresh_and_preserves_cause",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_link_preparation_failure_stops_refresh_and_preserves_cause[repoint]",
+      "test_link_preparation_failure_stops_refresh_and_preserves_cause[resave]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3837,7 +3837,7 @@\n         )\n     except Exception as exc:\n         LOGGER.exception(\"ppt_link_prep_failed file=%s\", pptx_path)\n-        raise RuntimeError(f\"PPT link prep failed for '{pptx_path}': {exc}\") from exc\n+        raise RuntimeError(f\"PPT link prep failed for '{pptx_path}': {exc}\")\n \n     app = None\n     presentation = None\n"
+  },
+  {
+    "mutation": "Missing Office client incorrectly reports success",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_refresh_ppt_links",
+    "edits": [
+      [
+        "status=PptProcessingStatus.SKIPPED,\n            error_detail=\"win32com unavailable\",",
+        "status=PptProcessingStatus.SUCCESS,\n            error_detail=\"win32com unavailable\","
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_link_refresh_failures.py::test_missing_office_client_skips_refresh_before_preparing_files",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_missing_office_client_skips_refresh_before_preparing_files"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3820,7 +3820,7 @@\n     except ImportError:\n         LOGGER.info(\"ppt_link_refresh_skipped file=%s reason=win32com_unavailable\", pptx_path)\n         return PptProcessingResult(\n-            status=PptProcessingStatus.SKIPPED,\n+            status=PptProcessingStatus.SUCCESS,\n             error_detail=\"win32com unavailable\",\n         )\n \n"
+  },
+  {
+    "mutation": "Refresh omits individual linked shapes",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_refresh_ppt_links",
+    "edits": [
+      [
+        "shape.LinkFormat.Update()",
+        "pass"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_link_refresh_failures.py::test_refresh_continues_after_unlinked_shape_and_bulk_update_failures",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_refresh_continues_after_unlinked_shape_and_bulk_update_failures"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3854,7 +3854,7 @@\n         for slide in presentation.Slides:\n             for shape in slide.Shapes:\n                 try:\n-                    shape.LinkFormat.Update()\n+                    pass\n                     updated += 1\n                 except Exception:\n                     continue\n"
+  },
+  {
+    "mutation": "Refresh never saves the presentation",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_refresh_ppt_links",
+    "edits": [
+      [
+        "presentation.Save()",
+        "pass"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_link_refresh_failures.py::test_refresh_save_failure_preserves_cause_and_releases_office",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_refresh_save_failure_preserves_cause_and_releases_office"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3858,7 +3858,7 @@\n                     updated += 1\n                 except Exception:\n                     continue\n-        presentation.Save()\n+        pass\n         LOGGER.info(\"ppt_link_refresh_complete file=%s shapes_updated=%d\", pptx_path, updated)\n         return PptProcessingResult(status=PptProcessingStatus.SUCCESS)\n     except Exception as exc:\n"
   }
 ]
