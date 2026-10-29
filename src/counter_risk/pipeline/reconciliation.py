@@ -133,8 +133,15 @@ def reconcile_series_coverage(
             totals_records,
             counterparty_resolver=counterparty_resolver,
         )
+        normalized_names_by_raw_name = {
+            raw_name: normalized_name
+            for normalized_name, raw_names in normalized_counterparties_in_data.items()
+            for raw_name in raw_names
+        }
         raw_counterparties_by_normalized = _raw_counterparties_by_normalized_from_parsed_data(
-            parsed_sections, counterparty_resolver=counterparty_resolver
+            parsed_sections,
+            counterparty_resolver=counterparty_resolver,
+            normalized_names_by_raw_name=normalized_names_by_raw_name,
         )
         clearing_houses_in_data = sorted(
             {
@@ -470,6 +477,7 @@ def _raw_counterparties_by_normalized_from_records(
     totals_records: list[dict[str, Any]],
     *,
     counterparty_resolver: Callable[[str], Any] = normalize_counterparty_with_source,
+    normalized_names_by_raw_name: Mapping[str, str] | None = None,
 ) -> dict[str, set[str]]:
     normalized_to_raw: dict[str, set[str]] = {}
     for record in totals_records:
@@ -479,7 +487,14 @@ def _raw_counterparties_by_normalized_from_records(
         raw_name = str(raw_value)
         if not raw_name.strip():
             continue
-        normalized_name = counterparty_resolver(raw_name.strip()).canonical_name
+        normalized_lookup_name = raw_name.strip()
+        normalized_name = (
+            normalized_names_by_raw_name.get(normalized_lookup_name)
+            if normalized_names_by_raw_name is not None
+            else None
+        )
+        if normalized_name is None:
+            normalized_name = counterparty_resolver(normalized_lookup_name).canonical_name
         normalized_to_raw.setdefault(normalized_name, set()).add(raw_name)
     return normalized_to_raw
 
@@ -495,10 +510,13 @@ def _raw_counterparties_by_normalized_from_parsed_data(
     parsed_sections: Mapping[str, Any],
     *,
     counterparty_resolver: Callable[[str], Any] = normalize_counterparty_with_source,
+    normalized_names_by_raw_name: Mapping[str, str] | None = None,
 ) -> dict[str, set[str]]:
     totals_records = _records(parsed_sections.get("totals", []))
     return _raw_counterparties_by_normalized_from_records(
-        totals_records, counterparty_resolver=counterparty_resolver
+        totals_records,
+        counterparty_resolver=counterparty_resolver,
+        normalized_names_by_raw_name=normalized_names_by_raw_name,
     )
 
 
