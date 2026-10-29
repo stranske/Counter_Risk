@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -228,3 +229,98 @@ def test_summary_artifact_is_registered_once_across_repeated_writes(
     builder.write(run_dir=tmp_path, manifest=manifest)
     saved = json.loads((tmp_path / "manifest.json").read_text())
     assert saved["output_paths"].count("DATA_QUALITY_SUMMARY.txt") == 1
+
+
+def test_source_date_conflicts_retain_report_evidence_after_writing(
+    tmp_path, builder_with_both_ppt_artifacts
+):
+    builder, paths = builder_with_both_ppt_artifacts
+    source_dates = {
+        "all_programs": {"value": "2026-01-31", "source": "worksheet"},
+        "trend": {"value": "2025-12-31", "source": "filename"},
+    }
+    builder = replace(builder, source_report_dates=source_dates)
+    manifest = builder.build(
+        run_dir=tmp_path,
+        input_hashes={},
+        output_paths=paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[
+            {"code": "SOURCE_REPORT_DATE_CONFLICT", "message": "Source periods disagree"},
+            {"code": "MISSING_NOTIONAL", "message": "Review notional", "row_idx": 3},
+        ],
+    )
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert saved["date_resolution"]["source_report_dates"] == source_dates
+    findings = {finding["code"]: finding for finding in saved["data_quality"]["findings"]}
+    assert findings["SOURCE_REPORT_DATE_CONFLICT"]["details"] == source_dates
+    assert "details" not in findings["MISSING_NOTIONAL"]
+
+
+def test_explicit_ppt_outputs_override_filename_inference(
+    tmp_path, builder_with_both_ppt_artifacts
+):
+    builder, paths = builder_with_both_ppt_artifacts
+    # Both deck files exist, but the caller knows generation failed. Preserve
+    # those explicit statuses instead of inferring success from their filenames.
+    explicit = {
+        role: {
+            "role": "maintainer_master" if role == "master" else "distribution",
+            "status": "failed",
+            "path": path.name,
+            "generation_step": f"ppt_{role}",
+        }
+        for role, path in zip(("master", "distribution"), paths, strict=True)
+    }
+    manifest = builder.build(
+        run_dir=tmp_path,
+        input_hashes={},
+        output_paths=paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_outputs=explicit,
+    )
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert saved["ppt_outputs"] == explicit
+
+
+def test_disabled_ppt_omits_even_explicit_outputs(tmp_path, builder_with_both_ppt_artifacts):
+    builder, paths = builder_with_both_ppt_artifacts
+    builder = replace(
+        builder, config=builder.config.model_copy(update={"enable_ppt_output": False})
+    )
+    manifest = builder.build(
+        run_dir=tmp_path,
+        input_hashes={},
+        output_paths=paths,
+        top_exposures={},
+        top_changes_per_variant={},
+        warnings=[],
+        ppt_outputs={"master": {"status": "failed"}},
+    )
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert "ppt_outputs" not in saved
+
+
+def test_master_only_output_records_distribution_as_skipped(
+    tmp_path, builder_with_both_ppt_artifacts
+):
+    builder, paths = builder_with_both_ppt_artifacts
+    paths[1].unlink()
+    manifest = _build(builder, tmp_path, paths[:1], "success")
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert saved["ppt_outputs"]["master"]["status"] == "success"
+    assert saved["ppt_outputs"]["distribution"] == {
+        "role": "distribution",
+        "status": "skipped",
+        "path": paths[1].name,
+        "generation_step": "ppt_distribution",
+        "skipped_reason": "Distribution output disabled for this run.",
+    }
+    assert paths[1].name not in saved["output_paths"]
