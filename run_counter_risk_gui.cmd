@@ -40,9 +40,14 @@ if exist "%~dp0src\counter_risk\cli\__init__.py" (
     )
     where py >nul 2>nul
     if not errorlevel 1 (
-        py -3.12 --version >nul 2>nul
+        py -3.14 --version >nul 2>nul
         if not errorlevel 1 (
-            call :run_and_log py -3.12 -m counter_risk.cli gui
+            call :run_and_log py -3.14 -m counter_risk.cli gui
+            goto :after_run
+        )
+        py -3.13 --version >nul 2>nul
+        if not errorlevel 1 (
+            call :run_and_log py -3.13 -m counter_risk.cli gui
             goto :after_run
         )
         call :run_and_log py -m counter_risk.cli gui
