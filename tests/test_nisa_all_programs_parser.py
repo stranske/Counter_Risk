@@ -360,3 +360,44 @@ def test_parser_raises_explicit_missing_headers_error(tmp_path: Path) -> None:
     message = str(exc_info.value)
     assert "commodity" in message
     assert "currency" in message
+
+
+def test_parser_rejects_missing_and_non_workbook_paths(tmp_path: Path) -> None:
+    missing_path = tmp_path / "missing.xlsx"
+    with pytest.raises(FileNotFoundError, match="NISA raw workbook not found"):
+        parse_nisa_all_programs(missing_path)
+
+    text_path = tmp_path / "not-a-workbook.csv"
+    text_path.write_text("counterparty", encoding="utf-8")
+    with pytest.raises(ValueError, match="must be an .xlsx file"):
+        parse_nisa_all_programs(text_path)
+
+
+def test_parser_rejects_unreadable_workbook(tmp_path: Path) -> None:
+    workbook_path = tmp_path / "unreadable.xlsx"
+    workbook_path.write_text("not an xlsx archive", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Unable to open NISA workbook"):
+        parse_nisa_all_programs(workbook_path)
+
+
+def test_parser_skips_subtotals_and_stops_totals_at_next_section(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    workbook_path = tmp_path / "raw_nisa_with_subtotals.xlsx"
+    _build_raw_nisa_workbook(workbook_path)
+
+    workbook = openpyxl.load_workbook(workbook_path)
+    try:
+        worksheet = workbook.active
+        worksheet.cell(row=8, column=2).value = "Subtotal"
+        worksheet.cell(row=26, column=2).value = "Total"
+        worksheet.cell(row=27, column=2).value = "Total Current Exposure"
+        worksheet.cell(row=28, column=2).value = "Should Not Be Parsed"
+        workbook.save(workbook_path)
+    finally:
+        workbook.close()
+
+    parsed = parse_nisa_all_programs(workbook_path)
+
+    assert [row.counterparty for row in parsed.ch_rows] == ["Alpha Bank", "Beta Bank"]
+    assert [row.counterparty for row in parsed.totals_rows] == ["Alpha Bank"]
