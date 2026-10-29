@@ -745,8 +745,9 @@ def test_parser_reads_workbook_without_dimension_record(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "stop_marker", ["total current exposure", "mosers program", "notional breakdown"]
 )
+@pytest.mark.parametrize("label_suffix", ["", " (Summary)"], ids=["exact", "with-suffix"])
 def test_published_input_contract_describes_parseable_workbook(
-    tmp_path: Path, stop_marker: str
+    tmp_path: Path, stop_marker: str, label_suffix: str
 ) -> None:
     import openpyxl
 
@@ -763,7 +764,7 @@ def test_published_input_contract_describes_parseable_workbook(
             worksheet.cell(4, column).value = structure.header_aliases[header][0]
         worksheet.cell(6, 1).value = "Futures / CDX"
         worksheet.cell(24, 2).value = structure.totals_marker
-        worksheet.cell(26, 2).value = stop_marker.title()
+        worksheet.cell(26, 2).value = stop_marker.title() + label_suffix
         worksheet.cell(27, 2).value = "Later Section Bank"
         worksheet.cell(27, 9).value = 999
         workbook.save(path)

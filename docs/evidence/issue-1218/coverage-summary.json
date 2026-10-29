@@ -26,7 +26,7 @@
     }
   },
   "candidate": {
-    "passed": 2565,
+    "passed": 2569,
     "skipped": 1,
     "totals": {
       "covered_lines": 11109,
@@ -618,5 +618,27 @@
       "Git push failed: Could not resolve host: github.com",
       "Automatic approval review rejected PR-body update and needs-human label: MCP tool call requires approval, but approval policy is never"
     ]
+  },
+  "stop_marker_followup": {
+    "new_cases": 3,
+    "mutation_scenarios": 1,
+    "prior_cases_survived_mutation": 31,
+    "red_cases": 3,
+    "restored_green_cases": 6,
+    "receipt_file": "docs/evidence/issue-1218/stop-marker-mutation-receipt.json",
+    "targeted_coverage_command": "python -m pytest tests/test_nisa_all_programs_parser.py -m \"not slow\" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q",
+    "targeted_passed": 34,
+    "targeted_cover_column": "99%",
+    "full_suite_passed": 2569,
+    "full_suite_skipped": 1,
+    "full_suite_seconds": 85.34,
+    "additional_covered_statements": 0,
+    "prior_head_ci": {
+      "sha": "c34cb8a0dcc502d3ed3e9d0ccbd634d09148cb08",
+      "gate_run_id": 40856352591,
+      "conclusion": "success"
+    },
+    "candidate_hosted_ci": "pending publication",
+    "live_pr_reconciliation": "blocked: automatic approval review rejected the PR-body update, blocker comment, and needs-human label: MCP tool call requires approval, but approval policy is never"
   }
 }

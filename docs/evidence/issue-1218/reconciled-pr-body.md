@@ -1,8 +1,14 @@
 ## Summary
 
-Add 88 regression cases across ten test modules in issue #1218's escaped-defect/churn/uncovered-mass order. Tests cover NISA parsing, rollups, runner launch handling, mapping-diff output, provider fallback, normalization, limits configuration, PowerPoint relationship repair, and XLSM building. No production bug was found; production files are byte-identical to the PR base.
+Add 91 regression cases across ten test modules in issue #1218's escaped-defect/churn/uncovered-mass order. Tests cover NISA parsing, rollups, runner launch handling, mapping-diff output, provider fallback, normalization, limits configuration, PowerPoint relationship repair, and XLSM building. No production bug was found; production files are byte-identical to the PR base.
 
-Reconciliation: reviewed `3456860`, `edc500f`, `0054b34`, `d843da8`, `e7a1c32`, `9cc0e39`, `3b633ea`, `d94890c`, `acc5ab4`, and `f2f4c43`. The former PR body described only the initial parser-boundary tests. The committed coverage summary and 76 mutation scenarios support all five nested contract checkboxes. Gate run [40852444189](https://github.com/stranske/Counter_Risk/actions/runs/40852444189) passed at `f2f4c43`, including Python 3.13 and 3.14 pytest jobs. This remains one ready-for-review PR for the existing coverage chunk, whose initial baseline was below 90%.
+Reconciliation: reviewed `c34cb8a`, `8b786d7`, `842d641`, `3456860`, `edc500f`, `0054b34`, `d843da8`, `e7a1c32`, `9cc0e39`, `3b633ea`, `d94890c`, `acc5ab4`, and `f2f4c43`. The former PR body described only the initial parser-boundary tests. The committed coverage summary and the recorded mutation scenarios support all five nested contract checkboxes. Gate run [40852444189](https://github.com/stranske/Counter_Risk/actions/runs/40852444189) passed at `f2f4c43`, including Python 3.13 and 3.14 pytest jobs. This remains one ready-for-review PR for the existing coverage chunk, whose initial baseline was below 90%.
+
+## Stop-label suffix regression
+
+Added three real-XLSX cases to the existing published-contract test, covering each totals stop marker followed by ` (Summary)`. The parser must stop before this section heading and the following bank row; it must preserve the earlier counterparty and numeric values. Exact-label cases remain in the matrix.
+
+Executed break-and-revert in `/tmp/counter-risk-1218-stop-markers`: replaced substring marker detection with exact-label membership. All 31 prior NISA cases still passed under that mutation (exit 0). All three new suffix-label cases failed (exit 1), while the three exact-label cases still passed. After exact source restoration, all six cases passed (exit 0). `stop-marker-mutation-receipt.json` records the edit, per-case results, output, and matching source hashes. No production bug or additional covered statement is claimed.
 
 ## Explicit counterparty header regression
 
@@ -87,10 +93,13 @@ Every added case has executed RED/GREEN evidence. Receipt files in `docs/evidenc
 | `inference-mutation-receipt.json` | 1 | 1 existing case strengthened |
 | `segment-score-mutation-receipt.json` | 1 | 2 existing cases strengthened |
 | `header-precedence-mutation-receipt.json` | 1 | 1 new case |
+| `stop-marker-mutation-receipt.json` | 1 | 3 new cases |
 
 Each scenario failed with the deliberate source change and passed after restoration. No collection errors or skips count as proof. The earlier malformed-XML mutation that changed no observable output was discarded; removing the ParseError catch instead produced a verified failure. The numeric cases assert all 17 numeric mappings with distinct values. Worksheet cases distinguish header-row priority, case-insensitive names, and incomplete-header rejection. Segment cases distinguish first-column and adjacent-column detection and inherited segments.
 
 ## Validation
+
+- Stop-label follow-up: `COVERAGE_FILE=<isolated data file> python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output> -q`: **2,569 passed, 1 skipped** in 85.34 seconds; **11,109/12,216 lines covered (90.9381%)**. Targeted NISA: **34 passed**, actual `Cover` column **99%** (216/218 statements; lines 239/311 missing). Production files match the PR base. Black formatting, both required and CI whole-tree checks, CI Ruff, and `git diff --check` passed. The same temporary asyncio wakeup shim and one worker were needed for Black's whole-tree checks. Prior head `c34cb8a` passed [Gate run 40856352591](https://github.com/stranske/Counter_Risk/actions/runs/40856352591); hosted CI for these new cases awaits publication.
 
 - Explicit-header follow-up: whole non-slow suite with the same coverage command: **2,566 passed, 1 skipped** in 104.99 seconds; **11,109/12,216 lines covered (90.9381%)**. Targeted NISA: **31 passed**, actual coverage table **99%** (216/218 statements; lines 239/311 missing). Whole-tree Black passed with both the required and CI exclusions (395 files), using the documented temporary asyncio wakeup shim and one worker; Ruff passed with CI flags. `git diff --check` passed and production files match the PR base. Hosted CI for this new case remains pending publication.
 - This follow-up: `COVERAGE_FILE=<isolated data file> python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output> -q`: **2,565 passed, 1 skipped** in 73.98 seconds; **11,109/12,216 lines covered (90.9381%)**. Targeted NISA coverage: **30 passed**, **99%** (216/218 statements; lines 239/311 missing). The segment-scoring mutation was reverted before these runs.
@@ -103,7 +112,9 @@ Each scenario failed with the deliberate source change and passed after restorat
 
 ## Delivery status
 
-The primary checkout's `.git` directory is read-only (`git add --dry-run` cannot create `index.lock`). The explicit-header follow-up is committed in `/tmp/counter-risk-1218-header-precedence`, with a recovery bundle at `/tmp/counter-risk-1218-header-precedence.bundle`. Git push failed with `Could not resolve host: github.com`. Automatic approval review rejected GitHub tree publication, the PR title/body update, the blocker comment, and the `needs-human` label: `MCP tool call requires approval, but approval policy is never`. Local validation is complete; publication and hosted CI remain pending. The five nested contract checkboxes are verified below, but the live body could not be reconciled. PR #1220 was confirmed open and ready for review (`isDraft=false`) at `8b786d7`; this remains the issue's single PR.
+Reconciled the latest three commits and the recorded coverage/mutation evidence. The five nested contract items below are verified. Attempting to reconcile those checkboxes in the live PR body was rejected by automatic approval review: `MCP tool call requires approval, but approval policy is never`. The same review rejected the blocker comment and `needs-human` label. The live body still needs that update; no live checkbox change is claimed.
+
+The primary checkout's `.git` directory is read-only (`git add --dry-run` cannot create `index.lock`). The stop-label follow-up is committed in `/tmp/counter-risk-1218-stop-markers`, with a recovery bundle at `/tmp/counter-risk-1218-stop-markers.bundle`. Git push failed with `Could not resolve host: github.com`. Local validation is complete; publication and hosted CI remain pending. PR #1220 was confirmed open and ready for review (`isDraft=false`) at `c34cb8a`; this remains the issue's single PR.
 
 Closes #1218
 
