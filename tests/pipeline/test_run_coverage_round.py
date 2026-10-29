@@ -560,6 +560,39 @@ def test_prior_populated_series_falls_back_when_workbook_is_unreadable(tmp_path)
     assert run_module._extract_prior_populated_series_by_sheet(tmp_path / "missing.xlsx") is None
 
 
+@pytest.mark.parametrize("failure_stage", ["lookup", "rows"])
+def test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails(
+    tmp_path, monkeypatch, failure_stage
+) -> None:
+    """A damaged worksheet must not discard evidence from readable worksheets."""
+    broken_sheet = Mock()
+    broken_sheet.iter_rows.side_effect = ValueError("damaged worksheet")
+    readable_sheet = Mock()
+    readable_sheet.iter_rows.return_value = [
+        ("Date", "Active", "Dormant"),
+        (date(2025, 11, 30), 25, 0),
+    ]
+
+    def lookup(name):
+        if name == "Broken":
+            if failure_stage == "lookup":
+                raise KeyError("missing worksheet")
+            return broken_sheet
+        assert name == "Total"
+        return readable_sheet
+
+    workbook = MagicMock(sheetnames=["Broken", "Total"])
+    workbook.__getitem__.side_effect = lookup
+    load = Mock(return_value=workbook)
+    monkeypatch.setattr("openpyxl.load_workbook", load)
+    path = tmp_path / "history.xlsx"
+
+    assert run_module._extract_prior_populated_series_by_sheet(path) == {"Total": ("Active",)}
+    load.assert_called_once_with(filename=path, read_only=True, data_only=True)
+    readable_sheet.iter_rows.assert_called_once_with(values_only=True)
+    workbook.close.assert_called_once_with()
+
+
 @pytest.mark.parametrize("failure", [RuntimeError(), IndexError("broken shared string table")])
 def test_historical_header_read_failure_preserves_context_cause_and_closes_workbook(
     tmp_path, monkeypatch, failure

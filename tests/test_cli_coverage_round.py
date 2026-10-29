@@ -123,7 +123,12 @@ def test_gui_non_headless_launches_with_a_callback(monkeypatch: pytest.MonkeyPat
     state = captured["initial_state"]
     assert state.run_mode == "trend"
     assert state.discovery_mode == "discover"
-    assert captured["runner"]([]) == 0
+    # The callback is how GUI actions reach the CLI; preserve both arguments and status.
+    dispatch = Mock(return_value=7)
+    monkeypatch.setattr(cli, "main", dispatch)
+    argv = ["run", "--config", "workflow.yml", "--strict-policy", "strict"]
+    assert captured["runner"](argv) == 7
+    dispatch.assert_called_once_with(argv)
 
 
 def test_runner_settings_helpers_reject_non_object_and_prefer_cli_values(tmp_path: Path) -> None:

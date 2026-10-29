@@ -1,0 +1,402 @@
+
+## GUI callback drops arguments
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/test_cli_coverage_round.py::test_gui_non_headless_launches_with_a_callback -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/test_cli_coverage_round.py F                                       [100%]
+
+=================================== FAILURES ===================================
+________________ test_gui_non_headless_launches_with_a_callback ________________
+tests/test_cli_coverage_round.py:131: in test_gui_non_headless_launches_with_a_callback
+    dispatch.assert_called_once_with(argv)
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:998: in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:986: in assert_called_with
+    raise AssertionError(_error_message()) from cause
+E   AssertionError: expected call not found.
+E   Expected: mock(['run', '--config', 'workflow.yml', '--strict-policy', 'strict'])
+E     Actual: mock([])
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_cli_coverage_round.py::test_gui_non_headless_launches_with_a_callback - AssertionError: expected call not found.
+Expected: mock(['run', '--config', 'workflow.yml', '--strict-policy', 'strict'])
+  Actual: mock([])
+======================== 1 failed, 13 warnings in 0.43s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/test_cli_coverage_round.py .                                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 13 warnings in 0.28s ========================
+
+
+
+## GUI callback discards failure status
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/test_cli_coverage_round.py::test_gui_non_headless_launches_with_a_callback -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/test_cli_coverage_round.py F                                       [100%]
+
+=================================== FAILURES ===================================
+________________ test_gui_non_headless_launches_with_a_callback ________________
+tests/test_cli_coverage_round.py:130: in test_gui_non_headless_launches_with_a_callback
+    assert captured["runner"](argv) == 7
+E   AssertionError: assert 0 == 7
+E    +  where 0 = <function _gui_command.<locals>._run_callback at 0x787742ce81a0>(['run', '--config', 'workflow.yml', '--strict-policy', 'strict'])
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_cli_coverage_round.py::test_gui_non_headless_launches_with_a_callback - AssertionError: assert 0 == 7
+ +  where 0 = <function _gui_command.<locals>._run_callback at 0x787742ce81a0>(['run', '--config', 'workflow.yml', '--strict-policy', 'strict'])
+======================== 1 failed, 13 warnings in 0.37s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/test_cli_coverage_round.py .                                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 13 warnings in 0.29s ========================
+
+
+
+## Workbook read failure discards readable sheets
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_coverage_round.py FF                             [100%]
+
+=================================== FAILURES ===================================
+_ test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails[lookup] _
+tests/pipeline/test_run_coverage_round.py:590: in test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails
+    assert run_module._extract_prior_populated_series_by_sheet(path) == {"Total": ("Active",)}
+E   AssertionError: assert {} == {'Total': ('Active',)}
+E     
+E     Right contains 1 more item:
+E     {'Total': ('Active',)}
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + {}
+E     - {
+E     -     'Total': (
+E     -         'Active',
+E     -     ),
+E     - }
+_ test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails[rows] _
+tests/pipeline/test_run_coverage_round.py:590: in test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails
+    assert run_module._extract_prior_populated_series_by_sheet(path) == {"Total": ("Active",)}
+E   AssertionError: assert {} == {'Total': ('Active',)}
+E     
+E     Right contains 1 more item:
+E     {'Total': ('Active',)}
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + {}
+E     - {
+E     -     'Total': (
+E     -         'Active',
+E     -     ),
+E     - }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails[lookup] - AssertionError: assert {} == {'Total': ('Active',)}
+  
+  Right contains 1 more item:
+  {'Total': ('Active',)}
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+  + {}
+  - {
+  -     'Total': (
+  -         'Active',
+  -     ),
+  - }
+FAILED tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails[rows] - AssertionError: assert {} == {'Total': ('Active',)}
+  
+  Right contains 1 more item:
+  {'Total': ('Active',)}
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+  + {}
+  - {
+  -     'Total': (
+  -         'Active',
+  -     ),
+  - }
+======================== 2 failed, 13 warnings in 0.66s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_coverage_round.py ..                             [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 2 passed, 13 warnings in 0.50s ========================
+
+
+
+## Historical headers omit workbook cleanup
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/pipeline/test_run_coverage_round.py::test_historical_header_read_failure_preserves_context_cause_and_closes_workbook -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_coverage_round.py FF                             [100%]
+
+=================================== FAILURES ===================================
+_ test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure0] _
+tests/pipeline/test_run_coverage_round.py:626: in test_historical_header_read_failure_preserves_context_cause_and_closes_workbook
+    workbook.close.assert_called_once_with()
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:997: in assert_called_once_with
+    raise AssertionError(msg)
+E   AssertionError: Expected 'close' to be called once. Called 0 times.
+_ test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure1] _
+tests/pipeline/test_run_coverage_round.py:626: in test_historical_header_read_failure_preserves_context_cause_and_closes_workbook
+    workbook.close.assert_called_once_with()
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:997: in assert_called_once_with
+    raise AssertionError(msg)
+E   AssertionError: Expected 'close' to be called once. Called 0 times.
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure0] - AssertionError: Expected 'close' to be called once. Called 0 times.
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure1] - AssertionError: Expected 'close' to be called once. Called 0 times.
+======================== 2 failed, 13 warnings in 0.70s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_coverage_round.py ..                             [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 2 passed, 13 warnings in 0.48s ========================
+
+
+
+## Workflow failures report success
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/test_cli_coverage_round.py::test_workflow_mode_reports_failure_and_returns_nonzero -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/test_cli_coverage_round.py FF                                      [100%]
+
+=================================== FAILURES ===================================
+________ test_workflow_mode_reports_failure_and_returns_nonzero[config] ________
+tests/test_cli_coverage_round.py:241: in test_workflow_mode_reports_failure_and_returns_nonzero
+    assert cli.main(["run", "--config", str(tmp_path / "config.yml")]) == 1
+E   AssertionError: assert 0 == 1
+E    +  where 0 = <function main at 0x713d3e9f5a60>(['run', '--config', '/tmp/pytest-of-runner/pytest-6/test_workflow_mode_reports_fai0/config.yml'])
+E    +    where <function main at 0x713d3e9f5a60> = cli.main
+----------------------------- Captured stdout call -----------------------------
+Counter Risk run failed: config input is unreadable
+_______ test_workflow_mode_reports_failure_and_returns_nonzero[pipeline] _______
+tests/test_cli_coverage_round.py:241: in test_workflow_mode_reports_failure_and_returns_nonzero
+    assert cli.main(["run", "--config", str(tmp_path / "config.yml")]) == 1
+E   AssertionError: assert 0 == 1
+E    +  where 0 = <function main at 0x713d3e9f5a60>(['run', '--config', '/tmp/pytest-of-runner/pytest-6/test_workflow_mode_reports_fai1/config.yml'])
+E    +    where <function main at 0x713d3e9f5a60> = cli.main
+----------------------------- Captured stdout call -----------------------------
+Counter Risk run failed: pipeline input is unreadable
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_cli_coverage_round.py::test_workflow_mode_reports_failure_and_returns_nonzero[config] - AssertionError: assert 0 == 1
+ +  where 0 = <function main at 0x713d3e9f5a60>(['run', '--config', '/tmp/pytest-of-runner/pytest-6/test_workflow_mode_reports_fai0/config.yml'])
+ +    where <function main at 0x713d3e9f5a60> = cli.main
+FAILED tests/test_cli_coverage_round.py::test_workflow_mode_reports_failure_and_returns_nonzero[pipeline] - AssertionError: assert 0 == 1
+ +  where 0 = <function main at 0x713d3e9f5a60>(['run', '--config', '/tmp/pytest-of-runner/pytest-6/test_workflow_mode_reports_fai1/config.yml'])
+ +    where <function main at 0x713d3e9f5a60> = cli.main
+======================== 2 failed, 13 warnings in 0.38s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/test_cli_coverage_round.py ..                                      [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 2 passed, 13 warnings in 0.30s ========================
+
+
+
+## Historical footer treated as dated position
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_uses_last_dated_row_and_ignores_footer -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_coverage_round.py F                              [100%]
+
+=================================== FAILURES ===================================
+______ test_prior_populated_series_uses_last_dated_row_and_ignores_footer ______
+tests/pipeline/test_run_coverage_round.py:351: in test_prior_populated_series_uses_last_dated_row_and_ignores_footer
+    assert run_module._extract_prior_populated_series_by_sheet(path) == {
+E   AssertionError: assert {'Total': (), 'Empty': ()} == {'Total': ('A..., 'Empty': ()}
+E     
+E     Omitting 1 identical items, use -vv to show
+E     Differing items:
+E     {'Total': ()} != {'Total': ('Active',)}
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E     -     'Total': (
+E     +     'Total': (),
+E     ?               ++
+E     -         'Active',
+E     -     ),
+E           'Empty': (),
+E       }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_uses_last_dated_row_and_ignores_footer - AssertionError: assert {'Total': (), 'Empty': ()} == {'Total': ('A..., 'Empty': ()}
+  
+  Omitting 1 identical items, use -vv to show
+  Differing items:
+  {'Total': ()} != {'Total': ('Active',)}
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+  -     'Total': (
+  +     'Total': (),
+  ?               ++
+  -         'Active',
+  -     ),
+        'Empty': (),
+    }
+======================== 1 failed, 13 warnings in 0.60s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_coverage_round.py .                              [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 13 warnings in 0.50s ========================
+
+
