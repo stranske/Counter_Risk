@@ -979,6 +979,57 @@ def test_historical_headers_retain_readable_sheets_after_series_headers_fail(
     workbook.close.assert_called_once_with()
 
 
+@pytest.mark.parametrize("failure_stage", ["export", "rebuild", "scrub"])
+def test_static_distribution_failure_warns_and_stops_before_publishing(
+    tmp_path, monkeypatch, failure_stage
+) -> None:
+    """A failed static deck must not be reported as a successful deliverable."""
+    source = tmp_path / "master.pptx"
+    source.write_bytes(b"original master deck")
+    target = tmp_path / "distribution.pptx"
+    images = [tmp_path / "slide-1.png"]
+    stages = {
+        "export": Mock(return_value=images),
+        "rebuild": Mock(),
+        "scrub": Mock(),
+    }
+    stages[failure_stage].side_effect = OSError("static stage unavailable")
+    monkeypatch.setattr(run_module.platform, "system", lambda: "Windows")
+    monkeypatch.setattr(run_module.importlib.util, "find_spec", lambda name: object())
+    monkeypatch.setattr(run_module, "export_ppt_slides_as_png_via_com", stages["export"])
+    monkeypatch.setattr(run_module, "_rebuild_pptx_from_slide_images", stages["rebuild"])
+    monkeypatch.setattr(run_module, "scrub_external_relationships_from_pptx", stages["scrub"])
+    warnings = ["earlier warning"]
+
+    result = run_module._create_static_distribution(
+        source_pptx=source,
+        run_dir=tmp_path,
+        config=_config().model_copy(update={"distribution_static": True}),
+        warnings=warnings,
+        output_path=target,
+    )
+
+    assert result == []
+    assert warnings == [
+        "earlier warning",
+        "distribution_static generation failed: static stage unavailable",
+    ]
+    assert source.read_bytes() == b"original master deck"
+    stages["export"].assert_called_once_with(
+        source_pptx=source, slide_images_dir=tmp_path / "_distribution_slides"
+    )
+    if failure_stage == "export":
+        stages["rebuild"].assert_not_called()
+    else:
+        stages["rebuild"].assert_called_once_with(
+            source_pptx=source, output_path=target, slide_images=images
+        )
+    if failure_stage == "scrub":
+        stages["scrub"].assert_called_once_with(target, scrubbed_pptx_path=target)
+    else:
+        stages["scrub"].assert_not_called()
+
+
 def _config():
     from counter_risk.config import WorkflowConfig
 

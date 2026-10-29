@@ -1699,5 +1699,38 @@
     "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
     "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
     "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -5762,7 +5762,7 @@\n                     if label\n                 ]\n             except (KeyError, ValueError):\n-                continue\n+                raise\n             except Exception as exc:\n                 _raise_with_context(\n                     exc=exc,\n"
+  },
+  {
+    "mutation": "Suppress static distribution stage failure warning",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_create_static_distribution",
+    "edits": [
+      [
+        "warnings.append(f\"distribution_static generation failed: {exc}\")",
+        "pass  # mutation: suppress the static generation failure warning"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_static_distribution_failure_warns_and_stops_before_publishing[export]",
+      "test_static_distribution_failure_warns_and_stops_before_publishing[rebuild]",
+      "test_static_distribution_failure_warns_and_stops_before_publishing[scrub]"
+    ],
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3936,7 +3936,7 @@\n         LOGGER.info(\"distribution_static_pptx_complete path=%s\", static_pptx_path)\n \n     except Exception as exc:\n-        warnings.append(f\"distribution_static generation failed: {exc}\")\n+        pass  # mutation: suppress the static generation failure warning\n         LOGGER.exception(\"distribution_static_failed\")\n \n     return output_paths\n"
   }
 ]

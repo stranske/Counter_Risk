@@ -1383,3 +1383,226 @@ src/counter_risk/pipeline/run.py    2636   1626    38%   149, 294, 389, 478-519,
 TOTAL                               2636   1626    38%
 Coverage JSON written to file /tmp/1217-header-targeted.json
 118 passed, 13 warnings in 1.44s
+
+
+Static distribution stage failure warning mutation
+
+Mutated: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short']
+Exit: 1
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__ test_static_distribution_failure_warns_and_stops_before_publishing[export] __
+tests/pipeline/test_run_coverage_round.py:1013: in test_static_distribution_failure_warns_and_stops_before_publishing
+    assert warnings == [
+E   AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+E
+E     Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           'earlier warning',
+E     -     'distribution_static generation failed: static stage unavailable',
+E       ]
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:3940 distribution_static_failed
+Traceback (most recent call last):
+  File "/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py", line 3922, in _create_static_distribution
+    slide_images = export_ppt_slides_as_png_via_com(
+        source_pptx=source_pptx,
+        slide_images_dir=slide_images_dir,
+    )
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: static stage unavailable
+_ test_static_distribution_failure_warns_and_stops_before_publishing[rebuild] __
+tests/pipeline/test_run_coverage_round.py:1013: in test_static_distribution_failure_warns_and_stops_before_publishing
+    assert warnings == [
+E   AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+E
+E     Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           'earlier warning',
+E     -     'distribution_static generation failed: static stage unavailable',
+E       ]
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:3940 distribution_static_failed
+Traceback (most recent call last):
+  File "/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py", line 3926, in _create_static_distribution
+    _rebuild_pptx_from_slide_images(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        source_pptx=source_pptx,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+        output_path=static_pptx_path,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        slide_images=slide_images,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: static stage unavailable
+__ test_static_distribution_failure_warns_and_stops_before_publishing[scrub] ___
+tests/pipeline/test_run_coverage_round.py:1013: in test_static_distribution_failure_warns_and_stops_before_publishing
+    assert warnings == [
+E   AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+E
+E     Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           'earlier warning',
+E     -     'distribution_static generation failed: static stage unavailable',
+E       ]
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:3940 distribution_static_failed
+Traceback (most recent call last):
+  File "/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py", line 3931, in _create_static_distribution
+    scrub_external_relationships_from_pptx(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        static_pptx_path,
+        ^^^^^^^^^^^^^^^^^
+        scrubbed_pptx_path=static_pptx_path,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: static stage unavailable
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing[export] - AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+
+  Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        'earlier warning',
+  -     'distribution_static generation failed: static stage unavailable',
+    ]
+FAILED tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing[rebuild] - AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+
+  Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        'earlier warning',
+  -     'distribution_static generation failed: static stage unavailable',
+    ]
+FAILED tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing[scrub] - AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+
+  Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        'earlier warning',
+  -     'distribution_static generation failed: static stage unavailable',
+    ]
+3 failed, 13 warnings in 0.53s
+
+
+Restored: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short']
+Exit: 0
+...                                                                      [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 13 warnings in 0.40s
+
+
+Static-distribution final full-suite verification (exit 0):
+COVERAGE_FILE=/tmp/1217-static-full.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-static-full.json -m "not slow" -q -o addopts=
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+.....................................................s.................. [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 93%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+.......................                                                  [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/counter_risk/cli/__init__.py                237      0   100%
+src/counter_risk/cli/__main__.py                  2      2     0%   3-5
+src/counter_risk/cli/mapping_diff_report.py      98     12    88%   85, 90, 93, 103, 106, 110, 113, 116, 178-181
+src/counter_risk/pipeline/run.py               2636     98    96%   566, 1007, 1092, 1250, 1428, 1501-1511, 1534, 1568, 1590-1591, 1674, 1818-1819, 1924-1926, 1955-1956, 1992, 2190, 2225, 2237, 2245-2246, 2270, 2290, 2293-2294, 2410, 2494, 2597, 2681, 2700, 2756, 2774, 3022-3024, 3054-3055, 3115-3116, 3148, 3166, 3176-3177, 3185-3186, 3209-3210, 3278, 3289, 3326, 3413, 3502, 3508, 3531, 3652-3653, 3666, 3975-3977, 4146, 4164, 4169, 4477, 4560, 4726, 4846, 4859, 4872, 4892, 4977, 5061, 5197, 5203, 5223, 5231, 5357, 5416, 5433, 5581, 5600, 5603, 5614, 5626, 5632, 5655, 5667, 5790-5791, 5897, 5913, 5943, 5963, 5974
+---------------------------------------------------------------------------
+TOTAL                                          2973    112    96%
+Coverage JSON written to file /tmp/1217-static-full.json
+2614 passed, 1 skipped, 87 deselected, 13 warnings in 230.64s (0:03:50)
+
+Targeted verification: 121 passed, exit 0; pipeline Cover column 39% (1026/2636).
+Case audit: {"mutations": 60, "collected_cases": 136, "proven_cases": 136, "omissions": [], "uncollected_cases": [], "duplicates": [], "mutated_restored_exit_pairs": [[1, 0]]}
+
+Required Black check (exit 0, helper described in PR body):
+All done! ✨ 🍰 ✨
+398 files would be left unchanged.
+
+CI Black check (exit 0, helper described in PR body):
+All done! ✨ 🍰 ✨
+398 files would be left unchanged.
