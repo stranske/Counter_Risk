@@ -1,0 +1,45 @@
+{
+  "source": "src/counter_risk/parsers/nisa.py",
+  "mutation": "Restore the original generic-notional-first alias order",
+  "command": [
+    "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+    "-m",
+    "pytest",
+    "tests/test_nisa_all_programs_parser.py::test_parser_distinguishes_notional_change_before_notional",
+    "-m",
+    "not slow",
+    "-q",
+    "--tb=short"
+  ],
+  "fixed_sha256": "23dd89f2cdb22cb8752e861d1871c4bc752e18c1b789f3d055fb726c096b2fa3",
+  "broken_sha256": "faa1c31845c32439932a88ef24428903b713a6fcccaf43555f124fc48f2a5c72",
+  "red": {
+    "exit_code": 1,
+    "tests": [
+      {
+        "name": "test_parser_distinguishes_notional_change_before_notional[Notional Change]",
+        "outcome": "failed"
+      },
+      {
+        "name": "test_parser_distinguishes_notional_change_before_notional[Notional Change From Prior Month]",
+        "outcome": "failed"
+      }
+    ],
+    "output": "============================= test session starts ==============================\nplatform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0\nrootdir: /tmp/counter-risk-1218-notional-alias\nconfigfile: pyproject.toml\nplugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1\ncollected 2 items\n\ntests/test_nisa_all_programs_parser.py FF                                [100%]\n\n=================================== FAILURES ===================================\n__ test_parser_distinguishes_notional_change_before_notional[Notional Change] __\ntests/test_nisa_all_programs_parser.py:447: in test_parser_distinguishes_notional_change_before_notional\n    parsed = parse_nisa_all_programs(path)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsrc/counter_risk/parsers/nisa.py:167: in parse_nisa_all_programs\n    worksheet, header_row, header_columns = _select_worksheet_and_headers(workbook=workbook)\n                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsrc/counter_risk/parsers/nisa.py:247: in _select_worksheet_and_headers\n    raise ValueError(\nE   ValueError: Missing required headers: cash, tips, treasury, equity, commodity, currency, notional, notional_change, annualized_volatility; evaluated sheets: Data\n_ test_parser_distinguishes_notional_change_before_notional[Notional Change From Prior Month] _\ntests/test_nisa_all_programs_parser.py:447: in test_parser_distinguishes_notional_change_before_notional\n    parsed = parse_nisa_all_programs(path)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsrc/counter_risk/parsers/nisa.py:167: in parse_nisa_all_programs\n    worksheet, header_row, header_columns = _select_worksheet_and_headers(workbook=workbook)\n                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nsrc/counter_risk/parsers/nisa.py:247: in _select_worksheet_and_headers\n    raise ValueError(\nE   ValueError: Missing required headers: cash, tips, treasury, equity, commodity, currency, notional, notional_change, annualized_volatility; evaluated sheets: Data\n=============================== warnings summary ===============================\n../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n----------------- generated xml file: /tmp/nisa-alias-red.xml ------------------\n=========================== short test summary info ============================\nFAILED tests/test_nisa_all_programs_parser.py::test_parser_distinguishes_notional_change_before_notional[Notional Change] - ValueError: Missing required headers: cash, tips, treasury, equity, commodity, currency, notional, notional_change, annualized_volatility; evaluated sheets: Data\nFAILED tests/test_nisa_all_programs_parser.py::test_parser_distinguishes_notional_change_before_notional[Notional Change From Prior Month] - ValueError: Missing required headers: cash, tips, treasury, equity, commodity, currency, notional, notional_change, annualized_volatility; evaluated sheets: Data\n======================== 2 failed, 13 warnings in 1.17s ========================\n"
+  },
+  "green": {
+    "exit_code": 0,
+    "tests": [
+      {
+        "name": "test_parser_distinguishes_notional_change_before_notional[Notional Change]",
+        "outcome": "passed"
+      },
+      {
+        "name": "test_parser_distinguishes_notional_change_before_notional[Notional Change From Prior Month]",
+        "outcome": "passed"
+      }
+    ],
+    "output": "============================= test session starts ==============================\nplatform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0\nrootdir: /tmp/counter-risk-1218-notional-alias\nconfigfile: pyproject.toml\nplugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1\ncollected 2 items\n\ntests/test_nisa_all_programs_parser.py ..                                [100%]\n\n=============================== warnings summary ===============================\n../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n---------------- generated xml file: /tmp/nisa-alias-green.xml -----------------\n======================== 2 passed, 13 warnings in 1.26s ========================\n"
+  },
+  "restored_sha256": "23dd89f2cdb22cb8752e861d1871c4bc752e18c1b789f3d055fb726c096b2fa3"
+}

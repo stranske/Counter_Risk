@@ -426,6 +426,36 @@ def test_parser_handles_reordered_columns(tmp_path: Path) -> None:
     _assert_expected_rows(parsed)
 
 
+@pytest.mark.parametrize("change_label", ["Notional Change", "Notional Change From Prior Month"])
+def test_parser_distinguishes_notional_change_before_notional(
+    tmp_path: Path, change_label: str
+) -> None:
+    import openpyxl
+
+    header_order = tuple(reversed(_CANONICAL_HEADERS))
+    path = _build_raw_nisa_workbook(
+        tmp_path / "notional-change-first.xlsx", header_order=header_order
+    )
+    workbook = openpyxl.load_workbook(path)
+    try:
+        change_column = 2 + header_order.index("notional_change")
+        workbook.active.cell(4, change_column).value = change_label
+        workbook.save(path)
+    finally:
+        workbook.close()
+
+    parsed = parse_nisa_all_programs(path)
+
+    assert [row.counterparty for row in parsed.ch_rows] == ["Alpha Bank", "Beta Bank"]
+    assert [(row.notional, row.notional_change) for row in parsed.ch_rows] == [
+        (210, 5),
+        (21, 1),
+    ]
+    assert [
+        (row.counterparty, row.notional, row.notional_change) for row in parsed.totals_rows
+    ] == [("Alpha Bank", 210, 5)]
+
+
 @pytest.mark.parametrize("segment_column", [1, 3], ids=["first-column", "adjacent-column"])
 def test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows(
     tmp_path: Path, segment_column: int

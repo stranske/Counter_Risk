@@ -42,13 +42,14 @@ _HEADER_ALIASES: dict[str, tuple[str, ...]] = {
     "equity": ("equity",),
     "commodity": ("commodity",),
     "currency": ("currency",),
-    "notional": ("notional",),
+    # Match the specific label before its "notional" substring, regardless of column order.
     "notional_change": (
         "notional change from prior month",
         "notional change",
         "from prior month***",
         "from prior month",
     ),
+    "notional": ("notional",),
     "annualized_volatility": ("annualized volatility",),
 }
 
