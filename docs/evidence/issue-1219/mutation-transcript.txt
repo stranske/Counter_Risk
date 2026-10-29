@@ -1,0 +1,2508 @@
+=== tests/test_web_demo_helpers.py::test_resolve_config_path_prefers_absolute_config_then_test_fixture: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_resolve_config_path_prefers_absolute_config_then_test_fixture ______
+tests/test_web_demo_helpers.py:25: in test_resolve_config_path_prefers_absolute_config_then_test_fixture
+    assert web_demo._resolve_config_path(absolute, config_dir=config_dir) == absolute.resolve()
+E   AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0') == PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0/absolute.csv')
+E    +  where PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0') = <function _resolve_config_path at 0x7e46eeb64eb0>(PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0/absolute.csv'), config_dir=PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0/config'))
+E    +    where <function _resolve_config_path at 0x7e46eeb64eb0> = web_demo._resolve_config_path
+E    +  and   PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0/absolute.csv') = resolve()
+E    +    where resolve = PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0/absolute.csv').resolve
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_resolve_config_path_prefers_absolute_config_then_test_fixture - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0') == PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0/absolute.csv')
+ +  where PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0') = <function _resolve_config_path at 0x7e46eeb64eb0>(PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0/absolute.csv'), config_dir=PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0/config'))
+ +    where <function _resolve_config_path at 0x7e46eeb64eb0> = web_demo._resolve_config_path
+ +  and   PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0/absolute.csv') = resolve()
+ +    where resolve = PosixPath('/tmp/pytest-of-runner/pytest-10/test_resolve_config_path_prefe0/absolute.csv').resolve
+1 failed, 13 warnings in 1.13s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.23s
+
+=== tests/test_web_demo_helpers.py::test_resolve_config_path_uses_repo_test_path_when_present: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_resolve_config_path_uses_repo_test_path_when_present ___________
+tests/test_web_demo_helpers.py:46: in test_resolve_config_path_uses_repo_test_path_when_present
+    assert (
+E   AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-12/test_resolve_config_path_uses_0/config/fixtures/input.csv') == PosixPath('/tmp/pytest-of-runner/pytest-12/test_resolve_config_path_uses_0/repo/tests/fixtures/input.csv')
+E    +  where PosixPath('/tmp/pytest-of-runner/pytest-12/test_resolve_config_path_uses_0/config/fixtures/input.csv') = <function _resolve_config_path at 0x7d8d52d78f60>(PosixPath('fixtures/input.csv'), config_dir=PosixPath('/tmp/pytest-of-runner/pytest-12/test_resolve_config_path_uses_0/config'))
+E    +    where <function _resolve_config_path at 0x7d8d52d78f60> = web_demo._resolve_config_path
+E    +    and   PosixPath('fixtures/input.csv') = Path('fixtures/input.csv')
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_resolve_config_path_uses_repo_test_path_when_present - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-12/test_resolve_config_path_uses_0/config/fixtures/input.csv') == PosixPath('/tmp/pytest-of-runner/pytest-12/test_resolve_config_path_uses_0/repo/tests/fixtures/input.csv')
+ +  where PosixPath('/tmp/pytest-of-runner/pytest-12/test_resolve_config_path_uses_0/config/fixtures/input.csv') = <function _resolve_config_path at 0x7d8d52d78f60>(PosixPath('fixtures/input.csv'), config_dir=PosixPath('/tmp/pytest-of-runner/pytest-12/test_resolve_config_path_uses_0/config'))
+ +    where <function _resolve_config_path at 0x7d8d52d78f60> = web_demo._resolve_config_path
+ +    and   PosixPath('fixtures/input.csv') = Path('fixtures/input.csv')
+1 failed, 13 warnings in 0.28s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.24s
+
+=== tests/test_web_demo_helpers.py::test_materialize_config_only_writes_relocated_paths: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_materialize_config_only_writes_relocated_paths ______________
+tests/test_web_demo_helpers.py:72: in test_materialize_config_only_writes_relocated_paths
+    assert yaml.safe_load(copied.read_text(encoding="utf-8")) == {
+E   AssertionError: assert {'ignored': 3.../source.xlsx'} == {'mosers_all_... 'ignored': 3}
+E
+E     Omitting 1 identical items, use -vv to show
+E     Differing items:
+E     {'mosers_all_programs_xlsx': 'fixtures/source.xlsx'} != {'mosers_all_programs_xlsx': '/tmp/pytest-of-runner/pytest-14/test_materialize_config_only_w0/repo/tests/fixtures/source.xlsx'}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E     -     'mosers_all_programs_xlsx': '/tmp/pytest-of-runner/pytest-14/test_materialize_config_only_w0/repo/tests/fixtures/source.xlsx',
+E           'ignored': 3,
+E     +     'mosers_all_programs_xlsx': 'fixtures/source.xlsx',
+E       }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_materialize_config_only_writes_relocated_paths - AssertionError: assert {'ignored': 3.../source.xlsx'} == {'mosers_all_... 'ignored': 3}
+
+  Omitting 1 identical items, use -vv to show
+  Differing items:
+  {'mosers_all_programs_xlsx': 'fixtures/source.xlsx'} != {'mosers_all_programs_xlsx': '/tmp/pytest-of-runner/pytest-14/test_materialize_config_only_w0/repo/tests/fixtures/source.xlsx'}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+  -     'mosers_all_programs_xlsx': '/tmp/pytest-of-runner/pytest-14/test_materialize_config_only_w0/repo/tests/fixtures/source.xlsx',
+        'ignored': 3,
+  +     'mosers_all_programs_xlsx': 'fixtures/source.xlsx',
+    }
+1 failed, 13 warnings in 0.30s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.23s
+
+=== tests/test_web_demo_helpers.py::test_materialize_config_preserves_local_config_and_rejects_non_mapping: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_materialize_config_preserves_local_config_and_rejects_non_mapping ____
+tests/test_web_demo_helpers.py:90: in test_materialize_config_preserves_local_config_and_rejects_non_mapping
+    with pytest.raises(ValueError, match="must be a mapping"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'must be a mapping'
+E     Actual message: 'Web demo config has invalid type: /tmp/pytest-of-runner/pytest-16/test_materialize_config_preser0/demo.yml'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_materialize_config_preserves_local_config_and_rejects_non_mapping - AssertionError: Regex pattern did not match.
+  Expected regex: 'must be a mapping'
+  Actual message: 'Web demo config has invalid type: /tmp/pytest-of-runner/pytest-16/test_materialize_config_preser0/demo.yml'
+1 failed, 13 warnings in 0.29s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.22s
+
+=== tests/test_web_demo_helpers.py::test_fixture_sources_and_assertion_cover_optional_sources: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_fixture_sources_and_assertion_cover_optional_sources ___________
+tests/test_web_demo_helpers.py:126: in test_fixture_sources_and_assertion_cover_optional_sources
+    assert set(web_demo._fixture_sources(config)) == {
+E   AssertionError: assert set() == {'input_disco..._inputs.main'}
+E
+E     Extra items in the right set:
+E     'input_discovery.directory_roots.source'
+E     'mosers_all_programs_xlsx'
+E     'screenshot_inputs.main'
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + set()
+E     - {
+E     -     'input_discovery.directory_roots.source',
+E     -     'mosers_all_programs_xlsx',
+E     -     'screenshot_inputs.main',
+E     - }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_fixture_sources_and_assertion_cover_optional_sources - AssertionError: assert set() == {'input_disco..._inputs.main'}
+
+  Extra items in the right set:
+  'input_discovery.directory_roots.source'
+  'mosers_all_programs_xlsx'
+  'screenshot_inputs.main'
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  + set()
+  - {
+  -     'input_discovery.directory_roots.source',
+  -     'mosers_all_programs_xlsx',
+  -     'screenshot_inputs.main',
+  - }
+1 failed, 13 warnings in 0.29s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.22s
+
+=== tests/test_web_demo_helpers.py::test_chat_runtime_guard_only_rejects_new_import: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_chat_runtime_guard_only_rejects_new_import ________________
+tests/test_web_demo_helpers.py:147: in test_chat_runtime_guard_only_rejects_new_import
+    with pytest.raises(RuntimeError, match="unexpectedly loaded"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'unexpectedly loaded'
+E     Actual message: 'Web demo imported an unavailable module: counter_risk.chat.providers.langchain_runtime'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_chat_runtime_guard_only_rejects_new_import - AssertionError: Regex pattern did not match.
+  Expected regex: 'unexpectedly loaded'
+  Actual message: 'Web demo imported an unavailable module: counter_risk.chat.providers.langchain_runtime'
+1 failed, 13 warnings in 0.28s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.23s
+
+=== tests/test_web_demo_helpers.py::test_summary_and_manifest_path_normalization: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________ test_summary_and_manifest_path_normalization _________________
+tests/test_web_demo_helpers.py:171: in test_summary_and_manifest_path_normalization
+    assert "Config: config/fixture.yml" in summary.read_text(encoding="utf-8")
+E   AssertionError: assert 'Config: config/fixture.yml' in 'Counter Risk browser demo data-quality summary\n\nMode: synthetic fixture replay\nData zone: no real/proprietary data...M boundary: chat disabled via COUNTER_RISK_CHAT_OFFLINE_MODE=1\nConfig: fixture.yml\n\nFixture sources:\n- input.csv\n'
+E    +  where 'Counter Risk browser demo data-quality summary\n\nMode: synthetic fixture replay\nData zone: no real/proprietary data...M boundary: chat disabled via COUNTER_RISK_CHAT_OFFLINE_MODE=1\nConfig: fixture.yml\n\nFixture sources:\n- input.csv\n' = read_text(encoding='utf-8')
+E    +    where read_text = PosixPath('/tmp/pytest-of-runner/pytest-20/test_summary_and_manifest_path0/run/DATA_QUALITY_SUMMARY.txt').read_text
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_summary_and_manifest_path_normalization - AssertionError: assert 'Config: config/fixture.yml' in 'Counter Risk browser demo data-quality summary\n\nMode: synthetic fixture replay\nData zone: no real/proprietary data...M boundary: chat disabled via COUNTER_RISK_CHAT_OFFLINE_MODE=1\nConfig: fixture.yml\n\nFixture sources:\n- input.csv\n'
+ +  where 'Counter Risk browser demo data-quality summary\n\nMode: synthetic fixture replay\nData zone: no real/proprietary data...M boundary: chat disabled via COUNTER_RISK_CHAT_OFFLINE_MODE=1\nConfig: fixture.yml\n\nFixture sources:\n- input.csv\n' = read_text(encoding='utf-8')
+ +    where read_text = PosixPath('/tmp/pytest-of-runner/pytest-20/test_summary_and_manifest_path0/run/DATA_QUALITY_SUMMARY.txt').read_text
+1 failed, 13 warnings in 0.29s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.22s
+
+=== tests/test_web_demo_helpers.py::test_run_web_demo_pipeline_annotates_manifest_and_preserves_offline_boundary: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_run_web_demo_pipeline_annotates_manifest_and_preserves_offline_boundary _
+tests/test_web_demo_helpers.py:213: in test_run_web_demo_pipeline_annotates_manifest_and_preserves_offline_boundary
+    assert manifest["data_zone"] == "synthetic-fixtures-only"
+E   AssertionError: assert 'unknown' == 'synthetic-fixtures-only'
+E
+E     - synthetic-fixtures-only
+E     + unknown
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_run_web_demo_pipeline_annotates_manifest_and_preserves_offline_boundary - AssertionError: assert 'unknown' == 'synthetic-fixtures-only'
+
+  - synthetic-fixtures-only
+  + unknown
+1 failed, 13 warnings in 0.27s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.23s
+
+=== tests/parsers/test_repo_cash_source_edges.py::test_inferred_workbook_source_skips_empty_headers_and_rows: RED ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______ test_inferred_workbook_source_skips_empty_headers_and_rows[.xlsx] _______
+tests/parsers/test_repo_cash_source_edges.py:29: in test_inferred_workbook_source_skips_empty_headers_and_rows
+    assert load_repo_cash_structured_source(path) == {"CIBC": 0.0}
+E   AssertionError: assert {'CIBC': 1.0} == {'CIBC': 0.0}
+E
+E     Differing items:
+E     {'CIBC': 1.0} != {'CIBC': 0.0}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E     -     'CIBC': 0.0,
+E     ?             ^
+E     +     'CIBC': 1.0,
+E     ?             ^
+E       }
+______ test_inferred_workbook_source_skips_empty_headers_and_rows[.xlsm] _______
+tests/parsers/test_repo_cash_source_edges.py:29: in test_inferred_workbook_source_skips_empty_headers_and_rows
+    assert load_repo_cash_structured_source(path) == {"CIBC": 0.0}
+E   AssertionError: assert {'CIBC': 1.0} == {'CIBC': 0.0}
+E
+E     Differing items:
+E     {'CIBC': 1.0} != {'CIBC': 0.0}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E     -     'CIBC': 0.0,
+E     ?             ^
+E     +     'CIBC': 1.0,
+E     ?             ^
+E       }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_inferred_workbook_source_skips_empty_headers_and_rows[.xlsx] - AssertionError: assert {'CIBC': 1.0} == {'CIBC': 0.0}
+
+  Differing items:
+  {'CIBC': 1.0} != {'CIBC': 0.0}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+  -     'CIBC': 0.0,
+  ?             ^
+  +     'CIBC': 1.0,
+  ?             ^
+    }
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_inferred_workbook_source_skips_empty_headers_and_rows[.xlsm] - AssertionError: assert {'CIBC': 1.0} == {'CIBC': 0.0}
+
+  Differing items:
+  {'CIBC': 1.0} != {'CIBC': 0.0}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+  -     'CIBC': 0.0,
+  ?             ^
+  +     'CIBC': 1.0,
+  ?             ^
+    }
+2 failed, 13 warnings in 0.35s
+
+=== RESTORED GREEN ===
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.27s
+
+=== tests/parsers/test_repo_cash_source_edges.py::test_empty_structured_sources_and_overrides: RED ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+______________ test_empty_structured_sources_and_overrides[.csv] _______________
+tests/parsers/test_repo_cash_source_edges.py:48: in test_empty_structured_sources_and_overrides
+    assert load_repo_cash_overrides_csv(path) == ({}, [])
+E   AssertionError: assert ({'unexpected': 1.0}, []) == ({}, [])
+E
+E     At index 0 diff: {'unexpected': 1.0} != {}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       (
+E     -     {},
+E     ?      --
+E     +     {
+E     +         'unexpected': 1.0,
+E     +     },
+E           [],
+E       )
+______________ test_empty_structured_sources_and_overrides[.xlsx] ______________
+tests/parsers/test_repo_cash_source_edges.py:49: in test_empty_structured_sources_and_overrides
+    assert load_repo_cash_structured_source(path) == {}
+E   AssertionError: assert {'unexpected': 1.0} == {}
+E
+E     Left contains 1 more item:
+E     {'unexpected': 1.0}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     - {}
+E     + {
+E     +     'unexpected': 1.0,
+E     + }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_empty_structured_sources_and_overrides[.csv] - AssertionError: assert ({'unexpected': 1.0}, []) == ({}, [])
+
+  At index 0 diff: {'unexpected': 1.0} != {}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  -     {},
+  ?      --
+  +     {
+  +         'unexpected': 1.0,
+  +     },
+        [],
+    )
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_empty_structured_sources_and_overrides[.xlsx] - AssertionError: assert {'unexpected': 1.0} == {}
+
+  Left contains 1 more item:
+  {'unexpected': 1.0}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  - {}
+  + {
+  +     'unexpected': 1.0,
+  + }
+2 failed, 13 warnings in 0.32s
+
+=== RESTORED GREEN ===
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.26s
+
+=== tests/parsers/test_repo_cash_source_edges.py::test_override_blank_fields_are_skipped_and_empty_overrides_preserve_source: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_override_blank_fields_are_skipped_and_empty_overrides_preserve_source __
+tests/parsers/test_repo_cash_source_edges.py:62: in test_override_blank_fields_are_skipped_and_empty_overrides_preserve_source
+    assert load_repo_cash_overrides_csv(overrides) == ({}, [])
+E   AssertionError: assert ({'unexpected': 1.0}, []) == ({}, [])
+E
+E     At index 0 diff: {'unexpected': 1.0} != {}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       (
+E     -     {},
+E     ?      --
+E     +     {
+E     +         'unexpected': 1.0,
+E     +     },
+E           [],
+E       )
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_override_blank_fields_are_skipped_and_empty_overrides_preserve_source - AssertionError: assert ({'unexpected': 1.0}, []) == ({}, [])
+
+  At index 0 diff: {'unexpected': 1.0} != {}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  -     {},
+  ?      --
+  +     {
+  +         'unexpected': 1.0,
+  +     },
+        [],
+    )
+1 failed, 13 warnings in 0.12s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.07s
+
+=== tests/parsers/test_repo_cash_source_edges.py::test_structured_source_rejects_unsupported_type_or_extension: RED ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_structured_source_rejects_unsupported_type_or_extension[xlsx-cash.csv-cash_source_type=xlsx requires a .xlsx/.xlsm file path] _
+tests/parsers/test_repo_cash_source_edges.py:79: in test_structured_source_rejects_unsupported_type_or_extension
+    with pytest.raises(ValueError, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'cash_source_type=xlsx requires a .xlsx/.xlsm file path'
+E     Actual message: "Unsupported workbook type, got '/tmp/pytest-of-runner/pytest-30/test_structured_source_rejects0/cash.csv'."
+_ test_structured_source_rejects_unsupported_type_or_extension[None-cash.txt-Unsupported cash source extension] _
+tests/parsers/test_repo_cash_source_edges.py:79: in test_structured_source_rejects_unsupported_type_or_extension
+    with pytest.raises(ValueError, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Unsupported cash source extension'
+E     Actual message: "Unsupported format for '/tmp/pytest-of-runner/pytest-30/test_structured_source_rejects1/cash.txt'."
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_structured_source_rejects_unsupported_type_or_extension[xlsx-cash.csv-cash_source_type=xlsx requires a .xlsx/.xlsm file path] - AssertionError: Regex pattern did not match.
+  Expected regex: 'cash_source_type=xlsx requires a .xlsx/.xlsm file path'
+  Actual message: "Unsupported workbook type, got '/tmp/pytest-of-runner/pytest-30/test_structured_source_rejects0/cash.csv'."
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_structured_source_rejects_unsupported_type_or_extension[None-cash.txt-Unsupported cash source extension] - AssertionError: Regex pattern did not match.
+  Expected regex: 'Unsupported cash source extension'
+  Actual message: "Unsupported format for '/tmp/pytest-of-runner/pytest-30/test_structured_source_rejects1/cash.txt'."
+2 failed, 13 warnings in 0.12s
+
+=== RESTORED GREEN ===
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.07s
+
+=== tests/parsers/test_repo_cash_source_edges.py::test_cash_dispatch_rejects_unknown_extension: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________ test_cash_dispatch_rejects_unknown_extension _________________
+tests/parsers/test_repo_cash_source_edges.py:84: in test_cash_dispatch_rejects_unknown_extension
+    with pytest.raises(ValueError, match="Cannot determine cash source type"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Cannot determine cash source type'
+E     Actual message: "Unsupported input format for '/tmp/pytest-of-runner/pytest-32/test_cash_dispatch_rejects_unk0/cash.txt'."
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_cash_dispatch_rejects_unknown_extension - AssertionError: Regex pattern did not match.
+  Expected regex: 'Cannot determine cash source type'
+  Actual message: "Unsupported input format for '/tmp/pytest-of-runner/pytest-32/test_cash_dispatch_rejects_unk0/cash.txt'."
+1 failed, 13 warnings in 0.12s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.07s
+
+=== tests/parsers/test_repo_cash_source_edges.py::test_pdf_inference_uses_default_parser: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________________ test_pdf_inference_uses_default_parser ____________________
+tests/parsers/test_repo_cash_source_edges.py:97: in test_pdf_inference_uses_default_parser
+    assert load_cash_by_counterparty(source_type=None, source_path=path) == (
+E   AssertionError: assert ({}, [], 'pdf...cash.PDF', []) == ({'CIBC': 7.0...cash.PDF', [])
+E
+E     At index 0 diff: {} != {'CIBC': 7.0}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       (
+E     -     {
+E     -         'CIBC': 7.0,
+E     -     },
+E     +     {},
+E     ?     +
+E           [],
+E           'pdf:/tmp/pytest-of-runner/pytest-34/test_pdf_inference_uses_defaul0/cash.PDF',
+E           [],
+E       )
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_pdf_inference_uses_default_parser - AssertionError: assert ({}, [], 'pdf...cash.PDF', []) == ({'CIBC': 7.0...cash.PDF', [])
+
+  At index 0 diff: {} != {'CIBC': 7.0}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  -     {
+  -         'CIBC': 7.0,
+  -     },
+  +     {},
+  ?     +
+        [],
+        'pdf:/tmp/pytest-of-runner/pytest-34/test_pdf_inference_uses_defaul0/cash.PDF',
+        [],
+    )
+1 failed, 13 warnings in 0.12s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.07s
+
+=== tests/parsers/test_repo_cash_source_edges.py::test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe: RED ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe[counterparty,other] _
+tests/parsers/test_repo_cash_source_edges.py:113: in test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe
+    with pytest.raises(ValueError, match="must include counterparty and cash columns"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'must include counterparty and cash columns'
+E     Actual message: "Structured cash source '/tmp/pytest-of-runner/pytest-36/test_missing_cash_schema_is_re0/cash.csv' has an invalid schema."
+_ test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe[other,cash_value] _
+tests/parsers/test_repo_cash_source_edges.py:113: in test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe
+    with pytest.raises(ValueError, match="must include counterparty and cash columns"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'must include counterparty and cash columns'
+E     Actual message: "Structured cash source '/tmp/pytest-of-runner/pytest-36/test_missing_cash_schema_is_re1/cash.csv' has an invalid schema."
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe[counterparty,other] - AssertionError: Regex pattern did not match.
+  Expected regex: 'must include counterparty and cash columns'
+  Actual message: "Structured cash source '/tmp/pytest-of-runner/pytest-36/test_missing_cash_schema_is_re0/cash.csv' has an invalid schema."
+FAILED tests/parsers/test_repo_cash_source_edges.py::test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe[other,cash_value] - AssertionError: Regex pattern did not match.
+  Expected regex: 'must include counterparty and cash columns'
+  Actual message: "Structured cash source '/tmp/pytest-of-runner/pytest-36/test_missing_cash_schema_is_re1/cash.csv' has an invalid schema."
+2 failed, 13 warnings in 0.13s
+
+=== RESTORED GREEN ===
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.08s
+
+=== tests/compute/test_limits_edges.py::test_sequence_limits_accept_models_and_mappings_and_skip_null_name_alias: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_sequence_limits_accept_models_and_mappings_and_skip_null_name_alias ___
+tests/compute/test_limits_edges.py:31: in test_sequence_limits_accept_models_and_mappings_and_skip_null_name_alias
+    assert len(rows) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits_edges.py::test_sequence_limits_accept_models_and_mappings_and_skip_null_name_alias - assert 0 == 1
+ +  where 0 = len([])
+1 failed, 13 warnings in 0.38s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.30s
+
+=== tests/compute/test_limits_edges.py::test_sequence_limits_report_invalid_entries: RED ===
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_sequence_limits_report_invalid_entries[entries0-TypeError-sequence items must be LimitEntry or mappings \\(index 0\\)] _
+tests/compute/test_limits_edges.py:49: in test_sequence_limits_report_invalid_entries
+    with pytest.raises(error, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'sequence items must be LimitEntry or mappings \\(index 0\\)'
+E     Actual message: 'Unsupported limit entry (index 0)'
+_ test_sequence_limits_report_invalid_entries[entries1-ValueError-limits_cfg is invalid] _
+tests/compute/test_limits_edges.py:49: in test_sequence_limits_report_invalid_entries
+    with pytest.raises(error, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'limits_cfg is invalid'
+E     Actual message: 'Invalid limits configuration: 4 validation errors for LimitsConfig\nlimits.0.entity_type\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\nlimits.0.entity_name\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\nlimits.0.limit_value\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\nlimits.0.limit_kind\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing'
+_ test_sequence_limits_report_invalid_entries[entries2-ValueError-limits_cfg is invalid] _
+tests/compute/test_limits_edges.py:49: in test_sequence_limits_report_invalid_entries
+    with pytest.raises(error, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'limits_cfg is invalid'
+E     Actual message: 'Invalid limits configuration: 1 validation error for LimitsConfig\nlimits\n  List should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.14/v/too_short'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits_edges.py::test_sequence_limits_report_invalid_entries[entries0-TypeError-sequence items must be LimitEntry or mappings \\(index 0\\)] - AssertionError: Regex pattern did not match.
+  Expected regex: 'sequence items must be LimitEntry or mappings \\(index 0\\)'
+  Actual message: 'Unsupported limit entry (index 0)'
+FAILED tests/compute/test_limits_edges.py::test_sequence_limits_report_invalid_entries[entries1-ValueError-limits_cfg is invalid] - AssertionError: Regex pattern did not match.
+  Expected regex: 'limits_cfg is invalid'
+  Actual message: 'Invalid limits configuration: 4 validation errors for LimitsConfig\nlimits.0.entity_type\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\nlimits.0.entity_name\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\nlimits.0.limit_value\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing\nlimits.0.limit_kind\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing'
+FAILED tests/compute/test_limits_edges.py::test_sequence_limits_report_invalid_entries[entries2-ValueError-limits_cfg is invalid] - AssertionError: Regex pattern did not match.
+  Expected regex: 'limits_cfg is invalid'
+  Actual message: 'Invalid limits configuration: 1 validation error for LimitsConfig\nlimits\n  List should have at least 1 item after validation, not 0 [type=too_short, input_value=[], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.14/v/too_short'
+3 failed, 13 warnings in 0.11s
+
+=== RESTORED GREEN ===
+...                                                                      [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 13 warnings in 0.05s
+
+=== tests/compute/test_limits_edges.py::test_exposure_row_validation_names_the_bad_index: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_exposure_row_validation_names_the_bad_index _______________
+tests/compute/test_limits_edges.py:54: in test_exposure_row_validation_names_the_bad_index
+    with pytest.raises(TypeError, match="exposures_df row at index 1 must be a mapping"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'exposures_df row at index 1 must be a mapping'
+E     Actual message: 'exposures_df row must contain exposure data'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits_edges.py::test_exposure_row_validation_names_the_bad_index - AssertionError: Regex pattern did not match.
+  Expected regex: 'exposures_df row at index 1 must be a mapping'
+  Actual message: 'exposures_df row must contain exposure data'
+1 failed, 13 warnings in 0.10s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.05s
+
+=== tests/compute/test_limits_edges.py::test_limits_reject_nonfinite_exposure_magnitudes: RED ===
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_limits_reject_nonfinite_exposure_magnitudes[nan] _____________
+tests/compute/test_limits_edges.py:60: in test_limits_reject_nonfinite_exposure_magnitudes
+    with pytest.raises(ValueError, match="exposures_df notional values must be finite"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'exposures_df notional values must be finite'
+E     Actual message: 'Invalid notional'
+____________ test_limits_reject_nonfinite_exposure_magnitudes[inf] _____________
+tests/compute/test_limits_edges.py:60: in test_limits_reject_nonfinite_exposure_magnitudes
+    with pytest.raises(ValueError, match="exposures_df notional values must be finite"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'exposures_df notional values must be finite'
+E     Actual message: 'Invalid notional'
+____________ test_limits_reject_nonfinite_exposure_magnitudes[-inf] ____________
+tests/compute/test_limits_edges.py:60: in test_limits_reject_nonfinite_exposure_magnitudes
+    with pytest.raises(ValueError, match="exposures_df notional values must be finite"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'exposures_df notional values must be finite'
+E     Actual message: 'Invalid notional'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits_edges.py::test_limits_reject_nonfinite_exposure_magnitudes[nan] - AssertionError: Regex pattern did not match.
+  Expected regex: 'exposures_df notional values must be finite'
+  Actual message: 'Invalid notional'
+FAILED tests/compute/test_limits_edges.py::test_limits_reject_nonfinite_exposure_magnitudes[inf] - AssertionError: Regex pattern did not match.
+  Expected regex: 'exposures_df notional values must be finite'
+  Actual message: 'Invalid notional'
+FAILED tests/compute/test_limits_edges.py::test_limits_reject_nonfinite_exposure_magnitudes[-inf] - AssertionError: Regex pattern did not match.
+  Expected regex: 'exposures_df notional values must be finite'
+  Actual message: 'Invalid notional'
+3 failed, 13 warnings in 0.11s
+
+=== RESTORED GREEN ===
+...                                                                      [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 13 warnings in 0.05s
+
+=== tests/compute/test_limits_edges.py::test_empty_breaches_csv_truncates_stale_output: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_empty_breaches_csv_truncates_stale_output ________________
+tests/compute/test_limits_edges.py:69: in test_empty_breaches_csv_truncates_stale_output
+    assert path.read_bytes() == b""
+E   AssertionError: assert b'stale breach' == b''
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     - b''
+E     + (b'stale breach')
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits_edges.py::test_empty_breaches_csv_truncates_stale_output - AssertionError: assert b'stale breach' == b''
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  - b''
+  + (b'stale breach')
+1 failed, 13 warnings in 0.10s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.05s
+
+=== tests/compute/test_limits_edges.py::test_missing_pandas_returns_records_with_ordered_columns: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_missing_pandas_returns_records_with_ordered_columns ___________
+tests/compute/test_limits_edges.py:90: in test_missing_pandas_returns_records_with_ordered_columns
+    assert check_limits([], [_limit()]) == []
+E   AssertionError: assert [{'unexpected': True}] == []
+E
+E     Left contains one more item: {'unexpected': True}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     - []
+E     + [
+E     +     {
+E     +         'unexpected': True,
+E     +     },
+E     + ]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits_edges.py::test_missing_pandas_returns_records_with_ordered_columns - AssertionError: assert [{'unexpected': True}] == []
+
+  Left contains one more item: {'unexpected': True}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  - []
+  + [
+  +     {
+  +         'unexpected': True,
+  +     },
+  + ]
+1 failed, 13 warnings in 0.10s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.06s
+
+=== tests/compute/test_limits_edges.py::test_table_projection_fills_missing_columns_without_extra_fields: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_table_projection_fills_missing_columns_without_extra_fields _______
+tests/compute/test_limits_edges.py:98: in test_table_projection_fills_missing_columns_without_extra_fields
+    assert result.to_dict(orient="records") == [{"notes": None, "actual_value": 12}]
+E   AssertionError: assert [{'notes': 'm...l_value': 12}] == [{'notes': No...l_value': 12}]
+E
+E     At index 0 diff: {'notes': 'missing', 'actual_value': 12} != {'notes': None, 'actual_value': 12}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           {
+E     -         'notes': None,
+E     ?                  ^^ ^
+E     +         'notes': 'missing',
+E     ?                  ^^^^^^ ^^
+E               'actual_value': 12,
+E           },
+E       ]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/compute/test_limits_edges.py::test_table_projection_fills_missing_columns_without_extra_fields - AssertionError: assert [{'notes': 'm...l_value': 12}] == [{'notes': No...l_value': 12}]
+
+  At index 0 diff: {'notes': 'missing', 'actual_value': 12} != {'notes': None, 'actual_value': 12}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        {
+  -         'notes': None,
+  ?                  ^^ ^
+  +         'notes': 'missing',
+  ?                  ^^^^^^ ^^
+            'actual_value': 12,
+        },
+    ]
+1 failed, 13 warnings in 0.41s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.31s
+
+=== tests/pipeline/test_data_quality_edges.py::test_reconciliation_details_use_safe_fallbacks: RED ===
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_reconciliation_details_use_safe_fallbacks[entry0-unmapped_counterparty(A, B, C)] _
+tests/pipeline/test_data_quality_edges.py:42: in test_reconciliation_details_use_safe_fallbacks
+    assert details == [
+E   AssertionError: assert [{'category':...ue=unknown.'}] == [{'category':...y(A, B, C).'}]
+E
+E     At index 0 diff: {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unknown.'} != {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unmapped_counterparty(A, B, C).'}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           {
+E               'category': 'reconciliation',
+E               'severity': 'fail',
+E               'code': 'RECONCILIATION_GAP_DETAIL',
+E               'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, '
+E     -         'impacted_rows=0, issue=unmapped_counterparty(A, B, C).',
+E     +         'impacted_rows=0, issue=unknown.',
+E           },
+E       ]
+_ test_reconciliation_details_use_safe_fallbacks[entry1-unmapped_counterparty] _
+tests/pipeline/test_data_quality_edges.py:42: in test_reconciliation_details_use_safe_fallbacks
+    assert details == [
+E   AssertionError: assert [{'category':...ue=unknown.'}] == [{'category':...unterparty.'}]
+E
+E     At index 0 diff: {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unknown.'} != {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unmapped_counterparty.'}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           {
+E               'category': 'reconciliation',
+E               'severity': 'fail',
+E               'code': 'RECONCILIATION_GAP_DETAIL',
+E               'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, '
+E     -         'impacted_rows=0, issue=unmapped_counterparty.',
+E     ?                                   ^^^^^^^^ ^ --------
+E     +         'impacted_rows=0, issue=unknown.',
+E     ?                                   ^^ ^
+E           },
+E       ]
+____ test_reconciliation_details_use_safe_fallbacks[entry2-source workbook] ____
+tests/pipeline/test_data_quality_edges.py:42: in test_reconciliation_details_use_safe_fallbacks
+    assert details == [
+E   AssertionError: assert [{'category':...ue=unknown.'}] == [{'category':...e workbook.'}]
+E
+E     At index 0 diff: {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unknown.'} != {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=source workbook.'}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           {
+E               'category': 'reconciliation',
+E               'severity': 'fail',
+E               'code': 'RECONCILIATION_GAP_DETAIL',
+E               'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, '
+E     -         'impacted_rows=0, issue=source workbook.',
+E     ?                                 ^ ----- ^^^^^^^
+E     +         'impacted_rows=0, issue=unknown.',
+E     ?                                 ^^^^  ^
+E           },
+E       ]
+__ test_reconciliation_details_use_safe_fallbacks[entry3-reconciliation_gap] ___
+tests/pipeline/test_data_quality_edges.py:42: in test_reconciliation_details_use_safe_fallbacks
+    assert details == [
+E   AssertionError: assert [{'category':...ue=unknown.'}] == [{'category':...iation_gap.'}]
+E
+E     At index 0 diff: {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unknown.'} != {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=reconciliation_gap.'}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           {
+E               'category': 'reconciliation',
+E               'severity': 'fail',
+E               'code': 'RECONCILIATION_GAP_DETAIL',
+E               'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, '
+E     -         'impacted_rows=0, issue=reconciliation_gap.',
+E     ?                                 ^^^  -------------
+E     +         'impacted_rows=0, issue=unknown.',
+E     ?                                 ^^^^ +
+E           },
+E       ]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_data_quality_edges.py::test_reconciliation_details_use_safe_fallbacks[entry0-unmapped_counterparty(A, B, C)] - AssertionError: assert [{'category':...ue=unknown.'}] == [{'category':...y(A, B, C).'}]
+
+  At index 0 diff: {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unknown.'} != {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unmapped_counterparty(A, B, C).'}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        {
+            'category': 'reconciliation',
+            'severity': 'fail',
+            'code': 'RECONCILIATION_GAP_DETAIL',
+            'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, '
+  -         'impacted_rows=0, issue=unmapped_counterparty(A, B, C).',
+  +         'impacted_rows=0, issue=unknown.',
+        },
+    ]
+FAILED tests/pipeline/test_data_quality_edges.py::test_reconciliation_details_use_safe_fallbacks[entry1-unmapped_counterparty] - AssertionError: assert [{'category':...ue=unknown.'}] == [{'category':...unterparty.'}]
+
+  At index 0 diff: {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unknown.'} != {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unmapped_counterparty.'}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        {
+            'category': 'reconciliation',
+            'severity': 'fail',
+            'code': 'RECONCILIATION_GAP_DETAIL',
+            'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, '
+  -         'impacted_rows=0, issue=unmapped_counterparty.',
+  ?                                   ^^^^^^^^ ^ --------
+  +         'impacted_rows=0, issue=unknown.',
+  ?                                   ^^ ^
+        },
+    ]
+FAILED tests/pipeline/test_data_quality_edges.py::test_reconciliation_details_use_safe_fallbacks[entry2-source workbook] - AssertionError: assert [{'category':...ue=unknown.'}] == [{'category':...e workbook.'}]
+
+  At index 0 diff: {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unknown.'} != {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=source workbook.'}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        {
+            'category': 'reconciliation',
+            'severity': 'fail',
+            'code': 'RECONCILIATION_GAP_DETAIL',
+            'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, '
+  -         'impacted_rows=0, issue=source workbook.',
+  ?                                 ^ ----- ^^^^^^^
+  +         'impacted_rows=0, issue=unknown.',
+  ?                                 ^^^^  ^
+        },
+    ]
+FAILED tests/pipeline/test_data_quality_edges.py::test_reconciliation_details_use_safe_fallbacks[entry3-reconciliation_gap] - AssertionError: assert [{'category':...ue=unknown.'}] == [{'category':...iation_gap.'}]
+
+  At index 0 diff: {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=unknown.'} != {'category': 'reconciliation', 'severity': 'fail', 'code': 'RECONCILIATION_GAP_DETAIL', 'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, impacted_rows=0, issue=reconciliation_gap.'}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        {
+            'category': 'reconciliation',
+            'severity': 'fail',
+            'code': 'RECONCILIATION_GAP_DETAIL',
+            'message': 'Reconciliation gap detail: variant=trend, sheet=unknown, '
+  -         'impacted_rows=0, issue=reconciliation_gap.',
+  ?                                 ^^^  -------------
+  +         'impacted_rows=0, issue=unknown.',
+  ?                                 ^^^^ +
+        },
+    ]
+4 failed, 13 warnings in 0.30s
+
+=== RESTORED GREEN ===
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 13 warnings in 0.24s
+
+=== tests/pipeline/test_data_quality_edges.py::test_failed_reconciliation_without_variant_map_still_reports_failure: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_failed_reconciliation_without_variant_map_still_reports_failure _____
+tests/pipeline/test_data_quality_edges.py:54: in test_failed_reconciliation_without_variant_map_still_reports_failure
+    assert [row["code"] for row in quality["findings"]] == ["RECONCILIATION_GAPS"]
+E   AssertionError: assert ['NO_FINDINGS'] == ['RECONCILIATION_GAPS']
+E
+E     At index 0 diff: 'NO_FINDINGS' != 'RECONCILIATION_GAPS'
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E     -     'RECONCILIATION_GAPS',
+E     +     'NO_FINDINGS',
+E       ]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_data_quality_edges.py::test_failed_reconciliation_without_variant_map_still_reports_failure - AssertionError: assert ['NO_FINDINGS'] == ['RECONCILIATION_GAPS']
+
+  At index 0 diff: 'NO_FINDINGS' != 'RECONCILIATION_GAPS'
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+  -     'RECONCILIATION_GAPS',
+  +     'NO_FINDINGS',
+    ]
+1 failed, 13 warnings in 0.29s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.23s
+
+=== tests/pipeline/test_data_quality_edges.py::test_warning_fallbacks_are_deduplicated_and_classified: RED ===
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_warning_fallbacks_are_deduplicated_and_classified[warning0-pipeline-fail] _
+tests/pipeline/test_data_quality_edges.py:72: in test_warning_fallbacks_are_deduplicated_and_classified
+    assert len(quality["findings"]) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([{'category': 'pipeline', 'severity': 'fail', 'code': 'SOURCE_ERROR', 'message': 'Source unavailable'}, {'category': 'pipeline', 'severity': 'fail', 'code': 'SOURCE_ERROR', 'message': 'Source unavailable'}])
+_ test_warning_fallbacks_are_deduplicated_and_classified[Reconciliation requires attention-reconciliation-warn] _
+tests/pipeline/test_data_quality_edges.py:72: in test_warning_fallbacks_are_deduplicated_and_classified
+    assert len(quality["findings"]) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([{'category': 'reconciliation', 'severity': 'warn', 'code': 'RECONCILIATION_REQUIRES_ATTENTION', 'message': 'Reconcili...ion', 'severity': 'warn', 'code': 'RECONCILIATION_REQUIRES_ATTENTION', 'message': 'Reconciliation requires attention'}])
+_ test_warning_fallbacks_are_deduplicated_and_classified[Mapping needs review-mapping-warn] _
+tests/pipeline/test_data_quality_edges.py:72: in test_warning_fallbacks_are_deduplicated_and_classified
+    assert len(quality["findings"]) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([{'category': 'mapping', 'severity': 'warn', 'code': 'MAPPING_NEEDS_REVIEW', 'message': 'Mapping needs review'}, {'category': 'mapping', 'severity': 'warn', 'code': 'MAPPING_NEEDS_REVIEW', 'message': 'Mapping needs review'}])
+_ test_warning_fallbacks_are_deduplicated_and_classified[Source report date conflict: December versus January-date-warn] _
+tests/pipeline/test_data_quality_edges.py:72: in test_warning_fallbacks_are_deduplicated_and_classified
+    assert len(quality["findings"]) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([{'category': 'date', 'severity': 'warn', 'code': 'SOURCE_REPORT_DATE_CONFLICT', 'message': 'Source report date confli...ty': 'warn', 'code': 'SOURCE_REPORT_DATE_CONFLICT', 'message': 'Source report date conflict: December versus January'}])
+_ test_warning_fallbacks_are_deduplicated_and_classified[Source report date override: December selected-date-warn] _
+tests/pipeline/test_data_quality_edges.py:72: in test_warning_fallbacks_are_deduplicated_and_classified
+    assert len(quality["findings"]) == 1
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([{'category': 'date', 'severity': 'warn', 'code': 'SOURCE_REPORT_DATE_OVERRIDE', 'message': 'Source report date overri...severity': 'warn', 'code': 'SOURCE_REPORT_DATE_OVERRIDE', 'message': 'Source report date override: December selected'}])
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_data_quality_edges.py::test_warning_fallbacks_are_deduplicated_and_classified[warning0-pipeline-fail] - AssertionError: assert 2 == 1
+ +  where 2 = len([{'category': 'pipeline', 'severity': 'fail', 'code': 'SOURCE_ERROR', 'message': 'Source unavailable'}, {'category': 'pipeline', 'severity': 'fail', 'code': 'SOURCE_ERROR', 'message': 'Source unavailable'}])
+FAILED tests/pipeline/test_data_quality_edges.py::test_warning_fallbacks_are_deduplicated_and_classified[Reconciliation requires attention-reconciliation-warn] - AssertionError: assert 2 == 1
+ +  where 2 = len([{'category': 'reconciliation', 'severity': 'warn', 'code': 'RECONCILIATION_REQUIRES_ATTENTION', 'message': 'Reconcili...ion', 'severity': 'warn', 'code': 'RECONCILIATION_REQUIRES_ATTENTION', 'message': 'Reconciliation requires attention'}])
+FAILED tests/pipeline/test_data_quality_edges.py::test_warning_fallbacks_are_deduplicated_and_classified[Mapping needs review-mapping-warn] - AssertionError: assert 2 == 1
+ +  where 2 = len([{'category': 'mapping', 'severity': 'warn', 'code': 'MAPPING_NEEDS_REVIEW', 'message': 'Mapping needs review'}, {'category': 'mapping', 'severity': 'warn', 'code': 'MAPPING_NEEDS_REVIEW', 'message': 'Mapping needs review'}])
+FAILED tests/pipeline/test_data_quality_edges.py::test_warning_fallbacks_are_deduplicated_and_classified[Source report date conflict: December versus January-date-warn] - AssertionError: assert 2 == 1
+ +  where 2 = len([{'category': 'date', 'severity': 'warn', 'code': 'SOURCE_REPORT_DATE_CONFLICT', 'message': 'Source report date confli...ty': 'warn', 'code': 'SOURCE_REPORT_DATE_CONFLICT', 'message': 'Source report date conflict: December versus January'}])
+FAILED tests/pipeline/test_data_quality_edges.py::test_warning_fallbacks_are_deduplicated_and_classified[Source report date override: December selected-date-warn] - AssertionError: assert 2 == 1
+ +  where 2 = len([{'category': 'date', 'severity': 'warn', 'code': 'SOURCE_REPORT_DATE_OVERRIDE', 'message': 'Source report date overri...severity': 'warn', 'code': 'SOURCE_REPORT_DATE_OVERRIDE', 'message': 'Source report date override: December selected'}])
+5 failed, 13 warnings in 0.30s
+
+=== RESTORED GREEN ===
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 13 warnings in 0.24s
+
+=== tests/pipeline/test_data_quality_edges.py::test_unknown_severity_counts_as_warning_in_its_category: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_unknown_severity_counts_as_warning_in_its_category ____________
+tests/pipeline/test_data_quality_edges.py:81: in test_unknown_severity_counts_as_warning_in_its_category
+    assert counts == {
+E   AssertionError: assert {'total_findi... 'total': 1}}} == {'total_findi... 'total': 1}}}
+E
+E     Omitting 1 identical items, use -vv to show
+E     Differing items:
+E     {'by_category': {'source': {'info': 1, 'warn': 0, 'fail': 0, 'total': 1}}} != {'by_category': {'source': {'info': 0, 'warn': 1, 'fail': 0, 'total': 1}}}
+E     {'by_severity': {'info': 1, 'warn': 0, 'fail': 0}} != {'by_severity': {'info': 0, 'warn': 1, 'fail': 0}}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E           'total_findings': 1,
+E           'by_severity': {
+E     -         'info': 0,
+E     ?                 ^
+E     +         'info': 1,
+E     ?                 ^
+E     -         'warn': 1,
+E     ?                 ^
+E     +         'warn': 0,
+E     ?                 ^
+E               'fail': 0,
+E           },
+E           'by_category': {
+E               'source': {
+E     -             'info': 0,
+E     ?                     ^
+E     +             'info': 1,
+E     ?                     ^
+E     -             'warn': 1,
+E     ?                     ^
+E     +             'warn': 0,
+E     ?                     ^
+E                   'fail': 0,
+E                   'total': 1,
+E               },
+E           },
+E       }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_data_quality_edges.py::test_unknown_severity_counts_as_warning_in_its_category - AssertionError: assert {'total_findi... 'total': 1}}} == {'total_findi... 'total': 1}}}
+
+  Omitting 1 identical items, use -vv to show
+  Differing items:
+  {'by_category': {'source': {'info': 1, 'warn': 0, 'fail': 0, 'total': 1}}} != {'by_category': {'source': {'info': 0, 'warn': 1, 'fail': 0, 'total': 1}}}
+  {'by_severity': {'info': 1, 'warn': 0, 'fail': 0}} != {'by_severity': {'info': 0, 'warn': 1, 'fail': 0}}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+        'total_findings': 1,
+        'by_severity': {
+  -         'info': 0,
+  ?                 ^
+  +         'info': 1,
+  ?                 ^
+  -         'warn': 1,
+  ?                 ^
+  +         'warn': 0,
+  ?                 ^
+            'fail': 0,
+        },
+        'by_category': {
+            'source': {
+  -             'info': 0,
+  ?                     ^
+  +             'info': 1,
+  ?                     ^
+  -             'warn': 1,
+  ?                     ^
+  +             'warn': 0,
+  ?                     ^
+                'fail': 0,
+                'total': 1,
+            },
+        },
+    }
+1 failed, 13 warnings in 0.31s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.23s
+
+=== tests/pipeline/test_data_quality_edges.py::test_cash_override_messages_keep_their_specific_codes: RED ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_cash_override_messages_keep_their_specific_codes[Repo cash overrides applied: 2-REPO_CASH_OVERRIDES_APPLIED-info] _
+tests/pipeline/test_data_quality_edges.py:97: in test_cash_override_messages_keep_their_specific_codes
+    assert quality["findings"] == [
+E   AssertionError: assert [{'category':... applied: 2'}] == [{'category':... applied: 2'}]
+E
+E     At index 0 diff: {'category': 'pipeline', 'severity': 'warn', 'code': 'UNKNOWN', 'message': 'Repo cash overrides applied: 2'} != {'category': 'cash', 'severity': 'info', 'code': 'REPO_CASH_OVERRIDES_APPLIED', 'message': 'Repo cash overrides applied: 2'}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           {
+E     -         'category': 'cash',
+E     ?                      ^^^^
+E     +         'category': 'pipeline',
+E     ?                      ^^^^^^^^
+E     -         'severity': 'info',
+E     ?                      ^ --
+E     +         'severity': 'warn',
+E     ?                      ^^^
+E     -         'code': 'REPO_CASH_OVERRIDES_APPLIED',
+E     +         'code': 'UNKNOWN',
+E               'message': 'Repo cash overrides applied: 2',
+E           },
+E       ]
+_ test_cash_override_messages_keep_their_specific_codes[Repo cash overrides file present but empty-REPO_CASH_OVERRIDES_EMPTY-warn] _
+tests/pipeline/test_data_quality_edges.py:97: in test_cash_override_messages_keep_their_specific_codes
+    assert quality["findings"] == [
+E   AssertionError: assert [{'category':...t but empty'}] == [{'category':...t but empty'}]
+E
+E     At index 0 diff: {'category': 'pipeline', 'severity': 'warn', 'code': 'UNKNOWN', 'message': 'Repo cash overrides file present but empty'} != {'category': 'cash', 'severity': 'warn', 'code': 'REPO_CASH_OVERRIDES_EMPTY', 'message': 'Repo cash overrides file present but empty'}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           {
+E     -         'category': 'cash',
+E     ?                      ^^^^
+E     +         'category': 'pipeline',
+E     ?                      ^^^^^^^^
+E               'severity': 'warn',
+E     -         'code': 'REPO_CASH_OVERRIDES_EMPTY',
+E     +         'code': 'UNKNOWN',
+E               'message': 'Repo cash overrides file present but empty',
+E           },
+E       ]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_data_quality_edges.py::test_cash_override_messages_keep_their_specific_codes[Repo cash overrides applied: 2-REPO_CASH_OVERRIDES_APPLIED-info] - AssertionError: assert [{'category':... applied: 2'}] == [{'category':... applied: 2'}]
+
+  At index 0 diff: {'category': 'pipeline', 'severity': 'warn', 'code': 'UNKNOWN', 'message': 'Repo cash overrides applied: 2'} != {'category': 'cash', 'severity': 'info', 'code': 'REPO_CASH_OVERRIDES_APPLIED', 'message': 'Repo cash overrides applied: 2'}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        {
+  -         'category': 'cash',
+  ?                      ^^^^
+  +         'category': 'pipeline',
+  ?                      ^^^^^^^^
+  -         'severity': 'info',
+  ?                      ^ --
+  +         'severity': 'warn',
+  ?                      ^^^
+  -         'code': 'REPO_CASH_OVERRIDES_APPLIED',
+  +         'code': 'UNKNOWN',
+            'message': 'Repo cash overrides applied: 2',
+        },
+    ]
+FAILED tests/pipeline/test_data_quality_edges.py::test_cash_override_messages_keep_their_specific_codes[Repo cash overrides file present but empty-REPO_CASH_OVERRIDES_EMPTY-warn] - AssertionError: assert [{'category':...t but empty'}] == [{'category':...t but empty'}]
+
+  At index 0 diff: {'category': 'pipeline', 'severity': 'warn', 'code': 'UNKNOWN', 'message': 'Repo cash overrides file present but empty'} != {'category': 'cash', 'severity': 'warn', 'code': 'REPO_CASH_OVERRIDES_EMPTY', 'message': 'Repo cash overrides file present but empty'}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        {
+  -         'category': 'cash',
+  ?                      ^^^^
+  +         'category': 'pipeline',
+  ?                      ^^^^^^^^
+            'severity': 'warn',
+  -         'code': 'REPO_CASH_OVERRIDES_EMPTY',
+  +         'code': 'UNKNOWN',
+            'message': 'Repo cash overrides file present but empty',
+        },
+    ]
+2 failed, 13 warnings in 0.30s
+
+=== RESTORED GREEN ===
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.23s
+
+=== tests/test_chat_context_edges.py::test_context_requires_a_run_directory: RED ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________________ test_context_requires_a_run_directory[missing] ________________
+tests/test_chat_context_edges.py:19: in test_context_requires_a_run_directory
+    with pytest.raises(context.RunContextError, match="does not exist or is not a directory"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'does not exist or is not a directory'
+E     Actual message: 'Run directory unavailable: /tmp/pytest-of-runner/pytest-40/test_context_requires_a_run_di0/missing'
+_________________ test_context_requires_a_run_directory[file] __________________
+tests/test_chat_context_edges.py:19: in test_context_requires_a_run_directory
+    with pytest.raises(context.RunContextError, match="does not exist or is not a directory"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'does not exist or is not a directory'
+E     Actual message: 'Run directory unavailable: /tmp/pytest-of-runner/pytest-40/test_context_requires_a_run_di1/file'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_context_edges.py::test_context_requires_a_run_directory[missing] - AssertionError: Regex pattern did not match.
+  Expected regex: 'does not exist or is not a directory'
+  Actual message: 'Run directory unavailable: /tmp/pytest-of-runner/pytest-40/test_context_requires_a_run_di0/missing'
+FAILED tests/test_chat_context_edges.py::test_context_requires_a_run_directory[file] - AssertionError: Regex pattern did not match.
+  Expected regex: 'does not exist or is not a directory'
+  Actual message: 'Run directory unavailable: /tmp/pytest-of-runner/pytest-40/test_context_requires_a_run_di1/file'
+2 failed, 13 warnings in 0.09s
+
+=== RESTORED GREEN ===
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.04s
+
+=== tests/test_chat_context_edges.py::test_manifest_requires_an_object: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________________ test_manifest_requires_an_object _______________________
+tests/test_chat_context_edges.py:25: in test_manifest_requires_an_object
+    with pytest.raises(context.RunContextError, match="must contain a JSON object"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'must contain a JSON object'
+E     Actual message: 'Invalid manifest shape'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_context_edges.py::test_manifest_requires_an_object - AssertionError: Regex pattern did not match.
+  Expected regex: 'must contain a JSON object'
+  Actual message: 'Invalid manifest shape'
+1 failed, 13 warnings in 0.09s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.04s
+
+=== tests/test_chat_context_edges.py::test_context_wraps_read_errors: RED ===
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_context_wraps_read_errors[manifest.json-load_manifest-Failed to read manifest.json] _
+tests/test_chat_context_edges.py:51: in test_context_wraps_read_errors
+    with pytest.raises(context.RunContextError, match=message) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Failed to read manifest.json'
+E     Actual message: 'Manifest unavailable: /tmp/pytest-of-runner/pytest-44/test_context_wraps_read_errors0/manifest.json'
+_ test_context_wraps_read_errors[cash.csv-discover_tables-Failed to read CSV table] _
+tests/test_chat_context_edges.py:51: in test_context_wraps_read_errors
+    with pytest.raises(context.RunContextError, match=message) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Failed to read CSV table'
+E     Actual message: 'CSV unavailable: /tmp/pytest-of-runner/pytest-44/test_context_wraps_read_errors1/cash.csv'
+_ test_context_wraps_read_errors[chat_logs/chat.jsonl-load_chat_logs-Failed to read chat log file] _
+tests/test_chat_context_edges.py:51: in test_context_wraps_read_errors
+    with pytest.raises(context.RunContextError, match=message) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Failed to read chat log file'
+E     Actual message: 'Chat unavailable: /tmp/pytest-of-runner/pytest-44/test_context_wraps_read_errors2/chat_logs/chat.jsonl'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_context_edges.py::test_context_wraps_read_errors[manifest.json-load_manifest-Failed to read manifest.json] - AssertionError: Regex pattern did not match.
+  Expected regex: 'Failed to read manifest.json'
+  Actual message: 'Manifest unavailable: /tmp/pytest-of-runner/pytest-44/test_context_wraps_read_errors0/manifest.json'
+FAILED tests/test_chat_context_edges.py::test_context_wraps_read_errors[cash.csv-discover_tables-Failed to read CSV table] - AssertionError: Regex pattern did not match.
+  Expected regex: 'Failed to read CSV table'
+  Actual message: 'CSV unavailable: /tmp/pytest-of-runner/pytest-44/test_context_wraps_read_errors1/cash.csv'
+FAILED tests/test_chat_context_edges.py::test_context_wraps_read_errors[chat_logs/chat.jsonl-load_chat_logs-Failed to read chat log file] - AssertionError: Regex pattern did not match.
+  Expected regex: 'Failed to read chat log file'
+  Actual message: 'Chat unavailable: /tmp/pytest-of-runner/pytest-44/test_context_wraps_read_errors2/chat_logs/chat.jsonl'
+3 failed, 13 warnings in 0.10s
+
+=== RESTORED GREEN ===
+...                                                                      [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 13 warnings in 0.10s
+
+=== tests/test_chat_context_edges.py::test_table_discovery_wraps_iteration_errors: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________ test_table_discovery_wraps_iteration_errors __________________
+tests/test_chat_context_edges.py:65: in test_table_discovery_wraps_iteration_errors
+    with pytest.raises(context.RunContextError, match="Failed while discovering tables") as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Failed while discovering tables'
+E     Actual message: 'Cannot scan: /tmp/pytest-of-runner/pytest-46/test_table_discovery_wraps_ite0'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_context_edges.py::test_table_discovery_wraps_iteration_errors - AssertionError: Regex pattern did not match.
+  Expected regex: 'Failed while discovering tables'
+  Actual message: 'Cannot scan: /tmp/pytest-of-runner/pytest-46/test_table_discovery_wraps_ite0'
+1 failed, 13 warnings in 0.09s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.04s
+
+=== tests/test_chat_context_edges.py::test_csv_parse_errors_include_the_table_path: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________ test_csv_parse_errors_include_the_table_path _________________
+tests/test_chat_context_edges.py:75: in test_csv_parse_errors_include_the_table_path
+    with pytest.raises(context.RunContextError, match="Malformed CSV table") as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Malformed CSV table'
+E     Actual message: 'Table parser failed: /tmp/pytest-of-runner/pytest-48/test_csv_parse_errors_include_0/cash.csv'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_context_edges.py::test_csv_parse_errors_include_the_table_path - AssertionError: Regex pattern did not match.
+  Expected regex: 'Malformed CSV table'
+  Actual message: 'Table parser failed: /tmp/pytest-of-runner/pytest-48/test_csv_parse_errors_include_0/cash.csv'
+1 failed, 13 warnings in 0.09s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.04s
+
+=== tests/test_chat_context_edges.py::test_blank_chat_lines_and_malformed_delta_records_are_skipped: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_blank_chat_lines_and_malformed_delta_records_are_skipped _________
+tests/test_chat_context_edges.py:102: in test_blank_chat_lines_and_malformed_delta_records_are_skipped
+    assert loaded.deltas == {"trend": [{"counterparty": "CIBC", "delta": 2}]}
+E   AssertionError: assert {} == {'trend': [{'... 'delta': 2}]}
+E
+E     Right contains 1 more item:
+E     {'trend': [{'counterparty': 'CIBC', 'delta': 2}]}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + {}
+E     - {
+E     -     'trend': [
+E     -         {
+E     -             'counterparty': 'CIBC',
+E     -             'delta': 2,
+E     -         },
+E     -     ],
+E     - }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_context_edges.py::test_blank_chat_lines_and_malformed_delta_records_are_skipped - AssertionError: assert {} == {'trend': [{'... 'delta': 2}]}
+
+  Right contains 1 more item:
+  {'trend': [{'counterparty': 'CIBC', 'delta': 2}]}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  + {}
+  - {
+  -     'trend': [
+  -         {
+  -             'counterparty': 'CIBC',
+  -             'delta': 2,
+  -         },
+  -     ],
+  - }
+1 failed, 13 warnings in 0.26s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.04s
+
+=== tests/test_chat_context_edges.py::test_parquet_disk_failure_is_distinct_from_arrow_error: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_parquet_disk_failure_is_distinct_from_arrow_error ____________
+tests/test_chat_context_edges.py:117: in test_parquet_disk_failure_is_distinct_from_arrow_error
+    with pytest.raises(
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Failed to access Parquet table on disk'
+E     Actual message: 'Parquet data format error: /tmp/pytest-of-runner/pytest-52/test_parquet_disk_failure_is_d0/cash.parquet. Verify the file exists and is readable.'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_context_edges.py::test_parquet_disk_failure_is_distinct_from_arrow_error - AssertionError: Regex pattern did not match.
+  Expected regex: 'Failed to access Parquet table on disk'
+  Actual message: 'Parquet data format error: /tmp/pytest-of-runner/pytest-52/test_parquet_disk_failure_is_d0/cash.parquet. Verify the file exists and is readable.'
+1 failed, 13 warnings in 0.09s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.04s
+
+=== tests/test_chat_context_edges.py::test_parquet_success_converts_to_records: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_parquet_success_converts_to_records ___________________
+tests/test_chat_context_edges.py:139: in test_parquet_success_converts_to_records
+    assert context.discover_tables(tmp_path) == {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/chat/context.py:111: in discover_tables
+    tables[table_key] = _load_parquet_table(table_path)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/chat/context.py:221: in _load_parquet_table
+    return cast(list[dict[str, Any]], dataframe.to_dict(orient="columns"))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_chat_context_edges.py:131: in to_dict
+    assert orient == "records"
+E   AssertionError: assert 'columns' == 'records'
+E
+E     - records
+E     + columns
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_context_edges.py::test_parquet_success_converts_to_records - AssertionError: assert 'columns' == 'records'
+
+  - records
+  + columns
+1 failed, 13 warnings in 0.10s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.04s
+
+=== tests/test_chat_session_edges.py::test_default_provider_skips_unavailable_models_and_checks_other_providers: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_default_provider_skips_unavailable_models_and_checks_other_providers ___
+tests/test_chat_session_edges.py:25: in test_default_provider_skips_unavailable_models_and_checks_other_providers
+    assert session._default_provider_key() == "experimental"
+E   AssertionError: assert 'openai' == 'experimental'
+E
+E     - experimental
+E     + openai
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_session_edges.py::test_default_provider_skips_unavailable_models_and_checks_other_providers - AssertionError: assert 'openai' == 'experimental'
+
+  - experimental
+  + openai
+1 failed, 13 warnings in 0.09s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.05s
+
+=== tests/test_chat_session_edges.py::test_default_model_fallback_is_deterministic_when_none_are_available: RED ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_default_model_fallback_is_deterministic_when_none_are_available[models0-a-model] _
+tests/test_chat_session_edges.py:40: in test_default_model_fallback_is_deterministic_when_none_are_available
+    assert session._default_model_key() == expected
+E   AssertionError: assert 'missing-model' == 'a-model'
+E
+E     - a-model
+E     + missing-model
+_ test_default_model_fallback_is_deterministic_when_none_are_available[models1-chat-model-placeholder] _
+tests/test_chat_session_edges.py:40: in test_default_model_fallback_is_deterministic_when_none_are_available
+    assert session._default_model_key() == expected
+E   AssertionError: assert 'missing-model' == 'chat-model-placeholder'
+E
+E     - chat-model-placeholder
+E     + missing-model
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_session_edges.py::test_default_model_fallback_is_deterministic_when_none_are_available[models0-a-model] - AssertionError: assert 'missing-model' == 'a-model'
+
+  - a-model
+  + missing-model
+FAILED tests/test_chat_session_edges.py::test_default_model_fallback_is_deterministic_when_none_are_available[models1-chat-model-placeholder] - AssertionError: assert 'missing-model' == 'chat-model-placeholder'
+
+  - chat-model-placeholder
+  + missing-model
+2 failed, 13 warnings in 0.09s
+
+=== RESTORED GREEN ===
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.04s
+
+=== tests/test_chat_session_edges.py::test_local_model_support_requires_offline_mode: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_local_model_support_requires_offline_mode ________________
+tests/test_chat_session_edges.py:45: in test_local_model_support_requires_offline_mode
+    assert not session.is_provider_model_supported("local", "chat-model-placeholder")
+E   AssertionError: assert not True
+E    +  where True = <function is_provider_model_supported at 0x714253a76820>('local', 'chat-model-placeholder')
+E    +    where <function is_provider_model_supported at 0x714253a76820> = session.is_provider_model_supported
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_session_edges.py::test_local_model_support_requires_offline_mode - AssertionError: assert not True
+ +  where True = <function is_provider_model_supported at 0x714253a76820>('local', 'chat-model-placeholder')
+ +    where <function is_provider_model_supported at 0x714253a76820> = session.is_provider_model_supported
+1 failed, 13 warnings in 0.11s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.04s
+
+=== tests/test_chat_session_edges.py::test_empty_untrusted_text_produces_no_ratio_warnings: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_empty_untrusted_text_produces_no_ratio_warnings _____________
+tests/test_chat_session_edges.py:52: in test_empty_untrusted_text_produces_no_ratio_warnings
+    assert caplog.records == []
+E   assert [<LogRecord: ..."Empty text">] == []
+E
+E     Left contains one more item: <LogRecord: counter_risk.chat.session, 30, /home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/session.py, 552, "Empty text">
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     - []
+E     + [
+E     +     <LogRecord: counter_risk.chat.session, 30, /home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/session.py, 552, "Empty text">,
+E     + ]
+------------------------------ Captured log call -------------------------------
+WARNING  counter_risk.chat.session:session.py:552 Empty text
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_session_edges.py::test_empty_untrusted_text_produces_no_ratio_warnings - assert [<LogRecord: ..."Empty text">] == []
+
+  Left contains one more item: <LogRecord: counter_risk.chat.session, 30, /home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/session.py, 552, "Empty text">
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  - []
+  + [
+  +     <LogRecord: counter_risk.chat.session, 30, /home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/chat/session.py, 552, "Empty text">,
+  + ]
+1 failed, 13 warnings in 0.10s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.05s
+
+=== tests/test_chat_session_edges.py::test_equal_exposure_rows_keep_source_order: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_equal_exposure_rows_keep_source_order __________________
+tests/test_chat_session_edges.py:58: in test_equal_exposure_rows_keep_source_order
+    assert session._sort_top_exposure_rows([first, second]) == [first, second]
+E   AssertionError: assert [{'variant': ...er': 'first'}] == [{'variant': ...r': 'second'}]
+E
+E     At index 0 diff: {'variant': 'all', 'name': 'CIBC', 'value': 2.0, 'marker': 'second'} != {'variant': 'all', 'name': 'CIBC', 'value': 2.0, 'marker': 'first'}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E     +     {
+E     +         'variant': 'all',
+E     +         'name': 'CIBC',
+E     +         'value': 2.0,
+E     +         'marker': 'second',
+E     +     },
+E           {
+E               'variant': 'all',
+E               'name': 'CIBC',
+E               'value': 2.0,
+E               'marker': 'first',
+E           },
+E     -     {
+E     -         'variant': 'all',
+E     -         'name': 'CIBC',
+E     -         'value': 2.0,
+E     -         'marker': 'second',
+E     -     },
+E       ]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_session_edges.py::test_equal_exposure_rows_keep_source_order - AssertionError: assert [{'variant': ...er': 'first'}] == [{'variant': ...r': 'second'}]
+
+  At index 0 diff: {'variant': 'all', 'name': 'CIBC', 'value': 2.0, 'marker': 'second'} != {'variant': 'all', 'name': 'CIBC', 'value': 2.0, 'marker': 'first'}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+  +     {
+  +         'variant': 'all',
+  +         'name': 'CIBC',
+  +         'value': 2.0,
+  +         'marker': 'second',
+  +     },
+        {
+            'variant': 'all',
+            'name': 'CIBC',
+            'value': 2.0,
+            'marker': 'first',
+        },
+  -     {
+  -         'variant': 'all',
+  -         'name': 'CIBC',
+  -         'value': 2.0,
+  -         'marker': 'second',
+  -     },
+    ]
+1 failed, 13 warnings in 0.09s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.05s
+
+=== tests/test_chat_session_edges.py::test_nonpositive_top_count_returns_no_rows: RED ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________________ test_nonpositive_top_count_returns_no_rows[0] _________________
+tests/test_chat_session_edges.py:63: in test_nonpositive_top_count_returns_no_rows
+    assert (
+E   AssertionError: assert [{'variant': ...'value': 2.0}] == []
+E
+E     Left contains one more item: {'variant': 'all', 'name': 'CIBC', 'value': 2.0}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     - []
+E     + [
+E     +     {
+E     +         'variant': 'all',
+E     +         'name': 'CIBC',
+E     +         'value': 2.0,
+E     +     },
+E     + ]
+________________ test_nonpositive_top_count_returns_no_rows[-1] ________________
+tests/test_chat_session_edges.py:63: in test_nonpositive_top_count_returns_no_rows
+    assert (
+E   AssertionError: assert [{'variant': ...'value': 2.0}] == []
+E
+E     Left contains one more item: {'variant': 'all', 'name': 'CIBC', 'value': 2.0}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     - []
+E     + [
+E     +     {
+E     +         'variant': 'all',
+E     +         'name': 'CIBC',
+E     +         'value': 2.0,
+E     +     },
+E     + ]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_chat_session_edges.py::test_nonpositive_top_count_returns_no_rows[0] - AssertionError: assert [{'variant': ...'value': 2.0}] == []
+
+  Left contains one more item: {'variant': 'all', 'name': 'CIBC', 'value': 2.0}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  - []
+  + [
+  +     {
+  +         'variant': 'all',
+  +         'name': 'CIBC',
+  +         'value': 2.0,
+  +     },
+  + ]
+FAILED tests/test_chat_session_edges.py::test_nonpositive_top_count_returns_no_rows[-1] - AssertionError: assert [{'variant': ...'value': 2.0}] == []
+
+  Left contains one more item: {'variant': 'all', 'name': 'CIBC', 'value': 2.0}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  - []
+  + [
+  +     {
+  +         'variant': 'all',
+  +         'name': 'CIBC',
+  +         'value': 2.0,
+  +     },
+  + ]
+2 failed, 13 warnings in 0.10s
+
+=== RESTORED GREEN ===
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.04s
+
+=== tests/test_demo_artifact_edges.py::test_demo_config_rejects_a_sequence: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________________ test_demo_config_rejects_a_sequence ______________________
+tests/test_demo_artifact_edges.py:14: in test_demo_config_rejects_a_sequence
+    with pytest.raises(ValueError, match="Demo config must be a mapping"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Demo config must be a mapping'
+E     Actual message: 'Invalid demo config: /tmp/pytest-of-runner/pytest-56/test_demo_config_rejects_a_seq0/demo.yml'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_demo_artifact_edges.py::test_demo_config_rejects_a_sequence - AssertionError: Regex pattern did not match.
+  Expected regex: 'Demo config must be a mapping'
+  Actual message: 'Invalid demo config: /tmp/pytest-of-runner/pytest-56/test_demo_config_rejects_a_seq0/demo.yml'
+1 failed, 13 warnings in 0.27s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.22s
+
+=== tests/test_demo_artifact_edges.py::test_local_demo_config_preserves_existing_paths_and_non_string_values: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_local_demo_config_preserves_existing_paths_and_non_string_values _____
+tests/test_demo_artifact_edges.py:26: in test_local_demo_config_preserves_existing_paths_and_non_string_values
+    assert (
+E   AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-58/test_local_demo_config_preserv0/output') == PosixPath('/tmp/pytest-of-runner/pytest-58/test_local_demo_config_preserv0/demo.yml')
+E    +  where PosixPath('/tmp/pytest-of-runner/pytest-58/test_local_demo_config_preserv0/output') = <function _materialize_source_checkout_config at 0x728ab4b35850>(config_path=PosixPath('/tmp/pytest-of-runner/pytest-58/test_local_demo_config_preserv0/demo.yml'), output_dir=(PosixPath('/tmp/pytest-of-runner/pytest-58/test_local_demo_config_preserv0') / 'output'))
+E    +    where <function _materialize_source_checkout_config at 0x728ab4b35850> = demo_artifact._materialize_source_checkout_config
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_demo_artifact_edges.py::test_local_demo_config_preserves_existing_paths_and_non_string_values - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-58/test_local_demo_config_preserv0/output') == PosixPath('/tmp/pytest-of-runner/pytest-58/test_local_demo_config_preserv0/demo.yml')
+ +  where PosixPath('/tmp/pytest-of-runner/pytest-58/test_local_demo_config_preserv0/output') = <function _materialize_source_checkout_config at 0x728ab4b35850>(config_path=PosixPath('/tmp/pytest-of-runner/pytest-58/test_local_demo_config_preserv0/demo.yml'), output_dir=(PosixPath('/tmp/pytest-of-runner/pytest-58/test_local_demo_config_preserv0') / 'output'))
+ +    where <function _materialize_source_checkout_config at 0x728ab4b35850> = demo_artifact._materialize_source_checkout_config
+1 failed, 13 warnings in 0.30s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.23s
+
+=== tests/test_demo_artifact_edges.py::test_demo_path_falls_back_to_config_parent: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_demo_path_falls_back_to_config_parent __________________
+tests/test_demo_artifact_edges.py:41: in test_demo_path_falls_back_to_config_parent
+    assert demo_artifact._resolve_config_path(Path(source.name), config_dir=config_dir) == source
+E   AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-60/test_demo_path_falls_back_to_c0/config/parent-source.xlsx') == PosixPath('/tmp/pytest-of-runner/pytest-60/test_demo_path_falls_back_to_c0/parent-source.xlsx')
+E    +  where PosixPath('/tmp/pytest-of-runner/pytest-60/test_demo_path_falls_back_to_c0/config/parent-source.xlsx') = <function _resolve_config_path at 0x762db326f3d0>(PosixPath('parent-source.xlsx'), config_dir=PosixPath('/tmp/pytest-of-runner/pytest-60/test_demo_path_falls_back_to_c0/config'))
+E    +    where <function _resolve_config_path at 0x762db326f3d0> = demo_artifact._resolve_config_path
+E    +    and   PosixPath('parent-source.xlsx') = Path('parent-source.xlsx')
+E    +      where 'parent-source.xlsx' = PosixPath('/tmp/pytest-of-runner/pytest-60/test_demo_path_falls_back_to_c0/parent-source.xlsx').name
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_demo_artifact_edges.py::test_demo_path_falls_back_to_config_parent - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-60/test_demo_path_falls_back_to_c0/config/parent-source.xlsx') == PosixPath('/tmp/pytest-of-runner/pytest-60/test_demo_path_falls_back_to_c0/parent-source.xlsx')
+ +  where PosixPath('/tmp/pytest-of-runner/pytest-60/test_demo_path_falls_back_to_c0/config/parent-source.xlsx') = <function _resolve_config_path at 0x762db326f3d0>(PosixPath('parent-source.xlsx'), config_dir=PosixPath('/tmp/pytest-of-runner/pytest-60/test_demo_path_falls_back_to_c0/config'))
+ +    where <function _resolve_config_path at 0x762db326f3d0> = demo_artifact._resolve_config_path
+ +    and   PosixPath('parent-source.xlsx') = Path('parent-source.xlsx')
+ +      where 'parent-source.xlsx' = PosixPath('/tmp/pytest-of-runner/pytest-60/test_demo_path_falls_back_to_c0/parent-source.xlsx').name
+1 failed, 13 warnings in 0.33s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.21s
+
+=== tests/test_demo_artifact_edges.py::test_demo_main_passes_cli_paths_to_builder_and_reports_result: RED ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_demo_main_passes_cli_paths_to_builder_and_reports_result[False] _____
+tests/test_demo_artifact_edges.py:67: in test_demo_main_passes_cli_paths_to_builder_and_reports_result
+    assert capsys.readouterr().out == f"Demo artifact written to {result}\n"
+E   AssertionError: assert 'Demo artifact created\n' == 'Demo artifac...0/completed\n'
+E
+E     - Demo artifact written to /tmp/pytest-of-runner/pytest-62/test_demo_main_passes_cli_path0/completed
+E     + Demo artifact created
+_____ test_demo_main_passes_cli_paths_to_builder_and_reports_result[True] ______
+tests/test_demo_artifact_edges.py:67: in test_demo_main_passes_cli_paths_to_builder_and_reports_result
+    assert capsys.readouterr().out == f"Demo artifact written to {result}\n"
+E   AssertionError: assert 'Demo artifact created\n' == 'Demo artifac...1/completed\n'
+E
+E     - Demo artifact written to /tmp/pytest-of-runner/pytest-62/test_demo_main_passes_cli_path1/completed
+E     + Demo artifact created
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_demo_artifact_edges.py::test_demo_main_passes_cli_paths_to_builder_and_reports_result[False] - AssertionError: assert 'Demo artifact created\n' == 'Demo artifac...0/completed\n'
+
+  - Demo artifact written to /tmp/pytest-of-runner/pytest-62/test_demo_main_passes_cli_path0/completed
+  + Demo artifact created
+FAILED tests/test_demo_artifact_edges.py::test_demo_main_passes_cli_paths_to_builder_and_reports_result[True] - AssertionError: assert 'Demo artifact created\n' == 'Demo artifac...1/completed\n'
+
+  - Demo artifact written to /tmp/pytest-of-runner/pytest-62/test_demo_main_passes_cli_path1/completed
+  + Demo artifact created
+2 failed, 13 warnings in 0.28s
+
+=== RESTORED GREEN ===
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.22s
+
+=== tests/test_mosers_workbook_helpers.py::test_metric_values_cover_zero_total_and_unknown_metric: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_metric_values_cover_zero_total_and_unknown_metric ____________
+tests/test_mosers_workbook_helpers.py:35: in test_metric_values_cover_zero_total_and_unknown_metric
+    assert generation._build_allocation_percentages((zero_total,)) == [0.0]
+E   assert [1.0] == [0.0]
+E
+E     At index 0 diff: 1.0 != 0.0
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E     -     0.0,
+E     ?     ^
+E     +     1.0,
+E     ?     ^
+E       ]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_mosers_workbook_helpers.py::test_metric_values_cover_zero_total_and_unknown_metric - assert [1.0] == [0.0]
+
+  At index 0 diff: 1.0 != 0.0
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+  -     0.0,
+  ?     ^
+  +     1.0,
+  ?     ^
+    ]
+1 failed, 13 warnings in 0.14s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.07s
+
+=== tests/test_mosers_workbook_helpers.py::test_section_helpers_write_clear_and_reject_invalid_markers: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_section_helpers_write_clear_and_reject_invalid_markers __________
+tests/test_mosers_workbook_helpers.py:63: in test_section_helpers_write_clear_and_reject_invalid_markers
+    assert worksheet["C3"].value is None
+E   AssertionError: assert 'stale unused row' is None
+E    +  where 'stale unused row' = <Cell 'Totals'.C3>.value
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_mosers_workbook_helpers.py::test_section_helpers_write_clear_and_reject_invalid_markers - AssertionError: assert 'stale unused row' is None
+ +  where 'stale unused row' = <Cell 'Totals'.C3>.value
+1 failed, 13 warnings in 0.33s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.27s
+
+=== tests/test_mosers_workbook_helpers.py::test_section_bounds_cover_missing_marker_empty_range_and_no_stop: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_section_bounds_cover_missing_marker_empty_range_and_no_stop _______
+tests/test_mosers_workbook_helpers.py:113: in test_section_bounds_cover_missing_marker_empty_range_and_no_stop
+    assert generation._resolve_section_bounds(
+E   assert None == (3, 3)
+E    +  where None = <function _resolve_section_bounds at 0x7b2dcd41ecf0>(worksheet=<Worksheet "Bounds">, section_marker='Totals', stop_markers=('Stop',))
+E    +    where <function _resolve_section_bounds at 0x7b2dcd41ecf0> = generation._resolve_section_bounds
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_mosers_workbook_helpers.py::test_section_bounds_cover_missing_marker_empty_range_and_no_stop - assert None == (3, 3)
+ +  where None = <function _resolve_section_bounds at 0x7b2dcd41ecf0>(worksheet=<Worksheet "Bounds">, section_marker='Totals', stop_markers=('Stop',))
+ +    where <function _resolve_section_bounds at 0x7b2dcd41ecf0> = generation._resolve_section_bounds
+1 failed, 13 warnings in 0.32s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.26s
+
+=== tests/test_mosers_workbook_helpers.py::test_field_and_header_validation_errors: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_field_and_header_validation_errors ____________________
+tests/test_mosers_workbook_helpers.py:120: in test_field_and_header_validation_errors
+    with pytest.raises(ValueError, match="Unsupported plug-values source field"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'Unsupported plug-values source field'
+E     Actual message: 'Unknown row field: unknown'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_mosers_workbook_helpers.py::test_field_and_header_validation_errors - AssertionError: Regex pattern did not match.
+  Expected regex: 'Unsupported plug-values source field'
+  Actual message: 'Unknown row field: unknown'
+1 failed, 13 warnings in 0.32s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.25s
+
+=== tests/test_mosers_workbook_helpers.py::test_metric_column_resolution_handles_fallback_and_distant_duplicate: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_metric_column_resolution_handles_fallback_and_distant_duplicate _____
+tests/test_mosers_workbook_helpers.py:131: in test_metric_column_resolution_handles_fallback_and_distant_duplicate
+    assert generation._resolve_metric_target_columns(
+E   AssertionError: assert {'annualized_...centage': 'A'} == {'annualized_...centage': 'E'}
+E
+E     Differing items:
+E     {'annualized_volatility': 'A'} != {'annualized_volatility': 'D'}
+E     {'allocation_percentage': 'A'} != {'allocation_percentage': 'E'}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E     -     'annualized_volatility': 'D',
+E     ?                               ^
+E     +     'annualized_volatility': 'A',
+E     ?                               ^
+E     -     'allocation_percentage': 'E',
+E     ?                               ^
+E     +     'allocation_percentage': 'A',
+E     ?                               ^
+E       }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_mosers_workbook_helpers.py::test_metric_column_resolution_handles_fallback_and_distant_duplicate - AssertionError: assert {'annualized_...centage': 'A'} == {'annualized_...centage': 'E'}
+
+  Differing items:
+  {'annualized_volatility': 'A'} != {'annualized_volatility': 'D'}
+  {'allocation_percentage': 'A'} != {'allocation_percentage': 'E'}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+  -     'annualized_volatility': 'D',
+  ?                               ^
+  +     'annualized_volatility': 'A',
+  ?                               ^
+  -     'allocation_percentage': 'E',
+  ?                               ^
+  +     'allocation_percentage': 'A',
+  ?                               ^
+    }
+1 failed, 13 warnings in 0.35s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.31s
+
+=== tests/test_mosers_workbook_helpers.py::test_template_missing_sheet_closes_workbook_and_generator_reports_missing_sheets: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_template_missing_sheet_closes_workbook_and_generator_reports_missing_sheets _
+tests/test_mosers_workbook_helpers.py:174: in test_template_missing_sheet_closes_workbook_and_generator_reports_missing_sheets
+    assert str(caught.value) == (
+E   AssertionError: assert 'MOSERS templ...s): CPRS - CH' == 'MOSERS templ...H, CPRS - FCM'
+E
+E     Skipping 50 identical leading characters in diff, use -v to show
+E     - : CPRS - CH, CPRS - FCM
+E     + : CPRS - CH
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_mosers_workbook_helpers.py::test_template_missing_sheet_closes_workbook_and_generator_reports_missing_sheets - AssertionError: assert 'MOSERS templ...s): CPRS - CH' == 'MOSERS templ...H, CPRS - FCM'
+
+  Skipping 50 identical leading characters in diff, use -v to show
+  - : CPRS - CH, CPRS - FCM
+  + : CPRS - CH
+1 failed, 13 warnings in 0.31s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.26s
+
+=== tests/test_mosers_workbook_helpers.py::test_trend_variant_clears_the_non_applicable_fcm_totals_section: RED ===
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_trend_variant_clears_the_non_applicable_fcm_totals_section ________
+tests/test_mosers_workbook_helpers.py:196: in test_trend_variant_clears_the_non_applicable_fcm_totals_section
+    assert sheet[f"C{marker_row + 1}"].value is None
+E   AssertionError: assert 'stale value' is None
+E    +  where 'stale value' = <Cell 'CPRS - FCM'.C11>.value
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_mosers_workbook_helpers.py::test_trend_variant_clears_the_non_applicable_fcm_totals_section - AssertionError: assert 'stale value' is None
+ +  where 'stale value' = <Cell 'CPRS - FCM'.C11>.value
+1 failed, 13 warnings in 0.36s
+
+=== RESTORED GREEN ===
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.28s
+
+=== tests/test_mosers_workbook_helpers.py::test_variant_wrappers_delegate_with_expected_variant: RED ===
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_variant_wrappers_delegate_with_expected_variant[generate_mosers_workbook_ex_trend-ex_trend] _
+tests/test_mosers_workbook_helpers.py:222: in test_variant_wrappers_delegate_with_expected_variant
+    assert captured["variant"] == variant
+E   AssertionError: assert 'all_programs' == 'ex_trend'
+E
+E     - ex_trend
+E     + all_programs
+_ test_variant_wrappers_delegate_with_expected_variant[generate_mosers_workbook_trend-trend] _
+tests/test_mosers_workbook_helpers.py:222: in test_variant_wrappers_delegate_with_expected_variant
+    assert captured["variant"] == variant
+E   AssertionError: assert 'all_programs' == 'trend'
+E
+E     - trend
+E     + all_programs
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_mosers_workbook_helpers.py::test_variant_wrappers_delegate_with_expected_variant[generate_mosers_workbook_ex_trend-ex_trend] - AssertionError: assert 'all_programs' == 'ex_trend'
+
+  - ex_trend
+  + all_programs
+FAILED tests/test_mosers_workbook_helpers.py::test_variant_wrappers_delegate_with_expected_variant[generate_mosers_workbook_trend-trend] - AssertionError: assert 'all_programs' == 'trend'
+
+  - trend
+  + all_programs
+2 failed, 13 warnings in 0.38s
+
+=== RESTORED GREEN ===
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.31s

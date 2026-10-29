@@ -42,6 +42,11 @@ def test_section_helpers_write_clear_and_reject_invalid_markers(worksheet: Any) 
     worksheet.title = "Totals"
     worksheet["A1"] = "Totals"
     worksheet["A4"] = "Stop"
+    worksheet["C1"] = "before section"
+    worksheet["C2"] = "stale first row"
+    worksheet["C3"] = "stale unused row"
+    worksheet["C4"] = "after section"
+    worksheet["D2"] = "unmapped column"
     mappings = (generation.MosersPlugValueFieldMapping("counterparty", "C"),)
 
     assert generation._resolve_section_bounds(
@@ -63,6 +68,10 @@ def test_section_helpers_write_clear_and_reject_invalid_markers(worksheet: Any) 
         field_mappings=mappings,
     )
     assert worksheet["C2"].value is None
+    assert worksheet["C3"].value is None
+    assert worksheet["C1"].value == "before section"
+    assert worksheet["C4"].value == "after section"
+    assert worksheet["D2"].value == "unmapped column"
 
     with pytest.raises(ValueError, match="Unable to resolve section marker"):
         generation._write_totals_rows_by_marker(
@@ -132,7 +141,7 @@ def test_metric_column_resolution_handles_fallback_and_distant_duplicate(workshe
     ) == {"annualized_volatility": "D"}
 
 
-def test_template_and_generator_missing_sheet_paths_close_workbook(
+def test_template_missing_sheet_closes_workbook_and_generator_reports_missing_sheets(
     monkeypatch: pytest.MonkeyPatch, worksheet: Any
 ) -> None:
     workbook = worksheet.parent
@@ -152,16 +161,19 @@ def test_template_and_generator_missing_sheet_paths_close_workbook(
 
     parsed = NisaAllProgramsData(ch_rows=(), totals_rows=())
     structure = generation.MosersAllProgramsOutputStructure(
-        required_sheets=("CPRS - CH",),
+        required_sheets=("CPRS - CH", "CPRS - FCM"),
         cprs_ch_sheet="CPRS - CH",
         program_name_cell="B5",
         cprs_ch_metric_start_row=1,
         cprs_ch_metric_end_row=2,
     )
-    with pytest.raises(ValueError, match="missing required sheet"):
+    with pytest.raises(ValueError, match="missing required sheet") as caught:
         generation._generate_mosers_workbook_from_parser(
             "ignored.xlsx", parser=lambda _: parsed, structure=structure
         )
+    assert str(caught.value) == (
+        "MOSERS template workbook missing required sheet(s): CPRS - CH, CPRS - FCM"
+    )
 
 
 def test_trend_variant_clears_the_non_applicable_fcm_totals_section(

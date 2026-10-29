@@ -1,0 +1,2650 @@
+[
+  {
+    "node": "tests/test_web_demo_helpers.py::test_resolve_config_path_prefers_absolute_config_then_test_fixture",
+    "source": "src/counter_risk/web_demo.py",
+    "changes": [
+      [
+        "return path.resolve()",
+        "return path.parent.resolve()"
+      ]
+    ],
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_resolve_config_path_prefers_absolute_config_then_test_fixture",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_resolve_config_path_prefers_absolute_config_then_test_fixture"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_resolve_config_path_prefers_absolute_config_then_test_fixture",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_web_demo_helpers.py::test_resolve_config_path_uses_repo_test_path_when_present",
+    "source": "src/counter_risk/web_demo.py",
+    "changes": [
+      [
+        "return repo_fixture",
+        "return primary"
+      ]
+    ],
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_resolve_config_path_uses_repo_test_path_when_present",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_resolve_config_path_uses_repo_test_path_when_present"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_resolve_config_path_uses_repo_test_path_when_present",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_web_demo_helpers.py::test_materialize_config_only_writes_relocated_paths",
+    "source": "src/counter_risk/web_demo.py",
+    "changes": [
+      [
+        "normalized[key] = str(resolved)",
+        "normalized[key] = str(source_path)"
+      ]
+    ],
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_materialize_config_only_writes_relocated_paths",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_materialize_config_only_writes_relocated_paths"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_materialize_config_only_writes_relocated_paths",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_web_demo_helpers.py::test_materialize_config_preserves_local_config_and_rejects_non_mapping",
+    "source": "src/counter_risk/web_demo.py",
+    "changes": [
+      [
+        "Web demo config must be a mapping:",
+        "Web demo config has invalid type:"
+      ]
+    ],
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_materialize_config_preserves_local_config_and_rejects_non_mapping",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_materialize_config_preserves_local_config_and_rejects_non_mapping"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_materialize_config_preserves_local_config_and_rejects_non_mapping",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_web_demo_helpers.py::test_fixture_sources_and_assertion_cover_optional_sources",
+    "source": "src/counter_risk/web_demo.py",
+    "changes": [
+      [
+        "return {key: value for key, value in sources.items() if value is not None}",
+        "return {}"
+      ]
+    ],
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_fixture_sources_and_assertion_cover_optional_sources",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_fixture_sources_and_assertion_cover_optional_sources"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_fixture_sources_and_assertion_cover_optional_sources",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_web_demo_helpers.py::test_chat_runtime_guard_only_rejects_new_import",
+    "source": "src/counter_risk/web_demo.py",
+    "changes": [
+      [
+        "Web demo unexpectedly loaded chat provider module:",
+        "Web demo imported an unavailable module:"
+      ]
+    ],
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_chat_runtime_guard_only_rejects_new_import",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_chat_runtime_guard_only_rejects_new_import"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_chat_runtime_guard_only_rejects_new_import",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_web_demo_helpers.py::test_summary_and_manifest_path_normalization",
+    "source": "src/counter_risk/web_demo.py",
+    "changes": [
+      [
+        "return path.resolve().relative_to(repo_root.resolve()).as_posix()",
+        "return path.name"
+      ]
+    ],
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_summary_and_manifest_path_normalization",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_summary_and_manifest_path_normalization"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_summary_and_manifest_path_normalization",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_web_demo_helpers.py::test_run_web_demo_pipeline_annotates_manifest_and_preserves_offline_boundary",
+    "source": "src/counter_risk/web_demo.py",
+    "changes": [
+      [
+        "manifest[\"data_zone\"] = \"synthetic-fixtures-only\"",
+        "manifest[\"data_zone\"] = \"unknown\""
+      ]
+    ],
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_run_web_demo_pipeline_annotates_manifest_and_preserves_offline_boundary",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_run_web_demo_pipeline_annotates_manifest_and_preserves_offline_boundary"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_run_web_demo_pipeline_annotates_manifest_and_preserves_offline_boundary",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_mosers_workbook_helpers.py::test_metric_values_cover_zero_total_and_unknown_metric",
+    "source": "src/counter_risk/mosers/workbook_generation.py",
+    "changes": [
+      [
+        "return [0.0 for _ in totals_rows]",
+        "return [1.0 for _ in totals_rows]"
+      ]
+    ],
+    "restored_sha256": "136453535922d53a12d5a12a6888929fe4f533326c4882a43e9c0cad359353eb",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_metric_values_cover_zero_total_and_unknown_metric",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_metric_values_cover_zero_total_and_unknown_metric"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_metric_values_cover_zero_total_and_unknown_metric",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_mosers_workbook_helpers.py::test_section_helpers_write_clear_and_reject_invalid_markers",
+    "source": "src/counter_risk/mosers/workbook_generation.py",
+    "changes": [
+      [
+        "worksheet[f\"{mapping.target_column}{row_number}\"] = None",
+        "pass"
+      ]
+    ],
+    "restored_sha256": "136453535922d53a12d5a12a6888929fe4f533326c4882a43e9c0cad359353eb",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_section_helpers_write_clear_and_reject_invalid_markers",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_section_helpers_write_clear_and_reject_invalid_markers"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_section_helpers_write_clear_and_reject_invalid_markers",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_mosers_workbook_helpers.py::test_section_bounds_cover_missing_marker_empty_range_and_no_stop",
+    "source": "src/counter_risk/mosers/workbook_generation.py",
+    "changes": [
+      [
+        "if end_row < start_row:",
+        "if end_row <= start_row:"
+      ]
+    ],
+    "restored_sha256": "136453535922d53a12d5a12a6888929fe4f533326c4882a43e9c0cad359353eb",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_section_bounds_cover_missing_marker_empty_range_and_no_stop",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_section_bounds_cover_missing_marker_empty_range_and_no_stop"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_section_bounds_cover_missing_marker_empty_range_and_no_stop",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_mosers_workbook_helpers.py::test_field_and_header_validation_errors",
+    "source": "src/counter_risk/mosers/workbook_generation.py",
+    "changes": [
+      [
+        "Unsupported plug-values source field:",
+        "Unknown row field:"
+      ]
+    ],
+    "restored_sha256": "136453535922d53a12d5a12a6888929fe4f533326c4882a43e9c0cad359353eb",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_field_and_header_validation_errors",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_field_and_header_validation_errors"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_field_and_header_validation_errors",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_mosers_workbook_helpers.py::test_metric_column_resolution_handles_fallback_and_distant_duplicate",
+    "source": "src/counter_risk/mosers/workbook_generation.py",
+    "changes": [
+      [
+        "resolved[metric] = get_column_letter(column_number)",
+        "resolved[metric] = \"A\""
+      ]
+    ],
+    "restored_sha256": "136453535922d53a12d5a12a6888929fe4f533326c4882a43e9c0cad359353eb",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_metric_column_resolution_handles_fallback_and_distant_duplicate",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_metric_column_resolution_handles_fallback_and_distant_duplicate"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_metric_column_resolution_handles_fallback_and_distant_duplicate",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_mosers_workbook_helpers.py::test_template_missing_sheet_closes_workbook_and_generator_reports_missing_sheets",
+    "source": "src/counter_risk/mosers/workbook_generation.py",
+    "changes": [
+      [
+        "missing = \", \".join(missing_sheets)",
+        "missing = missing_sheets[0]"
+      ]
+    ],
+    "restored_sha256": "136453535922d53a12d5a12a6888929fe4f533326c4882a43e9c0cad359353eb",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_template_missing_sheet_closes_workbook_and_generator_reports_missing_sheets",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_template_missing_sheet_closes_workbook_and_generator_reports_missing_sheets"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_template_missing_sheet_closes_workbook_and_generator_reports_missing_sheets",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_mosers_workbook_helpers.py::test_trend_variant_clears_the_non_applicable_fcm_totals_section",
+    "source": "src/counter_risk/mosers/workbook_generation.py",
+    "changes": [
+      [
+        "worksheet[f\"{mapping.target_column}{row_number}\"] = None",
+        "worksheet[f\"{mapping.target_column}{row_number}\"] = \"stale value\""
+      ]
+    ],
+    "restored_sha256": "136453535922d53a12d5a12a6888929fe4f533326c4882a43e9c0cad359353eb",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_trend_variant_clears_the_non_applicable_fcm_totals_section",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_trend_variant_clears_the_non_applicable_fcm_totals_section"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_trend_variant_clears_the_non_applicable_fcm_totals_section",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_mosers_workbook_helpers.py::test_variant_wrappers_delegate_with_expected_variant",
+    "source": "src/counter_risk/mosers/workbook_generation.py",
+    "changes": [
+      [
+        "variant=\"ex_trend\",",
+        "variant=\"all_programs\","
+      ],
+      [
+        "variant=\"trend\",",
+        "variant=\"all_programs\","
+      ]
+    ],
+    "restored_sha256": "136453535922d53a12d5a12a6888929fe4f533326c4882a43e9c0cad359353eb",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_variant_wrappers_delegate_with_expected_variant",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 2,
+      "failed": [
+        "test_variant_wrappers_delegate_with_expected_variant[generate_mosers_workbook_ex_trend-ex_trend]",
+        "test_variant_wrappers_delegate_with_expected_variant[generate_mosers_workbook_trend-trend]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_mosers_workbook_helpers.py::test_variant_wrappers_delegate_with_expected_variant",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 2,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/parsers/test_repo_cash_source_edges.py::test_inferred_workbook_source_skips_empty_headers_and_rows",
+    "source": "src/counter_risk/parsers/repo_cash_sources.py",
+    "changes": [
+      [
+        "mapping[canonical_counterparty] = _coerce_cash_value(",
+        "mapping[canonical_counterparty] = 1 + _coerce_cash_value("
+      ]
+    ],
+    "restored_sha256": "c3922fb146d7182b4c06633d2eaa99ee4ee8647fcb06b3adb675d7e2a864d7b6",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_inferred_workbook_source_skips_empty_headers_and_rows",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 2,
+      "failed": [
+        "test_inferred_workbook_source_skips_empty_headers_and_rows[.xlsx]",
+        "test_inferred_workbook_source_skips_empty_headers_and_rows[.xlsm]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_inferred_workbook_source_skips_empty_headers_and_rows",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 2,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/parsers/test_repo_cash_source_edges.py::test_empty_structured_sources_and_overrides",
+    "source": "src/counter_risk/parsers/repo_cash_sources.py",
+    "changes": [
+      [
+        "    if not rows:\n        return {}",
+        "    if not rows:\n        return {\"unexpected\": 1.0}"
+      ]
+    ],
+    "restored_sha256": "c3922fb146d7182b4c06633d2eaa99ee4ee8647fcb06b3adb675d7e2a864d7b6",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_empty_structured_sources_and_overrides",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 2,
+      "failed": [
+        "test_empty_structured_sources_and_overrides[.csv]",
+        "test_empty_structured_sources_and_overrides[.xlsx]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_empty_structured_sources_and_overrides",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 2,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/parsers/test_repo_cash_source_edges.py::test_override_blank_fields_are_skipped_and_empty_overrides_preserve_source",
+    "source": "src/counter_risk/parsers/repo_cash_sources.py",
+    "changes": [
+      [
+        "    return overrides, audit_rows",
+        "    return {\"unexpected\": 1.0}, audit_rows"
+      ]
+    ],
+    "restored_sha256": "c3922fb146d7182b4c06633d2eaa99ee4ee8647fcb06b3adb675d7e2a864d7b6",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_override_blank_fields_are_skipped_and_empty_overrides_preserve_source",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_override_blank_fields_are_skipped_and_empty_overrides_preserve_source"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_override_blank_fields_are_skipped_and_empty_overrides_preserve_source",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/parsers/test_repo_cash_source_edges.py::test_structured_source_rejects_unsupported_type_or_extension",
+    "source": "src/counter_risk/parsers/repo_cash_sources.py",
+    "changes": [
+      [
+        "cash_source_type=xlsx requires a .xlsx/.xlsm file path",
+        "Unsupported workbook type"
+      ],
+      [
+        "Unsupported cash source extension",
+        "Unsupported format"
+      ]
+    ],
+    "restored_sha256": "c3922fb146d7182b4c06633d2eaa99ee4ee8647fcb06b3adb675d7e2a864d7b6",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_structured_source_rejects_unsupported_type_or_extension",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 2,
+      "failed": [
+        "test_structured_source_rejects_unsupported_type_or_extension[xlsx-cash.csv-cash_source_type=xlsx requires a .xlsx/.xlsm file path]",
+        "test_structured_source_rejects_unsupported_type_or_extension[None-cash.txt-Unsupported cash source extension]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_structured_source_rejects_unsupported_type_or_extension",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 2,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/parsers/test_repo_cash_source_edges.py::test_cash_dispatch_rejects_unknown_extension",
+    "source": "src/counter_risk/parsers/repo_cash_sources.py",
+    "changes": [
+      [
+        "Cannot determine cash source type",
+        "Unsupported input format"
+      ]
+    ],
+    "restored_sha256": "c3922fb146d7182b4c06633d2eaa99ee4ee8647fcb06b3adb675d7e2a864d7b6",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_cash_dispatch_rejects_unknown_extension",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_cash_dispatch_rejects_unknown_extension"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_cash_dispatch_rejects_unknown_extension",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/parsers/test_repo_cash_source_edges.py::test_pdf_inference_uses_default_parser",
+    "source": "src/counter_risk/parsers/repo_cash_sources.py",
+    "changes": [
+      [
+        "repo_cash: dict[str, float] = pdf_parser(resolved_source)",
+        "repo_cash: dict[str, float] = {}"
+      ]
+    ],
+    "restored_sha256": "c3922fb146d7182b4c06633d2eaa99ee4ee8647fcb06b3adb675d7e2a864d7b6",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_pdf_inference_uses_default_parser",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_pdf_inference_uses_default_parser"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_pdf_inference_uses_default_parser",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/parsers/test_repo_cash_source_edges.py::test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe",
+    "source": "src/counter_risk/parsers/repo_cash_sources.py",
+    "changes": [
+      [
+        "must include counterparty and cash columns",
+        "has an invalid schema"
+      ]
+    ],
+    "restored_sha256": "c3922fb146d7182b4c06633d2eaa99ee4ee8647fcb06b3adb675d7e2a864d7b6",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 2,
+      "failed": [
+        "test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe[counterparty,other]",
+        "test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe[other,cash_value]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/parsers/test_repo_cash_source_edges.py::test_missing_cash_schema_is_rejected_but_duplicate_scan_is_safe",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 2,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/compute/test_limits_edges.py::test_sequence_limits_accept_models_and_mappings_and_skip_null_name_alias",
+    "source": "src/counter_risk/compute/limits.py",
+    "changes": [
+      [
+        "return abs(value)",
+        "return value"
+      ]
+    ],
+    "restored_sha256": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_sequence_limits_accept_models_and_mappings_and_skip_null_name_alias",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_sequence_limits_accept_models_and_mappings_and_skip_null_name_alias"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_sequence_limits_accept_models_and_mappings_and_skip_null_name_alias",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/compute/test_limits_edges.py::test_sequence_limits_report_invalid_entries",
+    "source": "src/counter_risk/compute/limits.py",
+    "changes": [
+      [
+        "limits_cfg sequence items must be LimitEntry or mappings",
+        "Unsupported limit entry"
+      ],
+      [
+        "limits_cfg is invalid:",
+        "Invalid limits configuration:"
+      ]
+    ],
+    "restored_sha256": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_sequence_limits_report_invalid_entries",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 3,
+      "failed": [
+        "test_sequence_limits_report_invalid_entries[entries0-TypeError-sequence items must be LimitEntry or mappings \\\\(index 0\\\\)]",
+        "test_sequence_limits_report_invalid_entries[entries1-ValueError-limits_cfg is invalid]",
+        "test_sequence_limits_report_invalid_entries[entries2-ValueError-limits_cfg is invalid]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_sequence_limits_report_invalid_entries",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 3,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/compute/test_limits_edges.py::test_exposure_row_validation_names_the_bad_index",
+    "source": "src/counter_risk/compute/limits.py",
+    "changes": [
+      [
+        "row at index {index} must be a mapping",
+        "row must contain exposure data"
+      ]
+    ],
+    "restored_sha256": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_exposure_row_validation_names_the_bad_index",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_exposure_row_validation_names_the_bad_index"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_exposure_row_validation_names_the_bad_index",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/compute/test_limits_edges.py::test_limits_reject_nonfinite_exposure_magnitudes",
+    "source": "src/counter_risk/compute/limits.py",
+    "changes": [
+      [
+        "exposures_df notional values must be finite",
+        "Invalid notional"
+      ]
+    ],
+    "restored_sha256": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_limits_reject_nonfinite_exposure_magnitudes",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 3,
+      "failed": [
+        "test_limits_reject_nonfinite_exposure_magnitudes[nan]",
+        "test_limits_reject_nonfinite_exposure_magnitudes[inf]",
+        "test_limits_reject_nonfinite_exposure_magnitudes[-inf]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_limits_reject_nonfinite_exposure_magnitudes",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 3,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/compute/test_limits_edges.py::test_empty_breaches_csv_truncates_stale_output",
+    "source": "src/counter_risk/compute/limits.py",
+    "changes": [
+      [
+        "out_path.write_text(\"\", encoding=\"utf-8\")",
+        "out_path.write_text(\"stale breach\", encoding=\"utf-8\")"
+      ]
+    ],
+    "restored_sha256": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_empty_breaches_csv_truncates_stale_output",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_empty_breaches_csv_truncates_stale_output"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_empty_breaches_csv_truncates_stale_output",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/compute/test_limits_edges.py::test_missing_pandas_returns_records_with_ordered_columns",
+    "source": "src/counter_risk/compute/limits.py",
+    "changes": [
+      [
+        "return [{column: row.get(column) for column in columns} for row in records]",
+        "return records[::-1] + [{\"unexpected\": True}]"
+      ]
+    ],
+    "restored_sha256": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_missing_pandas_returns_records_with_ordered_columns",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_missing_pandas_returns_records_with_ordered_columns"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_missing_pandas_returns_records_with_ordered_columns",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/compute/test_limits_edges.py::test_table_projection_fills_missing_columns_without_extra_fields",
+    "source": "src/counter_risk/compute/limits.py",
+    "changes": [
+      [
+        "frame[column] = None",
+        "frame[column] = \"missing\""
+      ]
+    ],
+    "restored_sha256": "a64d6c8d6aa5e4803d5176c6258a9cb86b1a322705e2725d29a15f0966554f82",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_table_projection_fills_missing_columns_without_extra_fields",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_table_projection_fills_missing_columns_without_extra_fields"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/compute/test_limits_edges.py::test_table_projection_fills_missing_columns_without_extra_fields",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/pipeline/test_data_quality_edges.py::test_reconciliation_details_use_safe_fallbacks",
+    "source": "src/counter_risk/pipeline/data_quality.py",
+    "changes": [
+      [
+        "issue = _reconciliation_issue_summary(entry)",
+        "issue = \"unknown\""
+      ]
+    ],
+    "restored_sha256": "f06599769890db230daf5c60f383e6167e6dbea9842d3f7aa866ceabdd3fc054",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/pipeline/test_data_quality_edges.py::test_reconciliation_details_use_safe_fallbacks",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 4,
+      "failed": [
+        "test_reconciliation_details_use_safe_fallbacks[entry0-unmapped_counterparty(A, B, C)]",
+        "test_reconciliation_details_use_safe_fallbacks[entry1-unmapped_counterparty]",
+        "test_reconciliation_details_use_safe_fallbacks[entry2-source workbook]",
+        "test_reconciliation_details_use_safe_fallbacks[entry3-reconciliation_gap]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/pipeline/test_data_quality_edges.py::test_reconciliation_details_use_safe_fallbacks",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 4,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/pipeline/test_data_quality_edges.py::test_failed_reconciliation_without_variant_map_still_reports_failure",
+    "source": "src/counter_risk/pipeline/data_quality.py",
+    "changes": [
+      [
+        "if reconciliation_status == \"failed\" or gap_count > 0:",
+        "if gap_count > 0:"
+      ]
+    ],
+    "restored_sha256": "f06599769890db230daf5c60f383e6167e6dbea9842d3f7aa866ceabdd3fc054",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/pipeline/test_data_quality_edges.py::test_failed_reconciliation_without_variant_map_still_reports_failure",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_failed_reconciliation_without_variant_map_still_reports_failure"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/pipeline/test_data_quality_edges.py::test_failed_reconciliation_without_variant_map_still_reports_failure",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/pipeline/test_data_quality_edges.py::test_warning_fallbacks_are_deduplicated_and_classified",
+    "source": "src/counter_risk/pipeline/data_quality.py",
+    "changes": [
+      [
+        "if key in seen:\n            continue",
+        "if False:\n            continue"
+      ]
+    ],
+    "restored_sha256": "f06599769890db230daf5c60f383e6167e6dbea9842d3f7aa866ceabdd3fc054",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/pipeline/test_data_quality_edges.py::test_warning_fallbacks_are_deduplicated_and_classified",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 5,
+      "failed": [
+        "test_warning_fallbacks_are_deduplicated_and_classified[warning0-pipeline-fail]",
+        "test_warning_fallbacks_are_deduplicated_and_classified[Reconciliation requires attention-reconciliation-warn]",
+        "test_warning_fallbacks_are_deduplicated_and_classified[Mapping needs review-mapping-warn]",
+        "test_warning_fallbacks_are_deduplicated_and_classified[Source report date conflict: December versus January-date-warn]",
+        "test_warning_fallbacks_are_deduplicated_and_classified[Source report date override: December selected-date-warn]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/pipeline/test_data_quality_edges.py::test_warning_fallbacks_are_deduplicated_and_classified",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 5,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/pipeline/test_data_quality_edges.py::test_unknown_severity_counts_as_warning_in_its_category",
+    "source": "src/counter_risk/pipeline/data_quality.py",
+    "changes": [
+      [
+        "severity = \"warn\"",
+        "severity = \"info\""
+      ]
+    ],
+    "restored_sha256": "f06599769890db230daf5c60f383e6167e6dbea9842d3f7aa866ceabdd3fc054",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/pipeline/test_data_quality_edges.py::test_unknown_severity_counts_as_warning_in_its_category",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_unknown_severity_counts_as_warning_in_its_category"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/pipeline/test_data_quality_edges.py::test_unknown_severity_counts_as_warning_in_its_category",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/pipeline/test_data_quality_edges.py::test_cash_override_messages_keep_their_specific_codes",
+    "source": "src/counter_risk/pipeline/data_quality.py",
+    "changes": [
+      [
+        "return \"REPO_CASH_OVERRIDES_APPLIED\"",
+        "return \"UNKNOWN\""
+      ],
+      [
+        "return \"REPO_CASH_OVERRIDES_EMPTY\"",
+        "return \"UNKNOWN\""
+      ]
+    ],
+    "restored_sha256": "f06599769890db230daf5c60f383e6167e6dbea9842d3f7aa866ceabdd3fc054",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/pipeline/test_data_quality_edges.py::test_cash_override_messages_keep_their_specific_codes",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 2,
+      "failed": [
+        "test_cash_override_messages_keep_their_specific_codes[Repo cash overrides applied: 2-REPO_CASH_OVERRIDES_APPLIED-info]",
+        "test_cash_override_messages_keep_their_specific_codes[Repo cash overrides file present but empty-REPO_CASH_OVERRIDES_EMPTY-warn]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/pipeline/test_data_quality_edges.py::test_cash_override_messages_keep_their_specific_codes",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 2,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_context_edges.py::test_context_requires_a_run_directory",
+    "source": "src/counter_risk/chat/context.py",
+    "changes": [
+      [
+        "Run directory does not exist or is not a directory:",
+        "Run directory unavailable:"
+      ]
+    ],
+    "restored_sha256": "1fa57c62674e2635fc7ed60db479bb74f75ef07c7ff8860e46413cd8ead4b78e",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_context_requires_a_run_directory",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 2,
+      "failed": [
+        "test_context_requires_a_run_directory[missing]",
+        "test_context_requires_a_run_directory[file]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_context_requires_a_run_directory",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 2,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_context_edges.py::test_manifest_requires_an_object",
+    "source": "src/counter_risk/chat/context.py",
+    "changes": [
+      [
+        "manifest.json must contain a JSON object",
+        "Invalid manifest shape"
+      ]
+    ],
+    "restored_sha256": "1fa57c62674e2635fc7ed60db479bb74f75ef07c7ff8860e46413cd8ead4b78e",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_manifest_requires_an_object",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_manifest_requires_an_object"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_manifest_requires_an_object",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_context_edges.py::test_context_wraps_read_errors",
+    "source": "src/counter_risk/chat/context.py",
+    "changes": [
+      [
+        "Failed to read manifest.json:",
+        "Manifest unavailable:"
+      ],
+      [
+        "Failed to read CSV table:",
+        "CSV unavailable:"
+      ],
+      [
+        "Failed to read chat log file:",
+        "Chat unavailable:"
+      ]
+    ],
+    "restored_sha256": "1fa57c62674e2635fc7ed60db479bb74f75ef07c7ff8860e46413cd8ead4b78e",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_context_wraps_read_errors",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 3,
+      "failed": [
+        "test_context_wraps_read_errors[manifest.json-load_manifest-Failed to read manifest.json]",
+        "test_context_wraps_read_errors[cash.csv-discover_tables-Failed to read CSV table]",
+        "test_context_wraps_read_errors[chat_logs/chat.jsonl-load_chat_logs-Failed to read chat log file]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_context_wraps_read_errors",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 3,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_context_edges.py::test_table_discovery_wraps_iteration_errors",
+    "source": "src/counter_risk/chat/context.py",
+    "changes": [
+      [
+        "Failed while discovering tables in run directory:",
+        "Cannot scan:"
+      ]
+    ],
+    "restored_sha256": "1fa57c62674e2635fc7ed60db479bb74f75ef07c7ff8860e46413cd8ead4b78e",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_table_discovery_wraps_iteration_errors",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_table_discovery_wraps_iteration_errors"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_table_discovery_wraps_iteration_errors",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_context_edges.py::test_csv_parse_errors_include_the_table_path",
+    "source": "src/counter_risk/chat/context.py",
+    "changes": [
+      [
+        "Malformed CSV table:",
+        "Table parser failed:"
+      ]
+    ],
+    "restored_sha256": "1fa57c62674e2635fc7ed60db479bb74f75ef07c7ff8860e46413cd8ead4b78e",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_csv_parse_errors_include_the_table_path",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_csv_parse_errors_include_the_table_path"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_csv_parse_errors_include_the_table_path",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_context_edges.py::test_blank_chat_lines_and_malformed_delta_records_are_skipped",
+    "source": "src/counter_risk/chat/context.py",
+    "changes": [
+      [
+        "return warnings, deltas",
+        "return warnings, {}"
+      ]
+    ],
+    "restored_sha256": "1fa57c62674e2635fc7ed60db479bb74f75ef07c7ff8860e46413cd8ead4b78e",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_blank_chat_lines_and_malformed_delta_records_are_skipped",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_blank_chat_lines_and_malformed_delta_records_are_skipped"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_blank_chat_lines_and_malformed_delta_records_are_skipped",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_context_edges.py::test_parquet_disk_failure_is_distinct_from_arrow_error",
+    "source": "src/counter_risk/chat/context.py",
+    "changes": [
+      [
+        "Failed to access Parquet table on disk:",
+        "Parquet data format error:"
+      ]
+    ],
+    "restored_sha256": "1fa57c62674e2635fc7ed60db479bb74f75ef07c7ff8860e46413cd8ead4b78e",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_parquet_disk_failure_is_distinct_from_arrow_error",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_parquet_disk_failure_is_distinct_from_arrow_error"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_parquet_disk_failure_is_distinct_from_arrow_error",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_context_edges.py::test_parquet_success_converts_to_records",
+    "source": "src/counter_risk/chat/context.py",
+    "changes": [
+      [
+        "dataframe.to_dict(orient=\"records\")",
+        "dataframe.to_dict(orient=\"columns\")"
+      ]
+    ],
+    "restored_sha256": "1fa57c62674e2635fc7ed60db479bb74f75ef07c7ff8860e46413cd8ead4b78e",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_parquet_success_converts_to_records",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_parquet_success_converts_to_records"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_context_edges.py::test_parquet_success_converts_to_records",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_session_edges.py::test_default_provider_skips_unavailable_models_and_checks_other_providers",
+    "source": "src/counter_risk/chat/session.py",
+    "changes": [
+      [
+        "for provider, provider_models in visible.items():",
+        "for provider, provider_models in ():"
+      ]
+    ],
+    "restored_sha256": "e807eaac127841d9e7f62e34c67b7dca2011fb5210ba750bc217cd06c6898af0",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_default_provider_skips_unavailable_models_and_checks_other_providers",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_default_provider_skips_unavailable_models_and_checks_other_providers"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_default_provider_skips_unavailable_models_and_checks_other_providers",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_session_edges.py::test_default_model_fallback_is_deterministic_when_none_are_available",
+    "source": "src/counter_risk/chat/session.py",
+    "changes": [
+      [
+        "return models[0]",
+        "return \"missing-model\""
+      ],
+      [
+        "return _PLACEHOLDER_MODEL",
+        "return \"missing-model\""
+      ]
+    ],
+    "restored_sha256": "e807eaac127841d9e7f62e34c67b7dca2011fb5210ba750bc217cd06c6898af0",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_default_model_fallback_is_deterministic_when_none_are_available",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 2,
+      "failed": [
+        "test_default_model_fallback_is_deterministic_when_none_are_available[models0-a-model]",
+        "test_default_model_fallback_is_deterministic_when_none_are_available[models1-chat-model-placeholder]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_default_model_fallback_is_deterministic_when_none_are_available",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 2,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_session_edges.py::test_local_model_support_requires_offline_mode",
+    "source": "src/counter_risk/chat/session.py",
+    "changes": [
+      [
+        "if provider_key == \"local\" and not _offline_mode_enabled():\n        return False",
+        "if provider_key == \"local\" and not _offline_mode_enabled():\n        return True"
+      ]
+    ],
+    "restored_sha256": "e807eaac127841d9e7f62e34c67b7dca2011fb5210ba750bc217cd06c6898af0",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_local_model_support_requires_offline_mode",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_local_model_support_requires_offline_mode"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_local_model_support_requires_offline_mode",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_session_edges.py::test_empty_untrusted_text_produces_no_ratio_warnings",
+    "source": "src/counter_risk/chat/session.py",
+    "changes": [
+      [
+        "if total_chars == 0:\n        return",
+        "if total_chars == 0:\n        _LOGGER.warning(\"Empty text\")\n        return"
+      ]
+    ],
+    "restored_sha256": "e807eaac127841d9e7f62e34c67b7dca2011fb5210ba750bc217cd06c6898af0",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_empty_untrusted_text_produces_no_ratio_warnings",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_empty_untrusted_text_produces_no_ratio_warnings"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_empty_untrusted_text_produces_no_ratio_warnings",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_session_edges.py::test_equal_exposure_rows_keep_source_order",
+    "source": "src/counter_risk/chat/session.py",
+    "changes": [
+      [
+        "return sorted(rows, key=cmp_to_key(_compare))",
+        "return sorted(rows, key=cmp_to_key(_compare))[::-1]"
+      ]
+    ],
+    "restored_sha256": "e807eaac127841d9e7f62e34c67b7dca2011fb5210ba750bc217cd06c6898af0",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_equal_exposure_rows_keep_source_order",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_equal_exposure_rows_keep_source_order"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_equal_exposure_rows_keep_source_order",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_chat_session_edges.py::test_nonpositive_top_count_returns_no_rows",
+    "source": "src/counter_risk/chat/session.py",
+    "changes": [
+      [
+        "if top_n <= 0:\n        return []",
+        "if top_n <= 0:\n        return rows"
+      ]
+    ],
+    "restored_sha256": "e807eaac127841d9e7f62e34c67b7dca2011fb5210ba750bc217cd06c6898af0",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_nonpositive_top_count_returns_no_rows",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 2,
+      "failed": [
+        "test_nonpositive_top_count_returns_no_rows[0]",
+        "test_nonpositive_top_count_returns_no_rows[-1]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_chat_session_edges.py::test_nonpositive_top_count_returns_no_rows",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 2,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_demo_artifact_edges.py::test_demo_config_rejects_a_sequence",
+    "source": "src/counter_risk/demo_artifact.py",
+    "changes": [
+      [
+        "Demo config must be a mapping:",
+        "Invalid demo config:"
+      ]
+    ],
+    "restored_sha256": "600c356641ac3c234b641072cb975b65118027b02a699e114c9ee5c82d3b386c",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_demo_artifact_edges.py::test_demo_config_rejects_a_sequence",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_demo_config_rejects_a_sequence"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_demo_artifact_edges.py::test_demo_config_rejects_a_sequence",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_demo_artifact_edges.py::test_local_demo_config_preserves_existing_paths_and_non_string_values",
+    "source": "src/counter_risk/demo_artifact.py",
+    "changes": [
+      [
+        "if not changed:\n        return config_path",
+        "if not changed:\n        return output_dir"
+      ]
+    ],
+    "restored_sha256": "600c356641ac3c234b641072cb975b65118027b02a699e114c9ee5c82d3b386c",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_demo_artifact_edges.py::test_local_demo_config_preserves_existing_paths_and_non_string_values",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_local_demo_config_preserves_existing_paths_and_non_string_values"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_demo_artifact_edges.py::test_local_demo_config_preserves_existing_paths_and_non_string_values",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_demo_artifact_edges.py::test_demo_path_falls_back_to_config_parent",
+    "source": "src/counter_risk/demo_artifact.py",
+    "changes": [
+      [
+        "return (config_dir.parent / path).resolve()",
+        "return (config_dir / path).resolve()"
+      ]
+    ],
+    "restored_sha256": "600c356641ac3c234b641072cb975b65118027b02a699e114c9ee5c82d3b386c",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_demo_artifact_edges.py::test_demo_path_falls_back_to_config_parent",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 1,
+      "failed": [
+        "test_demo_path_falls_back_to_config_parent"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_demo_artifact_edges.py::test_demo_path_falls_back_to_config_parent",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 1,
+      "failed": [],
+      "errors": []
+    }
+  },
+  {
+    "node": "tests/test_demo_artifact_edges.py::test_demo_main_passes_cli_paths_to_builder_and_reports_result",
+    "source": "src/counter_risk/demo_artifact.py",
+    "changes": [
+      [
+        "print(f\"Demo artifact written to {run_dir}\")",
+        "print(\"Demo artifact created\")"
+      ]
+    ],
+    "restored_sha256": "600c356641ac3c234b641072cb975b65118027b02a699e114c9ee5c82d3b386c",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_demo_artifact_edges.py::test_demo_main_passes_cli_paths_to_builder_and_reports_result",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 1,
+      "collected": 2,
+      "failed": [
+        "test_demo_main_passes_cli_paths_to_builder_and_reports_result[False]",
+        "test_demo_main_passes_cli_paths_to_builder_and_reports_result[True]"
+      ],
+      "errors": []
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_demo_artifact_edges.py::test_demo_main_passes_cli_paths_to_builder_and_reports_result",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/1221-mutation.xml"
+      ],
+      "exit": 0,
+      "collected": 2,
+      "failed": [],
+      "errors": []
+    }
+  }
+]
