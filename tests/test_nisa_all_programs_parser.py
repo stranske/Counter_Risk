@@ -529,9 +529,12 @@ def test_parser_preserves_each_numeric_field_in_ch_and_totals(
 
 
 def test_parser_raises_explicit_missing_headers_error(tmp_path: Path) -> None:
+    import openpyxl
+
     workbook_path = tmp_path / "raw_nisa_missing_headers.xlsx"
     _build_raw_nisa_workbook(
         workbook_path,
+        sheet_name="Incomplete Data",
         header_order=(
             "counterparty",
             "cash",
@@ -543,6 +546,13 @@ def test_parser_raises_explicit_missing_headers_error(tmp_path: Path) -> None:
             "annualized_volatility",
         ),
     )
+    workbook = openpyxl.load_workbook(workbook_path)
+    try:
+        intro = workbook.create_sheet("Intro", 0)
+        intro.cell(1, 1).value = "Workbook instructions"
+        workbook.save(workbook_path)
+    finally:
+        workbook.close()
 
     with pytest.raises(ValueError, match="Missing required headers:") as exc_info:
         parse_nisa_all_programs(workbook_path)
@@ -550,6 +560,8 @@ def test_parser_raises_explicit_missing_headers_error(tmp_path: Path) -> None:
     message = str(exc_info.value)
     assert "commodity" in message
     assert "currency" in message
+    # Report all evaluated sheets in candidate order so operators can find the bad export.
+    assert message.endswith("evaluated sheets: Incomplete Data, Intro")
 
 
 def test_parser_rejects_missing_and_non_workbook_paths(tmp_path: Path) -> None:
