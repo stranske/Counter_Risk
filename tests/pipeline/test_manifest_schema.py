@@ -281,6 +281,42 @@ def test_manifest_rejects_confidence_above_one_without_overwriting_outputs(
     assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
 
 
+@pytest.mark.parametrize(
+    ("row", "diagnostic"),
+    [
+        pytest.param(0, "must be >= 1", id="zero-row"),
+        pytest.param(True, "must be of type integer or null, got bool", id="boolean-row"),
+        pytest.param(1.5, "must be of type integer or null, got float", id="fractional-row"),
+    ],
+)
+def test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+    tmp_path: Path,
+    row: int | float | bool,
+    diagnostic: str,
+) -> None:
+    builder, manifest = numeric_manifest
+    evidence = manifest["top_exposures"]["all_programs"][0]["evidence"]
+    # Row references use Excel's one-based indexing; null means no row is known.
+    for valid_row in (None, 1):
+        evidence["row"] = valid_row
+        assert validate_manifest(manifest) == (True, None)
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        saved = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
+        assert saved["top_exposures"]["all_programs"][0]["evidence"]["row"] == valid_row
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+
+    evidence["row"] = row
+    assert validate_manifest(manifest) == (
+        False,
+        f"manifest.top_exposures.all_programs[0].evidence.row {diagnostic}",
+    )
+    with pytest.raises(ValueError, match="evidence.row " + diagnostic):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
+
+
 def test_manifest_preserves_confidence_bounds_and_null(
     numeric_manifest: tuple[ManifestBuilder, dict[str, Any]], tmp_path: Path
 ) -> None:
