@@ -440,6 +440,9 @@ def test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows
         sheet.insert_cols(1, 2)
         sheet.cell(6, 3).value = None
         sheet.cell(6, segment_column).value = "Swaps"
+        # A stray segment label in the other candidate must not outweigh four real labels.
+        other_column = 3 if segment_column == 1 else 1
+        sheet.cell(5, other_column).value = "Futures"
         # Segment-only rows must update the state without becoming counterparties.
         sheet.cell(8, segment_column).value = "  Repo  "
         sheet.cell(11, segment_column).value = "Futures"
