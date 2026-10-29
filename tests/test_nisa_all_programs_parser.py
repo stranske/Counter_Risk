@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
+from zipfile import ZipFile
 
 import pytest
 
@@ -401,3 +403,93 @@ def test_parser_skips_subtotals_and_stops_totals_at_next_section(tmp_path: Path)
 
     assert [row.counterparty for row in parsed.ch_rows] == ["Alpha Bank", "Beta Bank"]
     assert [row.counterparty for row in parsed.totals_rows] == ["Alpha Bank"]
+
+
+@pytest.mark.parametrize(
+    ("cleared_cells", "message"),
+    [
+        ([(24, 2)], "Unable to locate 'Total by Counterparty/Clearing House' section"),
+        ([(6, 1)], "produced no CPRS-CH rows"),
+        ([(25, 2)], "produced no totals rows"),
+    ],
+    ids=["missing-totals-marker", "missing-segment", "empty-totals"],
+)
+def test_parser_rejects_incomplete_sections(
+    tmp_path: Path, cleared_cells: list[tuple[int, int]], message: str
+) -> None:
+    import openpyxl
+
+    path = _build_raw_nisa_workbook(tmp_path / "incomplete.xlsx")
+    workbook = openpyxl.load_workbook(path)
+    try:
+        for row, column in cleared_cells:
+            workbook.active.cell(row, column).value = None
+        workbook.save(path)
+    finally:
+        workbook.close()
+
+    with pytest.raises(ValueError, match=message):
+        parse_nisa_all_programs(path)
+
+
+def test_parser_closes_workbook_with_no_worksheets(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "empty.xlsx"
+    path.touch()
+    workbook = Mock(sheetnames=[])
+    monkeypatch.setattr("openpyxl.load_workbook", lambda **kwargs: workbook)
+
+    with pytest.raises(ValueError, match="contains no worksheets"):
+        parse_nisa_all_programs(path)
+
+    workbook.close.assert_called_once_with()
+
+
+def test_parser_infers_unlabelled_counterparty_column_from_totals_marker(tmp_path: Path) -> None:
+    import openpyxl
+
+    path = _build_raw_nisa_workbook(tmp_path / "unlabelled.xlsx")
+    workbook = openpyxl.load_workbook(path)
+    try:
+        workbook.active.cell(4, 2).value = None
+        # A label before the first segment must not become a counterparty row.
+        workbook.active.cell(5, 2).value = "Preparation notes"
+        workbook.active.cell(28, 3).value = 999
+        workbook.save(path)
+    finally:
+        workbook.close()
+
+    _assert_expected_rows(parse_nisa_all_programs(path))
+
+
+def test_parser_reports_missing_totals_with_unlabelled_counterparty_column(tmp_path: Path) -> None:
+    import openpyxl
+
+    path = _build_raw_nisa_workbook(tmp_path / "no-marker.xlsx")
+    workbook = openpyxl.load_workbook(path)
+    try:
+        workbook.active.cell(4, 2).value = None
+        workbook.active.cell(24, 2).value = None
+        workbook.save(path)
+    finally:
+        workbook.close()
+
+    with pytest.raises(ValueError, match="Unable to locate 'Total by Counterparty"):
+        parse_nisa_all_programs(path)
+
+
+def test_parser_reads_workbook_without_dimension_record(tmp_path: Path) -> None:
+    import re
+
+    original = _build_raw_nisa_workbook(tmp_path / "original.xlsx")
+    path = tmp_path / "dimensionless.xlsx"
+    with ZipFile(original) as source, ZipFile(path, "w") as destination:
+        for entry in source.infolist():
+            data = source.read(entry.filename)
+            if entry.filename == "xl/worksheets/sheet1.xml":
+                data, count = re.subn(rb"<dimension\b[^>]*/>", b"", data)
+                assert count == 1
+            destination.writestr(entry, data)
+
+    _assert_expected_rows(parse_nisa_all_programs(path))

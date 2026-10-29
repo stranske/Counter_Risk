@@ -15,6 +15,53 @@ import pytest
 from counter_risk.cli import mapping_diff_report
 
 
+def test_mapping_diff_report_combines_explicit_names_and_json_payload(tmp_path: Path) -> None:
+    path = tmp_path / "names.json"
+    path.write_text('["Beta"]', encoding="utf-8")
+    assert mapping_diff_report._build_source_payload(names=["Alpha"], payload_paths=[path]) == [
+        "Alpha",
+        ["Beta"],
+    ]
+    assert mapping_diff_report._build_source_payload(names=[], payload_paths=[path]) == ["Beta"]
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [[], {}, {"reconciliation_results": []}, {"reconciliation_results": {"by_variant": []}}],
+)
+def test_mapping_diff_report_ignores_malformed_manifest_roots(payload: object) -> None:
+    assert mapping_diff_report._iter_manifest_source_names(payload) == []
+
+
+def test_mapping_diff_report_skips_malformed_manifest_children() -> None:
+    payload = {
+        "reconciliation_results": {
+            "by_variant": {
+                "bad": None,
+                "no-sheets": {"by_sheet": []},
+                "valid": {
+                    "by_sheet": {
+                        "bad": [],
+                        "valid": {"counterparties_in_data": ["Beta", " ", "Alpha", "Beta"]},
+                    }
+                },
+            }
+        }
+    }
+    assert mapping_diff_report._iter_manifest_source_names(payload) == ["Alpha", "Beta"]
+
+
+def test_mapping_diff_report_handles_registry_failure_in_process(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    registry = tmp_path / "missing.yml"
+    assert mapping_diff_report.main(["--registry", str(registry)]) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert str(registry) in captured.err
+    assert len(captured.err.strip().splitlines()) == 1
+
+
 def _cli_cmd() -> list[str]:
     return [sys.executable, "-m", "counter_risk.cli.mapping_diff_report"]
 

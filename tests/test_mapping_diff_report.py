@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from counter_risk.reports.mapping_diff import (
     collect_mapping_diff_findings,
     generate_mapping_diff_report,
@@ -25,6 +27,40 @@ def _write_registry(path: Path) -> None:
         + "\n",
         encoding="utf-8",
     )
+
+
+def test_mapping_report_scans_legacy_nested_strings_but_ignores_mapping_metadata(
+    tmp_path: Path,
+) -> None:
+    registry = tmp_path / "registry.yml"
+    _write_registry(registry)
+    findings = collect_mapping_diff_findings(
+        registry,
+        {
+            "legacy": [
+                "Zulu Unknown",
+                ["Alpha Unknown", " "],
+                {"name": "Ignored metadata"},
+                7,
+            ]
+        },
+    )
+    assert findings["unmapped_raw_names"] == ["Alpha Unknown", "Zulu Unknown"]
+
+
+@pytest.mark.parametrize("payload", ["Unscoped metadata", 17])
+def test_mapping_report_ignores_non_sequence_normalization_payload(
+    tmp_path: Path, payload: object
+) -> None:
+    registry = tmp_path / "registry.yml"
+    _write_registry(registry)
+    findings = collect_mapping_diff_findings(registry, {"normalization": payload})
+    assert findings == {"unmapped_raw_names": [], "fallback_mapped": {}, "name_resolutions": []}
+
+
+def test_mapping_report_rejects_unsupported_output_format(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="Unsupported output format: json"):
+        generate_mapping_diff_report(tmp_path / "absent.yml", {}, output_format="json")
 
 
 def test_generate_mapping_diff_report_scans_normalization_and_reconciliation_payloads(
