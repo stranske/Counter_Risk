@@ -1,0 +1,91 @@
+{
+  "starting_head": "4176a426e625eac052d27a907c66e4b92e59e56d",
+  "target": "src/counter_risk/web_demo.py",
+  "selection": "First target in issue #1219 explicit escaped-defect/churn/uncovered-mass ranking.",
+  "change": "Test-only extension to all 15 top-level fixture source fields, plus existing screenshot and discovery cases; 12 new relocation cases and 13 new containment cases.",
+  "new_regression_cases": 25,
+  "mutation_proof": "field-mutation-receipts.json: all 25 fail individually when their production field is omitted and pass after byte-for-byte restoration.",
+  "production_changed": false,
+  "full_suite": {
+    "command": "pytest tests/ -n 4 -m 'not slow' -q -o addopts= --cov=counter_risk.web_demo --cov-report=json:/tmp/issue-1219-fields-full.json --cov-report=term-missing",
+    "exit": 0,
+    "passed": 2590,
+    "skipped": 1,
+    "seconds": 71.75,
+    "coverage": {
+      "covered_lines": 127,
+      "num_statements": 127,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    }
+  },
+  "targeted_suite": {
+    "command": "pytest tests/test_web_demo_helpers.py tests/test_web_demo_smoke.py -m 'not slow' -q -o addopts= --cov=counter_risk.web_demo --cov-report=term-missing --cov-report=json:/tmp/issue-1219-fields-targeted.json",
+    "exit": 0,
+    "passed": 46,
+    "deselected": 1,
+    "coverage": {
+      "covered_lines": 127,
+      "num_statements": 127,
+      "percent_covered": 100.0,
+      "percent_covered_display": "100",
+      "missing_lines": 0,
+      "excluded_lines": 0,
+      "percent_statements_covered": 100.0,
+      "percent_statements_covered_display": "100"
+    }
+  },
+  "baseline_target_coverage": {
+    "statements": 127,
+    "missed": 0,
+    "cover_percent": 100
+  },
+  "reduction_in_existing_target_missed_lines_this_run": 0,
+  "coverage_limit": "CI issue baseline remains authoritative: 89.32% blended; local coverage is line-only. Prior whole-suite target reduction remains 5 lines, about 175 short of 180. No new CI blended reduction claimed.",
+  "formatting": {
+    "command": "black --check --line-length 100 --exclude '(\\.workflows-lib|node_modules)' .",
+    "exit": 0,
+    "files": 403,
+    "environment": {
+      "BLACK_NUM_WORKERS": "1",
+      "BLACK_CACHE_DIR": "/tmp/issue-1219-field-black-cache"
+    },
+    "preparation": "After the initial parallel invocation stalled, the existing relocation-black-driver.txt warmed the cache serially; the unmodified native CLI then passed. Initial stalled process interrupted after successful check."
+  },
+  "lint": {
+    "command": "ruff check --output-format github --extend-exclude .workflows-lib .",
+    "exit": 0
+  },
+  "git_diff_check_exit": 0,
+  "prior_published_head": {
+    "sha": "4176a426e625eac052d27a907c66e4b92e59e56d",
+    "gate": "success",
+    "gate_run": 40845116004,
+    "agents_guard": "success",
+    "agents_guard_run": 40845115733
+  },
+  "metadata_publication": {
+    "body_update": "rejected",
+    "needs_human_label": "rejected",
+    "blocker_comment": "rejected",
+    "reason": "MCP tool call requires approval, but approval policy is never"
+  },
+  "local_commit_checkout": "/tmp/issue-1219-field-commit",
+  "push": {
+    "command": "GIT_TERMINAL_PROMPT=0 timeout 30s git -C /tmp/issue-1219-field-commit push https://github.com/stranske/Counter_Risk.git HEAD:refs/heads/codex/issue-1219",
+    "exit": 128,
+    "reason": "Could not resolve host: github.com"
+  },
+  "portable_bundle": "/tmp/issue-1219-fields.bundle",
+  "final_remote_pr_state": {
+    "number": 1221,
+    "state": "open",
+    "draft": false,
+    "head_sha": "4176a426e625eac052d27a907c66e4b92e59e56d",
+    "new_test_expansion_published": false
+  }
+}

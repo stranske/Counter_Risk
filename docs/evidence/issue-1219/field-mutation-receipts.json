@@ -1,0 +1,184 @@
+{
+  "source": "src/counter_risk/web_demo.py",
+  "original_and_restored_sha256": "15d87316a6f3eb99564e9f8e4ea5cd9c4a84c22e40ac8b5f77bb2a9971ddc15a",
+  "command_template": "python -m pytest <node> -m \"not slow\" -q -o addopts= --tb=short --junitxml=<report>",
+  "method": "Remove exactly the recorded line, run its one parameter case, restore original source bytes, verify SHA-256, and rerun the same case. Each JUnit report contains exactly one testcase; the broken run has one failure and the restored run has none.",
+  "new_cases": 25,
+  "receipts": [
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[mosers_all_programs_xlsx]",
+      "removed_line": "\"mosers_all_programs_xlsx\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source mosers_all_programs_xlsx must live under /tmp/pytest-of-runner/pytest-1/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-1/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[raw_nisa_all_programs_xlsx]",
+      "removed_line": "\"raw_nisa_all_programs_xlsx\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source raw_nisa_all_programs_xlsx must live under /tmp/pytest-of-runner/pytest-3/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-3/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[mosers_ex_trend_xlsx]",
+      "removed_line": "\"mosers_ex_trend_xlsx\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source mosers_ex_trend_xlsx must live under /tmp/pytest-of-runner/pytest-5/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-5/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[raw_nisa_ex_trend_xlsx]",
+      "removed_line": "\"raw_nisa_ex_trend_xlsx\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source raw_nisa_ex_trend_xlsx must live under /tmp/pytest-of-runner/pytest-7/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-7/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[mosers_trend_xlsx]",
+      "removed_line": "\"mosers_trend_xlsx\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source mosers_trend_xlsx must live under /tmp/pytest-of-runner/pytest-9/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-9/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[raw_nisa_trend_xlsx]",
+      "removed_line": "\"raw_nisa_trend_xlsx\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source raw_nisa_trend_xlsx must live under /tmp/pytest-of-runner/pytest-11/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-11/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[daily_holdings_pdf]",
+      "removed_line": "\"daily_holdings_pdf\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source daily_holdings_pdf must live under /tmp/pytest-of-runner/pytest-13/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-13/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[cash_overrides_csv]",
+      "removed_line": "\"cash_overrides_csv\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source cash_overrides_csv must live under /tmp/pytest-of-runner/pytest-15/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-15/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[dropin_all_programs_template_xlsx]",
+      "removed_line": "\"dropin_all_programs_template_xlsx\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source dropin_all_programs_template_xlsx must live under /tmp/pytest-of-runner/pytest-17/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-17/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[hist_all_programs_3yr_xlsx]",
+      "removed_line": "\"hist_all_programs_3yr_xlsx\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source hist_all_programs_3yr_xlsx must live under /tmp/pytest-of-runner/pytest-19/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-19/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[hist_ex_llc_3yr_xlsx]",
+      "removed_line": "\"hist_ex_llc_3yr_xlsx\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source hist_ex_llc_3yr_xlsx must live under /tmp/pytest-of-runner/pytest-21/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-21/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[hist_llc_3yr_xlsx]",
+      "removed_line": "\"hist_llc_3yr_xlsx\",",
+      "broken_exit": 1,
+      "failure": "ValueError: Web demo fixture source hist_llc_3yr_xlsx must live under /tmp/pytest-of-runner/pytest-23/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-23/test_relocated_config_preserve0/local.csv",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[mosers_all_programs_xlsx]",
+      "removed_line": "\"mosers_all_programs_xlsx\": config.mosers_all_programs_xlsx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[raw_nisa_all_programs_xlsx]",
+      "removed_line": "\"raw_nisa_all_programs_xlsx\": config.raw_nisa_all_programs_xlsx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[mosers_ex_trend_xlsx]",
+      "removed_line": "\"mosers_ex_trend_xlsx\": config.mosers_ex_trend_xlsx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[raw_nisa_ex_trend_xlsx]",
+      "removed_line": "\"raw_nisa_ex_trend_xlsx\": config.raw_nisa_ex_trend_xlsx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[mosers_trend_xlsx]",
+      "removed_line": "\"mosers_trend_xlsx\": config.mosers_trend_xlsx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[raw_nisa_trend_xlsx]",
+      "removed_line": "\"raw_nisa_trend_xlsx\": config.raw_nisa_trend_xlsx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[daily_holdings_pdf]",
+      "removed_line": "\"daily_holdings_pdf\": config.daily_holdings_pdf,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[cash_overrides_csv]",
+      "removed_line": "\"cash_overrides_csv\": config.cash_overrides_csv,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[dropin_all_programs_template_xlsx]",
+      "removed_line": "\"dropin_all_programs_template_xlsx\": config.dropin_all_programs_template_xlsx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[hist_all_programs_3yr_xlsx]",
+      "removed_line": "\"hist_all_programs_3yr_xlsx\": config.hist_all_programs_3yr_xlsx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[hist_ex_llc_3yr_xlsx]",
+      "removed_line": "\"hist_ex_llc_3yr_xlsx\": config.hist_ex_llc_3yr_xlsx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[hist_llc_3yr_xlsx]",
+      "removed_line": "\"hist_llc_3yr_xlsx\": config.hist_llc_3yr_xlsx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    },
+    {
+      "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[monthly_pptx]",
+      "removed_line": "\"monthly_pptx\": config.monthly_pptx,",
+      "broken_exit": 1,
+      "failure": "Failed: Pipeline must not run with sources outside the fixture boundary",
+      "restored_exit": 0
+    }
+  ]
+}
