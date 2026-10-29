@@ -670,8 +670,13 @@ def test_parser_infers_unlabelled_counterparty_column_from_totals_marker(tmp_pat
     workbook = openpyxl.load_workbook(path)
     try:
         workbook.active.cell(4, 2).value = None
+        # The marker, rather than adjacency to numeric headers, must locate counterparties.
+        # Keep the numeric columns fixed and move only the unlabelled name column.
+        for row in range(1, workbook.active.max_row + 1):
+            workbook.active.cell(row, 13).value = workbook.active.cell(row, 2).value
+            workbook.active.cell(row, 2).value = None
         # A label before the first segment must not become a counterparty row.
-        workbook.active.cell(5, 2).value = "Preparation notes"
+        workbook.active.cell(5, 13).value = "Preparation notes"
         workbook.active.cell(28, 3).value = 999
         workbook.save(path)
     finally:

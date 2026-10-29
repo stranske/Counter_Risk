@@ -2,7 +2,7 @@
 
 Add 87 regression cases across ten test modules in issue #1218's escaped-defect/churn/uncovered-mass order. Tests cover NISA parsing, rollups, runner launch handling, mapping-diff output, provider fallback, normalization, limits configuration, PowerPoint relationship repair, and XLSM building. No production bug was found; production files are byte-identical to the PR base.
 
-Reconciliation: reviewed `3456860`, `edc500f`, `0054b34`, `d843da8`, `e7a1c32`, `9cc0e39`, `3b633ea`, and `d94890c`. The former PR body described only the initial parser-boundary tests. The committed coverage summary and 74 mutation scenarios support all five nested contract checkboxes. Gate run [40846577907](https://github.com/stranske/Counter_Risk/actions/runs/40846577907) passed at `d94890c`, including Python 3.13 and 3.14 pytest jobs. This remains one ready-for-review PR for the existing coverage chunk, whose initial baseline was below 90%.
+Reconciliation: reviewed `3456860`, `edc500f`, `0054b34`, `d843da8`, `e7a1c32`, `9cc0e39`, `3b633ea`, `d94890c`, and `acc5ab4`. The former PR body described only the initial parser-boundary tests. The committed coverage summary and 75 mutation scenarios support all five nested contract checkboxes. Gate run [40851053240](https://github.com/stranske/Counter_Risk/actions/runs/40851053240) passed at `acc5ab4`, including Python 3.13 and 3.14 pytest jobs. This remains one ready-for-review PR for the existing coverage chunk, whose initial baseline was below 90%.
 
 ## Workbook cleanup regression
 
@@ -21,6 +21,12 @@ Executed the break-and-revert check in an isolated checkout: changed `_find_head
 Strengthened the existing missing-header test with two real worksheets: an initial `Intro` sheet and a better-scoring `Incomplete Data` sheet missing commodity and currency headers. The error must identify both sheets in candidate order (`Incomplete Data, Intro`), so an operator can locate the malformed export instead of receiving generic header advice.
 
 Executed break-and-revert in `/tmp/counter-risk-1218-diagnostics`: changed `evaluated_sheet_names.append(sheet_name)` to append `<unknown>`. The test failed at the new diagnostic assertion (exit 1); restoring the exact source bytes made it pass (exit 0). `diagnostics-mutation-receipt.json` records the edit, command, output, and matching source hashes. This strengthens an existing case in the first ranked target; no additional covered statement or new test count is claimed. No production bug was found.
+
+## Unlabelled counterparty inference regression
+
+Strengthened the existing real-XLSX marker-inference case by moving its unlabelled counterparty names, totals marker, and stop marker from column B to column M while leaving the numeric columns fixed. The fixture now distinguishes marker-based inference from the numeric-header adjacency fallback, and still rejects a preparation note before the first segment.
+
+Executed break-and-revert in `/tmp/counter-risk-1218-inference`: changed the marker result to return the adjacent-to-numeric-header column. The prior version of the test passed with that mutation (exit 0), proving the gap; the strengthened test failed (exit 1), then passed after exact source restoration (exit 0). `inference-mutation-receipt.json` records all three runs, the exact mutation, and matching source hashes. No production bug or additional covered statement was found; the test count is unchanged.
 
 ## Coverage
 
@@ -66,21 +72,23 @@ Every added case has executed RED/GREEN evidence. Receipt files in `docs/evidenc
 | `completeness-mutation-receipt.json` | 1 | 4 |
 | `cleanup-mutation-receipt.json` | 1 | 3 existing cases strengthened |
 | `diagnostics-mutation-receipt.json` | 1 | 1 existing case strengthened |
+| `inference-mutation-receipt.json` | 1 | 1 existing case strengthened |
 
 Each scenario failed with the deliberate source change and passed after restoration. No collection errors or skips count as proof. The earlier malformed-XML mutation that changed no observable output was discarded; removing the ParseError catch instead produced a verified failure. The numeric cases assert all 17 numeric mappings with distinct values. Worksheet cases distinguish header-row priority, case-insensitive names, and incomplete-header rejection. Segment cases distinguish first-column and adjacent-column detection and inherited segments.
 
 ## Validation
 
+- This follow-up: `python -m pytest tests/ -m "not slow" -n 4 --dist load -q`: **2,565 passed, 1 skipped** in 90.86 seconds. Targeted NISA coverage: **30 passed**, **99%** (216/218 statements; lines 239/311 missing). The marker mutation was reverted before these runs.
 - Whole suite: `COVERAGE_FILE=<isolated data file> python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>`: **2,565 passed, 1 skipped** in 145.14 seconds. JSON confirms **11,109/12,216 lines covered (90.9381%)** and 198 fewer missing statements than the matched PR base.
 - Focused NISA: `python -m pytest tests/test_nisa_all_programs_parser.py -m "not slow" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q`: **30 passed**, with `nisa.py` showing **99%** in the actual coverage table (216/218 statements; lines 239/311 missing).
 - Black **26.10.1**: formatted the changed file at line length 100; required whole-tree check `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .` passed for **395 files**. A temporary Python startup shim schedules 10ms asyncio wakeups, and `BLACK_NUM_WORKERS=1` avoids sandbox process-pool limits; formatting, parse validation, and exclusions are unchanged. The CI variant adding `\.venv` to the exclusion also passed for 395 files.
 - Ruff **0.17.3**: `ruff check --output-format github --extend-exclude .workflows-lib .` passed for the whole tree.
 - `git diff --check` passed; all production files match the PR base. Mutation runs used a separate checkout and restored the source exactly.
-- Published head `d94890c` passed Gate on both supported Python versions (run [40846577907](https://github.com/stranske/Counter_Risk/actions/runs/40846577907)); this includes the earlier cleanup assertions. The strengthened diagnostic assertion awaits publication and hosted CI; the CI acceptance checkbox below remains unchecked for this candidate.
+- Published head `acc5ab4` passed Gate on Python 3.13 and 3.14 (run [40851053240](https://github.com/stranske/Counter_Risk/actions/runs/40851053240)), including the diagnostic assertions. This run's strengthened marker-inference assertion awaits publication and hosted CI; the CI acceptance checkbox below remains unchecked for this candidate.
 
-## Delivery limitation
+## Delivery status
 
-The primary checkout's `.git` directory is read-only (`git add --dry-run` fails creating `index.lock`). The strengthened test and evidence are committed in the writable checkout `/tmp/counter-risk-1218-diagnostics` with a Git bundle at `/tmp/counter-risk-1218-diagnostics.bundle`. Pushing to the existing PR branch failed: `Could not resolve host: github.com`. Automatic approval review rejected updating the PR title/body and adding `needs-human`: `MCP tool call requires approval, but approval policy is never`. The five verified nested contract checkboxes remain reconciled here; their live equivalents remain unchecked because the update was rejected. The existing PR was verified open and ready for review (`isDraft=false`) at published head `d94890c`. Hosted CI for the new diagnostic assertion remains pending publication. The original ranked coverage chunk is already verified above its approximate 180-unit goal.
+The primary checkout's `.git` directory is read-only (`git add --dry-run` cannot create `index.lock`). This follow-up is committed in the writable checkout `/tmp/counter-risk-1218-inference`, with a recovery Git bundle at `/tmp/counter-risk-1218-inference.bundle`. Pushing to the existing PR branch failed: `Could not resolve host: github.com`. Automatic approval review rejected the concrete PR title/body reconciliation and the `needs-human` label: `MCP tool call requires approval, but approval policy is never`. The five nested contract checkboxes are verified and reconciled below; their live equivalents remain unchecked because the update was rejected. PR #1220 is open and ready for review (`isDraft=false`) at `acc5ab4`, which passed Gate. Publication and hosted CI for the new marker-inference assertion remain pending; no new PR was created.
 
 Closes #1218
 
