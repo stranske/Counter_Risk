@@ -1,0 +1,24 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-snapshot
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 28 items
+
+tests/pipeline/test_manifest.py ............................             [100%]
+
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                    Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------
+src/counter_risk/pipeline/manifest.py     286     22    92%   144, 146, 148, 150, 185-186, 188, 203, 436, 450, 452, 467, 469-470, 506, 524, 542-543, 551, 565, 568-569
+---------------------------------------------------------------------
+TOTAL                                     286     22    92%
+======================= 28 passed, 13 warnings in 0.38s ========================

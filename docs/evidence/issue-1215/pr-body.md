@@ -4,7 +4,7 @@ Add discriminating boundary tests for all eight targets in issue #1215's specifi
 
 Tests found one real bug: evidence confidence declared `maximum: 1`, but the validator ignored maximum bounds. The minimal production fix enforces that existing constraint. Values immediately above 1, integer 2, and a large integer fail before either output file is overwritten; null and valid bounds still round-trip. No refactors or other production changes.
 
-The latest two cases verify that a valid first category cannot hide a negative or boolean count in a later category under `data_quality.counts.by_category`. Diagnostics identify the category and field; rejected writes preserve usable manifest and summary bytes. These two cases strengthen the contract and add no line-coverage gain.
+The latest case protects nested screenshot paths in configuration snapshots. It builds a real validated configuration, writes the manifest, and checks that nested paths, the output root, and the date survive JSON serialization without changing the caller's configuration. Removing JSON-mode serialization makes the new test fail at its snapshot assertion. This adds no line-coverage gain and needs no production change.
 
 ## Coverage and shortfall
 
@@ -31,27 +31,31 @@ Remaining paths cannot be meaningfully covered through the current public contra
 - `name_registry.py:50,63,98`: Pydantic rejects these types before field validators run.
 - `cprs_ch.py:273`: parsed records already supply the output fields, including empty frames.
 
-Counts and commands: [coverage comparison](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/category-count-coverage-comparison.json).
+Counts and commands: [coverage comparison](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/config-snapshot-coverage-comparison.json).
 
 ## Actual break-and-revert proof
 
-All **159 added collected cases** have actual failing-source and restored-source runs, including parametrized cases. Collection/fixture errors were not counted; assertions were not weakened. Earlier evidence covers the previous 157 cases, including the confidence bug's failing-before/fixed-after run. Source changes were restored byte-for-byte after deliberate mutations.
+All **160 added collected cases** have actual failing-source and restored-source runs, including parametrized cases. Collection/fixture errors were not counted; assertions were not weakened. Earlier evidence covers the previous 159 cases, including the confidence bug's failing-before/fixed-after run. Source changes were restored byte-for-byte after deliberate mutations.
 
 | Latest deliberate source mutation | Broken | Restored |
 | --- | --- | --- |
 | Remove minimum enforcement | Negative-count case: 1 failed | 2 passed |
 | Accept booleans as integers | Boolean-count case: 1 failed | 2 passed |
 | Skip schema-object map validation | Both new cases: 2 failed | 2 passed |
+| Remove JSON-mode serialization from the configuration snapshot | New nested-path case: 1 failed at assertion | 1 passed |
 
 Exact failed IDs, changes, commands, and restored hashes: [latest mutations](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/category-count-mutations.json), [latest transcript](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/category-count-mutation-transcript.txt). Accumulated evidence: `mutation-results.json`, `manifest-contract-mutations.json`, `root-discovery-mutation.json`, `confidence-mutations.json`, `confidence-domain-mutations.json`, and `action-validation-mutations.json` in the same directory.
+
+Nested configuration regression: [mutation record](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/config-snapshot-mutation.json), [break-and-revert transcript](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/config-snapshot-mutation-transcript.txt).
 
 ## Validation
 
 - Clean base `faad152`: **2478 passed, 1 skipped**.
-- Current whole non-slow suite: **2637 passed, 1 skipped**, 145.16 seconds. Eight target modules: **1757 statements, 13 missing, 99%** line coverage. [Full output](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/category-count-suite-transcript.txt).
+- Current whole non-slow suite: **2638 passed, 1 skipped**, 151.00 seconds. Eight target modules: **1757 statements, 13 missing, 99%** line coverage. [Full output](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/config-snapshot-suite-transcript.txt).
+- Focused manifest module: **28 passed**, **92%** line coverage in isolation. The whole-suite number for this target remains **99%**, with two missing lines, as shown above.
 - Focused schema and conformance suite: **88 passed**, `manifest_schema.py` **100% lines and branches** (149 statements, 100 branches).
 - Changed Python file formatted with Black, line length 100. Required and CI repository-wide Black checks passed (**401 files unchanged**); repository-wide Ruff with CI flags and `git diff --check` passed. Production source matches the preceding head exactly.
-- These are local results; remote CI has not verified this follow-up. [Commands and delivery notes](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/category-count-validation.md).
+- These are local results; remote CI has not verified this follow-up. [Commands and delivery notes](https://github.com/stranske/Counter_Risk/blob/codex/issue-1215/docs/evidence/issue-1215/config-snapshot-validation.md).
 
 ## Verified contract tasks
 
@@ -65,6 +69,8 @@ Coverage remains a partial delivery. No repository-wide 90% claim is made.
 
 ## Publication status
 
-This is a prepared replacement description, not the live PR body. The tool approval policy rejected the title/body update, blocker comment, and `needs-human` label. The verified follow-up is committed in a writable clone under `/tmp`; push failed because `github.com` could not be resolved. The supplied checkout has read-only Git metadata. PR #1216 was rechecked open and ready (`draft=false`), remote head `8b42d63`. Publishing the local commit and applying this description remain blocked.
+This is a prepared replacement description, not the live PR body. Reconciliation reviewed the recent commits through `eb4d039` and verified the five checked contract tasks above against their committed coverage and mutation evidence. The tool approval policy rejected the title/body update, blocker comment, and `needs-human` label with `MCP tool call requires approval, but approval policy is never`. No alternate API was used to bypass these rejections. Verification runs in a writable clone at `/tmp/counter-risk-1215-snapshot`; the supplied checkout has read-only Git metadata. PR #1216 was checked open and ready (`draft=false`), remote head `eb4d039`. Applying the description and live task-checkbox reconciliation remain blocked.
+
+The verified follow-up is committed in that clone. Push to the existing PR branch failed with `Could not resolve host: github.com`. A Git bundle and format-patch remain under `/tmp`, and committed files are copied to the supplied checkout for automation handoff.
 
 Closes #1215

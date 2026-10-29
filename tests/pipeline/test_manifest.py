@@ -96,6 +96,34 @@ def test_build_rejects_unknown_ppt_status(tmp_path, builder_with_both_ppt_artifa
         _build(builder, tmp_path, paths, "pending")
 
 
+def test_config_snapshot_round_trips_nested_screenshot_paths(
+    tmp_path, builder_with_both_ppt_artifacts
+):
+    builder, paths = builder_with_both_ppt_artifacts
+    screenshots = {
+        "slide1": tmp_path / "screenshots" / "CPRS CH.png",
+        "slide2": tmp_path / "screenshots" / "CPRS FCM.png",
+    }
+    config_values = builder.config.model_dump()
+    config_values["screenshot_inputs"] = screenshots
+    config = WorkflowConfig.model_validate(config_values)
+    builder = replace(builder, config=config)
+
+    manifest = _build(builder, tmp_path, paths, "success")
+    expected_paths = {name: str(path) for name, path in screenshots.items()}
+    assert manifest["config_snapshot"]["screenshot_inputs"] == expected_paths
+    builder.write(run_dir=tmp_path, manifest=manifest)
+
+    saved = json.loads((tmp_path / "manifest.json").read_text())
+    assert saved["config_snapshot"]["screenshot_inputs"] == expected_paths
+    assert saved["config_snapshot"]["as_of_date"] == AS_OF_DATE.isoformat()
+    assert saved["config_snapshot"]["output_root"] == str(tmp_path)
+    # Serializing the snapshot must not convert the caller's live config values.
+    assert config.screenshot_inputs == screenshots
+    assert all(isinstance(path, Path) for path in config.screenshot_inputs.values())
+    assert config.as_of_date == AS_OF_DATE
+
+
 @pytest.mark.parametrize("failed_name", ["manifest.json", "DATA_QUALITY_SUMMARY.txt"])
 def test_write_wraps_filesystem_errors(
     tmp_path, builder_with_both_ppt_artifacts, monkeypatch, failed_name
