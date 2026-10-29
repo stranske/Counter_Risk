@@ -24,7 +24,10 @@ def test_legacy_whitespace_helper_preserves_punctuation() -> None:
 def test_frozen_registry_resolution_falls_back_to_repository_registry(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    calls: list[object] = []
+
     def unavailable(path: object) -> Path:
+        calls.append(path)
         raise normalize.RuntimePathResolutionError("bundle asset absent")
 
     monkeypatch.setattr(normalize.sys, "frozen", True, raising=False)
@@ -32,6 +35,7 @@ def test_frozen_registry_resolution_falls_back_to_repository_registry(
     assert normalize._resolve_registry_path("config/name_registry.yml") == (
         normalize._REPO_DEFAULT_REGISTRY_PATH
     )
+    assert calls == [Path("config/name_registry.yml")]
 
 
 def test_explicit_relative_registry_path_resolves_against_cwd(

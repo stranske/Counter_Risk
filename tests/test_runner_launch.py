@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from counter_risk import runner_launch
 from counter_risk.runner_launch import (
     LaunchStatus,
     RunnerMode,
@@ -501,10 +502,15 @@ def test_resolve_output_dir_reports_exhausted_names() -> None:
     ],
 )
 def test_openers_report_nonzero_shell_exit(
-    opener: Callable[..., LaunchStatus], filename: str, callback_name: str, exists_name: str
+    opener: Callable[..., LaunchStatus],
+    filename: str,
+    callback_name: str,
+    exists_name: str,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     base = "C:\\repo\\runs\\2025-06-30"
     opened: list[str] = []
+    monkeypatch.setattr(runner_launch, "_default_directory_exists", lambda path: path == base)
 
     def fail_open(path: str) -> int:
         opened.append(path)
@@ -519,8 +525,9 @@ def test_openers_report_nonzero_shell_exit(
     assert opened == [base + filename]
 
 
-def test_open_manifest_reports_success() -> None:
+def test_open_manifest_reports_success(monkeypatch: pytest.MonkeyPatch) -> None:
     opened: list[str] = []
+    monkeypatch.setattr(runner_launch, "_default_directory_exists", lambda _: False)
     status = open_manifest(
         repo_root="C:/repo",
         selected_date="2025-06-30",
