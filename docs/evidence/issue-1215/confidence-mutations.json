@@ -1,0 +1,75 @@
+{
+  "source": "src/counter_risk/pipeline/manifest_schema.py",
+  "restored_sha256": "65cb534200f9f8c146acc93db309e5896e5e37db657a4790a2d05ca76f35d147",
+  "results": [
+    {
+      "mutation": "remove maximum check",
+      "red_expected_summary": "3 failed, 1 passed",
+      "red": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+          "-m",
+          "pytest",
+          "tests/pipeline/test_manifest_schema.py",
+          "-k",
+          "confidence_above_one or confidence_bounds_and_null",
+          "-m",
+          "not slow",
+          "-q",
+          "--tb=short"
+        ],
+        "returncode": 1
+      },
+      "restored": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+          "-m",
+          "pytest",
+          "tests/pipeline/test_manifest_schema.py",
+          "-k",
+          "confidence_above_one or confidence_bounds_and_null",
+          "-m",
+          "not slow",
+          "-q",
+          "--tb=short"
+        ],
+        "returncode": 0
+      }
+    },
+    {
+      "mutation": "make maximum exclusive",
+      "red_expected_summary": "1 failed",
+      "red": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+          "-m",
+          "pytest",
+          "tests/pipeline/test_manifest_schema.py",
+          "-k",
+          "confidence_bounds_and_null",
+          "-m",
+          "not slow",
+          "-q",
+          "--tb=short"
+        ],
+        "returncode": 1
+      },
+      "restored": {
+        "command": [
+          "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+          "-m",
+          "pytest",
+          "tests/pipeline/test_manifest_schema.py",
+          "-k",
+          "confidence_above_one or confidence_bounds_and_null",
+          "-m",
+          "not slow",
+          "-q",
+          "--tb=short"
+        ],
+        "returncode": 0
+      }
+    }
+  ],
+  "all_four_new_cases_fail_under_mutation_and_pass_after_restoration": true
+}

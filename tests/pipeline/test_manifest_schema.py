@@ -254,6 +254,44 @@ def test_finite_manifest_numbers_remain_json_serializable(
     assert saved["top_exposures"]["all_programs"][0]["notional"] == value
 
 
+@pytest.mark.parametrize(
+    "confidence",
+    [1.0000000000000002, 2, 10**400],
+    ids=["next-float-above-one", "integer-above-one", "large-integer"],
+)
+def test_manifest_rejects_confidence_above_one_without_overwriting_outputs(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+    tmp_path: Path,
+    confidence: int | float,
+) -> None:
+    builder, manifest = numeric_manifest
+    manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+    (tmp_path / "manifest.json").write_text("existing manifest", encoding="utf-8")
+    (tmp_path / "DATA_QUALITY_SUMMARY.txt").write_text("existing summary", encoding="utf-8")
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+
+    assert validate_manifest(manifest) == (
+        False,
+        "manifest.top_exposures.all_programs[0].evidence.confidence must be <= 1",
+    )
+    with pytest.raises(ValueError, match="confidence must be <= 1"):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
+
+
+def test_manifest_preserves_confidence_bounds_and_null(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]], tmp_path: Path
+) -> None:
+    builder, manifest = numeric_manifest
+    for confidence in (None, 0, 0.5, 1):
+        manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+        assert validate_manifest(manifest) == (True, None)
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        saved = json.loads((tmp_path / "manifest.json").read_text())
+        assert saved["top_exposures"]["all_programs"][0]["evidence"]["confidence"] == confidence
+
+
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
 @pytest.mark.parametrize("container", ["mapping", "list", "tuple"])
 def test_manifest_rejects_nonfinite_in_unconstrained_fields_before_writing(
