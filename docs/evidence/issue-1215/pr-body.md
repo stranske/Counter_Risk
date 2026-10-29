@@ -4,7 +4,7 @@ Add boundary tests for all eight targets in issue #1215's specified ranking. Pre
 
 The first ranked target also had a real contract bug: `_EVIDENCE_SCHEMA` declares confidence `maximum: 1`, but `_check_node` did not enforce maximum bounds. Three new regression cases prove that values immediately above 1, integer 2, and a large integer were accepted. The minimal production fix enforces numeric maximum bounds alongside the existing minimum check. A fourth case verifies JSON round-trips for null, both bounds, and an interior value. Invalid writes preserve existing manifest and summary bytes. No refactors or unrelated production changes.
 
-Reconciliation: reviewed `ba3969a`, `4af5ae2`, `c80d63c`, `e186f35`, and `277e56d`. They cover all eight ranked targets, despite the old PR description saying only the first target was touched. The verified contract checkboxes below reflect the accumulated work and the regression fix. The current follow-up adds five cases covering negative and boolean confidence values through public validation and writing, while preserving the bytes of a valid previous manifest and summary. No additional production bug was found or production change made.
+Reconciliation: reviewed all six PR commits through `d06892d`. They cover all eight ranked targets, despite the old PR description saying only the first target was touched. The verified contract checkboxes below reflect the accumulated work and the regression fix. The preceding follow-up added five cases covering negative and boolean confidence values through public validation and writing, while preserving valid output bytes. The current follow-up adds two cases checking whitespace-only category/action fields after a valid recommended action. Both accepted prefixes use supported `warn` and `fail` severities. No additional production bug was found or production change made.
 
 ## Coverage and remaining work
 
@@ -37,7 +37,7 @@ The upper-bound fix adds two covered statements. Those new statements do not red
 
 ## Actual break-and-revert evidence
 
-Every one of the **155 newly added collected cases** was run against a real source mutation and failed, then passed with the original source restored. Collection/fixture errors were not counted as evidence. No assertions were weakened.
+Every one of the **157 newly added collected cases** was run against a real source mutation and failed, then passed with the original source restored. Collection/fixture errors were not counted as evidence. No assertions were weakened.
 
 The audit applied one condition inversion, bypassed raise, or dropped return value at a time, ran the remaining selected node IDs, restored the source, and reran all new cases in each module. Additional direct mutations verify the new manifest behaviors and the previously unproven empty-SHA cases:
 
@@ -53,12 +53,17 @@ The audit applied one condition inversion, bypassed raise, or dropped return val
 | Remove the confidence maximum check | 3 failed, 1 passed | 4 passed |
 | Make the maximum exclusive (`>` to `>=`) | 1 failed | 4 passed |
 | Discover the workbook root using `Path.cwd()` | 2 failed at the selected workbook path assertion | 2 passed |
+| Accept whitespace-only categories (remove `.strip()`) | 1 failed | 1 passed |
+| Accept whitespace-only actions (remove `.strip()`) | 1 failed | 1 passed |
+| Validate only the first recommended action | 2 failed | 2 passed |
 
 Exact mutations, failed node IDs, and green reruns are recorded in [mutation-results.json](mutation-results.json), [manifest-contract-mutations.json](manifest-contract-mutations.json), [mutation-transcript.txt](mutation-transcript.txt), and [root-discovery-mutation-transcript.txt](root-discovery-mutation-transcript.txt). Whole-suite coverage counts and commands are in [coverage-comparison.json](coverage-comparison.json) and [root-discovery-coverage-comparison.json](root-discovery-coverage-comparison.json).
 
 The confidence regression first failed against the original implementation (3 failed, 1 passed). The four new cases reject values above 1 without overwriting either output file and round-trip `None`, `0`, `0.5`, and `1`. Exact failing assertions, green reruns, and the restored source hash are in [confidence-mutation-transcript.txt](confidence-mutation-transcript.txt) and [confidence-mutations.json](confidence-mutations.json).
 
 All five confidence-domain cases fail under one of two real mutations and pass after restoration. Exact failed case IDs and the byte-for-byte restored source hash are in [confidence-domain-mutations.json](confidence-domain-mutations.json); output is in [confidence-domain-mutation-transcript.txt](confidence-domain-mutation-transcript.txt). These cases strengthen the domain contract; they add no line-coverage gain beyond the previously measured 177 lines.
+
+The two new recommended-action cases reject whitespace-only fields in the second action, preserving its index in the diagnostic. Each fails under removal of the corresponding whitespace check; both fail when validation stops after the first valid action. All pass after restoration. Exact mutations and the restored source hash are in [action-validation-mutations.json](action-validation-mutations.json); output is in [action-validation-mutation-transcript.txt](action-validation-mutation-transcript.txt). These cases add no line-coverage gain.
 
 ## Validation
 
@@ -68,10 +73,12 @@ All five confidence-domain cases fail under one of two real mutations and pass a
 - Schema and conformance tests before this fix: **75 passed**. After the fix: **79 passed**, **100% line-plus-branch coverage** for `manifest_schema.py`.
 - Every one of the four new collected cases fails under a deliberate source mutation and passes after restoration. The fixed source was restored byte-for-byte.
 - Both changed Python files were formatted with Black at line length 100. Required and CI repository-wide Black checks: **401 files unchanged**. Repository-wide Ruff with CI flags, targeted mypy for the production module, and `git diff --check`: passed.
-- Current non-slow whole suite: **2633 passed, 1 skipped**, with the same eight-module coverage table (**1757 statements, 13 missing, 99%**). See [confidence-domain-suite-transcript.txt](confidence-domain-suite-transcript.txt).
-- Follow-up focused schema and conformance run: **84 passed**, schema **100% lines and branches** (149 statements, 100 branches). See [confidence-domain-coverage-transcript.txt](confidence-domain-coverage-transcript.txt).
+- Previous non-slow whole suite at `d06892d`: **2633 passed, 1 skipped**. See [confidence-domain-suite-transcript.txt](confidence-domain-suite-transcript.txt).
+- Current non-slow whole suite: **2635 passed, 1 skipped**, with the same eight-module coverage table (**1757 statements, 13 missing, 99%**). See [action-validation-suite-transcript.txt](action-validation-suite-transcript.txt).
+- Current focused schema and conformance run: **86 passed**, schema **100% lines and branches** (149 statements, 100 branches). Before the two new cases: **84 passed**, also 100%. See [action-validation-coverage-transcript.txt](action-validation-coverage-transcript.txt).
 - Follow-up checks: both required repository-wide Black commands passed (**401 files unchanged**); repository-wide Ruff with CI flags and `git diff --check` passed.
 - Full details: [confidence-validation.md](confidence-validation.md). Earlier mutation and coverage evidence remains in this directory.
+- Current follow-up details and publication blockers: [action-validation.md](action-validation.md).
 
 ## Reconciled contract tasks
 
@@ -81,8 +88,10 @@ All five confidence-domain cases fail under one of two real mutations and pass a
 - [x] Keep the blast radius low: boundary tests and one targeted schema-validator fix, no refactors.
 - [x] Keep one PR for this chunk: #1216, verified open and ready for review (`isDraft=false`).
 
-Coverage remains a partial delivery: 177 original missing lines covered, three short of the 180-unit aim. Each remaining path is explained above; the issue/Gate baseline remains authoritative. The preceding confidence maximum fix is committed at `277e56d`; this follow-up's five tests and evidence remain local. Staging failed because `.git/index.lock` cannot be created on the read-only Git directory. No commit, push, or CI result for these five additional cases is claimed.
+Coverage remains a partial delivery: 177 original missing lines covered, three short of the 180-unit aim. Each remaining path is explained above; the issue/Gate baseline remains authoritative. The confidence maximum fix is committed at `277e56d`, and the five confidence-domain tests and evidence are committed at `d06892d` on PR #1216.
 
-The authorized PR-description reconciliation was rejected with `MCP tool call requires approval, but approval policy is never`. This replacement description remains local; no alternate API was used to bypass the rejection. The live PR's stale checkboxes have not been updated. PR #1216 was verified open and ready for review (`draft=false`) at `277e56d` at both the start and end of this run.
+Reconciliation reviewed all six PR commits through `d06892d`, including their mutation and coverage evidence. All five contract items above are verified. The authorized PR-description reconciliation was again rejected with `MCP tool call requires approval, but approval policy is never`. This replacement description remains local; no alternate API was used to bypass the rejection. The live PR's stale checkboxes have not been updated. PR #1216 was verified open and ready for review (`draft=false`) at `d06892d` at the start of this run.
+
+The current two recommended-action cases and their evidence remain uncommitted and unpushed: staging failed because `.git/index.lock` cannot be created on the read-only Git directory. The blocker-comment and `needs-human` label requests were also rejected by the approval policy. Publishing the verified changes and applying this replacement description require a run with a writable Git checkout and permission to update PR metadata. PR #1216 was rechecked after testing and remains open and ready for review, head `d06892d`.
 
 Closes #1215

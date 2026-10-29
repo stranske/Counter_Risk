@@ -493,6 +493,25 @@ def test_validate_manifest_data_quality_rejects_absent_section() -> None:
     )
 
 
+@pytest.mark.parametrize("field", ["category", "action"])
+def test_validate_manifest_data_quality_rejects_blank_fields_after_valid_action(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]], field: str
+) -> None:
+    _, manifest = numeric_manifest
+    actions = [
+        {"category": "source", "severity": "warn", "action": "Review source dates"},
+        {"category": "mapping", "severity": "fail", "action": "Restore missing mappings"},
+    ]
+    manifest["data_quality"]["recommended_actions"] = actions
+    assert validate_manifest_data_quality(manifest) == (True, None)
+
+    actions[1][field] = " \t\n"
+    assert validate_manifest_data_quality(manifest) == (
+        False,
+        f"Manifest data_quality recommended_actions[1] must include non-empty {field}.",
+    )
+
+
 @pytest.mark.parametrize(
     ("value", "schema", "expected"),
     [
