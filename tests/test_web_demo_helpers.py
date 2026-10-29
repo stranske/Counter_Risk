@@ -139,6 +139,51 @@ def test_materialize_config_preserves_local_config_and_rejects_non_mapping(tmp_p
         )
 
 
+@pytest.mark.parametrize(
+    "naming_patterns", [{}, {"monthly": ["*.xlsx"]}], ids=["empty", "patterns"]
+)
+def test_relocated_config_accepts_discovery_without_directory_roots(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, naming_patterns: dict[str, list[str]]
+) -> None:
+    repo_root = tmp_path / "repo"
+    fixture_dir = repo_root / "tests" / "fixtures"
+    fixture_dir.mkdir(parents=True)
+    source = fixture_dir / "history.xlsx"
+    source.write_text("synthetic history", encoding="utf-8")
+    config_dir = repo_root / "config"
+    config_dir.mkdir()
+    discovery = {"naming_patterns": naming_patterns} if naming_patterns else {}
+    raw_config = dict.fromkeys(
+        (
+            "hist_all_programs_3yr_xlsx",
+            "hist_ex_llc_3yr_xlsx",
+            "hist_llc_3yr_xlsx",
+            "monthly_pptx",
+        ),
+        "fixtures/history.xlsx",
+    )
+    config_path = config_dir / "demo.yml"
+    original_config = yaml.safe_dump({**raw_config, "input_discovery": discovery})
+    config_path.write_text(original_config, encoding="utf-8")
+    output_dir = tmp_path / "output" / "run"
+    monkeypatch.setattr(web_demo, "_repo_root", lambda: repo_root)
+
+    materialized = web_demo._materialize_web_demo_config(
+        config_path=config_path, output_dir=output_dir
+    )
+
+    assert materialized == output_dir.parent / "web_demo_fixture_replay.yml"
+    assert yaml.safe_load(materialized.read_text(encoding="utf-8")) == {
+        **dict.fromkeys(raw_config, str(source)),
+        "input_discovery": discovery,
+    }
+    config = web_demo.load_config(materialized)
+    assert config.input_discovery.directory_roots == {}
+    assert config.input_discovery.naming_patterns == naming_patterns
+    assert web_demo._assert_fixture_only(config, config_path=materialized) == [source] * 4
+    assert config_path.read_text(encoding="utf-8") == original_config
+
+
 @pytest.mark.parametrize("fallback_exists", [True, False], ids=["existing", "missing"])
 def test_materialize_config_relocates_only_for_an_existing_parent_fallback(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fallback_exists: bool
