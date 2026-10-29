@@ -1,8 +1,14 @@
 ## Summary
 
-Add 87 regression cases across ten test modules in issue #1218's escaped-defect/churn/uncovered-mass order. Tests cover NISA parsing, rollups, runner launch handling, mapping-diff output, provider fallback, normalization, limits configuration, PowerPoint relationship repair, and XLSM building. No production bug was found; production files are byte-identical to the PR base.
+Add 88 regression cases across ten test modules in issue #1218's escaped-defect/churn/uncovered-mass order. Tests cover NISA parsing, rollups, runner launch handling, mapping-diff output, provider fallback, normalization, limits configuration, PowerPoint relationship repair, and XLSM building. No production bug was found; production files are byte-identical to the PR base.
 
 Reconciliation: reviewed `3456860`, `edc500f`, `0054b34`, `d843da8`, `e7a1c32`, `9cc0e39`, `3b633ea`, `d94890c`, `acc5ab4`, and `f2f4c43`. The former PR body described only the initial parser-boundary tests. The committed coverage summary and 76 mutation scenarios support all five nested contract checkboxes. Gate run [40852444189](https://github.com/stranske/Counter_Risk/actions/runs/40852444189) passed at `f2f4c43`, including Python 3.13 and 3.14 pytest jobs. This remains one ready-for-review PR for the existing coverage chunk, whose initial baseline was below 90%.
+
+## Explicit counterparty header regression
+
+Continued with NISA, the issue's first ranked target. One new real-XLSX case places a note mentioning the totals section in column M before the actual table. The explicit counterparty header in column B must take precedence over marker-based inference. Assertions verify both CH counterparties and notionals, plus the totals row.
+
+Executed break-and-revert: replaced the explicit-column return in `_infer_counterparty_column` with `pass`. All 30 prior NISA cases still passed with this mutation, demonstrating the missing regression check. The new case failed with `produced no CPRS-CH rows` (exit 1); restoring the exact source bytes made it pass (exit 0). `header-precedence-mutation-receipt.json` records all three runs and matching original/restored hashes. Production behavior is correct; this test adds discrimination without claiming additional covered lines or a production fix.
 
 ## Workbook cleanup regression
 
@@ -80,11 +86,13 @@ Every added case has executed RED/GREEN evidence. Receipt files in `docs/evidenc
 | `diagnostics-mutation-receipt.json` | 1 | 1 existing case strengthened |
 | `inference-mutation-receipt.json` | 1 | 1 existing case strengthened |
 | `segment-score-mutation-receipt.json` | 1 | 2 existing cases strengthened |
+| `header-precedence-mutation-receipt.json` | 1 | 1 new case |
 
 Each scenario failed with the deliberate source change and passed after restoration. No collection errors or skips count as proof. The earlier malformed-XML mutation that changed no observable output was discarded; removing the ParseError catch instead produced a verified failure. The numeric cases assert all 17 numeric mappings with distinct values. Worksheet cases distinguish header-row priority, case-insensitive names, and incomplete-header rejection. Segment cases distinguish first-column and adjacent-column detection and inherited segments.
 
 ## Validation
 
+- Explicit-header follow-up: whole non-slow suite with the same coverage command: **2,566 passed, 1 skipped** in 104.99 seconds; **11,109/12,216 lines covered (90.9381%)**. Targeted NISA: **31 passed**, actual coverage table **99%** (216/218 statements; lines 239/311 missing). Whole-tree Black passed with both the required and CI exclusions (395 files), using the documented temporary asyncio wakeup shim and one worker; Ruff passed with CI flags. `git diff --check` passed and production files match the PR base. Hosted CI for this new case remains pending publication.
 - This follow-up: `COVERAGE_FILE=<isolated data file> python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output> -q`: **2,565 passed, 1 skipped** in 73.98 seconds; **11,109/12,216 lines covered (90.9381%)**. Targeted NISA coverage: **30 passed**, **99%** (216/218 statements; lines 239/311 missing). The segment-scoring mutation was reverted before these runs.
 - Whole suite: `COVERAGE_FILE=<isolated data file> python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>`: **2,565 passed, 1 skipped** in 145.14 seconds. JSON confirms **11,109/12,216 lines covered (90.9381%)** and 198 fewer missing statements than the matched PR base.
 - Focused NISA: `python -m pytest tests/test_nisa_all_programs_parser.py -m "not slow" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q`: **30 passed**, with `nisa.py` showing **99%** in the actual coverage table (216/218 statements; lines 239/311 missing).
@@ -95,7 +103,7 @@ Each scenario failed with the deliberate source change and passed after restorat
 
 ## Delivery status
 
-The primary checkout's `.git` directory is read-only (`git add --dry-run` cannot create `index.lock`). This follow-up is committed in the writable checkout `/tmp/counter-risk-1218-segment-score`, with a recovery Git bundle at `/tmp/counter-risk-1218-segment-score.bundle`. Pushing to the existing PR branch failed: `Could not resolve host: github.com`. Automatic approval review rejected the concrete PR title/body reconciliation and the `needs-human` label: `MCP tool call requires approval, but approval policy is never`. The five nested contract checkboxes are verified and reconciled below; their live equivalents remain unchecked because the update was rejected. PR #1220 is open and ready for review (`isDraft=false`) at `f2f4c43`, which passed Gate. Publication and hosted CI for the strengthened segment-scoring cases remain pending; no new PR was created.
+The primary checkout's `.git` directory is read-only (`git add --dry-run` cannot create `index.lock`). The explicit-header follow-up is committed in `/tmp/counter-risk-1218-header-precedence`, with a recovery bundle at `/tmp/counter-risk-1218-header-precedence.bundle`. Git push failed with `Could not resolve host: github.com`. Automatic approval review rejected GitHub tree publication, the PR title/body update, the blocker comment, and the `needs-human` label: `MCP tool call requires approval, but approval policy is never`. Local validation is complete; publication and hosted CI remain pending. The five nested contract checkboxes are verified below, but the live body could not be reconciled. PR #1220 was confirmed open and ready for review (`isDraft=false`) at `8b786d7`; this remains the issue's single PR.
 
 Closes #1218
 

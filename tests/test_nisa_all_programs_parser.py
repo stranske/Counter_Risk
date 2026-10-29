@@ -688,6 +688,28 @@ def test_parser_infers_unlabelled_counterparty_column_from_totals_marker(tmp_pat
     _assert_expected_rows(parse_nisa_all_programs(path))
 
 
+def test_parser_prefers_explicit_counterparty_header_over_unrelated_totals_marker(
+    tmp_path: Path,
+) -> None:
+    import openpyxl
+
+    path = _build_raw_nisa_workbook(tmp_path / "explicit-counterparty.xlsx")
+    workbook = openpyxl.load_workbook(path)
+    try:
+        # A note mentions the totals section before the actual table. It must not
+        # redirect name-column inference away from the explicit header in column B.
+        workbook.active.cell(1, 13).value = "See Total by Counterparty/Clearing House below"
+        workbook.save(path)
+    finally:
+        workbook.close()
+
+    parsed = parse_nisa_all_programs(path)
+
+    _assert_expected_rows(parsed)
+    assert [row.counterparty for row in parsed.ch_rows] == ["Alpha Bank", "Beta Bank"]
+    assert [row.notional for row in parsed.ch_rows] == pytest.approx([210, 21])
+
+
 def test_parser_reports_missing_totals_with_unlabelled_counterparty_column(tmp_path: Path) -> None:
     import openpyxl
 
