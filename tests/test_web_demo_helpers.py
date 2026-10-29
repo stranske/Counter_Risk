@@ -139,6 +139,41 @@ def test_materialize_config_preserves_local_config_and_rejects_non_mapping(tmp_p
         )
 
 
+@pytest.mark.parametrize("fallback_exists", [True, False], ids=["existing", "missing"])
+def test_materialize_config_relocates_only_for_an_existing_parent_fallback(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fallback_exists: bool
+) -> None:
+    repo_root = tmp_path / "repo"
+    fixture_dir = repo_root / "tests" / "fixtures"
+    config_dir = fixture_dir / "config"
+    config_dir.mkdir(parents=True)
+    fallback = fixture_dir / "history.xlsx"
+    if fallback_exists:
+        fallback.write_text("synthetic history", encoding="utf-8")
+    config_path = config_dir / "demo.yml"
+    original_config = (
+        "# Preserve the original config and its diagnostics.\nmonthly_pptx: history.xlsx\n"
+    )
+    config_path.write_text(original_config, encoding="utf-8")
+    output_dir = tmp_path / "output" / "run"
+    monkeypatch.setattr(web_demo, "_repo_root", lambda: repo_root)
+
+    materialized = web_demo._materialize_web_demo_config(
+        config_path=config_path, output_dir=output_dir
+    )
+
+    if fallback_exists:
+        assert materialized == output_dir.parent / "web_demo_fixture_replay.yml"
+        assert yaml.safe_load(materialized.read_text(encoding="utf-8")) == {
+            "monthly_pptx": str(fallback)
+        }
+    else:
+        assert materialized == config_path
+        assert not output_dir.parent.exists()
+    assert config_path.read_text(encoding="utf-8") == original_config
+    assert not output_dir.exists()
+
+
 @pytest.mark.parametrize(
     "local_key",
     [*_FIXTURE_SOURCE_FIELDS, "screenshot_inputs", "input_discovery"],
