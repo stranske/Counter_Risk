@@ -85,7 +85,7 @@ librt==0.16.0 ; platform_python_implementation != 'PyPy'
     # via mypy
 lxml==6.0.2
     # via python-pptx
-mypy==2.4.0
+mypy==2.4.1
     # via counter-risk (pyproject.toml)
 mypy-extensions==1.1.0
     # via
@@ -153,7 +153,7 @@ pypdfium2==5.11.0
     # via pdfplumber
 pytesseract==0.3.13
     # via stranske-pdf-extract
-pytest==9.1.1
+pytest==9.2.0
     # via
     #   counter-risk (pyproject.toml)
     #   app-baseline-kit
