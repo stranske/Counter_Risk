@@ -20,6 +20,39 @@ def test_locate_uses_default_root_and_legacy_directory(tmp_path, monkeypatch):
     assert history.locate_ex_llc_3_year_workbook(search_root=str(tmp_path)) == preferred
 
 
+@pytest.mark.parametrize(
+    "relative_path",
+    [history._DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH, history._LEGACY_EX_LLC_3_YEAR_RELATIVE_PATH],
+    ids=["preferred-directory", "legacy-directory"],
+)
+def test_default_workbook_is_opened_relative_to_module_not_current_directory(
+    tmp_path, monkeypatch, relative_path
+):
+    openpyxl = pytest.importorskip("openpyxl")
+    repo_root = tmp_path / "installed"
+    module_path = repo_root / "src/counter_risk/writers/historical_update.py"
+    module_path.parent.mkdir(parents=True)
+    module_path.touch()
+    monkeypatch.setattr(history, "__file__", str(module_path))
+
+    working_directory = tmp_path / "unrelated"
+    for root, marker in [(repo_root, "package workbook"), (working_directory, "cwd decoy")]:
+        path = root / relative_path
+        path.parent.mkdir(parents=True)
+        workbook = openpyxl.Workbook()
+        workbook.active["A1"] = marker
+        workbook.save(path)
+        workbook.close()
+    monkeypatch.chdir(working_directory)
+
+    path, loaded = history.open_ex_llc_3_year_workbook()
+    try:
+        assert path == repo_root / relative_path
+        assert loaded.active["A1"].value == "package workbook"
+    finally:
+        loaded.close()
+
+
 def test_validate_rejects_directory_with_xlsx_suffix(tmp_path):
     directory = tmp_path / "directory.xlsx"
     directory.mkdir()

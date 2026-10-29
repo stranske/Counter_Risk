@@ -1,5 +1,7 @@
 # Verification and publication status
 
+This records the earlier iteration. See [root-discovery-validation.md](root-discovery-validation.md) for the follow-up on `c80d63c`, including two additional test cases and current publication blockers.
+
 Environment: Python 3.14.9, pytest 9.2.0, Black 26.10.1, Ruff 0.17.3.
 
 - Reviewed `ba3969a` and `4af5ae2`: eight unique test files, no production changes.

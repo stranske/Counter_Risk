@@ -1,0 +1,100 @@
+Mutation: return Path(__file__).resolve().parents[3] -> return Path.cwd()
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/writers/test_historical_update_boundaries.py', '-k', 'test_default_workbook_is_opened_relative_to_module_not_current_directory', '-m', 'not slow', '-q', '-o', 'addopts=']
+
+RED
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_default_workbook_is_opened_relative_to_module_not_current_directory[preferred-directory] _
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-3/test_default_workbook_is_opene0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7020ca1dd810>
+relative_path = PosixPath('docs/Ratings Instructions/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx')
+
+    @pytest.mark.parametrize(
+        "relative_path",
+        [history._DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH, history._LEGACY_EX_LLC_3_YEAR_RELATIVE_PATH],
+        ids=["preferred-directory", "legacy-directory"],
+    )
+    def test_default_workbook_is_opened_relative_to_module_not_current_directory(
+        tmp_path, monkeypatch, relative_path
+    ):
+        openpyxl = pytest.importorskip("openpyxl")
+        repo_root = tmp_path / "installed"
+        module_path = repo_root / "src/counter_risk/writers/historical_update.py"
+        module_path.parent.mkdir(parents=True)
+        module_path.touch()
+        monkeypatch.setattr(history, "__file__", str(module_path))
+    
+        working_directory = tmp_path / "unrelated"
+        for root, marker in [(repo_root, "package workbook"), (working_directory, "cwd decoy")]:
+            path = root / relative_path
+            path.parent.mkdir(parents=True)
+            workbook = openpyxl.Workbook()
+            workbook.active["A1"] = marker
+            workbook.save(path)
+            workbook.close()
+        monkeypatch.chdir(working_directory)
+    
+        path, loaded = history.open_ex_llc_3_year_workbook()
+        try:
+>           assert path == repo_root / relative_path
+E           AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-3/test_default_workbook_is_opene0/unrelated/docs/Ratings Instructions/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx') == (PosixPath('/tmp/pytest-of-runner/pytest-3/test_default_workbook_is_opene0/installed') / PosixPath('docs/Ratings Instructions/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'))
+
+/home/runner/work/Counter_Risk/Counter_Risk/tests/writers/test_historical_update_boundaries.py:50: AssertionError
+_ test_default_workbook_is_opened_relative_to_module_not_current_directory[legacy-directory] _
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-3/test_default_workbook_is_opene1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7020bbc463f0>
+relative_path = PosixPath('docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx')
+
+    @pytest.mark.parametrize(
+        "relative_path",
+        [history._DEFAULT_EX_LLC_3_YEAR_RELATIVE_PATH, history._LEGACY_EX_LLC_3_YEAR_RELATIVE_PATH],
+        ids=["preferred-directory", "legacy-directory"],
+    )
+    def test_default_workbook_is_opened_relative_to_module_not_current_directory(
+        tmp_path, monkeypatch, relative_path
+    ):
+        openpyxl = pytest.importorskip("openpyxl")
+        repo_root = tmp_path / "installed"
+        module_path = repo_root / "src/counter_risk/writers/historical_update.py"
+        module_path.parent.mkdir(parents=True)
+        module_path.touch()
+        monkeypatch.setattr(history, "__file__", str(module_path))
+    
+        working_directory = tmp_path / "unrelated"
+        for root, marker in [(repo_root, "package workbook"), (working_directory, "cwd decoy")]:
+            path = root / relative_path
+            path.parent.mkdir(parents=True)
+            workbook = openpyxl.Workbook()
+            workbook.active["A1"] = marker
+            workbook.save(path)
+            workbook.close()
+        monkeypatch.chdir(working_directory)
+    
+        path, loaded = history.open_ex_llc_3_year_workbook()
+        try:
+>           assert path == repo_root / relative_path
+E           AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-3/test_default_workbook_is_opene1/unrelated/docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx') == (PosixPath('/tmp/pytest-of-runner/pytest-3/test_default_workbook_is_opene1/installed') / PosixPath('docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'))
+
+/home/runner/work/Counter_Risk/Counter_Risk/tests/writers/test_historical_update_boundaries.py:50: AssertionError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/writers/test_historical_update_boundaries.py::test_default_workbook_is_opened_relative_to_module_not_current_directory[preferred-directory] - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-3/test_default_workbook_is_opene0/unrelated/docs/Ratings Instructions/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx') == (PosixPath('/tmp/pytest-of-runner/pytest-3/test_default_workbook_is_opene0/installed') / PosixPath('docs/Ratings Instructions/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'))
+FAILED tests/writers/test_historical_update_boundaries.py::test_default_workbook_is_opened_relative_to_module_not_current_directory[legacy-directory] - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-3/test_default_workbook_is_opene1/unrelated/docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx') == (PosixPath('/tmp/pytest-of-runner/pytest-3/test_default_workbook_is_opene1/installed') / PosixPath('docs/Ratings Instructiosns/Historical Counterparty Risk Graphs - ex LLC 3 Year.xlsx'))
+2 failed, 27 deselected, 13 warnings in 0.31s
+
+REVERTED
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 27 deselected, 13 warnings in 0.25s
