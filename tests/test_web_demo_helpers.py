@@ -94,6 +94,65 @@ def test_materialize_config_preserves_local_config_and_rejects_non_mapping(tmp_p
         )
 
 
+@pytest.mark.parametrize(
+    "local_key", ["monthly_pptx", "cash_source_path", "screenshot_inputs", "input_discovery"]
+)
+def test_relocated_config_preserves_config_relative_fixture_sources(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, local_key: str
+) -> None:
+    repo_root = tmp_path / "repo"
+    fixture_dir = repo_root / "tests" / "fixtures"
+    config_dir = fixture_dir / "config"
+    config_dir.mkdir(parents=True)
+    history = fixture_dir / "history.xlsx"
+    history.write_text("synthetic history", encoding="utf-8")
+    local_source = config_dir / "local.csv"
+    local_source.write_text("synthetic local input", encoding="utf-8")
+    raw_config: dict[str, object] = dict.fromkeys(
+        ("hist_all_programs_3yr_xlsx", "hist_ex_llc_3yr_xlsx", "hist_llc_3yr_xlsx", "monthly_pptx"),
+        "fixtures/history.xlsx",
+    )
+    if local_key == "screenshot_inputs":
+        raw_config[local_key] = {"cprs_ch": "local.csv"}
+    elif local_key == "input_discovery":
+        raw_config[local_key] = {"directory_roots": {"monthly_inputs": "."}}
+    else:
+        raw_config[local_key] = "local.csv"
+    config_path = config_dir / "demo.yml"
+    original_config = yaml.safe_dump(raw_config)
+    config_path.write_text(original_config, encoding="utf-8")
+    run_dir = tmp_path / "output" / "run"
+    run_dir.mkdir(parents=True)
+    (run_dir / "manifest.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(web_demo, "_repo_root", lambda: repo_root)
+    monkeypatch.setattr(web_demo, "_chat_runtime_loaded", lambda: False)
+    monkeypatch.setenv(web_demo._OFFLINE_ENV_VAR, "0")
+    calls = []
+
+    def run_pipeline(
+        config: web_demo.WorkflowConfig, *, config_dir: Path, output_dir: Path
+    ) -> Path:
+        assert config.hist_all_programs_3yr_xlsx == history
+        if local_key == "screenshot_inputs":
+            assert config.screenshot_inputs["cprs_ch"] == local_source
+        elif local_key == "input_discovery":
+            assert config.input_discovery.directory_roots["monthly_inputs"] == config_path.parent
+        else:
+            assert getattr(config, local_key) == local_source
+        assert config_dir == run_dir.parent
+        assert output_dir == run_dir
+        calls.append(config)
+        return run_dir
+
+    monkeypatch.setattr(web_demo, "run_pipeline_with_config", run_pipeline)
+
+    assert web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir) == run_dir
+    assert len(calls) == 1
+    assert config_path.read_text(encoding="utf-8") == original_config
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["data_zone"] == "synthetic-fixtures-only"
+
+
 def test_fixture_sources_and_assertion_cover_optional_sources(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

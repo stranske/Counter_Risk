@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import yaml
@@ -40,23 +41,41 @@ def _materialize_web_demo_config(*, config_path: Path, output_dir: Path) -> Path
     config_dir = config_path.resolve().parent
     path_keys = {
         "mosers_all_programs_xlsx",
+        "raw_nisa_all_programs_xlsx",
         "mosers_ex_trend_xlsx",
+        "raw_nisa_ex_trend_xlsx",
         "mosers_trend_xlsx",
+        "raw_nisa_trend_xlsx",
+        "daily_holdings_pdf",
+        "cash_source_path",
+        "cash_overrides_csv",
+        "dropin_all_programs_template_xlsx",
         "hist_all_programs_3yr_xlsx",
         "hist_ex_llc_3yr_xlsx",
         "hist_llc_3yr_xlsx",
         "monthly_pptx",
     }
-    normalized = dict(raw_config)
+    normalized = deepcopy(raw_config)
+    path_entries = [(normalized, key) for key in path_keys]
+    screenshots = normalized.get("screenshot_inputs")
+    if isinstance(screenshots, dict):
+        path_entries.extend((screenshots, key) for key in screenshots)
+    discovery = normalized.get("input_discovery")
+    if isinstance(discovery, dict):
+        roots = discovery.get("directory_roots")
+        if isinstance(roots, dict):
+            path_entries.extend((roots, key) for key in roots)
     changed = False
-    for key in path_keys:
-        value = raw_config.get(key)
+    for paths, key in path_entries:
+        value = paths.get(key)
         if not isinstance(value, str):
             continue
         source_path = Path(value)
         resolved = _resolve_config_path(source_path, config_dir=config_dir)
+        # A copied config has a different base directory. Preserve every source's
+        # original resolution, including local paths that did not trigger the copy.
+        paths[key] = str(resolved)
         if resolved != (config_dir / source_path).resolve() and resolved.exists():
-            normalized[key] = str(resolved)
             changed = True
 
     if not changed:
