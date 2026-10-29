@@ -1170,3 +1170,216 @@ Restored exit: 0
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 1 passed, 13 warnings in 0.38s
+
+
+Historical header recovery round (starting HEAD 63f9dac)
+Mutation: Propagate raw historical load errors instead of applying recovery policy
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_historical_header_open_failure_reports_path_and_preserves_cause', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short']
+Mutated exit: 1
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_historical_header_open_failure_reports_path_and_preserves_cause[KeyError] _
+tests/pipeline/test_run_coverage_round.py:934: in test_historical_header_open_failure_reports_path_and_preserves_cause
+    run_module._extract_historical_series_headers_by_sheet(path)
+src/counter_risk/pipeline/run.py:5714: in _extract_historical_series_headers_by_sheet
+    workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1241: in _execute_mock_call
+    raise effect
+E   KeyError: 'unreadable workbook'
+_ test_historical_header_open_failure_reports_path_and_preserves_cause[ValueError] _
+tests/pipeline/test_run_coverage_round.py:934: in test_historical_header_open_failure_reports_path_and_preserves_cause
+    run_module._extract_historical_series_headers_by_sheet(path)
+src/counter_risk/pipeline/run.py:5714: in _extract_historical_series_headers_by_sheet
+    workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1241: in _execute_mock_call
+    raise effect
+E   ValueError: unreadable workbook
+_ test_historical_header_open_failure_reports_path_and_preserves_cause[OSError] _
+tests/pipeline/test_run_coverage_round.py:934: in test_historical_header_open_failure_reports_path_and_preserves_cause
+    run_module._extract_historical_series_headers_by_sheet(path)
+src/counter_risk/pipeline/run.py:5714: in _extract_historical_series_headers_by_sheet
+    workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1241: in _execute_mock_call
+    raise effect
+E   OSError: unreadable workbook
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_header_open_failure_reports_path_and_preserves_cause[KeyError] - KeyError: 'unreadable workbook'
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_header_open_failure_reports_path_and_preserves_cause[ValueError] - ValueError: unreadable workbook
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_header_open_failure_reports_path_and_preserves_cause[OSError] - OSError: unreadable workbook
+3 failed, 13 warnings in 0.92s
+
+Restored exit: 0
+...                                                                      [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 13 warnings in 0.41s
+
+Restoration SHA256: a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791
+
+Mutation: Propagate raw historical series-headers errors instead of applying recovery policy
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_historical_headers_retain_readable_sheets_after_series_headers_fail', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short']
+Mutated exit: 1
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_historical_headers_retain_readable_sheets_after_series_headers_fail[column-count] _
+tests/pipeline/test_run_coverage_round.py:971: in test_historical_headers_retain_readable_sheets_after_series_headers_fail
+    result = run_module._extract_historical_series_headers_by_sheet(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/pipeline/run.py:5755: in _extract_historical_series_headers_by_sheet
+    max_column = int(getattr(worksheet, "max_column", 0))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: invalid literal for int() with base 10: 'invalid'
+_ test_historical_headers_retain_readable_sheets_after_series_headers_fail[header-cell] _
+tests/pipeline/test_run_coverage_round.py:971: in test_historical_headers_retain_readable_sheets_after_series_headers_fail
+    result = run_module._extract_historical_series_headers_by_sheet(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/pipeline/run.py:5758: in _extract_historical_series_headers_by_sheet
+    for label in (
+src/counter_risk/pipeline/run.py:5759: in <genexpr>
+    str(worksheet.cell(row=header_row, column=column_index).value or "").strip()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1247: in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+tests/pipeline/test_run_coverage_round.py:958: in read_cell
+    raise KeyError("unreadable series header")
+E   KeyError: 'unreadable series header'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_headers_retain_readable_sheets_after_series_headers_fail[column-count] - ValueError: invalid literal for int() with base 10: 'invalid'
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_headers_retain_readable_sheets_after_series_headers_fail[header-cell] - KeyError: 'unreadable series header'
+2 failed, 13 warnings in 0.75s
+
+Restored exit: 0
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.44s
+
+Restoration SHA256: a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791
+
+Stable full-suite verification after source restoration:
+COVERAGE_FILE=/tmp/1217-header-final.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-header-final.json -m "not slow" -q -o addopts=
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+..................................................s..................... [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 93%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+....................                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/counter_risk/cli/__init__.py                237      0   100%
+src/counter_risk/cli/__main__.py                  2      2     0%   3-5
+src/counter_risk/cli/mapping_diff_report.py      98     12    88%   85, 90, 93, 103, 106, 110, 113, 116, 178-181
+src/counter_risk/pipeline/run.py               2636    101    96%   566, 1007, 1092, 1250, 1428, 1501-1511, 1534, 1568, 1590-1591, 1674, 1818-1819, 1924-1926, 1955-1956, 1992, 2190, 2225, 2237, 2245-2246, 2270, 2290, 2293-2294, 2410, 2494, 2597, 2681, 2700, 2756, 2774, 3022-3024, 3054-3055, 3115-3116, 3148, 3166, 3176-3177, 3185-3186, 3209-3210, 3278, 3289, 3326, 3413, 3502, 3508, 3531, 3652-3653, 3666, 3938-3940, 3975-3977, 4146, 4164, 4169, 4477, 4560, 4726, 4846, 4859, 4872, 4892, 4977, 5061, 5197, 5203, 5223, 5231, 5357, 5416, 5433, 5581, 5600, 5603, 5614, 5626, 5632, 5655, 5667, 5790-5791, 5897, 5913, 5943, 5963, 5974
+---------------------------------------------------------------------------
+TOTAL                                          2973    115    96%
+Coverage JSON written to file /tmp/1217-header-final.json
+2611 passed, 1 skipped, 87 deselected, 13 warnings in 169.10s (0:02:49)
+
+Targeted verification:
+COVERAGE_FILE=/tmp/1217-header-targeted.cov pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing --cov-report=json:/tmp/1217-header-targeted.json -m "not slow" -q -o addopts=
+........................................................................ [ 61%]
+..............................................                           [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                               Stmts   Miss  Cover   Missing
+----------------------------------------------------------------
+src/counter_risk/pipeline/run.py    2636   1626    38%   149, 294, 389, 478-519, 524, 527, 566, 607, 664-682, 702, 714, 779-783, 837, 840, 843-844, 847, 858, 872, 875, 878, 886, 888, 891, 911-921, 927-967, 978, 999-1009, 1015-1047, 1080, 1085, 1091-1093, 1104-1115, 1217, 1238-1275, 1287-1326, 1336-1516, 1523, 1527, 1534, 1547, 1556-1573, 1582-1584, 1588-1591, 1597-1614, 1646, 1650, 1670-1677, 1686, 1690, 1703, 1712-1714, 1732, 1752-1804, 1808-1819, 1827-1853, 1861, 1879-1893, 1914-1976, 1982-2133, 2154-2173, 2187-2228, 2234-2260, 2266-2281, 2287-2318, 2322-2324, 2330-2359, 2365-2394, 2398-2401, 2405-2411, 2415-2419, 2442-2475, 2484-2500, 2507-2555, 2569-2610, 2620-2623, 2637-2639, 2663, 2681, 2690, 2700, 2739-2749, 2753-2756, 2762-2783, 2794-2806, 2858, 2861-2862, 2932-2935, 2965-3066, 3068-3085, 3110-3187, 3193-3210, 3219-3229, 3236, 3268-3376, 3388-3423, 3450-3484, 3495-3516, 3526-3547, 3559, 3564, 3568, 3573, 3578, 3599-3613, 3643-3653, 3658-3670, 3685-3731, 3744-3798, 3811-3873, 3894-3942, 3966, 3971, 3975-3977, 3997-4033, 4055-4134, 4145-4155, 4161-4170, 4176-4182, 4194-4217, 4226, 4271, 4277, 4281-4285, 4293-4295, 4308-4310, 4321-4323, 4335-4337, 4346-4348, 4458-4462, 4470-4481, 4560, 4567, 4619-4632, 4650-4661, 4710, 4726, 4737, 4743, 4763-4765, 4773, 4833, 4837-4841, 4846, 4852, 4859, 4872, 4887, 4891-4893, 4903-5033, 5040-5053, 5059-5132, 5136-5142, 5146-5157, 5163-5289, 5293-5331, 5335-5342, 5348-5389, 5411-5437, 5445-5502, 5510-5518, 5525-5538, 5546-5552, 5560-5582, 5598-5640, 5649-5656, 5661, 5664, 5667, 5677-5683, 5693-5697, 5719-5720, 5730-5733, 5743-5746, 5790-5791, 5873-5986, 5996-6002, 6009, 6017
+----------------------------------------------------------------
+TOTAL                               2636   1626    38%
+Coverage JSON written to file /tmp/1217-header-targeted.json
+118 passed, 13 warnings in 1.44s

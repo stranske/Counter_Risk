@@ -921,6 +921,64 @@ def test_historical_header_read_failure_preserves_context_cause_and_closes_workb
     workbook.close.assert_called_once_with()
 
 
+@pytest.mark.parametrize("error_type", [KeyError, ValueError, OSError])
+def test_historical_header_open_failure_reports_path_and_preserves_cause(
+    tmp_path, monkeypatch, error_type
+) -> None:
+    path = tmp_path / "history.xlsx"
+    failure = error_type("unreadable workbook")
+    load = Mock(side_effect=failure)
+    monkeypatch.setattr("openpyxl.load_workbook", load)
+
+    with pytest.raises(RuntimeError) as raised:
+        run_module._extract_historical_series_headers_by_sheet(path)
+
+    assert str(raised.value) == f"Unable to extract historical series headers from workbook: {path}"
+    assert raised.value.__cause__ is failure
+    load.assert_called_once_with(filename=path, read_only=True, data_only=True)
+    assert not path.exists()
+
+
+@pytest.mark.parametrize("failure_stage", ["column-count", "header-cell"])
+def test_historical_headers_retain_readable_sheets_after_series_headers_fail(
+    tmp_path, monkeypatch, failure_stage
+) -> None:
+    """A malformed series header must not discard later readable worksheets."""
+    from openpyxl import Workbook
+
+    readable_book = Workbook()
+    readable_sheet = readable_book.active
+    readable_sheet.append(["Date", " Active ", None, "Dormant"])
+    broken_sheet = SimpleNamespace(max_row=1, max_column=2)
+
+    def read_cell(*, row, column):
+        assert row == 1
+        if column == 1:
+            return SimpleNamespace(value="Date")
+        raise KeyError("unreadable series header")
+
+    broken_sheet.cell = Mock(side_effect=read_cell)
+    if failure_stage == "column-count":
+        broken_sheet.max_column = "invalid"
+    sheets = {"Broken": broken_sheet, "Total": readable_sheet}
+    workbook = MagicMock(sheetnames=list(sheets))
+    workbook.__getitem__.side_effect = sheets.__getitem__
+    load = Mock(return_value=workbook)
+    monkeypatch.setattr("openpyxl.load_workbook", load)
+    path = tmp_path / "history.xlsx"
+
+    try:
+        result = run_module._extract_historical_series_headers_by_sheet(path)
+    finally:
+        readable_book.close()
+
+    assert result == {"Total": ("Active", "Dormant")}
+    assert [call.args[0] for call in workbook.__getitem__.call_args_list] == ["Broken", "Total"]
+    assert broken_sheet.cell.call_count == (1 if failure_stage == "column-count" else 2)
+    load.assert_called_once_with(filename=path, read_only=True, data_only=True)
+    workbook.close.assert_called_once_with()
+
+
 def _config():
     from counter_risk.config import WorkflowConfig
 
