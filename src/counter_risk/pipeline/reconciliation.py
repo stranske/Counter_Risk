@@ -134,7 +134,7 @@ def reconcile_series_coverage(
             counterparty_resolver=counterparty_resolver,
         )
         raw_counterparties_by_normalized = _raw_counterparties_by_normalized_from_parsed_data(
-            parsed_sections
+            parsed_sections, counterparty_resolver=counterparty_resolver
         )
         clearing_houses_in_data = sorted(
             {
@@ -468,6 +468,8 @@ def _normalized_counterparties_from_records(
 
 def _raw_counterparties_by_normalized_from_records(
     totals_records: list[dict[str, Any]],
+    *,
+    counterparty_resolver: Callable[[str], Any] = normalize_counterparty_with_source,
 ) -> dict[str, set[str]]:
     normalized_to_raw: dict[str, set[str]] = {}
     for record in totals_records:
@@ -477,7 +479,7 @@ def _raw_counterparties_by_normalized_from_records(
         raw_name = str(raw_value)
         if not raw_name.strip():
             continue
-        normalized_name = normalize_counterparty(raw_name)
+        normalized_name = counterparty_resolver(raw_name.strip()).canonical_name
         normalized_to_raw.setdefault(normalized_name, set()).add(raw_name)
     return normalized_to_raw
 
@@ -491,9 +493,13 @@ def _normalized_counterparties_from_parsed_data(
 
 def _raw_counterparties_by_normalized_from_parsed_data(
     parsed_sections: Mapping[str, Any],
+    *,
+    counterparty_resolver: Callable[[str], Any] = normalize_counterparty_with_source,
 ) -> dict[str, set[str]]:
     totals_records = _records(parsed_sections.get("totals", []))
-    return _raw_counterparties_by_normalized_from_records(totals_records)
+    return _raw_counterparties_by_normalized_from_records(
+        totals_records, counterparty_resolver=counterparty_resolver
+    )
 
 
 def _records(table: Any) -> list[dict[str, Any]]:

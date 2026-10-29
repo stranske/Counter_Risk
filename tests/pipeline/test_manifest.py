@@ -309,11 +309,15 @@ def test_explicit_ppt_outputs_override_filename_inference(
         top_exposures={},
         top_changes_per_variant={},
         warnings=[],
+        ppt_status="failed",
         ppt_outputs=explicit,
     )
     builder.write(run_dir=tmp_path, manifest=manifest)
     saved = json.loads((tmp_path / "manifest.json").read_text())
     assert saved["ppt_outputs"] == explicit
+    assert any(
+        finding["code"] == "PPT_GENERATION_FAILED" for finding in saved["data_quality"]["findings"]
+    )
 
 
 def test_disabled_ppt_omits_even_explicit_outputs(tmp_path, builder_with_both_ppt_artifacts):

@@ -32,7 +32,7 @@ def test_present_series_ignores_blank_entries():
     assert result["by_sheet"]["Total"]["missing_from_data"] == []
 
 
-def test_strict_custom_resolver_retains_canonical_name_without_raw_metadata():
+def test_strict_custom_resolver_preserves_original_raw_counterparty():
     with pytest.raises(UnmappedCounterpartyError) as caught:
         reconcile.reconcile_series_coverage(
             parsed_data_by_sheet={"Total": {"totals": [{"counterparty": "CIBC"}], "futures": []}},
@@ -43,7 +43,7 @@ def test_strict_custom_resolver_retains_canonical_name_without_raw_metadata():
             fail_policy="strict",
         )
     assert caught.value.normalized_counterparty == "custom"
-    assert caught.value.raw_counterparty == "custom"
+    assert caught.value.raw_counterparty == "CIBC"
 
 
 def test_section_mapping_is_required_before_reconciling():
