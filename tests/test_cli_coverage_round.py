@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -146,3 +147,68 @@ def test_runner_settings_helpers_reject_non_object_and_prefer_cli_values(tmp_pat
     assert cli._resolve_discovery_as_of_date(config=config, as_of_date="2026-01-31") == date(
         2026, 1, 31
     )
+
+
+def test_gui_headless_preserves_unsuccessful_exit_code(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        "counter_risk.gui.runner.execute_gui_run",
+        lambda **kwargs: SimpleNamespace(exit_code=7),
+    )
+    assert cli._gui_command(argparse.Namespace(headless=True)) == 7
+    assert "failed with exit code 7" in capsys.readouterr().out
+
+
+def test_runner_settings_reports_unreadable_file(tmp_path: Path) -> None:
+    path = tmp_path / "missing.json"
+    with pytest.raises(ValueError, match="unable to read settings file") as raised:
+        cli._load_runner_settings(path)
+    assert str(path) in str(raised.value)
+    assert isinstance(raised.value.__cause__, FileNotFoundError)
+
+
+@pytest.mark.parametrize("configured_roots", [{}, {"custom": "old-inputs"}])
+def test_runner_settings_replace_input_roots_and_individual_paths(
+    tmp_path: Path, monkeypatch, configured_roots
+) -> None:
+    config = WorkflowConfig(
+        hist_all_programs_3yr_xlsx=Path("all.xlsx"),
+        hist_ex_llc_3yr_xlsx=Path("ex.xlsx"),
+        hist_llc_3yr_xlsx=Path("trend.xlsx"),
+        monthly_pptx=Path("report.pptx"),
+        input_discovery={"directory_roots": configured_roots},
+    )
+    monkeypatch.setattr(cli, "load_config", lambda _: config)
+    updated = cli._load_config_with_runner_settings(
+        tmp_path / "config.yml",
+        {"input_root": str(tmp_path), "path_monthly_pptx": "selected.pptx"},
+    )
+    expected_roots = configured_roots or {
+        "monthly_inputs": "",
+        "historical_inputs": "",
+        "template_inputs": "",
+    }
+    assert updated.input_discovery.directory_roots == dict.fromkeys(expected_roots, tmp_path)
+    assert updated.monthly_pptx == Path("selected.pptx")
+    assert config.monthly_pptx == Path("report.pptx")
+
+
+def test_workflow_mode_applies_as_of_date_override(tmp_path: Path, monkeypatch) -> None:
+    config = WorkflowConfig(
+        as_of_date="2025-12-31",
+        hist_all_programs_3yr_xlsx=Path("all.xlsx"),
+        hist_ex_llc_3yr_xlsx=Path("ex.xlsx"),
+        hist_llc_3yr_xlsx=Path("trend.xlsx"),
+        monthly_pptx=Path("report.pptx"),
+    )
+    captured = []
+    monkeypatch.setattr(cli, "_load_config_with_runner_settings", lambda *_: config)
+    monkeypatch.setattr(
+        cli, "run_pipeline_with_config", lambda config, **kwargs: captured.append(config)
+    )
+    args = argparse.Namespace(
+        config=tmp_path / "config.yml", as_of_date=" 2026-01-31 ", export_pdf=True
+    )
+    assert cli._run_workflow_mode(args) == 0
+    assert captured[0].as_of_date == date(2026, 1, 31)
+    assert captured[0].export_pdf is True
+    assert config.as_of_date == date(2025, 12, 31)
