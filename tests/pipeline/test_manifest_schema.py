@@ -9,7 +9,14 @@ import pytest
 
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.manifest import ManifestBuilder
-from counter_risk.pipeline.manifest_schema import _matches_type, manifest_schema, validate_manifest
+from counter_risk.pipeline.manifest_schema import (
+    _check_node,
+    _matches_type,
+    manifest_schema,
+    validate_manifest,
+    validate_manifest_data_quality,
+    validate_manifest_ppt_outputs,
+)
 
 
 def test_manifest_schema_defines_master_and_distribution_ppt_outputs() -> None:
@@ -285,3 +292,153 @@ def test_manifest_preserves_valid_unconstrained_values(
     builder.write(run_dir=tmp_path, manifest=manifest)
     saved = json.loads((tmp_path / "manifest.json").read_text())
     assert saved["top_changes_per_variant"]["all_programs"]["values"] == values
+
+
+@pytest.mark.parametrize(
+    ("ppt_enabled", "ppt_outputs", "expected"),
+    [
+        (False, None, (True, None)),
+        (
+            False,
+            {},
+            (False, "Manifest must not include ppt_outputs when PPT generation is disabled."),
+        ),
+        (
+            True,
+            None,
+            (False, "Manifest must include ppt_outputs with Master and Distribution entries."),
+        ),
+        (
+            True,
+            {"master": {}},
+            (False, "Manifest ppt_outputs is missing required Distribution PPT entry."),
+        ),
+        (
+            True,
+            {"distribution": {}},
+            (False, "Manifest ppt_outputs is missing required Master PPT entry."),
+        ),
+        (
+            True,
+            {},
+            (False, "Manifest ppt_outputs must include both Master and Distribution entries."),
+        ),
+        (True, {"master": {}, "distribution": {}}, (True, None)),
+    ],
+)
+def test_validate_manifest_ppt_outputs_reports_each_contract_failure(
+    ppt_enabled: bool, ppt_outputs: object, expected: tuple[bool, str | None]
+) -> None:
+    assert (
+        validate_manifest_ppt_outputs({"ppt_outputs": ppt_outputs}, ppt_enabled=ppt_enabled)
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
+    ("data_quality", "expected"),
+    [
+        (None, "Manifest must include data_quality object."),
+        ({}, "Manifest data_quality is missing required overall_status field."),
+        (
+            {"overall_status": "info", "severity_levels": [], "findings": [], "counts": {}},
+            "Manifest data_quality is missing required recommended_actions field.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": {},
+            },
+            "Manifest data_quality recommended_actions must be an array.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": ["bad"],
+            },
+            "Manifest data_quality recommended_actions[0] must be an object.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": [{}],
+            },
+            "Manifest data_quality recommended_actions[0] must include non-empty category.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": [{"category": "source"}],
+            },
+            "Manifest data_quality recommended_actions[0].severity must be one of: info, warn, fail.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": [{"category": "source", "severity": "info"}],
+            },
+            "Manifest data_quality recommended_actions[0] must include non-empty action.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": [
+                    {"category": "source", "severity": "info", "action": "review"}
+                ],
+            },
+            None,
+        ),
+    ],
+)
+def test_validate_manifest_data_quality_reports_action_contract_failures(
+    data_quality: object, expected: str | None
+) -> None:
+    valid, reason = validate_manifest_data_quality({"data_quality": data_quality})
+    assert valid is (expected is None)
+    assert reason == expected
+
+
+@pytest.mark.parametrize(
+    ("value", "schema", "expected"),
+    [
+        ("anything", {"type": "future-type"}, None),
+        ("wrong", {"enum": ["right"]}, "value must be one of: 'right'"),
+        (-1, {"minimum": 0}, "value must be >= 0"),
+        ("", {"minLength": 1}, "value must have at least 1 character(s)"),
+        ([], {"minItems": 1}, "value must have at least 1 item(s)"),
+        ({}, {"required": ["required"]}, "value is missing required key 'required'"),
+        (
+            {"extra": 1},
+            {"additionalProperties": False},
+            "value contains unexpected key 'extra' (additionalProperties is false)",
+        ),
+        (
+            {"extra": "wrong"},
+            {"additionalProperties": {"type": "integer"}},
+            "value.extra must be of type integer, got str",
+        ),
+        (["wrong"], {"items": {"type": "integer"}}, "value[0] must be of type integer, got str"),
+    ],
+)
+def test_check_node_reports_schema_constraint_failures(
+    value: object, schema: dict[str, object], expected: str | None
+) -> None:
+    assert _check_node(value, schema, "value") == expected
