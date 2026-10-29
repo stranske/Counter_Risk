@@ -67,6 +67,33 @@ def test_resolve_config_path_uses_repo_test_path_when_present(
     )
 
 
+@pytest.mark.parametrize("preferred", ["absolute", "config", "repository"])
+def test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, preferred: str
+) -> None:
+    repo_root = tmp_path / "repo"
+    config_dir = tmp_path / "project" / "config"
+    relative = Path("fixtures/input.csv")
+    candidates = {
+        "absolute": tmp_path / "absolute" / relative,
+        "config": config_dir / relative,
+        "repository": repo_root / "tests" / relative,
+        "parent": config_dir.parent / relative,
+    }
+    for label, candidate in candidates.items():
+        candidate.parent.mkdir(parents=True, exist_ok=True)
+        candidate.write_text(label, encoding="utf-8")
+    if preferred == "repository":
+        candidates["config"].unlink()
+    monkeypatch.setattr(web_demo, "_repo_root", lambda: repo_root)
+
+    requested = candidates["absolute"] if preferred == "absolute" else relative
+    resolved = web_demo._resolve_config_path(requested, config_dir=config_dir)
+
+    assert resolved == candidates[preferred]
+    assert resolved.read_text(encoding="utf-8") == preferred
+
+
 def test_materialize_config_only_writes_relocated_paths(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
