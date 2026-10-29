@@ -535,6 +535,92 @@ def test_output_generation_requires_its_stage_inputs(require, message) -> None:
         require(None)
 
 
+@pytest.mark.parametrize(
+    ("parsed", "message"),
+    [
+        (None, "parsed_by_variant is required"),
+        ({}, "Parsed payload for variant 'all_programs' is missing$"),
+        ({"all_programs": []}, "Parsed payload for variant 'all_programs' is missing$"),
+        ({"all_programs": {}}, "missing the totals section required for Drop-In"),
+    ],
+    ids=["no-parsed-inputs", "missing-variant", "invalid-variant", "missing-totals"],
+)
+def test_dropin_rejects_incomplete_inputs_before_writing(
+    monkeypatch, tmp_path, parsed, message
+) -> None:
+    config = _config().model_copy(
+        update={"dropin_all_programs_template_xlsx": tmp_path / "template.xlsx"}
+    )
+    fill = Mock()
+    monkeypatch.setattr(run_module, "fill_dropin_template", fill)
+    warnings = []
+
+    with pytest.raises(ValueError, match=message):
+        run_module._write_all_programs_dropin_output(
+            run_dir=tmp_path, config=config, warnings=warnings, parsed_by_variant=parsed
+        )
+
+    fill.assert_not_called()
+    assert warnings == []
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("output_count", [0, 2])
+def test_screenshot_generator_rejects_ambiguous_master_before_refresh(
+    monkeypatch, tmp_path, output_count
+) -> None:
+    inputs = {}
+    for variant in ("all_programs", "ex_trend", "trend"):
+        source = tmp_path / f"{variant}-source.xlsx"
+        source.write_bytes(b"input")
+        inputs[f"mosers_{variant}_xlsx"] = source
+    config = _config().model_copy(update=inputs)
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    generator = Mock(name="screenshot_generator")
+    generator.name = "ppt_screenshot"
+    generator.generate.return_value = tuple(
+        run_dir / f"master-{index}.pptx" for index in range(output_count)
+    )
+    registry = Mock()
+    registry.load.side_effect = [[generator], []]
+    monkeypatch.setattr(run_module, "_build_output_generator_registry", lambda **kwargs: registry)
+    refresh = Mock(side_effect=AssertionError("invalid Master must not reach Office"))
+    monkeypatch.setattr(run_module, "_refresh_ppt_links", refresh)
+
+    with pytest.raises(RuntimeError, match="must produce exactly one Master PPT output"):
+        run_module._write_outputs(
+            run_dir=run_dir, config=config, as_of_date=date(2025, 12, 31), warnings=[]
+        )
+
+    generator.generate.assert_called_once()
+    assert registry.load.call_count == 1
+    refresh.assert_not_called()
+    assert not list(run_dir.glob("*.pptx"))
+
+
+def test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one(
+    monkeypatch, tmp_path
+) -> None:
+    generator = Mock()
+    generator.generate.return_value = (tmp_path / "first.pdf", tmp_path / "second.pdf")
+    monkeypatch.setattr(
+        run_module, "_build_pdf_export_output_generator", lambda **kwargs: generator
+    )
+
+    with pytest.raises(RuntimeError, match="must produce at most one PDF output"):
+        run_module._export_distribution_pdf(
+            source_pptx=tmp_path / "distribution.pptx",
+            run_dir=tmp_path,
+            config=_config(),
+            as_of_date=date(2025, 12, 31),
+            warnings=[],
+        )
+
+    generator.generate.assert_called_once()
+    assert list(tmp_path.iterdir()) == []
+
+
 def test_historical_helpers_report_unavailable_reader(monkeypatch, tmp_path) -> None:
     monkeypatch.setitem(sys.modules, "openpyxl", None)
     path = tmp_path / "history.xlsx"

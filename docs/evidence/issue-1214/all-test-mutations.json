@@ -1244,5 +1244,147 @@
       "test_refresh_save_failure_preserves_cause_and_releases_office"
     ],
     "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3858,7 +3858,7 @@\n                     updated += 1\n                 except Exception:\n                     continue\n-        presentation.Save()\n+        pass\n         LOGGER.info(\"ppt_link_refresh_complete file=%s shapes_updated=%d\", pptx_path, updated)\n         return PptProcessingResult(status=PptProcessingStatus.SUCCESS)\n     except Exception as exc:\n"
+  },
+  {
+    "mutation": "Silently skip configured Drop-In when parsed inputs are absent",
+    "source": "src/counter_risk/pipeline/run.py",
+    "edits": [
+      [
+        "    if parsed_by_variant is None:\n        raise ValueError(\n            \"parsed_by_variant is required when dropin_all_programs_template_xlsx is configured\"\n        )",
+        "    if parsed_by_variant is None:\n        return None"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_dropin_rejects_incomplete_inputs_before_writing[no-parsed-inputs]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2723,9 +2723,7 @@\n     if template_path is None:\n         return None\n     if parsed_by_variant is None:\n-        raise ValueError(\n-            \"parsed_by_variant is required when dropin_all_programs_template_xlsx is configured\"\n-        )\n+        return None\n \n     parsed_all_programs = parsed_by_variant.get(\"all_programs\")\n     if not isinstance(parsed_all_programs, Mapping):\n"
+  },
+  {
+    "mutation": "Silently skip configured Drop-In with missing or invalid variant payload",
+    "source": "src/counter_risk/pipeline/run.py",
+    "edits": [
+      [
+        "    if not isinstance(parsed_all_programs, Mapping):\n        raise ValueError(\"Parsed payload for variant 'all_programs' is missing\")",
+        "    if not isinstance(parsed_all_programs, Mapping):\n        return None"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_dropin_rejects_incomplete_inputs_before_writing[missing-variant]",
+      "test_dropin_rejects_incomplete_inputs_before_writing[invalid-variant]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2729,7 +2729,7 @@\n \n     parsed_all_programs = parsed_by_variant.get(\"all_programs\")\n     if not isinstance(parsed_all_programs, Mapping):\n-        raise ValueError(\"Parsed payload for variant 'all_programs' is missing\")\n+        return None\n     if \"totals\" not in parsed_all_programs:\n         raise ValueError(\n             \"Parsed payload for variant 'all_programs' is missing the totals section required \"\n"
+  },
+  {
+    "mutation": "Silently skip configured Drop-In without totals",
+    "source": "src/counter_risk/pipeline/run.py",
+    "edits": [
+      [
+        "    if \"totals\" not in parsed_all_programs:\n        raise ValueError(\n            \"Parsed payload for variant 'all_programs' is missing the totals section required \"\n            \"for Drop-In output generation\"\n        )",
+        "    if \"totals\" not in parsed_all_programs:\n        return None"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_dropin_rejects_incomplete_inputs_before_writing[missing-totals]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2731,10 +2731,7 @@\n     if not isinstance(parsed_all_programs, Mapping):\n         raise ValueError(\"Parsed payload for variant 'all_programs' is missing\")\n     if \"totals\" not in parsed_all_programs:\n-        raise ValueError(\n-            \"Parsed payload for variant 'all_programs' is missing the totals section required \"\n-            \"for Drop-In output generation\"\n-        )\n+        return None\n \n     totals_records = _records(parsed_all_programs[\"totals\"])\n     notional_breakdown = _build_dropin_notional_breakdown(totals_records)\n"
+  },
+  {
+    "mutation": "Accept an absent or ambiguous Master PPT from screenshot generator",
+    "source": "src/counter_risk/pipeline/run.py",
+    "edits": [
+      [
+        "            if len(generated_paths) != 1:\n                raise RuntimeError(\n                    \"PPT screenshot output generator must produce exactly one Master PPT output\"\n                )",
+        "            if len(generated_paths) != 1:\n                pass"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_generator_rejects_ambiguous_master_before_refresh",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_screenshot_generator_rejects_ambiguous_master_before_refresh[0]",
+      "test_screenshot_generator_rejects_ambiguous_master_before_refresh[2]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2885,9 +2885,7 @@\n         output_paths.extend(generated_paths)\n         if generator.name == \"ppt_screenshot\":\n             if len(generated_paths) != 1:\n-                raise RuntimeError(\n-                    \"PPT screenshot output generator must produce exactly one Master PPT output\"\n-                )\n+                pass\n             target_master_ppt = generated_paths[0]\n \n     if target_master_ppt is None:\n"
+  },
+  {
+    "mutation": "Select first PDF silently when generator returns multiple outputs",
+    "source": "src/counter_risk/pipeline/run.py",
+    "edits": [
+      [
+        "    if len(generated_paths) != 1:\n        raise RuntimeError(\"PDF export output generator must produce at most one PDF output\")",
+        "    if len(generated_paths) != 1:\n        pass"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3966,7 +3966,7 @@\n         return None\n \n     if len(generated_paths) != 1:\n-        raise RuntimeError(\"PDF export output generator must produce at most one PDF output\")\n+        pass\n \n     return generated_paths[0]\n \n"
   }
 ]

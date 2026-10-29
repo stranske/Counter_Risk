@@ -655,3 +655,194 @@ tests/pipeline/test_run_link_refresh_failures.py .                       [100%]
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 ----- generated xml file: /tmp/1217-link-mutations-up26rei5/3-restored.xml -----
 ======================== 1 passed, 13 warnings in 0.35s ========================
+
+
+Output validation follow-up: five mutations, seven cases
+Source SHA256 before and after restoration: a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791
+
+Mutation: Silently skip configured Drop-In when parsed inputs are absent
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-0-mutated.xml']
+Exit: 1
+F...                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_dropin_rejects_incomplete_inputs_before_writing[no-parsed-inputs] ____
+tests/pipeline/test_run_coverage_round.py:558: in test_dropin_rejects_incomplete_inputs_before_writing
+    with pytest.raises(ValueError, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing[no-parsed-inputs] - Failed: DID NOT RAISE ValueError
+1 failed, 3 passed, 13 warnings in 1.26s
+
+Mutation: Silently skip configured Drop-In when parsed inputs are absent
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-0-restored.xml']
+Exit: 0
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 13 warnings in 0.26s
+
+Mutation: Silently skip configured Drop-In with missing or invalid variant payload
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-1-mutated.xml']
+Exit: 1
+.FF.                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_dropin_rejects_incomplete_inputs_before_writing[missing-variant] _____
+tests/pipeline/test_run_coverage_round.py:558: in test_dropin_rejects_incomplete_inputs_before_writing
+    with pytest.raises(ValueError, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+____ test_dropin_rejects_incomplete_inputs_before_writing[invalid-variant] _____
+tests/pipeline/test_run_coverage_round.py:558: in test_dropin_rejects_incomplete_inputs_before_writing
+    with pytest.raises(ValueError, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing[missing-variant] - Failed: DID NOT RAISE ValueError
+FAILED tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing[invalid-variant] - Failed: DID NOT RAISE ValueError
+2 failed, 2 passed, 13 warnings in 0.32s
+
+Mutation: Silently skip configured Drop-In with missing or invalid variant payload
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-1-restored.xml']
+Exit: 0
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 13 warnings in 0.26s
+
+Mutation: Silently skip configured Drop-In without totals
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-2-mutated.xml']
+Exit: 1
+...F                                                                     [100%]
+=================================== FAILURES ===================================
+_____ test_dropin_rejects_incomplete_inputs_before_writing[missing-totals] _____
+tests/pipeline/test_run_coverage_round.py:558: in test_dropin_rejects_incomplete_inputs_before_writing
+    with pytest.raises(ValueError, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing[missing-totals] - Failed: DID NOT RAISE ValueError
+1 failed, 3 passed, 13 warnings in 0.52s
+
+Mutation: Silently skip configured Drop-In without totals
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-2-restored.xml']
+Exit: 0
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 13 warnings in 0.24s
+
+Mutation: Accept an absent or ambiguous Master PPT from screenshot generator
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_screenshot_generator_rejects_ambiguous_master_before_refresh', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-3-mutated.xml']
+Exit: 1
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_screenshot_generator_rejects_ambiguous_master_before_refresh[0] _____
+tests/pipeline/test_run_coverage_round.py:592: in test_screenshot_generator_rejects_ambiguous_master_before_refresh
+    run_module._write_outputs(
+src/counter_risk/pipeline/run.py:2889: in _write_outputs
+    target_master_ppt = generated_paths[0]
+                        ^^^^^^^^^^^^^^^^^^
+E   IndexError: tuple index out of range
+_____ test_screenshot_generator_rejects_ambiguous_master_before_refresh[2] _____
+tests/pipeline/test_run_coverage_round.py:591: in test_screenshot_generator_rejects_ambiguous_master_before_refresh
+    with pytest.raises(RuntimeError, match="must produce exactly one Master PPT output"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE RuntimeError
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:2948 Master PPT link refresh failed: invalid Master must not reach Office
+WARNING  counter_risk.pipeline.run:run.py:2959 Skipping distribution PPT derivation because Master PPT refresh failed: /tmp/pytest-of-runner/pytest-11/test_screenshot_generator_reje1/run/master-0.pptx
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_screenshot_generator_rejects_ambiguous_master_before_refresh[0] - IndexError: tuple index out of range
+FAILED tests/pipeline/test_run_coverage_round.py::test_screenshot_generator_rejects_ambiguous_master_before_refresh[2] - Failed: DID NOT RAISE RuntimeError
+2 failed, 13 warnings in 0.38s
+
+Mutation: Accept an absent or ambiguous Master PPT from screenshot generator
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_screenshot_generator_rejects_ambiguous_master_before_refresh', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-3-restored.xml']
+Exit: 0
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.31s
+
+Mutation: Select first PDF silently when generator returns multiple outputs
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-4-mutated.xml']
+Exit: 1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one _______
+tests/pipeline/test_run_coverage_round.py:611: in test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one
+    with pytest.raises(RuntimeError, match="must produce at most one PDF output"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE RuntimeError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one - Failed: DID NOT RAISE RuntimeError
+1 failed, 13 warnings in 0.32s
+
+Mutation: Select first PDF silently when generator returns multiple outputs
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-4-restored.xml']
+Exit: 0
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.25s
