@@ -391,6 +391,51 @@ def test_parser_handles_reordered_columns(tmp_path: Path) -> None:
     _assert_expected_rows(parsed)
 
 
+@pytest.mark.parametrize("segment_column", [1, 3], ids=["first-column", "adjacent-column"])
+def test_parser_tracks_segment_changes_and_inherits_segment_on_continuation_rows(
+    tmp_path: Path, segment_column: int
+) -> None:
+    import openpyxl
+
+    path = _build_raw_nisa_workbook(tmp_path / "segment-changes.xlsx")
+    workbook = openpyxl.load_workbook(path)
+    try:
+        sheet = workbook.active
+        # Move counterparties to column 4 so the two segment-column candidates differ.
+        sheet.insert_cols(1, 2)
+        sheet.cell(6, 3).value = None
+        sheet.cell(6, segment_column).value = "Swaps"
+        # Segment-only rows must update the state without becoming counterparties.
+        sheet.cell(8, segment_column).value = "  Repo  "
+        sheet.cell(11, segment_column).value = "Futures"
+        sheet.cell(13, segment_column).value = "Futures / CDX"
+        for row, name, notional in (
+            (9, "Repo Bank", 123),
+            (10, "Repo Continuation", -45),
+            (12, "Futures Bank", 67),
+            (13, "CDX Bank", 89),
+            (14, "CDX Continuation", 90),
+        ):
+            sheet.cell(row, 4).value = name
+            sheet.cell(row, 11).value = notional
+        workbook.save(path)
+    finally:
+        workbook.close()
+
+    parsed = parse_nisa_all_programs(path)
+
+    assert [(row.segment, row.counterparty, row.notional) for row in parsed.ch_rows] == [
+        ("swaps", "Alpha Bank", 210),
+        ("swaps", "Beta Bank", 21),
+        ("repo", "Repo Bank", 123),
+        ("repo", "Repo Continuation", -45),
+        ("futures", "Futures Bank", 67),
+        ("futures_cdx", "CDX Bank", 89),
+        ("futures_cdx", "CDX Continuation", 90),
+    ]
+    assert [(row.counterparty, row.notional) for row in parsed.totals_rows] == [("Alpha Bank", 210)]
+
+
 @pytest.mark.parametrize(
     "header_order",
     [_CANONICAL_HEADERS, tuple(reversed(_CANONICAL_HEADERS))],

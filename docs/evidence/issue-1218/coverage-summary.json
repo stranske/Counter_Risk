@@ -4,7 +4,8 @@
     "3456860abdb9d78cd98fbb1e7c18d4611513c7b9",
     "edc500f44edb22520fae766a4776743e23354342",
     "0054b34c9bd62391c40dd42d57ae113f0b4ff67f",
-    "d843da80d3d8f60cdc0d1b10a9b6f1c65f195dc1"
+    "d843da80d3d8f60cdc0d1b10a9b6f1c65f195dc1",
+    "e7a1c323221d073c4557b5c33d1c06d09a7182d4"
   ],
   "python": "3.14.9",
   "command": "python -m pytest tests/ -m \"not slow\" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>",
@@ -24,7 +25,7 @@
     }
   },
   "candidate": {
-    "passed": 2559,
+    "passed": 2561,
     "skipped": 1,
     "totals": {
       "covered_lines": 11109,
@@ -558,5 +559,14 @@
       "python_3_14": "success"
     },
     "candidate_hosted_ci": "pending publication"
+  },
+  "segment_followup": {
+    "new_cases": 2,
+    "mutation_scenarios": 3,
+    "receipt_file": "docs/evidence/issue-1218/segment-mutation-receipts.json",
+    "full_suite_passed": 2561,
+    "full_suite_skipped": 1,
+    "full_suite_seconds": 97.19,
+    "additional_covered_statements": 0
   }
 }

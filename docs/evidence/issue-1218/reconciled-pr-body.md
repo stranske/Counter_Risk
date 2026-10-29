@@ -1,17 +1,17 @@
 ## Summary
 
-Add 81 regression cases across ten test modules for the targets in issue #1218, in its specified escaped-defect/churn/uncovered-mass order. The follow-ups cover the public NISA input contract with a real XLSX, all three totals-section stop markers, the Futures/CDX alias, every numeric field, and deterministic selection among valid worksheets. No production bug was found; production files are byte-identical to the PR base.
+Add 83 regression cases across ten test modules for the targets in issue #1218, in its specified escaped-defect/churn/uncovered-mass order. The follow-ups cover the public NISA input contract with a real XLSX, all three totals-section stop markers, the Futures/CDX alias, every numeric field, deterministic selection among valid worksheets, and segment transitions with both supported segment-column locations. No production bug was found; production files are byte-identical to the PR base.
 
 Reconciliation: reviewed `3456860`, `edc500f`, and `0054b34`. The latter already delivered the remaining ranked modules, rather than just NISA as the old PR body stated. The previous iteration verified 49 added test functions (75 parametrized cases) with per-case break-and-revert runs. This follow-up adds one function (two column-layout cases), verified against 17 independent field-mapping mutations. This remains one ready-for-review PR for one coverage chunk.
 
-The next reconciliation also reviewed `d843da8`, which delivered the numeric-field follow-up. All five nested contract checkboxes below were already supported by the committed implementation and receipts. The live PR body is stale because automatic approval review rejected its update; the verified reconciliation is recorded here. The current continuation adds four discriminating worksheet-selection cases to the first ranked target, rather than moving outside the issue's scope.
+The next reconciliation also reviewed `d843da8`, which delivered the numeric-field follow-up. All five nested contract checkboxes below were already supported by the committed implementation and receipts. The live PR body is stale because automatic approval review rejected its update; the verified reconciliation is recorded here. Commit `e7a1c32` delivered four discriminating worksheet-selection cases. This continuation adds two segment-transition cases to the first ranked target.
 
 ## Coverage
 
 Matched whole-suite measurements on Python 3.14.9, using `python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>`:
 
 - PR base `faad152`: **2,478 passed, 1 skipped**, 10,911/12,216 statements covered, **89.3173%**.
-- Candidate: **2,559 passed, 1 skipped**, 11,109/12,216 statements covered, **90.9381%**.
+- Candidate: **2,561 passed, 1 skipped**, 11,109/12,216 statements covered, **90.9381%**.
 - **198 fewer uncovered statements**, all within the issue's ranked targets; no coverage exclusions or thresholds changed.
 
 The measured baseline agrees with the issue's 89.32% rounded figure. The repository actually sets `branch = false`, so these are line-only results, not blended line+branch results. Gate explicitly disables coverage (`pr-00-gate.yml`); there is no Gate coverage artifact to claim. The table below comes from matched local whole-suite runs with the same non-slow selection as main's coverage job.
@@ -57,11 +57,17 @@ Four new cases exercise two valid worksheets with distinct counterparty payloads
 
 Executed two independent mutations in a temporary clone: removed header-row priority from the candidate sort, then replaced the case-insensitive name key with a case-sensitive key. Each mutation produced **2 failed tests** (exit 1); exact source restoration produced **2 passed tests** (exit 0). All four new cases therefore have executed break-and-revert evidence. `docs/evidence/issue-1218/sheet-selection-mutation-receipts.json` records the exact mutations, selected cases, output, exit codes, and matching source hashes. No production change or additional covered statement is claimed for this follow-up.
 
+## Segment-transition verification follow-up
+
+Two new cases use a real XLSX with counterparties shifted to column 4 and segment labels either in the first column or immediately before the counterparty column. They assert the exact segment, counterparty, and notional for seven rows across Swaps, Repo, Futures, and Futures/CDX. Segment-only rows must update the segment; continuation rows must inherit it. The totals payload must remain correct.
+
+Executed three independent source mutations in a temporary clone: froze the first recognized segment (both cases failed), removed the first-column fallback (the first-column case failed), and ignored the adjacent-column candidate (the adjacent-column case failed). Each RED run exited 1 and the corresponding exact-restoration GREEN run exited 0: **4 RED and 4 GREEN case executions**. `docs/evidence/issue-1218/segment-mutation-receipts.json` records the commands, failures, passes, exact edits, and matching original/restored SHA-256 values. All 83 added cases now have executed break-and-revert evidence. No production bug or additional covered statement is claimed.
+
 ## Validation
 
-- Full candidate suite: **2,559 passed, 1 skipped** in 142.41 seconds, `-m "not slow"`; source unchanged after all mutation runs. Coverage JSON confirms 11,109/12,216 lines covered (**90.9381%**), with the same 198-statement reduction from the PR base.
-- Focused NISA: `python -m pytest tests/test_nisa_all_programs_parser.py -m "not slow" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q`: **24 passed**, 216/218 statements (**99.08%**); the actual coverage table shows **99%**, missing lines 239/311.
-- Existing remote head `d843da8`: [Gate run 40840937953](https://github.com/stranske/Counter_Risk/actions/runs/40840937953) passed, including Python 3.13 and 3.14 pytest jobs. The four new worksheet-selection cases have not run in hosted CI yet; that acceptance checkbox remains unchecked until the new candidate passes there.
+- Full candidate suite: **2,561 passed, 1 skipped** in 97.19 seconds, `-m "not slow"`; source unchanged after all mutation runs. Coverage JSON confirms 11,109/12,216 lines covered (**90.9381%**), with the same 198-statement reduction from the PR base.
+- Focused NISA: `python -m pytest tests/test_nisa_all_programs_parser.py -m "not slow" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q`: **26 passed**, 216/218 statements (**99.08%**); the actual coverage table shows **99%**, missing lines 239/311.
+- Existing remote head `e7a1c32`: [Gate run 40842351195](https://github.com/stranske/Counter_Risk/actions/runs/40842351195) passed, including Python 3.13 and 3.14 pytest jobs. The two new segment-transition cases have not run in hosted CI yet; that acceptance checkbox remains unchecked until the new candidate passes there.
 - One earlier local whole-suite run was discarded because tests were added during its nested collection check and a concurrent targeted run shared its coverage data. Final measurements above used stable files and separate coverage data.
 
 Closes #1218
@@ -71,7 +77,7 @@ Closes #1218
 
 ## Delivery limitation
 
-Automatic approval review again rejected the PR-body write because GitHub mutations require approval and this run's policy is `never`; the live task checkboxes could not be reconciled. The main checkout's `.git` directory is read-only (`git add` failed creating `index.lock`), so the verified test change and evidence are committed in `/tmp/counter-risk-1218-sheet-selection` and exported as `/tmp/counter-risk-1218-sheet-selection.bundle`. Pushing the existing PR branch failed because the sandbox could not resolve `github.com`. This prepared body records the verified checklist; publication remains pending. PR #1220 remains open and ready for review.
+The main checkout's `.git` directory is read-only (`git add` failed creating `index.lock`). The verified test change and evidence are committed in `/tmp/counter-risk-1218-segments`; the commit is exported as `/tmp/counter-risk-1218-segments.bundle` for handoff. Pushing the existing PR branch failed because the sandbox could not resolve `github.com`. Automatic approval review rejected both GitHub source publication and the PR-body reconciliation: `MCP tool call requires approval, but approval policy is never`. PR #1220 is open and ready for review. Hosted CI verification remains unchecked for the new two-case follow-up, which has passed locally but is not yet on the PR branch.
 
 <details>
 <summary>Per-case break-and-revert results (75 distinct cases)</summary>
