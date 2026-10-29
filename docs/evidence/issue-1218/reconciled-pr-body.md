@@ -2,7 +2,13 @@
 
 Add 87 regression cases across ten test modules in issue #1218's escaped-defect/churn/uncovered-mass order. Tests cover NISA parsing, rollups, runner launch handling, mapping-diff output, provider fallback, normalization, limits configuration, PowerPoint relationship repair, and XLSM building. No production bug was found; production files are byte-identical to the PR base.
 
-Reconciliation: reviewed `3456860`, `edc500f`, `0054b34`, `d843da8`, `e7a1c32`, and `9cc0e39`. The former PR body described only the initial parser-boundary tests. The committed coverage summary and 71 mutation scenarios support all five nested contract checkboxes. Gate run [40843725927](https://github.com/stranske/Counter_Risk/actions/runs/40843725927) passed at `9cc0e39`, including Python 3.13 and 3.14 pytest jobs. This remains one ready-for-review PR for the existing coverage chunk, whose initial baseline was below 90%.
+Reconciliation: reviewed `3456860`, `edc500f`, `0054b34`, `d843da8`, `e7a1c32`, `9cc0e39`, and `3b633ea`. The former PR body described only the initial parser-boundary tests. The committed coverage summary and 73 mutation scenarios support all five nested contract checkboxes. Gate run [40845103822](https://github.com/stranske/Counter_Risk/actions/runs/40845103822) passed at `3b633ea`, including Python 3.13 and 3.14 pytest jobs. This remains one ready-for-review PR for the existing coverage chunk, whose initial baseline was below 90%.
+
+## Workbook cleanup regression
+
+Strengthened the three existing incomplete-section cases to verify that the actual read-only workbook is closed exactly once when parsing fails: a missing totals marker raises inside the parsing `try`, while a missing segment and empty totals raise after it. A spy wraps the real workbook close method, so the successful test runs release the actual XLSX resources.
+
+Executed break-and-revert in `/tmp/counter-risk-1218-close`: replaced the parser's `finally: workbook.close()` with `finally: pass`. All three cases failed on the new close assertions (exit 1); restoring the exact source bytes made all three pass (exit 0). `cleanup-mutation-receipt.json` records the edit, command, per-case outcomes, output, and matching original/restored hashes. No new test count or additional covered statement is claimed; this strengthens the existing regression cases.
 
 ## Incomplete-worksheet regression
 
@@ -52,21 +58,22 @@ Every added case has executed RED/GREEN evidence. Receipt files in `docs/evidenc
 | `sheet-selection-mutation-receipts.json` | 2 | 4 |
 | `segment-mutation-receipts.json` | 3 | 2 |
 | `completeness-mutation-receipt.json` | 1 | 4 |
+| `cleanup-mutation-receipt.json` | 1 | 3 existing cases strengthened |
 
 Each scenario failed with the deliberate source change and passed after restoration. No collection errors or skips count as proof. The earlier malformed-XML mutation that changed no observable output was discarded; removing the ParseError catch instead produced a verified failure. The numeric cases assert all 17 numeric mappings with distinct values. Worksheet cases distinguish header-row priority, case-insensitive names, and incomplete-header rejection. Segment cases distinguish first-column and adjacent-column detection and inherited segments.
 
 ## Validation
 
-- Whole suite: `COVERAGE_FILE=<isolated data file> python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>`: **2,565 passed, 1 skipped** in 163.67 seconds. JSON confirms **11,109/12,216 lines covered (90.9381%)** and 198 fewer missing statements than the matched PR base.
+- Whole suite: `COVERAGE_FILE=<isolated data file> python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>`: **2,565 passed, 1 skipped** in 155.05 seconds. JSON confirms **11,109/12,216 lines covered (90.9381%)** and 198 fewer missing statements than the matched PR base.
 - Focused NISA: `python -m pytest tests/test_nisa_all_programs_parser.py -m "not slow" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q`: **30 passed**, with `nisa.py` showing **99%** in the actual coverage table (216/218 statements; lines 239/311 missing).
 - Black **26.10.1**: formatted the changed file at line length 100; required whole-tree check `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .` passed for **395 files**. A temporary Python startup shim schedules 10ms asyncio wakeups, and `BLACK_NUM_WORKERS=1` avoids sandbox process-pool limits; formatting, parse validation, and exclusions are unchanged. The CI variant adding `\.venv` to the exclusion also passed for 395 files.
 - Ruff **0.17.3**: `ruff check --output-format github --extend-exclude .workflows-lib .` passed for the whole tree.
 - `git diff --check` passed; all production files match the PR base. Mutation runs used a separate checkout and restored the source exactly.
-- Prior published head `9cc0e39` passed Gate on both supported Python versions. The four new cases await publication and hosted CI; the CI acceptance checkbox below remains unchecked for this candidate.
+- Published head `3b633ea` passed Gate on both supported Python versions (run `40845103822`). The strengthened cleanup assertions await publication and hosted CI; the CI acceptance checkbox below remains unchecked for this candidate.
 
 ## Delivery limitation
 
-The main checkout's `.git` directory is read-only. The new test changes and evidence are committed in `/tmp/counter-risk-1218-completeness` and exported as `/tmp/counter-risk-1218-completeness.bundle`. GitHub publication is blocked because the sandbox cannot resolve `github.com` (confirmed by a Git push dry run). Automatic approval review rejected both PR-body reconciliation and adding `needs-human`: `MCP tool call requires approval, but approval policy is never`. The reconciled checkboxes are preserved here; they have not been applied to the live PR body. Hosted CI acceptance remains unchecked for the new four cases until publication and a successful CI run.
+The main checkout's `.git` directory is read-only (`git add` fails creating `index.lock`). The test changes and evidence are committed in `/tmp/counter-risk-1218-close` and exported as `/tmp/counter-risk-1218-close.bundle`. A push to the existing PR branch failed: `Could not resolve host: github.com`. Automatic approval review rejected both PR-body reconciliation and adding `needs-human`: `MCP tool call requires approval, but approval policy is never`. The five reconciled contract checkboxes are preserved here and have not been applied to the live PR body. Hosted CI acceptance remains unchecked for the strengthened assertions until publication and a successful CI run. The ranked coverage chunk is already verified above its approximate 180-unit goal; it needs publication and live checklist reconciliation rather than more coverage tests.
 
 Closes #1218
 

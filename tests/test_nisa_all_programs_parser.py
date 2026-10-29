@@ -603,7 +603,10 @@ def test_parser_skips_subtotals_and_stops_totals_at_next_section(tmp_path: Path)
     ids=["missing-totals-marker", "missing-segment", "empty-totals"],
 )
 def test_parser_rejects_incomplete_sections(
-    tmp_path: Path, cleared_cells: list[tuple[int, int]], message: str
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    cleared_cells: list[tuple[int, int]],
+    message: str,
 ) -> None:
     import openpyxl
 
@@ -616,8 +619,22 @@ def test_parser_rejects_incomplete_sections(
     finally:
         workbook.close()
 
+    load_workbook = openpyxl.load_workbook
+    close_calls: list[Mock] = []
+
+    def load_tracked_workbook(**kwargs: Any) -> Any:
+        loaded = load_workbook(**kwargs)
+        close = Mock(wraps=loaded.close)
+        monkeypatch.setattr(loaded, "close", close)
+        close_calls.append(close)
+        return loaded
+
+    monkeypatch.setattr(openpyxl, "load_workbook", load_tracked_workbook)
     with pytest.raises(ValueError, match=message):
         parse_nisa_all_programs(path)
+
+    assert len(close_calls) == 1
+    close_calls[0].assert_called_once_with()
 
 
 def test_parser_closes_workbook_with_no_worksheets(

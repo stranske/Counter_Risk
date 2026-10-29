@@ -589,5 +589,34 @@
     },
     "candidate_hosted_ci": "pending publication",
     "live_pr_reconciliation": "blocked: MCP tool call requires approval, but approval policy is never"
+  },
+  "cleanup_followup": {
+    "new_cases": 0,
+    "existing_cases_strengthened": 3,
+    "mutation_scenarios": 1,
+    "receipt_file": "docs/evidence/issue-1218/cleanup-mutation-receipt.json",
+    "targeted_coverage_command": "python -m pytest tests/test_nisa_all_programs_parser.py -m \"not slow\" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q",
+    "targeted_passed": 30,
+    "targeted_cover_column": "99%",
+    "additional_covered_statements": 0,
+    "prior_head_ci": {
+      "sha": "3b633ea36b7bfc4dc3b888c8a942e52ca523ac6a",
+      "gate_run_id": 40845103822,
+      "python_3_13": "success",
+      "python_3_14": "success"
+    },
+    "candidate_hosted_ci": "pending publication",
+    "live_pr_reconciliation": "blocked: automatic approval review rejected the update: MCP tool call requires approval, but approval policy is never",
+    "full_suite_passed": 2565,
+    "full_suite_skipped": 1,
+    "full_suite_seconds": 155.05,
+    "full_suite_covered_statements": 11109,
+    "full_suite_total_statements": 12216,
+    "full_suite_percent_covered": 90.93811394891945,
+    "publication_blockers": [
+      "Main checkout .git is read-only; commit and verified bundle saved in /tmp/counter-risk-1218-close",
+      "Git push failed: Could not resolve host: github.com",
+      "Automatic approval review rejected PR-body update and needs-human label: MCP tool call requires approval, but approval policy is never"
+    ]
   }
 }
