@@ -1,30 +1,31 @@
 ## Summary
 
-Add discriminating tests for all eight issue-ranked targets in the prescribed order. Strengthen MOSERS assertions for stale rows, section boundaries, and complete missing-sheet diagnostics. Exercise the public web-demo runner with a real parsed fixture configuration: a preloaded chat runtime is tolerated, a runtime introduced during execution raises before publishing demo annotations, and offline mode must be active before the pipeline starts.
+Add discriminating tests for all eight issue-ranked targets in the prescribed order. Production code is unchanged; no real bug was demonstrated. The latest follow-up strengthens the first-ranked target, `web_demo.py`: the public runner rejects optional cash inputs, screenshots, and discovery roots whose paths appear inside fixtures but resolve through symlinks to external data. Validation must happen before the pipeline runs or existing artifacts are changed.
 
-Production code is unchanged; no real production bug was demonstrated. This is a partial coverage delivery: local line coverage cannot establish the issue's CI blended coverage delta.
+This is a partial coverage delivery. The issue's **89.32% blended CI baseline / 185 missing ranked units** remains authoritative. Current project configuration explicitly uses line-only coverage (`branch=false`), so local results cannot establish the requested CI blended reduction.
 
 ## Verification
 
-- Full local suite, Python 3.14.9: **2,556 passed, 1 skipped**, `pytest tests/ -n 4 -m 'not slow' -q -o addopts= --cov=counter_risk --cov-report=json:/tmp/1221-round-final.json --cov-report=term`, 134.55s. Coverage source is the unchanged project configuration.
-- Focused and adjacent suites: **353 passed, 14 deselected**, with the eight explicit module `--cov` options and `--cov-report=term-missing`; see [targeted.log](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/targeted.log).
-- The first 76 added parameter cases have an actual break-and-revert run: **53 test functions / 76 parameter cases** failed under corresponding behavior mutations (exit 1, assertion failures rather than collection errors), then passed with source bytes restored (exit 0). [Receipts](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/mutation-receipts.json) contain each named case, exact text mutation, command, failure names, return codes and restored source SHA-256; [transcript](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/mutation-transcript.txt) contains the outputs. All final source hashes match the restored hashes. The strengthened stale-row test fails when clearing is replaced with `pass`; the missing-sheet test fails when the diagnostic retains only the first missing name.
-- Black 26.10.1: all **403 Python files** pass the required line-length/exclusion check. Default CLI worker startup raises sandbox `PermissionError` binding the multiprocessing forkserver socket. The successful run uses the same Black CLI discovery/configuration and `--check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .`, substituting serial calls to Black's own `reformat_one` for its multiprocessing scheduler. No formatting rules, exclusions or failures are suppressed. The changed file also passes the ordinary single-file Black command. [Black result](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/black.log).
-- Repository CI Ruff command passes: `ruff check --output-format github --extend-exclude .workflows-lib .`. `git diff --check` passes.
-- Current published head `6d64651` has passing [Gate](https://github.com/stranske/Counter_Risk/actions/runs/40838459385) and Agents Guard statuses. Both hosted Python 3.13 and 3.14 pytest jobs passed; Python 3.14 reported **2,527 passed, 1 skipped**. These are hosted results for the preceding committed tests. The two new runtime-transition cases are verified locally only.
-- Follow-up focused command: `pytest tests/test_web_demo_helpers.py tests/test_web_demo_smoke.py -m 'not slow' -q -o addopts= --cov=counter_risk.web_demo --cov-report=term-missing`: **12 passed, 1 deselected**, `web_demo.py` **100% (117/117 statements)**. Coverage is unchanged from the preceding iteration.
-- Follow-up [mutation receipts](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/followup-mutation-receipts.json) and [transcript](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/followup-mutation-transcript.txt) record four real mutations: omit the runtime check (new-runtime case fails); ignore preloaded state (preloaded case fails); write the summary before checking runtime (new-runtime case fails); omit setting offline mode before pipeline execution (both cases fail). Every mutation returned exit 1 and every restored run exit 0. Production bytes were restored after each experiment. Together with the preceding receipts this covers **54 test functions / 78 unique parameter cases**.
-- The ordinary repository-wide Black command was rerun and failed during forkserver startup with sandbox `PermissionError`. Black's native single-worker scheduler and a fork-based scheduler did not finish promptly. The successful check used the same CLI flags and file discovery with serial `reformat_one` scheduling: **403 files unchanged**. The ordinary changed-file Black command and repository-wide Ruff command pass. No formatting rules were changed.
+- Latest full local suite, Python 3.14.9: **2,559 passed, 1 skipped**, in 97.95s. Command: `pytest tests/ -n 4 -m 'not slow' -q -o addopts= --cov=counter_risk --cov-report=json:/tmp/issue-1219-symlink-full.json --cov-report=term`. Overall local line coverage is **90.7744%**. [Full output](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/symlink-full-suite.log).
+- Latest targeted command: `pytest tests/test_web_demo_helpers.py tests/test_web_demo_smoke.py -m 'not slow' -q -o addopts= --cov=counter_risk.web_demo --cov-report=term-missing`: **15 passed, 1 deselected**; `web_demo.py` **100% (117/117 statements)** before and after these three cases.
+- Previous focused/adjacent suites: **353 passed, 14 deselected**, with eight explicit module coverage options; see [targeted.log](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/targeted.log).
+- Ruff passes with CI flags: `ruff check --output-format github --extend-exclude .workflows-lib .`. `git diff --check` passes.
+- Black 26.10.1: changed file passes the ordinary formatting command; all **403 Python files** pass the required `--check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .` flags. The native repository-wide CLI fails creating its multiprocessing forkserver socket in this sandbox; its single-worker scheduler did not finish promptly. The successful check preserves Black's CLI, discovery and formatting rules, replacing only the scheduler with serial calls to Black's own `reformat_one`. [Black output](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/symlink-black.log).
+- Published head `67929e5` has passing [Gate](https://github.com/stranske/Counter_Risk/actions/runs/40839922611) and [Agents Guard](https://github.com/stranske/Counter_Risk/actions/runs/40839922122) statuses. These statuses precede the latest three symlink cases; hosted checks for those cases are unverified.
+
+## Real break-and-revert proof
+
+All **55 added test functions / 81 unique parameter cases** have actual mutation proof:
+
+- [Original receipts](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/mutation-receipts.json) and [transcript](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/mutation-transcript.txt): 53 functions / 76 cases. Each corresponding mutation fails with exit 1; the restored run passes with exit 0. MOSERS checks include seeded stale-row clearing, section boundaries, and complete missing-sheet diagnostics.
+- [Runtime-transition receipts](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/followup-mutation-receipts.json): one function / two cases. Omitting the runtime check, ignoring preloaded state, publishing before validation, and omitting offline mode before pipeline execution each cause corresponding failures; restored runs pass.
+- [Symlink receipts](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/symlink-mutation-receipts.json) and [transcript](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/symlink-mutation-transcript.txt): one function / three cases. Preserving symlinks instead of resolving absolute source paths causes **3 failures**. Individually omitting cash, screenshot, or discovery inputs causes **1 corresponding failure each**. Every restored run passes all three cases. Source bytes match their original SHA-256 after every experiment.
 
 ## Coverage and partial delivery
 
-The issue's **89.32% blended coverage / 185 missing ranked units** remains the authoritative CI baseline. Current `pyproject.toml` explicitly sets `branch=false`; all local measurements here are line-only and cannot establish that CI blended delta.
+Local whole-suite counts use the same source configuration and `-m 'not slow'`. The baseline excludes the eight PR-added test modules. Its overall line coverage is **68.9506%**, versus **90.7744%** for the candidate. The difference is dominated by unrelated module coverage and is sensitive to import/collection order; it must not be attributed wholesale to this PR. [Baseline output](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/baseline.log) and [per-file summaries](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/coverage-summary.json).
 
-The baseline excludes all eight PR-added test files, uses the same source configuration and `-m 'not slow'`, and passes **2,478 tests, 1 skipped** in 96.85s. Its overall coverage is **68.9506%** versus the final candidate's **90.7744%**. The change is dominated by unrelated module coverage and is sensitive to import/collection order; it must not be attributed wholesale to these tests. See [baseline.log](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/baseline.log), [candidate.log](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/candidate.log), and [per-file summaries](https://github.com/stranske/Counter_Risk/blob/codex/issue-1219/docs/evidence/issue-1219/coverage-summary.json).
-
-The whole-suite target counts are:
-
-| Target, in issue order | Baseline missed lines | Candidate missed lines | Candidate line coverage |
+| Target, in issue ranking order | Baseline missed lines | Candidate missed lines | Candidate line coverage |
 | --- | ---: | ---: | ---: |
 | `web_demo.py` | 0 | 0 | 100.00% |
 | `mosers/workbook_generation.py` | 0 | 0 | 100.00% |
@@ -35,29 +36,23 @@ The whole-suite target counts are:
 | `chat/session.py` | 0 | 0 | 100.00% |
 | `demo_artifact.py` | 0 | 0 | 100.00% |
 
-Only **5 fewer missed target lines** are measured locally: **175 short** of the requested approximately 180. Hosted CI coverage reduction is unverified. This is a partial PR with concrete test quality improvements, not a claim that focused coverage added 185 CI units.
+Only **5 fewer missed target lines** are measured locally, **175 short** of approximately 180. This follow-up adds **zero** covered lines. CI blended coverage reduction remains unverified.
 
-Remaining paths: `repo_cash_sources.py:192` handles `None` from `csv.DictReader`, which normal iteration does not yield; `limits.py:211` checks an empty validated limit list even though the schema requires entries; `data_quality.py:494` is a category fallback already handled by the code-to-category mapping; `context.py:16-22` covers alternate optional-PyArrow import shapes not present locally. The other four targets have no local whole-suite missed lines. No source edits, fake runtime states, refactors, thresholds or exclusions were added to force those defensive paths into the metric.
+Remaining paths: `repo_cash_sources.py:192` handles `None` from `csv.DictReader`, which normal iteration does not yield; `limits.py:211` checks an empty validated limit list despite schema validation requiring entries; `data_quality.py:494` is a category fallback already handled by the code-to-category mapping; `context.py:16-22` covers alternate optional-PyArrow import shapes absent locally. The other four targets have no missed lines in the local whole-suite run. No fake runtime states, source refactors, exclusions, or threshold changes were introduced to force those defensive paths into the metric. The local above-90 measurement includes existing PR tests and is not a pre-initiative CI baseline.
 
 ## Publication blocker
 
-PR #1221 is **open, draft=false**, on head `6d64651`. Reconciliation of the recent commits confirms all eight target test files and the previous verification evidence are published. The live PR body still describes only two targets and leaves all task checkboxes empty. An attempted update was rejected: `MCP tool call requires approval, but approval policy is never`. This local file contains the reconciled replacement body; the live body was not changed.
+The existing PR is open and ready for review (`draft=false`) at `67929e5`. Its live body still describes only the first two targets. This file is the reconciled replacement body. The latest three symlink cases and their evidence are verified locally but remain unpublished: `git add` cannot create `.git/index.lock` because the primary checkout's Git metadata is read-only. A GitHub `create_tree` attempt was rejected with `MCP tool call requires approval, but approval policy is never`; no remote branch or PR body was changed. A portable commit and bundle preserve the follow-up under `/tmp/issue-1219-symlink-publication/`. Primary-checkout staging, publication, hosted checks for this follow-up, and live checkbox reconciliation remain incomplete.
 
-The checkout's `.git` is mounted read-only: `git add tests/test_web_demo_helpers.py` fails creating `.git/index.lock`. The follow-up tests and evidence are preserved in a portable commit/bundle in `/tmp/issue-1219-followup/`; this does not advance the primary checkout or the remote PR. Publication and live checkbox reconciliation remain incomplete. No second PR was created.
+## Verified contract
+
+- [x] Pick targets by the issue's escaped-defect/churn/uncovered-mass ranking, beginning with `web_demo.py`.
+- [x] Run real break-and-revert proof for every added test case and record both results.
+- [x] Review possible bugs without working around demonstrated defects; no production bug was found and no production source is changed.
+- [x] Keep the diff focused on target tests and verification evidence, without refactors.
+- [x] Keep this logical chunk in one existing ready-for-review PR, #1221.
+- [x] Disclose the authoritative CI baseline, differing local metric, partial shortfall, and remaining target paths.
+- [x] Run formatter and linter checks with CI flags; disclose the serial Black scheduler workaround.
+- [ ] Publish the latest symlink tests/evidence and run hosted checks for that follow-up.
 
 Closes #1219
-
-## Reconciled tasks and acceptance
-
-- [x] Use CI's baseline as authoritative and explicitly disclose the local metric/baseline difference.
-- [x] Run repository formatter and linter flags on all changed/added files; disclose the serial Black execution workaround.
-- [ ] Publish all verified changes and update this live PR body; blocked by write approval and read-only Git metadata.
-- [ ] Current follow-up passes hosted CI; local full suite and every-test mutation proof are complete, but this follow-up is unpublished.
-- [x] State the partial coverage shortfall and explain remaining target paths.
-- [x] Production changes only for demonstrated bugs: no production code changes in this PR.
-- [x] Follow the issue's prescribed ranking.
-- [x] Run and record real break-and-revert proof for every added test case.
-- [x] Review possible bugs without working around any demonstrated defect; no real production bug was found.
-- [x] Keep the change focused: tests/evidence only, no refactors.
-- [x] Keep one PR for this logical chunk.
-- [ ] Hosted coverage acceptance remains unverified; the local above-90 result is after the PR's tests, not a verified pre-start CI baseline.

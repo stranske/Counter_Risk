@@ -282,3 +282,67 @@ def test_pipeline_checks_runtime_transition_before_publishing_demo_annotations(
 
     assert len(calls) == 1
     assert sys.modules[web_demo._BLOCKED_CHAT_RUNTIME] is runtime
+
+
+@pytest.mark.parametrize(
+    "source_key",
+    [
+        "cash_source_path",
+        "screenshot_inputs.cprs_ch",
+        "input_discovery.directory_roots.monthly_inputs",
+    ],
+)
+def test_pipeline_rejects_optional_fixture_symlinks_before_running(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, source_key: str
+) -> None:
+    repo_root = tmp_path / "repo"
+    fixture_dir = repo_root / "tests" / "fixtures"
+    fixture_dir.mkdir(parents=True)
+    source = fixture_dir / "input.xlsx"
+    source.write_text("synthetic fixture", encoding="utf-8")
+    external_dir = tmp_path / "external"
+    external_dir.mkdir()
+    (external_dir / "input.csv").write_text("outside fixture boundary", encoding="utf-8")
+    linked_dir = fixture_dir / "linked"
+    linked_dir.symlink_to(external_dir, target_is_directory=True)
+    linked_source = (
+        linked_dir if source_key.startswith("input_discovery.") else linked_dir / "input.csv"
+    )
+
+    raw_config = {
+        key: str(source)
+        for key in (
+            "hist_all_programs_3yr_xlsx",
+            "hist_ex_llc_3yr_xlsx",
+            "hist_llc_3yr_xlsx",
+            "monthly_pptx",
+        )
+    }
+    optional_config: object = str(linked_source)
+    for key in reversed(source_key.split(".")):
+        optional_config = {key: optional_config}
+    assert isinstance(optional_config, dict)
+    raw_config.update(optional_config)
+    config_path = fixture_dir / "demo.yml"
+    config_path.write_text(yaml.safe_dump(raw_config), encoding="utf-8")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    manifest_path = run_dir / "manifest.json"
+    original_manifest = '{"existing": true}\n'
+    manifest_path.write_text(original_manifest, encoding="utf-8")
+
+    def unexpected_pipeline(*_args: object, **_kwargs: object) -> Path:
+        pytest.fail("Pipeline must not run with sources outside the fixture boundary")
+
+    monkeypatch.setattr(web_demo, "_repo_root", lambda: repo_root)
+    monkeypatch.setattr(web_demo, "run_pipeline_with_config", unexpected_pipeline)
+    monkeypatch.setenv(web_demo._OFFLINE_ENV_VAR, "0")
+
+    with pytest.raises(ValueError) as exc_info:
+        web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir)
+
+    message = str(exc_info.value)
+    assert f"Web demo fixture source {source_key} must live under {fixture_dir}:" in message
+    assert str(linked_source.resolve()) in message
+    assert manifest_path.read_text(encoding="utf-8") == original_manifest
+    assert not (run_dir / "DATA_QUALITY_SUMMARY.txt").exists()
