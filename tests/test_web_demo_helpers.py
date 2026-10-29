@@ -95,7 +95,14 @@ def test_materialize_config_preserves_local_config_and_rejects_non_mapping(tmp_p
 
 
 @pytest.mark.parametrize(
-    "local_key", ["monthly_pptx", "cash_source_path", "screenshot_inputs", "input_discovery"]
+    "local_key",
+    [
+        "monthly_pptx",
+        "cash_source_path",
+        "exposure_summary_xlsx",
+        "screenshot_inputs",
+        "input_discovery",
+    ],
 )
 def test_relocated_config_preserves_config_relative_fixture_sources(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, local_key: str
@@ -172,6 +179,7 @@ def test_fixture_sources_and_assertion_cover_optional_sources(
         cash_source_path=None,
         cash_overrides_csv=None,
         dropin_all_programs_template_xlsx=None,
+        exposure_summary_xlsx=None,
         hist_all_programs_3yr_xlsx=None,
         hist_ex_llc_3yr_xlsx=None,
         hist_llc_3yr_xlsx=None,
@@ -347,6 +355,7 @@ def test_pipeline_checks_runtime_transition_before_publishing_demo_annotations(
     "source_key",
     [
         "cash_source_path",
+        "exposure_summary_xlsx",
         "screenshot_inputs.cprs_ch",
         "input_discovery.directory_roots.monthly_inputs",
     ],
