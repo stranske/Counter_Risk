@@ -14,7 +14,9 @@ def test_double_click_gui_launcher_exists_and_keeps_errors_visible() -> None:
     assert 'counter-risk.exe" gui' in text
     assert "counter-risk gui" in text
     assert "counter-risk-gui-launcher.log" in text
-    assert "py -3.12 -m counter_risk.cli gui" in text
+    assert "py -3.14 -m counter_risk.cli gui" in text
+    assert "py -3.13 -m counter_risk.cli gui" in text
+    assert "py -3.12" not in text
     assert "py -m counter_risk.cli gui" in text
     assert "python -m counter_risk.cli gui" in text
     assert "PYTHONPATH=%~dp0src;%PYTHONPATH%" in text
