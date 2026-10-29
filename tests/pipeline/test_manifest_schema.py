@@ -292,6 +292,38 @@ def test_manifest_preserves_confidence_bounds_and_null(
         assert saved["top_exposures"]["all_programs"][0]["evidence"]["confidence"] == confidence
 
 
+@pytest.mark.parametrize(
+    ("confidence", "diagnostic"),
+    [
+        pytest.param(-5e-324, "must be >= 0", id="next-float-below-zero"),
+        pytest.param(-1, "must be >= 0", id="negative-integer"),
+        pytest.param(-(10**400), "must be >= 0", id="large-negative-integer"),
+        pytest.param(True, "must be of type number or null, got bool", id="true"),
+        pytest.param(False, "must be of type number or null, got bool", id="false"),
+    ],
+)
+def test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+    tmp_path: Path,
+    confidence: int | float | bool,
+    diagnostic: str,
+) -> None:
+    builder, manifest = numeric_manifest
+    # Begin with real, valid outputs so rejection must preserve a usable prior run.
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+    manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+
+    assert validate_manifest(manifest) == (
+        False,
+        f"manifest.top_exposures.all_programs[0].evidence.confidence {diagnostic}",
+    )
+    with pytest.raises(ValueError, match="confidence " + diagnostic):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
+
+
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
 @pytest.mark.parametrize("container", ["mapping", "list", "tuple"])
 def test_manifest_rejects_nonfinite_in_unconstrained_fields_before_writing(

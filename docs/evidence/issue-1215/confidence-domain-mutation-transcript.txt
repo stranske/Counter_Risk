@@ -1,0 +1,375 @@
+## Mutation: ignore minimum
+$ pytest tests/pipeline/test_manifest_schema.py::test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs -m not slow -q --junitxml=/tmp/1215-confidence-domain.xml
+exit=1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 5 items
+
+tests/pipeline/test_manifest_schema.py FFF..                             [100%]
+
+=================================== FAILURES ===================================
+_ test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[next-float-below-zero] _
+
+numeric_manifest = (ManifestBuilder(config=WorkflowConfig(as_of_date=datetime.date(2026, 2, 13), run_date=None, report_date_policy='warn'...7c8dee64958465d393e63b5', 'python_version': '3.14.9', ...}, 'as_of_date': '2026-02-13', 'run_date': '2026-02-13', ...})
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-2/test_manifest_rejects_negative0')
+confidence = -5e-324, diagnostic = 'must be >= 0'
+
+    @pytest.mark.parametrize(
+        ("confidence", "diagnostic"),
+        [
+            pytest.param(-5e-324, "must be >= 0", id="next-float-below-zero"),
+            pytest.param(-1, "must be >= 0", id="negative-integer"),
+            pytest.param(-(10**400), "must be >= 0", id="large-negative-integer"),
+            pytest.param(True, "must be of type number or null, got bool", id="true"),
+            pytest.param(False, "must be of type number or null, got bool", id="false"),
+        ],
+    )
+    def test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs(
+        numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+        tmp_path: Path,
+        confidence: int | float | bool,
+        diagnostic: str,
+    ) -> None:
+        builder, manifest = numeric_manifest
+        # Begin with real, valid outputs so rejection must preserve a usable prior run.
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+        manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+    
+>       assert validate_manifest(manifest) == (
+            False,
+            f"manifest.top_exposures.all_programs[0].evidence.confidence {diagnostic}",
+        )
+E       AssertionError: assert (True, None) == (False, 'mani...must be >= 0')
+E         
+E         At index 0 diff: True != False
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           (
+E         -     False,
+E         -     'manifest.top_exposures.all_programs[0].evidence.confidence must be >= 0',
+E         +     True,
+E         +     None,
+E           )
+
+tests/pipeline/test_manifest_schema.py:317: AssertionError
+_ test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[negative-integer] _
+
+numeric_manifest = (ManifestBuilder(config=WorkflowConfig(as_of_date=datetime.date(2026, 2, 13), run_date=None, report_date_policy='warn'...7c8dee64958465d393e63b5', 'python_version': '3.14.9', ...}, 'as_of_date': '2026-02-13', 'run_date': '2026-02-13', ...})
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-2/test_manifest_rejects_negative1')
+confidence = -1, diagnostic = 'must be >= 0'
+
+    @pytest.mark.parametrize(
+        ("confidence", "diagnostic"),
+        [
+            pytest.param(-5e-324, "must be >= 0", id="next-float-below-zero"),
+            pytest.param(-1, "must be >= 0", id="negative-integer"),
+            pytest.param(-(10**400), "must be >= 0", id="large-negative-integer"),
+            pytest.param(True, "must be of type number or null, got bool", id="true"),
+            pytest.param(False, "must be of type number or null, got bool", id="false"),
+        ],
+    )
+    def test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs(
+        numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+        tmp_path: Path,
+        confidence: int | float | bool,
+        diagnostic: str,
+    ) -> None:
+        builder, manifest = numeric_manifest
+        # Begin with real, valid outputs so rejection must preserve a usable prior run.
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+        manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+    
+>       assert validate_manifest(manifest) == (
+            False,
+            f"manifest.top_exposures.all_programs[0].evidence.confidence {diagnostic}",
+        )
+E       AssertionError: assert (True, None) == (False, 'mani...must be >= 0')
+E         
+E         At index 0 diff: True != False
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           (
+E         -     False,
+E         -     'manifest.top_exposures.all_programs[0].evidence.confidence must be >= 0',
+E         +     True,
+E         +     None,
+E           )
+
+tests/pipeline/test_manifest_schema.py:317: AssertionError
+_ test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[large-negative-integer] _
+
+numeric_manifest = (ManifestBuilder(config=WorkflowConfig(as_of_date=datetime.date(2026, 2, 13), run_date=None, report_date_policy='warn'...7c8dee64958465d393e63b5', 'python_version': '3.14.9', ...}, 'as_of_date': '2026-02-13', 'run_date': '2026-02-13', ...})
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-2/test_manifest_rejects_negative2')
+confidence = -10000000000000000...0000000000000000000
+diagnostic = 'must be >= 0'
+
+    @pytest.mark.parametrize(
+        ("confidence", "diagnostic"),
+        [
+            pytest.param(-5e-324, "must be >= 0", id="next-float-below-zero"),
+            pytest.param(-1, "must be >= 0", id="negative-integer"),
+            pytest.param(-(10**400), "must be >= 0", id="large-negative-integer"),
+            pytest.param(True, "must be of type number or null, got bool", id="true"),
+            pytest.param(False, "must be of type number or null, got bool", id="false"),
+        ],
+    )
+    def test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs(
+        numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+        tmp_path: Path,
+        confidence: int | float | bool,
+        diagnostic: str,
+    ) -> None:
+        builder, manifest = numeric_manifest
+        # Begin with real, valid outputs so rejection must preserve a usable prior run.
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+        manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+    
+>       assert validate_manifest(manifest) == (
+            False,
+            f"manifest.top_exposures.all_programs[0].evidence.confidence {diagnostic}",
+        )
+E       AssertionError: assert (True, None) == (False, 'mani...must be >= 0')
+E         
+E         At index 0 diff: True != False
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           (
+E         -     False,
+E         -     'manifest.top_exposures.all_programs[0].evidence.confidence must be >= 0',
+E         +     True,
+E         +     None,
+E           )
+
+tests/pipeline/test_manifest_schema.py:317: AssertionError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+------------- generated xml file: /tmp/1215-confidence-domain.xml --------------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[next-float-below-zero] - AssertionError: assert (True, None) == (False, 'mani...must be >= 0')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  -     False,
+  -     'manifest.top_exposures.all_programs[0].evidence.confidence must be >= 0',
+  +     True,
+  +     None,
+    )
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[negative-integer] - AssertionError: assert (True, None) == (False, 'mani...must be >= 0')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  -     False,
+  -     'manifest.top_exposures.all_programs[0].evidence.confidence must be >= 0',
+  +     True,
+  +     None,
+    )
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[large-negative-integer] - AssertionError: assert (True, None) == (False, 'mani...must be >= 0')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  -     False,
+  -     'manifest.top_exposures.all_programs[0].evidence.confidence must be >= 0',
+  +     True,
+  +     None,
+    )
+=================== 3 failed, 2 passed, 13 warnings in 0.36s ===================
+
+
+## Restored: ignore minimum
+$ pytest tests/pipeline/test_manifest_schema.py::test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs -m not slow -q --junitxml=/tmp/1215-confidence-domain.xml
+exit=0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 5 items
+
+tests/pipeline/test_manifest_schema.py .....                             [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+------------- generated xml file: /tmp/1215-confidence-domain.xml --------------
+======================== 5 passed, 13 warnings in 0.30s ========================
+
+
+## Mutation: accept booleans as numbers
+$ pytest tests/pipeline/test_manifest_schema.py::test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs -m not slow -q --junitxml=/tmp/1215-confidence-domain.xml
+exit=1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 5 items
+
+tests/pipeline/test_manifest_schema.py ...FF                             [100%]
+
+=================================== FAILURES ===================================
+_ test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[true] _
+
+numeric_manifest = (ManifestBuilder(config=WorkflowConfig(as_of_date=datetime.date(2026, 2, 13), run_date=None, report_date_policy='warn'...7c8dee64958465d393e63b5', 'python_version': '3.14.9', ...}, 'as_of_date': '2026-02-13', 'run_date': '2026-02-13', ...})
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-4/test_manifest_rejects_negative3')
+confidence = True, diagnostic = 'must be of type number or null, got bool'
+
+    @pytest.mark.parametrize(
+        ("confidence", "diagnostic"),
+        [
+            pytest.param(-5e-324, "must be >= 0", id="next-float-below-zero"),
+            pytest.param(-1, "must be >= 0", id="negative-integer"),
+            pytest.param(-(10**400), "must be >= 0", id="large-negative-integer"),
+            pytest.param(True, "must be of type number or null, got bool", id="true"),
+            pytest.param(False, "must be of type number or null, got bool", id="false"),
+        ],
+    )
+    def test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs(
+        numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+        tmp_path: Path,
+        confidence: int | float | bool,
+        diagnostic: str,
+    ) -> None:
+        builder, manifest = numeric_manifest
+        # Begin with real, valid outputs so rejection must preserve a usable prior run.
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+        manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+    
+>       assert validate_manifest(manifest) == (
+            False,
+            f"manifest.top_exposures.all_programs[0].evidence.confidence {diagnostic}",
+        )
+E       AssertionError: assert (True, None) == (False, 'mani...ll, got bool')
+E         
+E         At index 0 diff: True != False
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           (
+E         +     True,
+E         +     None,
+E         -     False,
+E         -     'manifest.top_exposures.all_programs[0].evidence.confidence must be of '
+E         -     'type number or null, got bool',
+E           )
+
+tests/pipeline/test_manifest_schema.py:317: AssertionError
+_ test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[false] _
+
+numeric_manifest = (ManifestBuilder(config=WorkflowConfig(as_of_date=datetime.date(2026, 2, 13), run_date=None, report_date_policy='warn'...7c8dee64958465d393e63b5', 'python_version': '3.14.9', ...}, 'as_of_date': '2026-02-13', 'run_date': '2026-02-13', ...})
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-4/test_manifest_rejects_negative4')
+confidence = False, diagnostic = 'must be of type number or null, got bool'
+
+    @pytest.mark.parametrize(
+        ("confidence", "diagnostic"),
+        [
+            pytest.param(-5e-324, "must be >= 0", id="next-float-below-zero"),
+            pytest.param(-1, "must be >= 0", id="negative-integer"),
+            pytest.param(-(10**400), "must be >= 0", id="large-negative-integer"),
+            pytest.param(True, "must be of type number or null, got bool", id="true"),
+            pytest.param(False, "must be of type number or null, got bool", id="false"),
+        ],
+    )
+    def test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs(
+        numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+        tmp_path: Path,
+        confidence: int | float | bool,
+        diagnostic: str,
+    ) -> None:
+        builder, manifest = numeric_manifest
+        # Begin with real, valid outputs so rejection must preserve a usable prior run.
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+        manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+    
+>       assert validate_manifest(manifest) == (
+            False,
+            f"manifest.top_exposures.all_programs[0].evidence.confidence {diagnostic}",
+        )
+E       AssertionError: assert (True, None) == (False, 'mani...ll, got bool')
+E         
+E         At index 0 diff: True != False
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           (
+E         +     True,
+E         +     None,
+E         -     False,
+E         -     'manifest.top_exposures.all_programs[0].evidence.confidence must be of '
+E         -     'type number or null, got bool',
+E           )
+
+tests/pipeline/test_manifest_schema.py:317: AssertionError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+------------- generated xml file: /tmp/1215-confidence-domain.xml --------------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[true] - AssertionError: assert (True, None) == (False, 'mani...ll, got bool')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  +     True,
+  +     None,
+  -     False,
+  -     'manifest.top_exposures.all_programs[0].evidence.confidence must be of '
+  -     'type number or null, got bool',
+    )
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[false] - AssertionError: assert (True, None) == (False, 'mani...ll, got bool')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  +     True,
+  +     None,
+  -     False,
+  -     'manifest.top_exposures.all_programs[0].evidence.confidence must be of '
+  -     'type number or null, got bool',
+    )
+=================== 2 failed, 3 passed, 13 warnings in 0.35s ===================
+
+
+## Restored: accept booleans as numbers
+$ pytest tests/pipeline/test_manifest_schema.py::test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs -m not slow -q --junitxml=/tmp/1215-confidence-domain.xml
+exit=0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 5 items
+
+tests/pipeline/test_manifest_schema.py .....                             [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+------------- generated xml file: /tmp/1215-confidence-domain.xml --------------
+======================== 5 passed, 13 warnings in 0.29s ========================
