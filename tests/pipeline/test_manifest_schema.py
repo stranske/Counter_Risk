@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -290,6 +291,31 @@ def test_manifest_preserves_confidence_bounds_and_null(
         builder.write(run_dir=tmp_path, manifest=manifest)
         saved = json.loads((tmp_path / "manifest.json").read_text())
         assert saved["top_exposures"]["all_programs"][0]["evidence"]["confidence"] == confidence
+
+
+def test_manifest_validates_confidence_in_later_exposure_before_overwriting_outputs(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]], tmp_path: Path
+) -> None:
+    builder, manifest = numeric_manifest
+    exposures = manifest["top_exposures"]["all_programs"]
+    exposures[0]["evidence"]["confidence"] = 0
+    later_exposure = deepcopy(exposures[0])
+    later_exposure["counterparty"] = "Another counterparty"
+    later_exposure["evidence"]["confidence"] = 1
+    exposures.append(later_exposure)
+    assert validate_manifest(manifest) == (True, None)
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+
+    later_exposure["evidence"]["confidence"] = 2
+    assert validate_manifest(manifest) == (
+        False,
+        "manifest.top_exposures.all_programs[1].evidence.confidence must be <= 1",
+    )
+    with pytest.raises(ValueError, match=r"all_programs\[1\].evidence.confidence must be <= 1"):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
 
 
 @pytest.mark.parametrize(
