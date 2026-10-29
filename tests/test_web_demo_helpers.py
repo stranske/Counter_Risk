@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -213,3 +214,71 @@ def test_run_web_demo_pipeline_annotates_manifest_and_preserves_offline_boundary
     assert manifest["data_zone"] == "synthetic-fixtures-only"
     assert manifest["chat_offline_mode"] == "1"
     assert manifest["data_quality_summary"] == "DATA_QUALITY_SUMMARY.txt"
+
+
+@pytest.mark.parametrize("runtime_preloaded", [False, True], ids=["new-runtime", "preloaded"])
+def test_pipeline_checks_runtime_transition_before_publishing_demo_annotations(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, runtime_preloaded: bool
+) -> None:
+    repo_root = tmp_path / "repo"
+    fixture_dir = repo_root / "tests" / "fixtures"
+    fixture_dir.mkdir(parents=True)
+    source = fixture_dir / "input.xlsx"
+    source.write_text("synthetic fixture", encoding="utf-8")
+    config_path = fixture_dir / "demo.yml"
+    config_path.write_text(
+        yaml.safe_dump(
+            {
+                key: str(source)
+                for key in (
+                    "hist_all_programs_3yr_xlsx",
+                    "hist_ex_llc_3yr_xlsx",
+                    "hist_llc_3yr_xlsx",
+                    "monthly_pptx",
+                )
+            }
+        ),
+        encoding="utf-8",
+    )
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    manifest_path = run_dir / "manifest.json"
+    original_manifest = json.dumps({"output": str(run_dir / "out.csv")})
+    manifest_path.write_text(original_manifest, encoding="utf-8")
+    runtime = object()
+    monkeypatch.setattr(web_demo, "_repo_root", lambda: repo_root)
+    monkeypatch.setenv(web_demo._OFFLINE_ENV_VAR, "0")
+    monkeypatch.delitem(sys.modules, web_demo._BLOCKED_CHAT_RUNTIME, raising=False)
+    if runtime_preloaded:
+        monkeypatch.setitem(sys.modules, web_demo._BLOCKED_CHAT_RUNTIME, runtime)
+
+    calls = []
+
+    def run_pipeline(
+        config: web_demo.WorkflowConfig, *, config_dir: Path, output_dir: Path
+    ) -> Path:
+        assert config.hist_all_programs_3yr_xlsx == source
+        assert config_dir == fixture_dir
+        assert output_dir == run_dir
+        assert os.environ[web_demo._OFFLINE_ENV_VAR] == "1"
+        calls.append(config)
+        monkeypatch.setitem(sys.modules, web_demo._BLOCKED_CHAT_RUNTIME, runtime)
+        return run_dir
+
+    monkeypatch.setattr(web_demo, "run_pipeline_with_config", run_pipeline)
+
+    if runtime_preloaded:
+        assert (
+            web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir) == run_dir
+        )
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["data_zone"] == "synthetic-fixtures-only"
+        assert (run_dir / manifest["data_quality_summary"]).is_file()
+    else:
+        with pytest.raises(RuntimeError, match="unexpectedly loaded chat provider module"):
+            web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir)
+        assert manifest_path.read_text(encoding="utf-8") == original_manifest
+        assert not (run_dir / "DATA_QUALITY_SUMMARY.txt").exists()
+
+    assert len(calls) == 1
+    assert sys.modules[web_demo._BLOCKED_CHAT_RUNTIME] is runtime
