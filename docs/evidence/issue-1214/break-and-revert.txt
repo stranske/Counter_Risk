@@ -1,0 +1,2041 @@
+
+## GUI callback drops arguments
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/test_cli_coverage_round.py::test_gui_non_headless_launches_with_a_callback -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/test_cli_coverage_round.py F                                       [100%]
+
+=================================== FAILURES ===================================
+________________ test_gui_non_headless_launches_with_a_callback ________________
+tests/test_cli_coverage_round.py:131: in test_gui_non_headless_launches_with_a_callback
+    dispatch.assert_called_once_with(argv)
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:998: in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:986: in assert_called_with
+    raise AssertionError(_error_message()) from cause
+E   AssertionError: expected call not found.
+E   Expected: mock(['run', '--config', 'workflow.yml', '--strict-policy', 'strict'])
+E     Actual: mock([])
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_cli_coverage_round.py::test_gui_non_headless_launches_with_a_callback - AssertionError: expected call not found.
+Expected: mock(['run', '--config', 'workflow.yml', '--strict-policy', 'strict'])
+  Actual: mock([])
+======================== 1 failed, 13 warnings in 0.43s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/test_cli_coverage_round.py .                                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 13 warnings in 0.28s ========================
+
+
+
+## GUI callback discards failure status
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/test_cli_coverage_round.py::test_gui_non_headless_launches_with_a_callback -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/test_cli_coverage_round.py F                                       [100%]
+
+=================================== FAILURES ===================================
+________________ test_gui_non_headless_launches_with_a_callback ________________
+tests/test_cli_coverage_round.py:130: in test_gui_non_headless_launches_with_a_callback
+    assert captured["runner"](argv) == 7
+E   AssertionError: assert 0 == 7
+E    +  where 0 = <function _gui_command.<locals>._run_callback at 0x787742ce81a0>(['run', '--config', 'workflow.yml', '--strict-policy', 'strict'])
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_cli_coverage_round.py::test_gui_non_headless_launches_with_a_callback - AssertionError: assert 0 == 7
+ +  where 0 = <function _gui_command.<locals>._run_callback at 0x787742ce81a0>(['run', '--config', 'workflow.yml', '--strict-policy', 'strict'])
+======================== 1 failed, 13 warnings in 0.37s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/test_cli_coverage_round.py .                                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 13 warnings in 0.29s ========================
+
+
+
+## Workbook read failure discards readable sheets
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_coverage_round.py FF                             [100%]
+
+=================================== FAILURES ===================================
+_ test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails[lookup] _
+tests/pipeline/test_run_coverage_round.py:590: in test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails
+    assert run_module._extract_prior_populated_series_by_sheet(path) == {"Total": ("Active",)}
+E   AssertionError: assert {} == {'Total': ('Active',)}
+E     
+E     Right contains 1 more item:
+E     {'Total': ('Active',)}
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + {}
+E     - {
+E     -     'Total': (
+E     -         'Active',
+E     -     ),
+E     - }
+_ test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails[rows] _
+tests/pipeline/test_run_coverage_round.py:590: in test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails
+    assert run_module._extract_prior_populated_series_by_sheet(path) == {"Total": ("Active",)}
+E   AssertionError: assert {} == {'Total': ('Active',)}
+E     
+E     Right contains 1 more item:
+E     {'Total': ('Active',)}
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + {}
+E     - {
+E     -     'Total': (
+E     -         'Active',
+E     -     ),
+E     - }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails[lookup] - AssertionError: assert {} == {'Total': ('Active',)}
+  
+  Right contains 1 more item:
+  {'Total': ('Active',)}
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+  + {}
+  - {
+  -     'Total': (
+  -         'Active',
+  -     ),
+  - }
+FAILED tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails[rows] - AssertionError: assert {} == {'Total': ('Active',)}
+  
+  Right contains 1 more item:
+  {'Total': ('Active',)}
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+  + {}
+  - {
+  -     'Total': (
+  -         'Active',
+  -     ),
+  - }
+======================== 2 failed, 13 warnings in 0.66s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_coverage_round.py ..                             [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 2 passed, 13 warnings in 0.50s ========================
+
+
+
+## Historical headers omit workbook cleanup
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/pipeline/test_run_coverage_round.py::test_historical_header_read_failure_preserves_context_cause_and_closes_workbook -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_coverage_round.py FF                             [100%]
+
+=================================== FAILURES ===================================
+_ test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure0] _
+tests/pipeline/test_run_coverage_round.py:626: in test_historical_header_read_failure_preserves_context_cause_and_closes_workbook
+    workbook.close.assert_called_once_with()
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:997: in assert_called_once_with
+    raise AssertionError(msg)
+E   AssertionError: Expected 'close' to be called once. Called 0 times.
+_ test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure1] _
+tests/pipeline/test_run_coverage_round.py:626: in test_historical_header_read_failure_preserves_context_cause_and_closes_workbook
+    workbook.close.assert_called_once_with()
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:997: in assert_called_once_with
+    raise AssertionError(msg)
+E   AssertionError: Expected 'close' to be called once. Called 0 times.
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure0] - AssertionError: Expected 'close' to be called once. Called 0 times.
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure1] - AssertionError: Expected 'close' to be called once. Called 0 times.
+======================== 2 failed, 13 warnings in 0.70s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_coverage_round.py ..                             [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 2 passed, 13 warnings in 0.48s ========================
+
+
+
+## Workflow failures report success
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/test_cli_coverage_round.py::test_workflow_mode_reports_failure_and_returns_nonzero -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/test_cli_coverage_round.py FF                                      [100%]
+
+=================================== FAILURES ===================================
+________ test_workflow_mode_reports_failure_and_returns_nonzero[config] ________
+tests/test_cli_coverage_round.py:241: in test_workflow_mode_reports_failure_and_returns_nonzero
+    assert cli.main(["run", "--config", str(tmp_path / "config.yml")]) == 1
+E   AssertionError: assert 0 == 1
+E    +  where 0 = <function main at 0x713d3e9f5a60>(['run', '--config', '/tmp/pytest-of-runner/pytest-6/test_workflow_mode_reports_fai0/config.yml'])
+E    +    where <function main at 0x713d3e9f5a60> = cli.main
+----------------------------- Captured stdout call -----------------------------
+Counter Risk run failed: config input is unreadable
+_______ test_workflow_mode_reports_failure_and_returns_nonzero[pipeline] _______
+tests/test_cli_coverage_round.py:241: in test_workflow_mode_reports_failure_and_returns_nonzero
+    assert cli.main(["run", "--config", str(tmp_path / "config.yml")]) == 1
+E   AssertionError: assert 0 == 1
+E    +  where 0 = <function main at 0x713d3e9f5a60>(['run', '--config', '/tmp/pytest-of-runner/pytest-6/test_workflow_mode_reports_fai1/config.yml'])
+E    +    where <function main at 0x713d3e9f5a60> = cli.main
+----------------------------- Captured stdout call -----------------------------
+Counter Risk run failed: pipeline input is unreadable
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_cli_coverage_round.py::test_workflow_mode_reports_failure_and_returns_nonzero[config] - AssertionError: assert 0 == 1
+ +  where 0 = <function main at 0x713d3e9f5a60>(['run', '--config', '/tmp/pytest-of-runner/pytest-6/test_workflow_mode_reports_fai0/config.yml'])
+ +    where <function main at 0x713d3e9f5a60> = cli.main
+FAILED tests/test_cli_coverage_round.py::test_workflow_mode_reports_failure_and_returns_nonzero[pipeline] - AssertionError: assert 0 == 1
+ +  where 0 = <function main at 0x713d3e9f5a60>(['run', '--config', '/tmp/pytest-of-runner/pytest-6/test_workflow_mode_reports_fai1/config.yml'])
+ +    where <function main at 0x713d3e9f5a60> = cli.main
+======================== 2 failed, 13 warnings in 0.38s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/test_cli_coverage_round.py ..                                      [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 2 passed, 13 warnings in 0.30s ========================
+
+
+
+## Historical footer treated as dated position
+Command: /opt/hostedtoolcache/Python/3.14.9/x64/bin/python -m pytest tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_uses_last_dated_row_and_ignores_footer -m not slow -q --tb=short
+Mutated exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_coverage_round.py F                              [100%]
+
+=================================== FAILURES ===================================
+______ test_prior_populated_series_uses_last_dated_row_and_ignores_footer ______
+tests/pipeline/test_run_coverage_round.py:351: in test_prior_populated_series_uses_last_dated_row_and_ignores_footer
+    assert run_module._extract_prior_populated_series_by_sheet(path) == {
+E   AssertionError: assert {'Total': (), 'Empty': ()} == {'Total': ('A..., 'Empty': ()}
+E     
+E     Omitting 1 identical items, use -vv to show
+E     Differing items:
+E     {'Total': ()} != {'Total': ('Active',)}
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E     -     'Total': (
+E     +     'Total': (),
+E     ?               ++
+E     -         'Active',
+E     -     ),
+E           'Empty': (),
+E       }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_uses_last_dated_row_and_ignores_footer - AssertionError: assert {'Total': (), 'Empty': ()} == {'Total': ('A..., 'Empty': ()}
+  
+  Omitting 1 identical items, use -vv to show
+  Differing items:
+  {'Total': ()} != {'Total': ('Active',)}
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+  -     'Total': (
+  +     'Total': (),
+  ?               ++
+  -         'Active',
+  -     ),
+        'Empty': (),
+    }
+======================== 1 failed, 13 warnings in 0.60s ========================
+
+
+Restored exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_coverage_round.py .                              [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 13 warnings in 0.50s ========================
+
+
+
+
+## Link preparation discards the original cause: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_link_preparation_failure_stops_refresh_and_preserves_cause', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/0-mutated.xml']
+Exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_link_refresh_failures.py FF                      [100%]
+
+=================================== FAILURES ===================================
+___ test_link_preparation_failure_stops_refresh_and_preserves_cause[resave] ____
+tests/pipeline/test_run_link_refresh_failures.py:43: in test_link_preparation_failure_stops_refresh_and_preserves_cause
+    assert raised.value.__cause__ is failure
+E   assert None is OSError('historical link source is unreadable')
+E    +  where None = RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable").__cause__
+E    +    where RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable") = <ExceptionInfo RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable") tblen=2>.value
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:3839 ppt_link_prep_failed file=/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx
+Traceback (most recent call last):
+  File "/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py", line 3829, in _refresh_ppt_links
+    resaved = _ole_safe_resave_historical_workbooks(run_dir)
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: historical link source is unreadable
+___ test_link_preparation_failure_stops_refresh_and_preserves_cause[repoint] ___
+tests/pipeline/test_run_link_refresh_failures.py:43: in test_link_preparation_failure_stops_refresh_and_preserves_cause
+    assert raised.value.__cause__ is failure
+E   assert None is OSError('historical link source is unreadable')
+E    +  where None = RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable").__cause__
+E    +    where RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable") = <ExceptionInfo RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable") tblen=2>.value
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:3839 ppt_link_prep_failed file=/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx
+Traceback (most recent call last):
+  File "/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py", line 3830, in _refresh_ppt_links
+    repointed, axes_removed = _repoint_and_autoscale_ppt_charts(pptx_path, run_dir)
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: historical link source is unreadable
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/0-mutated.xml ------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_link_refresh_failures.py::test_link_preparation_failure_stops_refresh_and_preserves_cause[resave] - assert None is OSError('historical link source is unreadable')
+ +  where None = RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable").__cause__
+ +    where RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable") = <ExceptionInfo RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_0/monthly.pptx': historical link source is unreadable") tblen=2>.value
+FAILED tests/pipeline/test_run_link_refresh_failures.py::test_link_preparation_failure_stops_refresh_and_preserves_cause[repoint] - assert None is OSError('historical link source is unreadable')
+ +  where None = RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable").__cause__
+ +    where RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable") = <ExceptionInfo RuntimeError("PPT link prep failed for '/tmp/pytest-of-runner/pytest-5/test_link_preparation_failure_1/monthly.pptx': historical link source is unreadable") tblen=2>.value
+======================== 2 failed, 13 warnings in 1.34s ========================
+
+
+## Link preparation discards the original cause: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_link_preparation_failure_stops_refresh_and_preserves_cause', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/0-restored.xml']
+Exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_run_link_refresh_failures.py ..                      [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/0-restored.xml -----
+======================== 2 passed, 13 warnings in 0.35s ========================
+
+
+## Missing Office client incorrectly reports success: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_missing_office_client_skips_refresh_before_preparing_files', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/1-mutated.xml']
+Exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py F                       [100%]
+
+=================================== FAILURES ===================================
+_______ test_missing_office_client_skips_refresh_before_preparing_files ________
+tests/pipeline/test_run_link_refresh_failures.py:61: in test_missing_office_client_skips_refresh_before_preparing_files
+    assert result.status is run_module.PptProcessingStatus.SKIPPED
+E   AssertionError: assert <PptProcessingStatus.SUCCESS: 'success'> is <PptProcessingStatus.SKIPPED: 'skipped'>
+E    +  where <PptProcessingStatus.SUCCESS: 'success'> = PptProcessingResult(status=<PptProcessingStatus.SUCCESS: 'success'>, error_detail='win32com unavailable', ppt_outputs=None).status
+E    +  and   <PptProcessingStatus.SKIPPED: 'skipped'> = <enum 'PptProcessingStatus'>.SKIPPED
+E    +    where <enum 'PptProcessingStatus'> = run_module.PptProcessingStatus
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/1-mutated.xml ------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_link_refresh_failures.py::test_missing_office_client_skips_refresh_before_preparing_files - AssertionError: assert <PptProcessingStatus.SUCCESS: 'success'> is <PptProcessingStatus.SKIPPED: 'skipped'>
+ +  where <PptProcessingStatus.SUCCESS: 'success'> = PptProcessingResult(status=<PptProcessingStatus.SUCCESS: 'success'>, error_detail='win32com unavailable', ppt_outputs=None).status
+ +  and   <PptProcessingStatus.SKIPPED: 'skipped'> = <enum 'PptProcessingStatus'>.SKIPPED
+ +    where <enum 'PptProcessingStatus'> = run_module.PptProcessingStatus
+======================== 1 failed, 13 warnings in 0.38s ========================
+
+
+## Missing Office client incorrectly reports success: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_missing_office_client_skips_refresh_before_preparing_files', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/1-restored.xml']
+Exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py .                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/1-restored.xml -----
+======================== 1 passed, 13 warnings in 0.34s ========================
+
+
+## Refresh omits individual linked shapes: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_refresh_continues_after_unlinked_shape_and_bulk_update_failures', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/2-mutated.xml']
+Exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py F                       [100%]
+
+=================================== FAILURES ===================================
+_____ test_refresh_continues_after_unlinked_shape_and_bulk_update_failures _____
+tests/pipeline/test_run_link_refresh_failures.py:88: in test_refresh_continues_after_unlinked_shape_and_bulk_update_failures
+    failed_shape.LinkFormat.Update.assert_called_once_with()
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:997: in assert_called_once_with
+    raise AssertionError(msg)
+E   AssertionError: Expected 'Update' to be called once. Called 0 times.
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/2-mutated.xml ------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_link_refresh_failures.py::test_refresh_continues_after_unlinked_shape_and_bulk_update_failures - AssertionError: Expected 'Update' to be called once. Called 0 times.
+======================== 1 failed, 13 warnings in 0.43s ========================
+
+
+## Refresh omits individual linked shapes: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_refresh_continues_after_unlinked_shape_and_bulk_update_failures', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/2-restored.xml']
+Exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py .                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/2-restored.xml -----
+======================== 1 passed, 13 warnings in 0.34s ========================
+
+
+## Refresh never saves the presentation: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_refresh_save_failure_preserves_cause_and_releases_office', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/3-mutated.xml']
+Exit: 1
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py F                       [100%]
+
+=================================== FAILURES ===================================
+________ test_refresh_save_failure_preserves_cause_and_releases_office _________
+tests/pipeline/test_run_link_refresh_failures.py:106: in test_refresh_save_failure_preserves_cause_and_releases_office
+    with pytest.raises(RuntimeError, match="PPT link refresh failed") as raised:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE RuntimeError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/3-mutated.xml ------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_link_refresh_failures.py::test_refresh_save_failure_preserves_cause_and_releases_office - Failed: DID NOT RAISE RuntimeError
+======================== 1 failed, 13 warnings in 0.39s ========================
+
+
+## Refresh never saves the presentation: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_link_refresh_failures.py::test_refresh_save_failure_preserves_cause_and_releases_office', '-m', 'not slow', '-q', '--tb=short', '--junitxml=/tmp/1217-link-mutations-up26rei5/3-restored.xml']
+Exit: 0
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/runner/work/Counter_Risk/Counter_Risk
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_run_link_refresh_failures.py .                       [100%]
+
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1217-link-mutations-up26rei5/3-restored.xml -----
+======================== 1 passed, 13 warnings in 0.35s ========================
+
+
+Output validation follow-up: five mutations, seven cases
+Source SHA256 before and after restoration: a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791
+
+Mutation: Silently skip configured Drop-In when parsed inputs are absent
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-0-mutated.xml']
+Exit: 1
+F...                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_dropin_rejects_incomplete_inputs_before_writing[no-parsed-inputs] ____
+tests/pipeline/test_run_coverage_round.py:558: in test_dropin_rejects_incomplete_inputs_before_writing
+    with pytest.raises(ValueError, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing[no-parsed-inputs] - Failed: DID NOT RAISE ValueError
+1 failed, 3 passed, 13 warnings in 1.26s
+
+Mutation: Silently skip configured Drop-In when parsed inputs are absent
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-0-restored.xml']
+Exit: 0
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 13 warnings in 0.26s
+
+Mutation: Silently skip configured Drop-In with missing or invalid variant payload
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-1-mutated.xml']
+Exit: 1
+.FF.                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_dropin_rejects_incomplete_inputs_before_writing[missing-variant] _____
+tests/pipeline/test_run_coverage_round.py:558: in test_dropin_rejects_incomplete_inputs_before_writing
+    with pytest.raises(ValueError, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+____ test_dropin_rejects_incomplete_inputs_before_writing[invalid-variant] _____
+tests/pipeline/test_run_coverage_round.py:558: in test_dropin_rejects_incomplete_inputs_before_writing
+    with pytest.raises(ValueError, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing[missing-variant] - Failed: DID NOT RAISE ValueError
+FAILED tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing[invalid-variant] - Failed: DID NOT RAISE ValueError
+2 failed, 2 passed, 13 warnings in 0.32s
+
+Mutation: Silently skip configured Drop-In with missing or invalid variant payload
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-1-restored.xml']
+Exit: 0
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 13 warnings in 0.26s
+
+Mutation: Silently skip configured Drop-In without totals
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-2-mutated.xml']
+Exit: 1
+...F                                                                     [100%]
+=================================== FAILURES ===================================
+_____ test_dropin_rejects_incomplete_inputs_before_writing[missing-totals] _____
+tests/pipeline/test_run_coverage_round.py:558: in test_dropin_rejects_incomplete_inputs_before_writing
+    with pytest.raises(ValueError, match=message):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing[missing-totals] - Failed: DID NOT RAISE ValueError
+1 failed, 3 passed, 13 warnings in 0.52s
+
+Mutation: Silently skip configured Drop-In without totals
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-2-restored.xml']
+Exit: 0
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 13 warnings in 0.24s
+
+Mutation: Accept an absent or ambiguous Master PPT from screenshot generator
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_screenshot_generator_rejects_ambiguous_master_before_refresh', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-3-mutated.xml']
+Exit: 1
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_screenshot_generator_rejects_ambiguous_master_before_refresh[0] _____
+tests/pipeline/test_run_coverage_round.py:592: in test_screenshot_generator_rejects_ambiguous_master_before_refresh
+    run_module._write_outputs(
+src/counter_risk/pipeline/run.py:2889: in _write_outputs
+    target_master_ppt = generated_paths[0]
+                        ^^^^^^^^^^^^^^^^^^
+E   IndexError: tuple index out of range
+_____ test_screenshot_generator_rejects_ambiguous_master_before_refresh[2] _____
+tests/pipeline/test_run_coverage_round.py:591: in test_screenshot_generator_rejects_ambiguous_master_before_refresh
+    with pytest.raises(RuntimeError, match="must produce exactly one Master PPT output"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE RuntimeError
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:2948 Master PPT link refresh failed: invalid Master must not reach Office
+WARNING  counter_risk.pipeline.run:run.py:2959 Skipping distribution PPT derivation because Master PPT refresh failed: /tmp/pytest-of-runner/pytest-11/test_screenshot_generator_reje1/run/master-0.pptx
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_screenshot_generator_rejects_ambiguous_master_before_refresh[0] - IndexError: tuple index out of range
+FAILED tests/pipeline/test_run_coverage_round.py::test_screenshot_generator_rejects_ambiguous_master_before_refresh[2] - Failed: DID NOT RAISE RuntimeError
+2 failed, 13 warnings in 0.38s
+
+Mutation: Accept an absent or ambiguous Master PPT from screenshot generator
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_screenshot_generator_rejects_ambiguous_master_before_refresh', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-3-restored.xml']
+Exit: 0
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.31s
+
+Mutation: Select first PDF silently when generator returns multiple outputs
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-4-mutated.xml']
+Exit: 1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one _______
+tests/pipeline/test_run_coverage_round.py:611: in test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one
+    with pytest.raises(RuntimeError, match="must produce at most one PDF output"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE RuntimeError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one - Failed: DID NOT RAISE RuntimeError
+1 failed, 13 warnings in 0.32s
+
+Mutation: Select first PDF silently when generator returns multiple outputs
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-output-mutation-4-restored.xml']
+Exit: 0
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.25s
+
+Generator absence and refresh-fallback mutations
+
+Mutation: Proceed without a Master output
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-generator-0-mutated.xml']
+Exit: 1
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[no-generators] _
+tests/pipeline/test_run_coverage_round.py:629: in test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages
+    paths, result = run_module._write_outputs(
+src/counter_risk/pipeline/run.py:2898: in _write_outputs
+    master=target_master_ppt.relative_to(run_dir),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'relative_to'
+_ test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[auxiliary-only] _
+tests/pipeline/test_run_coverage_round.py:629: in test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages
+    paths, result = run_module._write_outputs(
+src/counter_risk/pipeline/run.py:2898: in _write_outputs
+    master=target_master_ppt.relative_to(run_dir),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'relative_to'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[no-generators] - AttributeError: 'NoneType' object has no attribute 'relative_to'
+FAILED tests/pipeline/test_run_coverage_round.py::test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[auxiliary-only] - AttributeError: 'NoneType' object has no attribute 'relative_to'
+2 failed, 13 warnings in 0.47s
+
+Mutation: Proceed without a Master output
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-generator-0-restored.xml']
+Exit: 0
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.27s
+
+Mutation: Skip enabled refresh fallback when no refresh generator is loaded
+Phase: mutated
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-generator-1-mutated.xml']
+Exit: 1
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[with-detail] _
+tests/pipeline/test_run_coverage_round.py:678: in test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution
+    paths, result = run_module._write_outputs(
+src/counter_risk/pipeline/run.py:2997: in _write_outputs
+    _derive_distribution_ppt(
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1241: in _execute_mock_call
+    raise effect
+E   AssertionError: failed Master must not be distributed
+_ test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[no-detail] _
+tests/pipeline/test_run_coverage_round.py:678: in test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution
+    paths, result = run_module._write_outputs(
+src/counter_risk/pipeline/run.py:2997: in _write_outputs
+    _derive_distribution_ppt(
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1241: in _execute_mock_call
+    raise effect
+E   AssertionError: failed Master must not be distributed
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[with-detail] - AssertionError: failed Master must not be distributed
+FAILED tests/pipeline/test_run_coverage_round.py::test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[no-detail] - AssertionError: failed Master must not be distributed
+2 failed, 13 warnings in 0.51s
+
+Mutation: Skip enabled refresh fallback when no refresh generator is loaded
+Phase: restored
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short', '--junitxml=/tmp/1217-generator-1-restored.xml']
+Exit: 0
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.26s
+
+Restored source SHA256: a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791
+
+=== Historical class mix and screenshot input/backend round ===
+
+Mutation 52: Published class mix ignored in favor of signed record totals
+Command: ["/opt/hostedtoolcache/Python/3.14.9/x64/bin/python", "-m", "pytest", "tests/pipeline/test_run_coverage_round.py::test_historical_class_mix_prefers_published_absolute_values_and_defaults_missing_classes", "-m", "not slow", "-q", "--tb=short", "-o", "addopts=", "--junitxml=/tmp/1217-mutation-52.xml"]
+Mutated exit: 1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_historical_class_mix_prefers_published_absolute_values_and_defaults_missing_classes _
+tests/pipeline/test_run_coverage_round.py:344: in test_historical_class_mix_prefers_published_absolute_values_and_defaults_missing_classes
+    assert rows[2][1:] == (0.8, 0)
+E   assert (-0.25, 1.25) == (0.8, 0)
+E
+E     At index 0 diff: -0.25 != 0.8
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       (
+E     -     0.8,
+E     ?       ^
+E     +     -0.25,
+E     ?     +  ^^
+E     -     0,
+E     +     1.25,
+E       )
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_class_mix_prefers_published_absolute_values_and_defaults_missing_classes - assert (-0.25, 1.25) == (0.8, 0)
+
+  At index 0 diff: -0.25 != 0.8
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  -     0.8,
+  ?       ^
+  +     -0.25,
+  ?     +  ^^
+  -     0,
+  +     1.25,
+    )
+1 failed, 13 warnings in 0.70s
+
+Restored exit: 0
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.53s
+
+
+Mutation 53: Blank screenshot keys accepted
+Command: ["/opt/hostedtoolcache/Python/3.14.9/x64/bin/python", "-m", "pytest", "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[blank-key]", "-m", "not slow", "-q", "--tb=short", "-o", "addopts=", "--junitxml=/tmp/1217-mutation-53.xml"]
+Mutated exit: 1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_screenshot_mapping_rejects_unusable_inputs[blank-key] __________
+tests/pipeline/test_run_coverage_round.py:585: in test_screenshot_mapping_rejects_unusable_inputs
+    with pytest.raises(error) as raised:
+         ^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[blank-key] - Failed: DID NOT RAISE ValueError
+1 failed, 13 warnings in 0.44s
+
+Restored exit: 0
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.35s
+
+
+Mutation 54: Missing or non-file screenshots accepted
+Command: ["/opt/hostedtoolcache/Python/3.14.9/x64/bin/python", "-m", "pytest", "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[missing-file]", "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[directory]", "-m", "not slow", "-q", "--tb=short", "-o", "addopts=", "--junitxml=/tmp/1217-mutation-54.xml"]
+Mutated exit: 1
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________ test_screenshot_mapping_rejects_unusable_inputs[missing-file] _________
+tests/pipeline/test_run_coverage_round.py:585: in test_screenshot_mapping_rejects_unusable_inputs
+    with pytest.raises(error) as raised:
+         ^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE FileNotFoundError
+__________ test_screenshot_mapping_rejects_unusable_inputs[directory] __________
+tests/pipeline/test_run_coverage_round.py:585: in test_screenshot_mapping_rejects_unusable_inputs
+    with pytest.raises(error) as raised:
+         ^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE FileNotFoundError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[missing-file] - Failed: DID NOT RAISE FileNotFoundError
+FAILED tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[directory] - Failed: DID NOT RAISE FileNotFoundError
+2 failed, 13 warnings in 0.45s
+
+Restored exit: 0
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.35s
+
+
+Mutation 55: Enabled screenshot replacement accepts an empty mapping
+Command: ["/opt/hostedtoolcache/Python/3.14.9/x64/bin/python", "-m", "pytest", "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[empty]", "-m", "not slow", "-q", "--tb=short", "-o", "addopts=", "--junitxml=/tmp/1217-mutation-55.xml"]
+Mutated exit: 1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____________ test_screenshot_mapping_rejects_unusable_inputs[empty] ____________
+tests/pipeline/test_run_coverage_round.py:585: in test_screenshot_mapping_rejects_unusable_inputs
+    with pytest.raises(error) as raised:
+         ^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[empty] - Failed: DID NOT RAISE ValueError
+1 failed, 13 warnings in 0.44s
+
+Restored exit: 0
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.35s
+
+
+Mutation 56: Unsupported screenshot backend silently selects zip
+Command: ["/opt/hostedtoolcache/Python/3.14.9/x64/bin/python", "-m", "pytest", "tests/pipeline/test_run_coverage_round.py::test_screenshot_replacer_rejects_unknown_backend", "-m", "not slow", "-q", "--tb=short", "-o", "addopts=", "--junitxml=/tmp/1217-mutation-56.xml"]
+Mutated exit: 1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_screenshot_replacer_rejects_unknown_backend _______________
+tests/pipeline/test_run_coverage_round.py:593: in test_screenshot_replacer_rejects_unknown_backend
+    with pytest.raises(
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_screenshot_replacer_rejects_unknown_backend - Failed: DID NOT RAISE ValueError
+1 failed, 13 warnings in 0.43s
+
+Restored exit: 0
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.34s
+
+
+Mutation 57: Python PPTX adapter drops the image mapping
+Command: ["/opt/hostedtoolcache/Python/3.14.9/x64/bin/python", "-m", "pytest", "tests/pipeline/test_run_coverage_round.py::test_python_pptx_screenshot_backend_replaces_image_and_preserves_source", "-m", "not slow", "-q", "--tb=short", "-o", "addopts=", "--junitxml=/tmp/1217-mutation-57.xml"]
+Mutated exit: 1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_python_pptx_screenshot_backend_replaces_image_and_preserves_source ____
+tests/pipeline/test_run_coverage_round.py:619: in test_python_pptx_screenshot_backend_replaces_image_and_preserves_source
+    replacer(source, output, {"Custom section": new_image})
+src/counter_risk/pipeline/run.py:3589: in _replace_screenshots_with_python_pptx_backend
+    replace_screenshot_pictures(
+src/counter_risk/writers/pptx_screenshots.py:147: in replace_screenshot_pictures
+    raise ValueError("images_by_section must contain at least one section mapping")
+E   ValueError: images_by_section must contain at least one section mapping
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_python_pptx_screenshot_backend_replaces_image_and_preserves_source - ValueError: images_by_section must contain at least one section mapping
+1 failed, 13 warnings in 0.55s
+
+Restored exit: 0
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.38s
+
+
+Historical header recovery round (starting HEAD 63f9dac)
+Mutation: Propagate raw historical load errors instead of applying recovery policy
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_historical_header_open_failure_reports_path_and_preserves_cause', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short']
+Mutated exit: 1
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_historical_header_open_failure_reports_path_and_preserves_cause[KeyError] _
+tests/pipeline/test_run_coverage_round.py:934: in test_historical_header_open_failure_reports_path_and_preserves_cause
+    run_module._extract_historical_series_headers_by_sheet(path)
+src/counter_risk/pipeline/run.py:5714: in _extract_historical_series_headers_by_sheet
+    workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1241: in _execute_mock_call
+    raise effect
+E   KeyError: 'unreadable workbook'
+_ test_historical_header_open_failure_reports_path_and_preserves_cause[ValueError] _
+tests/pipeline/test_run_coverage_round.py:934: in test_historical_header_open_failure_reports_path_and_preserves_cause
+    run_module._extract_historical_series_headers_by_sheet(path)
+src/counter_risk/pipeline/run.py:5714: in _extract_historical_series_headers_by_sheet
+    workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1241: in _execute_mock_call
+    raise effect
+E   ValueError: unreadable workbook
+_ test_historical_header_open_failure_reports_path_and_preserves_cause[OSError] _
+tests/pipeline/test_run_coverage_round.py:934: in test_historical_header_open_failure_reports_path_and_preserves_cause
+    run_module._extract_historical_series_headers_by_sheet(path)
+src/counter_risk/pipeline/run.py:5714: in _extract_historical_series_headers_by_sheet
+    workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1241: in _execute_mock_call
+    raise effect
+E   OSError: unreadable workbook
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_header_open_failure_reports_path_and_preserves_cause[KeyError] - KeyError: 'unreadable workbook'
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_header_open_failure_reports_path_and_preserves_cause[ValueError] - ValueError: unreadable workbook
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_header_open_failure_reports_path_and_preserves_cause[OSError] - OSError: unreadable workbook
+3 failed, 13 warnings in 0.92s
+
+Restored exit: 0
+...                                                                      [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 13 warnings in 0.41s
+
+Restoration SHA256: a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791
+
+Mutation: Propagate raw historical series-headers errors instead of applying recovery policy
+Command: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_historical_headers_retain_readable_sheets_after_series_headers_fail', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short']
+Mutated exit: 1
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_historical_headers_retain_readable_sheets_after_series_headers_fail[column-count] _
+tests/pipeline/test_run_coverage_round.py:971: in test_historical_headers_retain_readable_sheets_after_series_headers_fail
+    result = run_module._extract_historical_series_headers_by_sheet(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/pipeline/run.py:5755: in _extract_historical_series_headers_by_sheet
+    max_column = int(getattr(worksheet, "max_column", 0))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: invalid literal for int() with base 10: 'invalid'
+_ test_historical_headers_retain_readable_sheets_after_series_headers_fail[header-cell] _
+tests/pipeline/test_run_coverage_round.py:971: in test_historical_headers_retain_readable_sheets_after_series_headers_fail
+    result = run_module._extract_historical_series_headers_by_sheet(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/pipeline/run.py:5758: in _extract_historical_series_headers_by_sheet
+    for label in (
+src/counter_risk/pipeline/run.py:5759: in <genexpr>
+    str(worksheet.cell(row=header_row, column=column_index).value or "").strip()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1176: in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1180: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py:1247: in _execute_mock_call
+    result = effect(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+tests/pipeline/test_run_coverage_round.py:958: in read_cell
+    raise KeyError("unreadable series header")
+E   KeyError: 'unreadable series header'
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_headers_retain_readable_sheets_after_series_headers_fail[column-count] - ValueError: invalid literal for int() with base 10: 'invalid'
+FAILED tests/pipeline/test_run_coverage_round.py::test_historical_headers_retain_readable_sheets_after_series_headers_fail[header-cell] - KeyError: 'unreadable series header'
+2 failed, 13 warnings in 0.75s
+
+Restored exit: 0
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.44s
+
+Restoration SHA256: a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791
+
+Stable full-suite verification after source restoration:
+COVERAGE_FILE=/tmp/1217-header-final.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-header-final.json -m "not slow" -q -o addopts=
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+..................................................s..................... [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 93%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+....................                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/counter_risk/cli/__init__.py                237      0   100%
+src/counter_risk/cli/__main__.py                  2      2     0%   3-5
+src/counter_risk/cli/mapping_diff_report.py      98     12    88%   85, 90, 93, 103, 106, 110, 113, 116, 178-181
+src/counter_risk/pipeline/run.py               2636    101    96%   566, 1007, 1092, 1250, 1428, 1501-1511, 1534, 1568, 1590-1591, 1674, 1818-1819, 1924-1926, 1955-1956, 1992, 2190, 2225, 2237, 2245-2246, 2270, 2290, 2293-2294, 2410, 2494, 2597, 2681, 2700, 2756, 2774, 3022-3024, 3054-3055, 3115-3116, 3148, 3166, 3176-3177, 3185-3186, 3209-3210, 3278, 3289, 3326, 3413, 3502, 3508, 3531, 3652-3653, 3666, 3938-3940, 3975-3977, 4146, 4164, 4169, 4477, 4560, 4726, 4846, 4859, 4872, 4892, 4977, 5061, 5197, 5203, 5223, 5231, 5357, 5416, 5433, 5581, 5600, 5603, 5614, 5626, 5632, 5655, 5667, 5790-5791, 5897, 5913, 5943, 5963, 5974
+---------------------------------------------------------------------------
+TOTAL                                          2973    115    96%
+Coverage JSON written to file /tmp/1217-header-final.json
+2611 passed, 1 skipped, 87 deselected, 13 warnings in 169.10s (0:02:49)
+
+Targeted verification:
+COVERAGE_FILE=/tmp/1217-header-targeted.cov pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing --cov-report=json:/tmp/1217-header-targeted.json -m "not slow" -q -o addopts=
+........................................................................ [ 61%]
+..............................................                           [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                               Stmts   Miss  Cover   Missing
+----------------------------------------------------------------
+src/counter_risk/pipeline/run.py    2636   1626    38%   149, 294, 389, 478-519, 524, 527, 566, 607, 664-682, 702, 714, 779-783, 837, 840, 843-844, 847, 858, 872, 875, 878, 886, 888, 891, 911-921, 927-967, 978, 999-1009, 1015-1047, 1080, 1085, 1091-1093, 1104-1115, 1217, 1238-1275, 1287-1326, 1336-1516, 1523, 1527, 1534, 1547, 1556-1573, 1582-1584, 1588-1591, 1597-1614, 1646, 1650, 1670-1677, 1686, 1690, 1703, 1712-1714, 1732, 1752-1804, 1808-1819, 1827-1853, 1861, 1879-1893, 1914-1976, 1982-2133, 2154-2173, 2187-2228, 2234-2260, 2266-2281, 2287-2318, 2322-2324, 2330-2359, 2365-2394, 2398-2401, 2405-2411, 2415-2419, 2442-2475, 2484-2500, 2507-2555, 2569-2610, 2620-2623, 2637-2639, 2663, 2681, 2690, 2700, 2739-2749, 2753-2756, 2762-2783, 2794-2806, 2858, 2861-2862, 2932-2935, 2965-3066, 3068-3085, 3110-3187, 3193-3210, 3219-3229, 3236, 3268-3376, 3388-3423, 3450-3484, 3495-3516, 3526-3547, 3559, 3564, 3568, 3573, 3578, 3599-3613, 3643-3653, 3658-3670, 3685-3731, 3744-3798, 3811-3873, 3894-3942, 3966, 3971, 3975-3977, 3997-4033, 4055-4134, 4145-4155, 4161-4170, 4176-4182, 4194-4217, 4226, 4271, 4277, 4281-4285, 4293-4295, 4308-4310, 4321-4323, 4335-4337, 4346-4348, 4458-4462, 4470-4481, 4560, 4567, 4619-4632, 4650-4661, 4710, 4726, 4737, 4743, 4763-4765, 4773, 4833, 4837-4841, 4846, 4852, 4859, 4872, 4887, 4891-4893, 4903-5033, 5040-5053, 5059-5132, 5136-5142, 5146-5157, 5163-5289, 5293-5331, 5335-5342, 5348-5389, 5411-5437, 5445-5502, 5510-5518, 5525-5538, 5546-5552, 5560-5582, 5598-5640, 5649-5656, 5661, 5664, 5667, 5677-5683, 5693-5697, 5719-5720, 5730-5733, 5743-5746, 5790-5791, 5873-5986, 5996-6002, 6009, 6017
+----------------------------------------------------------------
+TOTAL                               2636   1626    38%
+Coverage JSON written to file /tmp/1217-header-targeted.json
+118 passed, 13 warnings in 1.44s
+
+
+Static distribution stage failure warning mutation
+
+Mutated: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short']
+Exit: 1
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__ test_static_distribution_failure_warns_and_stops_before_publishing[export] __
+tests/pipeline/test_run_coverage_round.py:1013: in test_static_distribution_failure_warns_and_stops_before_publishing
+    assert warnings == [
+E   AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+E
+E     Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           'earlier warning',
+E     -     'distribution_static generation failed: static stage unavailable',
+E       ]
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:3940 distribution_static_failed
+Traceback (most recent call last):
+  File "/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py", line 3922, in _create_static_distribution
+    slide_images = export_ppt_slides_as_png_via_com(
+        source_pptx=source_pptx,
+        slide_images_dir=slide_images_dir,
+    )
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: static stage unavailable
+_ test_static_distribution_failure_warns_and_stops_before_publishing[rebuild] __
+tests/pipeline/test_run_coverage_round.py:1013: in test_static_distribution_failure_warns_and_stops_before_publishing
+    assert warnings == [
+E   AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+E
+E     Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           'earlier warning',
+E     -     'distribution_static generation failed: static stage unavailable',
+E       ]
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:3940 distribution_static_failed
+Traceback (most recent call last):
+  File "/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py", line 3926, in _create_static_distribution
+    _rebuild_pptx_from_slide_images(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        source_pptx=source_pptx,
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+        output_path=static_pptx_path,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        slide_images=slide_images,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: static stage unavailable
+__ test_static_distribution_failure_warns_and_stops_before_publishing[scrub] ___
+tests/pipeline/test_run_coverage_round.py:1013: in test_static_distribution_failure_warns_and_stops_before_publishing
+    assert warnings == [
+E   AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+E
+E     Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           'earlier warning',
+E     -     'distribution_static generation failed: static stage unavailable',
+E       ]
+------------------------------ Captured log call -------------------------------
+ERROR    counter_risk.pipeline.run:run.py:3940 distribution_static_failed
+Traceback (most recent call last):
+  File "/home/runner/work/Counter_Risk/Counter_Risk/src/counter_risk/pipeline/run.py", line 3931, in _create_static_distribution
+    scrub_external_relationships_from_pptx(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        static_pptx_path,
+        ^^^^^^^^^^^^^^^^^
+        scrubbed_pptx_path=static_pptx_path,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+OSError: static stage unavailable
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing[export] - AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+
+  Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        'earlier warning',
+  -     'distribution_static generation failed: static stage unavailable',
+    ]
+FAILED tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing[rebuild] - AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+
+  Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        'earlier warning',
+  -     'distribution_static generation failed: static stage unavailable',
+    ]
+FAILED tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing[scrub] - AssertionError: assert ['earlier warning'] == ['earlier war... unavailable']
+
+  Right contains one more item: 'distribution_static generation failed: static stage unavailable'
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        'earlier warning',
+  -     'distribution_static generation failed: static stage unavailable',
+    ]
+3 failed, 13 warnings in 0.53s
+
+
+Restored: ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short']
+Exit: 0
+...                                                                      [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 13 warnings in 0.40s
+
+
+Static-distribution final full-suite verification (exit 0):
+COVERAGE_FILE=/tmp/1217-static-full.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-static-full.json -m "not slow" -q -o addopts=
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+.....................................................s.................. [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 93%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+.......................                                                  [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/counter_risk/cli/__init__.py                237      0   100%
+src/counter_risk/cli/__main__.py                  2      2     0%   3-5
+src/counter_risk/cli/mapping_diff_report.py      98     12    88%   85, 90, 93, 103, 106, 110, 113, 116, 178-181
+src/counter_risk/pipeline/run.py               2636     98    96%   566, 1007, 1092, 1250, 1428, 1501-1511, 1534, 1568, 1590-1591, 1674, 1818-1819, 1924-1926, 1955-1956, 1992, 2190, 2225, 2237, 2245-2246, 2270, 2290, 2293-2294, 2410, 2494, 2597, 2681, 2700, 2756, 2774, 3022-3024, 3054-3055, 3115-3116, 3148, 3166, 3176-3177, 3185-3186, 3209-3210, 3278, 3289, 3326, 3413, 3502, 3508, 3531, 3652-3653, 3666, 3975-3977, 4146, 4164, 4169, 4477, 4560, 4726, 4846, 4859, 4872, 4892, 4977, 5061, 5197, 5203, 5223, 5231, 5357, 5416, 5433, 5581, 5600, 5603, 5614, 5626, 5632, 5655, 5667, 5790-5791, 5897, 5913, 5943, 5963, 5974
+---------------------------------------------------------------------------
+TOTAL                                          2973    112    96%
+Coverage JSON written to file /tmp/1217-static-full.json
+2614 passed, 1 skipped, 87 deselected, 13 warnings in 230.64s (0:03:50)
+
+Targeted verification: 121 passed, exit 0; pipeline Cover column 39% (1026/2636).
+Case audit: {"mutations": 60, "collected_cases": 136, "proven_cases": 136, "omissions": [], "uncollected_cases": [], "duplicates": [], "mutated_restored_exit_pairs": [[1, 0]]}
+
+Required Black check (exit 0, helper described in PR body):
+All done! ✨ 🍰 ✨
+398 files would be left unchanged.
+
+CI Black check (exit 0, helper described in PR body):
+All done! ✨ 🍰 ✨
+398 files would be left unchanged.
+
+
+Empty configured Repo Cash source: warning/strict policies with real CSVs
+Command: ['pytest', 'tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals', '-m', 'not slow', '-q', '-o', 'addopts=', '--tb=short']
+Mutated exit: 1
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_empty_repo_cash_source_obeys_policy_and_preserves_totals[header-only-warn] _
+tests/pipeline/test_run_coverage_round.py:1067: in test_empty_repo_cash_source_obeys_policy_and_preserves_totals
+    assert summary["reconciliation_findings"] == [
+E   assert [] == [{'code': 'em...rty values.'}]
+E
+E     Right contains one more item: {'code': 'empty_cash_source', 'severity': 'warn', 'message': "Repo Cash source 'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob0/cash.csv' did not yield any counterparty values."}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + []
+E     - [
+E     -     {
+E     -         'code': 'empty_cash_source',
+E     -         'severity': 'warn',
+E     -         'message': 'Repo Cash source '
+E     -         "'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob0/cash.csv' "
+E     -         'did not yield any counterparty values.',
+E     -     },
+E     - ]
+_ test_empty_repo_cash_source_obeys_policy_and_preserves_totals[header-only-strict] _
+tests/pipeline/test_run_coverage_round.py:1058: in test_empty_repo_cash_source_obeys_policy_and_preserves_totals
+    with pytest.raises(ValueError) as raised:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_ test_empty_repo_cash_source_obeys_policy_and_preserves_totals[missing-cash-warn] _
+tests/pipeline/test_run_coverage_round.py:1067: in test_empty_repo_cash_source_obeys_policy_and_preserves_totals
+    assert summary["reconciliation_findings"] == [
+E   assert [] == [{'code': 'em...rty values.'}]
+E
+E     Right contains one more item: {'code': 'empty_cash_source', 'severity': 'warn', 'message': "Repo Cash source 'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob2/cash.csv' did not yield any counterparty values."}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + []
+E     - [
+E     -     {
+E     -         'code': 'empty_cash_source',
+E     -         'severity': 'warn',
+E     -         'message': 'Repo Cash source '
+E     -         "'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob2/cash.csv' "
+E     -         'did not yield any counterparty values.',
+E     -     },
+E     - ]
+_ test_empty_repo_cash_source_obeys_policy_and_preserves_totals[missing-cash-strict] _
+tests/pipeline/test_run_coverage_round.py:1058: in test_empty_repo_cash_source_obeys_policy_and_preserves_totals
+    with pytest.raises(ValueError) as raised:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals[header-only-warn] - assert [] == [{'code': 'em...rty values.'}]
+
+  Right contains one more item: {'code': 'empty_cash_source', 'severity': 'warn', 'message': "Repo Cash source 'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob0/cash.csv' did not yield any counterparty values."}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  + []
+  - [
+  -     {
+  -         'code': 'empty_cash_source',
+  -         'severity': 'warn',
+  -         'message': 'Repo Cash source '
+  -         "'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob0/cash.csv' "
+  -         'did not yield any counterparty values.',
+  -     },
+  - ]
+FAILED tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals[header-only-strict] - Failed: DID NOT RAISE ValueError
+FAILED tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals[missing-cash-warn] - assert [] == [{'code': 'em...rty values.'}]
+
+  Right contains one more item: {'code': 'empty_cash_source', 'severity': 'warn', 'message': "Repo Cash source 'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob2/cash.csv' did not yield any counterparty values."}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+  + []
+  - [
+  -     {
+  -         'code': 'empty_cash_source',
+  -         'severity': 'warn',
+  -         'message': 'Repo Cash source '
+  -         "'csv:/tmp/pytest-of-runner/pytest-6/test_empty_repo_cash_source_ob2/cash.csv' "
+  -         'did not yield any counterparty values.',
+  -     },
+  - ]
+FAILED tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals[missing-cash-strict] - Failed: DID NOT RAISE ValueError
+4 failed, 13 warnings in 1.24s
+
+Restored exit: 0
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 13 warnings in 0.30s
+
+Case audit: {
+  "mutations": 61,
+  "collected_cases": 140,
+  "proven_cases": 140,
+  "omissions": [],
+  "uncollected_cases": [],
+  "duplicates": [],
+  "mutated_restored_exit_pairs": [
+    [
+      1,
+      0
+    ]
+  ]
+}
+
+Final full-suite command: COVERAGE_FILE=/tmp/1217-round-final.cov pytest tests/ --cov=counter_risk.pipeline.run --cov=counter_risk.cli --cov-report=term-missing --cov-report=json:/tmp/1217-round-final.json -m "not slow" -q -o addopts=
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/counter_risk/cli/__init__.py                237      0   100%
+src/counter_risk/cli/__main__.py                  2      2     0%   3-5
+src/counter_risk/cli/mapping_diff_report.py      98     12    88%   85, 90, 93, 103, 106, 110, 113, 116, 178-181
+src/counter_risk/pipeline/run.py               2636     94    96%   566, 1007, 1092, 1250, 1534, 1568, 1590-1591, 1674, 1818-1819, 1924-1926, 1955-1956, 1992, 2190, 2225, 2237, 2245-2246, 2270, 2290, 2293-2294, 2410, 2494, 2597, 2681, 2700, 2756, 2774, 3022-3024, 3054-3055, 3115-3116, 3148, 3166, 3176-3177, 3185-3186, 3209-3210, 3278, 3289, 3326, 3413, 3502, 3508, 3531, 3652-3653, 3666, 3975-3977, 4146, 4164, 4169, 4477, 4560, 4726, 4846, 4859, 4872, 4892, 4977, 5061, 5197, 5203, 5223, 5231, 5357, 5416, 5433, 5581, 5600, 5603, 5614, 5626, 5632, 5655, 5667, 5790-5791, 5897, 5913, 5943, 5963, 5974
+---------------------------------------------------------------------------
+TOTAL                                          2973    108    96%
+Coverage JSON written to file /tmp/1217-round-final.json
+2618 passed, 1 skipped, 87 deselected, 13 warnings in 165.71s (0:02:45)
+
+Targeted command: COVERAGE_FILE=/tmp/1217-round-targeted.cov pytest tests/pipeline/test_run_coverage_round.py --cov=counter_risk.pipeline.run --cov-report=term-missing --cov-report=json:/tmp/1217-round-targeted.json -m "not slow" -q -o addopts=
+125 passed; pipeline Cover column 41% (1069/2636); exit 0. Whole-suite target coverage is reported above.
+Black required and CI checks: exit 0, 398 files unchanged; temporary EpollSelector timeout bound and BLACK_NUM_WORKERS=1, matching earlier rounds. Ruff repository check and git diff --check passed.
+
+
+Metrics guard round at 5179e87: four cases, two mutations
+Full clean before/after reports use distinct COVERAGE_FILE paths. Initial overlapping shared-file reports are discarded.
+Empty totals abort all later variants
+MUTATED (exit 1)
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_compute_metrics_keeps_empty_variants_and_continues[records] _______
+tests/pipeline/test_run_coverage_round.py:1104: in test_compute_metrics_keeps_empty_variants_and_continues
+    assert changes == {
+E   AssertionError: assert {'all_programs': []} == {'all_program...ange': -5.0}]}
+E
+E     Omitting 1 identical items, use -vv to show
+E     Right contains 1 more item:
+E     {'trend': [{'counterparty': 'Active', 'notional_change': -5.0}]}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E           'all_programs': [],
+E     -     'trend': [
+E     -         {
+E     -             'counterparty': 'Active',
+E     -             'notional_change': -5.0,
+E     -         },
+E     -     ],
+E       }
+______ test_compute_metrics_keeps_empty_variants_and_continues[dataframe] ______
+tests/pipeline/test_run_coverage_round.py:1104: in test_compute_metrics_keeps_empty_variants_and_continues
+    assert changes == {
+E   AssertionError: assert {'all_programs': []} == {'all_program...ange': -5.0}]}
+E
+E     Omitting 1 identical items, use -vv to show
+E     Right contains 1 more item:
+E     {'trend': [{'counterparty': 'Active', 'notional_change': -5.0}]}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E           'all_programs': [],
+E     -     'trend': [
+E     -         {
+E     -             'counterparty': 'Active',
+E     -             'notional_change': -5.0,
+E     -         },
+E     -     ],
+E       }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_compute_metrics_keeps_empty_variants_and_continues[records] - AssertionError: assert {'all_programs': []} == {'all_program...ange': -5.0}]}
+
+  Omitting 1 identical items, use -vv to show
+  Right contains 1 more item:
+  {'trend': [{'counterparty': 'Active', 'notional_change': -5.0}]}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+        'all_programs': [],
+  -     'trend': [
+  -         {
+  -             'counterparty': 'Active',
+  -             'notional_change': -5.0,
+  -         },
+  -     ],
+    }
+FAILED tests/pipeline/test_run_coverage_round.py::test_compute_metrics_keeps_empty_variants_and_continues[dataframe] - AssertionError: assert {'all_programs': []} == {'all_program...ange': -5.0}]}
+
+  Omitting 1 identical items, use -vv to show
+  Right contains 1 more item:
+  {'trend': [{'counterparty': 'Active', 'notional_change': -5.0}]}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+        'all_programs': [],
+  -     'trend': [
+  -         {
+  -             'counterparty': 'Active',
+  -             'notional_change': -5.0,
+  -         },
+  -     ],
+    }
+2 failed, 13 warnings in 0.74s
+
+RESTORED (exit 0)
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.61s
+
+Incomplete changes are ranked with fabricated zero values
+MUTATED (exit 1)
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__ test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[0] ___
+tests/pipeline/test_run_coverage_round.py:1128: in test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures
+    assert changes == {
+E   AssertionError: assert {'all_program...hange': 3.0}]} == {'all_program...hange': 3.0}]}
+E
+E     Omitting 1 identical items, use -vv to show
+E     Differing items:
+E     {'all_programs': [{'counterparty': 'Negative', 'notional_change': -7.0}, {'counterparty': 'Positive', 'notional_change': 0.0}]} != {'all_programs': []}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E     -     'all_programs': [],
+E     ?                      --
+E     +     'all_programs': [
+E     +         {
+E     +             'counterparty': 'Negative',
+E     +             'notional_change': -7.0,
+E     +         },
+E     +         {
+E     +             'counterparty': 'Positive',
+E     +             'notional_change': 0.0,
+E     +         },
+E     +     ],
+E           'trend': [
+E               {
+E                   'counterparty': 'Active',
+E                   'notional_change': 3.0,
+E               },
+E           ],
+E       }
+__ test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[1] ___
+tests/pipeline/test_run_coverage_round.py:1128: in test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures
+    assert changes == {
+E   AssertionError: assert {'all_program...hange': 3.0}]} == {'all_program...hange': 3.0}]}
+E
+E     Omitting 1 identical items, use -vv to show
+E     Differing items:
+E     {'all_programs': [{'counterparty': 'Positive', 'notional_change': 2.0}, {'counterparty': 'Negative', 'notional_change': 0.0}]} != {'all_programs': []}
+E
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       {
+E     -     'all_programs': [],
+E     ?                      --
+E     +     'all_programs': [
+E     +         {
+E     +             'counterparty': 'Positive',
+E     +             'notional_change': 2.0,
+E     +         },
+E     +         {
+E     +             'counterparty': 'Negative',
+E     +             'notional_change': 0.0,
+E     +         },
+E     +     ],
+E           'trend': [
+E               {
+E                   'counterparty': 'Active',
+E                   'notional_change': 3.0,
+E               },
+E           ],
+E       }
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_run_coverage_round.py::test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[0] - AssertionError: assert {'all_program...hange': 3.0}]} == {'all_program...hange': 3.0}]}
+
+  Omitting 1 identical items, use -vv to show
+  Differing items:
+  {'all_programs': [{'counterparty': 'Negative', 'notional_change': -7.0}, {'counterparty': 'Positive', 'notional_change': 0.0}]} != {'all_programs': []}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+  -     'all_programs': [],
+  ?                      --
+  +     'all_programs': [
+  +         {
+  +             'counterparty': 'Negative',
+  +             'notional_change': -7.0,
+  +         },
+  +         {
+  +             'counterparty': 'Positive',
+  +             'notional_change': 0.0,
+  +         },
+  +     ],
+        'trend': [
+            {
+                'counterparty': 'Active',
+                'notional_change': 3.0,
+            },
+        ],
+    }
+FAILED tests/pipeline/test_run_coverage_round.py::test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[1] - AssertionError: assert {'all_program...hange': 3.0}]} == {'all_program...hange': 3.0}]}
+
+  Omitting 1 identical items, use -vv to show
+  Differing items:
+  {'all_programs': [{'counterparty': 'Positive', 'notional_change': 2.0}, {'counterparty': 'Negative', 'notional_change': 0.0}]} != {'all_programs': []}
+
+  Full diff: (-: missing in left side, +: extra in left side)
+    {
+  -     'all_programs': [],
+  ?                      --
+  +     'all_programs': [
+  +         {
+  +             'counterparty': 'Positive',
+  +             'notional_change': 2.0,
+  +         },
+  +         {
+  +             'counterparty': 'Negative',
+  +             'notional_change': 0.0,
+  +         },
+  +     ],
+        'trend': [
+            {
+                'counterparty': 'Active',
+                'notional_change': 3.0,
+            },
+        ],
+    }
+2 failed, 13 warnings in 0.46s
+
+RESTORED (exit 0)
+..                                                                       [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2 passed, 13 warnings in 0.34s
+
+
+Clean before coverage
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/counter_risk/cli/__init__.py                237      0   100%
+src/counter_risk/cli/__main__.py                  2      2     0%   3-5
+src/counter_risk/cli/mapping_diff_report.py      98     12    88%   85, 90, 93, 103, 106, 110, 113, 116, 178-181
+src/counter_risk/pipeline/run.py               2636     94    96%   566, 1007, 1092, 1250, 1534, 1568, 1590-1591, 1674, 1818-1819, 1924-1926, 1955-1956, 1992, 2190, 2225, 2237, 2245-2246, 2270, 2290, 2293-2294, 2410, 2494, 2597, 2681, 2700, 2756, 2774, 3022-3024, 3054-3055, 3115-3116, 3148, 3166, 3176-3177, 3185-3186, 3209-3210, 3278, 3289, 3326, 3413, 3502, 3508, 3531, 3652-3653, 3666, 3975-3977, 4146, 4164, 4169, 4477, 4560, 4726, 4846, 4859, 4872, 4892, 4977, 5061, 5197, 5203, 5223, 5231, 5357, 5416, 5433, 5581, 5600, 5603, 5614, 5626, 5632, 5655, 5667, 5790-5791, 5897, 5913, 5943, 5963, 5974
+---------------------------------------------------------------------------
+TOTAL                                          2973    108    96%
+Coverage JSON written to file /tmp/1217-metrics-before.json
+2618 passed, 1 skipped, 91 deselected, 13 warnings in 240.33s (0:04:00)
+
+Clean after coverage
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src/counter_risk/cli/__init__.py                237      0   100%
+src/counter_risk/cli/__main__.py                  2      2     0%   3-5
+src/counter_risk/cli/mapping_diff_report.py      98     12    88%   85, 90, 93, 103, 106, 110, 113, 116, 178-181
+src/counter_risk/pipeline/run.py               2636     89    97%   566, 1007, 1092, 1250, 1534, 1568, 1590-1591, 1674, 1818-1819, 1992, 2190, 2225, 2237, 2245-2246, 2270, 2290, 2293-2294, 2410, 2494, 2597, 2681, 2700, 2756, 2774, 3022-3024, 3054-3055, 3115-3116, 3148, 3166, 3176-3177, 3185-3186, 3209-3210, 3278, 3289, 3326, 3413, 3502, 3508, 3531, 3652-3653, 3666, 3975-3977, 4146, 4164, 4169, 4477, 4560, 4726, 4846, 4859, 4872, 4892, 4977, 5061, 5197, 5203, 5223, 5231, 5357, 5416, 5433, 5581, 5600, 5603, 5614, 5626, 5632, 5655, 5667, 5790-5791, 5897, 5913, 5943, 5963, 5974
+---------------------------------------------------------------------------
+TOTAL                                          2973    103    97%
+Coverage JSON written to file /tmp/1217-metrics-after.json
+2622 passed, 1 skipped, 87 deselected, 13 warnings in 235.78s (0:03:55)
+
+Clean targeted-clean coverage
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                               Stmts   Miss  Cover   Missing
+----------------------------------------------------------------
+src/counter_risk/pipeline/run.py    2636   1545    41%   149, 294, 389, 478-519, 524, 527, 566, 607, 664-682, 702, 714, 779-783, 837, 840, 843-844, 847, 858, 872, 875, 878, 886, 888, 891, 911-921, 927-967, 978, 999-1009, 1015-1047, 1080, 1085, 1091-1093, 1104-1115, 1217, 1248-1275, 1287-1326, 1358-1361, 1364, 1370-1382, 1404-1423, 1446-1456, 1466-1477, 1483-1494, 1523, 1534, 1547, 1558-1573, 1588-1591, 1597-1614, 1646, 1650, 1670-1677, 1686, 1690, 1703, 1712-1714, 1732, 1752-1804, 1808-1819, 1827-1853, 1861, 1879-1893, 1982-2133, 2154-2173, 2187-2228, 2234-2260, 2266-2281, 2287-2318, 2322-2324, 2330-2359, 2365-2394, 2398-2401, 2405-2411, 2415-2419, 2442-2475, 2484-2500, 2507-2555, 2569-2610, 2620-2623, 2637-2639, 2663, 2681, 2690, 2700, 2739-2749, 2753-2756, 2762-2783, 2794-2806, 2858, 2861-2862, 2932-2935, 2965-3066, 3068-3085, 3110-3187, 3193-3210, 3219-3229, 3236, 3268-3376, 3388-3423, 3450-3484, 3495-3516, 3526-3547, 3559, 3564, 3568, 3573, 3578, 3599-3613, 3643-3653, 3658-3670, 3685-3731, 3744-3798, 3811-3873, 3895, 3898-3903, 3907-3908, 3911-3916, 3935-3936, 3966, 3971, 3975-3977, 3997-4033, 4055-4134, 4145-4155, 4161-4170, 4176-4182, 4194-4217, 4226, 4271, 4277, 4281-4285, 4293-4295, 4308-4310, 4321-4323, 4335-4337, 4346-4348, 4458-4462, 4470-4481, 4560, 4567, 4619-4632, 4650-4661, 4710, 4726, 4737, 4743, 4763-4765, 4773, 4833, 4837-4841, 4846, 4859, 4872, 4887, 4891-4893, 4903-5033, 5040-5053, 5059-5132, 5136-5142, 5146-5157, 5163-5289, 5293-5331, 5335-5342, 5348-5389, 5411-5437, 5445-5502, 5510-5518, 5525-5538, 5546-5552, 5560-5582, 5598-5640, 5649-5656, 5661, 5664, 5667, 5677-5683, 5693-5697, 5719-5720, 5730-5733, 5743-5746, 5790-5791, 5873-5986, 5996-6002, 6009, 6017
+----------------------------------------------------------------
+TOTAL                               2636   1545    41%
+Coverage JSON written to file /tmp/1217-metrics-targeted-clean.json
+129 passed, 13 warnings in 3.71s
+
+Mutation case audit
+{
+  "mutations": 63,
+  "collected_cases": 144,
+  "proven_cases": 144,
+  "omissions": [],
+  "uncollected_cases": [],
+  "duplicates": [],
+  "mutated_restored_exit_pairs": [
+    [
+      1,
+      0
+    ]
+  ]
+}
+
+Both Black checks pass: 398 files unchanged. Ruff repository check and git diff --check pass.
+Black sandbox helper: ordinary command timed out after 30s; checks pass with BLACK_NUM_WORKERS=1 and a temporary 0.1-second EpollSelector timeout bound, preserving formatter behavior.
+Publication blocked: read-only workspace Git directory, GitHub DNS failure, and automatic approval rejection of tree creation, PR-body update, blocker comment, and needs-human label (approval policy never).

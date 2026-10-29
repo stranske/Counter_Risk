@@ -1,0 +1,91 @@
+{
+  "target_order": [
+    "src/counter_risk/cli/__init__.py",
+    "src/counter_risk/pipeline/run.py"
+  ],
+  "authoritative_issue_baseline_percent": 89.32,
+  "local_metric": "line coverage only; target-limited instrumentation over full non-slow suite",
+  "tests": {
+    "baseline": {
+      "passed": 2595,
+      "skipped": 1,
+      "deselected": 87,
+      "seconds": 147.72
+    },
+    "final": {
+      "passed": 2599,
+      "skipped": 1,
+      "deselected": 87,
+      "seconds": 130.97
+    }
+  },
+  "targets": {
+    "src/counter_risk/cli/__init__.py": {
+      "before": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "after": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "newly_covered_lines": []
+    },
+    "src/counter_risk/pipeline/run.py": {
+      "before": {
+        "covered_lines": 2515,
+        "num_statements": 2636,
+        "percent_covered": 95.40971168437027,
+        "percent_covered_display": "95",
+        "missing_lines": 121,
+        "excluded_lines": 14,
+        "percent_statements_covered": 95.40971168437027,
+        "percent_statements_covered_display": "95"
+      },
+      "after": {
+        "covered_lines": 2521,
+        "num_statements": 2636,
+        "percent_covered": 95.63732928679818,
+        "percent_covered_display": "96",
+        "missing_lines": 115,
+        "excluded_lines": 14,
+        "percent_statements_covered": 95.63732928679818,
+        "percent_statements_covered_display": "96"
+      },
+      "newly_covered_lines": [
+        2894,
+        2895,
+        2940,
+        2941,
+        2945,
+        2950
+      ]
+    }
+  },
+  "new_mutations": 2,
+  "new_cases_proven": 4,
+  "pr_mutations": 51,
+  "pr_cases_proven": 121,
+  "source_sha256_before_and_after_mutations": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+  "published_gate": {
+    "head_sha": "62436883c9a64dabd92c7ad789c39ccac6b60009",
+    "run_id": 40843822529,
+    "status": "success",
+    "python314_passed": 2568,
+    "python314_skipped": 1,
+    "coverage_enabled": false,
+    "coverage_min_outcome": "skipped"
+  }
+}

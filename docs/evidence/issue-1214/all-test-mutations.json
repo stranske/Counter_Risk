@@ -1,0 +1,1987 @@
+[
+  {
+    "mutation": "Discovery suppresses missing-input warnings",
+    "source": "src/counter_risk/cli/__init__.py",
+    "function": "_run_with_discovery",
+    "edits": [
+      [
+        "if has_gaps:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_cli_coverage_round.py::test_discovery_reports_gaps_and_applies_explicit_run_overrides",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_discovery_reports_gaps_and_applies_explicit_run_overrides"
+    ],
+    "source_diff": "--- src/counter_risk/cli/__init__.py\n+++ src/counter_risk/cli/__init__.py\n@@ -315,7 +315,7 @@\n     # Resolve selections (auto-pick singles, prompt for multiples)\n     selected = resolve_discovery_selections(result)\n \n-    if has_gaps:\n+    if False:\n         missing = [name for name, matches in result.matches_by_input.items() if not matches]\n         print(f\"\\nWarning: no files discovered for: {', '.join(missing)}\")\n         print(\"Proceeding with config defaults for those inputs.\")\n"
+  },
+  {
+    "mutation": "GUI callback drops arguments",
+    "source": "src/counter_risk/cli/__init__.py",
+    "function": "_gui_command",
+    "edits": [
+      [
+        "return int(main(argv))",
+        "return int(main([]))"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_cli_coverage_round.py::test_gui_non_headless_launches_with_a_callback",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_gui_non_headless_launches_with_a_callback"
+    ],
+    "source_diff": "--- src/counter_risk/cli/__init__.py\n+++ src/counter_risk/cli/__init__.py\n@@ -257,7 +257,7 @@\n     )\n \n     def _run_callback(argv: list[str]) -> int:\n-        return int(main(argv))\n+        return int(main([]))\n \n     if bool(getattr(args, \"headless\", False)):\n         try:\n"
+  },
+  {
+    "mutation": "CLI formatting profile loses precedence",
+    "source": "src/counter_risk/cli/__init__.py",
+    "function": "_effective_formatting_profile",
+    "edits": [
+      [
+        "return formatting_profile",
+        "return settings.get(_SETTINGS_FORMATTING_PROFILE_KEY)"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_cli_coverage_round.py::test_runner_settings_helpers_reject_non_object_and_prefer_cli_values",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_runner_settings_helpers_reject_non_object_and_prefer_cli_values"
+    ],
+    "source_diff": "--- src/counter_risk/cli/__init__.py\n+++ src/counter_risk/cli/__init__.py\n@@ -460,7 +460,7 @@\n def _effective_formatting_profile(args: argparse.Namespace, settings: dict[str, str]) -> str | None:\n     formatting_profile = cast(str | None, getattr(args, \"formatting_profile\", None))\n     if formatting_profile:\n-        return formatting_profile\n+        return settings.get(_SETTINGS_FORMATTING_PROFILE_KEY)\n     return settings.get(_SETTINGS_FORMATTING_PROFILE_KEY)\n \n \n"
+  },
+  {
+    "mutation": "Headless GUI drops unsuccessful status",
+    "source": "src/counter_risk/cli/__init__.py",
+    "function": "_gui_command",
+    "edits": [
+      [
+        "return result.exit_code",
+        "return 0"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_cli_coverage_round.py::test_gui_headless_preserves_unsuccessful_exit_code",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_gui_headless_preserves_unsuccessful_exit_code"
+    ],
+    "source_diff": "--- src/counter_risk/cli/__init__.py\n+++ src/counter_risk/cli/__init__.py\n@@ -274,7 +274,7 @@\n             print(\"Counter Risk GUI headless run completed.\")\n             return 0\n         print(f\"Counter Risk GUI headless run failed with exit code {result.exit_code}.\")\n-        return result.exit_code\n+        return 0\n \n     launch_gui(initial_state=state, runner=_run_callback)\n     return 0\n"
+  },
+  {
+    "mutation": "Settings read failure loses diagnostic",
+    "source": "src/counter_risk/cli/__init__.py",
+    "function": "_load_runner_settings",
+    "edits": [
+      [
+        "unable to read settings file",
+        "cannot load settings file"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_cli_coverage_round.py::test_runner_settings_reports_unreadable_file",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_runner_settings_reports_unreadable_file"
+    ],
+    "source_diff": "--- src/counter_risk/cli/__init__.py\n+++ src/counter_risk/cli/__init__.py\n@@ -426,7 +426,7 @@\n     try:\n         raw = json.loads(settings_path.read_text(encoding=\"utf-8\"))\n     except OSError as exc:\n-        raise ValueError(f\"unable to read settings file '{settings_path}': {exc}\") from exc\n+        raise ValueError(f\"cannot load settings file '{settings_path}': {exc}\") from exc\n     except json.JSONDecodeError as exc:\n         raise ValueError(f\"settings file '{settings_path}' is not valid JSON: {exc}\") from exc\n \n"
+  },
+  {
+    "mutation": "Input root override ignored",
+    "source": "src/counter_risk/cli/__init__.py",
+    "function": "_load_config_with_runner_settings",
+    "edits": [
+      [
+        "if input_root:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_cli_coverage_round.py::test_runner_settings_replace_input_roots_and_individual_paths",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_runner_settings_replace_input_roots_and_individual_paths[configured_roots0]",
+      "test_runner_settings_replace_input_roots_and_individual_paths[configured_roots1]"
+    ],
+    "source_diff": "--- src/counter_risk/cli/__init__.py\n+++ src/counter_risk/cli/__init__.py\n@@ -479,7 +479,7 @@\n         overrides[\"output_root\"] = Path(output_root)\n \n     input_root = settings.get(_SETTINGS_INPUT_ROOT_KEY)\n-    if input_root:\n+    if False:\n         input_root_path = Path(input_root)\n         configured_roots = dict(config.input_discovery.directory_roots)\n         if configured_roots:\n"
+  },
+  {
+    "mutation": "Workflow ignores as-of-date override",
+    "source": "src/counter_risk/cli/__init__.py",
+    "function": "_run_workflow_mode",
+    "edits": [
+      [
+        "date.fromisoformat(as_of_date_raw.strip())",
+        "config.as_of_date"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_cli_coverage_round.py::test_workflow_mode_applies_as_of_date_override",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_workflow_mode_applies_as_of_date_override"
+    ],
+    "source_diff": "--- src/counter_risk/cli/__init__.py\n+++ src/counter_risk/cli/__init__.py\n@@ -374,7 +374,7 @@\n         overrides: dict[str, object] = {}\n         as_of_date_raw = cast(str | None, getattr(args, \"as_of_date\", None))\n         if as_of_date_raw:\n-            overrides[\"as_of_date\"] = date.fromisoformat(as_of_date_raw.strip())\n+            overrides[\"as_of_date\"] = config.as_of_date\n         strict_policy = _effective_strict_policy(args, runner_settings)\n         if strict_policy:\n             overrides[\"reconciliation\"] = config.reconciliation.model_copy(\n"
+  },
+  {
+    "mutation": "Workflow reports failures as success",
+    "source": "src/counter_risk/cli/__init__.py",
+    "function": "_run_workflow_mode",
+    "edits": [
+      [
+        "return 1",
+        "return 0"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_cli_coverage_round.py::test_workflow_mode_reports_failure_and_returns_nonzero",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_workflow_mode_reports_failure_and_returns_nonzero[config]",
+      "test_workflow_mode_reports_failure_and_returns_nonzero[pipeline]"
+    ],
+    "source_diff": "--- src/counter_risk/cli/__init__.py\n+++ src/counter_risk/cli/__init__.py\n@@ -405,7 +405,7 @@\n         return 0\n     except Exception as exc:\n         print(f\"Counter Risk run failed: {exc}\")\n-        return 1\n+        return 0\n \n \n def _format_discovery_dry_run(*, config: WorkflowConfig, as_of_date: date) -> str:\n"
+  },
+  {
+    "mutation": "Stage failure loses operator context",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "run_pipeline",
+    "edits": [
+      [
+        "Pipeline failed during",
+        "Stage failed during"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_pipeline_stage_failures_preserve_cause_and_stop_later_stages",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[load_config-config load]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_validate_pipeline_config-config validation]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_validate_input_files-input validation stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_collect_source_report_dates-date derivation stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_create_run_directory-run directory setup stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_prepare_runtime_config-parse stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_compute_metrics-compute stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_write_risk_outputs-risk output stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_compute_and_write_concentration_metrics-concentration metrics stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_write_change_attribution_outputs-change attribution stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_compute_and_write_limit_breaches-limit breach stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_update_historical_outputs-historical update stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_call_write_outputs-output write stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[_write_langsmith_fleet_artifact-LangSmith fleet artifact stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[manifest_build-manifest generation stage]",
+      "test_pipeline_stage_failures_preserve_cause_and_stop_later_stages[manifest_write-manifest generation stage]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -405,13 +405,13 @@\n         config = load_config(config_path)\n     except Exception as exc:\n         LOGGER.exception(\"pipeline_failed stage=config_load config_path=%s\", config_path)\n-        raise RuntimeError(f\"Pipeline failed during config load: {config_path}\") from exc\n+        raise RuntimeError(f\"Stage failed during config load: {config_path}\") from exc\n \n     try:\n         _validate_pipeline_config(config)\n     except Exception as exc:\n         LOGGER.exception(\"pipeline_failed stage=config_validate config_path=%s\", config_path)\n-        raise RuntimeError(f\"Pipeline failed during config validation: {config_path}\") from exc\n+        raise RuntimeError(f\"Stage failed during config validation: {config_path}\") from exc\n \n     input_paths: dict[str, Path] = {}\n     missing_inputs: dict[str, Any] = {\n@@ -431,7 +431,7 @@\n             input_paths=input_paths,\n         )\n         raise RuntimeError(\n-            f\"Pipeline failed during input validation stage. {operator_message}\"\n+            f\"Stage failed during input validation stage. {operator_message}\"\n         ) from exc\n \n     try:\n@@ -444,7 +444,7 @@\n         run_date_for_directory = config.run_date\n     except Exception as exc:\n         LOGGER.exception(\"pipeline_failed stage=date_derivation config_path=%s\", config_path)\n-        raise RuntimeError(\"Pipeline failed during date derivation stage\") from exc\n+        raise RuntimeError(\"Stage failed during date derivation stage\") from exc\n \n     try:\n         run_dir = _create_run_directory(\n@@ -457,7 +457,7 @@\n             \"pipeline_failed stage=run_dir_setup run_dir=%s\",\n             _resolve_repo_root() / \"runs\" / as_of_date.isoformat(),\n         )\n-        raise RuntimeError(\"Pipeline failed during run directory setup stage\") from exc\n+        raise RuntimeError(\"Stage failed during run directory setup stage\") from exc\n \n     date_comparison = compare_source_report_dates(\n         configured_date=config.as_of_date, evidence=source_dates\n@@ -563,14 +563,14 @@\n         LOGGER.exception(\"pipeline_failed stage=parse_inputs run_dir=%s\", run_dir)\n         operator_message = _build_parse_stage_operator_message(exc)\n         if operator_message:\n-            raise RuntimeError(f\"Pipeline failed during parse stage. {operator_message}\") from exc\n-        raise RuntimeError(\"Pipeline failed during parse stage\") from exc\n+            raise RuntimeError(f\"Stage failed during parse stage. {operator_message}\") from exc\n+        raise RuntimeError(\"Stage failed during parse stage\") from exc\n \n     try:\n         top_exposures, top_changes_per_variant = _compute_metrics(parsed_by_variant)\n     except Exception as exc:\n         LOGGER.exception(\"pipeline_failed stage=compute_metrics run_dir=%s\", run_dir)\n-        raise RuntimeError(\"Pipeline failed during compute stage\") from exc\n+        raise RuntimeError(\"Stage failed during compute stage\") from exc\n \n     concentration_metrics_records: list[dict[str, Any]] = []\n     concentration_metrics_output_paths: list[Path] = []\n@@ -595,7 +595,7 @@\n             \"risk-proxy-outputs\", started_at=risk_proxy_stage_started_at, status=\"error\"\n         )\n         LOGGER.exception(\"pipeline_failed stage=write_risk_outputs run_dir=%s\", run_dir)\n-        raise RuntimeError(\"Pipeline failed during risk output stage\") from exc\n+        raise RuntimeError(\"Stage failed during risk output stage\") from exc\n \n     concentration_stage_started_at = time.perf_counter()\n     try:\n@@ -613,7 +613,7 @@\n             \"concentration-metrics\", started_at=concentration_stage_started_at, status=\"error\"\n         )\n         LOGGER.exception(\"pipeline_failed stage=concentration_metrics run_dir=%s\", run_dir)\n-        raise RuntimeError(\"Pipeline failed during concentration metrics stage\") from exc\n+        raise RuntimeError(\"Stage failed during concentration metrics stage\") from exc\n \n     try:\n         change_attribution_output_paths = _write_change_attribution_outputs(\n@@ -623,7 +623,7 @@\n         )\n     except Exception as exc:\n         LOGGER.exception(\"pipeline_failed stage=change_attribution run_dir=%s\", run_dir)\n-        raise RuntimeError(\"Pipeline failed during change attribution stage\") from exc\n+        raise RuntimeError(\"Stage failed during change attribution stage\") from exc\n \n     limit_stage_started_at = time.perf_counter()\n     try:\n@@ -636,7 +636,7 @@\n     except Exception as exc:\n         _record_stage_event(\"limit-monitoring\", started_at=limit_stage_started_at, status=\"error\")\n         LOGGER.exception(\"pipeline_failed stage=limit_breaches run_dir=%s\", run_dir)\n-        raise RuntimeError(\"Pipeline failed during limit breach stage\") from exc\n+        raise RuntimeError(\"Stage failed during limit breach stage\") from exc\n \n     limit_breach_summary = _build_limit_breach_summary(\n         run_dir=run_dir,\n@@ -658,7 +658,7 @@\n         )\n     except Exception as exc:\n         LOGGER.exception(\"pipeline_failed stage=historical_update run_dir=%s\", run_dir)\n-        raise RuntimeError(\"Pipeline failed during historical update stage\") from exc\n+        raise RuntimeError(\"Stage failed during historical update stage\") from exc\n \n     if runtime_config.enable_screenshot_replacement:\n         reporting_workbooks = _write_cprs_reporting_workbooks(\n@@ -696,7 +696,7 @@\n     except Exception as exc:\n         _record_stage_event(\"report-generation\", started_at=report_stage_started_at, status=\"error\")\n         LOGGER.exception(\"pipeline_failed stage=write_outputs run_dir=%s\", run_dir)\n-        raise RuntimeError(\"Pipeline failed during output write stage\") from exc\n+        raise RuntimeError(\"Stage failed during output write stage\") from exc\n     _record_stage_event(\"report-generation\", started_at=report_stage_started_at, status=\"success\")\n     if isinstance(output_result, tuple):\n         output_paths, ppt_result = output_result\n@@ -734,7 +734,7 @@\n             \"workflow-trace-artifact\", started_at=artifact_stage_started_at, status=\"error\"\n         )\n         LOGGER.exception(\"pipeline_failed stage=langsmith_fleet_artifact run_dir=%s\", run_dir)\n-        raise RuntimeError(\"Pipeline failed during LangSmith fleet artifact stage\") from exc\n+        raise RuntimeError(\"Stage failed during LangSmith fleet artifact stage\") from exc\n \n     try:\n         input_hashes = {\n@@ -774,7 +774,7 @@\n         manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)\n     except Exception as exc:\n         LOGGER.exception(\"pipeline_failed stage=manifest_write run_dir=%s\", run_dir)\n-        raise RuntimeError(\"Pipeline failed during manifest generation stage\") from exc\n+        raise RuntimeError(\"Stage failed during manifest generation stage\") from exc\n \n     _raise_for_fail_limit_breaches(limit_breach_summary, run_dir=run_dir)\n \n"
+  },
+  {
+    "mutation": "In-memory config drops date-override reason",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "run_pipeline_with_config",
+    "edits": [
+      [
+        "\"report_date_override\": report_date_override",
+        "\"report_date_override\": None"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_run_pipeline_with_config_forwards_report_date_override",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_run_pipeline_with_config_forwards_report_date_override"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -334,7 +334,7 @@\n             output_dir=output_dir,\n             formatting_profile=formatting_profile,\n             **(\n-                {\"report_date_override\": report_date_override}\n+                {\"report_date_override\": None}\n                 if report_date_override is not None\n                 else {}\n             ),\n"
+  },
+  {
+    "mutation": "Fleet includes external output paths",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_write_langsmith_fleet_artifact",
+    "edits": [
+      [
+        "if _is_relative_to(path, run_dir)",
+        "if True"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_fleet_artifact_excludes_external_output_paths_and_captures_environment",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_fleet_artifact_excludes_external_output_paths_and_captures_environment"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -810,7 +810,7 @@\n     safe_output_refs = [\n         f\"artifact:{path.relative_to(run_dir).as_posix()}\"\n         for path in output_paths\n-        if _is_relative_to(path, run_dir)\n+        if True\n     ]\n     risk_proxy_status = \"success\" if risk_proxy_summary else \"skipped\"\n     data_quality_status = _derive_fleet_data_quality_status(warnings, limit_breach_summary)\n"
+  },
+  {
+    "mutation": "Limit banner always uses singular",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_build_limit_warning_banner_for_run_dir",
+    "edits": [
+      [
+        "\"breach\" if row_count == 1 else \"breaches\"",
+        "\"breach\""
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_limit_summary_and_failure_message_cover_invalid_and_fail_values",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_limit_summary_and_failure_message_cover_invalid_and_fail_values"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2699,7 +2699,7 @@\n     if row_count <= 0:\n         return None\n \n-    plurality = \"breach\" if row_count == 1 else \"breaches\"\n+    plurality = \"breach\"\n     title = f\"Limit {plurality.capitalize()} Detected ({row_count})\"\n     message = (\n         f\"Warning banner: {row_count} configured limit {plurality} were detected \"\n"
+  },
+  {
+    "mutation": "Extension validation accepts wrong input types",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_validate_extension",
+    "edits": [
+      [
+        "if path.suffix.lower() != expected_suffix:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_pipeline_rejects_wrong_file_type_for_each_input",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_pipeline_rejects_wrong_file_type_for_each_input[mosers_all_programs_xlsx]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[raw_nisa_all_programs_xlsx]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[mosers_ex_trend_xlsx]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[raw_nisa_ex_trend_xlsx]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[mosers_trend_xlsx]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[raw_nisa_trend_xlsx]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[daily_holdings_pdf]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[cash_overrides_csv]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[dropin_all_programs_template_xlsx]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[hist_all_programs_3yr_xlsx]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[hist_ex_llc_3yr_xlsx]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[hist_llc_3yr_xlsx]",
+      "test_pipeline_rejects_wrong_file_type_for_each_input[monthly_pptx]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1221,7 +1221,7 @@\n \n \n def _validate_extension(*, field_name: str, path: Path, expected_suffix: str) -> None:\n-    if path.suffix.lower() != expected_suffix:\n+    if False:\n         raise ValueError(\n             f\"Invalid file type for {field_name}: expected {expected_suffix}, got '{path.suffix}'\"\n         )\n"
+  },
+  {
+    "mutation": "Missing generated/raw source accepted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_validate_pipeline_config",
+    "edits": "omit_raises",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_pipeline_requires_a_generated_or_raw_source_for_each_variant",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_pipeline_requires_a_generated_or_raw_source_for_each_variant[all_programs]",
+      "test_pipeline_requires_a_generated_or_raw_source_for_each_variant[ex_trend]",
+      "test_pipeline_requires_a_generated_or_raw_source_for_each_variant[trend]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1119,12 +1119,10 @@\n     _validate_pdf_distribution_config(config)\n \n     if config.output_root.exists() and not config.output_root.is_dir():\n-        raise ValueError(f\"output_root must be a directory path: {config.output_root}\")\n+        pass\n \n     if config.mosers_all_programs_xlsx is None and config.raw_nisa_all_programs_xlsx is None:\n-        raise ValueError(\n-            \"One of mosers_all_programs_xlsx or raw_nisa_all_programs_xlsx must be configured\"\n-        )\n+        pass\n     if config.mosers_all_programs_xlsx is not None:\n         _validate_extension(\n             field_name=\"mosers_all_programs_xlsx\",\n@@ -1138,7 +1136,7 @@\n             expected_suffix=\".xlsx\",\n         )\n     if config.mosers_ex_trend_xlsx is None and config.raw_nisa_ex_trend_xlsx is None:\n-        raise ValueError(\"One of mosers_ex_trend_xlsx or raw_nisa_ex_trend_xlsx must be configured\")\n+        pass\n     if config.mosers_ex_trend_xlsx is not None:\n         _validate_extension(\n             field_name=\"mosers_ex_trend_xlsx\",\n@@ -1152,7 +1150,7 @@\n             expected_suffix=\".xlsx\",\n         )\n     if config.mosers_trend_xlsx is None and config.raw_nisa_trend_xlsx is None:\n-        raise ValueError(\"One of mosers_trend_xlsx or raw_nisa_trend_xlsx must be configured\")\n+        pass\n     if config.mosers_trend_xlsx is not None:\n         _validate_extension(\n             field_name=\"mosers_trend_xlsx\",\n@@ -1174,10 +1172,7 @@\n     if config.cash_source_path is not None:\n         cash_source_suffix = config.cash_source_path.suffix.lower()\n         if cash_source_suffix not in {\".pdf\", \".csv\", \".xlsx\", \".xlsm\"}:\n-            raise ValueError(\n-                \"cash_source_path must be one of .pdf, .csv, .xlsx, or .xlsm \"\n-                f\"(got '{config.cash_source_path.suffix}')\"\n-            )\n+            pass\n     if config.cash_overrides_csv is not None:\n         _validate_extension(\n             field_name=\"cash_overrides_csv\",\n"
+  },
+  {
+    "mutation": "Output root file accepted as a directory",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_validate_pipeline_config",
+    "edits": [
+      [
+        "if config.output_root.exists() and not config.output_root.is_dir():",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_pipeline_rejects_output_root_file_and_unsupported_cash_source",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_pipeline_rejects_output_root_file_and_unsupported_cash_source"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1118,7 +1118,7 @@\n def _validate_pipeline_config(config: WorkflowConfig) -> None:\n     _validate_pdf_distribution_config(config)\n \n-    if config.output_root.exists() and not config.output_root.is_dir():\n+    if False:\n         raise ValueError(f\"output_root must be a directory path: {config.output_root}\")\n \n     if config.mosers_all_programs_xlsx is None and config.raw_nisa_all_programs_xlsx is None:\n"
+  },
+  {
+    "mutation": "Raw input omitted from provenance",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_resolve_input_paths",
+    "edits": [
+      [
+        "if config.raw_nisa_all_programs_xlsx is not None:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_optional_input_paths_are_validated_and_included_in_provenance",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_optional_input_paths_are_validated_and_included_in_provenance"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1060,7 +1060,7 @@\n         paths[\"mosers_ex_trend_xlsx\"] = config.mosers_ex_trend_xlsx\n     if config.mosers_trend_xlsx is not None:\n         paths[\"mosers_trend_xlsx\"] = config.mosers_trend_xlsx\n-    if config.raw_nisa_all_programs_xlsx is not None:\n+    if False:\n         paths[\"raw_nisa_all_programs_xlsx\"] = config.raw_nisa_all_programs_xlsx\n     if config.raw_nisa_ex_trend_xlsx is not None:\n         paths[\"raw_nisa_ex_trend_xlsx\"] = config.raw_nisa_ex_trend_xlsx\n"
+  },
+  {
+    "mutation": "Cash source errors silently become no source",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_resolve_repo_cash_source",
+    "edits": "omit_cash_raises",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_explicit_cash_source_requires_a_path",
+      "tests/pipeline/test_run_coverage_round.py::test_cash_source_rejects_unknown_extension_and_falls_back_to_daily_pdf",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_explicit_cash_source_requires_a_path[csv]",
+      "test_explicit_cash_source_requires_a_path[xlsx]",
+      "test_explicit_cash_source_requires_a_path[pdf]",
+      "test_cash_source_rejects_unknown_extension_and_falls_back_to_daily_pdf"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1523,14 +1523,12 @@\n         return \"none\", None\n     if source_type in {\"csv\", \"xlsx\"}:\n         if source_path is None:\n-            raise ValueError(f\"cash_source_type={source_type} requires cash_source_path.\")\n+            return (\"none\", None)\n         return source_type, source_path\n     if source_type == \"pdf\":\n         resolved_pdf = source_path or config.daily_holdings_pdf\n         if resolved_pdf is None:\n-            raise ValueError(\n-                \"cash_source_type=pdf requires cash_source_path or daily_holdings_pdf in config.\"\n-            )\n+            return (\"none\", None)\n         return \"pdf\", resolved_pdf\n \n     if source_path is not None:\n@@ -1541,7 +1539,7 @@\n             return \"xlsx\", source_path\n         if suffix == \".pdf\":\n             return \"pdf\", source_path\n-        raise ValueError(f\"Unsupported cash_source_path extension: {source_path.suffix}\")\n+        return (\"none\", None)\n     if config.daily_holdings_pdf is not None:\n         return \"pdf\", config.daily_holdings_pdf\n     return \"none\", None\n"
+  },
+  {
+    "mutation": "Inferred cash source loses its type",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_resolve_repo_cash_source",
+    "edits": [
+      [
+        "return \"csv\", source_path",
+        "return \"none\", source_path"
+      ],
+      [
+        "return \"xlsx\", source_path",
+        "return \"none\", source_path"
+      ],
+      [
+        "return \"pdf\", source_path",
+        "return \"none\", source_path"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_cash_source_is_inferred_from_extension",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_cash_source_is_inferred_from_extension[.CSV-csv]",
+      "test_cash_source_is_inferred_from_extension[.xlsx-xlsx]",
+      "test_cash_source_is_inferred_from_extension[.xlsm-xlsx]",
+      "test_cash_source_is_inferred_from_extension[.pdf-pdf]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1536,11 +1536,11 @@\n     if source_path is not None:\n         suffix = source_path.suffix.lower()\n         if suffix == \".csv\":\n-            return \"csv\", source_path\n+            return \"none\", source_path\n         if suffix in {\".xlsx\", \".xlsm\"}:\n-            return \"xlsx\", source_path\n+            return \"none\", source_path\n         if suffix == \".pdf\":\n-            return \"pdf\", source_path\n+            return \"none\", source_path\n         raise ValueError(f\"Unsupported cash_source_path extension: {source_path.suffix}\")\n     if config.daily_holdings_pdf is not None:\n         return \"pdf\", config.daily_holdings_pdf\n"
+  },
+  {
+    "mutation": "Historical class mix gets an incorrect offset",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_merge_historical_workbook",
+    "edits": [
+      [
+        "column_index).value = share",
+        "column_index).value = share + 1"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_historical_class_mix_falls_back_to_rollup_records",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_historical_class_mix_falls_back_to_rollup_records[0.0]",
+      "test_historical_class_mix_falls_back_to_rollup_records[100.0]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4614,7 +4614,7 @@\n                             float(record.get(raw_column_name, 0.0) or 0.0) for record in records\n                         )\n                         share = (column_sum / total_notional) if total_notional else 0.0\n-                        worksheet.cell(row=append_row, column=column_index).value = share\n+                        worksheet.cell(row=append_row, column=column_index).value = share + 1\n             else:\n                 assert spec.value_column is not None\n                 records = _select_cprs_ch_records_for_spec(\n"
+  },
+  {
+    "mutation": "Historical position predicate inverted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_historical_cell_has_value",
+    "edits": "invert_returns",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_prior_historical_positions_ignore_blank_zero_and_error_cells",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_prior_historical_positions_ignore_blank_zero_and_error_cells[None-False]",
+      "test_prior_historical_positions_ignore_blank_zero_and_error_cells[False-False]",
+      "test_prior_historical_positions_ignore_blank_zero_and_error_cells[True-False]",
+      "test_prior_historical_positions_ignore_blank_zero_and_error_cells[0-False]",
+      "test_prior_historical_positions_ignore_blank_zero_and_error_cells[-2.5-True]",
+      "test_prior_historical_positions_ignore_blank_zero_and_error_cells[ #N/A -False]",
+      "test_prior_historical_positions_ignore_blank_zero_and_error_cells[\\u2014-False]",
+      "test_prior_historical_positions_ignore_blank_zero_and_error_cells[ 0.0 -False]",
+      "test_prior_historical_positions_ignore_blank_zero_and_error_cells[12-True]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -5781,17 +5781,16 @@\n def _historical_cell_has_value(value: Any) -> bool:\n     \"\"\"Whether a historical cell represents a real position (not blank/zero).\"\"\"\n     if value is None:\n-        return False\n+        return not (False)\n     if isinstance(value, bool):\n-        return False\n+        return not (False)\n     if isinstance(value, (int, float)):\n         try:\n-            return abs(float(value)) > 0.0\n+            return not (abs(float(value)) > 0.0)\n         except (TypeError, ValueError):\n-            return False\n+            return not (False)\n     text = str(value).strip()\n-    return text not in (\"\", \"0\", \"0.0\", \"-\", \"\u2013\", \"\u2014\", \"#N/A\", \"N/A\", \"nan\", \"None\")\n-\n+    return not (text not in (\"\", \"0\", \"0.0\", \"-\", \"\u2013\", \"\u2014\", \"#N/A\", \"N/A\", \"nan\", \"None\"))\n \n def _extract_prior_populated_series_by_sheet(\n     workbook_path: Path,\n"
+  },
+  {
+    "mutation": "Footer replaces prior dated position",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_extract_prior_populated_series_by_sheet",
+    "edits": [
+      [
+        "if row and _coerce_historical_row_date(row[0]) is not None:",
+        "if row and row[0] is not None:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_uses_last_dated_row_and_ignores_footer",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_prior_populated_series_uses_last_dated_row_and_ignores_footer"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -5841,7 +5841,7 @@\n \n             last_dated_row: tuple[Any, ...] | None = None\n             for row in rows[header_index + 1 :]:\n-                if row and _coerce_historical_row_date(row[0]) is not None:\n+                if row and row[0] is not None:\n                     last_dated_row = row\n             if last_dated_row is None:\n                 populated_by_sheet[sheet_name] = ()\n"
+  },
+  {
+    "mutation": "Table adapter accepts non-mapping records",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_records",
+    "edits": [
+      [
+        "for record in as_records if isinstance(record, Mapping)",
+        "for record in as_records"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_table_record_adapters_filter_non_mapping_rows",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_table_record_adapters_filter_non_mapping_rows[to_dict]",
+      "test_table_record_adapters_filter_non_mapping_rows[to_records]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4852,10 +4852,10 @@\n         return [dict(record) for record in table if isinstance(record, Mapping)]\n     if hasattr(table, \"to_dict\"):\n         as_records = table.to_dict(orient=\"records\")\n-        return [dict(record) for record in as_records if isinstance(record, Mapping)]\n+        return [dict(record) for record in as_records]\n     if hasattr(table, \"to_records\"):\n         as_records = table.to_records()\n-        return [dict(record) for record in as_records if isinstance(record, Mapping)]\n+        return [dict(record) for record in as_records]\n     return []\n \n \n"
+  },
+  {
+    "mutation": "Invalid table columns produce a spurious column",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_column_names",
+    "edits": [
+      [
+        "return set()",
+        "return {\"unexpected\"}"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_table_column_adapters_tolerate_non_iterable_columns",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_table_column_adapters_tolerate_non_iterable_columns[None]",
+      "test_table_column_adapters_tolerate_non_iterable_columns[123]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4865,11 +4865,11 @@\n         try:\n             return {str(column) for column in raw_columns}\n         except TypeError:\n-            return set()\n+            return {\"unexpected\"}\n \n     records = _records(table)\n     if not records:\n-        return set()\n+        return {\"unexpected\"}\n     return {str(column) for column in records[0]}\n \n \n"
+  },
+  {
+    "mutation": "PPT refresh errors lose their diagnostics",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_to_ppt_processing_result",
+    "edits": [
+      [
+        "did not record a refresh result",
+        "failed to record a refresh result"
+      ],
+      [
+        "missing a status",
+        "has no status"
+      ],
+      [
+        "Unsupported PPT processing status",
+        "Unknown PPT status"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_ppt_refresh_adapter_rejects_missing_or_unknown_status",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_ppt_refresh_adapter_rejects_missing_or_unknown_status[None-RuntimeError-did not record a refresh result]",
+      "test_ppt_refresh_adapter_rejects_missing_or_unknown_status[result1-TypeError-missing a status]",
+      "test_ppt_refresh_adapter_rejects_missing_or_unknown_status[result2-ValueError-Unsupported PPT processing status]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4354,17 +4354,17 @@\n \n def _to_ppt_processing_result(refresh_result: object | None) -> PptProcessingResult:\n     if refresh_result is None:\n-        raise RuntimeError(\"PPT link refresh output generator did not record a refresh result\")\n+        raise RuntimeError(\"PPT link refresh output generator failed to record a refresh result\")\n \n     status_value = getattr(refresh_result, \"status\", None)\n     if status_value is None:\n-        raise TypeError(\"PPT link refresh result is missing a status\")\n+        raise TypeError(\"PPT link refresh result is has no status\")\n \n     status_text = str(getattr(status_value, \"value\", status_value)).strip().lower()\n     try:\n         status = PptProcessingStatus(status_text)\n     except ValueError as exc:\n-        raise ValueError(f\"Unsupported PPT processing status: {status_text!r}\") from exc\n+        raise ValueError(f\"Unknown PPT status: {status_text!r}\") from exc\n \n     error_detail = getattr(refresh_result, \"error_detail\", None)\n     normalized_error = None if error_detail is None else str(error_detail)\n"
+  },
+  {
+    "mutation": "PPT refresh error detail corrupted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_to_ppt_processing_result",
+    "edits": [
+      [
+        "else str(error_detail)",
+        "else str(error_detail) + \"!\""
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_ppt_refresh_adapter_normalizes_status_and_error_detail",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_ppt_refresh_adapter_normalizes_status_and_error_detail[success]",
+      "test_ppt_refresh_adapter_normalizes_status_and_error_detail[failed]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4367,7 +4367,7 @@\n         raise ValueError(f\"Unsupported PPT processing status: {status_text!r}\") from exc\n \n     error_detail = getattr(refresh_result, \"error_detail\", None)\n-    normalized_error = None if error_detail is None else str(error_detail)\n+    normalized_error = None if error_detail is None else str(error_detail) + \"!\"\n     return PptProcessingResult(status=status, error_detail=normalized_error)\n \n \n"
+  },
+  {
+    "mutation": "Relative screenshot paths left unresolved",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_resolve_runtime_config_paths",
+    "edits": [
+      [
+        "if config.screenshot_inputs:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_runtime_paths_resolve_screenshots_and_discovery_roots_without_mutating_config",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_runtime_paths_resolve_screenshots_and_discovery_roots_without_mutating_config"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -355,7 +355,7 @@\n         if isinstance(field_value, Path) and not field_value.is_absolute():\n             resolved_updates[field_name] = (base_dir / field_value).resolve()\n \n-    if config.screenshot_inputs:\n+    if False:\n         resolved_updates[\"screenshot_inputs\"] = {\n             key: path if path.is_absolute() else (base_dir / path).resolve()\n             for key, path in config.screenshot_inputs.items()\n"
+  },
+  {
+    "mutation": "Malformed parsed-input diagnostics lose variant context",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_validate_parsed_inputs",
+    "edits": [
+      [
+        "Parsed payload for variant",
+        "Invalid input for variant"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_parsed_input_validation_rejects_malformed_variant_payload",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_parsed_input_validation_rejects_malformed_variant_payload[None]",
+      "test_parsed_input_validation_rejects_malformed_variant_payload[payload1]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1863,7 +1863,7 @@\n     for variant in _EXPECTED_VARIANTS:\n         parsed_sections = parsed_by_variant[variant]\n         if not isinstance(parsed_sections, Mapping):\n-            raise ValueError(f\"Parsed payload for variant '{variant}' must be a mapping\")\n+            raise ValueError(f\"Invalid input for variant '{variant}' must be a mapping\")\n \n         missing_sections = [\n             section\n@@ -1872,7 +1872,7 @@\n         ]\n         if missing_sections:\n             raise ValueError(\n-                f\"Parsed payload for variant '{variant}' is missing sections: \"\n+                f\"Invalid input for variant '{variant}' is missing sections: \"\n                 f\"{', '.join(missing_sections)}\"\n             )\n \n"
+  },
+  {
+    "mutation": "Missing columns are silently accepted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_require_columns",
+    "edits": [
+      [
+        "if missing_columns:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_required_columns_error_identifies_section_and_missing_columns",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_required_columns_error_identifies_section_and_missing_columns"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1901,7 +1901,7 @@\n     *, section_name: str, columns: set[str], required_columns: tuple[str, ...]\n ) -> None:\n     missing_columns = [column for column in required_columns if column not in columns]\n-    if missing_columns:\n+    if False:\n         raise ValueError(\n             f\"Parsed section '{section_name}' is missing required columns: \"\n             f\"{', '.join(missing_columns)}\"\n"
+  },
+  {
+    "mutation": "Exception cycles produce spurious operator diagnostics",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_build_reconciliation_failure_operator_message",
+    "edits": [
+      [
+        "return \"\"",
+        "return \"cycle\""
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_operator_diagnostics_terminate_on_exception_cycles",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_operator_diagnostics_terminate_on_exception_cycles[self]",
+      "test_operator_diagnostics_terminate_on_exception_cycles[pair]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1739,7 +1739,7 @@\n         if next_exc is current:\n             break\n         current = next_exc\n-    return \"\"\n+    return \"cycle\"\n \n \n def _prepare_runtime_config(\n"
+  },
+  {
+    "mutation": "Historical dates are misclassified",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_coerce_historical_row_date",
+    "edits": "misclassify_dates",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_historical_row_date_recognizes_supported_dates_only",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_historical_row_date_recognizes_supported_dates_only[value0-expected0]",
+      "test_historical_row_date_recognizes_supported_dates_only[ 12/31/25 -expected1]",
+      "test_historical_row_date_recognizes_supported_dates_only[2025/12/31-expected2]",
+      "test_historical_row_date_recognizes_supported_dates_only[ -None]",
+      "test_historical_row_date_recognizes_supported_dates_only[Report footer-None]",
+      "test_historical_row_date_recognizes_supported_dates_only[123-None]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4690,19 +4690,19 @@\n     month, and both guards were skipped because they saw no previous date.\n     \"\"\"\n     if isinstance(value, datetime):\n-        return value.date()\n+        return (value.date()).replace(year=1900)\n     if isinstance(value, date):\n-        return value\n+        return (value).replace(year=1900)\n     if isinstance(value, str):\n         text = value.strip()\n         if not text:\n-            return None\n+            return date(1900, 1, 1)\n         for date_format in (\"%Y-%m-%d\", \"%m/%d/%Y\", \"%m/%d/%y\", \"%Y/%m/%d\"):\n             try:\n-                return datetime.strptime(text, date_format).date()\n+                return (datetime.strptime(text, date_format).date()).replace(year=1900)\n             except ValueError:\n                 continue\n-    return None\n+    return date(1900, 1, 1)\n \n \n def _normalize_header(value: Any) -> str:\n"
+  },
+  {
+    "mutation": "Unknown historical variant loses warning",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_merge_historical_workbook",
+    "edits": [
+      [
+        "warnings.append(message)",
+        "pass"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_unknown_historical_variant_warns_without_reading_or_creating_file",
+      "tests/pipeline/test_run_coverage_round.py::test_historical_helpers_report_unavailable_reader",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_unknown_historical_variant_warns_without_reading_or_creating_file",
+      "test_historical_helpers_report_unavailable_reader"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4526,14 +4526,14 @@\n             f\"Historical workbook update skipped for variant '{variant}'; openpyxl unavailable\"\n         )\n         LOGGER.warning(\"historical_update_skipped variant=%s reason=openpyxl_unavailable\", variant)\n-        warnings.append(message)\n+        pass\n         return\n \n     specs = _HISTORICAL_SHEET_SPECS_BY_VARIANT.get(variant, ())\n     if not specs:\n         message = f\"Historical workbook update skipped for variant '{variant}'; no sheet mapping\"\n         LOGGER.warning(\"historical_update_skipped variant=%s reason=no_sheet_mapping\", variant)\n-        warnings.append(message)\n+        pass\n         return\n \n     workbook = None\n@@ -4658,7 +4658,7 @@\n                 updated_sheets,\n                 unmatched,\n             )\n-            warnings.append(message)\n+            pass\n \n         workbook.save(workbook_path)\n         LOGGER.info(\n"
+  },
+  {
+    "mutation": "Unrecognized workbook sheets accepted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_merge_historical_workbook",
+    "edits": [
+      [
+        "if not updated_sheets:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_unrecognized_historical_sheets_fail_without_rewriting_workbook",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_unrecognized_historical_sheets_fail_without_rewriting_workbook"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4634,7 +4634,7 @@\n             updated_sheets.append(spec.sheet_name)\n             _trim_historical_sheet_to_rolling_window(worksheet=worksheet, header_row=header_row)\n \n-        if not updated_sheets:\n+        if False:\n             raise ValueError(\n                 f\"No recognized historical sheets found for variant {variant!r} in workbook \"\n                 f\"{workbook_path.name!r} (expected one of \"\n"
+  },
+  {
+    "mutation": "Worksheet fallback row bound is off by one",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_worksheet_max_row",
+    "edits": [
+      [
+        "return fallback",
+        "return fallback + 1"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_worksheet_row_bound_can_fall_back_when_dimensions_are_unavailable",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_worksheet_row_bound_can_fall_back_when_dimensions_are_unavailable"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4758,7 +4758,7 @@\n \n     calculate_dimension = getattr(worksheet, \"calculate_dimension\", None)\n     if not callable(calculate_dimension):\n-        return fallback\n+        return fallback + 1\n \n     from openpyxl.utils.cell import range_boundaries\n \n"
+  },
+  {
+    "mutation": "Invalid screenshot keys lose actionable diagnostics",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_parse_zip_screenshot_key",
+    "edits": [
+      [
+        "Invalid screenshot key for zip backend",
+        "Invalid screenshot reference"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_zip_screenshot_keys_reject_invalid_slide_or_picture_numbers",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_zip_screenshot_keys_reject_invalid_slide_or_picture_numbers[Slide x]",
+      "test_zip_screenshot_keys_reject_invalid_slide_or_picture_numbers[slide 2:]",
+      "test_zip_screenshot_keys_reject_invalid_slide_or_picture_numbers[2:no]",
+      "test_zip_screenshot_keys_reject_invalid_slide_or_picture_numbers[2:1:3]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3623,13 +3623,13 @@\n     if normalized_slide.startswith(\"slide\"):\n         normalized_slide = normalized_slide.removeprefix(\"slide\").strip()\n     if not normalized_slide.isdigit():\n-        raise ValueError(f\"Invalid screenshot key for zip backend: {key!r}\")\n+        raise ValueError(f\"Invalid screenshot reference: {key!r}\")\n \n     picture_index = 0\n     if separator:\n         picture_candidate = picture_token.strip()\n         if not picture_candidate.isdigit():\n-            raise ValueError(f\"Invalid screenshot key for zip backend: {key!r}\")\n+            raise ValueError(f\"Invalid screenshot reference: {key!r}\")\n         picture_index = int(picture_candidate)\n \n     return int(normalized_slide), picture_index\n"
+  },
+  {
+    "mutation": "Screenshot slide indices are off by one",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_parse_zip_screenshot_key",
+    "edits": [
+      [
+        "return int(normalized_slide), picture_index",
+        "return int(normalized_slide) + 1, picture_index"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_zip_screenshot_keys_preserve_slide_and_picture_numbers",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_zip_screenshot_keys_preserve_slide_and_picture_numbers[ SLIDE 2 : 3 -expected0]",
+      "test_zip_screenshot_keys_preserve_slide_and_picture_numbers[4-expected1]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3632,7 +3632,7 @@\n             raise ValueError(f\"Invalid screenshot key for zip backend: {key!r}\")\n         picture_index = int(picture_candidate)\n \n-    return int(normalized_slide), picture_index\n+    return int(normalized_slide) + 1, picture_index\n \n \n _HIST_WORKBOOK_GLOB = \"Historical Counterparty Risk Graphs - *.xlsx\"\n"
+  },
+  {
+    "mutation": "_require_parsed_by_variant accepts missing stage input",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_require_parsed_by_variant",
+    "edits": "omit_raises",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py",
+      "-k",
+      "test_output_generation_requires_its_stage_inputs[_require_parsed_by_variant",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_output_generation_requires_its_stage_inputs[_require_parsed_by_variant-parsed_by_variant is required]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4267,7 +4267,7 @@\n     parsed_by_variant: Mapping[str, Mapping[str, Any]] | None,\n ) -> Mapping[str, Mapping[str, Any]]:\n     if parsed_by_variant is None:\n-        raise ValueError(\"parsed_by_variant is required for historical output generation\")\n+        pass\n     return parsed_by_variant\n \n \n"
+  },
+  {
+    "mutation": "_require_source_pptx accepts missing stage input",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_require_source_pptx",
+    "edits": "omit_raises",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py",
+      "-k",
+      "test_output_generation_requires_its_stage_inputs[_require_source_pptx",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_output_generation_requires_its_stage_inputs[_require_source_pptx-source_pptx is required]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4273,7 +4273,7 @@\n \n def _require_source_pptx(source_pptx: Path | None) -> Path:\n     if source_pptx is None:\n-        raise ValueError(\"source_pptx is required for PDF export output generation\")\n+        pass\n     return source_pptx\n \n \n"
+  },
+  {
+    "mutation": "Unreadable historical workbook becomes an empty success",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_extract_prior_populated_series_by_sheet",
+    "edits": [
+      [
+        "return None",
+        "return {}"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_falls_back_when_workbook_is_unreadable",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_prior_populated_series_falls_back_when_workbook_is_unreadable"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -5810,12 +5810,12 @@\n     try:\n         from openpyxl import load_workbook\n     except ImportError:\n-        return None\n+        return {}\n \n     try:\n         workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)\n     except Exception:\n-        return None\n+        return {}\n \n     workbook_obj: Any = workbook\n     populated_by_sheet: dict[str, tuple[str, ...]] = {}\n"
+  },
+  {
+    "mutation": "Damaged worksheet discards remaining sheets",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_extract_prior_populated_series_by_sheet",
+    "edits": [
+      [
+        "except Exception:\n                continue",
+        "except Exception:\n                return {}"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails[lookup]",
+      "test_prior_populated_series_retains_readable_sheets_after_one_sheet_fails[rows]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -5825,7 +5825,7 @@\n                 worksheet = workbook_obj[sheet_name]\n                 rows = list(worksheet.iter_rows(values_only=True))\n             except Exception:\n-                continue\n+                return {}\n \n             header_index = next(\n                 (\n"
+  },
+  {
+    "mutation": "Header extraction fails to close workbook",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_extract_historical_series_headers_by_sheet",
+    "edits": [
+      [
+        "workbook_obj.close()",
+        "pass"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_historical_header_read_failure_preserves_context_cause_and_closes_workbook",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure0]",
+      "test_historical_header_read_failure_preserves_context_cause_and_closes_workbook[failure1]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -5775,7 +5775,7 @@\n             headers_by_sheet[sheet_name] = tuple(headers)\n         return headers_by_sheet\n     finally:\n-        workbook_obj.close()\n+        pass\n \n \n def _historical_cell_has_value(value: Any) -> bool:\n"
+  },
+  {
+    "mutation": "Link preparation discards the original cause",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_refresh_ppt_links",
+    "edits": [
+      [
+        "raise RuntimeError(f\"PPT link prep failed for '{pptx_path}': {exc}\") from exc",
+        "raise RuntimeError(f\"PPT link prep failed for '{pptx_path}': {exc}\")"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_link_refresh_failures.py::test_link_preparation_failure_stops_refresh_and_preserves_cause",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_link_preparation_failure_stops_refresh_and_preserves_cause[repoint]",
+      "test_link_preparation_failure_stops_refresh_and_preserves_cause[resave]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3837,7 +3837,7 @@\n         )\n     except Exception as exc:\n         LOGGER.exception(\"ppt_link_prep_failed file=%s\", pptx_path)\n-        raise RuntimeError(f\"PPT link prep failed for '{pptx_path}': {exc}\") from exc\n+        raise RuntimeError(f\"PPT link prep failed for '{pptx_path}': {exc}\")\n \n     app = None\n     presentation = None\n"
+  },
+  {
+    "mutation": "Missing Office client incorrectly reports success",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_refresh_ppt_links",
+    "edits": [
+      [
+        "status=PptProcessingStatus.SKIPPED,\n            error_detail=\"win32com unavailable\",",
+        "status=PptProcessingStatus.SUCCESS,\n            error_detail=\"win32com unavailable\","
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_link_refresh_failures.py::test_missing_office_client_skips_refresh_before_preparing_files",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_missing_office_client_skips_refresh_before_preparing_files"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3820,7 +3820,7 @@\n     except ImportError:\n         LOGGER.info(\"ppt_link_refresh_skipped file=%s reason=win32com_unavailable\", pptx_path)\n         return PptProcessingResult(\n-            status=PptProcessingStatus.SKIPPED,\n+            status=PptProcessingStatus.SUCCESS,\n             error_detail=\"win32com unavailable\",\n         )\n \n"
+  },
+  {
+    "mutation": "Refresh omits individual linked shapes",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_refresh_ppt_links",
+    "edits": [
+      [
+        "shape.LinkFormat.Update()",
+        "pass"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_link_refresh_failures.py::test_refresh_continues_after_unlinked_shape_and_bulk_update_failures",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_refresh_continues_after_unlinked_shape_and_bulk_update_failures"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3854,7 +3854,7 @@\n         for slide in presentation.Slides:\n             for shape in slide.Shapes:\n                 try:\n-                    shape.LinkFormat.Update()\n+                    pass\n                     updated += 1\n                 except Exception:\n                     continue\n"
+  },
+  {
+    "mutation": "Refresh never saves the presentation",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_refresh_ppt_links",
+    "edits": [
+      [
+        "presentation.Save()",
+        "pass"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_link_refresh_failures.py::test_refresh_save_failure_preserves_cause_and_releases_office",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_refresh_save_failure_preserves_cause_and_releases_office"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3858,7 +3858,7 @@\n                     updated += 1\n                 except Exception:\n                     continue\n-        presentation.Save()\n+        pass\n         LOGGER.info(\"ppt_link_refresh_complete file=%s shapes_updated=%d\", pptx_path, updated)\n         return PptProcessingResult(status=PptProcessingStatus.SUCCESS)\n     except Exception as exc:\n"
+  },
+  {
+    "mutation": "Silently skip configured Drop-In when parsed inputs are absent",
+    "source": "src/counter_risk/pipeline/run.py",
+    "edits": [
+      [
+        "    if parsed_by_variant is None:\n        raise ValueError(\n            \"parsed_by_variant is required when dropin_all_programs_template_xlsx is configured\"\n        )",
+        "    if parsed_by_variant is None:\n        return None"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_dropin_rejects_incomplete_inputs_before_writing[no-parsed-inputs]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2723,9 +2723,7 @@\n     if template_path is None:\n         return None\n     if parsed_by_variant is None:\n-        raise ValueError(\n-            \"parsed_by_variant is required when dropin_all_programs_template_xlsx is configured\"\n-        )\n+        return None\n \n     parsed_all_programs = parsed_by_variant.get(\"all_programs\")\n     if not isinstance(parsed_all_programs, Mapping):\n"
+  },
+  {
+    "mutation": "Silently skip configured Drop-In with missing or invalid variant payload",
+    "source": "src/counter_risk/pipeline/run.py",
+    "edits": [
+      [
+        "    if not isinstance(parsed_all_programs, Mapping):\n        raise ValueError(\"Parsed payload for variant 'all_programs' is missing\")",
+        "    if not isinstance(parsed_all_programs, Mapping):\n        return None"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_dropin_rejects_incomplete_inputs_before_writing[missing-variant]",
+      "test_dropin_rejects_incomplete_inputs_before_writing[invalid-variant]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2729,7 +2729,7 @@\n \n     parsed_all_programs = parsed_by_variant.get(\"all_programs\")\n     if not isinstance(parsed_all_programs, Mapping):\n-        raise ValueError(\"Parsed payload for variant 'all_programs' is missing\")\n+        return None\n     if \"totals\" not in parsed_all_programs:\n         raise ValueError(\n             \"Parsed payload for variant 'all_programs' is missing the totals section required \"\n"
+  },
+  {
+    "mutation": "Silently skip configured Drop-In without totals",
+    "source": "src/counter_risk/pipeline/run.py",
+    "edits": [
+      [
+        "    if \"totals\" not in parsed_all_programs:\n        raise ValueError(\n            \"Parsed payload for variant 'all_programs' is missing the totals section required \"\n            \"for Drop-In output generation\"\n        )",
+        "    if \"totals\" not in parsed_all_programs:\n        return None"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_dropin_rejects_incomplete_inputs_before_writing",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_dropin_rejects_incomplete_inputs_before_writing[missing-totals]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2731,10 +2731,7 @@\n     if not isinstance(parsed_all_programs, Mapping):\n         raise ValueError(\"Parsed payload for variant 'all_programs' is missing\")\n     if \"totals\" not in parsed_all_programs:\n-        raise ValueError(\n-            \"Parsed payload for variant 'all_programs' is missing the totals section required \"\n-            \"for Drop-In output generation\"\n-        )\n+        return None\n \n     totals_records = _records(parsed_all_programs[\"totals\"])\n     notional_breakdown = _build_dropin_notional_breakdown(totals_records)\n"
+  },
+  {
+    "mutation": "Accept an absent or ambiguous Master PPT from screenshot generator",
+    "source": "src/counter_risk/pipeline/run.py",
+    "edits": [
+      [
+        "            if len(generated_paths) != 1:\n                raise RuntimeError(\n                    \"PPT screenshot output generator must produce exactly one Master PPT output\"\n                )",
+        "            if len(generated_paths) != 1:\n                pass"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_generator_rejects_ambiguous_master_before_refresh",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_screenshot_generator_rejects_ambiguous_master_before_refresh[0]",
+      "test_screenshot_generator_rejects_ambiguous_master_before_refresh[2]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2885,9 +2885,7 @@\n         output_paths.extend(generated_paths)\n         if generator.name == \"ppt_screenshot\":\n             if len(generated_paths) != 1:\n-                raise RuntimeError(\n-                    \"PPT screenshot output generator must produce exactly one Master PPT output\"\n-                )\n+                pass\n             target_master_ppt = generated_paths[0]\n \n     if target_master_ppt is None:\n"
+  },
+  {
+    "mutation": "Select first PDF silently when generator returns multiple outputs",
+    "source": "src/counter_risk/pipeline/run.py",
+    "edits": [
+      [
+        "    if len(generated_paths) != 1:\n        raise RuntimeError(\"PDF export output generator must produce at most one PDF output\")",
+        "    if len(generated_paths) != 1:\n        pass"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_pdf_export_rejects_multiple_outputs_instead_of_selecting_one"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3966,7 +3966,7 @@\n         return None\n \n     if len(generated_paths) != 1:\n-        raise RuntimeError(\"PDF export output generator must produce at most one PDF output\")\n+        pass\n \n     return generated_paths[0]\n \n"
+  },
+  {
+    "mutation": "Proceed without a Master output",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_write_outputs",
+    "edits": [
+      [
+        "if target_master_ppt is None:",
+        "if False:"
+      ]
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short",
+      "--junitxml=/tmp/1217-generator-0-restored.xml"
+    ],
+    "failed_then_passed_cases": [
+      "test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[auxiliary-only]",
+      "test_missing_master_generator_preserves_workbooks_and_skips_ppt_stages[no-generators]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2890,7 +2890,7 @@\n                 )\n             target_master_ppt = generated_paths[0]\n \n-    if target_master_ppt is None:\n+    if False:\n         LOGGER.info(\"write_outputs_skip_ppt_no_master_generator run_dir=%s\", run_dir)\n         return output_paths, PptProcessingResult(status=PptProcessingStatus.SKIPPED)\n \n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Skip enabled refresh fallback when no refresh generator is loaded",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_write_outputs",
+    "edits": [
+      [
+        "if not ran_master_refresh and refresh_enabled:",
+        "if False:"
+      ]
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short",
+      "--junitxml=/tmp/1217-generator-1-restored.xml"
+    ],
+    "failed_then_passed_cases": [
+      "test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[no-detail]",
+      "test_missing_refresh_generator_uses_fallback_and_reports_failure_without_distribution[with-detail]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2934,7 +2934,7 @@\n             refresh_result = _to_ppt_processing_result(getattr(generator, \"last_result\", None))\n             ran_master_refresh = True\n \n-    if not ran_master_refresh and refresh_enabled:\n+    if False:\n         try:\n             refresh_result = _refresh_ppt_links(target_master_ppt)\n         except Exception as exc:\n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Published class mix ignored in favor of signed record totals",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_merge_historical_workbook",
+    "edits": [
+      [
+        "if class_breakdown:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_historical_class_mix_prefers_published_absolute_values_and_defaults_missing_classes",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-52.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_historical_class_mix_prefers_published_absolute_values_and_defaults_missing_classes"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -4591,7 +4591,7 @@\n                 # clearing house before those rows are written -- so they must come\n                 # from the published row. Falls back to the record-derived mix when\n                 # no breakdown row is present.\n-                if class_breakdown:\n+                if False:\n                     for raw_column_name in _CLASS_BREAKDOWN_COLUMNS:\n                         normalized_label = _normalize_series_label_for_matching(raw_column_name)\n                         column_index = column_by_series.get(normalized_label)\n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Blank screenshot keys accepted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_resolve_screenshot_input_mapping",
+    "edits": [
+      [
+        "if not key:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[blank-key]",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-53.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_screenshot_mapping_rejects_unusable_inputs[blank-key]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3553,7 +3553,7 @@\n     seen_keys: set[str] = set()\n     for raw_key, raw_path in raw_inputs.items():\n         key = canonicalize_name(str(raw_key))\n-        if not key:\n+        if False:\n             raise ValueError(\"Screenshot input keys must be non-empty\")\n         if key in seen_keys:\n             raise ValueError(f\"Screenshot input key is duplicated after normalization: {key!r}\")\n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Missing or non-file screenshots accepted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_resolve_screenshot_input_mapping",
+    "edits": [
+      [
+        "if not image_path.exists() or not image_path.is_file():",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[missing-file]",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[directory]",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-54.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_screenshot_mapping_rejects_unusable_inputs[missing-file]",
+      "test_screenshot_mapping_rejects_unusable_inputs[directory]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3562,7 +3562,7 @@\n         image_path = Path(raw_path).expanduser().resolve()\n         if image_path.suffix.lower() != \".png\":\n             raise ValueError(f\"Screenshot input '{key}' must point to a PNG file: {image_path}\")\n-        if not image_path.exists() or not image_path.is_file():\n+        if False:\n             raise FileNotFoundError(f\"Screenshot input '{key}' file does not exist: {image_path}\")\n \n         normalized_pairs.append((key, image_path))\n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Enabled screenshot replacement accepts an empty mapping",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_resolve_screenshot_input_mapping",
+    "edits": [
+      [
+        "if config.enable_screenshot_replacement and not normalized:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_mapping_rejects_unusable_inputs[empty]",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-55.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_screenshot_mapping_rejects_unusable_inputs[empty]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3568,7 +3568,7 @@\n         normalized_pairs.append((key, image_path))\n \n     normalized = dict(sorted(normalized_pairs, key=lambda item: item[0]))\n-    if config.enable_screenshot_replacement and not normalized:\n+    if False:\n         raise ValueError(\"Screenshot replacement is enabled but no screenshot_inputs were provided\")\n     return normalized\n \n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Unsupported screenshot backend silently selects zip",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_get_screenshot_replacer",
+    "edits": [
+      [
+        "raise ValueError(f\"Unsupported screenshot replacement implementation: {implementation}\")",
+        "return _replace_screenshots_with_zip_backend"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_screenshot_replacer_rejects_unknown_backend",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-56.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_screenshot_replacer_rejects_unknown_backend"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3578,7 +3578,7 @@\n         return _replace_screenshots_with_zip_backend\n     if implementation == \"python-pptx\":\n         return _replace_screenshots_with_python_pptx_backend\n-    raise ValueError(f\"Unsupported screenshot replacement implementation: {implementation}\")\n+    return _replace_screenshots_with_zip_backend\n \n \n def _replace_screenshots_with_python_pptx_backend(\n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Python PPTX adapter drops the image mapping",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_replace_screenshots_with_python_pptx_backend",
+    "edits": [
+      [
+        "images_by_section=screenshot_inputs,",
+        "images_by_section={},"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_python_pptx_screenshot_backend_replaces_image_and_preserves_source",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short",
+      "-o",
+      "addopts=",
+      "--junitxml=/tmp/1217-mutation-57.xml"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_python_pptx_screenshot_backend_replaces_image_and_preserves_source"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3588,7 +3588,7 @@\n \n     replace_screenshot_pictures(\n         pptx_in=source_pptx_path,\n-        images_by_section=screenshot_inputs,\n+        images_by_section={},\n         pptx_out=output_pptx_path,\n     )\n \n",
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  {
+    "mutation": "Propagate raw historical load errors instead of applying recovery policy",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_extract_historical_series_headers_by_sheet",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_historical_header_open_failure_reports_path_and_preserves_cause",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_historical_header_open_failure_reports_path_and_preserves_cause[KeyError]",
+      "test_historical_header_open_failure_reports_path_and_preserves_cause[ValueError]",
+      "test_historical_header_open_failure_reports_path_and_preserves_cause[OSError]"
+    ],
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -5713,9 +5713,7 @@\n     try:\n         workbook = load_workbook(filename=workbook_path, read_only=True, data_only=True)\n     except (KeyError, ValueError, OSError) as exc:\n-        raise RuntimeError(\n-            f\"Unable to extract historical series headers from workbook: {workbook_path}\"\n-        ) from exc\n+        raise\n     except Exception as exc:\n         _raise_with_context(\n             exc=exc,\n"
+  },
+  {
+    "mutation": "Propagate raw historical series-headers errors instead of applying recovery policy",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_extract_historical_series_headers_by_sheet",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_historical_headers_retain_readable_sheets_after_series_headers_fail",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_historical_headers_retain_readable_sheets_after_series_headers_fail[column-count]",
+      "test_historical_headers_retain_readable_sheets_after_series_headers_fail[header-cell]"
+    ],
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -5762,7 +5762,7 @@\n                     if label\n                 ]\n             except (KeyError, ValueError):\n-                continue\n+                raise\n             except Exception as exc:\n                 _raise_with_context(\n                     exc=exc,\n"
+  },
+  {
+    "mutation": "Suppress static distribution stage failure warning",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_create_static_distribution",
+    "edits": [
+      [
+        "warnings.append(f\"distribution_static generation failed: {exc}\")",
+        "pass  # mutation: suppress the static generation failure warning"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_static_distribution_failure_warns_and_stops_before_publishing",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_static_distribution_failure_warns_and_stops_before_publishing[export]",
+      "test_static_distribution_failure_warns_and_stops_before_publishing[rebuild]",
+      "test_static_distribution_failure_warns_and_stops_before_publishing[scrub]"
+    ],
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3936,7 +3936,7 @@\n         LOGGER.info(\"distribution_static_pptx_complete path=%s\", static_pptx_path)\n \n     except Exception as exc:\n-        warnings.append(f\"distribution_static generation failed: {exc}\")\n+        pass  # mutation: suppress the static generation failure warning\n         LOGGER.exception(\"distribution_static_failed\")\n \n     return output_paths\n"
+  },
+  {
+    "mutation": "Silently accept empty configured Repo Cash source",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_load_repo_cash_by_counterparty",
+    "edits": [
+      [
+        "    if not repo_cash_by_counterparty:\n        finding_message = (",
+        "    if False:  # mutation: silently accept an empty configured cash source\n        finding_message = ("
+      ]
+    ],
+    "command": [
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_empty_repo_cash_source_obeys_policy_and_preserves_totals",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_empty_repo_cash_source_obeys_policy_and_preserves_totals[header-only-warn]",
+      "test_empty_repo_cash_source_obeys_policy_and_preserves_totals[header-only-strict]",
+      "test_empty_repo_cash_source_obeys_policy_and_preserves_totals[missing-cash-warn]",
+      "test_empty_repo_cash_source_obeys_policy_and_preserves_totals[missing-cash-strict]"
+    ],
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1497,7 +1497,7 @@\n             fail_policy=fail_policy,\n         )\n \n-    if not repo_cash_by_counterparty:\n+    if False:  # mutation: silently accept an empty configured cash source\n         finding_message = (\n             f\"Repo Cash source '{source_label}' did not yield any counterparty values.\"\n         )\n"
+  },
+  {
+    "mutation": "Empty totals abort all later variants",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_compute_metrics",
+    "edits": [
+      [
+        "        if not totals_records:\n            top_exposures[variant] = []\n            top_changes_per_variant[variant] = []\n            continue",
+        "        if not totals_records:\n            top_exposures[variant] = []\n            top_changes_per_variant[variant] = []\n            return top_exposures, top_changes_per_variant"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_compute_metrics_keeps_empty_variants_and_continues",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_compute_metrics_keeps_empty_variants_and_continues[records]",
+      "test_compute_metrics_keeps_empty_variants_and_continues[dataframe]"
+    ],
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1923,7 +1923,7 @@\n         if not totals_records:\n             top_exposures[variant] = []\n             top_changes_per_variant[variant] = []\n-            continue\n+            return top_exposures, top_changes_per_variant\n \n         sorted_exposures = sorted(\n             totals_records,\n"
+  },
+  {
+    "mutation": "Incomplete changes are ranked with fabricated zero values",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_compute_metrics",
+    "edits": [
+      [
+        "if not all(change_column in record for record in totals_records):",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[0]",
+      "test_compute_metrics_suppresses_incomplete_changes_but_keeps_exposures[1]"
+    ],
+    "source_sha256_before": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_sha256_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1951,7 +1951,7 @@\n         ]\n \n         change_column = \"NotionalChange\"\n-        if not all(change_column in record for record in totals_records):\n+        if False:\n             top_changes_per_variant[variant] = []\n             continue\n \n"
+  },
+  {
+    "mutation": "Generated futures schema drift is accepted",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_validate_milestone_one_parser_contract",
+    "edits": [
+      [
+        "if futures_columns != _EXPECTED_FUTURES_COLUMN_ORDER:",
+        "if False:"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_generated_futures_schema_drift_is_rejected[missing]",
+      "tests/pipeline/test_run_coverage_round.py::test_generated_futures_schema_drift_is_rejected[reordered]",
+      "tests/pipeline/test_run_coverage_round.py::test_generated_futures_schema_drift_is_rejected[extra]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_generated_futures_schema_drift_is_rejected[missing]",
+      "test_generated_futures_schema_drift_is_rejected[reordered]",
+      "test_generated_futures_schema_drift_is_rejected[extra]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -1815,7 +1815,7 @@\n             f\"for variant {variant!r}. Expected columns {_EXPECTED_TOTAL_COLUMN_ORDER!r}, \"\n             f\"got {totals_columns!r}\"\n         )\n-    if futures_columns != _EXPECTED_FUTURES_COLUMN_ORDER:\n+    if False:\n         raise ValueError(\n             \"Generated MOSERS workbook does not match Milestone 1 futures parser contract \"\n             f\"for variant {variant!r}. Expected columns {_EXPECTED_FUTURES_COLUMN_ORDER!r}, \"\n"
+  },
+  {
+    "mutation": "Missing risk proxy is ranked as zero",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_rank_proxy_rows",
+    "edits": [
+      [
+        "if raw_value is None:\n            raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\")",
+        "if raw_value is None:\n            return 0.0"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_risk_ranking_rejects_nonnumeric_proxy_values[missing]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_risk_ranking_rejects_nonnumeric_proxy_values[missing]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2287,7 +2287,7 @@\n     def finite_proxy_value(record: Mapping[str, Any]) -> float:\n         raw_value = record.get(proxy_column)\n         if raw_value is None:\n-            raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\")\n+            return 0.0\n         try:\n             value = float(raw_value)\n         except (TypeError, ValueError) as exc:\n"
+  },
+  {
+    "mutation": "Nonnumeric risk proxy is ranked as zero",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_rank_proxy_rows",
+    "edits": [
+      [
+        "except (TypeError, ValueError) as exc:\n            raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\") from exc",
+        "except (TypeError, ValueError):\n            return 0.0"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_risk_ranking_rejects_nonnumeric_proxy_values[invalid-text]",
+      "tests/pipeline/test_run_coverage_round.py::test_risk_ranking_rejects_nonnumeric_proxy_values[invalid-type]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_risk_ranking_rejects_nonnumeric_proxy_values[invalid-text]",
+      "test_risk_ranking_rejects_nonnumeric_proxy_values[invalid-type]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -2290,8 +2290,8 @@\n             raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\")\n         try:\n             value = float(raw_value)\n-        except (TypeError, ValueError) as exc:\n-            raise ValueError(f\"Risk proxy {proxy_column!r} must be numeric\") from exc\n+        except (TypeError, ValueError):\n+            return 0.0\n         if not math.isfinite(value):\n             raise ValueError(f\"Risk proxy {proxy_column!r} must be finite, got {raw_value!r}\")\n         return value\n"
+  },
+  {
+    "mutation": "Chart rebuilding loses collected slide fallback paths",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_apply_chart_replacement",
+    "edits": [
+      [
+        "fallback_slide_images[slide_idx] = img_path",
+        "pass  # deliberately drop fallback path"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[success-linked]",
+      "tests/pipeline/test_run_coverage_round.py::test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[success-static]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[success-linked]",
+      "test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[success-static]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3145,7 +3145,7 @@\n                 try:\n                     # Slides(idx) is 1-based; Slides[idx] would be 0-based (pywin32).\n                     presentation.Slides(slide_idx).Export(str(img_path), \"PNG\")\n-                    fallback_slide_images[slide_idx] = img_path\n+                    pass  # deliberately drop fallback path\n                 except Exception as exc:\n                     warnings.append(\n                         f\"chart_replacement fallback slide export failed (slide {slide_idx}): {exc}\"\n"
+  },
+  {
+    "mutation": "Chart rebuild failure warning loses the original error",
+    "source": "src/counter_risk/pipeline/run.py",
+    "function": "_apply_chart_replacement",
+    "edits": [
+      [
+        "warnings.append(f\"chart_replacement failed: {exc}\")",
+        "warnings.append(\"chart_replacement failed\")"
+      ]
+    ],
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_run_coverage_round.py::test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[rebuild-failure-linked]",
+      "tests/pipeline/test_run_coverage_round.py::test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[rebuild-failure-static]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--tb=short"
+    ],
+    "mutated_exit": 1,
+    "restored_exit": 0,
+    "failed_then_passed_cases": [
+      "test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[rebuild-failure-linked]",
+      "test_chart_replacement_collects_one_based_fallbacks_and_closes_office_before_rebuild[rebuild-failure-static]"
+    ],
+    "source_diff": "--- src/counter_risk/pipeline/run.py\n+++ src/counter_risk/pipeline/run.py\n@@ -3183,7 +3183,7 @@\n             LOGGER.info(\"chart_replacement_deferred_to_static_rebuild: %s\", exc)\n         else:\n             LOGGER.warning(\"chart_replacement_failed exc=%s\", exc)\n-            warnings.append(f\"chart_replacement failed: {exc}\")\n+            warnings.append(\"chart_replacement failed\")\n         return False\n \n \n"
+  }
+]

@@ -1,0 +1,132 @@
+{
+  "starting_head": "63f9dacede6cc4f923169cbc113fa2871c98723c",
+  "target_order": [
+    "src/counter_risk/cli/__init__.py",
+    "src/counter_risk/pipeline/run.py"
+  ],
+  "ranking_source": "https://github.com/stranske/Counter_Risk/issues/1214",
+  "authoritative_issue_baseline_percent": 89.32,
+  "local_metric": "line coverage only; target-limited instrumentation over full non-slow suite",
+  "baseline": {
+    "passed": 2605,
+    "failed": 1,
+    "skipped": 1,
+    "deselected": 87,
+    "seconds": 182.25,
+    "limitation": "Adding an initial test candidate while the suite was running changed collection between the CI-partition check subprocesses. The failure was an editing race. Coverage matches the previous green round. The stable final rerun passes; this initial run is not claimed as a green baseline."
+  },
+  "final": {
+    "passed": 2611,
+    "skipped": 1,
+    "deselected": 87,
+    "seconds": 169.1,
+    "exit_code": 0
+  },
+  "targeted": {
+    "passed": 118,
+    "seconds": 1.44,
+    "exit_code": 0,
+    "pipeline_summary": {
+      "covered_lines": 1010,
+      "num_statements": 2636,
+      "percent_covered": 38.31562974203339,
+      "percent_covered_display": "38",
+      "missing_lines": 1626,
+      "excluded_lines": 14,
+      "percent_statements_covered": 38.31562974203339,
+      "percent_statements_covered_display": "38"
+    }
+  },
+  "targets": {
+    "src/counter_risk/cli/__init__.py": {
+      "before": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "after": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "newly_covered_lines": []
+    },
+    "src/counter_risk/pipeline/run.py": {
+      "before": {
+        "covered_lines": 2533,
+        "num_statements": 2636,
+        "percent_covered": 96.09256449165402,
+        "percent_covered_display": "96",
+        "missing_lines": 103,
+        "excluded_lines": 14,
+        "percent_statements_covered": 96.09256449165402,
+        "percent_statements_covered_display": "96"
+      },
+      "after": {
+        "covered_lines": 2535,
+        "num_statements": 2636,
+        "percent_covered": 96.16843702579666,
+        "percent_covered_display": "96",
+        "missing_lines": 101,
+        "excluded_lines": 14,
+        "percent_statements_covered": 96.16843702579666,
+        "percent_statements_covered_display": "96"
+      },
+      "newly_covered_lines": [
+        5716,
+        5765
+      ]
+    }
+  },
+  "new_mutations": 2,
+  "new_cases_proven": 5,
+  "case_audit": {
+    "mutations": 59,
+    "proven_cases": 133,
+    "collected_cases": 133,
+    "omissions": [],
+    "duplicates": [],
+    "uncollected_cases": [],
+    "mutated_restored_exit_pairs": [
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  "source_sha256_before_and_after_mutations": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+  "published_gate": {
+    "head_sha": "63f9dacede6cc4f923169cbc113fa2871c98723c",
+    "run_id": 40847909230,
+    "status": "success",
+    "python314_job_id": 123360109439,
+    "python314_passed": 2579,
+    "python314_skipped": 1,
+    "coverage_enabled": false,
+    "coverage_min_outcome": "skipped"
+  },
+  "formatting": {
+    "changed_file_black": "passed",
+    "repository_black": "passed, 398 files unchanged",
+    "ci_black": "passed, 398 files unchanged",
+    "ruff": "passed",
+    "black_sandbox_helper": "The ordinary Black command hung and was interrupted. Both required commands exited 0 with BLACK_NUM_WORKERS=1 and a temporary sitecustomize bounding EpollSelector.select waits to 0.1 seconds, as in previous rounds. Formatter behavior was unchanged."
+  },
+  "delivery": {
+    "git_add": "failed: .git/index.lock: Read-only file system",
+    "github_create_tree": "rejected: MCP tool call requires approval, but approval policy is never",
+    "pr_body_update": "rejected: MCP tool call requires approval, but approval policy is never",
+    "blocker_comment": "rejected: MCP tool call requires approval, but approval policy is never",
+    "needs_human_label": "rejected: MCP tool call requires approval, but approval policy is never"
+  }
+}

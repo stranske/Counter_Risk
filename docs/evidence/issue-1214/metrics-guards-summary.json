@@ -1,0 +1,135 @@
+{
+  "starting_head": "5179e87534f8350e44ac409f5b7fe00de5e78b38",
+  "ranking_source": "https://github.com/stranske/Counter_Risk/issues/1214",
+  "target_selection": "CLI first (1 escaped-defect signal, churn 1, 19 CI uncovered units), then pipeline (churn 15, 302 CI uncovered units). CLI already 100% locally; continue pipeline.",
+  "authoritative_issue_baseline_percent": 89.32,
+  "metric": "Local line-only coverage over whole non-slow suite; not comparable to blended CI baseline.",
+  "baseline": {
+    "passed": 2618,
+    "skipped": 1,
+    "deselected": 91,
+    "seconds": 240.33,
+    "exit_code": 0
+  },
+  "final": {
+    "passed": 2622,
+    "skipped": 1,
+    "deselected": 87,
+    "seconds": 235.78,
+    "exit_code": 0
+  },
+  "targeted": {
+    "passed": 129,
+    "skipped": 0,
+    "deselected": 0,
+    "seconds": 3.71,
+    "exit_code": 0,
+    "pipeline_summary": {
+      "covered_lines": 1091,
+      "num_statements": 2636,
+      "percent_covered": 41.38846737481032,
+      "percent_covered_display": "41",
+      "missing_lines": 1545,
+      "excluded_lines": 14,
+      "percent_statements_covered": 41.38846737481032,
+      "percent_statements_covered_display": "41"
+    }
+  },
+  "targets": {
+    "src/counter_risk/cli/__init__.py": {
+      "before": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "after": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      }
+    },
+    "src/counter_risk/pipeline/run.py": {
+      "before": {
+        "covered_lines": 2542,
+        "num_statements": 2636,
+        "percent_covered": 96.4339908952959,
+        "percent_covered_display": "96",
+        "missing_lines": 94,
+        "excluded_lines": 14,
+        "percent_statements_covered": 96.4339908952959,
+        "percent_statements_covered_display": "96"
+      },
+      "after": {
+        "covered_lines": 2547,
+        "num_statements": 2636,
+        "percent_covered": 96.6236722306525,
+        "percent_covered_display": "97",
+        "missing_lines": 89,
+        "excluded_lines": 14,
+        "percent_statements_covered": 96.6236722306525,
+        "percent_statements_covered_display": "97"
+      }
+    }
+  },
+  "newly_covered_lines": [
+    1924,
+    1925,
+    1926,
+    1955,
+    1956
+  ],
+  "baseline_excludes_only_this_rounds_four_cases": true,
+  "initial_coverage_reports_discarded": "Initial whole-suite and targeted runs shared .coverage while overlapping. Their coverage reports were contaminated; the clean reruns use separate COVERAGE_FILE paths.",
+  "new_mutations": 2,
+  "new_cases_proven": 4,
+  "case_audit": {
+    "mutations": 63,
+    "collected_cases": 144,
+    "proven_cases": 144,
+    "omissions": [],
+    "uncollected_cases": [],
+    "duplicates": [],
+    "mutated_restored_exit_pairs": [
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  "source_sha256_before_and_after": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+  "production_changes_this_round": false,
+  "formatting": {
+    "changed_file_black": "passed",
+    "repository_black_command": "black --check --line-length 100 --exclude '(\\.workflows-lib|node_modules)' .",
+    "ci_black_command": "black --check --line-length 100 --exclude '(\\.venv|\\.workflows-lib|node_modules)' .",
+    "repository_and_ci_black": "passed, 398 files unchanged",
+    "ruff_command": "ruff check --output-format github --extend-exclude .workflows-lib .",
+    "ruff": "passed",
+    "git_diff_check": "passed",
+    "black_sandbox_helper": "The ordinary Black check timed out (exit 124) after 30 seconds. Both required commands passed with BLACK_NUM_WORKERS=1 and a temporary sitecustomize bounding EpollSelector.select waits to 0.1 seconds, as in previous rounds. Formatter behavior was unchanged."
+  },
+  "delivery": {
+    "workspace_git_add": "blocked: .git/index.lock read-only filesystem",
+    "git_transport": "blocked: Could not resolve host: github.com",
+    "github_create_tree": "rejected: MCP tool call requires approval, but approval policy is never",
+    "pr_body_update": "rejected: MCP tool call requires approval, but approval policy is never",
+    "blocker_comment": "rejected: MCP tool call requires approval, but approval policy is never",
+    "needs_human_label": "rejected: MCP tool call requires approval, but approval policy is never",
+    "isolated_git_directory": "/tmp/1217-metrics.git",
+    "patch": "/tmp/1217-metrics.patch",
+    "pr_number": 1217,
+    "pr_state": "open",
+    "isDraft": false,
+    "published_head_ci_for_new_cases": "pending publication; no claim of CI success for unpushed cases"
+  }
+}
