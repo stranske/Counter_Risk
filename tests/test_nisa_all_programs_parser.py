@@ -326,6 +326,41 @@ def test_parser_handles_extra_leading_rows_before_header_row(tmp_path: Path) -> 
 
 
 @pytest.mark.parametrize("reverse_sheet_order", [False, True], ids=["original", "reversed"])
+@pytest.mark.parametrize("missing_header", ["cash", "annualized_volatility"])
+def test_parser_skips_earlier_worksheet_with_incomplete_headers(
+    tmp_path: Path, missing_header: str, reverse_sheet_order: bool
+) -> None:
+    import openpyxl
+
+    path = _build_raw_nisa_workbook(tmp_path / "incomplete-decoy.xlsx", sheet_name="Alpha")
+    workbook = openpyxl.load_workbook(path)
+    try:
+        decoy = workbook.active
+        complete = workbook.copy_worksheet(decoy)
+        complete.title = "Zeta"
+        complete.insert_rows(1, 6)
+        # Both sheets contain data; only the later header is complete.
+        decoy.cell(6, 2).value = "Decoy Bank"
+        decoy.cell(25, 2).value = "Decoy Bank"
+        missing_column = 2 + _CANONICAL_HEADERS.index(missing_header)
+        decoy.cell(4, missing_column).value = None
+        if missing_header == "annualized_volatility":
+            decoy.cell(3, missing_column).value = None
+        if reverse_sheet_order:
+            workbook.move_sheet(complete, offset=-1)
+        workbook.save(path)
+    finally:
+        workbook.close()
+
+    parsed = parse_nisa_all_programs(path)
+
+    _assert_expected_rows(parsed)
+    assert parsed.ch_rows[0].cash == pytest.approx(10)
+    assert parsed.ch_rows[0].annualized_volatility == pytest.approx(0.11)
+    assert parsed.totals_rows[0].annualized_volatility == pytest.approx(0.11)
+
+
+@pytest.mark.parametrize("reverse_sheet_order", [False, True], ids=["original", "reversed"])
 @pytest.mark.parametrize(
     ("first_name", "leading_rows", "second_name", "expected_name"),
     [("Alpha", 6, "Zeta", "Zeta"), ("Beta", 0, "alpha", "alpha")],

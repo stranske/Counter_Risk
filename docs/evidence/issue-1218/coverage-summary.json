@@ -5,7 +5,8 @@
     "edc500f44edb22520fae766a4776743e23354342",
     "0054b34c9bd62391c40dd42d57ae113f0b4ff67f",
     "d843da80d3d8f60cdc0d1b10a9b6f1c65f195dc1",
-    "e7a1c323221d073c4557b5c33d1c06d09a7182d4"
+    "e7a1c323221d073c4557b5c33d1c06d09a7182d4",
+    "9cc0e39dd8f464cb8b542f09a99fa42845984520"
   ],
   "python": "3.14.9",
   "command": "python -m pytest tests/ -m \"not slow\" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>",
@@ -25,7 +26,7 @@
     }
   },
   "candidate": {
-    "passed": 2561,
+    "passed": 2565,
     "skipped": 1,
     "totals": {
       "covered_lines": 11109,
@@ -568,5 +569,25 @@
     "full_suite_skipped": 1,
     "full_suite_seconds": 97.19,
     "additional_covered_statements": 0
+  },
+  "completeness_followup": {
+    "new_cases": 4,
+    "mutation_scenarios": 1,
+    "receipt_file": "docs/evidence/issue-1218/completeness-mutation-receipt.json",
+    "targeted_coverage_command": "python -m pytest tests/test_nisa_all_programs_parser.py -m \"not slow\" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q",
+    "targeted_passed": 30,
+    "targeted_cover_column": "99%",
+    "full_suite_passed": 2565,
+    "full_suite_skipped": 1,
+    "full_suite_seconds": 163.67,
+    "additional_covered_statements": 0,
+    "prior_head_ci": {
+      "sha": "9cc0e39dd8f464cb8b542f09a99fa42845984520",
+      "gate_run_id": 40843725927,
+      "python_3_13": "success",
+      "python_3_14": "success"
+    },
+    "candidate_hosted_ci": "pending publication",
+    "live_pr_reconciliation": "blocked: MCP tool call requires approval, but approval policy is never"
   }
 }
