@@ -44,7 +44,7 @@ def test_discovery_reports_gaps_and_applies_explicit_run_overrides(
 
     class DiscoveryResult:
         matches_by_input = {
-            "missing_input": [],
+            "mosers_ex_trend_xlsx": [],
             "one_match": [Match(tmp_path / "single.xlsx")],
             "many_matches": [Match(tmp_path / "first.xlsx"), Match(tmp_path / "second.xlsx")],
         }
@@ -82,6 +82,7 @@ def test_discovery_reports_gaps_and_applies_explicit_run_overrides(
     runtime_config = captured["config"]
     assert isinstance(runtime_config, WorkflowConfig)
     assert runtime_config.mosers_all_programs_xlsx == tmp_path / "selected.xlsx"
+    assert runtime_config.mosers_ex_trend_xlsx == config.mosers_ex_trend_xlsx == Path("ex.xlsx")
     assert runtime_config.reconciliation.fail_policy == "strict"
     assert runtime_config.export_pdf is True
     assert captured["kwargs"] == {
@@ -91,7 +92,7 @@ def test_discovery_reports_gaps_and_applies_explicit_run_overrides(
         "report_date_override": "confirmed-source-date",
     }
     output = capsys.readouterr().out
-    assert "missing_input: no matches found" in output
+    assert "mosers_ex_trend_xlsx: no matches found" in output
     assert "many_matches: 2 matches (selection required)" in output
     assert "Proceeding with config defaults" in output
     assert "selected profile: accounting" in output
