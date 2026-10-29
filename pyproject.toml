@@ -45,7 +45,7 @@ dependencies = [
 [project.optional-dependencies]
 app = []
 dev = [
-    "pytest==9.1.1",
+    "pytest==9.2.0",
     "pytest-cov==7.1.0",
     "pytest-xdist==3.8.0",
     "pandas>=2.3,<4",
@@ -57,7 +57,7 @@ dev = [
     "numpy>=2.0,<3",
     "black==26.10.1",
     "ruff==0.17.3",
-    "mypy==2.4.0",
+    "mypy==2.4.1",
     "types-PyYAML==6.0.12.20260724",
     # Required by scripts/sync_test_dependencies.py when --fix is needed in CI
     "tomlkit>=0.14.0",
