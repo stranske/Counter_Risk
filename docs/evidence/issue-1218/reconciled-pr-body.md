@@ -1,15 +1,17 @@
 ## Summary
 
-Add 77 regression cases across ten test modules for the targets in issue #1218, in its specified escaped-defect/churn/uncovered-mass order. The follow-up covers the public NISA input contract with a real XLSX, all three totals-section stop markers, and the Futures/CDX alias. No production bug was found; production files are byte-identical to the PR base.
+Add 81 regression cases across ten test modules for the targets in issue #1218, in its specified escaped-defect/churn/uncovered-mass order. The follow-ups cover the public NISA input contract with a real XLSX, all three totals-section stop markers, the Futures/CDX alias, every numeric field, and deterministic selection among valid worksheets. No production bug was found; production files are byte-identical to the PR base.
 
 Reconciliation: reviewed `3456860`, `edc500f`, and `0054b34`. The latter already delivered the remaining ranked modules, rather than just NISA as the old PR body stated. The previous iteration verified 49 added test functions (75 parametrized cases) with per-case break-and-revert runs. This follow-up adds one function (two column-layout cases), verified against 17 independent field-mapping mutations. This remains one ready-for-review PR for one coverage chunk.
+
+The next reconciliation also reviewed `d843da8`, which delivered the numeric-field follow-up. All five nested contract checkboxes below were already supported by the committed implementation and receipts. The live PR body is stale because automatic approval review rejected its update; the verified reconciliation is recorded here. The current continuation adds four discriminating worksheet-selection cases to the first ranked target, rather than moving outside the issue's scope.
 
 ## Coverage
 
 Matched whole-suite measurements on Python 3.14.9, using `python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>`:
 
 - PR base `faad152`: **2,478 passed, 1 skipped**, 10,911/12,216 statements covered, **89.3173%**.
-- Candidate: **2,555 passed, 1 skipped**, 11,109/12,216 statements covered, **90.9381%**.
+- Candidate: **2,559 passed, 1 skipped**, 11,109/12,216 statements covered, **90.9381%**.
 - **198 fewer uncovered statements**, all within the issue's ranked targets; no coverage exclusions or thresholds changed.
 
 The measured baseline agrees with the issue's 89.32% rounded figure. The repository actually sets `branch = false`, so these are line-only results, not blended line+branch results. Gate explicitly disables coverage (`pr-00-gate.yml`); there is no Gate coverage artifact to claim. The table below comes from matched local whole-suite runs with the same non-slow selection as main's coverage job.
@@ -49,11 +51,17 @@ The first ranked target, NISA, had numeric-field execution coverage but only a f
 
 Executed 17 mutations, independently redirecting each numeric field's column lookup within `_parse_ch_rows` or `_parse_totals_rows`. Each mutation produced **2 failed tests** (exit 1); exact source restoration produced **2 passed tests** (exit 0). That is **34 RED and 34 GREEN case executions**. `docs/evidence/issue-1218/numeric-mutation-receipts.json` records the edits, cases, outcomes, and matching restoration hashes. Together with the prior receipts, all 77 added cases have break-and-revert evidence.
 
+## Worksheet-selection verification follow-up
+
+Four new cases exercise two valid worksheets with distinct counterparty payloads. They verify that the earliest complete header takes precedence over sheet name, and that tied header positions use case-insensitive sheet names. Both rules must hold with either worksheet order; assertions check the chosen CH and totals payloads through the public parser.
+
+Executed two independent mutations in a temporary clone: removed header-row priority from the candidate sort, then replaced the case-insensitive name key with a case-sensitive key. Each mutation produced **2 failed tests** (exit 1); exact source restoration produced **2 passed tests** (exit 0). All four new cases therefore have executed break-and-revert evidence. `docs/evidence/issue-1218/sheet-selection-mutation-receipts.json` records the exact mutations, selected cases, output, exit codes, and matching source hashes. No production change or additional covered statement is claimed for this follow-up.
+
 ## Validation
 
-- Full candidate suite: **2,555 passed, 1 skipped**, `-m "not slow"`; source unchanged after all mutation runs.
-- Focused NISA: `python -m pytest tests/test_nisa_all_programs_parser.py -m "not slow" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q`: **20 passed**, 216/218 statements (**99.08%**).
-- Existing remote head `0054b34`: [Gate run 40839407519](https://github.com/stranske/Counter_Risk/actions/runs/40839407519) passed. The two new numeric-field cases have not run in hosted CI yet.
+- Full candidate suite: **2,559 passed, 1 skipped** in 142.41 seconds, `-m "not slow"`; source unchanged after all mutation runs. Coverage JSON confirms 11,109/12,216 lines covered (**90.9381%**), with the same 198-statement reduction from the PR base.
+- Focused NISA: `python -m pytest tests/test_nisa_all_programs_parser.py -m "not slow" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q`: **24 passed**, 216/218 statements (**99.08%**); the actual coverage table shows **99%**, missing lines 239/311.
+- Existing remote head `d843da8`: [Gate run 40840937953](https://github.com/stranske/Counter_Risk/actions/runs/40840937953) passed, including Python 3.13 and 3.14 pytest jobs. The four new worksheet-selection cases have not run in hosted CI yet; that acceptance checkbox remains unchecked until the new candidate passes there.
 - One earlier local whole-suite run was discarded because tests were added during its nested collection check and a concurrent targeted run shared its coverage data. Final measurements above used stable files and separate coverage data.
 
 Closes #1218
@@ -63,7 +71,7 @@ Closes #1218
 
 ## Delivery limitation
 
-Automatic approval review rejected the PR-body write because GitHub mutations require approval and this run's policy is `never`; the live task checkboxes could not be reconciled. The main checkout's `.git` directory is read-only (`index.lock` creation rejected), so the verified source change and evidence are committed in a writable temporary clone and exported as a Git bundle. A direct push of the existing PR branch also failed because the sandbox could not resolve github.com. This prepared body records the verified checklist; publication remains pending. PR #1220 remains open and ready for review.
+Automatic approval review again rejected the PR-body write because GitHub mutations require approval and this run's policy is `never`; the live task checkboxes could not be reconciled. The main checkout's `.git` directory is read-only (`git add` failed creating `index.lock`), so the verified test change and evidence are committed in `/tmp/counter-risk-1218-sheet-selection` and exported as `/tmp/counter-risk-1218-sheet-selection.bundle`. Pushing the existing PR branch failed because the sandbox could not resolve `github.com`. This prepared body records the verified checklist; publication remains pending. PR #1220 remains open and ready for review.
 
 <details>
 <summary>Per-case break-and-revert results (75 distinct cases)</summary>
@@ -170,7 +178,7 @@ Counter_Risk reads 89.32% blended line+branch in CI; reaching 90% needs about 14
 - [x] Deliver what you verified. If you cannot reach the goal for ANY reason (a broken local environment, a target you could not finish, the time you had), still open the pull request with the verified work you have, say in its body how far short it is and why, and never leave verified commits or edits unpushed or uncommitted: a partial pull request that merges is worth more than a complete one that never opens, and a worktree left holding work blocks this issue's next dispatch.
 
 #### Acceptance criteria
-- [x] `pytest` passes in CI with the new tests, and each new test fails when the code it covers is deliberately broken (the PR body shows the break-and-revert run).
+- [ ] `pytest` passes in CI with the new tests, and each new test fails when the code it covers is deliberately broken (the PR body shows the break-and-revert run).
 - [x] The PR's Gate coverage shows the targets' uncovered statements+branches down by about 180 or more, or the PR body states how far short it is and why and explains each target that could not be meaningfully covered (a partial PR meets this criterion; no PR does not).
 - [x] Production code changes only where a test found a real bug, each one explained in the PR body.
 

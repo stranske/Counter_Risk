@@ -3,7 +3,8 @@
   "reviewed_commits": [
     "3456860abdb9d78cd98fbb1e7c18d4611513c7b9",
     "edc500f44edb22520fae766a4776743e23354342",
-    "0054b34c9bd62391c40dd42d57ae113f0b4ff67f"
+    "0054b34c9bd62391c40dd42d57ae113f0b4ff67f",
+    "d843da80d3d8f60cdc0d1b10a9b6f1c65f195dc1"
   ],
   "python": "3.14.9",
   "command": "python -m pytest tests/ -m \"not slow\" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>",
@@ -23,7 +24,7 @@
     }
   },
   "candidate": {
-    "passed": 2555,
+    "passed": 2559,
     "skipped": 1,
     "totals": {
       "covered_lines": 11109,
@@ -539,5 +540,23 @@
       ],
       "candidate_missing_lines": []
     }
-  ]
+  ],
+  "sheet_selection_followup": {
+    "new_cases": 4,
+    "mutation_scenarios": 2,
+    "red_cases": 4,
+    "restored_green_cases": 4,
+    "receipts": "docs/evidence/issue-1218/sheet-selection-mutation-receipts.json",
+    "targeted_coverage_command": "python -m pytest tests/test_nisa_all_programs_parser.py -m \"not slow\" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q",
+    "targeted_passed": 24,
+    "targeted_cover_column": "99%",
+    "additional_covered_statements": 0,
+    "existing_head_ci": {
+      "sha": "d843da80d3d8f60cdc0d1b10a9b6f1c65f195dc1",
+      "gate_run_id": 40840937953,
+      "python_3_13": "success",
+      "python_3_14": "success"
+    },
+    "candidate_hosted_ci": "pending publication"
+  }
 }

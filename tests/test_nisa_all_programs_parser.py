@@ -325,6 +325,52 @@ def test_parser_handles_extra_leading_rows_before_header_row(tmp_path: Path) -> 
     _assert_expected_rows(parsed)
 
 
+@pytest.mark.parametrize("reverse_sheet_order", [False, True], ids=["original", "reversed"])
+@pytest.mark.parametrize(
+    ("first_name", "leading_rows", "second_name", "expected_name"),
+    [("Alpha", 6, "Zeta", "Zeta"), ("Beta", 0, "alpha", "alpha")],
+    ids=["earliest-header", "case-insensitive-name"],
+)
+def test_parser_selects_valid_sheet_deterministically(
+    tmp_path: Path,
+    first_name: str,
+    leading_rows: int,
+    second_name: str,
+    expected_name: str,
+    reverse_sheet_order: bool,
+) -> None:
+    import openpyxl
+
+    path = _build_raw_nisa_workbook(
+        tmp_path / "multiple-data-sheets.xlsx",
+        sheet_name=first_name,
+        include_leading_rows=leading_rows,
+    )
+    workbook = openpyxl.load_workbook(path)
+    try:
+        first = workbook.active
+        second = workbook.copy_worksheet(first)
+        second.title = second_name
+        if leading_rows:
+            second.delete_rows(1, leading_rows)
+        # Distinct payloads expose which valid sheet supplied each parsed section.
+        for worksheet, offset in [(first, leading_rows), (second, 0)]:
+            worksheet.cell(6 + offset, 2).value = worksheet.title
+            worksheet.cell(25 + offset, 2).value = worksheet.title
+        if reverse_sheet_order:
+            workbook.move_sheet(second, offset=-1)
+        workbook.save(path)
+    finally:
+        workbook.close()
+
+    parsed = parse_nisa_all_programs(path)
+
+    assert [row.counterparty for row in parsed.ch_rows] == [expected_name, "Beta Bank"]
+    assert [row.counterparty for row in parsed.totals_rows] == [expected_name]
+    assert [row.notional for row in parsed.ch_rows] == pytest.approx([210, 21])
+    assert parsed.totals_rows[0].notional == pytest.approx(210)
+
+
 def test_parser_handles_reordered_columns(tmp_path: Path) -> None:
     workbook_path = tmp_path / "raw_nisa_reordered_columns.xlsx"
     header_order = (
