@@ -311,8 +311,8 @@ def test_provenance_hash_gate_keeps_tmp_minimal_inputs_not_archives() -> None:
 def test_gate_required_checks_surface_preserved() -> None:
     """Issue #1189 AC: Gate must keep the merge-relevant check surface after fixture cuts.
 
-    Hosted evidence (2026-10-30): exact-head Gate run 41076955271 on
-    ``d21110edfc798cba18c91eae24336d0c39d24ce6`` — python 3.13/3.14, lint-ruff,
+    Hosted evidence (2026-10-30): exact-head Gate run 41078691872 on
+    ``e7ed13f278cbfeb437c22efcfdc34bb5944d0d43`` — python 3.13/3.14, lint-ruff,
     typecheck-mypy, gate-summary, and commit status ``Gate / gate`` all green.
     Receipt: docs/evidence/issue-1189/pr-1223-gate-required-checks.json.
     Dropping any of these jobs/status contexts would break keepalive and branch
@@ -325,7 +325,8 @@ def test_gate_required_checks_surface_preserved() -> None:
     assert evidence["issue"] == 1189
     assert evidence["pr"] == 1223
     assert gate_run["conclusion"] == "success"
-    assert gate_run["id"] == 41076955271
+    assert gate_run["id"] == 41078691872
+    assert gate_run["head_sha"].startswith("e7ed13f")
     assert gate_run["workflow"] == ".github/workflows/pr-00-gate.yml"
     assert evidence["commit_statuses"], "exact-head Gate commit status receipt required"
     for status in evidence["commit_statuses"]:

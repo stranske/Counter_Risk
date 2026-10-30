@@ -2,24 +2,31 @@
   "issue": 1189,
   "pr": 1223,
   "acceptance": ".github/workflows/pr-00-gate.yml passes with required checks preserved after the change",
-  "verified_at": "2026-10-30T15:05:18Z",
+  "verified_at": "2026-10-30T15:16:51Z",
   "gate_run": {
+    "id": 41078691872,
+    "url": "https://github.com/stranske/Counter_Risk/actions/runs/41078691872",
+    "head_sha": "e7ed13f278cbfeb437c22efcfdc34bb5944d0d43",
+    "event": "pull_request",
+    "conclusion": "success",
+    "run_started_at": "2026-10-30T15:13:25Z",
+    "last_job_completed_at": "2026-10-30T15:16:50Z",
+    "elapsed_seconds": 205,
+    "workflow": ".github/workflows/pr-00-gate.yml"
+  },
+  "prior_green_after_fixture_cut": {
     "id": 41076955271,
     "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271",
     "head_sha": "d21110edfc798cba18c91eae24336d0c39d24ce6",
-    "event": "pull_request",
     "conclusion": "success",
-    "run_started_at": "2026-10-30T15:02:07Z",
-    "last_job_completed_at": "2026-10-30T15:05:17Z",
-    "elapsed_seconds": 190,
-    "workflow": ".github/workflows/pr-00-gate.yml"
+    "note": "Earlier exact-head green before required-check receipt lock commit"
   },
   "commit_statuses": [
     {
       "context": "Gate / gate",
       "state": "success",
       "description": "Python CI passed",
-      "target_url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271"
+      "target_url": "https://github.com/stranske/Counter_Risk/actions/runs/41078691872"
     }
   ],
   "required_job_names": [
@@ -33,51 +40,51 @@
     {
       "name": "Python CI / lint-ruff",
       "conclusion": "success",
-      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124135814284",
-      "started_at": "2026-10-30T15:02:38Z",
-      "completed_at": "2026-10-30T15:03:17Z",
-      "elapsed_seconds": 39.0
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41078691872/job/124141966396",
+      "started_at": "2026-10-30T15:13:58Z",
+      "completed_at": "2026-10-30T15:14:41Z",
+      "elapsed_seconds": 43.0
     },
     {
       "name": "Python CI / python 3.13",
       "conclusion": "success",
-      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124135878767",
-      "started_at": "2026-10-30T15:02:44Z",
-      "completed_at": "2026-10-30T15:04:53Z",
-      "elapsed_seconds": 129.0
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41078691872/job/124142026525",
+      "started_at": "2026-10-30T15:14:04Z",
+      "completed_at": "2026-10-30T15:16:20Z",
+      "elapsed_seconds": 136.0
     },
     {
       "name": "Python CI / python 3.14",
       "conclusion": "success",
-      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124135878890",
-      "started_at": "2026-10-30T15:02:44Z",
-      "completed_at": "2026-10-30T15:04:51Z",
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41078691872/job/124142026783",
+      "started_at": "2026-10-30T15:14:04Z",
+      "completed_at": "2026-10-30T15:16:11Z",
       "elapsed_seconds": 127.0
     },
     {
       "name": "Python CI / typecheck-mypy",
       "conclusion": "success",
-      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124135814045",
-      "started_at": "2026-10-30T15:02:37Z",
-      "completed_at": "2026-10-30T15:03:20Z",
-      "elapsed_seconds": 43.0
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41078691872/job/124141966843",
+      "started_at": "2026-10-30T15:13:58Z",
+      "completed_at": "2026-10-30T15:14:50Z",
+      "elapsed_seconds": 52.0
     },
     {
       "name": "gate-summary",
       "conclusion": "success",
-      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124137181982",
-      "started_at": "2026-10-30T15:05:09Z",
-      "completed_at": "2026-10-30T15:05:17Z",
-      "elapsed_seconds": 8.0
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41078691872/job/124143467417",
+      "started_at": "2026-10-30T15:16:43Z",
+      "completed_at": "2026-10-30T15:16:50Z",
+      "elapsed_seconds": 7.0
     }
   ],
   "optional_skippable_jobs": [
     {
       "name": "Python CI / lint-format",
       "conclusion": "skipped",
-      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124135816367",
-      "started_at": "2026-10-30T15:02:35Z",
-      "completed_at": "2026-10-30T15:02:34Z",
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41078691872/job/124141969523",
+      "started_at": "2026-10-30T15:13:56Z",
+      "completed_at": "2026-10-30T15:13:55Z",
       "elapsed_seconds": -1.0
     }
   ],
@@ -103,5 +110,5 @@
     "artifact_prefix": "gate-",
     "reusable_workflow_suffix": "reusable-10-ci-python.yml@main"
   },
-  "notes": "Exact-head Gate success after provenance fixture cut on PR #1223. lint-format may skip when classify-changed-paths omits format-only work; it is not a merge-required job. Health 85 seven-day p50 closure remains separate."
+  "notes": "Exact-head Gate success after provenance fixture cut and required-check receipt lock on PR #1223. lint-format may skip when classify-changed-paths omits format-only work; it is not a merge-required job. Health 85 seven-day p50 closure remains separate."
 }
