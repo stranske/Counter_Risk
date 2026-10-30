@@ -338,9 +338,9 @@ def test_gate_required_checks_surface_preserved() -> None:
         "Python CI / typecheck-mypy",
         "gate-summary",
     }
-    assert {job["name"]: job["conclusion"] for job in evidence["required_jobs"]} == {
-        name: "success" for name in evidence["required_job_names"]
-    }
+    assert {job["name"]: job["conclusion"] for job in evidence["required_jobs"]} == dict.fromkeys(
+        evidence["required_job_names"], "success"
+    )
     for job in evidence.get("optional_skippable_jobs", []):
         assert job["conclusion"] in {"success", "skipped"}
 
