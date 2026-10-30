@@ -10,6 +10,7 @@ from scripts import health85_p50_series as series
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = REPO_ROOT / "docs" / "evidence" / "issue-1189" / "health85-p50-series.json"
+LIVE_COMMENTS = REPO_ROOT / "docs" / "evidence" / "issue-1189" / "health85-comments-api.json"
 
 
 def test_parse_budget_comment_extracts_fields() -> None:
@@ -165,6 +166,13 @@ def test_issue_1189_evidence_series_matches_health85_comments() -> None:
     assert recorded["under_target_dates"] == list(status.under_target_dates)
     assert recorded["ready_to_close"] is status.ready_to_close
     assert recorded["remaining_days"] == status.remaining_days
+    expected_next = (
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+    )
+    assert recorded["next_required_dates"] == list(expected_next)
 
     # Through 2026-10-30 Health 85 posted three consecutive under-target days.
     # Do not mark the #1189 closure AC complete until ready_to_close flips true.
@@ -176,13 +184,11 @@ def test_issue_1189_evidence_series_matches_health85_comments() -> None:
     assert status.streak == 3
     assert status.ready_to_close is False
     assert status.remaining_days == 4
-    assert series.next_required_dates(
-        measurements, target_minutes=target, required_consecutive_days=required
-    ) == (
-        "2026-10-31",
-        "2026-11-01",
-        "2026-11-02",
-        "2026-11-03",
+    assert (
+        series.next_required_dates(
+            measurements, target_minutes=target, required_consecutive_days=required
+        )
+        == expected_next
     )
 
     # Every checked-in under-target day must stay at or below the Gate target.
@@ -455,7 +461,14 @@ def test_ingest_comments_refuses_early_close_and_writes_series(
         "2026-10-29",
         "2026-10-30",
     ]
+    assert written["status"]["next_required_dates"] == [
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+    ]
     assert written["updated_at"] == "2026-10-30T12:00:00Z"
+    assert report["status"] == written["status"]
 
     # Four more under-target days flip closure readiness for the dated series.
     extra = tmp_path / "extra.json"
@@ -476,6 +489,9 @@ def test_ingest_comments_refuses_early_close_and_writes_series(
     assert ready_report["ready_to_close"] is True
     assert ready_report["remaining_days"] == 0
     assert ready_report["next_required_dates"] == []
+    ready_written = json.loads(path.read_text(encoding="utf-8"))
+    assert ready_written["status"]["next_required_dates"] == []
+    assert ready_written["status"]["ready_to_close"] is True
     assert series.main([str(path), "--require-ready"]) == 0
     assert series.main([str(path), "--print-closure-comment"]) == 0
     closure = capsys.readouterr().out
@@ -610,4 +626,88 @@ def test_issue_1189_evidence_matches_live_comment_ingest(
         "2026-10-29",
         "2026-10-30",
     ]
+    assert report["next_required_dates"] == [
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+    ]
     assert report["wrote"] is False
+    assert report["status"]["next_required_dates"] == report["next_required_dates"]
+
+
+def test_issue_1189_live_api_snapshot_ingest_blocks_closure(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Real gh-api comment snapshot for #1189 must keep ready_to_close false (3/7).
+
+    Closer path: ingest docs/evidence/issue-1189/health85-comments-api.json, then
+    ``--print-closure-comment`` must exit 1 until Health 85 posts 2026-10-31..11-03.
+    """
+
+    assert LIVE_COMMENTS.is_file(), LIVE_COMMENTS
+    live = json.loads(LIVE_COMMENTS.read_text(encoding="utf-8"))
+    assert isinstance(live, list) and live
+    budget_bodies = [
+        comment["body"]
+        for comment in live
+        if series.parse_budget_comment(str(comment.get("body") or "")) is not None
+    ]
+    assert len(budget_bodies) == 6
+
+    empty = tmp_path / "series.json"
+    empty.write_text(
+        json.dumps(
+            {
+                "issue": 1189,
+                "target_minutes": 10.0,
+                "required_consecutive_days": 7,
+                "measurements": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert (
+        series.main(
+            [
+                str(empty),
+                "--ingest-comments",
+                str(LIVE_COMMENTS),
+                "--write",
+                "--print-closure-comment",
+            ]
+        )
+        == 1
+    )
+    report = json.loads(capsys.readouterr().out)
+    assert report["ready_to_close"] is False
+    assert report["streak"] == 3
+    assert report["remaining_days"] == 4
+    assert report["under_target_dates"] == [
+        "2026-10-28",
+        "2026-10-29",
+        "2026-10-30",
+    ]
+    assert report["next_required_dates"] == [
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+    ]
+    assert "Closing #" not in json.dumps(report)
+
+    written = json.loads(empty.read_text(encoding="utf-8"))
+    assert written["status"]["ready_to_close"] is False
+    assert written["status"]["next_required_dates"] == report["next_required_dates"]
+
+    # Checked-in evidence must stay byte-aligned with this official snapshot.
+    assert series.main([str(EVIDENCE), "--ingest-comments", str(LIVE_COMMENTS)]) == 0
+    synced = json.loads(capsys.readouterr().out)
+    assert synced["ready_to_close"] is False
+    assert synced["streak"] == 3
+    assert synced["next_required_dates"] == report["next_required_dates"]
+    assert series.main([str(EVIDENCE), "--print-closure-comment"]) == 1
+    blocked = json.loads(capsys.readouterr().out)
+    assert blocked["ready_to_close"] is False
+    assert blocked["status"]["next_required_dates"] == report["next_required_dates"]

@@ -2,10 +2,11 @@
   "issue": 1189,
   "source": "https://github.com/stranske/Counter_Risk/issues/1189",
   "metric": "Health 85 trailing-seven-day Gate p50 (minutes)",
-  "target_minutes": 10.0,
-  "required_consecutive_days": 7,
   "comment_pattern": "CI budget YYYY-MM-DD: p50=X.XX min; target=10 min; ...",
   "updated_at": "2026-10-30T12:23:35Z",
+  "notes": "Official Health 85 issue comments are the source of truth (snapshot: docs/evidence/issue-1189/health85-comments-api.json). Refresh via scripts/health85_p50_series.py --ingest-comments <gh-api-comments.json> --write. status.next_required_dates lists the Health 85 calendar days still needed. Emit the dated close body only with --print-closure-comment once ready_to_close is true (exits 1 otherwise). Do not close #1189 until seven consecutive under-target daily measurements.",
+  "target_minutes": 10.0,
+  "required_consecutive_days": 7,
   "measurements": [
     {
       "date": "2026-10-25",
@@ -70,9 +71,18 @@
   ],
   "status": {
     "streak": 3,
-    "under_target_dates": ["2026-10-28", "2026-10-29", "2026-10-30"],
+    "under_target_dates": [
+      "2026-10-28",
+      "2026-10-29",
+      "2026-10-30"
+    ],
     "ready_to_close": false,
-    "remaining_days": 4
-  },
-  "notes": "Official Health 85 issue comments are the source of truth. Refresh via scripts/health85_p50_series.py --ingest-comments <gh-api-comments.json> --write. Emit the dated close body only with --print-closure-comment once ready_to_close is true (exits 1 otherwise). Do not close #1189 until seven consecutive under-target daily measurements."
+    "remaining_days": 4,
+    "next_required_dates": [
+      "2026-10-31",
+      "2026-11-01",
+      "2026-11-02",
+      "2026-11-03"
+    ]
+  }
 }

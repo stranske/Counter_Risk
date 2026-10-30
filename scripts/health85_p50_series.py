@@ -13,14 +13,17 @@ and refuses to report closure readiness early.
 Refresh from live comments, then emit the dated closure series only when ready::
 
     gh api repos/OWNER/REPO/issues/1189/comments --paginate \\
-      > /tmp/issue-1189-comments.json
+      > docs/evidence/issue-1189/health85-comments-api.json
     python scripts/health85_p50_series.py \\
       docs/evidence/issue-1189/health85-p50-series.json \\
-      --ingest-comments /tmp/issue-1189-comments.json --write
+      --ingest-comments docs/evidence/issue-1189/health85-comments-api.json --write
     python scripts/health85_p50_series.py \\
       docs/evidence/issue-1189/health85-p50-series.json --require-ready
     python scripts/health85_p50_series.py \\
       docs/evidence/issue-1189/health85-p50-series.json --print-closure-comment
+
+While ``ready_to_close`` is false, ``status.next_required_dates`` names the
+Health 85 calendar days still required before the dated close comment may emit.
 """
 
 from __future__ import annotations
@@ -324,6 +327,11 @@ def series_to_jsonable(
         target_minutes=target_minutes,
         required_consecutive_days=required_consecutive_days,
     )
+    needed = next_required_dates(
+        measurements,
+        target_minutes=target_minutes,
+        required_consecutive_days=required_consecutive_days,
+    )
     payload: dict[str, Any] = {
         **(meta or {}),
         "target_minutes": target_minutes,
@@ -334,6 +342,8 @@ def series_to_jsonable(
             "under_target_dates": list(status.under_target_dates),
             "ready_to_close": status.ready_to_close,
             "remaining_days": status.remaining_days,
+            # Calendar dates Health 85 must still post ≤target before #1189 may close.
+            "next_required_dates": list(needed),
         },
     }
     return payload
@@ -427,6 +437,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             write=args.write,
         )
         measurements = [measurement_from_mapping(item) for item in refreshed["measurements"]]
+        needed = list(
+            next_required_dates(
+                measurements,
+                target_minutes=status.target_minutes,
+                required_consecutive_days=status.required_consecutive_days,
+            )
+        )
         report = {
             "issue": refreshed.get("issue"),
             "ingested_dates": [item["date"] for item in refreshed["measurements"]],
@@ -435,15 +452,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             "under_target_dates": list(status.under_target_dates),
             "ready_to_close": status.ready_to_close,
             "remaining_days": status.remaining_days,
-            "next_required_dates": list(
-                next_required_dates(
-                    measurements,
-                    target_minutes=status.target_minutes,
-                    required_consecutive_days=status.required_consecutive_days,
-                )
-            ),
+            "next_required_dates": needed,
             "target_minutes": status.target_minutes,
             "wrote": bool(args.write),
+            # Mirror persisted status so closer automation can trust one shape.
+            "status": refreshed.get("status"),
         }
         if args.print_closure_comment:
             if not status.ready_to_close:
@@ -467,6 +480,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     status = evaluate_series(
         measurements, target_minutes=target, required_consecutive_days=required
     )
+    needed = list(
+        next_required_dates(
+            measurements,
+            target_minutes=target,
+            required_consecutive_days=required,
+        )
+    )
+    # Keep CLI report aligned with series_to_jsonable status (incl. next dates).
+    aligned_status = series_to_jsonable(
+        measurements,
+        target_minutes=target,
+        required_consecutive_days=required,
+        meta=series_meta(payload),
+    )["status"]
     report = {
         "issue": payload.get("issue"),
         "streak": status.streak,
@@ -474,14 +501,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "under_target_dates": list(status.under_target_dates),
         "ready_to_close": status.ready_to_close,
         "remaining_days": status.remaining_days,
-        "next_required_dates": list(
-            next_required_dates(
-                measurements,
-                target_minutes=target,
-                required_consecutive_days=required,
-            )
-        ),
+        "next_required_dates": needed,
         "target_minutes": status.target_minutes,
+        "status": aligned_status,
     }
     if args.print_closure_comment:
         if not status.ready_to_close:
