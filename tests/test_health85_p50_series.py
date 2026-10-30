@@ -87,6 +87,52 @@ def test_evaluate_series_refuses_early_closure() -> None:
     assert series.next_required_dates(seven) == ()
 
 
+@pytest.mark.parametrize(
+    "p50",
+    [float("nan"), float("inf"), float("-inf"), -1.0, 10.01],
+    ids=["nan", "infinity", "negative-infinity", "negative", "over-target"],
+)
+@pytest.mark.parametrize("invalid_index", [0, 3, 6], ids=["first", "middle", "latest"])
+def test_cli_invalid_p50_breaks_streak_until_corrected(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    p50: float,
+    invalid_index: int,
+) -> None:
+    """A missing numeric p50 cannot establish an under-target daily measurement."""
+
+    path = tmp_path / "series.json"
+    measurements = [{"date": f"2026-10-{day}", "p50_minutes": 10.0} for day in range(24, 31)]
+    measurements[invalid_index]["p50_minutes"] = p50
+    payload = {"issue": 1189, "measurements": measurements}
+    # Python's JSON loader accepts non-finite numbers; the closer must not count them.
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    loaded, target, _, _ = series.load_series(path)
+    table = series.format_dated_p50_series(loaded, target_minutes=target)
+    assert f"| 2026-10-{24 + invalid_index} | {p50:.2f} | no |" in table
+
+    for option in ("--require-ready", "--print-closure-comment"):
+        assert series.main([str(path), option]) == 1
+        output = capsys.readouterr().out
+        report = json.loads(output)
+        assert report["ready_to_close"] is False
+        assert report["streak"] == 6 - invalid_index
+        assert report["remaining_days"] == invalid_index + 1
+        assert "Closing #" not in output
+
+    # A corrected zero-minute value is valid, as are the six days exactly at target.
+    measurements[invalid_index]["p50_minutes"] = 0.0
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    assert series.main([str(path), "--require-ready"]) == 0
+    ready = json.loads(capsys.readouterr().out)
+    assert ready["streak"] == 7
+    assert ready["ready_to_close"] is True
+    assert series.main([str(path), "--print-closure-comment"]) == 0
+    closure = capsys.readouterr().out
+    assert "Closing #1189" in closure
+    assert f"| 2026-10-{24 + invalid_index} | 0.00 | yes |" in closure
+
+
 def test_format_closure_comment_refuses_early_and_emits_dated_series() -> None:
     short = [
         series.Measurement(date="2026-10-28", p50_minutes=2.12),

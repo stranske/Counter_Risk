@@ -117,7 +117,8 @@ def consecutive_under_target(
     """Return trailing consecutive under-target calendar-day streak and those dates.
 
     The streak walks backward from the newest measurement. A gap in calendar
-    days or any day with ``p50_minutes > target_minutes`` ends the streak.
+    days, an invalid (negative or non-finite) p50, or any day above the target
+    ends the streak.
     """
 
     if not measurements:
@@ -129,7 +130,7 @@ def consecutive_under_target(
     cursor = newest
     while cursor in by_day:
         item = by_day[cursor]
-        if item.p50_minutes > target_minutes:
+        if not 0 <= item.p50_minutes <= target_minutes:
             break
         streak_dates.append(item.date)
         cursor -= timedelta(days=1)
@@ -201,7 +202,7 @@ def format_dated_p50_series(
     ]
     for day in sorted(by_date):
         item = by_date[day]
-        under = "yes" if item.p50_minutes <= target_minutes else "no"
+        under = "yes" if 0 <= item.p50_minutes <= target_minutes else "no"
         lines.append(f"| {item.date} | {item.p50_minutes:.2f} | {under} |")
     return "\n".join(lines)
 
