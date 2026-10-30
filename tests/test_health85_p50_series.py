@@ -62,6 +62,12 @@ def test_evaluate_series_refuses_early_closure() -> None:
     assert status.streak == 3
     assert status.ready_to_close is False
     assert status.remaining_days == 4
+    assert series.next_required_dates(measurements) == (
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+    )
 
     # 28..31 Oct + 1..3 Nov — seven consecutive under-target calendar days.
     seven = [
@@ -77,6 +83,39 @@ def test_evaluate_series_refuses_early_closure() -> None:
     assert ready.streak == 7
     assert ready.ready_to_close is True
     assert ready.remaining_days == 0
+    assert series.next_required_dates(seven) == ()
+
+
+def test_format_closure_comment_refuses_early_and_emits_dated_series() -> None:
+    short = [
+        series.Measurement(date="2026-10-28", p50_minutes=2.12),
+        series.Measurement(date="2026-10-29", p50_minutes=2.08),
+        series.Measurement(date="2026-10-30", p50_minutes=2.08),
+    ]
+    with pytest.raises(ValueError, match="not ready to close"):
+        series.format_closure_comment(short)
+
+    seven = [
+        series.Measurement(date="2026-10-25", p50_minutes=19.97),
+        series.Measurement(date="2026-10-26", p50_minutes=17.81),
+        series.Measurement(date="2026-10-27", p50_minutes=17.29),
+        series.Measurement(date="2026-10-28", p50_minutes=2.12),
+        series.Measurement(date="2026-10-29", p50_minutes=2.08),
+        series.Measurement(date="2026-10-30", p50_minutes=2.08),
+        series.Measurement(date="2026-10-31", p50_minutes=2.00),
+        series.Measurement(date="2026-11-01", p50_minutes=2.00),
+        series.Measurement(date="2026-11-02", p50_minutes=2.00),
+        series.Measurement(date="2026-11-03", p50_minutes=2.00),
+    ]
+    body = series.format_closure_comment(seven, issue=1189)
+    assert "Closing #1189" in body
+    assert "7 consecutive daily measurements" in body
+    assert "Dated p50 series:" in body
+    assert "| 2026-10-28 | 2.12 | yes |" in body
+    assert "| 2026-11-03 | 2.00 | yes |" in body
+    assert "| 2026-10-25 | 19.97 | no |" in body
+    table = series.format_dated_p50_series(seven)
+    assert table in body
 
 
 def test_over_target_day_resets_streak() -> None:
@@ -89,6 +128,27 @@ def test_over_target_day_resets_streak() -> None:
     assert status.streak == 1
     assert status.under_target_dates == ("2026-10-30",)
     assert status.ready_to_close is False
+
+
+def test_next_required_dates_after_over_target_newest_day() -> None:
+    measurements = [
+        series.Measurement(date="2026-10-28", p50_minutes=2.0),
+        series.Measurement(date="2026-10-29", p50_minutes=2.0),
+        series.Measurement(date="2026-10-30", p50_minutes=11.0),
+    ]
+    status = series.evaluate_series(measurements, target_minutes=10.0)
+    assert status.streak == 0
+    assert status.under_target_dates == ()
+    assert series.next_required_dates(measurements) == (
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+        "2026-11-04",
+        "2026-11-05",
+        "2026-11-06",
+    )
+    assert series.next_required_dates([]) == ()
 
 
 def test_issue_1189_evidence_series_matches_health85_comments() -> None:
@@ -116,11 +176,28 @@ def test_issue_1189_evidence_series_matches_health85_comments() -> None:
     assert status.streak == 3
     assert status.ready_to_close is False
     assert status.remaining_days == 4
+    assert series.next_required_dates(
+        measurements, target_minutes=target, required_consecutive_days=required
+    ) == (
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+    )
 
     # Every checked-in under-target day must stay at or below the Gate target.
     by_date = {item.date: item for item in measurements}
     for day in status.under_target_dates:
         assert by_date[day].p50_minutes <= target
+
+    # Closure comment must stay blocked until Health 85 posts the remaining days.
+    with pytest.raises(ValueError, match="not ready to close"):
+        series.format_closure_comment(
+            measurements,
+            issue=1189,
+            target_minutes=target,
+            required_consecutive_days=required,
+        )
 
 
 def test_cli_reports_remaining_days(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -145,7 +222,19 @@ def test_cli_reports_remaining_days(tmp_path: Path, capsys: pytest.CaptureFixtur
     assert payload["streak"] == 3
     assert payload["ready_to_close"] is False
     assert payload["remaining_days"] == 4
+    assert payload["next_required_dates"] == [
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+    ]
     assert series.main([str(path), "--require-ready"]) == 1
+    capsys.readouterr()  # drain require-ready JSON before the close-comment probe
+    assert series.main([str(path), "--print-closure-comment"]) == 1
+    blocked_out = capsys.readouterr().out
+    blocked = json.loads(blocked_out)
+    assert blocked["ready_to_close"] is False
+    assert "Closing #" not in blocked_out
 
 
 def _budget_comment(date: str, p50: float, *, drainable_in: int, url: str) -> dict:
@@ -386,7 +475,92 @@ def test_ingest_comments_refuses_early_close_and_writes_series(
     assert ready_report["streak"] == 7
     assert ready_report["ready_to_close"] is True
     assert ready_report["remaining_days"] == 0
+    assert ready_report["next_required_dates"] == []
     assert series.main([str(path), "--require-ready"]) == 0
+    assert series.main([str(path), "--print-closure-comment"]) == 0
+    closure = capsys.readouterr().out
+    assert "Closing #1189" in closure
+    assert "Dated p50 series:" in closure
+    assert "| 2026-10-28 | 2.12 | yes |" in closure
+    assert "| 2026-11-03 | 2.00 | yes |" in closure
+
+
+def test_cli_print_closure_comment_on_checked_in_evidence_exits_nonzero(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Live #1189 evidence (streak 3/7) must not emit a close-comment body."""
+
+    assert series.main([str(EVIDENCE), "--print-closure-comment"]) == 1
+    report = json.loads(capsys.readouterr().out)
+    assert report["ready_to_close"] is False
+    assert report["remaining_days"] == 4
+    assert report["next_required_dates"] == [
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+    ]
+
+
+def test_cli_ingest_print_closure_comment_blocks_then_emits(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Ingest+print-closure-comment stays blocked until the seventh under-target day."""
+
+    path = tmp_path / "series.json"
+    path.write_text(
+        json.dumps(
+            {
+                "issue": 1189,
+                "target_minutes": 10.0,
+                "required_consecutive_days": 7,
+                "measurements": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    short = tmp_path / "short.json"
+    short.write_text(
+        json.dumps(
+            [_budget_comment("2026-10-30", 2.08, drainable_in=4, url="https://example.test/30")]
+        ),
+        encoding="utf-8",
+    )
+    assert (
+        series.main(
+            [str(path), "--ingest-comments", str(short), "--write", "--print-closure-comment"]
+        )
+        == 1
+    )
+    blocked = json.loads(capsys.readouterr().out)
+    assert blocked["ready_to_close"] is False
+    assert blocked["streak"] == 1
+    assert "Closing #" not in json.dumps(blocked)
+
+    seven = tmp_path / "seven.json"
+    seven.write_text(
+        json.dumps(
+            [
+                _budget_comment("2026-10-28", 2.0, drainable_in=6, url="https://example.test/28"),
+                _budget_comment("2026-10-29", 2.0, drainable_in=5, url="https://example.test/29"),
+                _budget_comment("2026-10-30", 2.0, drainable_in=4, url="https://example.test/30"),
+                _budget_comment("2026-10-31", 2.0, drainable_in=3, url="https://example.test/31"),
+                _budget_comment("2026-11-01", 2.0, drainable_in=2, url="https://example.test/01"),
+                _budget_comment("2026-11-02", 2.0, drainable_in=1, url="https://example.test/02"),
+                _budget_comment("2026-11-03", 2.0, drainable_in=0, url="https://example.test/03"),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    assert (
+        series.main(
+            [str(path), "--ingest-comments", str(seven), "--write", "--print-closure-comment"]
+        )
+        == 0
+    )
+    closure = capsys.readouterr().out
+    assert "Closing #1189" in closure
+    assert "| 2026-11-03 | 2.00 | yes |" in closure
 
 
 def test_issue_1189_evidence_matches_live_comment_ingest(

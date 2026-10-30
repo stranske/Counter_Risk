@@ -10,7 +10,7 @@ Issue #1189 closes only after seven consecutive daily measurements report
 This helper parses those comments, evaluates the consecutive under-target streak,
 and refuses to report closure readiness early.
 
-Refresh from live comments::
+Refresh from live comments, then emit the dated closure series only when ready::
 
     gh api repos/OWNER/REPO/issues/1189/comments --paginate \\
       > /tmp/issue-1189-comments.json
@@ -19,6 +19,8 @@ Refresh from live comments::
       --ingest-comments /tmp/issue-1189-comments.json --write
     python scripts/health85_p50_series.py \\
       docs/evidence/issue-1189/health85-p50-series.json --require-ready
+    python scripts/health85_p50_series.py \\
+      docs/evidence/issue-1189/health85-p50-series.json --print-closure-comment
 """
 
 from __future__ import annotations
@@ -147,6 +149,94 @@ def evaluate_series(
         under_target_dates=under_dates,
         ready_to_close=streak >= required_consecutive_days,
         remaining_days=remaining,
+    )
+
+
+def next_required_dates(
+    measurements: Sequence[Measurement],
+    *,
+    target_minutes: float = DEFAULT_TARGET_MINUTES,
+    required_consecutive_days: int = DEFAULT_REQUIRED_CONSECUTIVE_DAYS,
+) -> tuple[str, ...]:
+    """Return the next calendar dates still needed to finish the under-target streak.
+
+    Empty when ``evaluate_series(...).ready_to_close`` is already true. When the
+    series is empty, dates start from today is not guessed — returns an empty
+    tuple so callers refresh Health 85 comments first.
+    """
+
+    status = evaluate_series(
+        measurements,
+        target_minutes=target_minutes,
+        required_consecutive_days=required_consecutive_days,
+    )
+    if status.ready_to_close or not measurements:
+        return ()
+    newest = max(_parse_date(item.date) for item in measurements)
+    # If the trailing streak does not include the newest day, recovery starts
+    # the day after that newest measurement (Health 85 posts one budget/day).
+    if status.under_target_dates:
+        start = _parse_date(status.under_target_dates[-1]) + timedelta(days=1)
+    else:
+        start = newest + timedelta(days=1)
+    return tuple(
+        (start + timedelta(days=offset)).isoformat() for offset in range(status.remaining_days)
+    )
+
+
+def format_dated_p50_series(
+    measurements: Sequence[Measurement],
+    *,
+    target_minutes: float = DEFAULT_TARGET_MINUTES,
+) -> str:
+    """Render the dated Gate p50 series markdown table for issue closure."""
+
+    by_date = {item.date: item for item in measurements}
+    lines = [
+        "| Date | p50 (min) | ≤10? |",
+        "| --- | ---: | :---: |",
+    ]
+    for day in sorted(by_date):
+        item = by_date[day]
+        under = "yes" if item.p50_minutes <= target_minutes else "no"
+        lines.append(f"| {item.date} | {item.p50_minutes:.2f} | {under} |")
+    return "\n".join(lines)
+
+
+def format_closure_comment(
+    measurements: Sequence[Measurement],
+    *,
+    issue: int | None = 1189,
+    target_minutes: float = DEFAULT_TARGET_MINUTES,
+    required_consecutive_days: int = DEFAULT_REQUIRED_CONSECUTIVE_DAYS,
+) -> str:
+    """Build the issue-close comment body that attaches the dated p50 series.
+
+    Raises ``ValueError`` unless the consecutive under-target streak already
+    meets ``required_consecutive_days``. Callers must not close #1189 early.
+    """
+
+    status = evaluate_series(
+        measurements,
+        target_minutes=target_minutes,
+        required_consecutive_days=required_consecutive_days,
+    )
+    if not status.ready_to_close:
+        raise ValueError(
+            "Health 85 Gate p50 series is not ready to close: "
+            f"streak={status.streak}/{status.required_consecutive_days}, "
+            f"remaining_days={status.remaining_days}"
+        )
+
+    issue_ref = f"#{issue}" if issue is not None else "this issue"
+    table = format_dated_p50_series(measurements, target_minutes=target_minutes)
+    under = ", ".join(status.under_target_dates)
+    return (
+        f"Closing {issue_ref}: Health 85 reported trailing-seven-day Gate p50 "
+        f"at or below {target_minutes:g} min for "
+        f"{status.required_consecutive_days} consecutive daily measurements "
+        f"({under}).\n\n"
+        f"Dated p50 series:\n\n{table}\n"
     )
 
 
@@ -317,6 +407,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="With --ingest-comments, rewrite series_path after merging",
     )
+    parser.add_argument(
+        "--print-closure-comment",
+        action="store_true",
+        help=(
+            "Print the dated p50 series close-comment body and exit 0 only when "
+            "ready_to_close is true; otherwise exit 1 without emitting a close body"
+        ),
+    )
     args = parser.parse_args(argv)
 
     if args.ingest_comments is not None:
@@ -328,23 +426,39 @@ def main(argv: Sequence[str] | None = None) -> int:
             raw,
             write=args.write,
         )
-        print(
-            json.dumps(
-                {
-                    "issue": refreshed.get("issue"),
-                    "ingested_dates": [item["date"] for item in refreshed["measurements"]],
-                    "streak": status.streak,
-                    "required_consecutive_days": status.required_consecutive_days,
-                    "under_target_dates": list(status.under_target_dates),
-                    "ready_to_close": status.ready_to_close,
-                    "remaining_days": status.remaining_days,
-                    "target_minutes": status.target_minutes,
-                    "wrote": bool(args.write),
-                },
-                indent=2,
-                sort_keys=True,
+        measurements = [measurement_from_mapping(item) for item in refreshed["measurements"]]
+        report = {
+            "issue": refreshed.get("issue"),
+            "ingested_dates": [item["date"] for item in refreshed["measurements"]],
+            "streak": status.streak,
+            "required_consecutive_days": status.required_consecutive_days,
+            "under_target_dates": list(status.under_target_dates),
+            "ready_to_close": status.ready_to_close,
+            "remaining_days": status.remaining_days,
+            "next_required_dates": list(
+                next_required_dates(
+                    measurements,
+                    target_minutes=status.target_minutes,
+                    required_consecutive_days=status.required_consecutive_days,
+                )
+            ),
+            "target_minutes": status.target_minutes,
+            "wrote": bool(args.write),
+        }
+        if args.print_closure_comment:
+            if not status.ready_to_close:
+                print(json.dumps(report, indent=2, sort_keys=True))
+                return 1
+            print(
+                format_closure_comment(
+                    measurements,
+                    issue=refreshed.get("issue"),
+                    target_minutes=status.target_minutes,
+                    required_consecutive_days=status.required_consecutive_days,
+                )
             )
-        )
+            return 0
+        print(json.dumps(report, indent=2, sort_keys=True))
         if args.require_ready and not status.ready_to_close:
             return 1
         return 0
@@ -353,21 +467,36 @@ def main(argv: Sequence[str] | None = None) -> int:
     status = evaluate_series(
         measurements, target_minutes=target, required_consecutive_days=required
     )
-    print(
-        json.dumps(
-            {
-                "issue": payload.get("issue"),
-                "streak": status.streak,
-                "required_consecutive_days": status.required_consecutive_days,
-                "under_target_dates": list(status.under_target_dates),
-                "ready_to_close": status.ready_to_close,
-                "remaining_days": status.remaining_days,
-                "target_minutes": status.target_minutes,
-            },
-            indent=2,
-            sort_keys=True,
+    report = {
+        "issue": payload.get("issue"),
+        "streak": status.streak,
+        "required_consecutive_days": status.required_consecutive_days,
+        "under_target_dates": list(status.under_target_dates),
+        "ready_to_close": status.ready_to_close,
+        "remaining_days": status.remaining_days,
+        "next_required_dates": list(
+            next_required_dates(
+                measurements,
+                target_minutes=target,
+                required_consecutive_days=required,
+            )
+        ),
+        "target_minutes": status.target_minutes,
+    }
+    if args.print_closure_comment:
+        if not status.ready_to_close:
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return 1
+        print(
+            format_closure_comment(
+                measurements,
+                issue=payload.get("issue"),
+                target_minutes=target,
+                required_consecutive_days=required,
+            )
         )
-    )
+        return 0
+    print(json.dumps(report, indent=2, sort_keys=True))
     if args.require_ready and not status.ready_to_close:
         return 1
     return 0
