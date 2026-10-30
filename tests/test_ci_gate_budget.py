@@ -284,6 +284,18 @@ def _function_source(path: Path, name: str) -> str:
     raise AssertionError(f"{path}: missing function {name}")
 
 
+def _called_names(path: Path, name: str) -> set[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            return {
+                call.func.id
+                for call in ast.walk(node)
+                if isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+            }
+    raise AssertionError(f"{path}: missing function {name}")
+
+
 def test_provenance_hash_gate_keeps_tmp_minimal_inputs_not_archives() -> None:
     """Issue #1189: provenance hashing must not reopen archived MOSERS/Historical workbooks.
 
@@ -296,7 +308,9 @@ def test_provenance_hash_gate_keeps_tmp_minimal_inputs_not_archives() -> None:
     source = _function_source(PIPELINE_TEST, "test_optional_input_provenance_hashes")
     helper = _function_source(PIPELINE_TEST, "_write_scope_workflow_config")
 
-    assert "_write_scope_workflow_config" in source
+    assert "_write_scope_workflow_config" in _called_names(
+        PIPELINE_TEST, "test_optional_input_provenance_hashes"
+    )
     assert "openpyxl.Workbook()" in source or "Workbook()" in source
     for banned in PROVENANCE_ARCHIVE_BASENAMES:
         assert banned not in source, banned
@@ -311,10 +325,11 @@ def test_provenance_hash_gate_keeps_tmp_minimal_inputs_not_archives() -> None:
 def test_gate_required_checks_surface_preserved() -> None:
     """Issue #1189 AC: Gate must keep the merge-relevant check surface after fixture cuts.
 
-    Hosted evidence (2026-10-30): exact-head Gate run 41078691872 on
+    Historical evidence (2026-10-30): Gate run 41078691872 on
     ``e7ed13f278cbfeb437c22efcfdc34bb5944d0d43`` — python 3.13/3.14, lint-ruff,
     typecheck-mypy, gate-summary, and commit status ``Gate / gate`` all green.
     Receipt: docs/evidence/issue-1189/pr-1223-gate-required-checks.json.
+    This receipt proves only that historical head; read final-head checks live.
     Dropping any of these jobs/status contexts would break keepalive and branch
     protection even if pytest stayed fast.
     """
@@ -357,7 +372,10 @@ def test_gate_required_checks_surface_preserved() -> None:
     ]
 
     python_ci = jobs["python-ci"]
-    assert python_ci["uses"].endswith(surface["reusable_workflow_suffix"])
+    assert (
+        python_ci["uses"] == "stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main"
+    )
+    assert python_ci["uses"] == surface["reusable_workflow_uses"]
     assert not python_ci.get("continue-on-error", False)
     inputs = python_ci["with"]
     assert yaml.safe_load(inputs["python-versions"]) == surface["python_versions"]

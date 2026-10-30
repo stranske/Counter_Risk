@@ -22,5 +22,6 @@
   },
   "hosted_before": "https://github.com/stranske/Counter_Risk/actions/runs/40160750372",
   "hosted_after": "https://github.com/stranske/Counter_Risk/actions/runs/40210271632",
-  "recent_py314_p50_minutes_approx": 2.06
+  "recent_py314_p50_minutes_approx": 2.06,
+  "recent_py314_p50_scope": "PR-local comparison only; not a seven-day Health 85 Gate p50 measurement; seven-day criterion remains pending"
 }

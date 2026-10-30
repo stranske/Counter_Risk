@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 from collections.abc import Sequence
@@ -121,6 +122,8 @@ def consecutive_under_target(
     ends the streak.
     """
 
+    if not math.isfinite(target_minutes) or target_minutes < 0:
+        raise ValueError("target_minutes must be finite and nonnegative")
     if not measurements:
         return 0, ()
 
@@ -305,6 +308,8 @@ def load_series(path: Path) -> tuple[list[Measurement], float, int, dict[str, An
     measurements = [measurement_from_mapping(item) for item in payload["measurements"]]
     measurements.sort(key=lambda item: item.date)
     target = float(payload.get("target_minutes", DEFAULT_TARGET_MINUTES))
+    if not math.isfinite(target) or target < 0:
+        raise ValueError("target_minutes must be finite and nonnegative")
     required = int(payload.get("required_consecutive_days", DEFAULT_REQUIRED_CONSECUTIVE_DAYS))
     return measurements, target, required, payload
 

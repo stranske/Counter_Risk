@@ -108,7 +108,9 @@
     "enable_soft_gate": false,
     "pytest_markers": "not release and not slow",
     "artifact_prefix": "gate-",
-    "reusable_workflow_suffix": "reusable-10-ci-python.yml@main"
+    "reusable_workflow_suffix": "reusable-10-ci-python.yml@main",
+    "reusable_workflow_uses": "stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main"
   },
-  "notes": "Exact-head Gate success after provenance fixture cut and required-check receipt lock on PR #1223. lint-format may skip when classify-changed-paths omits format-only work; it is not a merge-required job. Health 85 seven-day p50 closure remains separate."
+  "notes": "Historical Gate success after provenance fixture cut. lint-format may skip; Health 85 seven-day p50 closure remains separate. Final-head validation is recorded in PR comments and live checks.",
+  "evidence_scope": "Historical Gate result for e7ed13f278cbfeb437c22efcfdc34bb5944d0d43; not proof for later PR heads. Final-head Gate status must be read live from GitHub checks."
 }
