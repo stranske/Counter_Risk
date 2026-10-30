@@ -2605,33 +2605,39 @@ def test_optional_input_provenance_hashes(
 ) -> None:
     """Manifest hashes track active external sources, not generated images or idle options.
 
-    Issue #1189 / PR #1207: minimal real fixtures keep this test fast for Gate p50 work.
+    Issue #1189: reuse `_write_scope_workflow_config`'s tiny real XLSX/PPTX helpers so
+    Gate never reloads style-heavy archive workbooks for this hashing contract.
     """
 
     openpyxl = pytest.importorskip("openpyxl")
     fixtures = Path("tests/fixtures").resolve()
+    tmp_root = tmp_path.resolve()
     # The hashing contract needs real readable inputs, not the archive's large
     # style tables. Keep production header/date reads and manifest construction,
     # using the same small XLSX/PPTX inputs as the other focused pipeline gates.
     input_config = run_module.load_config(_write_scope_workflow_config(tmp_path))
-    required_hashes = {
-        field: _sha256(getattr(input_config, field))
-        for field in (
-            "mosers_all_programs_xlsx",
-            "mosers_ex_trend_xlsx",
-            "mosers_trend_xlsx",
-            "hist_all_programs_3yr_xlsx",
-            "hist_ex_llc_3yr_xlsx",
-            "hist_llc_3yr_xlsx",
-            "monthly_pptx",
-        )
-    }
+    required_fields = (
+        "mosers_all_programs_xlsx",
+        "mosers_ex_trend_xlsx",
+        "mosers_trend_xlsx",
+        "hist_all_programs_3yr_xlsx",
+        "hist_ex_llc_3yr_xlsx",
+        "hist_llc_3yr_xlsx",
+        "monthly_pptx",
+    )
+    required_hashes = {}
+    for field in required_fields:
+        path = Path(getattr(input_config, field)).resolve()
+        assert path.is_relative_to(tmp_root), path
+        assert path.exists()
+        required_hashes[field] = _sha256(path)
     screenshot = tmp_path / "external.png"
     shutil.copyfile(fixtures / "screenshots/slide_1.png", screenshot)
+    # Optional maturity source uses the same tiny real workbook helper pattern.
     maturity_workbook = tmp_path / "exposure-maturity.xlsx"
-    shutil.copyfile(
-        fixtures / "nisa/NISA_Monthly_Exposure_Summary_sanitized.xlsx", maturity_workbook
-    )
+    maturity_book = openpyxl.Workbook()
+    maturity_book.save(maturity_workbook)
+    maturity_book.close()
     generated_source = fixtures / "screenshots/slide_2.png"
 
     def generated_screenshot(
@@ -6318,12 +6324,16 @@ def test_screenshot_repo_cash_agrees_with_historical_and_totals(
 
 
 def _write_scope_workflow_config(tmp_path: Path) -> Path:
+    """Write tiny real XLSX/PPTX inputs under tmp_path for Gate-speed pipeline tests.
+
+    Shared by provenance hashing and limit-scope gates so those checks never open
+    the style-heavy archived MOSERS/Historical/Monthly fixtures.
+    """
+
     import yaml
     from openpyxl import Workbook
     from pptx import Presentation
 
-    # Tiny real input files keep unrelated historical fixture scans out of this
-    # scope gate while retaining actual config/input validation and hashing.
     config = _minimal_workflow_config(tmp_path)
     for field in (
         "mosers_all_programs_xlsx",

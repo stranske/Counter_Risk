@@ -1,0 +1,27 @@
+{
+  "pr": 1223,
+  "acceptance_command": "PYTHONPATH=src python -m pytest tests/pipeline/test_run_pipeline.py::test_optional_input_provenance_hashes -q -o addopts= --durations=3",
+  "after_call_seconds": 0.35,
+  "after_total_seconds": 1.01,
+  "baseline_archive_call_seconds": 186.41,
+  "mutation": {
+    "before": "runtime_config, external_screenshot_inputs=config.screenshot_inputs",
+    "after": "runtime_config, external_screenshot_inputs={}",
+    "red_exit_code": 1,
+    "restored_green_exit_code": 0,
+    "production_sha256": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791"
+  },
+  "bottleneck": {
+    "job": "Python CI / python 3.14",
+    "run": "https://github.com/stranske/Counter_Risk/actions/runs/40160750372/job/121071665022",
+    "job_minutes": 24.63,
+    "pytest_step_minutes": 19.67,
+    "install_minutes": 4.2,
+    "called_workflow": "stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main",
+    "dominant_cause": "pytest suite; provenance test previously ~421s via openpyxl stylesheet reads on archive workbooks"
+  },
+  "hosted_before": "https://github.com/stranske/Counter_Risk/actions/runs/40160750372",
+  "hosted_after": "https://github.com/stranske/Counter_Risk/actions/runs/40210271632",
+  "recent_py314_p50_minutes_approx": 2.06,
+  "recent_py314_p50_scope": "PR-local comparison only; not a seven-day Health 85 Gate p50 measurement; seven-day criterion remains pending"
+}
