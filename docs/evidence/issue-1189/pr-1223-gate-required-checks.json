@@ -1,0 +1,107 @@
+{
+  "issue": 1189,
+  "pr": 1223,
+  "acceptance": ".github/workflows/pr-00-gate.yml passes with required checks preserved after the change",
+  "verified_at": "2026-10-30T15:05:18Z",
+  "gate_run": {
+    "id": 41076955271,
+    "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271",
+    "head_sha": "d21110edfc798cba18c91eae24336d0c39d24ce6",
+    "event": "pull_request",
+    "conclusion": "success",
+    "run_started_at": "2026-10-30T15:02:07Z",
+    "last_job_completed_at": "2026-10-30T15:05:17Z",
+    "elapsed_seconds": 190,
+    "workflow": ".github/workflows/pr-00-gate.yml"
+  },
+  "commit_statuses": [
+    {
+      "context": "Gate / gate",
+      "state": "success",
+      "description": "Python CI passed",
+      "target_url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271"
+    }
+  ],
+  "required_job_names": [
+    "Python CI / lint-ruff",
+    "Python CI / python 3.13",
+    "Python CI / python 3.14",
+    "Python CI / typecheck-mypy",
+    "gate-summary"
+  ],
+  "required_jobs": [
+    {
+      "name": "Python CI / lint-ruff",
+      "conclusion": "success",
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124135814284",
+      "started_at": "2026-10-30T15:02:38Z",
+      "completed_at": "2026-10-30T15:03:17Z",
+      "elapsed_seconds": 39.0
+    },
+    {
+      "name": "Python CI / python 3.13",
+      "conclusion": "success",
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124135878767",
+      "started_at": "2026-10-30T15:02:44Z",
+      "completed_at": "2026-10-30T15:04:53Z",
+      "elapsed_seconds": 129.0
+    },
+    {
+      "name": "Python CI / python 3.14",
+      "conclusion": "success",
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124135878890",
+      "started_at": "2026-10-30T15:02:44Z",
+      "completed_at": "2026-10-30T15:04:51Z",
+      "elapsed_seconds": 127.0
+    },
+    {
+      "name": "Python CI / typecheck-mypy",
+      "conclusion": "success",
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124135814045",
+      "started_at": "2026-10-30T15:02:37Z",
+      "completed_at": "2026-10-30T15:03:20Z",
+      "elapsed_seconds": 43.0
+    },
+    {
+      "name": "gate-summary",
+      "conclusion": "success",
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124137181982",
+      "started_at": "2026-10-30T15:05:09Z",
+      "completed_at": "2026-10-30T15:05:17Z",
+      "elapsed_seconds": 8.0
+    }
+  ],
+  "optional_skippable_jobs": [
+    {
+      "name": "Python CI / lint-format",
+      "conclusion": "skipped",
+      "url": "https://github.com/stranske/Counter_Risk/actions/runs/41076955271/job/124135816367",
+      "started_at": "2026-10-30T15:02:35Z",
+      "completed_at": "2026-10-30T15:02:34Z",
+      "elapsed_seconds": -1.0
+    }
+  ],
+  "workflow_surface": {
+    "file": ".github/workflows/pr-00-gate.yml",
+    "required_job_keys": [
+      "resolve-pr",
+      "detect",
+      "generated-delivery-seal",
+      "python-ci",
+      "summary"
+    ],
+    "summary_job_name": "gate-summary",
+    "commit_status_context": "Gate / gate",
+    "python_versions": [
+      "3.13",
+      "3.14"
+    ],
+    "primary_python_version": "3.14",
+    "coverage": false,
+    "enable_soft_gate": false,
+    "pytest_markers": "not release and not slow",
+    "artifact_prefix": "gate-",
+    "reusable_workflow_suffix": "reusable-10-ci-python.yml@main"
+  },
+  "notes": "Exact-head Gate success after provenance fixture cut on PR #1223. lint-format may skip when classify-changed-paths omits format-only work; it is not a merge-required job. Health 85 seven-day p50 closure remains separate."
+}

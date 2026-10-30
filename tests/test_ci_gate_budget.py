@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import re
 import shlex
 import subprocess
@@ -15,6 +16,9 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
 PIPELINE_TEST = REPO_ROOT / "tests" / "pipeline" / "test_run_pipeline.py"
+GATE_REQUIRED_CHECKS_EVIDENCE = (
+    REPO_ROOT / "docs" / "evidence" / "issue-1189" / "pr-1223-gate-required-checks.json"
+)
 
 # Style-heavy archive basenames that previously dominated Gate pytest on
 # test_optional_input_provenance_hashes (Issue #1189 / Health 85 recovery).
@@ -307,23 +311,44 @@ def test_provenance_hash_gate_keeps_tmp_minimal_inputs_not_archives() -> None:
 def test_gate_required_checks_surface_preserved() -> None:
     """Issue #1189 AC: Gate must keep the merge-relevant check surface after fixture cuts.
 
-    Hosted evidence (2026-10-30): Gate run 41072837934 — python 3.13/3.14, lint-ruff,
-    typecheck-mypy, gate-summary, and commit status ``Gate / gate`` all green. Dropping any
-    of these jobs/status contexts would break keepalive and branch protection even if
-    pytest stayed fast.
+    Hosted evidence (2026-10-30): exact-head Gate run 41076955271 on
+    ``d21110edfc798cba18c91eae24336d0c39d24ce6`` — python 3.13/3.14, lint-ruff,
+    typecheck-mypy, gate-summary, and commit status ``Gate / gate`` all green.
+    Receipt: docs/evidence/issue-1189/pr-1223-gate-required-checks.json.
+    Dropping any of these jobs/status contexts would break keepalive and branch
+    protection even if pytest stayed fast.
     """
+
+    evidence = json.loads(GATE_REQUIRED_CHECKS_EVIDENCE.read_text(encoding="utf-8"))
+    surface = evidence["workflow_surface"]
+    gate_run = evidence["gate_run"]
+    assert evidence["issue"] == 1189
+    assert evidence["pr"] == 1223
+    assert gate_run["conclusion"] == "success"
+    assert gate_run["id"] == 41076955271
+    assert gate_run["workflow"] == ".github/workflows/pr-00-gate.yml"
+    assert evidence["commit_statuses"], "exact-head Gate commit status receipt required"
+    for status in evidence["commit_statuses"]:
+        assert status["context"] == surface["commit_status_context"]
+        assert status["state"] == "success"
+    assert set(evidence["required_job_names"]) == {
+        "Python CI / python 3.13",
+        "Python CI / python 3.14",
+        "Python CI / lint-ruff",
+        "Python CI / typecheck-mypy",
+        "gate-summary",
+    }
+    assert {job["name"]: job["conclusion"] for job in evidence["required_jobs"]} == {
+        name: "success" for name in evidence["required_job_names"]
+    }
+    for job in evidence.get("optional_skippable_jobs", []):
+        assert job["conclusion"] in {"success", "skipped"}
 
     workflow = yaml.safe_load((WORKFLOWS / "pr-00-gate.yml").read_text(encoding="utf-8"))
     jobs = workflow["jobs"]
 
-    assert set(jobs) >= {
-        "resolve-pr",
-        "detect",
-        "generated-delivery-seal",
-        "python-ci",
-        "summary",
-    }
-    assert jobs["summary"]["name"] == "gate-summary"
+    assert set(jobs) >= set(surface["required_job_keys"])
+    assert jobs["summary"]["name"] == surface["summary_job_name"]
     assert list(jobs["summary"]["needs"]) == [
         "detect",
         "python-ci",
@@ -331,18 +356,18 @@ def test_gate_required_checks_surface_preserved() -> None:
     ]
 
     python_ci = jobs["python-ci"]
-    assert python_ci["uses"].endswith("reusable-10-ci-python.yml@main")
+    assert python_ci["uses"].endswith(surface["reusable_workflow_suffix"])
     assert not python_ci.get("continue-on-error", False)
     inputs = python_ci["with"]
-    assert yaml.safe_load(inputs["python-versions"]) == ["3.13", "3.14"]
-    assert inputs["primary-python-version"] == "3.14"
+    assert yaml.safe_load(inputs["python-versions"]) == surface["python_versions"]
+    assert inputs["primary-python-version"] == surface["primary_python_version"]
     # PR Gate stays coverage-off and hard-fail; soft-gate would hide regressions.
-    assert inputs["coverage"] is False
-    assert inputs["enable-soft-gate"] is False
-    assert inputs["pytest_markers"] == "not release and not slow"
-    assert inputs["artifact-prefix"] == "gate-"
+    assert inputs["coverage"] is surface["coverage"]
+    assert inputs["enable-soft-gate"] is surface["enable_soft_gate"]
+    assert inputs["pytest_markers"] == surface["pytest_markers"]
+    assert inputs["artifact-prefix"] == surface["artifact_prefix"]
 
     gate_yml = (WORKFLOWS / "pr-00-gate.yml").read_text(encoding="utf-8")
-    assert "context: 'Gate / gate'" in gate_yml
+    assert f"context: '{surface['commit_status_context']}'" in gate_yml
     assert "name: Report Gate commit status" in gate_yml
     assert "name: Enforce Gate success" in gate_yml
