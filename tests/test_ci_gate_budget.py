@@ -285,7 +285,8 @@ def test_provenance_hash_gate_keeps_tmp_minimal_inputs_not_archives() -> None:
 
     Health 85 still needs seven consecutive under-target daily Gate p50s before
     closing #1189. Reintroducing those archives would spike pytest again and
-    reset the recovery streak (p50_series 2026-10-28..30 are already ≤10 min).
+    reset the recovery streak tracked in
+    docs/evidence/issue-1189/health85-p50-series.json (2026-10-28..30 ≤10 min).
     """
 
     source = _function_source(PIPELINE_TEST, "test_optional_input_provenance_hashes")

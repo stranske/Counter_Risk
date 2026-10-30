@@ -1,0 +1,78 @@
+{
+  "issue": 1189,
+  "source": "https://github.com/stranske/Counter_Risk/issues/1189",
+  "metric": "Health 85 trailing-seven-day Gate p50 (minutes)",
+  "target_minutes": 10.0,
+  "required_consecutive_days": 7,
+  "comment_pattern": "CI budget YYYY-MM-DD: p50=X.XX min; target=10 min; ...",
+  "updated_at": "2026-10-30T12:23:35Z",
+  "measurements": [
+    {
+      "date": "2026-10-25",
+      "p50_minutes": 19.97,
+      "target_minutes": 10.0,
+      "distance": 0.997,
+      "share": 39.63,
+      "drainable_in": 7,
+      "longest_job": "Python CI / python 3.14",
+      "comment_url": "https://github.com/stranske/Counter_Risk/issues/1189#issuecomment-6397554775"
+    },
+    {
+      "date": "2026-10-26",
+      "p50_minutes": 17.81,
+      "target_minutes": 10.0,
+      "distance": 0.781,
+      "share": 21.78,
+      "drainable_in": 7,
+      "longest_job": "Python CI / python 3.14",
+      "comment_url": "https://github.com/stranske/Counter_Risk/issues/1189#issuecomment-6415975492"
+    },
+    {
+      "date": "2026-10-27",
+      "p50_minutes": 17.29,
+      "target_minutes": 10.0,
+      "distance": 0.729,
+      "share": 18.88,
+      "drainable_in": 7,
+      "longest_job": "Python CI / python 3.14",
+      "comment_url": "https://github.com/stranske/Counter_Risk/issues/1189#issuecomment-6441712388"
+    },
+    {
+      "date": "2026-10-28",
+      "p50_minutes": 2.12,
+      "target_minutes": 10.0,
+      "distance": 0.0,
+      "share": 0.0,
+      "drainable_in": 6,
+      "longest_job": "Python CI / python 3.14",
+      "comment_url": "https://github.com/stranske/Counter_Risk/issues/1189#issuecomment-6468882644"
+    },
+    {
+      "date": "2026-10-29",
+      "p50_minutes": 2.08,
+      "target_minutes": 10.0,
+      "distance": 0.0,
+      "share": 0.0,
+      "drainable_in": 5,
+      "longest_job": "Python CI / python 3.14",
+      "comment_url": "https://github.com/stranske/Counter_Risk/issues/1189#issuecomment-6496657222"
+    },
+    {
+      "date": "2026-10-30",
+      "p50_minutes": 2.08,
+      "target_minutes": 10.0,
+      "distance": 0.0,
+      "share": 0.0,
+      "drainable_in": 4,
+      "longest_job": "Python CI / python 3.14",
+      "comment_url": "https://github.com/stranske/Counter_Risk/issues/1189#issuecomment-6522761333"
+    }
+  ],
+  "status": {
+    "streak": 3,
+    "under_target_dates": ["2026-10-28", "2026-10-29", "2026-10-30"],
+    "ready_to_close": false,
+    "remaining_days": 4
+  },
+  "notes": "Official Health 85 issue comments are the source of truth. Do not close #1189 until status.ready_to_close is true after seven consecutive under-target daily measurements."
+}
