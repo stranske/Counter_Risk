@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import re
 import shlex
 import subprocess
@@ -13,6 +14,15 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
+PIPELINE_TEST = REPO_ROOT / "tests" / "pipeline" / "test_run_pipeline.py"
+
+# Style-heavy archive basenames that previously dominated Gate pytest on
+# test_optional_input_provenance_hashes (Issue #1189 / Health 85 recovery).
+PROVENANCE_ARCHIVE_BASENAMES = (
+    "MOSERS Counterparty Risk Summary",
+    "Historical Counterparty Risk Graphs",
+    "NISA_Monthly_Exposure_Summary_sanitized.xlsx",
+)
 
 # Same-commit local A/B on tip (Gate markers, -n 4, ignore integration):
 #   --dist load      WALL_SEC=32.87  (kept)
@@ -259,3 +269,35 @@ def test_slow_shard_rejects_invalid_specs_with_a_usage_error(spec: str) -> None:
     # pytest.UsageError exits 4; an unusable shard must never read as "selected nothing, passed".
     assert proc.returncode == 4, (spec, proc.returncode, proc.stdout[-300:], proc.stderr[-300:])
     assert "--slow-shard" in proc.stderr + proc.stdout
+
+
+def _function_source(path: Path, name: str) -> str:
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            lines = path.read_text(encoding="utf-8").splitlines()
+            return "\n".join(lines[node.lineno - 1 : node.end_lineno])
+    raise AssertionError(f"{path}: missing function {name}")
+
+
+def test_provenance_hash_gate_keeps_tmp_minimal_inputs_not_archives() -> None:
+    """Issue #1189: provenance hashing must not reopen archived MOSERS/Historical workbooks.
+
+    Health 85 still needs seven consecutive under-target daily Gate p50s before
+    closing #1189. Reintroducing those archives would spike pytest again and
+    reset the recovery streak (p50_series 2026-10-28..30 are already ≤10 min).
+    """
+
+    source = _function_source(PIPELINE_TEST, "test_optional_input_provenance_hashes")
+    helper = _function_source(PIPELINE_TEST, "_write_scope_workflow_config")
+
+    assert "_write_scope_workflow_config" in source
+    assert "openpyxl.Workbook()" in source or "Workbook()" in source
+    for banned in PROVENANCE_ARCHIVE_BASENAMES:
+        assert banned not in source, banned
+        assert banned not in helper, banned
+
+    # Helper must materialize tiny real XLSX/PPTX under tmp_path, not copy fixtures.
+    assert "Workbook()" in helper
+    assert "Presentation()" in helper
+    assert "tests/fixtures" not in helper
