@@ -74,5 +74,5 @@
     "ready_to_close": false,
     "remaining_days": 4
   },
-  "notes": "Official Health 85 issue comments are the source of truth. Do not close #1189 until status.ready_to_close is true after seven consecutive under-target daily measurements."
+  "notes": "Official Health 85 issue comments are the source of truth. Refresh via scripts/health85_p50_series.py --ingest-comments <gh-api-comments.json> --write. Do not close #1189 until status.ready_to_close is true after seven consecutive under-target daily measurements."
 }
