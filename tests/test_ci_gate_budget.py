@@ -301,3 +301,47 @@ def test_provenance_hash_gate_keeps_tmp_minimal_inputs_not_archives() -> None:
     assert "Workbook()" in helper
     assert "Presentation()" in helper
     assert "tests/fixtures" not in helper
+
+
+def test_gate_required_checks_surface_preserved() -> None:
+    """Issue #1189 AC: Gate must keep the merge-relevant check surface after fixture cuts.
+
+    Hosted evidence (2026-10-30): Gate run 41072837934 — python 3.13/3.14, lint-ruff,
+    typecheck-mypy, gate-summary, and commit status ``Gate / gate`` all green. Dropping any
+    of these jobs/status contexts would break keepalive and branch protection even if
+    pytest stayed fast.
+    """
+
+    workflow = yaml.safe_load((WORKFLOWS / "pr-00-gate.yml").read_text(encoding="utf-8"))
+    jobs = workflow["jobs"]
+
+    assert set(jobs) >= {
+        "resolve-pr",
+        "detect",
+        "generated-delivery-seal",
+        "python-ci",
+        "summary",
+    }
+    assert jobs["summary"]["name"] == "gate-summary"
+    assert list(jobs["summary"]["needs"]) == [
+        "detect",
+        "python-ci",
+        "generated-delivery-seal",
+    ]
+
+    python_ci = jobs["python-ci"]
+    assert python_ci["uses"].endswith("reusable-10-ci-python.yml@main")
+    assert not python_ci.get("continue-on-error", False)
+    inputs = python_ci["with"]
+    assert yaml.safe_load(inputs["python-versions"]) == ["3.13", "3.14"]
+    assert inputs["primary-python-version"] == "3.14"
+    # PR Gate stays coverage-off and hard-fail; soft-gate would hide regressions.
+    assert inputs["coverage"] is False
+    assert inputs["enable-soft-gate"] is False
+    assert inputs["pytest_markers"] == "not release and not slow"
+    assert inputs["artifact-prefix"] == "gate-"
+
+    gate_yml = (WORKFLOWS / "pr-00-gate.yml").read_text(encoding="utf-8")
+    assert "context: 'Gate / gate'" in gate_yml
+    assert "name: Report Gate commit status" in gate_yml
+    assert "name: Enforce Gate success" in gate_yml
