@@ -17,10 +17,11 @@ import argparse
 import json
 import re
 import sys
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 BUDGET_COMMENT_RE = re.compile(
     r"CI budget\s+"
