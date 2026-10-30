@@ -1,0 +1,18 @@
+{
+  "broken_exit": 1,
+  "restored_exit": 0,
+  "source": "src/counter_risk/pipeline/manifest_schema.py",
+  "original": "for index, item in enumerate(value):",
+  "replacement": "for index, item in enumerate(value[:1]):",
+  "command": [
+    "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_manifest_schema.py::test_manifest_validates_confidence_in_later_exposure_before_overwriting_outputs",
+    "-m",
+    "not slow",
+    "-q",
+    "--tb=short"
+  ],
+  "source_sha256_before_and_after": "65cb534200f9f8c146acc93db309e5896e5e37db657a4790a2d05ca76f35d147"
+}

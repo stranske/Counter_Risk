@@ -1,0 +1,58 @@
+[
+  {
+    "source_file": "src/counter_risk/pipeline/manifest.py",
+    "original": "finding[\"details\"] = self.source_report_dates",
+    "replacement": "finding[\"details\"] = {}",
+    "node": "tests/pipeline/test_manifest.py::test_source_date_conflicts_retain_report_evidence_after_writing",
+    "failed_tests": [
+      "tests/pipeline/test_manifest.py::test_source_date_conflicts_retain_report_evidence_after_writing"
+    ],
+    "red_exit_code": 1,
+    "reverted_exit_code": 0
+  },
+  {
+    "source_file": "src/counter_risk/pipeline/manifest.py",
+    "original": "if explicit_outputs is not None:",
+    "replacement": "if False:",
+    "node": "tests/pipeline/test_manifest.py::test_explicit_ppt_outputs_override_filename_inference",
+    "failed_tests": [
+      "tests/pipeline/test_manifest.py::test_explicit_ppt_outputs_override_filename_inference"
+    ],
+    "red_exit_code": 1,
+    "reverted_exit_code": 0
+  },
+  {
+    "source_file": "src/counter_risk/pipeline/manifest.py",
+    "original": "if not self.config.ppt_output_enabled:",
+    "replacement": "if False:",
+    "node": "tests/pipeline/test_manifest.py::test_disabled_ppt_omits_even_explicit_outputs",
+    "failed_tests": [
+      "tests/pipeline/test_manifest.py::test_disabled_ppt_omits_even_explicit_outputs"
+    ],
+    "red_exit_code": 1,
+    "reverted_exit_code": 0
+  },
+  {
+    "source_file": "src/counter_risk/pipeline/manifest.py",
+    "original": "\"status\": \"skipped\",",
+    "replacement": "\"status\": \"success\",",
+    "node": "tests/pipeline/test_manifest.py::test_master_only_output_records_distribution_as_skipped",
+    "failed_tests": [
+      "tests/pipeline/test_manifest.py::test_master_only_output_records_distribution_as_skipped"
+    ],
+    "red_exit_code": 1,
+    "reverted_exit_code": 0
+  },
+  {
+    "source_file": "src/counter_risk/pipeline/manifest.py",
+    "original": "return sha or None",
+    "replacement": "return sha",
+    "node": "tests/pipeline/test_manifest.py::test_git_sha_normalizes_empty_and_padded_output",
+    "failed_tests": [
+      "tests/pipeline/test_manifest.py::test_git_sha_normalizes_empty_and_padded_output[]",
+      "tests/pipeline/test_manifest.py::test_git_sha_normalizes_empty_and_padded_output[ \\n]"
+    ],
+    "red_exit_code": 1,
+    "reverted_exit_code": 0
+  }
+]

@@ -1,0 +1,210 @@
+zero-row: broken
+$ ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[zero-row]', '-m', 'not slow', '-q', '--tb=short']
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-evidence-row
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_manifest_schema.py F                                 [100%]
+
+=================================== FAILURES ===================================
+_ test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[zero-row] _
+tests/pipeline/test_manifest_schema.py:310: in test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs
+    assert validate_manifest(manifest) == (
+E   AssertionError: assert (True, None) == (False, 'mani...must be >= 1')
+E     
+E     At index 0 diff: True != False
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       (
+E     -     False,
+E     -     'manifest.top_exposures.all_programs[0].evidence.row must be >= 1',
+E     +     True,
+E     +     None,
+E       )
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[zero-row] - AssertionError: assert (True, None) == (False, 'mani...must be >= 1')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  -     False,
+  -     'manifest.top_exposures.all_programs[0].evidence.row must be >= 1',
+  +     True,
+  +     None,
+    )
+======================== 1 failed, 13 warnings in 0.35s ========================
+
+exit=1
+
+zero-row: restored
+$ ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[zero-row]', '-m', 'not slow', '-q', '--tb=short']
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-evidence-row
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_manifest_schema.py .                                 [100%]
+
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 13 warnings in 0.28s ========================
+
+exit=0
+
+boolean-row: broken
+$ ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[boolean-row]', '-m', 'not slow', '-q', '--tb=short']
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-evidence-row
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_manifest_schema.py F                                 [100%]
+
+=================================== FAILURES ===================================
+_ test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[boolean-row] _
+tests/pipeline/test_manifest_schema.py:310: in test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs
+    assert validate_manifest(manifest) == (
+E   AssertionError: assert (True, None) == (False, 'mani...ll, got bool')
+E     
+E     At index 0 diff: True != False
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       (
+E     +     True,
+E     +     None,
+E     -     False,
+E     -     'manifest.top_exposures.all_programs[0].evidence.row must be of type '
+E     -     'integer or null, got bool',
+E       )
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[boolean-row] - AssertionError: assert (True, None) == (False, 'mani...ll, got bool')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  +     True,
+  +     None,
+  -     False,
+  -     'manifest.top_exposures.all_programs[0].evidence.row must be of type '
+  -     'integer or null, got bool',
+    )
+======================== 1 failed, 13 warnings in 0.35s ========================
+
+exit=1
+
+boolean-row: restored
+$ ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[boolean-row]', '-m', 'not slow', '-q', '--tb=short']
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-evidence-row
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_manifest_schema.py .                                 [100%]
+
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 13 warnings in 0.27s ========================
+
+exit=0
+
+fractional-row: broken
+$ ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[fractional-row]', '-m', 'not slow', '-q', '--tb=short']
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-evidence-row
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_manifest_schema.py F                                 [100%]
+
+=================================== FAILURES ===================================
+_ test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[fractional-row] _
+tests/pipeline/test_manifest_schema.py:310: in test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs
+    assert validate_manifest(manifest) == (
+E   AssertionError: assert (True, None) == (False, 'mani...l, got float')
+E     
+E     At index 0 diff: True != False
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       (
+E     +     True,
+E     +     None,
+E     -     False,
+E     -     'manifest.top_exposures.all_programs[0].evidence.row must be of type '
+E     -     'integer or null, got float',
+E       )
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[fractional-row] - AssertionError: assert (True, None) == (False, 'mani...l, got float')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  +     True,
+  +     None,
+  -     False,
+  -     'manifest.top_exposures.all_programs[0].evidence.row must be of type '
+  -     'integer or null, got float',
+    )
+======================== 1 failed, 13 warnings in 0.35s ========================
+
+exit=1
+
+fractional-row: restored
+$ ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[fractional-row]', '-m', 'not slow', '-q', '--tb=short']
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-evidence-row
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_manifest_schema.py .                                 [100%]
+
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 1 passed, 13 warnings in 0.30s ========================
+
+exit=0

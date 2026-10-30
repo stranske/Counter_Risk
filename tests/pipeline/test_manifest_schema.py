@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -9,7 +10,14 @@ import pytest
 
 from counter_risk.config import WorkflowConfig
 from counter_risk.pipeline.manifest import ManifestBuilder
-from counter_risk.pipeline.manifest_schema import _matches_type, manifest_schema, validate_manifest
+from counter_risk.pipeline.manifest_schema import (
+    _check_node,
+    _matches_type,
+    manifest_schema,
+    validate_manifest,
+    validate_manifest_data_quality,
+    validate_manifest_ppt_outputs,
+)
 
 
 def test_manifest_schema_defines_master_and_distribution_ppt_outputs() -> None:
@@ -247,6 +255,175 @@ def test_finite_manifest_numbers_remain_json_serializable(
     assert saved["top_exposures"]["all_programs"][0]["notional"] == value
 
 
+@pytest.mark.parametrize(
+    "confidence",
+    [1.0000000000000002, 2, 10**400],
+    ids=["next-float-above-one", "integer-above-one", "large-integer"],
+)
+def test_manifest_rejects_confidence_above_one_without_overwriting_outputs(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+    tmp_path: Path,
+    confidence: int | float,
+) -> None:
+    builder, manifest = numeric_manifest
+    manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+    (tmp_path / "manifest.json").write_text("existing manifest", encoding="utf-8")
+    (tmp_path / "DATA_QUALITY_SUMMARY.txt").write_text("existing summary", encoding="utf-8")
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+
+    assert validate_manifest(manifest) == (
+        False,
+        "manifest.top_exposures.all_programs[0].evidence.confidence must be <= 1",
+    )
+    with pytest.raises(ValueError, match="confidence must be <= 1"):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
+
+
+@pytest.mark.parametrize(
+    ("row", "diagnostic"),
+    [
+        pytest.param(0, "must be >= 1", id="zero-row"),
+        pytest.param(True, "must be of type integer or null, got bool", id="boolean-row"),
+        pytest.param(1.5, "must be of type integer or null, got float", id="fractional-row"),
+    ],
+)
+def test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+    tmp_path: Path,
+    row: int | float | bool,
+    diagnostic: str,
+) -> None:
+    builder, manifest = numeric_manifest
+    evidence = manifest["top_exposures"]["all_programs"][0]["evidence"]
+    # Row references use Excel's one-based indexing; null means no row is known.
+    for valid_row in (None, 1):
+        evidence["row"] = valid_row
+        assert validate_manifest(manifest) == (True, None)
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        saved = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
+        assert saved["top_exposures"]["all_programs"][0]["evidence"]["row"] == valid_row
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+
+    evidence["row"] = row
+    assert validate_manifest(manifest) == (
+        False,
+        f"manifest.top_exposures.all_programs[0].evidence.row {diagnostic}",
+    )
+    with pytest.raises(ValueError, match="evidence.row " + diagnostic):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
+
+
+def test_manifest_preserves_confidence_bounds_and_null(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]], tmp_path: Path
+) -> None:
+    builder, manifest = numeric_manifest
+    for confidence in (None, 0, 0.5, 1):
+        manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+        assert validate_manifest(manifest) == (True, None)
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        saved = json.loads((tmp_path / "manifest.json").read_text())
+        assert saved["top_exposures"]["all_programs"][0]["evidence"]["confidence"] == confidence
+
+
+def test_manifest_validates_confidence_in_later_exposure_before_overwriting_outputs(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]], tmp_path: Path
+) -> None:
+    builder, manifest = numeric_manifest
+    exposures = manifest["top_exposures"]["all_programs"]
+    exposures[0]["evidence"]["confidence"] = 0
+    later_exposure = deepcopy(exposures[0])
+    later_exposure["counterparty"] = "Another counterparty"
+    later_exposure["evidence"]["confidence"] = 1
+    exposures.append(later_exposure)
+    assert validate_manifest(manifest) == (True, None)
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+
+    later_exposure["evidence"]["confidence"] = 2
+    assert validate_manifest(manifest) == (
+        False,
+        "manifest.top_exposures.all_programs[1].evidence.confidence must be <= 1",
+    )
+    with pytest.raises(ValueError, match=r"all_programs\[1\].evidence.confidence must be <= 1"):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
+
+
+@pytest.mark.parametrize(
+    ("count", "diagnostic"),
+    [
+        pytest.param(-1, "must be >= 0", id="negative-count"),
+        pytest.param(True, "must be of type integer, got bool", id="boolean-count"),
+    ],
+)
+def test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+    tmp_path: Path,
+    count: int | bool,
+    diagnostic: str,
+) -> None:
+    builder, manifest = numeric_manifest
+    counts = manifest["data_quality"]["counts"]
+    counts["total_findings"] = 1
+    counts["by_severity"] = {"info": 0, "warn": 1, "fail": 0}
+    counts["by_category"] = {
+        "source": {"info": 0, "warn": 1, "fail": 0, "total": 1},
+        "mapping": {"info": 0, "warn": 0, "fail": 0, "total": 0},
+    }
+    # A valid first category must not hide a malformed later category in this
+    # schema-object map. Save usable output before attempting the invalid write.
+    assert validate_manifest(manifest) == (True, None)
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+    counts["by_category"]["mapping"]["total"] = count
+
+    assert validate_manifest(manifest) == (
+        False,
+        f"manifest.data_quality.counts.by_category.mapping.total {diagnostic}",
+    )
+    with pytest.raises(ValueError, match="mapping.total " + diagnostic):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
+
+
+@pytest.mark.parametrize(
+    ("confidence", "diagnostic"),
+    [
+        pytest.param(-5e-324, "must be >= 0", id="next-float-below-zero"),
+        pytest.param(-1, "must be >= 0", id="negative-integer"),
+        pytest.param(-(10**400), "must be >= 0", id="large-negative-integer"),
+        pytest.param(True, "must be of type number or null, got bool", id="true"),
+        pytest.param(False, "must be of type number or null, got bool", id="false"),
+    ],
+)
+def test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+    tmp_path: Path,
+    confidence: int | float | bool,
+    diagnostic: str,
+) -> None:
+    builder, manifest = numeric_manifest
+    # Begin with real, valid outputs so rejection must preserve a usable prior run.
+    builder.write(run_dir=tmp_path, manifest=manifest)
+    before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+    manifest["top_exposures"]["all_programs"][0]["evidence"]["confidence"] = confidence
+
+    assert validate_manifest(manifest) == (
+        False,
+        f"manifest.top_exposures.all_programs[0].evidence.confidence {diagnostic}",
+    )
+    with pytest.raises(ValueError, match="confidence " + diagnostic):
+        builder.write(run_dir=tmp_path, manifest=manifest)
+
+    assert {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()} == before
+
+
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
 @pytest.mark.parametrize("container", ["mapping", "list", "tuple"])
 def test_manifest_rejects_nonfinite_in_unconstrained_fields_before_writing(
@@ -285,3 +462,180 @@ def test_manifest_preserves_valid_unconstrained_values(
     builder.write(run_dir=tmp_path, manifest=manifest)
     saved = json.loads((tmp_path / "manifest.json").read_text())
     assert saved["top_changes_per_variant"]["all_programs"]["values"] == values
+
+
+@pytest.mark.parametrize(
+    ("ppt_enabled", "ppt_outputs", "expected"),
+    [
+        (False, None, (True, None)),
+        (
+            False,
+            {},
+            (False, "Manifest must not include ppt_outputs when PPT generation is disabled."),
+        ),
+        (
+            True,
+            None,
+            (False, "Manifest must include ppt_outputs with Master and Distribution entries."),
+        ),
+        (
+            True,
+            {"master": {}},
+            (False, "Manifest ppt_outputs is missing required Distribution PPT entry."),
+        ),
+        (
+            True,
+            {"distribution": {}},
+            (False, "Manifest ppt_outputs is missing required Master PPT entry."),
+        ),
+        (
+            True,
+            {},
+            (False, "Manifest ppt_outputs must include both Master and Distribution entries."),
+        ),
+        (True, {"master": {}, "distribution": {}}, (True, None)),
+    ],
+)
+def test_validate_manifest_ppt_outputs_reports_each_contract_failure(
+    ppt_enabled: bool, ppt_outputs: object, expected: tuple[bool, str | None]
+) -> None:
+    assert (
+        validate_manifest_ppt_outputs({"ppt_outputs": ppt_outputs}, ppt_enabled=ppt_enabled)
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
+    ("data_quality", "expected"),
+    [
+        (None, "Manifest must include data_quality object."),
+        ({}, "Manifest data_quality is missing required overall_status field."),
+        (
+            {"overall_status": "info", "severity_levels": [], "findings": [], "counts": {}},
+            "Manifest data_quality is missing required recommended_actions field.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": {},
+            },
+            "Manifest data_quality recommended_actions must be an array.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": ["bad"],
+            },
+            "Manifest data_quality recommended_actions[0] must be an object.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": [{}],
+            },
+            "Manifest data_quality recommended_actions[0] must include non-empty category.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": [{"category": "source"}],
+            },
+            "Manifest data_quality recommended_actions[0].severity must be one of: info, warn, fail.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": [{"category": "source", "severity": "info"}],
+            },
+            "Manifest data_quality recommended_actions[0] must include non-empty action.",
+        ),
+        (
+            {
+                "overall_status": "info",
+                "severity_levels": [],
+                "findings": [],
+                "counts": {},
+                "recommended_actions": [
+                    {"category": "source", "severity": "info", "action": "review"}
+                ],
+            },
+            None,
+        ),
+    ],
+)
+def test_validate_manifest_data_quality_reports_action_contract_failures(
+    data_quality: object, expected: str | None
+) -> None:
+    valid, reason = validate_manifest_data_quality({"data_quality": data_quality})
+    assert valid is (expected is None)
+    assert reason == expected
+
+
+def test_validate_manifest_data_quality_rejects_absent_section() -> None:
+    assert validate_manifest_data_quality({}) == (
+        False,
+        "Manifest must include data_quality object.",
+    )
+
+
+@pytest.mark.parametrize("field", ["category", "action"])
+def test_validate_manifest_data_quality_rejects_blank_fields_after_valid_action(
+    numeric_manifest: tuple[ManifestBuilder, dict[str, Any]], field: str
+) -> None:
+    _, manifest = numeric_manifest
+    actions = [
+        {"category": "source", "severity": "warn", "action": "Review source dates"},
+        {"category": "mapping", "severity": "fail", "action": "Restore missing mappings"},
+    ]
+    manifest["data_quality"]["recommended_actions"] = actions
+    assert validate_manifest_data_quality(manifest) == (True, None)
+
+    actions[1][field] = " \t\n"
+    assert validate_manifest_data_quality(manifest) == (
+        False,
+        f"Manifest data_quality recommended_actions[1] must include non-empty {field}.",
+    )
+
+
+@pytest.mark.parametrize(
+    ("value", "schema", "expected"),
+    [
+        ("anything", {"type": "future-type"}, None),
+        (["unconstrained"], {}, None),
+        ("wrong", {"enum": ["right"]}, "value must be one of: 'right'"),
+        (-1, {"minimum": 0}, "value must be >= 0"),
+        ("", {"minLength": 1}, "value must have at least 1 character(s)"),
+        ([], {"minItems": 1}, "value must have at least 1 item(s)"),
+        ({}, {"required": ["required"]}, "value is missing required key 'required'"),
+        (
+            {"extra": 1},
+            {"additionalProperties": False},
+            "value contains unexpected key 'extra' (additionalProperties is false)",
+        ),
+        (
+            {"extra": "wrong"},
+            {"additionalProperties": {"type": "integer"}},
+            "value.extra must be of type integer, got str",
+        ),
+        (["wrong"], {"items": {"type": "integer"}}, "value[0] must be of type integer, got str"),
+    ],
+)
+def test_check_node_reports_schema_constraint_failures(
+    value: object, schema: dict[str, object], expected: str | None
+) -> None:
+    assert _check_node(value, schema, "value") == expected

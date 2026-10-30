@@ -1,0 +1,23 @@
+$ ['black', '--line-length', '100', 'tests/pipeline/test_reconciliation_boundaries.py']
+All done! ✨ 🍰 ✨
+1 file left unchanged.
+exit=0
+
+$ ['black', '--check', '--line-length', '100', '--exclude', '(\\.workflows-lib|node_modules)', '.']
+All done! ✨ 🍰 ✨
+401 files would be left unchanged.
+exit=0
+
+$ ['black', '--check', '--line-length', '100', '--exclude', '(\\.venv|\\.workflows-lib|node_modules)', '.']
+All done! ✨ 🍰 ✨
+401 files would be left unchanged.
+exit=0
+
+$ ['ruff', 'check', '--output-format', 'github', '--extend-exclude', '.workflows-lib', '.']
+exit=0
+
+$ ['git', 'diff', '--check']
+exit=0
+
+$ ['git', 'diff', '--exit-code', '--', 'src']
+exit=0

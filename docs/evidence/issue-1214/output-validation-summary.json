@@ -1,0 +1,81 @@
+{
+  "target_order": [
+    "src/counter_risk/cli/__init__.py",
+    "src/counter_risk/pipeline/run.py"
+  ],
+  "authoritative_issue_baseline_percent": 89.32,
+  "local_metric": "line coverage only; target-limited instrumentation over full non-slow suite",
+  "tests": {
+    "baseline_passed": 2588,
+    "final_passed": 2595,
+    "skipped": 1,
+    "deselected": 87
+  },
+  "targets": {
+    "src/counter_risk/cli/__init__.py": {
+      "before": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "after": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "newly_covered_lines": []
+    },
+    "src/counter_risk/pipeline/run.py": {
+      "before": {
+        "covered_lines": 2510,
+        "num_statements": 2636,
+        "percent_covered": 95.22003034901365,
+        "percent_covered_display": "95",
+        "missing_lines": 126,
+        "excluded_lines": 14,
+        "percent_statements_covered": 95.22003034901365,
+        "percent_statements_covered_display": "95"
+      },
+      "after": {
+        "covered_lines": 2515,
+        "num_statements": 2636,
+        "percent_covered": 95.40971168437027,
+        "percent_covered_display": "95",
+        "missing_lines": 121,
+        "excluded_lines": 14,
+        "percent_statements_covered": 95.40971168437027,
+        "percent_statements_covered_display": "95"
+      },
+      "newly_covered_lines": [
+        2726,
+        2732,
+        2734,
+        2888,
+        3969
+      ]
+    }
+  },
+  "new_mutations": 5,
+  "new_cases_proven": 7,
+  "pr_mutations": 49,
+  "pr_cases_proven": 117,
+  "published_gate": {
+    "head_sha": "16b0262357d4caba9b3ff17e76bd88a4a63639a8",
+    "run_id": 40837070799,
+    "status": "success",
+    "python314_passed": 2561,
+    "python314_skipped": 1,
+    "coverage_enabled": false,
+    "coverage_min_outcome": "skipped"
+  }
+}

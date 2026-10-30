@@ -527,3 +527,109 @@ def test_compute_risk_proxies_supports_lowercase_proxy_input_aliases() -> None:
 
     assert records[0]["risk_proxy_notional_annualized_volatility"] == pytest.approx(10.0)
     assert records[0]["risk_proxy_position_usd_vol"] == pytest.approx(200.0)
+
+
+def test_compute_totals_rejects_non_mapping_rows() -> None:
+    with pytest.raises(TypeError, match="exposures_df row at index 1 must be a mapping"):
+        compute_totals([{"counterparty": "A", "asset_class": "Cash", "notional": 1}, 7])
+
+
+def test_compute_totals_rejects_missing_counterparty() -> None:
+    with pytest.raises(ValueError, match="missing required counterparty"):
+        compute_totals([{"counterparty": " ", "asset_class": "Cash", "notional": 1}])
+
+
+def test_compute_totals_rejects_non_numeric_exposure() -> None:
+    with pytest.raises(ValueError, match="Row value for 'notional' must be numeric"):
+        compute_totals([{"counterparty": "A", "asset_class": "Cash", "notional": "bad"}])
+
+
+def test_compute_totals_empty_input_keeps_output_schema() -> None:
+    result = compute_totals([])
+    assert list(result.columns) == [
+        "group_type",
+        "group_name",
+        "notional",
+        "prior_notional",
+        "notional_change",
+    ]
+    assert result.empty
+
+
+def test_compute_totals_without_pandas_preserves_values_and_schema(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(sys.modules, "pandas", None)
+    result = compute_totals(
+        [{"counterparty": "A", "asset_class": "Cash", "notional": 12, "prior_notional": 2}]
+    )
+    assert result == [
+        {
+            "group_type": "counterparty",
+            "group_name": "A",
+            "notional": 12,
+            "prior_notional": 2,
+            "notional_change": 10,
+        },
+        {
+            "group_type": "asset_class",
+            "group_name": "Cash",
+            "notional": 12,
+            "prior_notional": 2,
+            "notional_change": 10,
+        },
+    ]
+
+
+def test_repo_cash_empty_overlay_preserves_rows_and_adds_required_columns() -> None:
+    original = [{"counterparty": "A", "Notional": 12}]
+    result = apply_repo_cash_to_totals(original, {})
+    assert result.loc[0, "counterparty"] == "A"
+    assert result.loc[0, "Notional"] == 12
+    assert result.loc[0, "Cash"] == 0
+    assert original == [{"counterparty": "A", "Notional": 12}]
+
+
+def test_repo_cash_ignores_unidentified_counterparty_group() -> None:
+    result = _as_records(
+        apply_repo_cash_to_totals(
+            [{"group_type": "counterparty", "group_name": " ", "Notional": 5}], {"A": 3}
+        )
+    )
+    assert len(result) == 2
+    assert result[0]["Notional"] == 5
+    assert result[1]["counterparty"] == "A"
+    assert result[1]["Notional"] == 3
+
+
+def test_repo_cash_rejects_blank_counterparty() -> None:
+    with pytest.raises(ValueError, match="empty counterparty key"):
+        apply_repo_cash_to_totals([], {" ": 3})
+
+
+@pytest.mark.parametrize("amount", [float("nan"), float("inf"), float("-inf")])
+def test_repo_cash_rejects_non_finite_amount(amount: float) -> None:
+    with pytest.raises(ValueError, match="value for 'A' must be finite"):
+        apply_repo_cash_to_totals([], {"A": amount})
+
+
+def test_notional_breakdown_returns_zero_shares_for_zero_total() -> None:
+    assert compute_notional_breakdown(
+        [
+            {"asset_class": "Cash", "notional": 0},
+            {"asset_class": "Equity", "notional": 0},
+        ]
+    ) == {"Cash": 0, "Equity": 0}
+
+
+@pytest.mark.parametrize("function", [top_exposures, top_changes])
+@pytest.mark.parametrize("n", [0, -1])
+def test_top_rollups_reject_non_positive_limit(function: Any, n: int) -> None:
+    with pytest.raises(ValueError, match="n must be positive"):
+        function([], n=n)
+
+
+@pytest.mark.parametrize("change", [None, "invalid"])
+def test_top_changes_rejects_non_numeric_change(change: Any) -> None:
+    with pytest.raises(ValueError, match="notional_change values must be numeric"):
+        top_changes([{"notional_change": change}])

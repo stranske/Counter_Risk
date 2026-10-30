@@ -16,7 +16,7 @@ name = "counter-risk"
 version = "0.1.0"
 description = "Counterparty exposure, margin, and risk reporting toolkit"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 license = {text = "MIT"}
 authors = [
     {name = "stranske", email = "maintainers@users.noreply.github.com"},
@@ -26,8 +26,8 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "pydantic>=2.13.3,<3",
@@ -45,7 +45,7 @@ dependencies = [
 [project.optional-dependencies]
 app = []
 dev = [
-    "pytest==9.1.1",
+    "pytest==9.2.0",
     "pytest-cov==7.1.0",
     "pytest-xdist==3.8.0",
     "pandas>=2.3,<4",
@@ -57,7 +57,7 @@ dev = [
     "numpy>=2.0,<3",
     "black==26.10.1",
     "ruff==0.17.3",
-    "mypy==2.4.0",
+    "mypy==2.4.1",
     "types-PyYAML==6.0.12.20260724",
     # Required by scripts/sync_test_dependencies.py when --fix is needed in CI
     "tomlkit>=0.14.0",
@@ -112,7 +112,7 @@ exclude_lines = [
 fail_under = "${COVERAGE_FAIL_UNDER-0}"
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 line-length = 100
 src = ["src", "tests"]
 
@@ -136,7 +136,7 @@ ignore = [
 known-first-party = ["counter_risk", "tools"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
@@ -213,7 +213,7 @@ ignore_errors = true
 
 [tool.black]
 line-length = 100
-target-version = ["py312"]
+target-version = ["py313"]
 extend-exclude = '''
 /(
   \.venv

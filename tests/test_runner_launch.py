@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 
+from counter_risk import runner_launch
 from counter_risk.runner_launch import (
+    LaunchStatus,
     RunnerMode,
     build_command,
     build_discovery_dry_run_command,
@@ -17,6 +19,7 @@ from counter_risk.runner_launch import (
     format_gui_run_failure,
     format_launch_error_for_runner,
     map_runner_error_to_operator_message,
+    normalize_path_separators,
     open_data_quality_summary,
     open_manifest,
     open_output_folder,
@@ -448,3 +451,90 @@ def test_format_gui_run_failure_maps_validation_errors() -> None:
     assert message.startswith("Error 2:")
     assert "Operator action:" in message
     assert "verify required input files" in message
+
+
+def test_blank_launch_failure_gives_default_input_guidance() -> None:
+    assert map_runner_error_to_operator_message(" \n ") == (
+        "Operator action: review run inputs, then rerun the process."
+    )
+
+
+def test_unmapped_launch_failure_requests_mapping_update() -> None:
+    assert map_runner_error_to_operator_message("Unmatched counterparty Acme") == (
+        "Operator action: update counterparty mappings for this month and rerun."
+    )
+
+
+def test_successful_launch_preserves_status_message() -> None:
+    status = LaunchStatus(True, 0, "Opened report", "report", 0)
+    assert format_launch_error_for_runner(status) == "Opened report"
+
+
+def test_normalize_path_removes_trailing_slashes_without_truncating_drive_root() -> None:
+    assert normalize_path_separators(" C:/reports/// ") == "C:\\reports"
+    assert normalize_path_separators("C:/") == "C:\\"
+
+
+def test_resolve_output_dir_reports_exhausted_names() -> None:
+    checked: list[str] = []
+
+    def always_exists(path: str) -> bool:
+        checked.append(path)
+        return True
+
+    with pytest.raises(
+        RuntimeError, match="Unable to resolve unique output directory for 2025-06-30"
+    ):
+        resolve_output_dir("C:/repo", "2025-06-30", directory_exists=always_exists)
+
+    assert len(checked) == 10_000
+    assert checked[0] == "C:\\repo\\runs\\2025-06-30"
+    assert checked[-1] == "C:\\repo\\runs\\2025-06-30_9999"
+
+
+@pytest.mark.parametrize(
+    ("opener", "filename", "callback_name", "exists_name"),
+    [
+        (open_output_folder, "", "open_directory", "directory_exists"),
+        (open_ppt_output_folder, "", "open_directory", "directory_exists"),
+        (open_data_quality_summary, "\\DATA_QUALITY_SUMMARY.txt", "open_file", "file_exists"),
+        (open_manifest, "\\manifest.json", "open_file", "file_exists"),
+    ],
+)
+def test_openers_report_nonzero_shell_exit(
+    opener: Callable[..., LaunchStatus],
+    filename: str,
+    callback_name: str,
+    exists_name: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = "C:\\repo\\runs\\2025-06-30"
+    opened: list[str] = []
+    monkeypatch.setattr(runner_launch, "_default_directory_exists", lambda path: path == base)
+
+    def fail_open(path: str) -> int:
+        opened.append(path)
+        return 9
+
+    status = opener(
+        repo_root="C:/repo",
+        selected_date="2025-06-30",
+        **{callback_name: fail_open, exists_name: lambda path: path == base + filename},
+    )
+    assert status == LaunchStatus(False, 7109, "Process exited with code 9", base + filename, 9)
+    assert opened == [base + filename]
+
+
+def test_open_manifest_reports_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    opened: list[str] = []
+    monkeypatch.setattr(runner_launch, "_default_directory_exists", lambda _: False)
+    status = open_manifest(
+        repo_root="C:/repo",
+        selected_date="2025-06-30",
+        file_exists=lambda _: True,
+        open_file=lambda path: opened.append(path) or 0,
+    )
+    assert status == LaunchStatus(
+        True, 0, "Success", "C:\\repo\\runs\\2025-06-30\\manifest.json", 0
+    )
+    assert opened == [status.command]

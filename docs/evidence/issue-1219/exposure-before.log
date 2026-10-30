@@ -1,0 +1,31 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_relocated_config_preserves_config_relative_fixture_sources[exposure_summary_xlsx] _
+tests/test_web_demo_helpers.py:156: in test_relocated_config_preserves_config_relative_fixture_sources
+    assert web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir) == run_dir
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:222: in run_web_demo_pipeline
+    run_dir = run_pipeline_with_config(
+tests/test_web_demo_helpers.py:148: in run_pipeline
+    assert getattr(config, local_key) == local_source
+E   AssertionError: assert PosixPath('local.csv') == PosixPath('/tmp/pytest-of-runner/pytest-1/test_relocated_config_preserve0/repo/tests/fixtures/config/local.csv')
+E    +  where PosixPath('local.csv') = getattr(WorkflowConfig(as_of_date=None, run_date=None, report_date_policy='warn', mosers_all_programs_xlsx=None, raw_nisa_all_...port', registration='builtin:pdf_export', stage='ppt_post_distribution', enabled=True)), output_root=PosixPath('runs')), 'exposure_summary_xlsx')
+_ test_pipeline_rejects_optional_fixture_symlinks_before_running[exposure_summary_xlsx] _
+tests/test_web_demo_helpers.py:409: in test_pipeline_rejects_optional_fixture_symlinks_before_running
+    web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir)
+src/counter_risk/web_demo.py:222: in run_web_demo_pipeline
+    run_dir = run_pipeline_with_config(
+tests/test_web_demo_helpers.py:402: in unexpected_pipeline
+    pytest.fail("Pipeline must not run with sources outside the fixture boundary")
+E   Failed: Pipeline must not run with sources outside the fixture boundary
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[exposure_summary_xlsx] - AssertionError: assert PosixPath('local.csv') == PosixPath('/tmp/pytest-of-runner/pytest-1/test_relocated_config_preserve0/repo/tests/fixtures/config/local.csv')
+ +  where PosixPath('local.csv') = getattr(WorkflowConfig(as_of_date=None, run_date=None, report_date_policy='warn', mosers_all_programs_xlsx=None, raw_nisa_all_...port', registration='builtin:pdf_export', stage='ppt_post_distribution', enabled=True)), output_root=PosixPath('runs')), 'exposure_summary_xlsx')
+FAILED tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[exposure_summary_xlsx] - Failed: Pipeline must not run with sources outside the fixture boundary
+2 failed, 17 deselected, 13 warnings in 0.39s

@@ -1,0 +1,912 @@
+{
+  "summary": {
+    "tests/pipeline/test_manifest_schema.py": {
+      "new_cases": 27,
+      "mutation_proven": 27,
+      "unproven": [],
+      "reverted_exit_code": 0,
+      "reverted_green_section": "manifest_schema-reverted-green"
+    },
+    "tests/pipeline/test_manifest.py": {
+      "new_cases": 25,
+      "mutation_proven": 25,
+      "unproven": [],
+      "reverted_exit_code": 0,
+      "reverted_green_section": "manifest-reverted-green"
+    },
+    "tests/writers/test_historical_update_boundaries.py": {
+      "new_cases": 27,
+      "mutation_proven": 27,
+      "unproven": [],
+      "reverted_exit_code": 0,
+      "reverted_green_section": "historical_update-reverted-green"
+    },
+    "tests/parsers/test_cprs_fcm_boundaries.py": {
+      "new_cases": 14,
+      "mutation_proven": 14,
+      "unproven": [],
+      "reverted_exit_code": 0,
+      "reverted_green_section": "cprs_fcm-reverted-green"
+    },
+    "tests/pipeline/test_reconciliation_boundaries.py": {
+      "new_cases": 10,
+      "mutation_proven": 10,
+      "unproven": [],
+      "reverted_exit_code": 0,
+      "reverted_green_section": "reconciliation-reverted-green"
+    },
+    "tests/observability/test_langsmith_fleet_boundaries.py": {
+      "new_cases": 17,
+      "mutation_proven": 17,
+      "unproven": [],
+      "reverted_exit_code": 0,
+      "reverted_green_section": "langsmith_fleet-reverted-green"
+    },
+    "tests/test_name_registry_boundaries.py": {
+      "new_cases": 5,
+      "mutation_proven": 5,
+      "unproven": [],
+      "reverted_exit_code": 0,
+      "reverted_green_section": "name_registry-reverted-green"
+    },
+    "tests/parsers/test_cprs_ch_boundaries.py": {
+      "new_cases": 19,
+      "mutation_proven": 19,
+      "unproven": [],
+      "reverted_exit_code": 0,
+      "reverted_green_section": "cprs_ch-reverted-green"
+    }
+  },
+  "mutations": [
+    {
+      "source_file": "src/counter_risk/pipeline/manifest_schema.py",
+      "line": 403,
+      "kind": "invert-condition",
+      "original": "not ppt_enabled",
+      "replacement": "not (not ppt_enabled)",
+      "failed_tests": [
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[False-None-expected0]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[False-ppt_outputs1-expected1]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[True-None-expected2]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[True-ppt_outputs3-expected3]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[True-ppt_outputs4-expected4]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[True-ppt_outputs5-expected5]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[True-ppt_outputs6-expected6]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 27,
+      "transcript_section": "manifest_schema-line-403-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest_schema.py",
+      "line": 426,
+      "kind": "invert-condition",
+      "original": "not isinstance(data_quality, Mapping)",
+      "replacement": "not (not isinstance(data_quality, Mapping))",
+      "failed_tests": [
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_rejects_absent_section",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[None-Manifest must include data_quality object.]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality1-Manifest data_quality is missing required overall_status field.]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality2-Manifest data_quality is missing required recommended_actions field.]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality3-Manifest data_quality recommended_actions must be an array.]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality4-Manifest data_quality recommended_actions[0] must be an object.]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality5-Manifest data_quality recommended_actions[0] must include non-empty category.]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality6-Manifest data_quality recommended_actions[0].severity must be one of: info, warn, fail.]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality7-Manifest data_quality recommended_actions[0] must include non-empty action.]",
+        "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality8-None]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 20,
+      "transcript_section": "manifest_schema-line-426-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest_schema.py",
+      "line": 482,
+      "kind": "invert-condition",
+      "original": "type_name == \"object\"",
+      "replacement": "not (type_name == \"object\")",
+      "failed_tests": [
+        "tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[anything-schema0-None]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 10,
+      "transcript_section": "manifest_schema-line-482-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest_schema.py",
+      "line": 486,
+      "kind": "invert-condition",
+      "original": "type_name == \"string\"",
+      "replacement": "not (type_name == \"string\")",
+      "failed_tests": [
+        "tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value8-schema8-value.extra must be of type integer, got str]",
+        "tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value9-schema9-value[0] must be of type integer, got str]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 9,
+      "transcript_section": "manifest_schema-line-486-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest_schema.py",
+      "line": 526,
+      "kind": "invert-condition",
+      "original": "\"enum\" in schema and value not in schema[\"enum\"]",
+      "replacement": "not (\"enum\" in schema and value not in schema[\"enum\"])",
+      "failed_tests": [
+        "tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[-1-schema3-value must be >= 0]",
+        "tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[-schema4-value must have at least 1 character(s)]",
+        "tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value1-schema1-None]",
+        "tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value5-schema5-value must have at least 1 item(s)]",
+        "tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value6-schema6-value is missing required key 'required']",
+        "tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value7-schema7-value contains unexpected key 'extra' (additionalProperties is false)]",
+        "tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[wrong-schema2-value must be one of: 'right']"
+      ],
+      "exit_code": 1,
+      "selected_cases": 7,
+      "transcript_section": "manifest_schema-line-526-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest.py",
+      "line": 66,
+      "kind": "invert-condition",
+      "original": "ppt_status not in valid_ppt_statuses",
+      "replacement": "not (ppt_status not in valid_ppt_statuses)",
+      "failed_tests": [
+        "tests/pipeline/test_manifest.py::test_build_rejects_unknown_ppt_status",
+        "tests/pipeline/test_manifest.py::test_disabled_ppt_omits_even_explicit_outputs",
+        "tests/pipeline/test_manifest.py::test_explicit_ppt_outputs_override_filename_inference",
+        "tests/pipeline/test_manifest.py::test_master_only_output_records_distribution_as_skipped",
+        "tests/pipeline/test_manifest.py::test_source_date_conflicts_retain_report_evidence_after_writing",
+        "tests/pipeline/test_manifest.py::test_summary_artifact_is_registered_once_across_repeated_writes",
+        "tests/pipeline/test_manifest.py::test_write_wraps_filesystem_errors[DATA_QUALITY_SUMMARY.txt]",
+        "tests/pipeline/test_manifest.py::test_write_wraps_filesystem_errors[manifest.json]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 25,
+      "transcript_section": "manifest-line-66-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest.py",
+      "line": 187,
+      "kind": "invert-condition",
+      "original": "result.returncode != 0",
+      "replacement": "not (result.returncode != 0)",
+      "failed_tests": [
+        "tests/pipeline/test_manifest.py::test_git_sha_normalizes_empty_and_padded_output[ abc123\\n]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 17,
+      "transcript_section": "manifest-line-187-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest.py",
+      "line": 216,
+      "kind": "invert-condition",
+      "original": "not isinstance(output_paths, list)",
+      "replacement": "not (not isinstance(output_paths, list))",
+      "failed_tests": [
+        "tests/pipeline/test_manifest.py::test_summary_registration_preserves_invalid_or_existing_paths[None]",
+        "tests/pipeline/test_manifest.py::test_summary_registration_preserves_invalid_or_existing_paths[artifact.xlsx]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 16,
+      "transcript_section": "manifest-line-216-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest.py",
+      "line": 219,
+      "kind": "invert-condition",
+      "original": "_DATA_QUALITY_SUMMARY_FILENAME in rendered_paths",
+      "replacement": "not (_DATA_QUALITY_SUMMARY_FILENAME in rendered_paths)",
+      "failed_tests": [
+        "tests/pipeline/test_manifest.py::test_summary_registration_preserves_invalid_or_existing_paths[output_paths2]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 14,
+      "transcript_section": "manifest-line-219-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest.py",
+      "line": 283,
+      "kind": "invert-condition",
+      "original": "isinstance(data_quality, Mapping)",
+      "replacement": "not (isinstance(data_quality, Mapping))",
+      "failed_tests": [
+        "tests/pipeline/test_manifest.py::test_summary_derives_counts_with_normalized_finding_categories[None]",
+        "tests/pipeline/test_manifest.py::test_summary_derives_counts_with_normalized_finding_categories[counts1]",
+        "tests/pipeline/test_manifest.py::test_summary_sanitizes_counts_and_ignores_malformed_entries",
+        "tests/pipeline/test_manifest.py::test_summary_without_findings_uses_safe_defaults[None]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 13,
+      "transcript_section": "manifest-line-283-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest.py",
+      "line": 348,
+      "kind": "invert-condition",
+      "original": "counts_by_category",
+      "replacement": "not (counts_by_category)",
+      "failed_tests": [
+        "tests/pipeline/test_manifest.py::test_summary_without_findings_uses_safe_defaults[data_quality1]",
+        "tests/pipeline/test_manifest.py::test_summary_without_findings_uses_safe_defaults[data_quality2]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 9,
+      "transcript_section": "manifest-line-348-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest.py",
+      "line": 466,
+      "kind": "invert-condition",
+      "original": "warning is None",
+      "replacement": "not (warning is None)",
+      "failed_tests": [
+        "tests/pipeline/test_manifest.py::test_warning_normalization_preserves_metadata_without_a_message[42-42-structured3]",
+        "tests/pipeline/test_manifest.py::test_warning_normalization_preserves_metadata_without_a_message[warning0-only message-structured0]",
+        "tests/pipeline/test_manifest.py::test_warning_normalization_preserves_metadata_without_a_message[warning1-code=WARN, row_idx=0-structured1]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 7,
+      "transcript_section": "manifest-line-466-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest.py",
+      "line": 468,
+      "kind": "invert-condition",
+      "original": "isinstance(warning, str)",
+      "replacement": "not (isinstance(warning, str))",
+      "failed_tests": [
+        "tests/pipeline/test_manifest.py::test_warning_normalization_preserves_metadata_without_a_message[warning2-None-None]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 4,
+      "transcript_section": "manifest-line-468-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/manifest.py",
+      "line": 538,
+      "kind": "invert-condition",
+      "original": "artifact_path.is_absolute()",
+      "replacement": "not (artifact_path.is_absolute())",
+      "failed_tests": [
+        "tests/pipeline/test_manifest.py::test_artifact_path_cannot_reference_run_directory"
+      ],
+      "exit_code": 1,
+      "selected_cases": 3,
+      "transcript_section": "manifest-line-538-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 130,
+      "kind": "invert-condition",
+      "original": "isinstance(value, Path)",
+      "replacement": "not (isinstance(value, Path))",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_corrupt_workbook_load_is_reported_with_cause[append]",
+        "tests/writers/test_historical_update_boundaries.py::test_corrupt_workbook_load_is_reported_with_cause[open]",
+        "tests/writers/test_historical_update_boundaries.py::test_wal_initial_observation_is_written_below_header"
+      ],
+      "exit_code": 1,
+      "selected_cases": 27,
+      "transcript_section": "historical_update-line-130-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 132,
+      "kind": "invert-condition",
+      "original": "isinstance(value, str) and value.strip()",
+      "replacement": "not (isinstance(value, str) and value.strip())",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_locate_uses_default_root_and_legacy_directory"
+      ],
+      "exit_code": 1,
+      "selected_cases": 24,
+      "transcript_section": "historical_update-line-132-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 138,
+      "kind": "invert-condition",
+      "original": "path.suffix.lower() != \".xlsx\"",
+      "replacement": "not (path.suffix.lower() != \".xlsx\")",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_validate_rejects_directory_with_xlsx_suffix"
+      ],
+      "exit_code": 1,
+      "selected_cases": 23,
+      "transcript_section": "historical_update-line-138-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 193,
+      "kind": "invert-condition",
+      "original": "value is None",
+      "replacement": "not (value is None)",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_append_ignores_empty_header_columns",
+        "tests/writers/test_historical_update_boundaries.py::test_date_only_sheet_appends_and_reports_missing_numeric_series",
+        "tests/writers/test_historical_update_boundaries.py::test_inferred_date_skips_blank_candidate_then_uses_later_header"
+      ],
+      "exit_code": 1,
+      "selected_cases": 22,
+      "transcript_section": "historical_update-line-193-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 199,
+      "kind": "invert-condition",
+      "original": "value is None",
+      "replacement": "not (value is None)",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_empty_series_labels_are_ignored[None]",
+        "tests/writers/test_historical_update_boundaries.py::test_rollup_coercion_ignores_blank_labels"
+      ],
+      "exit_code": 1,
+      "selected_cases": 19,
+      "transcript_section": "historical_update-line-199-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 230,
+      "kind": "bypass-error",
+      "original": "raise WorkbookValidationError(\n        f\"Unable to locate a header row containing a date label in worksheet {worksheet.title!r}\"\n    )",
+      "replacement": "pass",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_header_scan_reports_missing_date_label"
+      ],
+      "exit_code": 1,
+      "selected_cases": 17,
+      "transcript_section": "historical_update-line-230-bypass-error"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 258,
+      "kind": "invert-condition",
+      "original": "isinstance(existing_cells, dict)",
+      "replacement": "not (isinstance(existing_cells, dict))",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_read_only_cell_lookup_does_not_materialize_missing_cells"
+      ],
+      "exit_code": 1,
+      "selected_cases": 16,
+      "transcript_section": "historical_update-line-258-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 316,
+      "kind": "invert-condition",
+      "original": "append_date is not None",
+      "replacement": "not (append_date is not None)",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_append_date_resolution_requires_a_source"
+      ],
+      "exit_code": 1,
+      "selected_cases": 15,
+      "transcript_section": "historical_update-line-316-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 378,
+      "kind": "bypass-error",
+      "original": "raise WorkbookValidationError(\"Worksheet header row is missing a date column\")",
+      "replacement": "pass",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_date_column_resolvers_reject_missing_header[_get_date_column]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 14,
+      "transcript_section": "historical_update-line-378-bypass-error"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 385,
+      "kind": "bypass-error",
+      "original": "raise WorkbookValidationError(\"Worksheet header rows are missing a date column\")",
+      "replacement": "pass",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_date_column_resolvers_reject_missing_header[_get_date_column_from_consolidated]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 13,
+      "transcript_section": "historical_update-line-385-bypass-error"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 422,
+      "kind": "invert-condition",
+      "original": "value is None",
+      "replacement": "not (value is None)",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_cell_date_rejects_unrecognized_values[123]",
+        "tests/writers/test_historical_update_boundaries.py::test_cell_date_rejects_unrecognized_values[yesterday]",
+        "tests/writers/test_historical_update_boundaries.py::test_cell_dates_support_datetime_and_blank_text[value0]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 12,
+      "transcript_section": "historical_update-line-422-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 424,
+      "kind": "invert-condition",
+      "original": "isinstance(value, datetime)",
+      "replacement": "not (isinstance(value, datetime))",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_cell_dates_support_datetime_and_blank_text[  ]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 9,
+      "transcript_section": "historical_update-line-424-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 458,
+      "kind": "bypass-error",
+      "original": "raise WorkbookValidationError(\"Worksheet header rows are missing a WAL value column\")",
+      "replacement": "pass",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_wal_column_accepts_prefixed_label_and_rejects_absence"
+      ],
+      "exit_code": 1,
+      "selected_cases": 8,
+      "transcript_section": "historical_update-line-458-bypass-error"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 468,
+      "kind": "invert-condition",
+      "original": "wal_sheet_name not in getattr(workbook, \"sheetnames\", [])",
+      "replacement": "not (wal_sheet_name not in getattr(workbook, \"sheetnames\", []))",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_append_rejects_missing_worksheet[wal]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 7,
+      "transcript_section": "historical_update-line-468-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 510,
+      "kind": "drop-return-value",
+      "original": "snapshots",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_preserved_wal_cells_detect_changes[2-2-0.00-0%-number format]",
+        "tests/writers/test_historical_update_boundaries.py::test_preserved_wal_cells_detect_changes[2-3-General-General-cell value]",
+        "tests/writers/test_historical_update_boundaries.py::test_preserved_wal_cells_detect_changes[=A2-2-General-General-formula usage]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 6,
+      "transcript_section": "historical_update-line-510-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 557,
+      "kind": "invert-condition",
+      "original": "excess > 0",
+      "replacement": "not (excess > 0)",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_wal_rolling_window_removes_oldest_observations"
+      ],
+      "exit_code": 1,
+      "selected_cases": 3,
+      "transcript_section": "historical_update-line-557-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 600,
+      "kind": "invert-condition",
+      "original": "sheet_name not in getattr(workbook, \"sheetnames\", [])",
+      "replacement": "not (sheet_name not in getattr(workbook, \"sheetnames\", []))",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_append_rejects_missing_worksheet[counterparty]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 2,
+      "transcript_section": "historical_update-line-600-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/writers/historical_update.py",
+      "line": 203,
+      "kind": "drop-return-value",
+      "original": "\"\"",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/writers/test_historical_update_boundaries.py::test_empty_series_labels_are_ignored[  ]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 1,
+      "transcript_section": "historical_update-line-203-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/parsers/cprs_fcm.py",
+      "line": 106,
+      "kind": "drop-return-value",
+      "original": "_to_dataframe(\n        records=_parse_fcm_total_records(path), columns=_TOTAL_COLUMNS, dtypes=_TOTAL_DTYPES\n    )",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_absent_sections_return_typed_empty_frames[parse_fcm_totals]",
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_malformed_workbook_reports_structure_error[worksheet-parse_fcm_totals]",
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_malformed_workbook_reports_structure_error[zip-parse_fcm_totals]",
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_totals_section_requires_identifiable_counterparty_header",
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_totals_skip_summary_and_empty_rows_and_read_to_end"
+      ],
+      "exit_code": 1,
+      "selected_cases": 14,
+      "transcript_section": "cprs_fcm-line-106-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/parsers/cprs_fcm.py",
+      "line": 124,
+      "kind": "drop-return-value",
+      "original": "_fcm_total_evidence_from_records(_parse_fcm_total_records(path))",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_missing_workbook_has_contextual_error[parse_fcm_total_evidence]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 9,
+      "transcript_section": "cprs_fcm-line-124-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/parsers/cprs_fcm.py",
+      "line": 207,
+      "kind": "invert-condition",
+      "original": "not file_path.exists()",
+      "replacement": "not (not file_path.exists())",
+      "failed_tests": [
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_absent_sections_return_typed_empty_frames[parse_futures_detail]",
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_futures_missing_columns_are_reported",
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_futures_skips_blank_and_repeated_header_rows_and_reads_to_end",
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_malformed_workbook_reports_structure_error[worksheet-parse_futures_detail]",
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_malformed_workbook_reports_structure_error[zip-parse_futures_detail]",
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_missing_workbook_has_contextual_error[parse_futures_detail]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 8,
+      "transcript_section": "cprs_fcm-line-207-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/parsers/cprs_fcm.py",
+      "line": 335,
+      "kind": "invert-condition",
+      "original": "value is None",
+      "replacement": "not (value is None)",
+      "failed_tests": [
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_header_mapping_ignores_blank_and_duplicate_columns"
+      ],
+      "exit_code": 1,
+      "selected_cases": 2,
+      "transcript_section": "cprs_fcm-line-335-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/parsers/cprs_fcm.py",
+      "line": 471,
+      "kind": "drop-return-value",
+      "original": "df.astype(dtypes)",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/parsers/test_cprs_fcm_boundaries.py::test_dataframe_fills_missing_fields_and_preserves_column_order"
+      ],
+      "exit_code": 1,
+      "selected_cases": 1,
+      "transcript_section": "cprs_fcm-line-471-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/reconciliation.py",
+      "line": 43,
+      "kind": "drop-return-value",
+      "original": "_REPO_NAME_REGISTRY_PATH",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/pipeline/test_reconciliation_boundaries.py::test_present_series_ignores_blank_entries",
+        "tests/pipeline/test_reconciliation_boundaries.py::test_strict_custom_resolver_retains_canonical_name_without_raw_metadata"
+      ],
+      "exit_code": 1,
+      "selected_cases": 10,
+      "transcript_section": "reconciliation-line-43-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/reconciliation.py",
+      "line": 424,
+      "kind": "invert-condition",
+      "original": "not variant or not expected_segments_by_variant",
+      "replacement": "not (not variant or not expected_segments_by_variant)",
+      "failed_tests": [
+        "tests/pipeline/test_reconciliation_boundaries.py::test_expected_segments_match_variant_case_and_ignore_blank_values"
+      ],
+      "exit_code": 1,
+      "selected_cases": 8,
+      "transcript_section": "reconciliation-line-424-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/reconciliation.py",
+      "line": 482,
+      "kind": "drop-return-value",
+      "original": "normalized_to_raw",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/pipeline/test_reconciliation_boundaries.py::test_raw_counterparty_metadata_ignores_none_and_preserves_original_spacing"
+      ],
+      "exit_code": 1,
+      "selected_cases": 7,
+      "transcript_section": "reconciliation-line-482-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/reconciliation.py",
+      "line": 500,
+      "kind": "invert-condition",
+      "original": "isinstance(table, list)",
+      "replacement": "not (isinstance(table, list))",
+      "failed_tests": [
+        "tests/pipeline/test_reconciliation_boundaries.py::test_records_adapts_legacy_and_record_table_protocols[table0-expected0]",
+        "tests/pipeline/test_reconciliation_boundaries.py::test_records_adapts_legacy_and_record_table_protocols[table1-expected1]",
+        "tests/pipeline/test_reconciliation_boundaries.py::test_records_adapts_legacy_and_record_table_protocols[table2-expected2]",
+        "tests/pipeline/test_reconciliation_boundaries.py::test_records_adapts_legacy_and_record_table_protocols[table3-expected3]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 6,
+      "transcript_section": "reconciliation-line-500-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/reconciliation.py",
+      "line": 389,
+      "kind": "invert-condition",
+      "original": "not isinstance(raw_sections, Mapping)",
+      "replacement": "not (not isinstance(raw_sections, Mapping))",
+      "failed_tests": [
+        "tests/pipeline/test_reconciliation_boundaries.py::test_section_mapping_is_required_before_reconciling"
+      ],
+      "exit_code": 1,
+      "selected_cases": 2,
+      "transcript_section": "reconciliation-line-389-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/pipeline/reconciliation.py",
+      "line": 40,
+      "kind": "drop-return-value",
+      "original": "resolve_runtime_path(\"config/name_registry.yml\")",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/pipeline/test_reconciliation_boundaries.py::test_frozen_registry_falls_back_when_bundle_asset_is_missing"
+      ],
+      "exit_code": 1,
+      "selected_cases": 1,
+      "transcript_section": "reconciliation-line-40-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/observability/langsmith_fleet.py",
+      "line": 263,
+      "kind": "drop-return-value",
+      "original": "normalized",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_workflow_events_ignore_blank_stages_and_sanitize_latency"
+      ],
+      "exit_code": 1,
+      "selected_cases": 17,
+      "transcript_section": "langsmith_fleet-line-263-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/observability/langsmith_fleet.py",
+      "line": 326,
+      "kind": "drop-return-value",
+      "original": "record",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_rejects_invalid_contract_fields[domain-value3-domain must be an object]",
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_rejects_invalid_contract_fields[domain-value4-missing domain fields]",
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_rejects_invalid_contract_fields[repo-other/repo-invalid repo]",
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_rejects_invalid_contract_fields[schema_version-invalid-invalid schema_version]",
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_rejects_invalid_contract_fields[surface-other-invalid surface]",
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_report_artifacts_can_be_explicitly_absent",
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_report_artifacts_require_a_list",
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_top_level_artifact_reference_is_validated"
+      ],
+      "exit_code": 1,
+      "selected_cases": 16,
+      "transcript_section": "langsmith_fleet-line-326-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/observability/langsmith_fleet.py",
+      "line": 388,
+      "kind": "invert-condition",
+      "original": "not isinstance(value, str)",
+      "replacement": "not (not isinstance(value, str))",
+      "failed_tests": [
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_artifact_reference_requires_relative_artifact_scheme[42]",
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_artifact_reference_requires_relative_artifact_scheme[None]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 8,
+      "transcript_section": "langsmith_fleet-line-388-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/observability/langsmith_fleet.py",
+      "line": 390,
+      "kind": "invert-condition",
+      "original": "not value.startswith(\"artifact:\")",
+      "replacement": "not (not value.startswith(\"artifact:\"))",
+      "failed_tests": [
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_artifact_reference_requires_relative_artifact_scheme[report.json]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 6,
+      "transcript_section": "langsmith_fleet-line-390-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/observability/langsmith_fleet.py",
+      "line": 398,
+      "kind": "invert-condition",
+      "original": "path.is_absolute() or not path.parts",
+      "replacement": "not (path.is_absolute() or not path.parts)",
+      "failed_tests": [
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_artifact_reference_requires_relative_artifact_scheme[artifact:.]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 5,
+      "transcript_section": "langsmith_fleet-line-398-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/observability/langsmith_fleet.py",
+      "line": 406,
+      "kind": "invert-condition",
+      "original": "not isinstance(value, str)",
+      "replacement": "not (not isinstance(value, str))",
+      "failed_tests": [
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_sha_reference_requires_string_and_sha_scheme[42]",
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_sha_reference_requires_string_and_sha_scheme[None]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 4,
+      "transcript_section": "langsmith_fleet-line-406-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/observability/langsmith_fleet.py",
+      "line": 334,
+      "kind": "invert-condition",
+      "original": "missing",
+      "replacement": "not (missing)",
+      "failed_tests": [
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_reports_missing_top_level_fields"
+      ],
+      "exit_code": 1,
+      "selected_cases": 2,
+      "transcript_section": "langsmith_fleet-line-334-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/observability/langsmith_fleet.py",
+      "line": 409,
+      "kind": "drop-return-value",
+      "original": "False",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/observability/test_langsmith_fleet_boundaries.py::test_sha_reference_requires_string_and_sha_scheme[artifact:report.json]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 1,
+      "transcript_section": "langsmith_fleet-line-409-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/name_registry.py",
+      "line": 115,
+      "kind": "invert-condition",
+      "original": "not normalized",
+      "replacement": "not (not normalized)",
+      "failed_tests": [
+        "tests/test_name_registry_boundaries.py::test_registry_entry_rejects_whitespace_only_labels[display_name-  -display_name cannot be blank]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 5,
+      "transcript_section": "name_registry-line-115-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/name_registry.py",
+      "line": 42,
+      "kind": "invert-condition",
+      "original": "not variant_key",
+      "replacement": "not (not variant_key)",
+      "failed_tests": [
+        "tests/test_name_registry_boundaries.py::test_series_flags_reject_blank_and_duplicate_normalized_keys[flags0-variant keys cannot be blank]",
+        "tests/test_name_registry_boundaries.py::test_series_flags_reject_blank_and_duplicate_normalized_keys[flags1-segment keys cannot be blank]",
+        "tests/test_name_registry_boundaries.py::test_series_flags_reject_blank_and_duplicate_normalized_keys[flags2-duplicate segment key]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 4,
+      "transcript_section": "name_registry-line-42-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/name_registry.py",
+      "line": 97,
+      "kind": "invert-condition",
+      "original": "not isinstance(alias, str)",
+      "replacement": "not (not isinstance(alias, str))",
+      "failed_tests": [
+        "tests/test_name_registry_boundaries.py::test_registry_entry_rejects_whitespace_only_labels[aliases-value0-aliases cannot contain blank values]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 1,
+      "transcript_section": "name_registry-line-97-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/parsers/cprs_ch.py",
+      "line": 133,
+      "kind": "invert-condition",
+      "original": "not file_path.exists()",
+      "replacement": "not (not file_path.exists())",
+      "failed_tests": [
+        "tests/parsers/test_cprs_ch_boundaries.py::test_numeric_headers_allow_missing_counterparty_label",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_parser_rejects_incomplete_structure[rows0-Unable to locate CPRS-CH header row]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_parser_rejects_incomplete_structure[rows1-missing required column: Notional]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_parser_rejects_incomplete_structure[rows2-No CPRS-CH segments detected]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_parser_rejects_incomplete_structure[rows3-CPRS-CH parser produced no rows]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_parser_reports_malformed_workbook[worksheet]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_parser_reports_malformed_workbook[zip]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_trend_swaps_relabel_preserves_totals_segment"
+      ],
+      "exit_code": 1,
+      "selected_cases": 19,
+      "transcript_section": "cprs_ch-line-133-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/parsers/cprs_ch.py",
+      "line": 282,
+      "kind": "invert-condition",
+      "original": "value is None",
+      "replacement": "not (value is None)",
+      "failed_tests": [
+        "tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_defaults_missing_and_invalid_cells_to_zero",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_prefers_first_absolute_row_and_parses_percentages[False]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_prefers_first_absolute_row_and_parses_percentages[True]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 11,
+      "transcript_section": "cprs_ch-line-282-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/parsers/cprs_ch.py",
+      "line": 284,
+      "kind": "drop-return-value",
+      "original": "safe_display_name(value.replace(\"\\n\", \" \"))",
+      "replacement": "None",
+      "failed_tests": [
+        "tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_returns_none_when_unavailable[breakdown]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_returns_none_when_unavailable[classes]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_returns_none_when_unavailable[header]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 8,
+      "transcript_section": "cprs_ch-line-284-drop-return-value"
+    },
+    {
+      "source_file": "src/counter_risk/parsers/cprs_ch.py",
+      "line": 520,
+      "kind": "invert-condition",
+      "original": "not file_path.exists()",
+      "replacement": "not (not file_path.exists())",
+      "failed_tests": [
+        "tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_requires_existing_workbook",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_returns_none_when_unavailable[zip]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 5,
+      "transcript_section": "cprs_ch-line-520-invert-condition"
+    },
+    {
+      "source_file": "src/counter_risk/parsers/cprs_ch.py",
+      "line": 250,
+      "kind": "invert-condition",
+      "original": "not isinstance(raw_value, (int, float))",
+      "replacement": "not (not isinstance(raw_value, (int, float)))",
+      "failed_tests": [
+        "tests/parsers/test_cprs_ch_boundaries.py::test_numeric_validation_reports_field_and_source_row[1e+16-Out-of-range numeric value]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_numeric_validation_reports_field_and_source_row[bad-Invalid non-numeric value]",
+        "tests/parsers/test_cprs_ch_boundaries.py::test_numeric_validation_reports_field_and_source_row[inf-Invalid non-finite numeric value]"
+      ],
+      "exit_code": 1,
+      "selected_cases": 3,
+      "transcript_section": "cprs_ch-line-250-invert-condition"
+    }
+  ]
+}

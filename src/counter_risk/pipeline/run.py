@@ -5841,7 +5841,7 @@ def _extract_prior_populated_series_by_sheet(
 
             last_dated_row: tuple[Any, ...] | None = None
             for row in rows[header_index + 1 :]:
-                if row and row[0] is not None:
+                if row and _coerce_historical_row_date(row[0]) is not None:
                     last_dated_row = row
             if last_dated_row is None:
                 populated_by_sheet[sheet_name] = ()

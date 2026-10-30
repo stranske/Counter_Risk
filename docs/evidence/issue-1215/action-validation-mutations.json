@@ -1,0 +1,30 @@
+{
+  "source_file": "src/counter_risk/pipeline/manifest_schema.py",
+  "restored_sha256": "65cb534200f9f8c146acc93db309e5896e5e37db657a4790a2d05ca76f35d147",
+  "results": [
+    {
+      "mutation": "accept-whitespace-category",
+      "original": "not category.strip()",
+      "replacement": "not category",
+      "node": "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_rejects_blank_fields_after_valid_action[category]",
+      "red_exit_code": 1,
+      "reverted_exit_code": 0
+    },
+    {
+      "mutation": "accept-whitespace-action",
+      "original": "not description.strip()",
+      "replacement": "not description",
+      "node": "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_rejects_blank_fields_after_valid_action[action]",
+      "red_exit_code": 1,
+      "reverted_exit_code": 0
+    },
+    {
+      "mutation": "check-only-first-action",
+      "original": "enumerate(recommended_actions)",
+      "replacement": "enumerate(recommended_actions[:1])",
+      "node": "tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_rejects_blank_fields_after_valid_action",
+      "red_exit_code": 1,
+      "reverted_exit_code": 0
+    }
+  ]
+}

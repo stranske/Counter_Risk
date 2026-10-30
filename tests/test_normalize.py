@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from counter_risk import normalize
 from counter_risk.normalize import (
     canonicalize_name,
     counterparty_included_for_variant,
@@ -14,6 +15,41 @@ from counter_risk.normalize import (
     normalize_counterparty_with_source,
     safe_display_name,
 )
+
+
+def test_legacy_whitespace_helper_preserves_punctuation() -> None:
+    assert normalize._normalize_whitespace("  Acme–Bank\tLtd\n ") == "Acme–Bank Ltd"
+
+
+def test_frozen_registry_resolution_falls_back_to_repository_registry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[object] = []
+
+    def unavailable(path: object) -> Path:
+        calls.append(path)
+        raise normalize.RuntimePathResolutionError("bundle asset absent")
+
+    monkeypatch.setattr(normalize.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(normalize, "resolve_runtime_path", unavailable)
+    assert normalize._resolve_registry_path("config/name_registry.yml") == (
+        normalize._REPO_DEFAULT_REGISTRY_PATH
+    )
+    assert calls == [Path("config/name_registry.yml")]
+
+
+def test_explicit_relative_registry_path_resolves_against_cwd(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    assert (
+        normalize._resolve_registry_path("custom/registry.yml") == tmp_path / "custom/registry.yml"
+    )
+
+
+def test_unknown_variant_keeps_registered_counterparty_included() -> None:
+    assert counterparty_included_for_variant("Citibank", "future-variant") is True
 
 
 @pytest.mark.parametrize(

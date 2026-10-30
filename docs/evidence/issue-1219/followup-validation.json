@@ -1,0 +1,46 @@
+{
+  "python": "3.14.9",
+  "new_test_functions": 1,
+  "new_parameter_cases": 2,
+  "new_mutation_experiments": 4,
+  "all_mutants_failed_and_restored_passed": true,
+  "restored_source_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114",
+  "full_suite": {
+    "passed": 2556,
+    "skipped": 1,
+    "seconds": 134.55
+  },
+  "targeted_suite": {
+    "passed": 12,
+    "deselected": 1,
+    "target": "counter_risk.web_demo",
+    "statements": 117,
+    "missed": 0,
+    "cover_percent": 100
+  },
+  "overall_line_coverage_percent": 90.77439423706615,
+  "additional_covered_lines_from_followup": 0,
+  "ci_blended_delta": "unverified; issue baseline 89.32% remains authoritative",
+  "black": {
+    "files": 403,
+    "exit": 0,
+    "scheduler": "serial reformat_one; native forkserver denied; single-worker/fork schedulers did not complete promptly"
+  },
+  "ruff": {
+    "command": "ruff check --output-format github --extend-exclude .workflows-lib .",
+    "exit": 0
+  },
+  "published_pr": {
+    "number": 1221,
+    "state": "open",
+    "draft": false,
+    "head_sha": "6d64651340cd40134fe45557e3a01418ff996949",
+    "gate": "success",
+    "python_313": "success",
+    "python_314": "success"
+  },
+  "publication_blockers": [
+    "GitHub PR body update rejected: approval required, policy never",
+    ".git/index.lock cannot be created: read-only file system"
+  ]
+}

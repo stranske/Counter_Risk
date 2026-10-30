@@ -13,6 +13,48 @@ import pytest
 from counter_risk.chat.providers import langchain_runtime as runtime
 
 
+@pytest.mark.parametrize("content", [None, "{invalid json"])
+def test_slot_catalog_uses_defaults_for_missing_or_invalid_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, content: str | None
+) -> None:
+    path = tmp_path / "slots.json"
+    if content is not None:
+        path.write_text(content, encoding="utf-8")
+    monkeypatch.setenv(runtime.ENV_SLOT_CONFIG, str(path))
+    assert runtime._load_slot_config() == runtime._default_slots()
+
+
+@pytest.mark.parametrize("failure_mode", ["import", "missing-class"])
+def test_anthropic_client_missing_dependency_returns_none(
+    monkeypatch: pytest.MonkeyPatch, failure_mode: str
+) -> None:
+    def import_module(_: str) -> object:
+        if failure_mode == "import":
+            raise ImportError("dependency missing")
+        return SimpleNamespace()
+
+    monkeypatch.setattr(runtime.importlib, "import_module", import_module)
+    assert (
+        runtime._build_anthropic_client(
+            model="claude-sonnet", token="unused-test-value", timeout=10, max_retries=1
+        )
+        is None
+    )
+
+
+def test_chat_client_returns_none_when_all_slots_fail(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "unused-test-value")
+    calls: list[str] = []
+
+    def unavailable(*, provider: str, **kwargs: object) -> None:
+        calls.append(provider)
+
+    monkeypatch.setattr(runtime, "_build_client_for_provider", unavailable)
+    assert runtime.build_chat_client() is None
+    assert calls == [slot.provider for slot in runtime._resolve_slots()]
+    assert calls
+
+
 @pytest.fixture(autouse=True)
 def _isolate_runtime_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     """Keep provider credentials and routing overrides isolated from every test."""

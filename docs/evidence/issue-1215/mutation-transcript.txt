@@ -1,0 +1,535 @@
+Actual break-and-revert run, Python 3.14.9 / pytest 9.2.0
+Base for identifying newly added test functions: faad152.
+For each source file: first run every new case green; then apply one AST-local
+condition inversion, bypassed raise, or dropped return value at a time.
+Run remaining unproven node IDs with:
+python -m pytest -q -o addopts= -m "not slow" --junitxml=/tmp/1216-mutation-junit.xml <node IDs>
+Accept only exit 1 with JUnit test failures and no JUnit errors.
+Restore the exact original bytes in finally; rerun all selected cases green.
+Additional direct contract mutations independently exercise the four new manifest behaviors
+and convert an empty git SHA from None to an empty string.
+Every one of 144 newly added parametrized cases failed on a real source mutation.
+
+=== src/counter_risk/pipeline/manifest_schema.py:403 invert-condition ===
+ORIGINAL: 'not ppt_enabled'
+MUTANT: 'not (not ppt_enabled)'
+Exit 1; 7 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[False-None-expected0] - AssertionError: assert (False, 'Mani...ion entries.') == (True, None)
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[False-ppt_outputs1-expected1] - AssertionError: assert (False, 'Mani...ion entries.') == (False, 'Mani...is disabled.')
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[True-None-expected2] - AssertionError: assert (True, None) == (False, 'Mani...ion entries.')
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[True-ppt_outputs3-expected3] - AssertionError: assert (False, 'Mani...is disabled.') == (False, 'Mani...n PPT entry.')
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[True-ppt_outputs4-expected4] - AssertionError: assert (False, 'Mani...is disabled.') == (False, 'Mani...r PPT entry.')
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[True-ppt_outputs5-expected5] - AssertionError: assert (False, 'Mani...is disabled.') == (False, 'Mani...ion entries.')
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_ppt_outputs_reports_each_contract_failure[True-ppt_outputs6-expected6] - AssertionError: assert (False, 'Mani...is disabled.') == (True, None)
+
+=== src/counter_risk/pipeline/manifest_schema.py:426 invert-condition ===
+ORIGINAL: 'not isinstance(data_quality, Mapping)'
+MUTANT: 'not (not isinstance(data_quality, Mapping))'
+Exit 1; 10 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_rejects_absent_section - TypeError: argument of type 'NoneType' is not a container or iterable
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[None-Manifest must include data_quality object.] - TypeError: argument of type 'NoneType' is not a container or iterable
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality1-Manifest data_quality is missing required overall_status field.] - AssertionError: assert 'Manifest mus...ality object.' == 'Manifest dat...status field.'
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality2-Manifest data_quality is missing required recommended_actions field.] - AssertionError: assert 'Manifest mus...ality object.' == 'Manifest dat...ctions field.'
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality3-Manifest data_quality recommended_actions must be an array.] - AssertionError: assert 'Manifest mus...ality object.' == 'Manifest dat... be an array.'
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality4-Manifest data_quality recommended_actions[0] must be an object.] - AssertionError: assert 'Manifest mus...ality object.' == 'Manifest dat...be an object.'
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality5-Manifest data_quality recommended_actions[0] must include non-empty category.] - AssertionError: assert 'Manifest mus...ality object.' == 'Manifest dat...pty category.'
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality6-Manifest data_quality recommended_actions[0].severity must be one of: info, warn, fail.] - AssertionError: assert 'Manifest mus...ality object.' == 'Manifest dat..., warn, fail.'
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality7-Manifest data_quality recommended_actions[0] must include non-empty action.] - AssertionError: assert 'Manifest mus...ality object.' == 'Manifest dat...empty action.'
+FAILED tests/pipeline/test_manifest_schema.py::test_validate_manifest_data_quality_reports_action_contract_failures[data_quality8-None] - assert False is (None is None)
+
+=== src/counter_risk/pipeline/manifest_schema.py:482 invert-condition ===
+ORIGINAL: 'type_name == "object"'
+MUTANT: 'not (type_name == "object")'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[anything-schema0-None] - AssertionError: assert 'value must be of type future-type, got str' == None
+
+=== src/counter_risk/pipeline/manifest_schema.py:486 invert-condition ===
+ORIGINAL: 'type_name == "string"'
+MUTANT: 'not (type_name == "string")'
+Exit 1; 2 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value8-schema8-value.extra must be of type integer, got str] - AssertionError: assert None == 'value.extra must be of type integer, got str'
+FAILED tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value9-schema9-value[0] must be of type integer, got str] - AssertionError: assert None == 'value[0] must be of type integer, got str'
+
+=== src/counter_risk/pipeline/manifest_schema.py:526 invert-condition ===
+ORIGINAL: '"enum" in schema and value not in schema["enum"]'
+MUTANT: 'not ("enum" in schema and value not in schema["enum"])'
+Exit 1; 7 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[-1-schema3-value must be >= 0] - KeyError: 'enum'
+FAILED tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[-schema4-value must have at least 1 character(s)] - KeyError: 'enum'
+FAILED tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value1-schema1-None] - KeyError: 'enum'
+FAILED tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value5-schema5-value must have at least 1 item(s)] - KeyError: 'enum'
+FAILED tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value6-schema6-value is missing required key 'required'] - KeyError: 'enum'
+FAILED tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[value7-schema7-value contains unexpected key 'extra' (additionalProperties is false)] - KeyError: 'enum'
+FAILED tests/pipeline/test_manifest_schema.py::test_check_node_reports_schema_constraint_failures[wrong-schema2-value must be one of: 'right'] - assert None == "value must be one of: 'right'"
+
+=== src/counter_risk/pipeline/manifest.py:66 invert-condition ===
+ORIGINAL: 'ppt_status not in valid_ppt_statuses'
+MUTANT: 'not (ppt_status not in valid_ppt_statuses)'
+Exit 1; 8 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest.py::test_build_rejects_unknown_ppt_status - Failed: DID NOT RAISE ValueError
+FAILED tests/pipeline/test_manifest.py::test_disabled_ppt_omits_even_explicit_outputs - ValueError: Invalid ppt_status 'success'; expected one of: failed, skipped, success
+FAILED tests/pipeline/test_manifest.py::test_explicit_ppt_outputs_override_filename_inference - ValueError: Invalid ppt_status 'success'; expected one of: failed, skipped, success
+FAILED tests/pipeline/test_manifest.py::test_master_only_output_records_distribution_as_skipped - ValueError: Invalid ppt_status 'success'; expected one of: failed, skipped, success
+FAILED tests/pipeline/test_manifest.py::test_source_date_conflicts_retain_report_evidence_after_writing - ValueError: Invalid ppt_status 'success'; expected one of: failed, skipped, success
+FAILED tests/pipeline/test_manifest.py::test_summary_artifact_is_registered_once_across_repeated_writes - ValueError: Invalid ppt_status 'success'; expected one of: failed, skipped, success
+FAILED tests/pipeline/test_manifest.py::test_write_wraps_filesystem_errors[DATA_QUALITY_SUMMARY.txt] - ValueError: Invalid ppt_status 'success'; expected one of: failed, skipped, success
+FAILED tests/pipeline/test_manifest.py::test_write_wraps_filesystem_errors[manifest.json] - ValueError: Invalid ppt_status 'success'; expected one of: failed, skipped, success
+
+=== src/counter_risk/pipeline/manifest.py:187 invert-condition ===
+ORIGINAL: 'result.returncode != 0'
+MUTANT: 'not (result.returncode != 0)'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest.py::test_git_sha_normalizes_empty_and_padded_output[ abc123\n] - AssertionError: assert None == (('abc123'))
+
+=== src/counter_risk/pipeline/manifest.py:216 invert-condition ===
+ORIGINAL: 'not isinstance(output_paths, list)'
+MUTANT: 'not (not isinstance(output_paths, list))'
+Exit 1; 2 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest.py::test_summary_registration_preserves_invalid_or_existing_paths[None] - TypeError: 'NoneType' object is not iterable
+FAILED tests/pipeline/test_manifest.py::test_summary_registration_preserves_invalid_or_existing_paths[artifact.xlsx] - AttributeError: 'str' object has no attribute 'append'
+
+=== src/counter_risk/pipeline/manifest.py:219 invert-condition ===
+ORIGINAL: '_DATA_QUALITY_SUMMARY_FILENAME in rendered_paths'
+MUTANT: 'not (_DATA_QUALITY_SUMMARY_FILENAME in rendered_paths)'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest.py::test_summary_registration_preserves_invalid_or_existing_paths[output_paths2] - AssertionError: assert ['DATA_QUALIT..._SUMMARY.txt'] == ['DATA_QUALITY_SUMMARY.txt']
+
+=== src/counter_risk/pipeline/manifest.py:283 invert-condition ===
+ORIGINAL: 'isinstance(data_quality, Mapping)'
+MUTANT: 'not (isinstance(data_quality, Mapping))'
+Exit 1; 4 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest.py::test_summary_derives_counts_with_normalized_finding_categories[None] - AssertionError: assert '- Total findings: 3\n- info: 1\n- warn: 1\n- fail: 1' in 'Counterparty Risk Data Quality Summary\n\nAs-of date: unknown\nRun date: unknown\nOverall status: INFO (GREEN) - Safe...n- warn: 0\n- fail: 0\n\nFindings by category:\n- none\n\nDetailed findings:\n- none\n\nRecommended actions:\n- none\n'
+FAILED tests/pipeline/test_manifest.py::test_summary_derives_counts_with_normalized_finding_categories[counts1] - AssertionError: assert '- Total findings: 3\n- info: 1\n- warn: 1\n- fail: 1' in 'Counterparty Risk Data Quality Summary\n\nAs-of date: unknown\nRun date: unknown\nOverall status: INFO (GREEN) - Safe...n- warn: 0\n- fail: 0\n\nFindings by category:\n- none\n\nDetailed findings:\n- none\n\nRecommended actions:\n- none\n'
+FAILED tests/pipeline/test_manifest.py::test_summary_sanitizes_counts_and_ignores_malformed_entries - AssertionError: assert 'Overall status: FAIL (RED) - Do not send until failing checks are resolved.' in 'Counterparty Risk Data Quality Summary\n\nAs-of date: unknown\nRun date: unknown\nOverall status: INFO (GREEN) - Safe...n- warn: 0\n- fail: 0\n\nFindings by category:\n- none\n\nDetailed findings:\n- none\n\nRecommended actions:\n- none\n'
+FAILED tests/pipeline/test_manifest.py::test_summary_without_findings_uses_safe_defaults[None] - AttributeError: 'NoneType' object has no attribute 'get'
+
+=== src/counter_risk/pipeline/manifest.py:348 invert-condition ===
+ORIGINAL: 'counts_by_category'
+MUTANT: 'not (counts_by_category)'
+Exit 1; 2 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest.py::test_summary_without_findings_uses_safe_defaults[data_quality1] - AssertionError: assert 'Findings by category:\n- none\n' in 'Counterparty Risk Data Quality Summary\n\nAs-of date: unknown\nRun date: unknown\nOverall status: INFO (GREEN) - Safe...info: 0\n- warn: 0\n- fail: 0\n\nFindings by category:\n\nDetailed findings:\n- none\n\nRecommended actions:\n- none\n'
+FAILED tests/pipeline/test_manifest.py::test_summary_without_findings_uses_safe_defaults[data_quality2] - AssertionError: assert 'Findings by category:\n- none\n' in 'Counterparty Risk Data Quality Summary\n\nAs-of date: unknown\nRun date: unknown\nOverall status: INFO (GREEN) - Safe...info: 0\n- warn: 0\n- fail: 0\n\nFindings by category:\n\nDetailed findings:\n- none\n\nRecommended actions:\n- none\n'
+
+=== src/counter_risk/pipeline/manifest.py:466 invert-condition ===
+ORIGINAL: 'warning is None'
+MUTANT: 'not (warning is None)'
+Exit 1; 3 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest.py::test_warning_normalization_preserves_metadata_without_a_message[42-42-structured3] - AssertionError: assert None == '42'
+FAILED tests/pipeline/test_manifest.py::test_warning_normalization_preserves_metadata_without_a_message[warning0-only message-structured0] - AssertionError: assert None == 'only message'
+FAILED tests/pipeline/test_manifest.py::test_warning_normalization_preserves_metadata_without_a_message[warning1-code=WARN, row_idx=0-structured1] - AssertionError: assert None == 'code=WARN, row_idx=0'
+
+=== src/counter_risk/pipeline/manifest.py:468 invert-condition ===
+ORIGINAL: 'isinstance(warning, str)'
+MUTANT: 'not (isinstance(warning, str))'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest.py::test_warning_normalization_preserves_metadata_without_a_message[warning2-None-None] - AttributeError: 'dict' object has no attribute 'strip'
+
+=== src/counter_risk/pipeline/manifest.py:538 invert-condition ===
+ORIGINAL: 'artifact_path.is_absolute()'
+MUTANT: 'not (artifact_path.is_absolute())'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_manifest.py::test_artifact_path_cannot_reference_run_directory - AssertionError: Regex pattern did not match.
+
+=== src/counter_risk/writers/historical_update.py:130 invert-condition ===
+ORIGINAL: 'isinstance(value, Path)'
+MUTANT: 'not (isinstance(value, Path))'
+Exit 1; 3 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_corrupt_workbook_load_is_reported_with_cause[append] - AssertionError: Regex pattern did not match.
+FAILED tests/writers/test_historical_update_boundaries.py::test_corrupt_workbook_load_is_reported_with_cause[open] - AssertionError: Regex pattern did not match.
+FAILED tests/writers/test_historical_update_boundaries.py::test_wal_initial_observation_is_written_below_header - counter_risk.writers.historical_update.WorkbookValidationError: workbook_path must be a non-empty path-like value
+
+=== src/counter_risk/writers/historical_update.py:132 invert-condition ===
+ORIGINAL: 'isinstance(value, str) and value.strip()'
+MUTANT: 'not (isinstance(value, str) and value.strip())'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_locate_uses_default_root_and_legacy_directory - counter_risk.writers.historical_update.WorkbookValidationError: search_root must be a non-empty path-like value
+
+=== src/counter_risk/writers/historical_update.py:138 invert-condition ===
+ORIGINAL: 'path.suffix.lower() != ".xlsx"'
+MUTANT: 'not (path.suffix.lower() != ".xlsx")'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_validate_rejects_directory_with_xlsx_suffix - AssertionError: Regex pattern did not match.
+
+=== src/counter_risk/writers/historical_update.py:193 invert-condition ===
+ORIGINAL: 'value is None'
+MUTANT: 'not (value is None)'
+Exit 1; 3 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_append_ignores_empty_header_columns - counter_risk.writers.historical_update.WorkbookValidationError: Unable to locate a header row containing a date label in worksheet 'history'
+FAILED tests/writers/test_historical_update_boundaries.py::test_date_only_sheet_appends_and_reports_missing_numeric_series - counter_risk.writers.historical_update.WorkbookValidationError: Unable to locate a header row containing a date label in worksheet 'history'
+FAILED tests/writers/test_historical_update_boundaries.py::test_inferred_date_skips_blank_candidate_then_uses_later_header - AssertionError: assert None == datetime.date(2026, 1, 31)
+
+=== src/counter_risk/writers/historical_update.py:199 invert-condition ===
+ORIGINAL: 'value is None'
+MUTANT: 'not (value is None)'
+Exit 1; 2 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_empty_series_labels_are_ignored[None] - AssertionError: assert 'none' == ''
+FAILED tests/writers/test_historical_update_boundaries.py::test_rollup_coercion_ignores_blank_labels - AssertionError: assert {} == {'total': 12.5}
+
+=== src/counter_risk/writers/historical_update.py:230 bypass-error ===
+ORIGINAL: 'raise WorkbookValidationError(\n        f"Unable to locate a header row containing a date label in worksheet {worksheet.title!r}"\n    )'
+MUTANT: 'pass'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_header_scan_reports_missing_date_label - Failed: DID NOT RAISE WorkbookValidationError
+
+=== src/counter_risk/writers/historical_update.py:258 invert-condition ===
+ORIGINAL: 'isinstance(existing_cells, dict)'
+MUTANT: 'not (isinstance(existing_cells, dict))'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_read_only_cell_lookup_does_not_materialize_missing_cells - AttributeError: 'NoneType' object has no attribute 'get'
+
+=== src/counter_risk/writers/historical_update.py:316 invert-condition ===
+ORIGINAL: 'append_date is not None'
+MUTANT: 'not (append_date is not None)'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_append_date_resolution_requires_a_source - Failed: DID NOT RAISE AppendDateResolutionError
+
+=== src/counter_risk/writers/historical_update.py:378 bypass-error ===
+ORIGINAL: 'raise WorkbookValidationError("Worksheet header row is missing a date column")'
+MUTANT: 'pass'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_date_column_resolvers_reject_missing_header[_get_date_column] - Failed: DID NOT RAISE WorkbookValidationError
+
+=== src/counter_risk/writers/historical_update.py:385 bypass-error ===
+ORIGINAL: 'raise WorkbookValidationError("Worksheet header rows are missing a date column")'
+MUTANT: 'pass'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_date_column_resolvers_reject_missing_header[_get_date_column_from_consolidated] - Failed: DID NOT RAISE WorkbookValidationError
+
+=== src/counter_risk/writers/historical_update.py:422 invert-condition ===
+ORIGINAL: 'value is None'
+MUTANT: 'not (value is None)'
+Exit 1; 3 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_cell_date_rejects_unrecognized_values[123] - Failed: DID NOT RAISE AppendDateError
+FAILED tests/writers/test_historical_update_boundaries.py::test_cell_date_rejects_unrecognized_values[yesterday] - Failed: DID NOT RAISE AppendDateError
+FAILED tests/writers/test_historical_update_boundaries.py::test_cell_dates_support_datetime_and_blank_text[value0] - assert None == datetime.date(2026, 1, 31)
+
+=== src/counter_risk/writers/historical_update.py:424 invert-condition ===
+ORIGINAL: 'isinstance(value, datetime)'
+MUTANT: 'not (isinstance(value, datetime))'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_cell_dates_support_datetime_and_blank_text[  ] - AttributeError: 'str' object has no attribute 'date'
+
+=== src/counter_risk/writers/historical_update.py:458 bypass-error ===
+ORIGINAL: 'raise WorkbookValidationError("Worksheet header rows are missing a WAL value column")'
+MUTANT: 'pass'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_wal_column_accepts_prefixed_label_and_rejects_absence - Failed: DID NOT RAISE WorkbookValidationError
+
+=== src/counter_risk/writers/historical_update.py:468 invert-condition ===
+ORIGINAL: 'wal_sheet_name not in getattr(workbook, "sheetnames", [])'
+MUTANT: 'not (wal_sheet_name not in getattr(workbook, "sheetnames", []))'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_append_rejects_missing_worksheet[wal] - KeyError: 'Worksheet WAL does not exist.'
+
+=== src/counter_risk/writers/historical_update.py:510 drop-return-value ===
+ORIGINAL: 'snapshots'
+MUTANT: 'None'
+Exit 1; 3 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_preserved_wal_cells_detect_changes[2-2-0.00-0%-number format] - AttributeError: 'NoneType' object has no attribute 'items'
+FAILED tests/writers/test_historical_update_boundaries.py::test_preserved_wal_cells_detect_changes[2-3-General-General-cell value] - AttributeError: 'NoneType' object has no attribute 'items'
+FAILED tests/writers/test_historical_update_boundaries.py::test_preserved_wal_cells_detect_changes[=A2-2-General-General-formula usage] - AttributeError: 'NoneType' object has no attribute 'items'
+
+=== src/counter_risk/writers/historical_update.py:557 invert-condition ===
+ORIGINAL: 'excess > 0'
+MUTANT: 'not (excess > 0)'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_wal_rolling_window_removes_oldest_observations - AssertionError: assert [('Date', 'WA..., 5, 1), 2.5)] == [('Date', 'WA..., 5, 1), 2.5)]
+
+=== src/counter_risk/writers/historical_update.py:600 invert-condition ===
+ORIGINAL: 'sheet_name not in getattr(workbook, "sheetnames", [])'
+MUTANT: 'not (sheet_name not in getattr(workbook, "sheetnames", []))'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_append_rejects_missing_worksheet[counterparty] - KeyError: 'Worksheet missing does not exist.'
+
+=== src/counter_risk/writers/historical_update.py:203 drop-return-value ===
+ORIGINAL: '""'
+MUTANT: 'None'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/writers/test_historical_update_boundaries.py::test_empty_series_labels_are_ignored[  ] - AssertionError: assert None == ''
+
+=== src/counter_risk/parsers/cprs_fcm.py:106 drop-return-value ===
+ORIGINAL: '_to_dataframe(\n        records=_parse_fcm_total_records(path), columns=_TOTAL_COLUMNS, dtypes=_TOTAL_DTYPES\n    )'
+MUTANT: 'None'
+Exit 1; 5 selected cases failed; no JUnit errors.
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_absent_sections_return_typed_empty_frames[parse_fcm_totals] - AttributeError: 'NoneType' object has no attribute 'empty'
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_malformed_workbook_reports_structure_error[worksheet-parse_fcm_totals] - Failed: DID NOT RAISE ValueError
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_malformed_workbook_reports_structure_error[zip-parse_fcm_totals] - Failed: DID NOT RAISE ValueError
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_totals_section_requires_identifiable_counterparty_header - Failed: DID NOT RAISE CprsFcmColumnsMissingError
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_totals_skip_summary_and_empty_rows_and_read_to_end - TypeError: 'NoneType' object is not subscriptable
+
+=== src/counter_risk/parsers/cprs_fcm.py:124 drop-return-value ===
+ORIGINAL: '_fcm_total_evidence_from_records(_parse_fcm_total_records(path))'
+MUTANT: 'None'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_missing_workbook_has_contextual_error[parse_fcm_total_evidence] - Failed: DID NOT RAISE FileNotFoundError
+
+=== src/counter_risk/parsers/cprs_fcm.py:207 invert-condition ===
+ORIGINAL: 'not file_path.exists()'
+MUTANT: 'not (not file_path.exists())'
+Exit 1; 6 selected cases failed; no JUnit errors.
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_absent_sections_return_typed_empty_frames[parse_futures_detail] - FileNotFoundError: CPRS-FCM file not found: /tmp/pytest-of-runner/pytest-87/test_absent_sections_return_ty0/all-programs.xlsx
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_futures_missing_columns_are_reported - FileNotFoundError: CPRS-FCM file not found: /tmp/pytest-of-runner/pytest-87/test_futures_missing_columns_a0/all-programs.xlsx
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_futures_skips_blank_and_repeated_header_rows_and_reads_to_end - FileNotFoundError: CPRS-FCM file not found: /tmp/pytest-of-runner/pytest-87/test_futures_skips_blank_and_r0/all-programs.xlsx
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_malformed_workbook_reports_structure_error[worksheet-parse_futures_detail] - FileNotFoundError: CPRS-FCM file not found: /tmp/pytest-of-runner/pytest-87/test_malformed_workbook_report0/all-programs.xlsx
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_malformed_workbook_reports_structure_error[zip-parse_futures_detail] - FileNotFoundError: CPRS-FCM file not found: /tmp/pytest-of-runner/pytest-87/test_malformed_workbook_report1/all-programs.xlsx
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_missing_workbook_has_contextual_error[parse_futures_detail] - AssertionError: Regex pattern did not match.
+
+=== src/counter_risk/parsers/cprs_fcm.py:335 invert-condition ===
+ORIGINAL: 'value is None'
+MUTANT: 'not (value is None)'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_header_mapping_ignores_blank_and_duplicate_columns - counter_risk.parsers.cprs_fcm.CprsFcmColumnsMissingError: Missing required columns in FCM futures detail: account, description, class, fcm, clearing_house, notional
+
+=== src/counter_risk/parsers/cprs_fcm.py:471 drop-return-value ===
+ORIGINAL: 'df.astype(dtypes)'
+MUTANT: 'None'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/parsers/test_cprs_fcm_boundaries.py::test_dataframe_fills_missing_fields_and_preserves_column_order - AttributeError: 'NoneType' object has no attribute 'to_dict'
+
+=== src/counter_risk/pipeline/reconciliation.py:43 drop-return-value ===
+ORIGINAL: '_REPO_NAME_REGISTRY_PATH'
+MUTANT: 'None'
+Exit 1; 2 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_present_series_ignores_blank_entries - TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_strict_custom_resolver_retains_canonical_name_without_raw_metadata - TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+
+=== src/counter_risk/pipeline/reconciliation.py:424 invert-condition ===
+ORIGINAL: 'not variant or not expected_segments_by_variant'
+MUTANT: 'not (not variant or not expected_segments_by_variant)'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_expected_segments_match_variant_case_and_ignore_blank_values - AssertionError: assert set() == {'futures'}
+
+=== src/counter_risk/pipeline/reconciliation.py:482 drop-return-value ===
+ORIGINAL: 'normalized_to_raw'
+MUTANT: 'None'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_raw_counterparty_metadata_ignores_none_and_preserves_original_spacing - AssertionError: assert None == {'CIBC': {' CIBC '}}
+
+=== src/counter_risk/pipeline/reconciliation.py:500 invert-condition ===
+ORIGINAL: 'isinstance(table, list)'
+MUTANT: 'not (isinstance(table, list))'
+Exit 1; 4 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_records_adapts_legacy_and_record_table_protocols[table0-expected0] - TypeError: '_LegacyTable' object is not iterable
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_records_adapts_legacy_and_record_table_protocols[table1-expected1] - TypeError: '_RecordTable' object is not iterable
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_records_adapts_legacy_and_record_table_protocols[table2-expected2] - TypeError: '_RecordTable' object is not iterable
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_records_adapts_legacy_and_record_table_protocols[table3-expected3] - TypeError: 'object' object is not iterable
+
+=== src/counter_risk/pipeline/reconciliation.py:389 invert-condition ===
+ORIGINAL: 'not isinstance(raw_sections, Mapping)'
+MUTANT: 'not (not isinstance(raw_sections, Mapping))'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_section_mapping_is_required_before_reconciling - counter_risk.pipeline.parsing_types.ParsedDataMissingKeyError: Missing required parsed_data section(s) for sheet 'Total': totals, futures
+
+=== src/counter_risk/pipeline/reconciliation.py:40 drop-return-value ===
+ORIGINAL: 'resolve_runtime_path("config/name_registry.yml")'
+MUTANT: 'None'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_frozen_registry_falls_back_when_bundle_asset_is_missing - AssertionError: assert None == PosixPath('/home/runner/work/Counter_Risk/Counter_Risk/config/name_registry.yml')
+
+=== src/counter_risk/observability/langsmith_fleet.py:263 drop-return-value ===
+ORIGINAL: 'normalized'
+MUTANT: 'None'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_workflow_events_ignore_blank_stages_and_sanitize_latency - AssertionError: assert None == [{'stage': 'parse', 'status': 'unknown', 'latency_ms': 0}, {'stage': 'write', 'status': 'success', 'latency_ms': 0}]
+
+=== src/counter_risk/observability/langsmith_fleet.py:326 drop-return-value ===
+ORIGINAL: 'record'
+MUTANT: 'None'
+Exit 1; 8 selected cases failed; no JUnit errors.
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_rejects_invalid_contract_fields[domain-value3-domain must be an object] - TypeError: 'NoneType' object does not support item assignment
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_rejects_invalid_contract_fields[domain-value4-missing domain fields] - TypeError: 'NoneType' object does not support item assignment
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_rejects_invalid_contract_fields[repo-other/repo-invalid repo] - TypeError: 'NoneType' object does not support item assignment
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_rejects_invalid_contract_fields[schema_version-invalid-invalid schema_version] - TypeError: 'NoneType' object does not support item assignment
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_rejects_invalid_contract_fields[surface-other-invalid surface] - TypeError: 'NoneType' object does not support item assignment
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_report_artifacts_can_be_explicitly_absent - TypeError: 'NoneType' object is not subscriptable
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_report_artifacts_require_a_list - TypeError: 'NoneType' object is not subscriptable
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_top_level_artifact_reference_is_validated - TypeError: 'NoneType' object does not support item assignment
+
+=== src/counter_risk/observability/langsmith_fleet.py:388 invert-condition ===
+ORIGINAL: 'not isinstance(value, str)'
+MUTANT: 'not (not isinstance(value, str))'
+Exit 1; 2 selected cases failed; no JUnit errors.
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_artifact_reference_requires_relative_artifact_scheme[42] - AttributeError: 'int' object has no attribute 'startswith'
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_artifact_reference_requires_relative_artifact_scheme[None] - AttributeError: 'NoneType' object has no attribute 'startswith'
+
+=== src/counter_risk/observability/langsmith_fleet.py:390 invert-condition ===
+ORIGINAL: 'not value.startswith("artifact:")'
+MUTANT: 'not (not value.startswith("artifact:"))'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_artifact_reference_requires_relative_artifact_scheme[report.json] - AssertionError: assert True is False
+
+=== src/counter_risk/observability/langsmith_fleet.py:398 invert-condition ===
+ORIGINAL: 'path.is_absolute() or not path.parts'
+MUTANT: 'not (path.is_absolute() or not path.parts)'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_artifact_reference_requires_relative_artifact_scheme[artifact:.] - IndexError: tuple index out of range
+
+=== src/counter_risk/observability/langsmith_fleet.py:406 invert-condition ===
+ORIGINAL: 'not isinstance(value, str)'
+MUTANT: 'not (not isinstance(value, str))'
+Exit 1; 2 selected cases failed; no JUnit errors.
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_sha_reference_requires_string_and_sha_scheme[42] - AttributeError: 'int' object has no attribute 'startswith'
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_sha_reference_requires_string_and_sha_scheme[None] - AttributeError: 'NoneType' object has no attribute 'startswith'
+
+=== src/counter_risk/observability/langsmith_fleet.py:334 invert-condition ===
+ORIGINAL: 'missing'
+MUTANT: 'not (missing)'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_fleet_reports_missing_top_level_fields - KeyError: 'schema_version'
+
+=== src/counter_risk/observability/langsmith_fleet.py:409 drop-return-value ===
+ORIGINAL: 'False'
+MUTANT: 'None'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/observability/test_langsmith_fleet_boundaries.py::test_sha_reference_requires_string_and_sha_scheme[artifact:report.json] - AssertionError: assert None is False
+
+=== src/counter_risk/name_registry.py:115 invert-condition ===
+ORIGINAL: 'not normalized'
+MUTANT: 'not (not normalized)'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/test_name_registry_boundaries.py::test_registry_entry_rejects_whitespace_only_labels[display_name-  -display_name cannot be blank] - Failed: DID NOT RAISE ValidationError
+
+=== src/counter_risk/name_registry.py:42 invert-condition ===
+ORIGINAL: 'not variant_key'
+MUTANT: 'not (not variant_key)'
+Exit 1; 3 selected cases failed; no JUnit errors.
+FAILED tests/test_name_registry_boundaries.py::test_series_flags_reject_blank_and_duplicate_normalized_keys[flags0-variant keys cannot be blank] - AssertionError: Regex pattern did not match.
+FAILED tests/test_name_registry_boundaries.py::test_series_flags_reject_blank_and_duplicate_normalized_keys[flags1-segment keys cannot be blank] - AssertionError: Regex pattern did not match.
+FAILED tests/test_name_registry_boundaries.py::test_series_flags_reject_blank_and_duplicate_normalized_keys[flags2-duplicate segment key] - AssertionError: Regex pattern did not match.
+
+=== src/counter_risk/name_registry.py:97 invert-condition ===
+ORIGINAL: 'not isinstance(alias, str)'
+MUTANT: 'not (not isinstance(alias, str))'
+Exit 1; 1 selected cases failed; no JUnit errors.
+FAILED tests/test_name_registry_boundaries.py::test_registry_entry_rejects_whitespace_only_labels[aliases-value0-aliases cannot contain blank values] - AssertionError: Regex pattern did not match.
+
+=== src/counter_risk/parsers/cprs_ch.py:133 invert-condition ===
+ORIGINAL: 'not file_path.exists()'
+MUTANT: 'not (not file_path.exists())'
+Exit 1; 8 selected cases failed; no JUnit errors.
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_numeric_headers_allow_missing_counterparty_label - FileNotFoundError: CPRS-CH file not found: /tmp/pytest-of-runner/pytest-94/test_numeric_headers_allow_mis0/trend.xlsx
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_parser_rejects_incomplete_structure[rows0-Unable to locate CPRS-CH header row] - FileNotFoundError: CPRS-CH file not found: /tmp/pytest-of-runner/pytest-94/test_parser_rejects_incomplete0/trend.xlsx
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_parser_rejects_incomplete_structure[rows1-missing required column: Notional] - FileNotFoundError: CPRS-CH file not found: /tmp/pytest-of-runner/pytest-94/test_parser_rejects_incomplete1/trend.xlsx
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_parser_rejects_incomplete_structure[rows2-No CPRS-CH segments detected] - FileNotFoundError: CPRS-CH file not found: /tmp/pytest-of-runner/pytest-94/test_parser_rejects_incomplete2/trend.xlsx
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_parser_rejects_incomplete_structure[rows3-CPRS-CH parser produced no rows] - FileNotFoundError: CPRS-CH file not found: /tmp/pytest-of-runner/pytest-94/test_parser_rejects_incomplete3/trend.xlsx
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_parser_reports_malformed_workbook[worksheet] - FileNotFoundError: CPRS-CH file not found: /tmp/pytest-of-runner/pytest-94/test_parser_reports_malformed_0/trend.xlsx
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_parser_reports_malformed_workbook[zip] - FileNotFoundError: CPRS-CH file not found: /tmp/pytest-of-runner/pytest-94/test_parser_reports_malformed_1/trend.xlsx
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_trend_swaps_relabel_preserves_totals_segment - FileNotFoundError: CPRS-CH file not found: /tmp/pytest-of-runner/pytest-94/test_trend_swaps_relabel_prese0/trend.xlsx
+
+=== src/counter_risk/parsers/cprs_ch.py:282 invert-condition ===
+ORIGINAL: 'value is None'
+MUTANT: 'not (value is None)'
+Exit 1; 3 selected cases failed; no JUnit errors.
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_defaults_missing_and_invalid_cells_to_zero - AssertionError: assert None == {'TIPS': 0.0, 'Treasury': 0.0, 'Equity': 0.0, 'Commodity': -12.5, ...}
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_prefers_first_absolute_row_and_parses_percentages[False] - AssertionError: assert None == {'TIPS': 10.0, 'Treasury': 20.0, 'Equity': 30.0, 'Commodity': 15.0, ...}
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_prefers_first_absolute_row_and_parses_percentages[True] - AssertionError: assert None == {'TIPS': 5.0, 'Treasury': 25.0, 'Equity': 40.0, 'Commodity': 10.0, ...}
+
+=== src/counter_risk/parsers/cprs_ch.py:284 drop-return-value ===
+ORIGINAL: 'safe_display_name(value.replace("\\n", " "))'
+MUTANT: 'None'
+Exit 1; 3 selected cases failed; no JUnit errors.
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_returns_none_when_unavailable[breakdown] - TypeError: expected string or bytes-like object, got 'NoneType'
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_returns_none_when_unavailable[classes] - TypeError: expected string or bytes-like object, got 'NoneType'
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_returns_none_when_unavailable[header] - TypeError: expected string or bytes-like object, got 'NoneType'
+
+=== src/counter_risk/parsers/cprs_ch.py:520 invert-condition ===
+ORIGINAL: 'not file_path.exists()'
+MUTANT: 'not (not file_path.exists())'
+Exit 1; 2 selected cases failed; no JUnit errors.
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_requires_existing_workbook - AssertionError: Regex pattern did not match.
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_class_breakdown_returns_none_when_unavailable[zip] - FileNotFoundError: CPRS-CH file not found: /tmp/pytest-of-runner/pytest-127/test_class_breakdown_returns_n0/trend.xlsx
+
+=== src/counter_risk/parsers/cprs_ch.py:250 invert-condition ===
+ORIGINAL: 'not isinstance(raw_value, (int, float))'
+MUTANT: 'not (not isinstance(raw_value, (int, float)))'
+Exit 1; 3 selected cases failed; no JUnit errors.
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_numeric_validation_reports_field_and_source_row[1e+16-Out-of-range numeric value] - AssertionError: Regex pattern did not match.
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_numeric_validation_reports_field_and_source_row[bad-Invalid non-numeric value] - AssertionError: Regex pattern did not match.
+FAILED tests/parsers/test_cprs_ch_boundaries.py::test_numeric_validation_reports_field_and_source_row[inf-Invalid non-finite numeric value] - AssertionError: Regex pattern did not match.
+
+=== tests/pipeline/test_manifest_schema.py baseline green ===
+27 passed, 13 warnings in 0.29s
+=== tests/pipeline/test_manifest_schema.py reverted green ===
+27 passed, 13 warnings in 0.32s
+
+=== tests/pipeline/test_manifest.py baseline green ===
+25 passed, 13 warnings in 0.36s
+=== tests/pipeline/test_manifest.py reverted green ===
+25 passed, 13 warnings in 1.02s
+
+=== tests/writers/test_historical_update_boundaries.py baseline green ===
+27 passed, 13 warnings in 0.45s
+=== tests/writers/test_historical_update_boundaries.py reverted green ===
+27 passed, 13 warnings in 0.46s
+
+=== tests/parsers/test_cprs_fcm_boundaries.py baseline green ===
+14 passed, 13 warnings in 0.58s
+=== tests/parsers/test_cprs_fcm_boundaries.py reverted green ===
+14 passed, 13 warnings in 0.60s
+
+=== tests/pipeline/test_reconciliation_boundaries.py baseline green ===
+10 passed, 13 warnings in 0.31s
+=== tests/pipeline/test_reconciliation_boundaries.py reverted green ===
+10 passed, 13 warnings in 0.43s
+
+=== tests/observability/test_langsmith_fleet_boundaries.py baseline green ===
+17 passed, 13 warnings in 0.06s
+=== tests/observability/test_langsmith_fleet_boundaries.py reverted green ===
+17 passed, 13 warnings in 0.06s
+
+=== tests/test_name_registry_boundaries.py baseline green ===
+5 passed, 13 warnings in 0.06s
+=== tests/test_name_registry_boundaries.py reverted green ===
+5 passed, 13 warnings in 0.06s
+
+=== tests/parsers/test_cprs_ch_boundaries.py baseline green ===
+19 passed, 13 warnings in 1.34s
+=== tests/parsers/test_cprs_ch_boundaries.py reverted green ===
+19 passed, 13 warnings in 0.61s
+
+=== direct contract: tests/pipeline/test_manifest.py::test_source_date_conflicts_retain_report_evidence_after_writing ===
+ORIGINAL: 'finding["details"] = self.source_report_dates'
+MUTANT: 'finding["details"] = {}'
+RED exit 1:
+FAILED tests/pipeline/test_manifest.py::test_source_date_conflicts_retain_report_evidence_after_writing - AssertionError: assert {} == {'all_program...: 'filename'}}
+1 failed, 13 warnings in 0.39s
+REVERTED exit 0:
+1 passed, 13 warnings in 0.31s
+
+=== direct contract: tests/pipeline/test_manifest.py::test_explicit_ppt_outputs_override_filename_inference ===
+ORIGINAL: 'if explicit_outputs is not None:'
+MUTANT: 'if False:'
+RED exit 1:
+FAILED tests/pipeline/test_manifest.py::test_explicit_ppt_outputs_override_filename_inference - AssertionError: assert {'distributio...': 'success'}} == {'master': {'...istribution'}}
+1 failed, 13 warnings in 0.40s
+REVERTED exit 0:
+1 passed, 13 warnings in 0.31s
+
+=== direct contract: tests/pipeline/test_manifest.py::test_disabled_ppt_omits_even_explicit_outputs ===
+ORIGINAL: 'if not self.config.ppt_output_enabled:'
+MUTANT: 'if False:'
+RED exit 1:
+FAILED tests/pipeline/test_manifest.py::test_disabled_ppt_omits_even_explicit_outputs - ValueError: Manifest failed schema validation: manifest.ppt_outputs is missing required key 'distribution'
+1 failed, 13 warnings in 0.40s
+REVERTED exit 0:
+1 passed, 13 warnings in 0.31s
+
+=== direct contract: tests/pipeline/test_manifest.py::test_master_only_output_records_distribution_as_skipped ===
+ORIGINAL: '"status": "skipped",'
+MUTANT: '"status": "success",'
+RED exit 1:
+FAILED tests/pipeline/test_manifest.py::test_master_only_output_records_distribution_as_skipped - AssertionError: assert {'generation_...is run.', ...} == {'role': 'dis...ibution', ...}
+1 failed, 13 warnings in 0.38s
+REVERTED exit 0:
+1 passed, 13 warnings in 0.31s
+
+=== direct contract: tests/pipeline/test_manifest.py::test_git_sha_normalizes_empty_and_padded_output ===
+ORIGINAL: 'return sha or None'
+MUTANT: 'return sha'
+RED exit 1:
+FAILED tests/pipeline/test_manifest.py::test_git_sha_normalizes_empty_and_padded_output[] - AssertionError: assert '' == (('' or None))
+FAILED tests/pipeline/test_manifest.py::test_git_sha_normalizes_empty_and_padded_output[ \n] - AssertionError: assert '' == (('' or None))
+2 failed, 1 passed, 13 warnings in 0.38s
+REVERTED exit 0:
+3 passed, 13 warnings in 0.30s
+

@@ -1,13 +1,108 @@
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from pathlib import Path
-from zipfile import ZipFile
+from urllib.parse import quote
+from zipfile import BadZipFile, ZipFile
+
+import pytest
 
 from counter_risk.ppt.pptx_postprocess import (
     list_external_relationship_targets,
+    repoint_external_relationship_targets,
     scrub_external_relationships_from_pptx,
 )
+
+
+@pytest.mark.parametrize("in_place", [False, True])
+def test_repoint_targets_preserves_unrelated_package_bytes(tmp_path: Path, in_place: bool) -> None:
+    source = tmp_path / "source.pptx"
+    destination = source if in_place else tmp_path / "nested" / "output.pptx"
+    local = tmp_path / "run outputs" / "My Book.xlsx"
+    rels = rb"""<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" TargetMode="External" Target="file:///C:/old/My%20Book.xlsx"/>
+  <Relationship Id="rId2" TargetMode="External" Target="C:\old\My Book.xlsx"/>
+  <Relationship Id="rId3" Target="../media/image.png"/>
+  <Relationship Id="rId4" TargetMode="External" Target="https://example.com/other.xlsx"/>
+  <Relationship Id="rId5" TargetMode="External"/>
+</Relationships>"""
+    parts = {
+        "ppt/charts/_rels/chart1.xml.rels": rels,
+        "ppt/slides/_rels/slide1.xml.rels": b"<malformed",
+        "ppt/charts/chart1.xml": b'<chart xmlns:x="urn:preserve"><x:custom/></chart>',
+        "ppt/media/image.png": b"image-data",
+        "_rels/.rels": b"non-PPT relationships",
+    }
+    with ZipFile(source, "w") as archive:
+        for name, data in parts.items():
+            archive.writestr(name, data)
+    original = source.read_bytes()
+
+    assert (
+        repoint_external_relationship_targets(
+            source, target_replacements={"My Book.xlsx": local}, repointed_pptx_path=destination
+        )
+        == destination
+    )
+
+    expected_uri = "file:///" + quote(str(local.resolve()), safe="\\:")
+    expected_rels = rels.replace(b"file:///C:/old/My%20Book.xlsx", expected_uri.encode()).replace(
+        b"C:\\old\\My Book.xlsx", expected_uri.encode()
+    )
+    with ZipFile(destination) as archive:
+        assert set(archive.namelist()) == set(parts)
+        for name, data in parts.items():
+            assert archive.read(name) == (
+                expected_rels if name.endswith("chart1.xml.rels") else data
+            )
+    if not in_place:
+        assert source.read_bytes() == original
+    assert sorted(path.name for path in tmp_path.iterdir()) == (
+        ["source.pptx"] if in_place else ["nested", "source.pptx"]
+    )
+
+
+@pytest.mark.parametrize(
+    "operation", [scrub_external_relationships_from_pptx, repoint_external_relationship_targets]
+)
+def test_in_place_postprocessing_cleans_up_after_bad_archive(
+    tmp_path: Path, operation: Callable[..., Path]
+) -> None:
+    source = tmp_path / "broken.pptx"
+    source.write_bytes(b"invalid zip")
+    kwargs = (
+        {"scrubbed_pptx_path": source}
+        if operation is scrub_external_relationships_from_pptx
+        else {"target_replacements": {}}
+    )
+    with pytest.raises(BadZipFile):
+        operation(source, **kwargs)
+
+    assert source.read_bytes() == b"invalid zip"
+    assert list(tmp_path.iterdir()) == [source]
+
+
+def test_scrubbing_preserves_malformed_relationship_xml(tmp_path: Path) -> None:
+    source = tmp_path / "malformed.pptx"
+    with ZipFile(source, "w") as archive:
+        archive.writestr("ppt/charts/_rels/chart1.xml.rels", b"<malformed")
+    output = scrub_external_relationships_from_pptx(source)
+    with ZipFile(output) as archive:
+        assert archive.read("ppt/charts/_rels/chart1.xml.rels") == b"<malformed"
+
+
+@pytest.mark.parametrize("kind", ["missing", "directory", "invalid-zip", "invalid-xml"])
+def test_external_target_scan_tolerates_nonstandard_inputs(tmp_path: Path, kind: str) -> None:
+    source = tmp_path / "report.pptx"
+    if kind == "directory":
+        source.mkdir()
+    elif kind == "invalid-zip":
+        source.write_bytes(b"invalid zip")
+    elif kind == "invalid-xml":
+        with ZipFile(source, "w") as archive:
+            archive.writestr("ppt/charts/_rels/chart1.xml.rels", b"<malformed")
+    assert list_external_relationship_targets(source) == set()
 
 
 def _relationship_count(path: Path, rel_part: str) -> int:
