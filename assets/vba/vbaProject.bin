@@ -372,6 +372,10 @@ Private Const COMPLETE_STATUS As String = "Complete"
 Private Const DQ_STATUS_CELL As String = "B9"
 Private Const SETTINGS_TEMP_FILENAME As String = "counter-risk-runner-settings.json"
 Private Const MANIFEST_FILENAME As String = "manifest.json"
+Private Const DRY_RUN_OUTPUT_FILENAME As String = "counter-risk-dry-run-discovery.txt"
+Private Const MSGBOX_PROMPT_MAX_CHARS As Long = 1024
+Private Const ASK_ABOUT_UNAVAILABLE_MESSAGE As String = "Asking questions about a run is not available from Excel. " & _
+    "Review this run with the operator runner: counter-risk gui"
 
 Public Enum RunnerMode
     RunnerModeAllPrograms = 0
@@ -509,6 +513,55 @@ OpenPPTFolderError:
     WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
 End Sub
 
+Public Sub DryRunDiscovery_Click()
+    On Error GoTo DryRunDiscoveryError
+
+    Dim parsedDate As Date
+    Dim outputPath As String
+    Dim shellCommand As String
+    Dim exitCode As Long
+    Dim discoveryOutput As String
+
+    parsedDate = ParseAsOfMonth(ReadSelectedDate())
+    outputPath = ResolveTempFilePath(DRY_RUN_OUTPUT_FILENAME)
+    shellCommand = BuildCapturedShellCommand( _
+        BuildExecutableShellCommand(ResolveExecutablePath(), BuildDryRunDiscoveryArguments(parsedDate)), _
+        outputPath _
+    )
+
+    WriteStatus PRE_LAUNCH_STATUS
+    exitCode = ExecuteShellCommand(shellCommand)
+    WriteStatus POST_LAUNCH_STATUS
+
+    discoveryOutput = ReadTextFile(outputPath)
+    If exitCode <> 0 Then
+        WriteResult "Error " & CStr(SHELL_ERROR_BASE + exitCode) & ": Dry-run discovery exited with code " & CStr(exitCode)
+    Else
+        WriteResult "Success"
+    End If
+    ShowDryRunDiscoveryOutput outputPath, discoveryOutput
+    Exit Sub
+
+DryRunDiscoveryError:
+    WriteStatus "Error"
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
+Public Sub AskAbout_Click()
+    On Error GoTo AskAboutError
+
+    Dim runFolder As String
+
+    runFolder = ResolveExistingOutputDir(ResolveRepoRoot(), ReadSelectedDate())
+    MsgBox ASK_ABOUT_UNAVAILABLE_MESSAGE & vbCrLf & vbCrLf & "Run folder: " & runFolder, _
+           vbInformation, "Ask about this run"
+    WriteResult "Ask about this run: use counter-risk gui"
+    Exit Sub
+
+AskAboutError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
 Public Function BuildRunArguments(ByVal asOfMonth As String, ByVal mode As RunnerMode) As String
     Dim outputDir As String
     Dim parsedDate As Date
@@ -573,6 +626,23 @@ Private Function BuildCommandArguments( _
                             " --as-of-date " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd")) & _
                             " --output-dir " & QuoteArg(outputDir) & _
                             " --settings " & QuoteArg(settingsPath)
+End Function
+
+Private Function BuildDryRunDiscoveryArguments(ByVal parsedDate As Date) As String
+    Dim settingsPath As String
+    settingsPath = ResolveSettingsFilePath()
+    WriteSettingsFile settingsPath, BuildSettingsJson()
+
+    BuildDryRunDiscoveryArguments = "run --config " & _
+                                    QuoteArg(ResolveConfigPath(RunnerModeAllPrograms)) & _
+                                    " --settings " & QuoteArg(settingsPath) & _
+                                    " --dry-run-discovery --as-of-month " & _
+                                    QuoteArg(Format$(parsedDate, "yyyy-mm-dd"))
+End Function
+
+Private Function BuildCapturedShellCommand(ByVal shellCommand As String, ByVal outputPath As String) As String
+    BuildCapturedShellCommand = "cmd /s /c " & Chr$(34) & shellCommand & _
+                                " > " & QuoteArg(outputPath) & " 2>&1" & Chr$(34)
 End Function
 
 Public Function BuildExecutableCommand( _
@@ -820,6 +890,25 @@ OpenDirectoryError:
     OpenDirectory = BuildErrorStatus(directoryPath, Err.Number, Err.Description)
 End Function
 
+Private Sub ShowDryRunDiscoveryOutput(ByVal outputPath As String, ByVal discoveryOutput As String)
+    Dim openStatus As LaunchStatus
+
+    If Len(discoveryOutput) <= MSGBOX_PROMPT_MAX_CHARS Then
+        MsgBox discoveryOutput, vbInformation, "Dry-Run Discovery"
+        Exit Sub
+    End If
+
+    openStatus = OpenFile(outputPath)
+    If openStatus.Success Then
+        MsgBox "Discovery output is too long for a message box." & vbCrLf & vbCrLf & _
+               "Opened: " & outputPath, vbInformation, "Dry-Run Discovery"
+        Exit Sub
+    End If
+
+    MsgBox "Discovery output is too long for a message box." & vbCrLf & vbCrLf & _
+           "Full output saved to:" & vbCrLf & outputPath, vbInformation, "Dry-Run Discovery"
+End Sub
+
 Private Function OpenFile(ByVal filePath As String) As LaunchStatus
     Dim status As LaunchStatus
     Dim shellObject As Object
@@ -975,6 +1064,37 @@ Private Function ResolveSettingsFilePath() As String
         tempRoot = NormalizePathSeparators(ResolveRepoRoot())
     End If
     ResolveSettingsFilePath = tempRoot & "\" & SETTINGS_TEMP_FILENAME
+End Function
+
+Private Function ResolveTempFilePath(ByVal fileName As String) As String
+    Dim tempRoot As String
+    tempRoot = NormalizePathSeparators(Environ$("TEMP"))
+    If LenB(tempRoot) = 0 Then
+        tempRoot = NormalizePathSeparators(ResolveRepoRoot())
+    End If
+    ResolveTempFilePath = tempRoot & "\" & fileName
+End Function
+
+Private Function ReadTextFile(ByVal filePath As String) As String
+    Dim fileNumber As Integer
+
+    On Error GoTo ReadTextFileError
+    If Not FileExists(filePath) Then
+        ReadTextFile = "No output was captured at " & filePath
+        Exit Function
+    End If
+
+    fileNumber = FreeFile
+    Open filePath For Input As #fileNumber
+    ReadTextFile = Input$(LOF(fileNumber), #fileNumber)
+    Close #fileNumber
+    Exit Function
+
+ReadTextFileError:
+    If fileNumber > 0 Then
+        Close #fileNumber
+    End If
+    ReadTextFile = "Unable to read output at " & filePath & ": " & Err.Description
 End Function
 
 Private Sub WriteSettingsFile(ByVal filePath As String, ByVal payload As String)

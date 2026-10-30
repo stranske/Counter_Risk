@@ -16,4 +16,5 @@ def test_product_contract_reports_current_maintainer_cli_status() -> None:
     assert rows["C4"] == "WORKS (maintainer CLI)"
     assert "## Known gaps at draft time" not in contract
     assert "The Windows release bundle" in contract
-    assert "`Ask about this run` label without a bound Form Control or VBA handler" in contract
+    assert "binds `Ask about this run` to `AskAbout_Click`" in contract
+    assert "label without a bound Form Control or VBA handler" not in contract

@@ -60,6 +60,8 @@ EXPECTED_RUNNER_BUTTONS = {
     "F5": ("Open Manifest", "OpenManifest_Click", 1029, "rId6", "ctrlProp5.xml"),
     "G5": ("Open Summary", "OpenSummary_Click", 1030, "rId7", "ctrlProp6.xml"),
     "H5": ("Open PPT Folder", "OpenPPTFolder_Click", 1031, "rId8", "ctrlProp7.xml"),
+    "D5": ("Dry-Run Discovery", "DryRunDiscovery_Click", 1032, "rId9", "ctrlProp8.xml"),
+    "I5": ("Ask about this run", "AskAbout_Click", 1033, "rId10", "ctrlProp9.xml"),
 }
 PUBLIC_SUB_PATTERN = re.compile(r"^Public Sub ([A-Za-z0-9_]+)\(\)", re.MULTILINE)
 
@@ -404,6 +406,44 @@ def test_runner_workbook_button_macros_exist_in_runnerlaunch_source() -> None:
 
     assert macros
     assert macros <= public_subs
+
+
+def test_runner_workbook_binds_every_action_label_to_an_embedded_macro() -> None:
+    workbook_path = Path("Runner.xlsm")
+    vba_text = _extract_searchable_vba_text(workbook_path)
+    embedded_public_subs = set(PUBLIC_SUB_PATTERN.findall(vba_text.replace("\r\n", "\n")))
+
+    assert set(EXPECTED_RUNNER_BUTTONS) == set(EXPECTED_RUNNER_ACTION_CELLS)
+    for cell_ref, (caption, macro, *_rest) in EXPECTED_RUNNER_BUTTONS.items():
+        assert EXPECTED_RUNNER_ACTION_CELLS[cell_ref] == caption
+        assert (
+            macro in embedded_public_subs
+        ), f"{cell_ref} macro {macro} missing from vbaProject.bin"
+
+    assert "Public Sub DryRunDiscovery_Click()" in vba_text
+    assert "Public Sub AskAbout_Click()" in vba_text
+
+
+def test_build_runner_workbook_binds_a_button_to_every_action_label(tmp_path: Path) -> None:
+    output_workbook = tmp_path / "Runner.built.xlsm"
+    runner_builder.build_runner_workbook(output_workbook)
+
+    with ZipFile(output_workbook) as zip_file:
+        vml_root = _read_xml(zip_file, "xl/drawings/vmlDrawing1.vml")
+
+    built_buttons: dict[str, str] = {}
+    for shape in vml_root.findall("v:shape", NAMESPACES):
+        anchor = shape.find("x:ClientData/x:Anchor", NAMESPACES)
+        macro = shape.find("x:ClientData/x:FmlaMacro", NAMESPACES)
+        assert anchor is not None and anchor.text
+        assert macro is not None and macro.text
+        column_index, _, row_index, *_ = (int(part) for part in anchor.text.split(","))
+        cell_ref = f"{chr(ord('A') + column_index)}{row_index + 1}"
+        built_buttons[cell_ref] = _macro_name(macro.text)
+
+    assert built_buttons == {
+        cell_ref: macro for cell_ref, (_caption, macro, *_rest) in EXPECTED_RUNNER_BUTTONS.items()
+    }
 
 
 def test_runner_workbook_loads_with_openpyxl_keep_vba() -> None:

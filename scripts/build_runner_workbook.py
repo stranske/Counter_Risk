@@ -99,6 +99,8 @@ _RUNNER_ACTION_BUTTONS: tuple[RunnerActionButton, ...] = (
     RunnerActionButton("F5", "Open Manifest", "OpenManifest_Click", 5),
     RunnerActionButton("G5", "Open Summary", "OpenSummary_Click", 6),
     RunnerActionButton("H5", "Open PPT Folder", "OpenPPTFolder_Click", 7),
+    RunnerActionButton("D5", "Dry-Run Discovery", "DryRunDiscovery_Click", 8),
+    RunnerActionButton("I5", "Ask about this run", "AskAbout_Click", 9),
 )
 _SPREADSHEET_DRAWING_NS = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
 _CTRL_PROP_CONTENT_TYPE = "application/vnd.ms-excel.controlproperties+xml"
