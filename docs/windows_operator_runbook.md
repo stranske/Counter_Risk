@@ -134,4 +134,4 @@ Key files:
 - Sign the exe with `signtool` (see `release.spec` for the exact command) to
   eliminate SmartScreen prompts in corporate environments.
 - Regenerate lock files on Windows after adding dependencies:
-  `uv pip compile --python-version 3.12 pyproject.toml --extra dev --universal --output-file requirements.lock`
+  `uv pip compile --python-version 3.13 pyproject.toml --extra dev --universal --output-file requirements.lock`
