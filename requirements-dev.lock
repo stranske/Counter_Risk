@@ -222,7 +222,6 @@ types-pyyaml==6.0.12.20260724
 typing-extensions==4.15.0
     # via
     #   anthropic
-    #   anyio
     #   langchain-core
     #   langchain-protocol
     #   langsmith
