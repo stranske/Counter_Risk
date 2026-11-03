@@ -363,6 +363,8 @@ def test_quoted_matching_text_is_not_a_measurement(wrapper: str) -> None:
         "share=0.00%; drainable_in=4",
         "CI budget 2026-10-30: p50=2.08 min; target=10 min; distance=0.000; "
         "share=0.00%; drainable_in=4; longest_job=.",
+        "CI budget 2026-10-30: p50=2.08 min; target=10 min; distance=0.000; "
+        "share=0.00%; drainable_in=4; longest_job=..",
         "CI budget 2026-02-30: p50=2.08 min; target=10 min; distance=0.000; "
         "share=0.00%; drainable_in=4; longest_job=Python CI.",
     ],

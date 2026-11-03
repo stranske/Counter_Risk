@@ -91,7 +91,7 @@ def parse_budget_comment(text: str) -> Measurement | None:
         date.fromisoformat(match.group("date"))
     except ValueError:
         return None
-    if not match.group("longest_job").strip():
+    if not match.group("longest_job").strip().rstrip("."):
         return None
     if not all(
         math.isfinite(float(match.group(key))) for key in ("p50", "target", "distance", "share")
@@ -399,9 +399,12 @@ def ingest_comments_into_series(
         newest_created = None
         for comment in comments:
             created = comment.get("created_at")
-            if isinstance(created, str) and (newest_created is None or created > newest_created):
-                if _authenticated_budget_comment(comment) is not None:
-                    newest_created = created
+            if (
+                isinstance(created, str)
+                and (newest_created is None or created > newest_created)
+                and _authenticated_budget_comment(comment) is not None
+            ):
+                newest_created = created
         if newest_created is not None:
             meta["updated_at"] = newest_created
     refreshed = series_to_jsonable(
