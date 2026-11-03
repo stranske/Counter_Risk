@@ -294,6 +294,7 @@ def test_cli_reports_remaining_days(tmp_path: Path, capsys: pytest.CaptureFixtur
 
 def _budget_comment(date: str, p50: float, *, drainable_in: int, url: str) -> dict:
     return {
+        "user": {"login": "stranske"},
         "body": (
             f"CI budget {date}: p50={p50} min; target=10 min; distance=0.000; "
             f"share=0.00%; drainable_in={drainable_in}; "
@@ -302,6 +303,76 @@ def _budget_comment(date: str, p50: float, *, drainable_in: int, url: str) -> di
         "html_url": url,
         "created_at": f"{date}T12:00:00Z",
     }
+
+
+@pytest.mark.parametrize(
+    "user",
+    [{"login": "untrusted"}, {"login": "github-actions[bot]"}, {}, None, "stranske"],
+)
+def test_unauthorized_later_same_date_overwrite_cannot_authorize_closure(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], user: object
+) -> None:
+    official = [
+        _budget_comment(f"2026-10-{day}", 2.0, drainable_in=1, url=f"https://example.test/{day}")
+        for day in range(24, 31)
+    ]
+    official[-1] = _budget_comment(
+        "2026-10-30", 12.0, drainable_in=7, url="https://example.test/official"
+    )
+    path = tmp_path / "series.json"
+    path.write_text(json.dumps({"issue": 1189, "measurements": []}))
+    series.ingest_comments_into_series(path, official, write=True)
+    spoof = _budget_comment("2026-10-30", 0.0, drainable_in=0, url="https://example.test/spoof")
+    spoof["user"] = user
+    spoof["created_at"] = "2026-10-31T12:00:00Z"
+    refreshed, status = series.ingest_comments_into_series(path, [*official, spoof], write=True)
+    assert refreshed["measurements"][-1]["p50_minutes"] == 12.0
+    assert refreshed["measurements"][-1]["comment_url"] == "https://example.test/official"
+    assert refreshed["updated_at"] == "2026-10-30T12:00:00Z"
+    assert status.ready_to_close is False
+    assert series.main([str(path), "--print-closure-comment"]) == 1
+    assert "Closing #" not in capsys.readouterr().out
+
+    correction = _budget_comment(
+        "2026-10-30", 2.08, drainable_in=0, url="https://example.test/correction"
+    )
+    refreshed, status = series.ingest_comments_into_series(path, [correction], write=True)
+    assert refreshed["measurements"][-1]["p50_minutes"] == 2.08
+    assert refreshed["measurements"][-1]["comment_url"] == "https://example.test/correction"
+    assert status.streak == 7
+    assert status.ready_to_close is True
+
+
+@pytest.mark.parametrize(
+    "wrapper",
+    ["> {}", "```text\n{}\n```", "Copied measurement:\n{}", "{}\nQuoted above."],
+)
+def test_quoted_matching_text_is_not_a_measurement(wrapper: str) -> None:
+    comment = _budget_comment("2026-10-30", 2.0, drainable_in=4, url="https://example.test/30")
+    comment["body"] = wrapper.format(comment["body"])
+    assert series.parse_budget_comment(comment["body"]) is None
+    assert series.measurements_from_issue_comments([comment]) == []
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "CI budget 2026-10-30: p50=2.08 min",
+        "CI budget 2026-10-30: p50=2.08 min; target=10 min",
+        "CI budget 2026-10-30: p50=2.08 min; target=10 min; distance=0.000; "
+        "share=0.00%; drainable_in=4",
+        "CI budget 2026-10-30: p50=2.08 min; target=10 min; distance=0.000; "
+        "share=0.00%; drainable_in=4; longest_job=.",
+        "CI budget 2026-02-30: p50=2.08 min; target=10 min; distance=0.000; "
+        "share=0.00%; drainable_in=4; longest_job=Python CI.",
+    ],
+)
+def test_malformed_partial_records_are_not_measurements(body: str) -> None:
+    assert series.parse_budget_comment(body) is None
+    assert (
+        series.measurements_from_issue_comments([{"user": {"login": "stranske"}, "body": body}])
+        == []
+    )
 
 
 def test_consecutive_under_target_empty_series() -> None:
@@ -400,7 +471,7 @@ def test_cli_ingest_require_ready_exits_nonzero_while_streak_short(
     assert report["streak"] == 1
 
 
-def test_measurements_from_issue_comments_keeps_latest_per_day() -> None:
+def test_measurements_from_issue_comments_accepts_valid_publisher_correction() -> None:
     comments = [
         _budget_comment(
             "2026-10-30",
@@ -645,6 +716,7 @@ def test_issue_1189_evidence_matches_live_comment_ingest(
         )
         comments.append(
             {
+                "user": {"login": "stranske"},
                 "body": body,
                 "html_url": item.comment_url,
                 "created_at": payload["updated_at"],

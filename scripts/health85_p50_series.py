@@ -40,16 +40,20 @@ from pathlib import Path
 from typing import Any
 
 BUDGET_COMMENT_RE = re.compile(
-    r"CI budget\s+"
-    r"(?P<date>\d{4}-\d{2}-\d{2}):\s*"
-    r"p50=(?P<p50>[0-9]+(?:\.[0-9]+)?)\s*min"
-    r"(?:;\s*target=(?P<target>[0-9]+(?:\.[0-9]+)?)\s*min)?"
-    r"(?:;\s*distance=(?P<distance>[0-9]+(?:\.[0-9]+)?))?"
-    r"(?:;\s*share=(?P<share>[0-9]+(?:\.[0-9]+)?)%)?"
-    r"(?:;\s*drainable_in=(?P<drainable_in>[0-9]+))?"
-    r"(?:;\s*longest_job=(?P<longest_job>[^\n]+))?",
-    flags=re.IGNORECASE,
+    r"CI budget (?P<date>\d{4}-\d{2}-\d{2}): "
+    r"p50=(?P<p50>[0-9]+(?:\.[0-9]+)?) min; "
+    r"target=(?P<target>[0-9]+(?:\.[0-9]+)?) min; "
+    r"distance=(?P<distance>[0-9]+(?:\.[0-9]+)?); "
+    r"share=(?P<share>[0-9]+(?:\.[0-9]+)?)%; "
+    r"drainable_in=(?P<drainable_in>[0-9]+); "
+    r"longest_job=(?P<longest_job>[^\r\n]+)\."
 )
+
+# Workflows/.github/workflows/health-85-ci-time-budget.yml publishes with
+# OWNER_PR_PAT || SERVICE_BOT_PAT, not the read-only workflow token. Verified
+# against the #1189 daily API comments on 2026-11-02: publisher is stranske.
+# A different PAT owner must be verified before extending this allowlist.
+HEALTH85_PUBLISHERS = frozenset({"stranske"})
 
 DEFAULT_TARGET_MINUTES = 10.0
 DEFAULT_REQUIRED_CONSECUTIVE_DAYS = 7
@@ -78,10 +82,20 @@ class SeriesStatus:
 
 
 def parse_budget_comment(text: str) -> Measurement | None:
-    """Parse a Health 85 CI-budget comment body into a measurement, if present."""
+    """Parse only a complete Health 85 body; author validation happens at ingestion."""
 
-    match = BUDGET_COMMENT_RE.search(text or "")
+    match = BUDGET_COMMENT_RE.fullmatch(text or "")
     if match is None:
+        return None
+    try:
+        date.fromisoformat(match.group("date"))
+    except ValueError:
+        return None
+    if not match.group("longest_job").strip():
+        return None
+    if not all(
+        math.isfinite(float(match.group(key))) for key in ("p50", "target", "distance", "share")
+    ):
         return None
 
     def _float(name: str) -> float | None:
@@ -267,14 +281,15 @@ def measurements_from_issue_comments(
 ) -> list[Measurement]:
     """Extract Health 85 budget measurements from GitHub issue comment payloads.
 
-    Accepts objects shaped like the GitHub Issues Comments API (``body``,
-    ``html_url`` / ``url``). Later comments for the same calendar date win so a
-    corrected Health 85 post replaces an earlier value for that day.
+    Accepts trusted GitHub Issues Comments API payloads (``user.login``, ``body``,
+    ``html_url`` / ``url``). Only complete bodies from the verified publishing
+    identity enter the series. Later authenticated comments for the same date
+    win so a corrected Health 85 post replaces an earlier value for that day.
     """
 
     by_date: dict[str, Measurement] = {}
     for comment in comments:
-        parsed = parse_budget_comment(str(comment.get("body") or ""))
+        parsed = _authenticated_budget_comment(comment)
         if parsed is None:
             continue
         url = comment.get("html_url") or comment.get("url")
@@ -289,6 +304,13 @@ def measurements_from_issue_comments(
             comment_url=None if url is None else str(url),
         )
     return sorted(by_date.values(), key=lambda item: item.date)
+
+
+def _authenticated_budget_comment(comment: dict[str, Any]) -> Measurement | None:
+    user = comment.get("user")
+    if not isinstance(user, dict) or user.get("login") not in HEALTH85_PUBLISHERS:
+        return None
+    return parse_budget_comment(str(comment.get("body") or ""))
 
 
 def merge_measurements(
@@ -378,8 +400,7 @@ def ingest_comments_into_series(
         for comment in comments:
             created = comment.get("created_at")
             if isinstance(created, str) and (newest_created is None or created > newest_created):
-                body = str(comment.get("body") or "")
-                if parse_budget_comment(body) is not None:
+                if _authenticated_budget_comment(comment) is not None:
                     newest_created = created
         if newest_created is not None:
             meta["updated_at"] = newest_created
