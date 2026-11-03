@@ -179,6 +179,28 @@ def test_classifier_checks(classifiers: list[str], accepted: bool) -> None:
             {"ruff": {"target-version": "py313"}, "black": {"target-version": ["py313"]}},
             False,
         ),
+        (
+            {
+                "black": {"target-version": ["py313"]},
+                "mypy": {"python_version": "3.13"},
+            },
+            False,
+        ),
+        (
+            {
+                "ruff": {"target-version": "py313"},
+                "mypy": {"python_version": "3.13"},
+            },
+            False,
+        ),
+        (
+            {
+                "ruff": {"target-version": "py313"},
+                "black": {"target-version": "py313"},
+                "mypy": {"python_version": "3.13"},
+            },
+            True,
+        ),
     ],
 )
 def test_tool_target_checks(tool: dict, accepted: bool) -> None:
