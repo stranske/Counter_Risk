@@ -46,17 +46,26 @@ def _assert_classifiers(project: dict) -> None:
 
 
 def _assert_tool_targets(tool: dict) -> None:
-    # A missing key is not a regression: ruff and black infer the target from requires-python.
-    targets = {}
-    if "target-version" in tool.get("ruff", {}):
-        targets["ruff"] = [tool["ruff"]["target-version"]]
-    if "target-version" in tool.get("black", {}):
-        targets["black"] = tool["black"]["target-version"]
-    if "python_version" in tool.get("mypy", {}):
-        targets["mypy"] = [tool["mypy"]["python_version"]]
-    for name, values in targets.items():
-        assert values, f"{name} target list is empty"
-        assert all(_version(v) >= FLOOR for v in values), f"{name} targets below 3.13: {values}"
+    ruff = tool.get("ruff", {})
+    assert "target-version" in ruff, "ruff target-version must be present"
+    assert _version(ruff["target-version"]) >= FLOOR, (
+        f"ruff target below 3.13: {ruff['target-version']!r}"
+    )
+
+    black = tool.get("black", {})
+    assert "target-version" in black, "black target-version must be present"
+    black_raw = black["target-version"]
+    black_targets = [black_raw] if isinstance(black_raw, str) else list(black_raw)
+    assert black_targets, "black target list is empty"
+    assert all(_version(v) >= FLOOR for v in black_targets), (
+        f"black targets below 3.13: {black_targets}"
+    )
+
+    mypy = tool.get("mypy", {})
+    assert "python_version" in mypy, "mypy python_version must be present"
+    assert _version(mypy["python_version"]) >= FLOOR, (
+        f"mypy python_version below 3.13: {mypy['python_version']!r}"
+    )
 
 
 def test_python_floor_is_3_13() -> None:
@@ -119,14 +128,57 @@ def test_classifier_checks(classifiers: list[str], accepted: bool) -> None:
     "tool,accepted",
     [
         (
-            {"ruff": {"target-version": "py313"}, "black": {"target-version": ["py313", "py314"]}},
+            {
+                "ruff": {"target-version": "py313"},
+                "black": {"target-version": ["py313", "py314"]},
+                "mypy": {"python_version": "3.13"},
+            },
             True,
         ),
-        ({"mypy": {"python_version": "3.14"}}, True),
-        ({"ruff": {"target-version": "py312"}}, False),
-        ({"black": {"target-version": ["py311", "py313"]}}, False),
-        ({"black": {"target-version": []}}, False),
-        ({"mypy": {"python_version": "3.12"}}, False),
+        (
+            {
+                "ruff": {"target-version": "py313"},
+                "black": {"target-version": ["py313"]},
+                "mypy": {"python_version": "3.14"},
+            },
+            True,
+        ),
+        (
+            {
+                "ruff": {"target-version": "py312"},
+                "black": {"target-version": ["py313"]},
+                "mypy": {"python_version": "3.13"},
+            },
+            False,
+        ),
+        (
+            {
+                "ruff": {"target-version": "py313"},
+                "black": {"target-version": ["py311", "py313"]},
+                "mypy": {"python_version": "3.13"},
+            },
+            False,
+        ),
+        (
+            {
+                "ruff": {"target-version": "py313"},
+                "black": {"target-version": []},
+                "mypy": {"python_version": "3.13"},
+            },
+            False,
+        ),
+        (
+            {
+                "ruff": {"target-version": "py313"},
+                "black": {"target-version": ["py313"]},
+                "mypy": {"python_version": "3.12"},
+            },
+            False,
+        ),
+        (
+            {"ruff": {"target-version": "py313"}, "black": {"target-version": ["py313"]}},
+            False,
+        ),
     ],
 )
 def test_tool_target_checks(tool: dict, accepted: bool) -> None:
