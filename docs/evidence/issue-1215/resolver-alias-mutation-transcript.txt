@@ -1,0 +1,190 @@
+Mutation: resolve-metadata-again
+$ ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_reconciliation_boundaries.py::test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again', '-m', 'not slow', '-q', '--tb=short']
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-resolver
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_reconciliation_boundaries.py FF                      [100%]
+
+=================================== FAILURES ===================================
+_ test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again[warn] _
+tests/pipeline/test_reconciliation_boundaries.py:81: in test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again
+    assert unmapped == [
+E   AssertionError: assert [] == [{'variant': ...merce'], ...}]
+E     
+E     Right contains one more item: {'variant': None, 'sheet': 'Total', 'error_type': 'unmapped_counterparty', 'raw_counterparties': ['  CIBC  ', 'Canadian Imperial Bank of Commerce'], ...}
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E     + []
+E     - [
+E     -     {
+E     -         'variant': None,
+E     -         'sheet': 'Total',
+E     -         'error_type': 'unmapped_counterparty',
+E     -         'raw_counterparties': [
+E     -             '  CIBC  ',
+E     -             'Canadian Imperial Bank of Commerce',
+E     -         ],
+E     -         'normalized_counterparties': [
+E     -             'custom',
+E     -         ],
+E     -     },
+E     - ]
+_ test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again[strict] _
+tests/pipeline/test_reconciliation_boundaries.py:73: in test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again
+    assert caught.value.raw_counterparty == raw_names[0]
+E   AssertionError: assert 'custom' == '  CIBC  '
+E     
+E     -   CIBC  
+E     + custom
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again[warn] - AssertionError: assert [] == [{'variant': ...merce'], ...}]
+  
+  Right contains one more item: {'variant': None, 'sheet': 'Total', 'error_type': 'unmapped_counterparty', 'raw_counterparties': ['  CIBC  ', 'Canadian Imperial Bank of Commerce'], ...}
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+  + []
+  - [
+  -     {
+  -         'variant': None,
+  -         'sheet': 'Total',
+  -         'error_type': 'unmapped_counterparty',
+  -         'raw_counterparties': [
+  -             '  CIBC  ',
+  -             'Canadian Imperial Bank of Commerce',
+  -         ],
+  -         'normalized_counterparties': [
+  -             'custom',
+  -         ],
+  -     },
+  - ]
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again[strict] - AssertionError: assert 'custom' == '  CIBC  '
+  
+  -   CIBC  
+  + custom
+======================== 2 failed, 13 warnings in 0.30s ========================
+
+
+Restored source
+$ ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_reconciliation_boundaries.py::test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again', '-m', 'not slow', '-q', '--tb=short']
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-resolver
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_reconciliation_boundaries.py ..                      [100%]
+
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 2 passed, 13 warnings in 0.25s ========================
+
+
+Mutation: discard-original-spacing
+$ ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_reconciliation_boundaries.py::test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again', '-m', 'not slow', '-q', '--tb=short']
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-resolver
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_reconciliation_boundaries.py FF                      [100%]
+
+=================================== FAILURES ===================================
+_ test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again[warn] _
+tests/pipeline/test_reconciliation_boundaries.py:81: in test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again
+    assert unmapped == [
+E   AssertionError: assert [{'variant': ...'CIBC'], ...}] == [{'variant': ...merce'], ...}]
+E     
+E     At index 0 diff: {'variant': None, 'sheet': 'Total', 'error_type': 'unmapped_counterparty', 'raw_counterparties': ['Canadian Imperial Bank of Commerce', 'CIBC'], 'normalized_counterparties': ['custom']} != {'variant': None, 'sheet': 'Total', 'error_type': 'unmapped_counterparty', 'raw_counterparties': ['  CIBC  ', 'Canadian Imperial Bank of Commerce'], 'normalized_counterparties': ['custom']}
+E     
+E     Full diff: (-: missing in left side, +: extra in left side)
+E       [
+E           {
+E               'variant': None,
+E               'sheet': 'Total',
+E               'error_type': 'unmapped_counterparty',
+E               'raw_counterparties': [
+E     -             '  CIBC  ',
+E                   'Canadian Imperial Bank of Commerce',
+E     +             'CIBC',
+E               ],
+E               'normalized_counterparties': [
+E                   'custom',
+E               ],
+E           },
+E       ]
+_ test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again[strict] _
+tests/pipeline/test_reconciliation_boundaries.py:73: in test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again
+    assert caught.value.raw_counterparty == raw_names[0]
+E   AssertionError: assert 'Canadian Imp...k of Commerce' == '  CIBC  '
+E     
+E     -   CIBC  
+E     + Canadian Imperial Bank of Commerce
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again[warn] - AssertionError: assert [{'variant': ...'CIBC'], ...}] == [{'variant': ...merce'], ...}]
+  
+  At index 0 diff: {'variant': None, 'sheet': 'Total', 'error_type': 'unmapped_counterparty', 'raw_counterparties': ['Canadian Imperial Bank of Commerce', 'CIBC'], 'normalized_counterparties': ['custom']} != {'variant': None, 'sheet': 'Total', 'error_type': 'unmapped_counterparty', 'raw_counterparties': ['  CIBC  ', 'Canadian Imperial Bank of Commerce'], 'normalized_counterparties': ['custom']}
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    [
+        {
+            'variant': None,
+            'sheet': 'Total',
+            'error_type': 'unmapped_counterparty',
+            'raw_counterparties': [
+  -             '  CIBC  ',
+                'Canadian Imperial Bank of Commerce',
+  +             'CIBC',
+            ],
+            'normalized_counterparties': [
+                'custom',
+            ],
+        },
+    ]
+FAILED tests/pipeline/test_reconciliation_boundaries.py::test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again[strict] - AssertionError: assert 'Canadian Imp...k of Commerce' == '  CIBC  '
+  
+  -   CIBC  
+  + Canadian Imperial Bank of Commerce
+======================== 2 failed, 13 warnings in 0.30s ========================
+
+
+Restored source
+$ ['/opt/hostedtoolcache/Python/3.14.9/x64/bin/python', '-m', 'pytest', 'tests/pipeline/test_reconciliation_boundaries.py::test_custom_resolver_preserves_raw_aliases_without_resolving_metadata_again', '-m', 'not slow', '-q', '--tb=short']
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-resolver
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_reconciliation_boundaries.py ..                      [100%]
+
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 2 passed, 13 warnings in 0.25s ========================

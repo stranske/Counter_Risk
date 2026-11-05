@@ -1,0 +1,24 @@
+import sys
+from pathlib import Path
+
+import black
+import black.concurrency
+
+
+def reformat_serial(sources, fast, write_back, mode, report, workers, no_cache=False, cache_dir=None):
+    for source in sorted(sources, key=str):
+        print(source, flush=True)
+        black.reformat_one(
+            src=source,
+            fast=fast,
+            write_back=write_back,
+            mode=mode,
+            report=report,
+            no_cache=no_cache,
+            cache_dir=cache_dir,
+        )
+
+
+black.concurrency.reformat_many = reformat_serial
+sys.argv = ['black', '--check', '--line-length', '100', '--exclude', r'(\.workflows-lib|node_modules)', '.']
+black.patched_main()

@@ -1,0 +1,56 @@
+[
+  {
+    "case": "zero-row",
+    "original": "\"row\": {\"type\": [\"integer\", \"null\"], \"minimum\": 1},",
+    "replacement": "\"row\": {\"type\": [\"integer\", \"null\"], \"minimum\": 0},",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[zero-row]",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "broken_exit": 1,
+    "restored_exit": 0,
+    "source_sha256_before_and_after": "65cb534200f9f8c146acc93db309e5896e5e37db657a4790a2d05ca76f35d147"
+  },
+  {
+    "case": "boolean-row",
+    "original": "\"row\": {\"type\": [\"integer\", \"null\"], \"minimum\": 1},",
+    "replacement": "\"row\": {\"type\": [\"integer\", \"boolean\", \"null\"], \"minimum\": 1},",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[boolean-row]",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "broken_exit": 1,
+    "restored_exit": 0,
+    "source_sha256_before_and_after": "65cb534200f9f8c146acc93db309e5896e5e37db657a4790a2d05ca76f35d147"
+  },
+  {
+    "case": "fractional-row",
+    "original": "\"row\": {\"type\": [\"integer\", \"null\"], \"minimum\": 1},",
+    "replacement": "\"row\": {\"type\": [\"number\", \"null\"], \"minimum\": 1},",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_evidence_row_without_overwriting_outputs[fractional-row]",
+      "-m",
+      "not slow",
+      "-q",
+      "--tb=short"
+    ],
+    "broken_exit": 1,
+    "restored_exit": 0,
+    "source_sha256_before_and_after": "65cb534200f9f8c146acc93db309e5896e5e37db657a4790a2d05ca76f35d147"
+  }
+]

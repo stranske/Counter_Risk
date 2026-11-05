@@ -1,0 +1,38 @@
+{
+  "python": "3.14.9",
+  "all_added_test_functions": 53,
+  "all_added_parameter_cases": 76,
+  "mutation_failures": 76,
+  "restored_passes": 76,
+  "all_source_hashes_match": true,
+  "full_suite": {
+    "passed": 2554,
+    "skipped": 1,
+    "seconds": 94.63
+  },
+  "targeted_suite": {
+    "passed": 353,
+    "deselected": 14
+  },
+  "black": {
+    "version": "26.10.1",
+    "exit": 0,
+    "files": 403,
+    "scheduler": "serial reformat_one; default forkserver startup denied"
+  },
+  "ruff": {
+    "version": "0.17.3",
+    "command": "ruff check --output-format github --extend-exclude .workflows-lib .",
+    "exit": 0
+  },
+  "remote_pr": {
+    "number": 1221,
+    "state": "open",
+    "draft": false,
+    "head_sha": "194291382a1c34ea10b8d3d8aaf0655030e82aa3"
+  },
+  "publication_blockers": [
+    "GitHub writes require approval; policy never",
+    ".git/index.lock cannot be created; read-only filesystem"
+  ]
+}

@@ -32,7 +32,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   click
     #   pytest
     #   tqdm
-coverage==7.17.0
+coverage==7.17.1
     # via pytest-cov
 cryptography==49.0.0
     # via pdfminer-six
@@ -222,7 +222,6 @@ types-pyyaml==6.0.12.20260724
 typing-extensions==4.15.0
     # via
     #   anthropic
-    #   anyio
     #   langchain-core
     #   langchain-protocol
     #   langsmith

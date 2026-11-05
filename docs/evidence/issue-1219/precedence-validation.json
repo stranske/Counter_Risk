@@ -1,0 +1,74 @@
+{
+  "starting_head": "54db3ee2f9530659d7d5b68a245b184d9c68b64d",
+  "target": "src/counter_risk/web_demo.py",
+  "selection": "First target in issue #1219 explicit escaped-defect/churn/uncovered-mass ranking.",
+  "change": "Test-only regression cases for source precedence when fallback files also exist.",
+  "new_cases": 3,
+  "production_changed": false,
+  "mutation_proof": "precedence-mutation-receipts.json: each selected case fails with AssertionError and exit 1 under its mutation, then passes with exit 0 after byte-for-byte source restoration.",
+  "source_sha256": "15d87316a6f3eb99564e9f8e4ea5cd9c4a84c22e40ac8b5f77bb2a9971ddc15a",
+  "targeted_suite": {
+    "exit": 0,
+    "passed": 49,
+    "deselected": 1,
+    "seconds": 1.04
+  },
+  "full_suite": {
+    "exit": 0,
+    "passed": 2593,
+    "skipped": 1,
+    "seconds": 122.35
+  },
+  "coverage": {
+    "baseline_percent": 100,
+    "targeted_percent": 100,
+    "full_suite_percent": 100,
+    "statements": 127,
+    "missing": 0
+  },
+  "coverage_limit": "CI issue baseline remains authoritative: 89.32% blended; local measurement is line-only. This follow-up reduces no existing missed lines. Previously measured target reduction remains 5 lines, about 175 short of 180.",
+  "formatting": {
+    "required_command": "black --check --line-length 100 --exclude '(\\.workflows-lib|node_modules)' .",
+    "ci_command": "black --check --line-length 100 --exclude '(\\.venv|\\.workflows-lib|node_modules)' .",
+    "exit": 0,
+    "files": 403,
+    "preparation": "Existing serial driver warmed the temporary cache after initial process runner stalled; both unmodified native commands then passed. Stalled initial process interrupted after successful checks."
+  },
+  "lint": {
+    "command": "ruff check --output-format github --extend-exclude .workflows-lib .",
+    "exit": 0
+  },
+  "git_diff_check_exit": 0,
+  "published_head_checks": {
+    "sha": "54db3ee2f9530659d7d5b68a245b184d9c68b64d",
+    "gate_run": 40851083752,
+    "gate": "success",
+    "python_3_13_tests": "success",
+    "python_3_14_tests": "success",
+    "lint_format": "skipped",
+    "agents_guard_run": 40851082914,
+    "agents_guard": "success"
+  },
+  "metadata_publication": {
+    "body_update": "rejected",
+    "needs_human_label": "rejected",
+    "blocker_comment": "rejected",
+    "reason": "MCP tool call requires approval, but approval policy is never"
+  },
+  "commit_checkout": "/tmp/issue-1219-precedence-commit",
+  "publication": "blocked: push failed; no new remote commits published",
+  "push": {
+    "command": "GIT_TERMINAL_PROMPT=0 timeout 30s git -C /tmp/issue-1219-precedence-commit push https://github.com/stranske/Counter_Risk.git HEAD:refs/heads/codex/issue-1219",
+    "attempted_commit": "48aaee8",
+    "exit": 128,
+    "reason": "Could not resolve host: github.com"
+  },
+  "portable_bundle": "/tmp/issue-1219-precedence.bundle",
+  "final_remote_pr_state": {
+    "number": 1221,
+    "state": "open",
+    "draft": false,
+    "head_sha": "54db3ee2f9530659d7d5b68a245b184d9c68b64d",
+    "new_precedence_tests_published": false
+  }
+}

@@ -1,0 +1,267 @@
+{
+  "rank": 1,
+  "target": "src/counter_risk/web_demo.py",
+  "real_bug": "A fixture fallback caused a copied configuration to resolve its other relative source paths against the copy directory instead of their original directory.",
+  "original_code_result": "Four regression cases fail; see relocation-before.log.",
+  "new_test_functions": 1,
+  "new_parameter_cases": 4,
+  "mutation_experiments": 4,
+  "all_mutants_failed_and_restored_passed": true,
+  "full_suite": {
+    "command": "pytest tests/ -n 4 -m 'not slow' -q -o addopts= --cov=counter_risk --cov-report=json:/tmp/issue-1219-relocation-full.json --cov-report=term",
+    "exit": 0,
+    "passed": 2563,
+    "skipped": 1,
+    "seconds": 129.92,
+    "totals": {
+      "covered_lines": 11099,
+      "num_statements": 12226,
+      "percent_covered": 90.78194012759693,
+      "percent_covered_display": "91",
+      "missing_lines": 1127,
+      "excluded_lines": 84,
+      "percent_statements_covered": 90.78194012759693,
+      "percent_statements_covered_display": "91"
+    }
+  },
+  "targeted_suite": {
+    "command": "pytest tests/test_web_demo_helpers.py tests/test_web_demo_smoke.py -m 'not slow' -q -o addopts= --cov=counter_risk.web_demo --cov-report=term-missing",
+    "exit": 0,
+    "passed": 19,
+    "deselected": 1,
+    "statements": 127,
+    "missed": 0,
+    "cover_percent": 100
+  },
+  "target_line_coverage": {
+    "src/counter_risk/web_demo.py": {
+      "baseline": {
+        "covered_lines": 117,
+        "num_statements": 117,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate": {
+        "covered_lines": 127,
+        "num_statements": 127,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate_missing_lines": []
+    },
+    "src/counter_risk/mosers/workbook_generation.py": {
+      "baseline": {
+        "covered_lines": 222,
+        "num_statements": 222,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate": {
+        "covered_lines": 222,
+        "num_statements": 222,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate_missing_lines": []
+    },
+    "src/counter_risk/parsers/repo_cash_sources.py": {
+      "baseline": {
+        "covered_lines": 177,
+        "num_statements": 178,
+        "percent_covered": 99.43820224719101,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 2,
+        "percent_statements_covered": 99.43820224719101,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate": {
+        "covered_lines": 177,
+        "num_statements": 178,
+        "percent_covered": 99.43820224719101,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 2,
+        "percent_statements_covered": 99.43820224719101,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate_missing_lines": [
+        192
+      ]
+    },
+    "src/counter_risk/compute/limits.py": {
+      "baseline": {
+        "covered_lines": 185,
+        "num_statements": 186,
+        "percent_covered": 99.46236559139786,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 0,
+        "percent_statements_covered": 99.46236559139786,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate": {
+        "covered_lines": 185,
+        "num_statements": 186,
+        "percent_covered": 99.46236559139786,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 0,
+        "percent_statements_covered": 99.46236559139786,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate_missing_lines": [
+        211
+      ]
+    },
+    "src/counter_risk/pipeline/data_quality.py": {
+      "baseline": {
+        "covered_lines": 255,
+        "num_statements": 261,
+        "percent_covered": 97.70114942528735,
+        "percent_covered_display": "98",
+        "missing_lines": 6,
+        "excluded_lines": 0,
+        "percent_statements_covered": 97.70114942528735,
+        "percent_statements_covered_display": "98"
+      },
+      "candidate": {
+        "covered_lines": 260,
+        "num_statements": 261,
+        "percent_covered": 99.61685823754789,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 0,
+        "percent_statements_covered": 99.61685823754789,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate_missing_lines": [
+        494
+      ]
+    },
+    "src/counter_risk/chat/context.py": {
+      "baseline": {
+        "covered_lines": 131,
+        "num_statements": 135,
+        "percent_covered": 97.03703703703704,
+        "percent_covered_display": "97",
+        "missing_lines": 4,
+        "excluded_lines": 0,
+        "percent_statements_covered": 97.03703703703704,
+        "percent_statements_covered_display": "97"
+      },
+      "candidate": {
+        "covered_lines": 131,
+        "num_statements": 135,
+        "percent_covered": 97.03703703703704,
+        "percent_covered_display": "97",
+        "missing_lines": 4,
+        "excluded_lines": 0,
+        "percent_statements_covered": 97.03703703703704,
+        "percent_statements_covered_display": "97"
+      },
+      "candidate_missing_lines": [
+        16,
+        17,
+        20,
+        22
+      ]
+    },
+    "src/counter_risk/chat/session.py": {
+      "baseline": {
+        "covered_lines": 441,
+        "num_statements": 441,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate": {
+        "covered_lines": 441,
+        "num_statements": 441,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate_missing_lines": []
+    },
+    "src/counter_risk/demo_artifact.py": {
+      "baseline": {
+        "covered_lines": 119,
+        "num_statements": 119,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 2,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate": {
+        "covered_lines": 119,
+        "num_statements": 119,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 2,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate_missing_lines": []
+    }
+  },
+  "reduction_in_existing_target_missed_lines": 5,
+  "ci_blended_delta": "Unverified; issue baseline 89.32% is authoritative. Local missed-line reduction is only 5, 175 short of about 180.",
+  "black": {
+    "version": "26.10.1",
+    "required_flags": "--check --line-length 100 --exclude '(\\.workflows-lib|node_modules)' .",
+    "native_cli": "Default multiprocessing cannot bind a forkserver socket; single-worker thread scheduler and fork scheduler attempts were interrupted after not completing promptly.",
+    "successful_check": "Black CLI, configuration, discovery, and formatting rules preserved, with serial calls to reformat_one replacing only reformat_many scheduling. All 403 files unchanged.",
+    "reproduction_driver": "relocation-black-driver.txt",
+    "exit": 0,
+    "changed_files_native_check_exit": 0
+  },
+  "ruff": {
+    "command": "ruff check --output-format github --extend-exclude .workflows-lib .",
+    "exit": 0
+  },
+  "mypy": {
+    "command": "mypy src/counter_risk/web_demo.py",
+    "exit": 0
+  },
+  "git_diff_check_exit": 0,
+  "published_pr": {
+    "number": 1221,
+    "state": "open",
+    "draft": false,
+    "head_sha": "fe3ec4c2333d0620af8dca4cc8925fd28b237b2d",
+    "gate": "success",
+    "agents_guard": "success"
+  },
+  "publication_blockers": [
+    "Primary-checkout git add cannot create .git/index.lock: read-only file system.",
+    "GitHub update_pull_request returned: MCP tool call requires approval, but approval policy is never. Live PR body and branch unchanged."
+  ],
+  "local_commit_checkout": "/tmp/issue-1219-relocation-commit",
+  "portable_bundle": "/tmp/issue-1219-relocation.bundle"
+}

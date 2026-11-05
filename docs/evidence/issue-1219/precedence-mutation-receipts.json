@@ -1,0 +1,71 @@
+[
+  {
+    "case": "absolute",
+    "node": "tests/test_web_demo_helpers.py::test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[absolute]",
+    "command": [
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[absolute]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov"
+    ],
+    "mutation": {
+      "before": "        return path.resolve()\n",
+      "after": "        path = Path(*path.parts[-2:])\n"
+    },
+    "broken_exit": 1,
+    "broken_output": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_ test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[absolute] _\n\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x78959ea38d60>\ntmp_path = PosixPath('/tmp/pytest-of-runner/pytest-1/test_resolve_config_path_selec0')\npreferred = 'absolute'\n\n    @pytest.mark.parametrize(\"preferred\", [\"absolute\", \"config\", \"repository\"])\n    def test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist(\n        monkeypatch: pytest.MonkeyPatch, tmp_path: Path, preferred: str\n    ) -> None:\n        repo_root = tmp_path / \"repo\"\n        config_dir = tmp_path / \"project\" / \"config\"\n        relative = Path(\"fixtures/input.csv\")\n        candidates = {\n            \"absolute\": tmp_path / \"absolute\" / relative,\n            \"config\": config_dir / relative,\n            \"repository\": repo_root / \"tests\" / relative,\n            \"parent\": config_dir.parent / relative,\n        }\n        for label, candidate in candidates.items():\n            candidate.parent.mkdir(parents=True, exist_ok=True)\n            candidate.write_text(label, encoding=\"utf-8\")\n        if preferred == \"repository\":\n            candidates[\"config\"].unlink()\n        monkeypatch.setattr(web_demo, \"_repo_root\", lambda: repo_root)\n    \n        requested = candidates[\"absolute\"] if preferred == \"absolute\" else relative\n        resolved = web_demo._resolve_config_path(requested, config_dir=config_dir)\n    \n>       assert resolved == candidates[preferred]\nE       AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-1/test_resolve_config_path_selec0/project/config/fixtures/input.csv') == PosixPath('/tmp/pytest-of-runner/pytest-1/test_resolve_config_path_selec0/absolute/fixtures/input.csv')\n\ntests/test_web_demo_helpers.py:93: AssertionError\n=============================== warnings summary ===============================\n../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_web_demo_helpers.py::test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[absolute] - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-1/test_resolve_config_path_selec0/project/config/fixtures/input.csv') == PosixPath('/tmp/pytest-of-runner/pytest-1/test_resolve_config_path_selec0/absolute/fixtures/input.csv')\n1 failed, 13 warnings in 0.39s\n",
+    "restored_exit": 0,
+    "restored_output": ".                                                                        [100%]\n=============================== warnings summary ===============================\n../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n1 passed, 13 warnings in 0.28s\n",
+    "restored_sha256": "15d87316a6f3eb99564e9f8e4ea5cd9c4a84c22e40ac8b5f77bb2a9971ddc15a"
+  },
+  {
+    "case": "config",
+    "node": "tests/test_web_demo_helpers.py::test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[config]",
+    "command": [
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[config]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov"
+    ],
+    "mutation": {
+      "before": "    if primary.exists():\n        return primary\n",
+      "after": ""
+    },
+    "broken_exit": 1,
+    "broken_output": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_ test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[config] _\n\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7a9a054110f0>\ntmp_path = PosixPath('/tmp/pytest-of-runner/pytest-3/test_resolve_config_path_selec0')\npreferred = 'config'\n\n    @pytest.mark.parametrize(\"preferred\", [\"absolute\", \"config\", \"repository\"])\n    def test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist(\n        monkeypatch: pytest.MonkeyPatch, tmp_path: Path, preferred: str\n    ) -> None:\n        repo_root = tmp_path / \"repo\"\n        config_dir = tmp_path / \"project\" / \"config\"\n        relative = Path(\"fixtures/input.csv\")\n        candidates = {\n            \"absolute\": tmp_path / \"absolute\" / relative,\n            \"config\": config_dir / relative,\n            \"repository\": repo_root / \"tests\" / relative,\n            \"parent\": config_dir.parent / relative,\n        }\n        for label, candidate in candidates.items():\n            candidate.parent.mkdir(parents=True, exist_ok=True)\n            candidate.write_text(label, encoding=\"utf-8\")\n        if preferred == \"repository\":\n            candidates[\"config\"].unlink()\n        monkeypatch.setattr(web_demo, \"_repo_root\", lambda: repo_root)\n    \n        requested = candidates[\"absolute\"] if preferred == \"absolute\" else relative\n        resolved = web_demo._resolve_config_path(requested, config_dir=config_dir)\n    \n>       assert resolved == candidates[preferred]\nE       AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-3/test_resolve_config_path_selec0/repo/tests/fixtures/input.csv') == PosixPath('/tmp/pytest-of-runner/pytest-3/test_resolve_config_path_selec0/project/config/fixtures/input.csv')\n\ntests/test_web_demo_helpers.py:93: AssertionError\n=============================== warnings summary ===============================\n../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_web_demo_helpers.py::test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[config] - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-3/test_resolve_config_path_selec0/repo/tests/fixtures/input.csv') == PosixPath('/tmp/pytest-of-runner/pytest-3/test_resolve_config_path_selec0/project/config/fixtures/input.csv')\n1 failed, 13 warnings in 0.40s\n",
+    "restored_exit": 0,
+    "restored_output": ".                                                                        [100%]\n=============================== warnings summary ===============================\n../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n1 passed, 13 warnings in 0.27s\n",
+    "restored_sha256": "15d87316a6f3eb99564e9f8e4ea5cd9c4a84c22e40ac8b5f77bb2a9971ddc15a"
+  },
+  {
+    "case": "repository",
+    "node": "tests/test_web_demo_helpers.py::test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[repository]",
+    "command": [
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[repository]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov"
+    ],
+    "mutation": {
+      "before": "    if repo_fixture.exists():\n        return repo_fixture\n",
+      "after": ""
+    },
+    "broken_exit": 1,
+    "broken_output": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_ test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[repository] _\n\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x712e420290f0>\ntmp_path = PosixPath('/tmp/pytest-of-runner/pytest-5/test_resolve_config_path_selec0')\npreferred = 'repository'\n\n    @pytest.mark.parametrize(\"preferred\", [\"absolute\", \"config\", \"repository\"])\n    def test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist(\n        monkeypatch: pytest.MonkeyPatch, tmp_path: Path, preferred: str\n    ) -> None:\n        repo_root = tmp_path / \"repo\"\n        config_dir = tmp_path / \"project\" / \"config\"\n        relative = Path(\"fixtures/input.csv\")\n        candidates = {\n            \"absolute\": tmp_path / \"absolute\" / relative,\n            \"config\": config_dir / relative,\n            \"repository\": repo_root / \"tests\" / relative,\n            \"parent\": config_dir.parent / relative,\n        }\n        for label, candidate in candidates.items():\n            candidate.parent.mkdir(parents=True, exist_ok=True)\n            candidate.write_text(label, encoding=\"utf-8\")\n        if preferred == \"repository\":\n            candidates[\"config\"].unlink()\n        monkeypatch.setattr(web_demo, \"_repo_root\", lambda: repo_root)\n    \n        requested = candidates[\"absolute\"] if preferred == \"absolute\" else relative\n        resolved = web_demo._resolve_config_path(requested, config_dir=config_dir)\n    \n>       assert resolved == candidates[preferred]\nE       AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-5/test_resolve_config_path_selec0/project/fixtures/input.csv') == PosixPath('/tmp/pytest-of-runner/pytest-5/test_resolve_config_path_selec0/repo/tests/fixtures/input.csv')\n\ntests/test_web_demo_helpers.py:93: AssertionError\n=============================== warnings summary ===============================\n../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_web_demo_helpers.py::test_resolve_config_path_selects_preferred_source_when_fallbacks_also_exist[repository] - AssertionError: assert PosixPath('/tmp/pytest-of-runner/pytest-5/test_resolve_config_path_selec0/project/fixtures/input.csv') == PosixPath('/tmp/pytest-of-runner/pytest-5/test_resolve_config_path_selec0/repo/tests/fixtures/input.csv')\n1 failed, 13 warnings in 0.36s\n",
+    "restored_exit": 0,
+    "restored_output": ".                                                                        [100%]\n=============================== warnings summary ===============================\n../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings\n  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead\n    if asyncio.iscoroutinefunction(func):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n1 passed, 13 warnings in 0.33s\n",
+    "restored_sha256": "15d87316a6f3eb99564e9f8e4ea5cd9c4a84c22e40ac8b5f77bb2a9971ddc15a"
+  }
+]

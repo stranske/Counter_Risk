@@ -1,0 +1,59 @@
+{
+  "source": "src/counter_risk/pipeline/manifest_schema.py",
+  "sha256_before": "65cb534200f9f8c146acc93db309e5896e5e37db657a4790a2d05ca76f35d147",
+  "sha256_after": "65cb534200f9f8c146acc93db309e5896e5e37db657a4790a2d05ca76f35d147",
+  "results": [
+    {
+      "mutation": "remove-minimum",
+      "old": "\"minimum\" in schema",
+      "new": "False",
+      "broken": {
+        "exit_code": 1,
+        "failures": [
+          "test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[negative-count]"
+        ],
+        "errors": []
+      },
+      "restored": {
+        "exit_code": 0,
+        "failures": [],
+        "errors": []
+      }
+    },
+    {
+      "mutation": "accept-boolean-integer",
+      "old": "return isinstance(value, int) and not isinstance(value, bool)",
+      "new": "return isinstance(value, int)",
+      "broken": {
+        "exit_code": 1,
+        "failures": [
+          "test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[boolean-count]"
+        ],
+        "errors": []
+      },
+      "restored": {
+        "exit_code": 0,
+        "failures": [],
+        "errors": []
+      }
+    },
+    {
+      "mutation": "skip-map-subschema",
+      "old": "elif isinstance(additional, Mapping):",
+      "new": "elif False:",
+      "broken": {
+        "exit_code": 1,
+        "failures": [
+          "test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[negative-count]",
+          "test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[boolean-count]"
+        ],
+        "errors": []
+      },
+      "restored": {
+        "exit_code": 0,
+        "failures": [],
+        "errors": []
+      }
+    }
+  ]
+}

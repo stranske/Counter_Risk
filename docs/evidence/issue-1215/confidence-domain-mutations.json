@@ -1,0 +1,32 @@
+{
+  "source": "src/counter_risk/pipeline/manifest_schema.py",
+  "restored_sha256": "65cb534200f9f8c146acc93db309e5896e5e37db657a4790a2d05ca76f35d147",
+  "all_five_cases_fail_under_mutation_and_pass_after_restoration": true,
+  "results": [
+    {
+      "mutation": "ignore minimum",
+      "original": "and value < schema[\"minimum\"]",
+      "replacement": "and False",
+      "red_exit": 1,
+      "failed_cases": [
+        "test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[next-float-below-zero]",
+        "test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[negative-integer]",
+        "test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[large-negative-integer]"
+      ],
+      "green_exit": 0,
+      "restored_passed": 5
+    },
+    {
+      "mutation": "accept booleans as numbers",
+      "original": "isinstance(value, (int, float))\n            and not isinstance(value, bool)\n            and (not isinstance(value, float) or math.isfinite(value))",
+      "replacement": "isinstance(value, (int, float))\n            and (not isinstance(value, float) or math.isfinite(value))",
+      "red_exit": 1,
+      "failed_cases": [
+        "test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[true]",
+        "test_manifest_rejects_negative_and_boolean_confidence_without_overwriting_outputs[false]"
+      ],
+      "green_exit": 0,
+      "restored_passed": 5
+    }
+  ]
+}

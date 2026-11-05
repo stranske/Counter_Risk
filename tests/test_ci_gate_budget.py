@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ast
+import json
 import re
 import shlex
 import subprocess
@@ -13,6 +15,18 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
+PIPELINE_TEST = REPO_ROOT / "tests" / "pipeline" / "test_run_pipeline.py"
+GATE_REQUIRED_CHECKS_EVIDENCE = (
+    REPO_ROOT / "docs" / "evidence" / "issue-1189" / "pr-1223-gate-required-checks.json"
+)
+
+# Style-heavy archive basenames that previously dominated Gate pytest on
+# test_optional_input_provenance_hashes (Issue #1189 / Health 85 recovery).
+PROVENANCE_ARCHIVE_BASENAMES = (
+    "MOSERS Counterparty Risk Summary",
+    "Historical Counterparty Risk Graphs",
+    "NISA_Monthly_Exposure_Summary_sanitized.xlsx",
+)
 
 # Same-commit local A/B on tip (Gate markers, -n 4, ignore integration):
 #   --dist load      WALL_SEC=32.87  (kept)
@@ -259,3 +273,120 @@ def test_slow_shard_rejects_invalid_specs_with_a_usage_error(spec: str) -> None:
     # pytest.UsageError exits 4; an unusable shard must never read as "selected nothing, passed".
     assert proc.returncode == 4, (spec, proc.returncode, proc.stdout[-300:], proc.stderr[-300:])
     assert "--slow-shard" in proc.stderr + proc.stdout
+
+
+def _function_source(path: Path, name: str) -> str:
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            lines = path.read_text(encoding="utf-8").splitlines()
+            return "\n".join(lines[node.lineno - 1 : node.end_lineno])
+    raise AssertionError(f"{path}: missing function {name}")
+
+
+def _called_names(path: Path, name: str) -> set[str]:
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            return {
+                call.func.id
+                for call in ast.walk(node)
+                if isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+            }
+    raise AssertionError(f"{path}: missing function {name}")
+
+
+def test_provenance_hash_gate_keeps_tmp_minimal_inputs_not_archives() -> None:
+    """Issue #1189: provenance hashing must not reopen archived MOSERS/Historical workbooks.
+
+    Health 85 still needs seven consecutive under-target daily Gate p50s before
+    closing #1189. Reintroducing those archives would spike pytest again and
+    reset the recovery streak tracked in
+    docs/evidence/issue-1189/health85-p50-series.json (2026-10-28..30 ≤10 min).
+    """
+
+    source = _function_source(PIPELINE_TEST, "test_optional_input_provenance_hashes")
+    helper = _function_source(PIPELINE_TEST, "_write_scope_workflow_config")
+
+    assert "_write_scope_workflow_config" in _called_names(
+        PIPELINE_TEST, "test_optional_input_provenance_hashes"
+    )
+    assert "openpyxl.Workbook()" in source or "Workbook()" in source
+    for banned in PROVENANCE_ARCHIVE_BASENAMES:
+        assert banned not in source, banned
+        assert banned not in helper, banned
+
+    # Helper must materialize tiny real XLSX/PPTX under tmp_path, not copy fixtures.
+    assert "Workbook()" in helper
+    assert "Presentation()" in helper
+    assert "tests/fixtures" not in helper
+
+
+def test_gate_required_checks_surface_preserved() -> None:
+    """Issue #1189 AC: Gate must keep the merge-relevant check surface after fixture cuts.
+
+    Historical evidence (2026-10-30): Gate run 41078691872 on
+    ``e7ed13f278cbfeb437c22efcfdc34bb5944d0d43`` — python 3.13/3.14, lint-ruff,
+    typecheck-mypy, gate-summary, and commit status ``Gate / gate`` all green.
+    Receipt: docs/evidence/issue-1189/pr-1223-gate-required-checks.json.
+    This receipt proves only that historical head; read final-head checks live.
+    Dropping any of these jobs/status contexts would break keepalive and branch
+    protection even if pytest stayed fast.
+    """
+
+    evidence = json.loads(GATE_REQUIRED_CHECKS_EVIDENCE.read_text(encoding="utf-8"))
+    surface = evidence["workflow_surface"]
+    gate_run = evidence["gate_run"]
+    assert evidence["issue"] == 1189
+    assert evidence["pr"] == 1223
+    assert gate_run["conclusion"] == "success"
+    assert gate_run["id"] == 41078691872
+    assert gate_run["head_sha"].startswith("e7ed13f")
+    assert gate_run["workflow"] == ".github/workflows/pr-00-gate.yml"
+    assert evidence["commit_statuses"], "exact-head Gate commit status receipt required"
+    for status in evidence["commit_statuses"]:
+        assert status["context"] == surface["commit_status_context"]
+        assert status["state"] == "success"
+    assert set(evidence["required_job_names"]) == {
+        "Python CI / python 3.13",
+        "Python CI / python 3.14",
+        "Python CI / lint-ruff",
+        "Python CI / typecheck-mypy",
+        "gate-summary",
+    }
+    assert {job["name"]: job["conclusion"] for job in evidence["required_jobs"]} == dict.fromkeys(
+        evidence["required_job_names"], "success"
+    )
+    for job in evidence.get("optional_skippable_jobs", []):
+        assert job["conclusion"] in {"success", "skipped"}
+
+    workflow = yaml.safe_load((WORKFLOWS / "pr-00-gate.yml").read_text(encoding="utf-8"))
+    jobs = workflow["jobs"]
+
+    assert set(jobs) >= set(surface["required_job_keys"])
+    assert jobs["summary"]["name"] == surface["summary_job_name"]
+    assert list(jobs["summary"]["needs"]) == [
+        "detect",
+        "python-ci",
+        "generated-delivery-seal",
+    ]
+
+    python_ci = jobs["python-ci"]
+    assert (
+        python_ci["uses"] == "stranske/Workflows/.github/workflows/reusable-10-ci-python.yml@main"
+    )
+    assert python_ci["uses"] == surface["reusable_workflow_uses"]
+    assert not python_ci.get("continue-on-error", False)
+    inputs = python_ci["with"]
+    assert yaml.safe_load(inputs["python-versions"]) == surface["python_versions"]
+    assert inputs["primary-python-version"] == surface["primary_python_version"]
+    # PR Gate stays coverage-off and hard-fail; soft-gate would hide regressions.
+    assert inputs["coverage"] is surface["coverage"]
+    assert inputs["enable-soft-gate"] is surface["enable_soft_gate"]
+    assert inputs["pytest_markers"] == surface["pytest_markers"]
+    assert inputs["artifact-prefix"] == surface["artifact_prefix"]
+
+    gate_yml = (WORKFLOWS / "pr-00-gate.yml").read_text(encoding="utf-8")
+    assert f"context: '{surface['commit_status_context']}'" in gate_yml
+    assert "name: Report Gate commit status" in gate_yml
+    assert "name: Enforce Gate success" in gate_yml

@@ -1,0 +1,22 @@
+$ black --line-length 100 tests/pipeline/test_manifest_schema.py
+Previously run successfully: 1 file left unchanged.
+
+$ Sequential Black reformat_one checks with configured PY313 target and line length 100
+401 files would be left unchanged.
+
+$ BLACK_NUM_WORKERS=1 BLACK_CACHE_DIR=/tmp/1215-row-black-cache black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .
+All done! ✨ 🍰 ✨
+401 files would be left unchanged.
+
+$ BLACK_NUM_WORKERS=1 BLACK_CACHE_DIR=/tmp/1215-row-black-cache black --check --line-length 100 --exclude '(\.venv|\.workflows-lib|node_modules)' .
+All done! ✨ 🍰 ✨
+401 files would be left unchanged.
+
+$ ruff check --output-format github --extend-exclude .workflows-lib .
+exit=0
+
+$ git diff --check
+exit=0
+
+$ git diff --exit-code -- src
+exit=0

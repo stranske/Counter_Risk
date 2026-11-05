@@ -1,0 +1,88 @@
+[
+  {
+    "mutation": "omit-exposure-relocation",
+    "node": "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[exposure_summary_xlsx]",
+    "source": "src/counter_risk/web_demo.py",
+    "removed_line": "\"exposure_summary_xlsx\",",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[exposure_summary_xlsx]",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/issue-1219-exposure-omit-exposure-relocation-red.xml"
+      ],
+      "exit": 1,
+      "tests": 1,
+      "failures": 1,
+      "errors": 0
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[exposure_summary_xlsx]",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/issue-1219-exposure-omit-exposure-relocation-green.xml"
+      ],
+      "exit": 0,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0
+    },
+    "restored_sha256": "15d87316a6f3eb99564e9f8e4ea5cd9c4a84c22e40ac8b5f77bb2a9971ddc15a"
+  },
+  {
+    "mutation": "omit-exposure-source-validation",
+    "node": "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[exposure_summary_xlsx]",
+    "source": "src/counter_risk/web_demo.py",
+    "removed_line": "\"exposure_summary_xlsx\": config.exposure_summary_xlsx,",
+    "red": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[exposure_summary_xlsx]",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/issue-1219-exposure-omit-exposure-source-validation-red.xml"
+      ],
+      "exit": 1,
+      "tests": 1,
+      "failures": 1,
+      "errors": 0
+    },
+    "green": {
+      "command": [
+        "pytest",
+        "tests/test_web_demo_helpers.py::test_pipeline_rejects_optional_fixture_symlinks_before_running[exposure_summary_xlsx]",
+        "-m",
+        "not slow",
+        "-q",
+        "-o",
+        "addopts=",
+        "--no-cov",
+        "--tb=short",
+        "--junitxml=/tmp/issue-1219-exposure-omit-exposure-source-validation-green.xml"
+      ],
+      "exit": 0,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0
+    },
+    "restored_sha256": "15d87316a6f3eb99564e9f8e4ea5cd9c4a84c22e40ac8b5f77bb2a9971ddc15a"
+  }
+]

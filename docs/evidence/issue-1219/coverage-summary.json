@@ -1,0 +1,342 @@
+{
+  "metric": "local line coverage only; branch=false; CI issue baseline remains authoritative",
+  "baseline_totals": {
+    "covered_lines": 8423,
+    "num_statements": 12216,
+    "percent_covered": 68.9505566470203,
+    "percent_covered_display": "69",
+    "missing_lines": 3793,
+    "excluded_lines": 84,
+    "percent_statements_covered": 68.9505566470203,
+    "percent_statements_covered_display": "69"
+  },
+  "candidate_totals": {
+    "covered_lines": 11089,
+    "num_statements": 12216,
+    "percent_covered": 90.77439423706615,
+    "percent_covered_display": "91",
+    "missing_lines": 1127,
+    "excluded_lines": 84,
+    "percent_statements_covered": 90.77439423706615,
+    "percent_statements_covered_display": "91"
+  },
+  "files": {
+    "src/counter_risk/web_demo.py": {
+      "baseline": {
+        "covered_lines": 117,
+        "num_statements": 117,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate": {
+        "covered_lines": 117,
+        "num_statements": 117,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate_missing_lines": [],
+      "targeted": {
+        "covered_lines": 117,
+        "num_statements": 117,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "targeted_missing_lines": []
+    },
+    "src/counter_risk/mosers/workbook_generation.py": {
+      "baseline": {
+        "covered_lines": 222,
+        "num_statements": 222,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate": {
+        "covered_lines": 222,
+        "num_statements": 222,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate_missing_lines": [],
+      "targeted": {
+        "covered_lines": 222,
+        "num_statements": 222,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "targeted_missing_lines": []
+    },
+    "src/counter_risk/parsers/repo_cash_sources.py": {
+      "baseline": {
+        "covered_lines": 177,
+        "num_statements": 178,
+        "percent_covered": 99.43820224719101,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 2,
+        "percent_statements_covered": 99.43820224719101,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate": {
+        "covered_lines": 177,
+        "num_statements": 178,
+        "percent_covered": 99.43820224719101,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 2,
+        "percent_statements_covered": 99.43820224719101,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate_missing_lines": [
+        192
+      ],
+      "targeted": {
+        "covered_lines": 177,
+        "num_statements": 178,
+        "percent_covered": 99.43820224719101,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 2,
+        "percent_statements_covered": 99.43820224719101,
+        "percent_statements_covered_display": "99"
+      },
+      "targeted_missing_lines": [
+        192
+      ]
+    },
+    "src/counter_risk/compute/limits.py": {
+      "baseline": {
+        "covered_lines": 185,
+        "num_statements": 186,
+        "percent_covered": 99.46236559139786,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 0,
+        "percent_statements_covered": 99.46236559139786,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate": {
+        "covered_lines": 185,
+        "num_statements": 186,
+        "percent_covered": 99.46236559139786,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 0,
+        "percent_statements_covered": 99.46236559139786,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate_missing_lines": [
+        211
+      ],
+      "targeted": {
+        "covered_lines": 185,
+        "num_statements": 186,
+        "percent_covered": 99.46236559139786,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 0,
+        "percent_statements_covered": 99.46236559139786,
+        "percent_statements_covered_display": "99"
+      },
+      "targeted_missing_lines": [
+        211
+      ]
+    },
+    "src/counter_risk/pipeline/data_quality.py": {
+      "baseline": {
+        "covered_lines": 255,
+        "num_statements": 261,
+        "percent_covered": 97.70114942528735,
+        "percent_covered_display": "98",
+        "missing_lines": 6,
+        "excluded_lines": 0,
+        "percent_statements_covered": 97.70114942528735,
+        "percent_statements_covered_display": "98"
+      },
+      "candidate": {
+        "covered_lines": 260,
+        "num_statements": 261,
+        "percent_covered": 99.61685823754789,
+        "percent_covered_display": "99",
+        "missing_lines": 1,
+        "excluded_lines": 0,
+        "percent_statements_covered": 99.61685823754789,
+        "percent_statements_covered_display": "99"
+      },
+      "candidate_missing_lines": [
+        494
+      ],
+      "targeted": {
+        "covered_lines": 252,
+        "num_statements": 261,
+        "percent_covered": 96.55172413793103,
+        "percent_covered_display": "97",
+        "missing_lines": 9,
+        "excluded_lines": 0,
+        "percent_statements_covered": 96.55172413793103,
+        "percent_statements_covered_display": "97"
+      },
+      "targeted_missing_lines": [
+        236,
+        247,
+        248,
+        249,
+        250,
+        475,
+        488,
+        494,
+        525
+      ]
+    },
+    "src/counter_risk/chat/context.py": {
+      "baseline": {
+        "covered_lines": 131,
+        "num_statements": 135,
+        "percent_covered": 97.03703703703704,
+        "percent_covered_display": "97",
+        "missing_lines": 4,
+        "excluded_lines": 0,
+        "percent_statements_covered": 97.03703703703704,
+        "percent_statements_covered_display": "97"
+      },
+      "candidate": {
+        "covered_lines": 131,
+        "num_statements": 135,
+        "percent_covered": 97.03703703703704,
+        "percent_covered_display": "97",
+        "missing_lines": 4,
+        "excluded_lines": 0,
+        "percent_statements_covered": 97.03703703703704,
+        "percent_statements_covered_display": "97"
+      },
+      "candidate_missing_lines": [
+        16,
+        17,
+        20,
+        22
+      ],
+      "targeted": {
+        "covered_lines": 131,
+        "num_statements": 135,
+        "percent_covered": 97.03703703703704,
+        "percent_covered_display": "97",
+        "missing_lines": 4,
+        "excluded_lines": 0,
+        "percent_statements_covered": 97.03703703703704,
+        "percent_statements_covered_display": "97"
+      },
+      "targeted_missing_lines": [
+        16,
+        17,
+        20,
+        22
+      ]
+    },
+    "src/counter_risk/chat/session.py": {
+      "baseline": {
+        "covered_lines": 441,
+        "num_statements": 441,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate": {
+        "covered_lines": 441,
+        "num_statements": 441,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate_missing_lines": [],
+      "targeted": {
+        "covered_lines": 428,
+        "num_statements": 441,
+        "percent_covered": 97.05215419501134,
+        "percent_covered_display": "97",
+        "missing_lines": 13,
+        "excluded_lines": 0,
+        "percent_statements_covered": 97.05215419501134,
+        "percent_statements_covered_display": "97"
+      },
+      "targeted_missing_lines": [
+        420,
+        421,
+        588,
+        599,
+        605,
+        608,
+        644,
+        650,
+        771,
+        772,
+        773,
+        774,
+        775
+      ]
+    },
+    "src/counter_risk/demo_artifact.py": {
+      "baseline": {
+        "covered_lines": 119,
+        "num_statements": 119,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 2,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate": {
+        "covered_lines": 119,
+        "num_statements": 119,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 2,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "candidate_missing_lines": [],
+      "targeted": {
+        "covered_lines": 119,
+        "num_statements": 119,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 2,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "targeted_missing_lines": []
+    }
+  },
+  "target_missing_delta": 5
+}

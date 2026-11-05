@@ -1,0 +1,121 @@
+{
+  "target_order": [
+    "src/counter_risk/cli/__init__.py",
+    "src/counter_risk/pipeline/run.py"
+  ],
+  "authoritative_issue_baseline_percent": 89.32,
+  "local_metric": "line coverage only; target-limited instrumentation over full non-slow suite",
+  "tests": {
+    "baseline": {
+      "passed": 2599,
+      "skipped": 1,
+      "deselected": 87,
+      "seconds": 219.13
+    },
+    "final": {
+      "passed": 2606,
+      "skipped": 1,
+      "deselected": 87,
+      "seconds": 222.78
+    },
+    "targeted": {
+      "passed": 113,
+      "seconds": 2.69,
+      "pipeline_cover_column_percent": 38
+    }
+  },
+  "targets": {
+    "src/counter_risk/cli/__init__.py": {
+      "before": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "after": {
+        "covered_lines": 237,
+        "num_statements": 237,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "newly_covered_lines": []
+    },
+    "src/counter_risk/pipeline/run.py": {
+      "before": {
+        "covered_lines": 2521,
+        "num_statements": 2636,
+        "percent_covered": 95.63732928679818,
+        "percent_covered_display": "96",
+        "missing_lines": 115,
+        "excluded_lines": 14,
+        "percent_statements_covered": 95.63732928679818,
+        "percent_statements_covered_display": "96"
+      },
+      "after": {
+        "covered_lines": 2533,
+        "num_statements": 2636,
+        "percent_covered": 96.09256449165402,
+        "percent_covered_display": "96",
+        "missing_lines": 103,
+        "excluded_lines": 14,
+        "percent_statements_covered": 96.09256449165402,
+        "percent_statements_covered_display": "96"
+      },
+      "newly_covered_lines": [
+        3557,
+        3566,
+        3572,
+        3581,
+        3587,
+        3589,
+        4595,
+        4596,
+        4597,
+        4598,
+        4599,
+        4600
+      ]
+    }
+  },
+  "new_mutations": 6,
+  "new_cases_proven": 7,
+  "pr_mutations": 57,
+  "pr_cases_proven": 128,
+  "case_audit": {
+    "omissions": [],
+    "duplicates": [],
+    "uncollected_cases": []
+  },
+  "source_sha256_before_and_after_mutations": "a0fd1be2b0785c170ffc361f4cdf11b4f65d3fe0ff5ef3d8e40c2009ebab7791",
+  "published_gate": {
+    "head_sha": "1cf2d4c8b806de84b1723e3c7dcea4022fce9a23",
+    "run_id": 40845618999,
+    "status": "success",
+    "python314_job_id": 123352483086,
+    "python314_passed": 2572,
+    "python314_skipped": 1,
+    "coverage_enabled": false,
+    "coverage_min_outcome": "skipped"
+  },
+  "formatting": {
+    "changed_file_black": "passed",
+    "repository_black": "passed, 398 files unchanged",
+    "ci_black": "passed, 398 files unchanged",
+    "ruff": "passed",
+    "black_sandbox_helper": "Temporary sitecustomize bounds selectors.EpollSelector.select waits to 0.1 seconds; BLACK_NUM_WORKERS=1. The normal repository check timed out after reporting all 398 files unchanged. Both checks with the helper exited 0."
+  },
+  "delivery": {
+    "git_add": "failed: .git/index.lock: Read-only file system",
+    "pr_body_update": "rejected: MCP tool call requires approval, but approval policy is never",
+    "blocker_comment": "rejected: same approval restriction",
+    "needs_human_label": "rejected: same approval restriction"
+  }
+}

@@ -1,0 +1,86 @@
+[
+  {
+    "name": "missed-runtime-transition",
+    "node": "tests/test_web_demo_helpers.py::test_pipeline_checks_runtime_transition_before_publishing_demo_annotations[new-runtime]",
+    "source": "src/counter_risk/web_demo.py",
+    "old": "    _assert_chat_runtime_not_newly_loaded(loaded_before=chat_runtime_loaded_before)\n",
+    "replacement": "",
+    "command": [
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_pipeline_checks_runtime_transition_before_publishing_demo_annotations[new-runtime]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov",
+      "--tb=short"
+    ],
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114"
+  },
+  {
+    "name": "ignored-preloaded-state",
+    "node": "tests/test_web_demo_helpers.py::test_pipeline_checks_runtime_transition_before_publishing_demo_annotations[preloaded]",
+    "source": "src/counter_risk/web_demo.py",
+    "old": "    chat_runtime_loaded_before = _chat_runtime_loaded()\n",
+    "replacement": "    chat_runtime_loaded_before = False\n",
+    "command": [
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_pipeline_checks_runtime_transition_before_publishing_demo_annotations[preloaded]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov",
+      "--tb=short"
+    ],
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114"
+  },
+  {
+    "name": "annotations-written-before-check",
+    "node": "tests/test_web_demo_helpers.py::test_pipeline_checks_runtime_transition_before_publishing_demo_annotations[new-runtime]",
+    "source": "src/counter_risk/web_demo.py",
+    "old": "    _assert_chat_runtime_not_newly_loaded(loaded_before=chat_runtime_loaded_before)\n    summary_path = _write_data_quality_summary(\n        run_dir=run_dir,\n        config_path=config_path.resolve(),\n        fixture_sources=fixture_sources,\n    )\n",
+    "replacement": "    summary_path = _write_data_quality_summary(\n        run_dir=run_dir,\n        config_path=config_path.resolve(),\n        fixture_sources=fixture_sources,\n    )\n    _assert_chat_runtime_not_newly_loaded(loaded_before=chat_runtime_loaded_before)\n",
+    "command": [
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_pipeline_checks_runtime_transition_before_publishing_demo_annotations[new-runtime]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov",
+      "--tb=short"
+    ],
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114"
+  },
+  {
+    "name": "offline-set-too-late",
+    "node": "tests/test_web_demo_helpers.py::test_pipeline_checks_runtime_transition_before_publishing_demo_annotations",
+    "source": "src/counter_risk/web_demo.py",
+    "old": "    os.environ[_OFFLINE_ENV_VAR] = \"1\"\n",
+    "replacement": "",
+    "command": [
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_pipeline_checks_runtime_transition_before_publishing_demo_annotations",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov",
+      "--tb=short"
+    ],
+    "red_exit": 1,
+    "green_exit": 0,
+    "restored_sha256": "07b3d0785486456d71b3514746fb073ac35bed7cba07261a42b05f4f2d59d114"
+  }
+]

@@ -1,0 +1,91 @@
+[
+  {
+    "name": "normalize-only-fallbacks",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov",
+      "--tb=short"
+    ],
+    "old": "        paths[key] = str(resolved)\n",
+    "replacement": "",
+    "red_exit": 1,
+    "green_exit": 0,
+    "source_sha256": "038d1695dad3392a9253b15f73766daa01188c5e49cfc798686dda0b10c81927",
+    "additional_mutation": {
+      "old": "            changed = True\n",
+      "replacement": "            paths[key] = str(resolved)\n            changed = True\n",
+      "count": 1
+    }
+  },
+  {
+    "name": "omit-cash-path",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[cash_source_path]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov",
+      "--tb=short"
+    ],
+    "old": "        \"cash_source_path\",\n",
+    "replacement": "",
+    "red_exit": 1,
+    "green_exit": 0,
+    "source_sha256": "038d1695dad3392a9253b15f73766daa01188c5e49cfc798686dda0b10c81927"
+  },
+  {
+    "name": "omit-screenshots",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[screenshot_inputs]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov",
+      "--tb=short"
+    ],
+    "old": "        path_entries.extend((screenshots, key) for key in screenshots)\n",
+    "replacement": "        pass\n",
+    "red_exit": 1,
+    "green_exit": 0,
+    "source_sha256": "038d1695dad3392a9253b15f73766daa01188c5e49cfc798686dda0b10c81927"
+  },
+  {
+    "name": "omit-discovery-roots",
+    "command": [
+      "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[input_discovery]",
+      "-m",
+      "not slow",
+      "-q",
+      "-o",
+      "addopts=",
+      "--no-cov",
+      "--tb=short"
+    ],
+    "old": "            path_entries.extend((roots, key) for key in roots)\n",
+    "replacement": "            pass\n",
+    "red_exit": 1,
+    "green_exit": 0,
+    "source_sha256": "038d1695dad3392a9253b15f73766daa01188c5e49cfc798686dda0b10c81927"
+  }
+]

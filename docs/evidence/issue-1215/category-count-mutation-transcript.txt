@@ -1,0 +1,389 @@
+$ pytest -q 'tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[negative-count]' -m 'not slow' --junitxml=/tmp/1215-category-remove-minimum-red.xml
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-followup
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_manifest_schema.py F                                 [100%]
+
+=================================== FAILURES ===================================
+_ test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[negative-count] _
+
+numeric_manifest = (ManifestBuilder(config=WorkflowConfig(as_of_date=datetime.date(2026, 2, 13), run_date=None, report_date_policy='warn'...7460abbac4a0d7e2e469faa', 'python_version': '3.14.9', ...}, 'as_of_date': '2026-02-13', 'run_date': '2026-02-13', ...})
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-3/test_manifest_rejects_invalid_0')
+count = -1, diagnostic = 'must be >= 0'
+
+    @pytest.mark.parametrize(
+        ("count", "diagnostic"),
+        [
+            pytest.param(-1, "must be >= 0", id="negative-count"),
+            pytest.param(True, "must be of type integer, got bool", id="boolean-count"),
+        ],
+    )
+    def test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs(
+        numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+        tmp_path: Path,
+        count: int | bool,
+        diagnostic: str,
+    ) -> None:
+        builder, manifest = numeric_manifest
+        counts = manifest["data_quality"]["counts"]
+        counts["total_findings"] = 1
+        counts["by_severity"] = {"info": 0, "warn": 1, "fail": 0}
+        counts["by_category"] = {
+            "source": {"info": 0, "warn": 1, "fail": 0, "total": 1},
+            "mapping": {"info": 0, "warn": 0, "fail": 0, "total": 0},
+        }
+        # A valid first category must not hide a malformed later category in this
+        # schema-object map. Save usable output before attempting the invalid write.
+        assert validate_manifest(manifest) == (True, None)
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+        counts["by_category"]["mapping"]["total"] = count
+    
+>       assert validate_manifest(manifest) == (
+            False,
+            f"manifest.data_quality.counts.by_category.mapping.total {diagnostic}",
+        )
+E       AssertionError: assert (True, None) == (False, 'mani...must be >= 0')
+E         
+E         At index 0 diff: True != False
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           (
+E         -     False,
+E         -     'manifest.data_quality.counts.by_category.mapping.total must be >= 0',
+E         +     True,
+E         +     None,
+E           )
+
+tests/pipeline/test_manifest_schema.py:323: AssertionError
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+-------- generated xml file: /tmp/1215-category-remove-minimum-red.xml ---------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[negative-count] - AssertionError: assert (True, None) == (False, 'mani...must be >= 0')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  -     False,
+  -     'manifest.data_quality.counts.by_category.mapping.total must be >= 0',
+  +     True,
+  +     None,
+    )
+======================== 1 failed, 13 warnings in 0.36s ========================
+
+
+exit=1
+
+$ pytest -q tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs -m 'not slow' --junitxml=/tmp/1215-category-remove-minimum-green.xml
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-followup
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_manifest_schema.py ..                                [100%]
+
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+------- generated xml file: /tmp/1215-category-remove-minimum-green.xml --------
+======================== 2 passed, 13 warnings in 0.30s ========================
+
+
+exit=0
+
+$ pytest -q 'tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[boolean-count]' -m 'not slow' --junitxml=/tmp/1215-category-accept-boolean-integer-red.xml
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-followup
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 1 item
+
+tests/pipeline/test_manifest_schema.py F                                 [100%]
+
+=================================== FAILURES ===================================
+_ test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[boolean-count] _
+
+numeric_manifest = (ManifestBuilder(config=WorkflowConfig(as_of_date=datetime.date(2026, 2, 13), run_date=None, report_date_policy='warn'...7460abbac4a0d7e2e469faa', 'python_version': '3.14.9', ...}, 'as_of_date': '2026-02-13', 'run_date': '2026-02-13', ...})
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-5/test_manifest_rejects_invalid_0')
+count = True, diagnostic = 'must be of type integer, got bool'
+
+    @pytest.mark.parametrize(
+        ("count", "diagnostic"),
+        [
+            pytest.param(-1, "must be >= 0", id="negative-count"),
+            pytest.param(True, "must be of type integer, got bool", id="boolean-count"),
+        ],
+    )
+    def test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs(
+        numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+        tmp_path: Path,
+        count: int | bool,
+        diagnostic: str,
+    ) -> None:
+        builder, manifest = numeric_manifest
+        counts = manifest["data_quality"]["counts"]
+        counts["total_findings"] = 1
+        counts["by_severity"] = {"info": 0, "warn": 1, "fail": 0}
+        counts["by_category"] = {
+            "source": {"info": 0, "warn": 1, "fail": 0, "total": 1},
+            "mapping": {"info": 0, "warn": 0, "fail": 0, "total": 0},
+        }
+        # A valid first category must not hide a malformed later category in this
+        # schema-object map. Save usable output before attempting the invalid write.
+        assert validate_manifest(manifest) == (True, None)
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+        counts["by_category"]["mapping"]["total"] = count
+    
+>       assert validate_manifest(manifest) == (
+            False,
+            f"manifest.data_quality.counts.by_category.mapping.total {diagnostic}",
+        )
+E       AssertionError: assert (True, None) == (False, 'mani...er, got bool')
+E         
+E         At index 0 diff: True != False
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           (
+E         +     True,
+E         +     None,
+E         -     False,
+E         -     'manifest.data_quality.counts.by_category.mapping.total must be of type '
+E         -     'integer, got bool',
+E           )
+
+tests/pipeline/test_manifest_schema.py:323: AssertionError
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+---- generated xml file: /tmp/1215-category-accept-boolean-integer-red.xml -----
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[boolean-count] - AssertionError: assert (True, None) == (False, 'mani...er, got bool')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  +     True,
+  +     None,
+  -     False,
+  -     'manifest.data_quality.counts.by_category.mapping.total must be of type '
+  -     'integer, got bool',
+    )
+======================== 1 failed, 13 warnings in 0.36s ========================
+
+
+exit=1
+
+$ pytest -q tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs -m 'not slow' --junitxml=/tmp/1215-category-accept-boolean-integer-green.xml
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-followup
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_manifest_schema.py ..                                [100%]
+
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+--- generated xml file: /tmp/1215-category-accept-boolean-integer-green.xml ----
+======================== 2 passed, 13 warnings in 0.29s ========================
+
+
+exit=0
+
+$ pytest -q tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs -m 'not slow' --junitxml=/tmp/1215-category-skip-map-subschema-red.xml
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-followup
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_manifest_schema.py FF                                [100%]
+
+=================================== FAILURES ===================================
+_ test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[negative-count] _
+
+numeric_manifest = (ManifestBuilder(config=WorkflowConfig(as_of_date=datetime.date(2026, 2, 13), run_date=None, report_date_policy='warn'...7460abbac4a0d7e2e469faa', 'python_version': '3.14.9', ...}, 'as_of_date': '2026-02-13', 'run_date': '2026-02-13', ...})
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-7/test_manifest_rejects_invalid_0')
+count = -1, diagnostic = 'must be >= 0'
+
+    @pytest.mark.parametrize(
+        ("count", "diagnostic"),
+        [
+            pytest.param(-1, "must be >= 0", id="negative-count"),
+            pytest.param(True, "must be of type integer, got bool", id="boolean-count"),
+        ],
+    )
+    def test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs(
+        numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+        tmp_path: Path,
+        count: int | bool,
+        diagnostic: str,
+    ) -> None:
+        builder, manifest = numeric_manifest
+        counts = manifest["data_quality"]["counts"]
+        counts["total_findings"] = 1
+        counts["by_severity"] = {"info": 0, "warn": 1, "fail": 0}
+        counts["by_category"] = {
+            "source": {"info": 0, "warn": 1, "fail": 0, "total": 1},
+            "mapping": {"info": 0, "warn": 0, "fail": 0, "total": 0},
+        }
+        # A valid first category must not hide a malformed later category in this
+        # schema-object map. Save usable output before attempting the invalid write.
+        assert validate_manifest(manifest) == (True, None)
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+        counts["by_category"]["mapping"]["total"] = count
+    
+>       assert validate_manifest(manifest) == (
+            False,
+            f"manifest.data_quality.counts.by_category.mapping.total {diagnostic}",
+        )
+E       AssertionError: assert (True, None) == (False, 'mani...must be >= 0')
+E         
+E         At index 0 diff: True != False
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           (
+E         -     False,
+E         -     'manifest.data_quality.counts.by_category.mapping.total must be >= 0',
+E         +     True,
+E         +     None,
+E           )
+
+tests/pipeline/test_manifest_schema.py:323: AssertionError
+_ test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[boolean-count] _
+
+numeric_manifest = (ManifestBuilder(config=WorkflowConfig(as_of_date=datetime.date(2026, 2, 13), run_date=None, report_date_policy='warn'...7460abbac4a0d7e2e469faa', 'python_version': '3.14.9', ...}, 'as_of_date': '2026-02-13', 'run_date': '2026-02-13', ...})
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-7/test_manifest_rejects_invalid_1')
+count = True, diagnostic = 'must be of type integer, got bool'
+
+    @pytest.mark.parametrize(
+        ("count", "diagnostic"),
+        [
+            pytest.param(-1, "must be >= 0", id="negative-count"),
+            pytest.param(True, "must be of type integer, got bool", id="boolean-count"),
+        ],
+    )
+    def test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs(
+        numeric_manifest: tuple[ManifestBuilder, dict[str, Any]],
+        tmp_path: Path,
+        count: int | bool,
+        diagnostic: str,
+    ) -> None:
+        builder, manifest = numeric_manifest
+        counts = manifest["data_quality"]["counts"]
+        counts["total_findings"] = 1
+        counts["by_severity"] = {"info": 0, "warn": 1, "fail": 0}
+        counts["by_category"] = {
+            "source": {"info": 0, "warn": 1, "fail": 0, "total": 1},
+            "mapping": {"info": 0, "warn": 0, "fail": 0, "total": 0},
+        }
+        # A valid first category must not hide a malformed later category in this
+        # schema-object map. Save usable output before attempting the invalid write.
+        assert validate_manifest(manifest) == (True, None)
+        builder.write(run_dir=tmp_path, manifest=manifest)
+        before = {path.name: path.read_bytes() for path in tmp_path.iterdir() if path.is_file()}
+        counts["by_category"]["mapping"]["total"] = count
+    
+>       assert validate_manifest(manifest) == (
+            False,
+            f"manifest.data_quality.counts.by_category.mapping.total {diagnostic}",
+        )
+E       AssertionError: assert (True, None) == (False, 'mani...er, got bool')
+E         
+E         At index 0 diff: True != False
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           (
+E         +     True,
+E         +     None,
+E         -     False,
+E         -     'manifest.data_quality.counts.by_category.mapping.total must be of type '
+E         -     'integer, got bool',
+E           )
+
+tests/pipeline/test_manifest_schema.py:323: AssertionError
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+------ generated xml file: /tmp/1215-category-skip-map-subschema-red.xml -------
+=========================== short test summary info ============================
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[negative-count] - AssertionError: assert (True, None) == (False, 'mani...must be >= 0')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  -     False,
+  -     'manifest.data_quality.counts.by_category.mapping.total must be >= 0',
+  +     True,
+  +     None,
+    )
+FAILED tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs[boolean-count] - AssertionError: assert (True, None) == (False, 'mani...er, got bool')
+  
+  At index 0 diff: True != False
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+    (
+  +     True,
+  +     None,
+  -     False,
+  -     'manifest.data_quality.counts.by_category.mapping.total must be of type '
+  -     'integer, got bool',
+    )
+======================== 2 failed, 13 warnings in 0.37s ========================
+
+
+exit=1
+
+$ pytest -q tests/pipeline/test_manifest_schema.py::test_manifest_rejects_invalid_later_category_count_without_overwriting_outputs -m 'not slow' --junitxml=/tmp/1215-category-skip-map-subschema-green.xml
+============================= test session starts ==============================
+platform linux -- Python 3.14.9, pytest-9.2.0, pluggy-1.7.0
+rootdir: /tmp/counter-risk-1215-followup
+configfile: pyproject.toml
+plugins: platformdirs-4.14.0, xdist-3.8.0, regressions-2.11.0, langsmith-0.14.14, datadir-1.8.0, cov-7.1.0, anyio-4.15.1
+collected 2 items
+
+tests/pipeline/test_manifest_schema.py ..                                [100%]
+
+=============================== warnings summary ===============================
+../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+----- generated xml file: /tmp/1215-category-skip-map-subschema-green.xml ------
+======================== 2 passed, 13 warnings in 0.29s ========================
+
+
+exit=0

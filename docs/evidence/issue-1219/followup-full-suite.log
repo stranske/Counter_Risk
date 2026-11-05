@@ -1,0 +1,160 @@
+bringing up nodes...
+bringing up nodes...
+
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+........................................................................ [ 11%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 25%]
+........................................................................ [ 28%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 36%]
+........................................................................ [ 39%]
+........................................................................ [ 42%]
+........................................................................ [ 45%]
+........................................................................ [ 47%]
+........................................................................ [ 50%]
+........................................................................ [ 53%]
+........................................................................ [ 56%]
+........................................................................ [ 59%]
+........................................................................ [ 61%]
+........................................................................ [ 64%]
+........................................................................ [ 67%]
+........................................................................ [ 70%]
+........................................................................ [ 73%]
+........................................................................ [ 76%]
+........................................................................ [ 78%]
+.......s................................................................ [ 81%]
+........................................................................ [ 84%]
+........................................................................ [ 87%]
+........................................................................ [ 90%]
+........................................................................ [ 92%]
+........................................................................ [ 95%]
+........................................................................ [ 98%]
+.....................................                                    [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 65 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.14.9-final-0 ________________
+
+Name                                                     Stmts   Miss  Cover
+----------------------------------------------------------------------------
+src/counter_risk/__init__.py                                 1      0   100%
+src/counter_risk/build/__init__.py                           0      0   100%
+src/counter_risk/build/release.py                          220     17    92%
+src/counter_risk/build/xlsm.py                             121     48    60%
+src/counter_risk/calculations/__init__.py                    2      0   100%
+src/counter_risk/calculations/wal.py                        36      3    92%
+src/counter_risk/chat/__init__.py                            4      0   100%
+src/counter_risk/chat/context.py                           135      4    97%
+src/counter_risk/chat/providers/__init__.py                  2      0   100%
+src/counter_risk/chat/providers/anthropic_stub.py            5      5     0%
+src/counter_risk/chat/providers/base.py                    162      2    99%
+src/counter_risk/chat/providers/langchain_runtime.py       235      9    96%
+src/counter_risk/chat/providers/openai_stub.py               5      5     0%
+src/counter_risk/chat/session.py                           441      0   100%
+src/counter_risk/chat/ui.py                                 28      2    93%
+src/counter_risk/chat/utils.py                              10      0   100%
+src/counter_risk/cli/__init__.py                           237     19    92%
+src/counter_risk/cli/__main__.py                             2      2     0%
+src/counter_risk/cli/mapping_diff_report.py                 98     12    88%
+src/counter_risk/compute/__init__.py                         4      0   100%
+src/counter_risk/compute/errors.py                           6      0   100%
+src/counter_risk/compute/futures_delta.py                  197      9    95%
+src/counter_risk/compute/limits.py                         186      1    99%
+src/counter_risk/compute/rollups.py                        311     16    95%
+src/counter_risk/config.py                                 115      2    98%
+src/counter_risk/dates.py                                  124     10    92%
+src/counter_risk/demo_artifact.py                          119      0   100%
+src/counter_risk/formatting.py                              20      0   100%
+src/counter_risk/gui/__init__.py                             2      0   100%
+src/counter_risk/gui/runner.py                             416     92    78%
+src/counter_risk/integrations/__init__.py                    2      0   100%
+src/counter_risk/integrations/excel_com.py                 143     16    89%
+src/counter_risk/integrations/powerpoint_com.py            139      9    94%
+src/counter_risk/io/__init__.py                              4      0   100%
+src/counter_risk/io/discover.py                            131     23    82%
+src/counter_risk/io/errors.py                                7      0   100%
+src/counter_risk/io/excel_range_compare.py                  47      4    91%
+src/counter_risk/io/mosers_workbook.py                     164      8    95%
+src/counter_risk/io/workbook_compare.py                     60      5    92%
+src/counter_risk/limits_config.py                           57      3    95%
+src/counter_risk/logging.py                                 37      0   100%
+src/counter_risk/mosers/__init__.py                          3      0   100%
+src/counter_risk/mosers/template.py                         46      6    87%
+src/counter_risk/mosers/workbook_generation.py             222      0   100%
+src/counter_risk/name_matching.py                            8      0   100%
+src/counter_risk/name_registry.py                          104      8    92%
+src/counter_risk/normalize.py                              112      5    96%
+src/counter_risk/observability/__init__.py                   0      0   100%
+src/counter_risk/observability/langsmith_fleet.py          182     15    92%
+src/counter_risk/outputs/__init__.py                         7      0   100%
+src/counter_risk/outputs/base.py                            17      0   100%
+src/counter_risk/outputs/historical_workbook.py             58      1    98%
+src/counter_risk/outputs/pdf_export.py                      53     15    72%
+src/counter_risk/outputs/ppt_link_refresh.py                63      4    94%
+src/counter_risk/outputs/ppt_screenshot.py                  71      1    99%
+src/counter_risk/outputs/registry.py                        56      6    89%
+src/counter_risk/parser.py                                   5      0   100%
+src/counter_risk/parsers/__init__.py                         9      0   100%
+src/counter_risk/parsers/_variant_text.py                    4      0   100%
+src/counter_risk/parsers/_xlsx_reader.py                   111     10    91%
+src/counter_risk/parsers/cprs_ch.py                        256     52    80%
+src/counter_risk/parsers/cprs_fcm.py                       230     23    90%
+src/counter_risk/parsers/daily_holdings_pdf.py             120     32    73%
+src/counter_risk/parsers/exposure_maturity_schedule.py     129      9    93%
+src/counter_risk/parsers/nisa.py                           218     30    86%
+src/counter_risk/parsers/nisa_all_programs.py                3      0   100%
+src/counter_risk/parsers/nisa_ex_trend.py                    7      1    86%
+src/counter_risk/parsers/nisa_trend.py                       7      1    86%
+src/counter_risk/parsers/repo_cash_sources.py              178      1    99%
+src/counter_risk/pipeline/__init__.py                        4      0   100%
+src/counter_risk/pipeline/data_quality.py                  261      1    99%
+src/counter_risk/pipeline/evidence.py                       13      0   100%
+src/counter_risk/pipeline/fixture_replay.py                 44      6    86%
+src/counter_risk/pipeline/manifest.py                      286     19    93%
+src/counter_risk/pipeline/manifest_schema.py               147     14    90%
+src/counter_risk/pipeline/parsing_types.py                  16      0   100%
+src/counter_risk/pipeline/ppt_naming.py                     22      0   100%
+src/counter_risk/pipeline/ppt_validation.py                 32      1    97%
+src/counter_risk/pipeline/reconciliation.py                190     21    89%
+src/counter_risk/pipeline/run.py                          2636    302    89%
+src/counter_risk/pipeline/run_folder_outputs.py             29      0   100%
+src/counter_risk/pipeline/time_utils.py                      5      0   100%
+src/counter_risk/pipeline/warnings.py                       38      1    97%
+src/counter_risk/ppt/__init__.py                             2      0   100%
+src/counter_risk/ppt/concentration_table.py                 81      0   100%
+src/counter_risk/ppt/pptx_postprocess.py                   161     54    66%
+src/counter_risk/ppt/pptx_static.py                         37      1    97%
+src/counter_risk/ppt/replace_screenshots.py                101     18    82%
+src/counter_risk/renderers/__init__.py                       2      0   100%
+src/counter_risk/renderers/table_png.py                    248     14    94%
+src/counter_risk/reports/__init__.py                         2      0   100%
+src/counter_risk/reports/change_attribution.py             216     11    95%
+src/counter_risk/reports/mapping_diff.py                    99     12    88%
+src/counter_risk/runner_date_control.py                     29      0   100%
+src/counter_risk/runner_launch.py                          193     14    93%
+src/counter_risk/runtime_paths.py                           46      1    98%
+src/counter_risk/web_demo.py                               117      0   100%
+src/counter_risk/workflows/__init__.py                       0      0   100%
+src/counter_risk/workflows/historical_update.py             21      0   100%
+src/counter_risk/writer.py                                   4      0   100%
+src/counter_risk/writers/__init__.py                         6      0   100%
+src/counter_risk/writers/dropin_templates.py               240     11    95%
+src/counter_risk/writers/historical_update.py              360     36    90%
+src/counter_risk/writers/mosers_workbook.py                 55     27    51%
+src/counter_risk/writers/pptx_screenshots.py               116     14    88%
+src/counter_risk/yaml_utils.py                              43      3    93%
+----------------------------------------------------------------------------
+TOTAL                                                    12216   1127    91%
+Coverage JSON written to file /tmp/1221-round-final.json
+2556 passed, 1 skipped, 65 warnings in 134.55s (0:02:14)

@@ -1,0 +1,220 @@
+normalize-only-fallbacks: BROKEN exit=1
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_relocated_config_preserves_config_relative_fixture_sources[monthly_pptx] _
+src/counter_risk/web_demo.py:126: in _assert_fixture_only
+    resolved.relative_to(fixture_root)
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/pathlib/__init__.py:490: in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+E   ValueError: '/tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve0/local.csv' is not in the subpath of '/tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve0/repo/tests/fixtures'
+
+The above exception was the direct cause of the following exception:
+tests/test_web_demo_helpers.py:149: in test_relocated_config_preserves_config_relative_fixture_sources
+    assert web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir) == run_dir
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:221: in run_web_demo_pipeline
+    fixture_sources = _assert_fixture_only(config, config_path=demo_config_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:128: in _assert_fixture_only
+    raise ValueError(
+E   ValueError: Web demo fixture source monthly_pptx must live under /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve0/local.csv
+_ test_relocated_config_preserves_config_relative_fixture_sources[cash_source_path] _
+src/counter_risk/web_demo.py:126: in _assert_fixture_only
+    resolved.relative_to(fixture_root)
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/pathlib/__init__.py:490: in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+E   ValueError: '/tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve1/local.csv' is not in the subpath of '/tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve1/repo/tests/fixtures'
+
+The above exception was the direct cause of the following exception:
+tests/test_web_demo_helpers.py:149: in test_relocated_config_preserves_config_relative_fixture_sources
+    assert web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir) == run_dir
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:221: in run_web_demo_pipeline
+    fixture_sources = _assert_fixture_only(config, config_path=demo_config_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:128: in _assert_fixture_only
+    raise ValueError(
+E   ValueError: Web demo fixture source cash_source_path must live under /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve1/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve1/local.csv
+_ test_relocated_config_preserves_config_relative_fixture_sources[screenshot_inputs] _
+src/counter_risk/web_demo.py:126: in _assert_fixture_only
+    resolved.relative_to(fixture_root)
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/pathlib/__init__.py:490: in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+E   ValueError: '/tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve2/local.csv' is not in the subpath of '/tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve2/repo/tests/fixtures'
+
+The above exception was the direct cause of the following exception:
+tests/test_web_demo_helpers.py:149: in test_relocated_config_preserves_config_relative_fixture_sources
+    assert web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir) == run_dir
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:221: in run_web_demo_pipeline
+    fixture_sources = _assert_fixture_only(config, config_path=demo_config_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:128: in _assert_fixture_only
+    raise ValueError(
+E   ValueError: Web demo fixture source screenshot_inputs.cprs_ch must live under /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve2/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve2/local.csv
+_ test_relocated_config_preserves_config_relative_fixture_sources[input_discovery] _
+src/counter_risk/web_demo.py:126: in _assert_fixture_only
+    resolved.relative_to(fixture_root)
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/pathlib/__init__.py:490: in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+E   ValueError: '/tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve3/output' is not in the subpath of '/tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve3/repo/tests/fixtures'
+
+The above exception was the direct cause of the following exception:
+tests/test_web_demo_helpers.py:149: in test_relocated_config_preserves_config_relative_fixture_sources
+    assert web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir) == run_dir
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:221: in run_web_demo_pipeline
+    fixture_sources = _assert_fixture_only(config, config_path=demo_config_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:128: in _assert_fixture_only
+    raise ValueError(
+E   ValueError: Web demo fixture source input_discovery.directory_roots.monthly_inputs must live under /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve3/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve3/output
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[monthly_pptx] - ValueError: Web demo fixture source monthly_pptx must live under /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve0/local.csv
+FAILED tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[cash_source_path] - ValueError: Web demo fixture source cash_source_path must live under /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve1/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve1/local.csv
+FAILED tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[screenshot_inputs] - ValueError: Web demo fixture source screenshot_inputs.cprs_ch must live under /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve2/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve2/local.csv
+FAILED tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[input_discovery] - ValueError: Web demo fixture source input_discovery.directory_roots.monthly_inputs must live under /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve3/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-2/test_relocated_config_preserve3/output
+4 failed, 13 warnings in 0.95s
+
+
+normalize-only-fallbacks: RESTORED exit=0
+....                                                                     [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+4 passed, 13 warnings in 0.53s
+
+
+omit-cash-path: BROKEN exit=1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_relocated_config_preserves_config_relative_fixture_sources[cash_source_path] _
+src/counter_risk/web_demo.py:125: in _assert_fixture_only
+    resolved.relative_to(fixture_root)
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/pathlib/__init__.py:490: in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+E   ValueError: '/tmp/pytest-of-runner/pytest-4/test_relocated_config_preserve0/local.csv' is not in the subpath of '/tmp/pytest-of-runner/pytest-4/test_relocated_config_preserve0/repo/tests/fixtures'
+
+The above exception was the direct cause of the following exception:
+tests/test_web_demo_helpers.py:149: in test_relocated_config_preserves_config_relative_fixture_sources
+    assert web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir) == run_dir
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:220: in run_web_demo_pipeline
+    fixture_sources = _assert_fixture_only(config, config_path=demo_config_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:127: in _assert_fixture_only
+    raise ValueError(
+E   ValueError: Web demo fixture source cash_source_path must live under /tmp/pytest-of-runner/pytest-4/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-4/test_relocated_config_preserve0/local.csv
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[cash_source_path] - ValueError: Web demo fixture source cash_source_path must live under /tmp/pytest-of-runner/pytest-4/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-4/test_relocated_config_preserve0/local.csv
+1 failed, 13 warnings in 0.49s
+
+
+omit-cash-path: RESTORED exit=0
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.26s
+
+
+omit-screenshots: BROKEN exit=1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_relocated_config_preserves_config_relative_fixture_sources[screenshot_inputs] _
+src/counter_risk/web_demo.py:126: in _assert_fixture_only
+    resolved.relative_to(fixture_root)
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/pathlib/__init__.py:490: in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+E   ValueError: '/tmp/pytest-of-runner/pytest-6/test_relocated_config_preserve0/local.csv' is not in the subpath of '/tmp/pytest-of-runner/pytest-6/test_relocated_config_preserve0/repo/tests/fixtures'
+
+The above exception was the direct cause of the following exception:
+tests/test_web_demo_helpers.py:149: in test_relocated_config_preserves_config_relative_fixture_sources
+    assert web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir) == run_dir
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:221: in run_web_demo_pipeline
+    fixture_sources = _assert_fixture_only(config, config_path=demo_config_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:128: in _assert_fixture_only
+    raise ValueError(
+E   ValueError: Web demo fixture source screenshot_inputs.cprs_ch must live under /tmp/pytest-of-runner/pytest-6/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-6/test_relocated_config_preserve0/local.csv
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[screenshot_inputs] - ValueError: Web demo fixture source screenshot_inputs.cprs_ch must live under /tmp/pytest-of-runner/pytest-6/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-6/test_relocated_config_preserve0/local.csv
+1 failed, 13 warnings in 0.36s
+
+
+omit-screenshots: RESTORED exit=0
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.27s
+
+
+omit-discovery-roots: BROKEN exit=1
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_relocated_config_preserves_config_relative_fixture_sources[input_discovery] _
+src/counter_risk/web_demo.py:126: in _assert_fixture_only
+    resolved.relative_to(fixture_root)
+/opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/pathlib/__init__.py:490: in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+E   ValueError: '/tmp/pytest-of-runner/pytest-8/test_relocated_config_preserve0/output' is not in the subpath of '/tmp/pytest-of-runner/pytest-8/test_relocated_config_preserve0/repo/tests/fixtures'
+
+The above exception was the direct cause of the following exception:
+tests/test_web_demo_helpers.py:149: in test_relocated_config_preserves_config_relative_fixture_sources
+    assert web_demo.run_web_demo_pipeline(config_path=config_path, output_dir=run_dir) == run_dir
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:221: in run_web_demo_pipeline
+    fixture_sources = _assert_fixture_only(config, config_path=demo_config_path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/counter_risk/web_demo.py:128: in _assert_fixture_only
+    raise ValueError(
+E   ValueError: Web demo fixture source input_discovery.directory_roots.monthly_inputs must live under /tmp/pytest-of-runner/pytest-8/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-8/test_relocated_config_preserve0/output
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_web_demo_helpers.py::test_relocated_config_preserves_config_relative_fixture_sources[input_discovery] - ValueError: Web demo fixture source input_discovery.directory_roots.monthly_inputs must live under /tmp/pytest-of-runner/pytest-8/test_relocated_config_preserve0/repo/tests/fixtures: /tmp/pytest-of-runner/pytest-8/test_relocated_config_preserve0/output
+1 failed, 13 warnings in 0.36s
+
+
+omit-discovery-roots: RESTORED exit=0
+.                                                                        [100%]
+=============================== warnings summary ===============================
+../../../../../opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: 13 warnings
+  /opt/hostedtoolcache/Python/3.14.9/x64/lib/python3.14/site-packages/langsmith/_internal/_beta_decorator.py:70: DeprecationWarning: 'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16; use inspect.iscoroutinefunction() instead
+    if asyncio.iscoroutinefunction(func):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 13 warnings in 0.26s

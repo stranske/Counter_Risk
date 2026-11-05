@@ -1,0 +1,22 @@
+{
+  "mutation": {
+    "file": "src/counter_risk/pipeline/manifest.py",
+    "old": "raw = config.model_dump(mode=\"json\")",
+    "new": "raw = config.model_dump()"
+  },
+  "command": [
+    "/opt/hostedtoolcache/Python/3.14.9/x64/bin/python",
+    "-m",
+    "pytest",
+    "tests/pipeline/test_manifest.py::test_config_snapshot_round_trips_nested_screenshot_paths",
+    "-m",
+    "not slow",
+    "-q",
+    "--tb=short"
+  ],
+  "broken_exit": 1,
+  "restored_exit": 0,
+  "broken_result": "1 failed at snapshot assertion: nested values are PosixPath instead of str",
+  "restored_result": "1 passed",
+  "source_sha256_before_and_after": "cf2ecce548dc58482863106fea30d34e671fa8d7e4ea44c1c2351c78784c4d93"
+}
