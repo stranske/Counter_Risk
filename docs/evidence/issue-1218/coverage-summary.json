@@ -2,7 +2,12 @@
   "pull_request": 1232,
   "branch": "codex/issue-1218",
   "base_sha": "faad15275296e77105016b3f1861e017838826f6",
-  "current_head_sha": "b9b5e1884b05c979facfabfce9dfa689d72ed09a",
+  "current_head_sha": "ab025f3e1f9d4f698ff819ee9346aefd758e7c9d",
+  "latest_hosted_verification_sha": "ab025f3e1f9d4f698ff819ee9346aefd758e7c9d",
+  "measured_source_revisions": [
+    "d92b97f070301f5540774f4040b3d6fb40023056",
+    "b9b5e1884b05c979facfabfce9dfa689d72ed09a"
+  ],
   "reviewed_commits": [
     "3456860abdb9d78cd98fbb1e7c18d4611513c7b9",
     "edc500f44edb22520fae766a4776743e23354342",
@@ -10,7 +15,9 @@
     "d843da80d3d8f60cdc0d1b10a9b6f1c65f195dc1",
     "e7a1c323221d073c4557b5c33d1c06d09a7182d4",
     "9cc0e39dd8f464cb8b542f09a99fa42845984520",
-    "d92b97f070301f5540774f4040b3d6fb40023056"
+    "d92b97f070301f5540774f4040b3d6fb40023056",
+    "b9b5e1884b05c979facfabfce9dfa689d72ed09a",
+    "ab025f3e1f9d4f698ff819ee9346aefd758e7c9d"
   ],
   "python": "3.12.2",
   "python_note": "Closer local verification used Counter_Risk/.venv/bin/python; hosted Gate uses 3.13 and 3.14.",
@@ -656,7 +663,7 @@
   },
   "closer_followup": {
     "pull_request": 1232,
-    "head_sha": "b9b5e1884b05c979facfabfce9dfa689d72ed09a",
+    "head_sha": "ab025f3e1f9d4f698ff819ee9346aefd758e7c9d",
     "gate_run_skipped_python_ci": {
       "run_id": 41964641320,
       "head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
@@ -668,13 +675,27 @@
       "run_id": 41973909675,
       "head_sha": "b9b5e1884b05c979facfabfce9dfa689d72ed09a",
       "python_3_13": "success",
-      "python_3_14": "success"
+      "python_3_14": "success",
+      "note": "historical — measured source revision, not latest verification head"
     },
     "hosted_python_ci_prior_success_at_alias_head": {
       "run_id": 40859376188,
       "head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
       "python_3_13": "success",
       "python_3_14": "success"
+    },
+    "latest_hosted_verification": {
+      "run_id": 41974656827,
+      "head_sha": "ab025f3e1f9d4f698ff819ee9346aefd758e7c9d",
+      "conclusion": "success",
+      "python_3_13": "success",
+      "python_3_14": "success",
+      "validate_inputs": "success",
+      "lint_ruff": "success",
+      "typecheck_mypy": "success",
+      "select_reusable_ci_scope": "success",
+      "logs_summary": "success",
+      "note": "current-head verification — independently verified via gh CLI"
     }
   }
 }
