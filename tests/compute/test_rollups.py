@@ -302,6 +302,40 @@ def test_apply_repo_cash_to_totals_rejects_non_numeric_repo_cash() -> None:
         )
 
 
+@pytest.mark.parametrize("existing", [False, True], ids=["appended-row", "existing-row"])
+def test_repo_cash_accumulates_aliases_into_one_counterparty(existing: bool) -> None:
+    totals_rows = (
+        [
+            {
+                "counterparty": "Citibank",
+                "Cash": 4.0,
+                "Notional": 20.0,
+                "NotionalChange": 3.0,
+            }
+        ]
+        if existing
+        else []
+    )
+
+    updated = _as_records(
+        apply_repo_cash_to_totals(
+            totals_rows,
+            {" Citibank ": 2.5, "Citigroup": -1.0},
+        )
+    )
+
+    # Both aliases must find row zero, including a row appended by the first
+    # overlay entry. Preserve the signed cash adjustment and update each alias.
+    assert len(updated) == 1
+    row = updated[0]
+    assert row["counterparty"] == "Citibank"
+    assert row["Cash"] == pytest.approx(5.5 if existing else 1.5)
+    for alias in ("notional", "Notional"):
+        assert row[alias] == pytest.approx(21.5 if existing else 1.5)
+    for alias in ("notional_change", "NotionalChange"):
+        assert row[alias] == pytest.approx(4.5 if existing else 1.5)
+
+
 def test_apply_repo_cash_to_totals_updates_counterparty_group_rows_from_rollups_schema() -> None:
     totals_rows = [
         {
