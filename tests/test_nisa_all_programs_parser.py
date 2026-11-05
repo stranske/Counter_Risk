@@ -1,4 +1,7 @@
-"""Robustness tests for raw NISA All Programs parser."""
+"""Robustness tests for raw NISA All Programs parser.
+
+Mutation receipts for parametrized cases: docs/evidence/issue-1218/.
+"""
 
 from __future__ import annotations
 
