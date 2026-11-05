@@ -656,14 +656,20 @@
   },
   "closer_followup": {
     "pull_request": 1232,
-    "head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
+    "head_sha": "965897fd46ce9036463b8aed5e2a9c23fa194e6b",
     "gate_run_skipped_python_ci": {
       "run_id": 41964641320,
       "head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
       "reason": "path classifier reported 0 changed files; is-python-code=false"
     },
-    "hosted_python_ci_remediation": "Add verify:full label or Gate workflow_dispatch to force-full classify and run reusable Python CI",
+    "hosted_python_ci_remediation": "Avoid verify:full (force-full sets is-docs-only=true and skips python-ci). Retrigger Gate via synchronize.",
     "reconciled_pr_body": "docs/evidence/issue-1218/reconciled-pr-body.md",
-    "hosted_python_ci_run": "pending retrigger after push"
+    "hosted_python_ci_success_at_issue1218_code": {
+      "run_id": 40859376188,
+      "head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
+      "python_3_13": "success",
+      "python_3_14": "success"
+    },
+    "hosted_python_ci_retrigger": "pending Gate on 965897fd after verify:full removal"
   }
 }
