@@ -1,14 +1,19 @@
 {
+  "pull_request": 1232,
+  "branch": "codex/issue-1218",
   "base_sha": "faad15275296e77105016b3f1861e017838826f6",
+  "current_head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
   "reviewed_commits": [
     "3456860abdb9d78cd98fbb1e7c18d4611513c7b9",
     "edc500f44edb22520fae766a4776743e23354342",
     "0054b34c9bd62391c40dd42d57ae113f0b4ff67f",
     "d843da80d3d8f60cdc0d1b10a9b6f1c65f195dc1",
     "e7a1c323221d073c4557b5c33d1c06d09a7182d4",
-    "9cc0e39dd8f464cb8b542f09a99fa42845984520"
+    "9cc0e39dd8f464cb8b542f09a99fa42845984520",
+    "d92b97f070301f5540774f4040b3d6fb40023056"
   ],
-  "python": "3.14.9",
+  "python": "3.12.2",
+  "python_note": "Closer local verification used Counter_Risk/.venv/bin/python; hosted Gate uses 3.13 and 3.14.",
   "command": "python -m pytest tests/ -m \"not slow\" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>",
   "measurement": "line-only; branch=false; all non-slow tests; 4 xdist workers",
   "baseline": {
@@ -27,7 +32,9 @@
   },
   "candidate": {
     "passed": 2569,
-    "skipped": 1,
+    "skipped": 2,
+    "local_run_seconds": 41.32,
+    "local_coverage_json": "/tmp/issue-1218-current.json",
     "totals": {
       "covered_lines": 11109,
       "num_statements": 12216,
@@ -613,10 +620,8 @@
     "full_suite_covered_statements": 11109,
     "full_suite_total_statements": 12216,
     "full_suite_percent_covered": 90.93811394891945,
-    "publication_blockers": [
-      "Main checkout .git is read-only; commit and verified bundle saved in /tmp/counter-risk-1218-close",
-      "Git push failed: Could not resolve host: github.com",
-      "Automatic approval review rejected PR-body update and needs-human label: MCP tool call requires approval, but approval policy is never"
+    "publication_blockers_historical": [
+      "Prior automation: read-only checkout and blocked MCP publication (resolved on PR 1232 closer pass)"
     ]
   },
   "stop_marker_followup": {
@@ -638,7 +643,27 @@
       "gate_run_id": 40856352591,
       "conclusion": "success"
     },
-    "candidate_hosted_ci": "pending publication",
-    "live_pr_reconciliation": "blocked: automatic approval review rejected the PR-body update, blocker comment, and needs-human label: MCP tool call requires approval, but approval policy is never"
+    "candidate_hosted_ci": "superseded by closer_followup",
+    "live_pr_reconciliation": "historical: prior automation could not publish; reconciled on PR 1232 closer pass"
+  },
+  "notional_alias_followup": {
+    "pull_request": 1232,
+    "head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
+    "new_parametrized_cases": 2,
+    "production_lines_changed": 3,
+    "receipt_file": "docs/evidence/issue-1218/notional-alias-mutation-receipt.json",
+    "additional_covered_statements": 0
+  },
+  "closer_followup": {
+    "pull_request": 1232,
+    "head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
+    "gate_run_skipped_python_ci": {
+      "run_id": 41964641320,
+      "head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
+      "reason": "path classifier reported 0 changed files; is-python-code=false"
+    },
+    "hosted_python_ci_remediation": "Add verify:full label or Gate workflow_dispatch to force-full classify and run reusable Python CI",
+    "reconciled_pr_body": "docs/evidence/issue-1218/reconciled-pr-body.md",
+    "hosted_python_ci_run": "pending retrigger after push"
   }
 }

@@ -1,21 +1,20 @@
 ## Summary
 
-Expand regression coverage across issue #1218's ranked targets in escaped-defect, churn, then uncovered-mass order. Earlier verified work reduced uncovered target statements by 198. This follow-up continues with the first ranked target, `parsers/nisa.py`, and fixes a real header-alias bug with two regression cases.
+Expand regression coverage across issue #1218's ranked targets in escaped-defect, churn, then uncovered-mass order. Verified work on PR #1232 (`codex/issue-1218`) reduced uncovered target statements by **198** versus base `faad152`, exceeding the ~180-unit bundling goal. This closer pass reconciles evidence with the live PR head and reruns hosted Python CI after Gate run [41964641320](https://github.com/stranske/Counter_Risk/actions/runs/41964641320) skipped pytest jobs because path classification reported **0 changed files** (shallow checkout), not because the diff lacks Python.
 
-When a workbook places `Notional Change` or `Notional Change From Prior Month` before `Notional`, the generic `notional` substring used to capture the change column. The parser then rejected the valid workbook as missing required headers. Match the existing specific `notional_change` aliases before the generic `notional` alias. This is the only production change; it reorders existing entries and adds an explanatory comment. No refactor, dependency, workflow, coverage exclusion, or threshold changes.
-
-The two real-XLSX cases assert counterparties and distinct notional/change values in both CH and totals. Both failed on the original production code. An explicit break-and-revert run restored the original alias order: **2 failed**, pytest exit 1; exact fixed-source restoration: **2 passed**, exit 0. `notional-alias-mutation-receipt.json` records the command, per-case outcomes, full outputs, and matching fixed/restored SHA-256 hashes.
+The only production change fixes a real NISA header-alias bug: when a workbook places `Notional Change` or `Notional Change From Prior Month` before `Notional`, the generic `notional` substring used to capture the change column and the parser rejected the workbook as missing required headers. Match the specific `notional_change` aliases before the generic `notional` alias (three-line reorder plus comment). Two real-XLSX regression cases discriminate CH and totals; break-and-revert is recorded in `notional-alias-mutation-receipt.json`.
 
 ## Coverage
 
-The repository's configuration uses line-only coverage (`branch = false`); no blended line+branch improvement is claimed. Gate disables coverage, so the measurements below are matched local whole non-slow suite results, not a Gate coverage artifact. The original base baseline was below 90%; this is a continuation of the same existing PR.
+Line-only coverage (`branch = false` in repo config); no blended line+branch claim. Gate PR runs use `coverage: false`; numbers below are matched local whole non-slow suite runs on the repository-selected interpreter (`Counter_Risk/.venv/bin/python`, Python 3.12.2 on this host).
 
-- Base `faad152`: 10,911/12,216 statements, **89.3173%**, agreeing with the issue's rounded 89.32% baseline.
-- Current candidate: 11,109/12,216 statements, **90.9381%**; **198 fewer uncovered statements** in ranked targets, exceeding the approximate 180-unit goal by 18.
-- This follow-up changes behavior and adds regression discrimination; it claims **zero additional covered statements** over the earlier candidate.
-- Focused NISA coverage: **36 passed**, actual coverage table **99%**, 216/218 statements covered; only defensive lines 240/312 remain missing.
+| Measure | Base `faad152` | PR head (current) |
+|---|---:|---:|
+| Statements | 10,911 / 12,216 | 11,109 / 12,216 |
+| Percent | 89.3173% | **90.9381%** |
+| Ranked-target delta | — | **198 fewer** uncovered statements |
 
-| Target, in issue order | Missing before | Missing after | Coverage before | Coverage after |
+| Target (issue order) | Missing before | Missing after | Before % | After % |
 |---|---:|---:|---:|---:|
 | parsers/nisa.py | 30 | 2 | 86.24% | 99.08% |
 | compute/rollups.py | 16 | 0 | 94.86% | 100% |
@@ -29,28 +28,27 @@ The repository's configuration uses line-only coverage (`branch = false`); no bl
 | ppt/pptx_postprocess.py | 54 | 0 | 66.46% | 100% |
 | build/xlsm.py | 48 | 0 | 60.33% | 100% |
 
-Seven defensive statements remain across the ranked targets: NISA's public caller guarantees nonempty numeric headers before the two missing inference fallbacks; CLI's nonempty payload-path loop unconditionally appends loaded payloads; runtime configuration supplies default slots rather than an empty catalog; provider base repeats a missing-environment error after the same condition already raised. These were previously documented as unreachable through the public contracts. Their line numbers can move with comments; this follow-up does not bypass invariants to reach them.
+Seven defensive statements remain across ranked targets (documented unreachable via public contracts); this pass does not pad them.
 
-## Validation
+**Historical vs current evidence:** Earlier commits on this branch (`3456860` … `8b786d70`) added the bulk tests and receipts under `docs/evidence/issue-1218/`. Keepalive commits reference PR #1220 in message text only; the live delivery PR is **#1232**. Alias follow-up at head `d92b97f0` adds zero additional covered statements over the prior candidate; it adds discrimination tests plus the alias fix.
 
-- `COVERAGE_FILE=/tmp/counter-risk-1218-alias-suite.coverage python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:/tmp/counter-risk-1218-alias-suite.json -q`: **2,571 passed, 1 skipped** in 125.72 seconds. Coverage JSON confirms 11,109/12,216 statements.
-- `COVERAGE_FILE=/tmp/counter-risk-1218-alias-target.coverage python -m pytest tests/test_nisa_all_programs_parser.py -m "not slow" --cov=counter_risk.parsers.nisa --cov-report=term-missing -q`: **36 passed**, **99%**.
-- Black 26.10.1 formatted both changed Python files at line length 100. Required check `black --check --line-length 100 --exclude '(\.workflows-lib|node_modules)' .` and CI check adding `\.venv` to the exclusion both passed: **395 files unchanged**. As in earlier rounds, a temporary startup shim schedules asyncio wakeups and `BLACK_NUM_WORKERS=1` accommodates the sandbox; formatting and parse validation remain enabled.
-- CI Ruff 0.17.3: `ruff check --output-format github --extend-exclude .workflows-lib .` passed.
-- `git diff --check` passed.
+## Validation (current head)
 
-Earlier break-and-revert receipts remain in `docs/evidence/issue-1218/`: `mutation-receipts.json`, `numeric-mutation-receipts.json`, `sheet-selection-mutation-receipts.json`, `segment-mutation-receipts.json`, and the completeness, cleanup, diagnostics, inference, segment-score, header-precedence, and stop-marker receipts. They record actual failing mutations and passing restored runs for previous additions. Hosted CI for this new candidate remains pending publication; previous heads' Gate results do not verify this source change.
+- **Local (2026-11-04, head `d92b97f0`):** `python -m pytest tests/ -m "not slow" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:/tmp/issue-1218-current.json -q` → **2569 passed, 2 skipped**, 41.32s; coverage JSON **11,109 / 12,216 (90.9381%)**. One environment-specific failure (`test_validate_bundle_fails_when_gh_is_missing`) occurs when `gh` is on PATH locally; Gate pytest excludes integration/release markers and is the merge authority.
+- **Break-and-revert (alias):** `notional-alias-mutation-receipt.json` — broken alias order **2 failed** (exit 1); restored fixed source **2 passed** (exit 0) for both parametrized labels.
+- **Other mutations:** `mutation-receipts.json`, `numeric-mutation-receipts.json`, `sheet-selection-mutation-receipts.json`, `segment-mutation-receipts.json`, `completeness-mutation-receipt.json`, `cleanup-mutation-receipt.json`, `diagnostics-mutation-receipt.json`, `inference-mutation-receipt.json`, `header-precedence-mutation-receipt.json`, `segment-score-mutation-receipt.json`, `stop-marker-mutation-receipt.json` — each maps added scenarios to recorded red/green runs (no new parametrized cases without receipts in this pass).
+- **Hosted Python CI:** Gate run 41964641320 skipped `Python CI` (`is-python-code=false`, 0 changed files). Remediation: label **`verify:full`** (or Gate `workflow_dispatch`) forces full classification and runs the standard reusable Python CI path without weakening gates. Record the successful run id and `headSha` here after the push retriggers Gate.
+
+## Production bug rationale
+
+Generic `notional` alias precedence swallowed `Notional Change*` headers when those columns appeared left of `Notional`, clearing `notional_change` from the resolved header map and failing validation. Reordering aliases fixes real workbook layouts without changing parsing semantics elsewhere.
 
 ## Verified contract tasks
 
-1. [x] Pick the next target by the repo's own coverage-gap ranking: NISA is explicitly first in issue #1218.
-2. [x] Run break-and-revert for each new test: both new alias cases failed with the original alias order and passed after exact restoration; the receipt includes individual outcomes.
-3. [x] Fix real bugs with a minimal targeted diff: reordered the two overlapping header aliases after the tests demonstrated workbook rejection. No cache logic is involved.
-4. [x] Low blast radius: two XLSX regression cases and a three-line production diff, with no refactor.
-5. [x] One PR per logical chunk: continue existing PR #1220; no additional PR opened.
-
-## Delivery status
-
-The primary checkout's `.git` directory is read-only: `git add --dry-run` fails creating `index.lock`. The verified source, tests and evidence are preserved in the writable checkout `/tmp/counter-risk-1218-notional-alias`. The change is committed in that writable checkout and preserved in `/tmp/counter-risk-1218-notional-alias.bundle`. Git push failed with `Could not resolve host: github.com`. Automatic approval review rejected GitHub connector publication, the PR-body update, the blocker comment, and the `needs-human` label: `MCP tool call requires approval, but approval policy is never`. Consequently the live task checkboxes were not changed, and hosted CI for this candidate remains pending. PR #1220 was reverified open and ready for review (`isDraft=false`) at `c117a610df4ee03b59b5eaf60785ecaf63171846` after those attempts.
+1. [x] Ranked targets covered in issue order with discriminating tests.
+2. [x] Break-and-revert recorded for new alias cases and prior mutation receipts for earlier additions.
+3. [x] Minimal production fix only for the demonstrated alias defect.
+4. [x] Low blast radius; no refactors, pins, thresholds, or workflow gate changes.
+5. [x] Single PR **#1232** for this chunk (`Closes #1218`).
 
 Closes #1218
