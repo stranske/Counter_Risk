@@ -1,6 +1,8 @@
 """Robustness tests for raw NISA All Programs parser.
 
 Mutation receipts for parametrized cases: docs/evidence/issue-1218/.
+Closer repair reconciles those receipts on main after PR #1232 merge; see
+docs/evidence/issue-1218/reconciled-pr-body.md.
 """
 
 from __future__ import annotations
