@@ -2,7 +2,7 @@
   "pull_request": 1232,
   "branch": "codex/issue-1218",
   "base_sha": "faad15275296e77105016b3f1861e017838826f6",
-  "current_head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
+  "current_head_sha": "b9b5e1884b05c979facfabfce9dfa689d72ed09a",
   "reviewed_commits": [
     "3456860abdb9d78cd98fbb1e7c18d4611513c7b9",
     "edc500f44edb22520fae766a4776743e23354342",
@@ -656,20 +656,25 @@
   },
   "closer_followup": {
     "pull_request": 1232,
-    "head_sha": "965897fd46ce9036463b8aed5e2a9c23fa194e6b",
+    "head_sha": "b9b5e1884b05c979facfabfce9dfa689d72ed09a",
     "gate_run_skipped_python_ci": {
       "run_id": 41964641320,
       "head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
       "reason": "path classifier reported 0 changed files; is-python-code=false"
     },
-    "hosted_python_ci_remediation": "Avoid verify:full (force-full sets is-docs-only=true and skips python-ci). Retrigger Gate via synchronize.",
+    "hosted_python_ci_remediation": "Ensure synchronize diff includes at least one Python path; avoid verify:full (skips python-ci).",
     "reconciled_pr_body": "docs/evidence/issue-1218/reconciled-pr-body.md",
-    "hosted_python_ci_success_at_issue1218_code": {
+    "hosted_python_ci_success": {
+      "run_id": 41973909675,
+      "head_sha": "b9b5e1884b05c979facfabfce9dfa689d72ed09a",
+      "python_3_13": "success",
+      "python_3_14": "success"
+    },
+    "hosted_python_ci_prior_success_at_alias_head": {
       "run_id": 40859376188,
       "head_sha": "d92b97f070301f5540774f4040b3d6fb40023056",
       "python_3_13": "success",
       "python_3_14": "success"
-    },
-    "hosted_python_ci_retrigger": "pending Gate on 965897fd after verify:full removal"
+    }
   }
 }
