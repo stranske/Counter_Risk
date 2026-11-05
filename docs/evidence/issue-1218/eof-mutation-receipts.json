@@ -1,0 +1,85 @@
+{
+  "python": "3.14.9",
+  "new_cases": 1,
+  "existing_cases": 1,
+  "additional_covered_statements": 0,
+  "source_restored_sha256": "23dd89f2cdb22cb8752e861d1871c4bc752e18c1b789f3d055fb726c096b2fa3",
+  "scenarios": [
+    {
+      "mutation": "totals-exclusive-upper-bound",
+      "source": "src/counter_risk/parsers/nisa.py",
+      "before": "range(totals_marker_row + 1, _worksheet_max_row(worksheet) + 1)",
+      "after": "range(totals_marker_row + 1, _worksheet_max_row(worksheet))",
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_nisa_all_programs_parser.py::test_parser_reads_workbook_without_dimension_record",
+        "-m",
+        "not slow",
+        "-q",
+        "--junitxml=/tmp/issue-1218-totals-exclusive-upper-bound.xml"
+      ],
+      "broken_exit_code": 1,
+      "broken_failed": [
+        "test_parser_reads_workbook_without_dimension_record[eof]"
+      ],
+      "broken_passed": 1,
+      "restored_command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_nisa_all_programs_parser.py::test_parser_reads_workbook_without_dimension_record",
+        "-m",
+        "not slow",
+        "-q"
+      ],
+      "restored_exit_code": 0,
+      "restored_passed": 2,
+      "failure_summary": [
+        "E           AssertionError: assert ['Alpha Bank'] == ['Alpha Bank', 'Final Bank']",
+        "tests/test_nisa_all_programs_parser.py:798: AssertionError",
+        "FAILED tests/test_nisa_all_programs_parser.py::test_parser_reads_workbook_without_dimension_record[eof] - AssertionError: assert ['Alpha Bank'] == ['Alpha Bank', 'Final Bank']"
+      ],
+      "restored_summary": "======================== 2 passed, 13 warnings in 0.36s ========================"
+    },
+    {
+      "mutation": "worksheet-cached-bound-truncated",
+      "source": "src/counter_risk/parsers/nisa.py",
+      "before": "return int(max_row)",
+      "after": "return int(max_row) - 1",
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_nisa_all_programs_parser.py::test_parser_reads_workbook_without_dimension_record",
+        "-m",
+        "not slow",
+        "-q",
+        "--junitxml=/tmp/issue-1218-worksheet-cached-bound-truncated.xml"
+      ],
+      "broken_exit_code": 1,
+      "broken_failed": [
+        "test_parser_reads_workbook_without_dimension_record[eof]"
+      ],
+      "broken_passed": 1,
+      "restored_command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/test_nisa_all_programs_parser.py::test_parser_reads_workbook_without_dimension_record",
+        "-m",
+        "not slow",
+        "-q"
+      ],
+      "restored_exit_code": 0,
+      "restored_passed": 2,
+      "failure_summary": [
+        "E           AssertionError: assert ['Alpha Bank'] == ['Alpha Bank', 'Final Bank']",
+        "tests/test_nisa_all_programs_parser.py:798: AssertionError",
+        "FAILED tests/test_nisa_all_programs_parser.py::test_parser_reads_workbook_without_dimension_record[eof] - AssertionError: assert ['Alpha Bank'] == ['Alpha Bank', 'Final Bank']"
+      ],
+      "restored_summary": "======================== 2 passed, 13 warnings in 0.37s ========================"
+    }
+  ]
+}

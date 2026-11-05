@@ -2,7 +2,6 @@
   "pull_request": 1232,
   "branch": "codex/issue-1218",
   "base_sha": "faad15275296e77105016b3f1861e017838826f6",
-  "current_head_sha": "ab025f3e1f9d4f698ff819ee9346aefd758e7c9d",
   "latest_hosted_verification_sha": "ab025f3e1f9d4f698ff819ee9346aefd758e7c9d",
   "measured_source_revisions": [
     "d92b97f070301f5540774f4040b3d6fb40023056",
@@ -20,7 +19,7 @@
     "ab025f3e1f9d4f698ff819ee9346aefd758e7c9d"
   ],
   "python": "3.12.2",
-  "python_note": "Closer local verification used Counter_Risk/.venv/bin/python; hosted Gate uses 3.13 and 3.14.",
+  "python_note": "Top-level baseline/candidate are historical Python 3.12.2 measurements; eof_followup records new Python 3.14.9 measurements. latest_hosted_verification_sha is historical and does not verify this follow-up.",
   "command": "python -m pytest tests/ -m \"not slow\" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output>",
   "measurement": "line-only; branch=false; all non-slow tests; 4 xdist workers",
   "baseline": {
@@ -676,7 +675,7 @@
       "head_sha": "b9b5e1884b05c979facfabfce9dfa689d72ed09a",
       "python_3_13": "success",
       "python_3_14": "success",
-      "note": "historical — measured source revision, not latest verification head"
+      "note": "historical \u2014 measured source revision, not latest verification head"
     },
     "hosted_python_ci_prior_success_at_alias_head": {
       "run_id": 40859376188,
@@ -695,7 +694,282 @@
       "typecheck_mypy": "success",
       "select_reusable_ci_scope": "success",
       "logs_summary": "success",
-      "note": "current-head verification — independently verified via gh CLI"
+      "note": "current-head verification \u2014 independently verified via gh CLI"
     }
+  },
+  "verification_base_sha": "4c08e8b487f2bb3355869f4ad2c6d95be2032363",
+  "eof_followup": {
+    "python": "3.14.9",
+    "new_cases": 1,
+    "existing_cases_strengthened": 1,
+    "production_changes": 0,
+    "test_file_sha256": "1cb5e201749c7a9b179b0e4721116ff2c314c06c4f5b22b7389dd31f987f01c8",
+    "receipt_file": "docs/evidence/issue-1218/eof-mutation-receipts.json",
+    "mutation_scenarios": 2,
+    "red_per_scenario": {
+      "failed": 1,
+      "passed": 1
+    },
+    "restored_per_scenario": {
+      "passed": 2
+    },
+    "command": "python -m pytest tests/ -m \"not slow\" -n 4 --dist load --cov=counter_risk --cov-report=term --cov-report=json:<output> -q",
+    "before": {
+      "passed": 3053,
+      "skipped": 1,
+      "seconds": 80.4,
+      "totals": {
+        "covered_lines": 11722,
+        "num_statements": 12232,
+        "percent_covered": 95.83060824068018,
+        "percent_covered_display": "96",
+        "missing_lines": 510,
+        "excluded_lines": 84,
+        "percent_statements_covered": 95.83060824068018,
+        "percent_statements_covered_display": "96"
+      }
+    },
+    "after": {
+      "passed": 3054,
+      "skipped": 1,
+      "seconds": 75.32,
+      "totals": {
+        "covered_lines": 11722,
+        "num_statements": 12232,
+        "percent_covered": 95.83060824068018,
+        "percent_covered_display": "96",
+        "missing_lines": 510,
+        "excluded_lines": 84,
+        "percent_statements_covered": 95.83060824068018,
+        "percent_statements_covered_display": "96"
+      }
+    },
+    "targeted_command": "python -m pytest tests/test_nisa_all_programs_parser.py -m \"not slow\" --cov=counter_risk.parsers.nisa --cov-report=term-missing --cov-report=json:<output> -q",
+    "targeted_before_passed": 36,
+    "targeted_after_passed": 37,
+    "targeted_cover_column": "99%",
+    "targeted_totals": {
+      "covered_lines": 216,
+      "num_statements": 218,
+      "percent_covered": 99.08256880733946,
+      "percent_covered_display": "99",
+      "missing_lines": 2,
+      "excluded_lines": 2,
+      "percent_statements_covered": 99.08256880733946,
+      "percent_statements_covered_display": "99"
+    },
+    "additional_covered_statements": 0,
+    "targets_in_issue_order": [
+      {
+        "path": "src/counter_risk/parsers/nisa.py",
+        "before": {
+          "covered_lines": 216,
+          "num_statements": 218,
+          "missing_lines": 2,
+          "percent_covered": 99.08256880733946
+        },
+        "after": {
+          "covered_lines": 216,
+          "num_statements": 218,
+          "missing_lines": 2,
+          "percent_covered": 99.08256880733946
+        },
+        "missing_lines": [
+          240,
+          312
+        ]
+      },
+      {
+        "path": "src/counter_risk/compute/rollups.py",
+        "before": {
+          "covered_lines": 311,
+          "num_statements": 311,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "after": {
+          "covered_lines": 311,
+          "num_statements": 311,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "missing_lines": []
+      },
+      {
+        "path": "src/counter_risk/runner_launch.py",
+        "before": {
+          "covered_lines": 193,
+          "num_statements": 193,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "after": {
+          "covered_lines": 193,
+          "num_statements": 193,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "missing_lines": []
+      },
+      {
+        "path": "src/counter_risk/cli/mapping_diff_report.py",
+        "before": {
+          "covered_lines": 97,
+          "num_statements": 98,
+          "missing_lines": 1,
+          "percent_covered": 98.9795918367347
+        },
+        "after": {
+          "covered_lines": 97,
+          "num_statements": 98,
+          "missing_lines": 1,
+          "percent_covered": 98.9795918367347
+        },
+        "missing_lines": [
+          90
+        ]
+      },
+      {
+        "path": "src/counter_risk/reports/mapping_diff.py",
+        "before": {
+          "covered_lines": 99,
+          "num_statements": 99,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "after": {
+          "covered_lines": 99,
+          "num_statements": 99,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "missing_lines": []
+      },
+      {
+        "path": "src/counter_risk/chat/providers/langchain_runtime.py",
+        "before": {
+          "covered_lines": 233,
+          "num_statements": 235,
+          "missing_lines": 2,
+          "percent_covered": 99.14893617021276
+        },
+        "after": {
+          "covered_lines": 233,
+          "num_statements": 235,
+          "missing_lines": 2,
+          "percent_covered": 99.14893617021276
+        },
+        "missing_lines": [
+          191,
+          192
+        ]
+      },
+      {
+        "path": "src/counter_risk/normalize.py",
+        "before": {
+          "covered_lines": 112,
+          "num_statements": 112,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "after": {
+          "covered_lines": 112,
+          "num_statements": 112,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "missing_lines": []
+      },
+      {
+        "path": "src/counter_risk/limits_config.py",
+        "before": {
+          "covered_lines": 57,
+          "num_statements": 57,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "after": {
+          "covered_lines": 57,
+          "num_statements": 57,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "missing_lines": []
+      },
+      {
+        "path": "src/counter_risk/chat/providers/base.py",
+        "before": {
+          "covered_lines": 160,
+          "num_statements": 162,
+          "missing_lines": 2,
+          "percent_covered": 98.76543209876543
+        },
+        "after": {
+          "covered_lines": 160,
+          "num_statements": 162,
+          "missing_lines": 2,
+          "percent_covered": 98.76543209876543
+        },
+        "missing_lines": [
+          178,
+          179
+        ]
+      },
+      {
+        "path": "src/counter_risk/ppt/pptx_postprocess.py",
+        "before": {
+          "covered_lines": 161,
+          "num_statements": 161,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "after": {
+          "covered_lines": 161,
+          "num_statements": 161,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "missing_lines": []
+      },
+      {
+        "path": "src/counter_risk/build/xlsm.py",
+        "before": {
+          "covered_lines": 121,
+          "num_statements": 121,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "after": {
+          "covered_lines": 121,
+          "num_statements": 121,
+          "missing_lines": 0,
+          "percent_covered": 100.0
+        },
+        "missing_lines": []
+      }
+    ],
+    "baseline_difference": "The issue cited 89.32% blended line+branch. Current config measures lines only. Historical matched Python 3.12 runs showed 198 fewer missing statements; the new Python 3.14 suite already measured 95.8306% before this follow-up. No additional coverage gain is claimed and no new PR is opened.",
+    "formatting_note": "Black 26.10.1 required formatting three existing assertions in tests/test_python_floor.py; its 21 existing tests passed. A single worker and writable /tmp cache accommodate this sandbox.",
+    "hosted_ci": "not run: publication blocked",
+    "checks": [
+      {
+        "command": "BLACK_NUM_WORKERS=1 BLACK_CACHE_DIR=/tmp/issue-1218-black-cache black --check --line-length 100 --exclude '(\\.workflows-lib|node_modules)' .",
+        "exit_code": 0,
+        "files": 414
+      },
+      {
+        "command": "ruff check --output-format github --extend-exclude .workflows-lib .",
+        "exit_code": 0
+      },
+      {
+        "command": "python -m pytest tests/test_python_floor.py -m \"not slow\" -q",
+        "exit_code": 0,
+        "passed": 21
+      }
+    ],
+    "publication_blockers": [
+      "Local git commit failed: .git/index.lock cannot be created because .git is read-only.",
+      "Automatic approval review rejected github_create_tree: MCP tool call requires approval, but approval policy is never."
+    ]
   }
 }

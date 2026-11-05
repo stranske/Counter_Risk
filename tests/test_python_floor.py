@@ -48,24 +48,24 @@ def _assert_classifiers(project: dict) -> None:
 def _assert_tool_targets(tool: dict) -> None:
     ruff = tool.get("ruff", {})
     assert "target-version" in ruff, "ruff target-version must be present"
-    assert _version(ruff["target-version"]) >= FLOOR, (
-        f"ruff target below 3.13: {ruff['target-version']!r}"
-    )
+    assert (
+        _version(ruff["target-version"]) >= FLOOR
+    ), f"ruff target below 3.13: {ruff['target-version']!r}"
 
     black = tool.get("black", {})
     assert "target-version" in black, "black target-version must be present"
     black_raw = black["target-version"]
     black_targets = [black_raw] if isinstance(black_raw, str) else list(black_raw)
     assert black_targets, "black target list is empty"
-    assert all(_version(v) >= FLOOR for v in black_targets), (
-        f"black targets below 3.13: {black_targets}"
-    )
+    assert all(
+        _version(v) >= FLOOR for v in black_targets
+    ), f"black targets below 3.13: {black_targets}"
 
     mypy = tool.get("mypy", {})
     assert "python_version" in mypy, "mypy python_version must be present"
-    assert _version(mypy["python_version"]) >= FLOOR, (
-        f"mypy python_version below 3.13: {mypy['python_version']!r}"
-    )
+    assert (
+        _version(mypy["python_version"]) >= FLOOR
+    ), f"mypy python_version below 3.13: {mypy['python_version']!r}"
 
 
 def test_python_floor_is_3_13() -> None:
