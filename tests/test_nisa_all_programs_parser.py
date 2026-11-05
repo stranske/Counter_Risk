@@ -1,4 +1,7 @@
-"""Robustness tests for raw NISA All Programs parser."""
+"""Robustness tests for raw NISA All Programs parser.
+
+Mutation receipts for parametrized cases: docs/evidence/issue-1218/.
+"""
 
 from __future__ import annotations
 
@@ -756,10 +759,27 @@ def test_parser_reports_missing_totals_with_unlabelled_counterparty_column(tmp_p
         parse_nisa_all_programs(path)
 
 
-def test_parser_reads_workbook_without_dimension_record(tmp_path: Path) -> None:
+@pytest.mark.parametrize("with_stop_marker", [True, False], ids=["stop-marker", "eof"])
+def test_parser_reads_workbook_without_dimension_record(
+    tmp_path: Path, with_stop_marker: bool
+) -> None:
     import re
 
+    import openpyxl
+
     original = _build_raw_nisa_workbook(tmp_path / "original.xlsx")
+    if not with_stop_marker:
+        workbook = openpyxl.load_workbook(original)
+        try:
+            # Leave the last totals row at EOF. A dimension fallback or totals
+            # loop that loses that row would silently underreport exposure.
+            worksheet = workbook.active
+            worksheet.cell(26, 2).value = "Final Bank"
+            worksheet.cell(26, 9).value = 321.0
+            workbook.save(original)
+        finally:
+            workbook.close()
+
     path = tmp_path / "dimensionless.xlsx"
     with ZipFile(original) as source, ZipFile(path, "w") as destination:
         for entry in source.infolist():
@@ -769,7 +789,14 @@ def test_parser_reads_workbook_without_dimension_record(tmp_path: Path) -> None:
                 assert count == 1
             destination.writestr(entry, data)
 
-    _assert_expected_rows(parse_nisa_all_programs(path))
+    parsed = parse_nisa_all_programs(path)
+    if with_stop_marker:
+        _assert_expected_rows(parsed)
+    else:
+        assert [row.counterparty for row in parsed.ch_rows] == ["Alpha Bank", "Beta Bank"]
+        assert [row.notional for row in parsed.ch_rows] == pytest.approx([210, 21])
+        assert [row.counterparty for row in parsed.totals_rows] == ["Alpha Bank", "Final Bank"]
+        assert [row.notional for row in parsed.totals_rows] == pytest.approx([210, 321])
 
 
 @pytest.mark.parametrize(

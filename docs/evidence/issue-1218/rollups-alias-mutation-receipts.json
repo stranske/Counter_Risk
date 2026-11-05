@@ -1,0 +1,185 @@
+[
+  {
+    "label": "alias-lookup",
+    "source": "src/counter_risk/compute/rollups.py",
+    "test": "tests/compute/test_rollups.py::test_repo_cash_accumulates_aliases_into_one_counterparty",
+    "edit": [
+      "normalized = normalize_counterparty(counterparty)",
+      "normalized = counterparty"
+    ],
+    "source_sha256": "31c8fe926ddfed2bddfb920b9a8d0940c1c38cdbe016d4457994f54839e649ab",
+    "red": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/compute/test_rollups.py::test_repo_cash_accumulates_aliases_into_one_counterparty",
+        "-m",
+        "not slow",
+        "-q",
+        "--junitxml=/tmp/issue-1218-rollups-alias-lookup-red.xml"
+      ],
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[appended-row]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[existing-row]",
+          "outcome": "failed"
+        }
+      ],
+      "assertion_failures": [
+        "existing = False\n\n    @pytest.mark.parametrize(\"existing\", [False, True], ids=[\"appended-row\", \"existing-row\"])\n    def test_repo_cash_accumulates_aliases_into_one_counterparty(existing: bool) -> None:\n        totals_rows = (\n            [\n                {\n                    \"counterparty\": \"Citibank\",\n                    \"Cash\": 4.0,\n                    \"Notional\": 20.0,\n                    \"NotionalChange\": 3.0,\n                }\n            ]\n            if existing\n            else []\n        )\n    \n        updated = _as_records(\n            apply_repo_cash_to_totals(\n                totals_rows,\n                {\" Citibank \": 2.5, \"Citigroup\": -1.0},\n            )\n        )\n    \n        # Both aliases must find row zero, including a row appended by the first\n        # overlay entry. Preserve the signed cash adjustment and update each alias.\n>       assert len(updated) == 1\nE       AssertionError: assert 2 == 1\nE        +  where 2 = len([{'counterparty': 'Citibank', 'group_type': 'counterparty', 'group_name': 'Citibank', 'TIPS': 0.0, ...}, {'counterparty': 'Citigroup', 'group_type': 'counterparty', 'group_name': 'Citigroup', 'TIPS': 0.0, ...}])\n\ntests/compute/test_rollups.py:329: AssertionError",
+        "existing = True\n\n    @pytest.mark.parametrize(\"existing\", [False, True], ids=[\"appended-row\", \"existing-row\"])\n    def test_repo_cash_accumulates_aliases_into_one_counterparty(existing: bool) -> None:\n        totals_rows = (\n            [\n                {\n                    \"counterparty\": \"Citibank\",\n                    \"Cash\": 4.0,\n                    \"Notional\": 20.0,\n                    \"NotionalChange\": 3.0,\n                }\n            ]\n            if existing\n            else []\n        )\n    \n        updated = _as_records(\n            apply_repo_cash_to_totals(\n                totals_rows,\n                {\" Citibank \": 2.5, \"Citigroup\": -1.0},\n            )\n        )\n    \n        # Both aliases must find row zero, including a row appended by the first\n        # overlay entry. Preserve the signed cash adjustment and update each alias.\n>       assert len(updated) == 1\nE       AssertionError: assert 2 == 1\nE        +  where 2 = len([{'counterparty': 'Citibank', 'Cash': 6.5, 'Notional': 22.5, 'NotionalChange': 5.5, ...}, {'counterparty': 'Citigroup', 'Cash': -1.0, 'Notional': -1.0, 'NotionalChange': -1.0, ...}])\n\ntests/compute/test_rollups.py:329: AssertionError"
+      ]
+    },
+    "green": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/compute/test_rollups.py::test_repo_cash_accumulates_aliases_into_one_counterparty",
+        "-m",
+        "not slow",
+        "-q",
+        "--junitxml=/tmp/issue-1218-rollups-alias-lookup-green.xml"
+      ],
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[appended-row]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[existing-row]",
+          "outcome": "passed"
+        }
+      ]
+    },
+    "restored_sha256": "31c8fe926ddfed2bddfb920b9a8d0940c1c38cdbe016d4457994f54839e649ab"
+  },
+  {
+    "label": "row-zero",
+    "source": "src/counter_risk/compute/rollups.py",
+    "test": "tests/compute/test_rollups.py::test_repo_cash_accumulates_aliases_into_one_counterparty",
+    "edit": [
+      "if matched_index is None:",
+      "if not matched_index:"
+    ],
+    "source_sha256": "31c8fe926ddfed2bddfb920b9a8d0940c1c38cdbe016d4457994f54839e649ab",
+    "red": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/compute/test_rollups.py::test_repo_cash_accumulates_aliases_into_one_counterparty",
+        "-m",
+        "not slow",
+        "-q",
+        "--junitxml=/tmp/issue-1218-rollups-row-zero-red.xml"
+      ],
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[appended-row]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[existing-row]",
+          "outcome": "failed"
+        }
+      ],
+      "assertion_failures": [
+        "existing = False\n\n    @pytest.mark.parametrize(\"existing\", [False, True], ids=[\"appended-row\", \"existing-row\"])\n    def test_repo_cash_accumulates_aliases_into_one_counterparty(existing: bool) -> None:\n        totals_rows = (\n            [\n                {\n                    \"counterparty\": \"Citibank\",\n                    \"Cash\": 4.0,\n                    \"Notional\": 20.0,\n                    \"NotionalChange\": 3.0,\n                }\n            ]\n            if existing\n            else []\n        )\n    \n        updated = _as_records(\n            apply_repo_cash_to_totals(\n                totals_rows,\n                {\" Citibank \": 2.5, \"Citigroup\": -1.0},\n            )\n        )\n    \n        # Both aliases must find row zero, including a row appended by the first\n        # overlay entry. Preserve the signed cash adjustment and update each alias.\n>       assert len(updated) == 1\nE       AssertionError: assert 2 == 1\nE        +  where 2 = len([{'counterparty': 'Citibank', 'group_type': 'counterparty', 'group_name': 'Citibank', 'TIPS': 0.0, ...}, {'counterparty': 'Citigroup', 'group_type': 'counterparty', 'group_name': 'Citigroup', 'TIPS': 0.0, ...}])\n\ntests/compute/test_rollups.py:329: AssertionError",
+        "existing = True\n\n    @pytest.mark.parametrize(\"existing\", [False, True], ids=[\"appended-row\", \"existing-row\"])\n    def test_repo_cash_accumulates_aliases_into_one_counterparty(existing: bool) -> None:\n        totals_rows = (\n            [\n                {\n                    \"counterparty\": \"Citibank\",\n                    \"Cash\": 4.0,\n                    \"Notional\": 20.0,\n                    \"NotionalChange\": 3.0,\n                }\n            ]\n            if existing\n            else []\n        )\n    \n        updated = _as_records(\n            apply_repo_cash_to_totals(\n                totals_rows,\n                {\" Citibank \": 2.5, \"Citigroup\": -1.0},\n            )\n        )\n    \n        # Both aliases must find row zero, including a row appended by the first\n        # overlay entry. Preserve the signed cash adjustment and update each alias.\n>       assert len(updated) == 1\nE       AssertionError: assert 2 == 1\nE        +  where 2 = len([{'counterparty': 'Citibank', 'Cash': 4.0, 'Notional': 20.0, 'NotionalChange': 3.0, ...}, {'counterparty': 'Citibank', 'Cash': 1.5, 'Notional': 1.5, 'NotionalChange': 1.5, ...}])\n\ntests/compute/test_rollups.py:329: AssertionError"
+      ]
+    },
+    "green": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/compute/test_rollups.py::test_repo_cash_accumulates_aliases_into_one_counterparty",
+        "-m",
+        "not slow",
+        "-q",
+        "--junitxml=/tmp/issue-1218-rollups-row-zero-green.xml"
+      ],
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[appended-row]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[existing-row]",
+          "outcome": "passed"
+        }
+      ]
+    },
+    "restored_sha256": "31c8fe926ddfed2bddfb920b9a8d0940c1c38cdbe016d4457994f54839e649ab"
+  },
+  {
+    "label": "signed-cash",
+    "source": "src/counter_risk/compute/rollups.py",
+    "test": "tests/compute/test_rollups.py::test_repo_cash_accumulates_aliases_into_one_counterparty",
+    "edit": [
+      "amount = float(raw_amount)",
+      "amount = abs(float(raw_amount))"
+    ],
+    "source_sha256": "31c8fe926ddfed2bddfb920b9a8d0940c1c38cdbe016d4457994f54839e649ab",
+    "red": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/compute/test_rollups.py::test_repo_cash_accumulates_aliases_into_one_counterparty",
+        "-m",
+        "not slow",
+        "-q",
+        "--junitxml=/tmp/issue-1218-rollups-signed-cash-red.xml"
+      ],
+      "exit_code": 1,
+      "tests": [
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[appended-row]",
+          "outcome": "failed"
+        },
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[existing-row]",
+          "outcome": "failed"
+        }
+      ],
+      "assertion_failures": [
+        "existing = False\n\n    @pytest.mark.parametrize(\"existing\", [False, True], ids=[\"appended-row\", \"existing-row\"])\n    def test_repo_cash_accumulates_aliases_into_one_counterparty(existing: bool) -> None:\n        totals_rows = (\n            [\n                {\n                    \"counterparty\": \"Citibank\",\n                    \"Cash\": 4.0,\n                    \"Notional\": 20.0,\n                    \"NotionalChange\": 3.0,\n                }\n            ]\n            if existing\n            else []\n        )\n    \n        updated = _as_records(\n            apply_repo_cash_to_totals(\n                totals_rows,\n                {\" Citibank \": 2.5, \"Citigroup\": -1.0},\n            )\n        )\n    \n        # Both aliases must find row zero, including a row appended by the first\n        # overlay entry. Preserve the signed cash adjustment and update each alias.\n        assert len(updated) == 1\n        row = updated[0]\n        assert row[\"counterparty\"] == \"Citibank\"\n>       assert row[\"Cash\"] == pytest.approx(5.5 if existing else 1.5)\nE       assert 3.5 == 1.5 \u00b1 1.5e-06\nE         \nE         comparison failed\nE         Obtained: 3.5\nE         Expected: 1.5 \u00b1 1.5e-06\n\ntests/compute/test_rollups.py:332: AssertionError",
+        "existing = True\n\n    @pytest.mark.parametrize(\"existing\", [False, True], ids=[\"appended-row\", \"existing-row\"])\n    def test_repo_cash_accumulates_aliases_into_one_counterparty(existing: bool) -> None:\n        totals_rows = (\n            [\n                {\n                    \"counterparty\": \"Citibank\",\n                    \"Cash\": 4.0,\n                    \"Notional\": 20.0,\n                    \"NotionalChange\": 3.0,\n                }\n            ]\n            if existing\n            else []\n        )\n    \n        updated = _as_records(\n            apply_repo_cash_to_totals(\n                totals_rows,\n                {\" Citibank \": 2.5, \"Citigroup\": -1.0},\n            )\n        )\n    \n        # Both aliases must find row zero, including a row appended by the first\n        # overlay entry. Preserve the signed cash adjustment and update each alias.\n        assert len(updated) == 1\n        row = updated[0]\n        assert row[\"counterparty\"] == \"Citibank\"\n>       assert row[\"Cash\"] == pytest.approx(5.5 if existing else 1.5)\nE       assert 7.5 == 5.5 \u00b1 5.5e-06\nE         \nE         comparison failed\nE         Obtained: 7.5\nE         Expected: 5.5 \u00b1 5.5e-06\n\ntests/compute/test_rollups.py:332: AssertionError"
+      ]
+    },
+    "green": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "tests/compute/test_rollups.py::test_repo_cash_accumulates_aliases_into_one_counterparty",
+        "-m",
+        "not slow",
+        "-q",
+        "--junitxml=/tmp/issue-1218-rollups-signed-cash-green.xml"
+      ],
+      "exit_code": 0,
+      "tests": [
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[appended-row]",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_repo_cash_accumulates_aliases_into_one_counterparty[existing-row]",
+          "outcome": "passed"
+        }
+      ]
+    },
+    "restored_sha256": "31c8fe926ddfed2bddfb920b9a8d0940c1c38cdbe016d4457994f54839e649ab"
+  }
+]
