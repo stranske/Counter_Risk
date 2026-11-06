@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import tempfile
 from datetime import UTC, date, datetime
@@ -12,8 +13,21 @@ from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 CORE_PROPERTIES_MEMBER = "docProps/core.xml"
 CONFIG_SHEET_NAME = "Config"
-_CONFIG_SHEET_RID = "rId5"
-_CONFIG_SHEET_TARGET = "worksheets/sheet3.xml"
+_CONFIG_DEFINED_NAMES: tuple[tuple[str, str], ...] = (
+    ("RunnerConfig_MosersAllPrograms", "Config!$B$4"),
+    ("RunnerConfig_MosersExTrend", "Config!$B$5"),
+    ("RunnerConfig_MosersTrend", "Config!$B$6"),
+    ("RunnerConfig_HistAllPrograms3yr", "Config!$B$7"),
+    ("RunnerConfig_HistExLlc3yr", "Config!$B$8"),
+    ("RunnerConfig_HistLlc3yr", "Config!$B$9"),
+    ("RunnerConfig_MonthlyPptx", "Config!$B$10"),
+)
+_WORKSHEET_REL_TYPE = (
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+)
+_WORKSHEET_CONTENT_TYPE = (
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+)
 
 
 def repository_root() -> Path:
@@ -120,19 +134,49 @@ def _build_config_sheet_xml() -> str:
     return "\n".join(lines)
 
 
-def _defined_names_xml() -> str:
-    """Build the <definedNames> XML block for Config sheet Named Ranges."""
-    ranges = [
-        ("RunnerConfig_MosersAllPrograms", "Config!$B$4"),
-        ("RunnerConfig_MosersExTrend", "Config!$B$5"),
-        ("RunnerConfig_MosersTrend", "Config!$B$6"),
-        ("RunnerConfig_HistAllPrograms3yr", "Config!$B$7"),
-        ("RunnerConfig_HistExLlc3yr", "Config!$B$8"),
-        ("RunnerConfig_HistLlc3yr", "Config!$B$9"),
-        ("RunnerConfig_MonthlyPptx", "Config!$B$10"),
+def _defined_name_line(name: str, ref: str) -> str:
+    return f'    <definedName name="{name}">{ref}</definedName>'
+
+
+def _merge_config_defined_names(workbook_xml: str) -> str:
+    """Add Config named ranges without duplicating an existing definedNames block."""
+    lines = [
+        _defined_name_line(name, ref)
+        for name, ref in _CONFIG_DEFINED_NAMES
+        if f'name="{name}"' not in workbook_xml
     ]
-    inner = "\n".join(f'    <definedName name="{name}">{ref}</definedName>' for name, ref in ranges)
-    return f"  <definedNames>\n{inner}\n  </definedNames>"
+    if not lines:
+        return workbook_xml
+    block = "\n".join(lines)
+    if "</definedNames>" in workbook_xml:
+        return workbook_xml.replace("</definedNames>", f"{block}\n  </definedNames>", 1)
+    return workbook_xml.replace(
+        "</workbook>",
+        f"  <definedNames>\n{block}\n  </definedNames>\n</workbook>",
+        1,
+    )
+
+
+def _lowest_free_positive_id(used: set[int]) -> int:
+    candidate = 1
+    while candidate in used:
+        candidate += 1
+    return candidate
+
+
+def _used_relationship_ids(rels_xml: str) -> set[int]:
+    return {int(value) for value in re.findall(r'Id="rId(\d+)"', rels_xml)}
+
+
+def _used_sheet_numbers(*sources: str) -> set[int]:
+    used: set[int] = set()
+    for source in sources:
+        used.update(int(value) for value in re.findall(r"worksheets/sheet(\d+)\.xml", source))
+    return used
+
+
+def _used_sheet_ids(workbook_xml: str) -> set[int]:
+    return {int(value) for value in re.findall(r'sheetId="(\d+)"', workbook_xml)}
 
 
 def inject_config_sheet(xlsm_path: Path) -> None:
@@ -155,26 +199,27 @@ def inject_config_sheet(xlsm_path: Path) -> None:
     workbook_xml = workbook_bytes.decode("utf-8")
     rels_xml = existing["xl/_rels/workbook.xml.rels"][1].decode("utf-8")
     ct_xml = existing["[Content_Types].xml"][1].decode("utf-8")
+    rel_id = f"rId{_lowest_free_positive_id(_used_relationship_ids(rels_xml))}"
+    sheet_number = _lowest_free_positive_id(_used_sheet_numbers(*existing, rels_xml, ct_xml))
+    sheet_id = _lowest_free_positive_id(_used_sheet_ids(workbook_xml))
+    sheet_target = f"worksheets/sheet{sheet_number}.xml"
 
     # Add sheet entry to workbook.xml
-    sheet_tag = f'    <sheet name="Config" sheetId="3" r:id="{_CONFIG_SHEET_RID}"/>\n  '
-    workbook_xml = workbook_xml.replace("  </sheets>", sheet_tag + "</sheets>")
-
-    # Add definedNames section to workbook.xml
-    workbook_xml = workbook_xml.replace("</workbook>", _defined_names_xml() + "\n</workbook>")
+    sheet_tag = f'    <sheet name="Config" sheetId="{sheet_id}" r:id="{rel_id}"/>\n  '
+    workbook_xml = workbook_xml.replace("  </sheets>", sheet_tag + "</sheets>", 1)
+    workbook_xml = _merge_config_defined_names(workbook_xml)
 
     # Add relationship to workbook.xml.rels
-    ws_type = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
     rel_tag = (
-        f'  <Relationship Id="{_CONFIG_SHEET_RID}" Type="{ws_type}"'
-        f' Target="{_CONFIG_SHEET_TARGET}"/>\n'
+        f'  <Relationship Id="{rel_id}" Type="{_WORKSHEET_REL_TYPE}" Target="{sheet_target}"/>\n'
     )
-    rels_xml = rels_xml.replace("</Relationships>", rel_tag + "</Relationships>")
+    rels_xml = rels_xml.replace("</Relationships>", rel_tag + "</Relationships>", 1)
 
     # Add content type to [Content_Types].xml
-    ws_ct = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
-    ct_tag = f'  <Override PartName="/xl/{_CONFIG_SHEET_TARGET}" ContentType="{ws_ct}"/>\n'
-    ct_xml = ct_xml.replace("</Types>", ct_tag + "</Types>")
+    part_name = f"/xl/{sheet_target}"
+    if part_name not in ct_xml:
+        ct_tag = f'  <Override PartName="{part_name}" ContentType="{_WORKSHEET_CONTENT_TYPE}"/>\n'
+        ct_xml = ct_xml.replace("</Types>", ct_tag + "</Types>", 1)
 
     updated = {
         "xl/workbook.xml": workbook_xml.encode("utf-8"),
@@ -195,7 +240,7 @@ def inject_config_sheet(xlsm_path: Path) -> None:
                 out_info.flag_bits = info.flag_bits
                 out_info.create_system = info.create_system
                 out_zf.writestr(out_info, updated.get(filename, data))
-            sheet_info = ZipInfo(_CONFIG_SHEET_TARGET.replace("worksheets/", "xl/worksheets/"))
+            sheet_info = ZipInfo(f"xl/{sheet_target}")
             sheet_info.date_time = (1980, 1, 1, 0, 0, 0)
             sheet_info.compress_type = ZIP_DEFLATED
             out_zf.writestr(sheet_info, _build_config_sheet_xml().encode("utf-8"))

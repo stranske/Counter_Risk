@@ -14,22 +14,29 @@ from counter_risk.build import xlsm
 
 def _write_legacy_template(path: Path) -> None:
     """Create the supported two-sheet template that predates Config inputs."""
+    omitted_sheets = {"xl/worksheets/sheet3.xml", "xl/worksheets/sheet4.xml"}
     with (
         ZipFile("assets/templates/counter_risk_template.xlsm") as source,
         ZipFile(path, "w") as output,
     ):
         for info in source.infolist():
-            if info.filename == "xl/worksheets/sheet3.xml":
+            if info.filename in omitted_sheets:
                 continue
             data = source.read(info.filename)
             if info.filename == "xl/workbook.xml":
-                data = re.sub(rb'    <sheet name="Config"[^>]*/>\n', b"", data)
+                data = re.sub(rb'    <sheet name="(?:Settings|Config)"[^>]*/>\n', b"", data)
                 data = re.sub(rb"  <definedNames>.*?</definedNames>\n", b"", data, flags=re.DOTALL)
             elif info.filename == "xl/_rels/workbook.xml.rels":
-                data = re.sub(rb'  <Relationship Id="rId5"[^>]*/>\n', b"", data)
+                data = re.sub(
+                    rb'  <Relationship Id="rId\d+"[^>]*Target="worksheets/sheet[34]\.xml"/>\n',
+                    b"",
+                    data,
+                )
             elif info.filename == "[Content_Types].xml":
                 data = re.sub(
-                    rb'  <Override PartName="/xl/worksheets/sheet3.xml"[^>]*/>\n', b"", data
+                    rb'  <Override PartName="/xl/worksheets/sheet[34]\.xml"[^>]*/>\n',
+                    b"",
+                    data,
                 )
             output.writestr(info, data)
 
