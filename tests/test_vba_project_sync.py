@@ -5,7 +5,6 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
-
 from scripts import create_vba_project, extract_vba_modules
 from scripts import sync_vba_project_runnerlaunch_mirror as sync
 from scripts.vba_project import CompoundFile, decompress, project_modules

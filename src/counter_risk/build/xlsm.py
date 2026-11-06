@@ -181,7 +181,9 @@ def inject_config_sheet(xlsm_path: Path) -> None:
     rel_ids = [el.get("Id") for el in rels]
     if len(set(sheet_ids)) != len(sheet_ids) or len(set(rel_ids)) != len(rel_ids):
         raise ValueError("Unsupported duplicate sheet/relationship IDs")
-    sheet_id = _lowest_free_positive_id({int(value) for value in sheet_ids})
+    if any(value is None for value in sheet_ids):
+        raise ValueError("Unsupported missing sheetId")
+    sheet_id = _lowest_free_positive_id({int(value) for value in sheet_ids if value is not None})
     occupied = {
         int(m.group(1))
         for name in existing
