@@ -95,6 +95,24 @@ Opens the run output directory for the selected reporting month. That directory
 contains the manifest-registered PPT deliverables. If the directory is missing, it
 reports an error in the result cell instead of silently succeeding.
 
+### `DryRunDiscovery_Click`
+
+Spec ID: `MS-DRY-RUN-DISCOVERY`
+
+Launches the same dry-run discovery command the Tk GUI uses for its default All
+Programs mode: `counter-risk run --dry-run-discovery` with the runner settings JSON,
+the all-programs config, and the selected month-end. Failures are written with the
+existing `LaunchStatus` result format.
+
+### `AskAbout_Click`
+
+Spec ID: `MS-ASK-ABOUT`
+
+Resolves the latest run folder for the selected month and tells the operator to
+use `counter-risk gui`. The repository documents chat as a library used by
+maintainers, not as an operator command, so the macro shows that message instead
+of doing nothing.
+
 ## Per-Macro Requirements
 
 ### `RunAll_Click`
@@ -278,6 +296,45 @@ Output expectations (ranges affected, invariants):
 - Attempts to open the folder
 - If folder missing, writes an error to `Runner!B8` instead of silent success
 - Does not mutate MOSERS workbook ranges
+
+### `DryRunDiscovery_Click`
+
+Spec ID: `MS-DRY-RUN-DISCOVERY`
+
+Fixture sources:
+- VBA module fixture: `assets/vba/RunnerLaunch.bas`
+- Command shape aligned with `counter_risk.gui.runner._build_cli_args` when
+  `dry_run_discovery` is true and `run_mode` is `all`
+
+Required inputs (sheet names, columns):
+- Sheet `Runner`
+- Cell `B3` selected month text for `--as-of-month`
+- Settings named ranges serialized to the runner settings JSON
+
+Output expectations (ranges affected, invariants):
+- Writes a settings JSON file and invokes
+  `run --dry-run-discovery` with `--config`, `--settings`, `--as-of-month`,
+  `--strict-policy`, and `--formatting-profile`
+- On failure, writes `Error <code>: <message>` from `LaunchStatus` to `Runner!B8`
+- Does not create a run output directory and does not mutate MOSERS workbook ranges
+
+### `AskAbout_Click`
+
+Spec ID: `MS-ASK-ABOUT`
+
+Fixture sources:
+- VBA module fixture: `assets/vba/RunnerLaunch.bas`
+- Latest run folder resolved by `ResolveExistingOutputDir`
+
+Required inputs (sheet names, columns):
+- Sheet `Runner`
+- Cell `B3` selected month text for latest-run-folder resolution
+
+Output expectations (ranges affected, invariants):
+- Resolves the latest run folder for the selected month
+- Shows a message that names `counter-risk gui` for the latest run folder
+- Writes that same message to `Runner!B8`
+- Does not launch a maintainer-only chat module and does not mutate MOSERS ranges
 
 ## Known-Acceptable Drift
 

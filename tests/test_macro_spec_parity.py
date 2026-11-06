@@ -31,6 +31,8 @@ EXPECTED_CLICK_HANDLERS: tuple[tuple[str, str], ...] = (
     ("OpenSummary_Click", "MS-OPEN-SUMMARY"),
     ("OpenManifest_Click", "MS-OPEN-MANIFEST"),
     ("OpenPPTFolder_Click", "MS-OPEN-PPT"),
+    ("DryRunDiscovery_Click", "MS-DRY-RUN-DISCOVERY"),
+    ("AskAbout_Click", "MS-ASK-ABOUT"),
 )
 
 CLICK_HANDLER_PATTERN = re.compile(r"^Public Sub ([A-Za-z0-9_]+_Click)\(\)", re.MULTILINE)

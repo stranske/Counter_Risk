@@ -56,10 +56,12 @@ EXPECTED_RUNNER_BUTTONS = {
     "A5": ("Run All", "RunAll_Click", 1025, "rId2", "ctrlProp1.xml"),
     "B5": ("Run Ex Trend", "RunExTrend_Click", 1026, "rId3", "ctrlProp2.xml"),
     "C5": ("Run Trend", "RunTrend_Click", 1027, "rId4", "ctrlProp3.xml"),
-    "E5": ("Open Output Folder", "OpenOutputFolder_Click", 1028, "rId5", "ctrlProp4.xml"),
-    "F5": ("Open Manifest", "OpenManifest_Click", 1029, "rId6", "ctrlProp5.xml"),
-    "G5": ("Open Summary", "OpenSummary_Click", 1030, "rId7", "ctrlProp6.xml"),
-    "H5": ("Open PPT Folder", "OpenPPTFolder_Click", 1031, "rId8", "ctrlProp7.xml"),
+    "D5": ("Dry-Run Discovery", "DryRunDiscovery_Click", 1028, "rId5", "ctrlProp4.xml"),
+    "E5": ("Open Output Folder", "OpenOutputFolder_Click", 1029, "rId6", "ctrlProp5.xml"),
+    "F5": ("Open Manifest", "OpenManifest_Click", 1030, "rId7", "ctrlProp6.xml"),
+    "G5": ("Open Summary", "OpenSummary_Click", 1031, "rId8", "ctrlProp7.xml"),
+    "H5": ("Open PPT Folder", "OpenPPTFolder_Click", 1032, "rId9", "ctrlProp8.xml"),
+    "I5": ("Ask about this run", "AskAbout_Click", 1033, "rId10", "ctrlProp9.xml"),
 }
 PUBLIC_SUB_PATTERN = re.compile(r"^Public Sub ([A-Za-z0-9_]+)\(\)", re.MULTILINE)
 
@@ -405,6 +407,12 @@ def test_runner_workbook_button_macros_exist_in_runnerlaunch_source() -> None:
     assert macros
     assert macros <= public_subs
 
+    vba_text = _extract_searchable_vba_text(workbook_path)
+    for macro_name in ("DryRunDiscovery_Click", "AskAbout_Click"):
+        exported_name = f"Public Sub {macro_name}()"
+        assert exported_name in source
+        assert exported_name in vba_text
+
 
 def test_runner_workbook_loads_with_openpyxl_keep_vba() -> None:
     from openpyxl import load_workbook
@@ -482,6 +490,37 @@ def test_runner_workbook_contains_data_quality_row() -> None:
         assert result_label.text == "Result"
 
 
+def test_build_runner_workbook_exports_expected_action_button_macros(tmp_path: Path) -> None:
+    output_workbook = tmp_path / "Runner.built.xlsm"
+    runner_builder.build_runner_workbook(output_workbook)
+
+    with ZipFile(output_workbook) as zip_file:
+        runner_sheet_root = _read_xml(zip_file, "xl/worksheets/sheet1.xml")
+        controls = runner_sheet_root.findall(
+            "ss:controls/mc:AlternateContent/mc:Choice/ss:control",
+            NAMESPACES,
+        )
+        vml_root = _read_xml(zip_file, "xl/drawings/vmlDrawing1.vml")
+
+    control_macros = {
+        _macro_name(control.find("ss:controlPr", NAMESPACES).attrib["macro"])
+        for control in controls
+    }
+    vml_macros = {
+        _macro_name(node.text)
+        for node in vml_root.findall("v:shape/x:ClientData/x:FmlaMacro", NAMESPACES)
+        if node.text
+    }
+    expected_macros = {macro for _, (_, macro, *_) in EXPECTED_RUNNER_BUTTONS.items()}
+
+    assert len(controls) == len(EXPECTED_RUNNER_BUTTONS)
+    assert len(vml_macros) == len(EXPECTED_RUNNER_BUTTONS)
+    assert control_macros == expected_macros
+    assert vml_macros == expected_macros
+    assert "DryRunDiscovery_Click" in control_macros
+    assert "AskAbout_Click" in control_macros
+
+
 def test_build_runner_workbook_embeds_valid_vba_binary_with_matching_hash(tmp_path: Path) -> None:
     output_workbook = tmp_path / "Runner.built.xlsm"
     runner_builder.build_runner_workbook(output_workbook)
@@ -514,6 +553,8 @@ def test_build_runner_workbook_extracts_searchable_vba_text(tmp_path: Path) -> N
     assert "Public Sub RunAll_Click()" in vba_text
     assert "Public Sub RunExTrend_Click()" in vba_text
     assert "Public Sub RunTrend_Click()" in vba_text
+    assert "Public Sub DryRunDiscovery_Click()" in vba_text
+    assert "Public Sub AskAbout_Click()" in vba_text
     assert "OpenOutputFolder_Click" in vba_text
     assert "BuildRunArguments" in vba_text
     assert "BuildExecutableCommand" in vba_text
