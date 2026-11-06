@@ -19,13 +19,21 @@ from counter_risk.runtime_paths import resolve_runtime_path
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
-def _resolved_cli_config_path(raw_path: Path) -> Path:
-    """Resolve a workflow config path for CLI ``run`` (CWD-independent in source mode)."""
+def _resolved_cli_config_path(raw_path: Path, *, from_cwd: bool = False) -> Path:
+    """Resolve a workflow config path for CLI ``run``.
+    
+    Args:
+        raw_path: The path to resolve.
+        from_cwd: If True, resolve relative paths from CWD. If False, resolve from
+                   source/bundle location for built-in defaults.
+    """
 
     if raw_path.is_absolute():
         return raw_path
     if getattr(sys, "frozen", False):
         return resolve_runtime_path(raw_path)
+    if from_cwd:
+        return raw_path.resolve()
     return (_REPO_ROOT / raw_path).resolve()
 
 _SETTINGS_DISCOVERY_MODE_KEY = "discovery_mode"
@@ -531,7 +539,7 @@ def main(argv: list[str] | None = None) -> int:
         if config_arg is None:
             args.config = _resolved_cli_config_path(Path("config/fixture_replay.yml"))
         else:
-            args.config = _resolved_cli_config_path(config_arg)
+            args.config = _resolved_cli_config_path(config_arg, from_cwd=True)
 
     # Configure logging exactly once, here, before any subcommand dispatch. Every
     # subcommand reaches this line -- including `gui`, which is how the packaged

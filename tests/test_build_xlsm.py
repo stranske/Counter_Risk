@@ -187,13 +187,18 @@ def test_build_xlsm_artifact_retains_runnerlaunch_vba_markers(tmp_path: Path) ->
         version="1.2.3",
     )
 
-    with ZipFile(output_path) as workbook, workbook.open("xl/vbaProject.bin") as handle:
-        vba_text = handle.read().decode("latin-1", errors="ignore")
-
-    assert 'Attribute VB_Name = "RunnerLaunch"' in vba_text
-    assert "Public Sub RunAll_Click()" in vba_text
-    assert "Public Sub RunExTrend_Click()" in vba_text
-    assert "Public Sub RunTrend_Click()" in vba_text
+    # Extract the VBA module from the generated workbook
+    from scripts import extract_vba_modules
+    
+    modules = extract_vba_modules.extract_modules_from_workbook(output_path)
+    
+    assert "RunnerLaunch" in modules
+    module_text = modules["RunnerLaunch"]
+    
+    assert 'Attribute VB_Name = "RunnerLaunch"' in module_text
+    assert "Public Sub RunAll_Click()" in module_text
+    assert "Public Sub RunExTrend_Click()" in module_text
+    assert "Public Sub RunTrend_Click()" in module_text
 
 
 def test_build_xlsm_artifact_raises_for_missing_template(tmp_path: Path) -> None:

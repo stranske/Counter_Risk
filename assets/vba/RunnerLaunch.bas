@@ -436,14 +436,20 @@ End Function
 
 Private Function ResolveBundleRelativePath(ByVal relativePath As String) As String
     Dim bundleRoot As String
+    Dim candidatePath As String
+    Dim repoRootPath As String
 
     bundleRoot = Trim$(Environ$("COUNTER_RISK_BUNDLE_ROOT"))
     If LenB(bundleRoot) > 0 Then
-        ResolveBundleRelativePath = JoinPath(bundleRoot, relativePath)
-        Exit Function
+        candidatePath = JoinPath(bundleRoot, relativePath)
+        If FileExists(candidatePath) Or DirectoryExists(candidatePath) Then
+            ResolveBundleRelativePath = candidatePath
+            Exit Function
+        End If
     End If
 
-    ResolveBundleRelativePath = JoinPath(ResolveRepoRoot(), relativePath)
+    repoRootPath = JoinPath(ResolveRepoRoot(), relativePath)
+    ResolveBundleRelativePath = repoRootPath
 End Function
 
 Private Function JoinPath(ByVal rootPath As String, ByVal relativePath As String) As String
