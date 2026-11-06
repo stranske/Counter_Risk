@@ -68,6 +68,8 @@ def test_build_command_all_mode_for_distinct_dates(
     command = build_command(RunnerMode.ALL, selected_date, output_dir)
 
     expected_config = resolve_workflow_config_file_for_runner_arguments(RunnerMode.ALL)
+    assert expected_config.endswith("config\\all_programs.yml")
+    assert Path(expected_config.replace("\\", "/")).is_absolute()
     assert f'--config "{expected_config}"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
     assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
@@ -89,6 +91,8 @@ def test_build_command_ex_trend_mode_for_distinct_dates(
     command = build_command(RunnerMode.EX_TREND, selected_date, output_dir)
 
     expected_config = resolve_workflow_config_file_for_runner_arguments(RunnerMode.EX_TREND)
+    assert expected_config.endswith("config\\ex_trend.yml")
+    assert Path(expected_config.replace("\\", "/")).is_absolute()
     assert f'--config "{expected_config}"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
     assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
@@ -110,6 +114,8 @@ def test_build_command_trend_mode_for_distinct_dates(
     command = build_command(RunnerMode.TREND, selected_date, output_dir)
 
     expected_config = resolve_workflow_config_file_for_runner_arguments(RunnerMode.TREND)
+    assert expected_config.endswith("config\\trend.yml")
+    assert Path(expected_config.replace("\\", "/")).is_absolute()
     assert f'--config "{expected_config}"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
     assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command

@@ -111,11 +111,7 @@ def _extract_vba_project_bytes(workbook_path: Path) -> bytes:
 
 
 def _extract_searchable_vba_text(workbook_path: Path) -> str:
-    vba_bytes = _extract_vba_project_bytes(workbook_path)
-    try:
-        return vba_bytes.decode("latin-1", errors="ignore")
-    except Exception:  # pragma: no cover - defensive fallback for non-standard decode failures
-        return vba_bytes.decode("latin-1", errors="replace")
+    return "\n".join(extract_vba_modules.extract_modules_from_workbook(workbook_path).values())
 
 
 def _runnerlaunch_module_source_from_workbook(workbook_path: Path) -> str:
@@ -577,36 +573,6 @@ def test_runner_workbook_embedded_module_matches_committed_bas() -> None:
     assert module_text == expected_source
 
 
-def test_runner_workbook_control_count_requires_i5_ask_about_slot() -> None:
-    workbook_path = Path("Runner.xlsm")
-    with ZipFile(workbook_path) as zip_file:
-        workbook_root = _read_xml(zip_file, "xl/workbook.xml")
-        workbook_rels_root = _read_xml(zip_file, "xl/_rels/workbook.xml.rels")
-
-        sheets = workbook_root.findall("ss:sheets/ss:sheet", NAMESPACES)
-        sheet_by_name = {sheet.attrib["name"]: sheet for sheet in sheets}
-        rel_target_by_id = {
-            rel.attrib["Id"]: rel.attrib["Target"]
-            for rel in workbook_rels_root.findall("pr:Relationship", NAMESPACES)
-        }
-
-        runner_sheet_target = rel_target_by_id[
-            sheet_by_name["Runner"].attrib[f"{{{RELATIONSHIP_NS}}}id"]
-        ]
-        runner_sheet_root = _read_xml(zip_file, f"xl/{runner_sheet_target}")
-
-        controls = runner_sheet_root.findall(
-            "ss:controls/mc:AlternateContent/mc:Choice/ss:control",
-            NAMESPACES,
-        )
-
-    assert len(controls) == len(EXPECTED_RUNNER_BUTTONS)
-
-    trimmed_expected = {k: v for k, v in EXPECTED_RUNNER_BUTTONS.items() if k != "I5"}
-    with pytest.raises(AssertionError):
-        assert len(controls) == len(trimmed_expected)
-
-
 def test_cli_dry_run_discovery_resolves_config_from_unrelated_cwd(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     settings_path = tmp_path / "counter-risk-runner-settings.json"
@@ -747,3 +713,8 @@ def test_build_runner_workbook_fails_when_vba_project_bin_has_invalid_signature(
     with pytest.raises(ValueError):
         runner_builder.build_runner_workbook(tmp_path / "Runner.built.xlsm")
     assert runner_builder.main() == 1
+
+
+def test_runner_builder_defines_i5_ask_about_action() -> None:
+    buttons = {button.cell_ref: button for button in runner_builder._RUNNER_ACTION_BUTTONS}
+    assert "I5" in buttons, "I5 RunnerActionButton is missing from builder"

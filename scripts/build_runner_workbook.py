@@ -490,15 +490,15 @@ def _load_vba_project_bin(path: Path | None = None) -> bytes:
         raise FileNotFoundError(msg)
 
     content = path.read_bytes()
-    if (
-        len(content) < len(OLE_CFB_SIGNATURE)
-        or content[: len(OLE_CFB_SIGNATURE)] != OLE_CFB_SIGNATURE
-    ):
-        msg = (
-            "Invalid VBA project binary signature for "
-            f"{path}; expected OLE/CFB header {OLE_CFB_SIGNATURE.hex(' ').upper()}"
-        )
-        raise ValueError(msg)
+    # Support both module imports and direct script execution.
+    if __package__ in {None, ""}:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts.vba_project import project_modules
+
+    modules = project_modules(content)
+    expected = Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
+    if modules.get("RunnerLaunch") != expected:
+        raise ValueError("Actual RunnerLaunch module differs from canonical source")
 
     return content
 

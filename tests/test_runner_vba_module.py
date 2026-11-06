@@ -210,3 +210,11 @@ def test_runner_workbook_embeds_runnerlaunch_entrypoints_in_vba_project() -> Non
     assert "Public Sub OpenPPTFolder_Click()" in module_text
     assert "Public Sub DryRunDiscovery_Click()" in module_text
     assert "Public Sub AskAbout_Click()" in module_text
+
+
+def test_actual_module_matches_source_in_both_workbooks() -> None:
+    for workbook in ("Runner.xlsm", "assets/templates/counter_risk_template.xlsm"):
+        assert (
+            extract_vba_modules.extract_modules_from_workbook(Path(workbook))["RunnerLaunch"]
+            == _module_source()
+        )

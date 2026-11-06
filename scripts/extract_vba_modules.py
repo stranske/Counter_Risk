@@ -1,24 +1,16 @@
 #!/usr/bin/env python3
-"""Extract VBA module source files from workbook fixtures.
-
-The workbooks embed VBA project binaries in ``xl/vbaProject.bin``. This script
-inspects the actual VBA project streams to extract module sources.
-
-For backward compatibility with legacy pseudo-projects (text files with fake
-OLE headers), this script first validates that the vbaProject.bin has a proper
-OLE CFB signature before attempting extraction.
-
-Note: Extracting VBA modules from real VBA project binaries requires parsing
-the VBA-specific structures within the OLE CFB file. This implementation
-handles structurally valid OLE files with embedded VBA source code.
-"""
+"""Extract declared CFB/MS-OVBA module streams; legacy recovery is explicitly separate."""
 
 from __future__ import annotations
 
 import argparse
 import re
+import sys
 from pathlib import Path
 from zipfile import ZipFile
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 # OLE CFB signature
 OLE_CFB_SIGNATURE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
@@ -41,152 +33,24 @@ def _normalize_newlines(text: str) -> str:
 
 
 def extract_modules_from_workbook(workbook_path: Path) -> dict[str, str]:
-    """Return VBA module sources extracted from one workbook.
-
-    This function first attempts to extract modules from a real VBA project
-    binary (OLE CFB format). If that fails, it falls back to the legacy
-    mirror block extraction for backward compatibility.
-
-    Raises:
-        ValueError: If no modules can be extracted and the vbaProject.bin
-                   is not a valid pseudo-project (text-based).
-    """
-    if not workbook_path.is_file():
-        msg = f"Workbook not found: {workbook_path}"
-        raise FileNotFoundError(msg)
+    """Extract only declared, decompressed module streams from an executable project."""
+    from scripts.vba_project import project_modules
 
     with ZipFile(workbook_path) as workbook:
-        vba_bytes = workbook.read("xl/vbaProject.bin")
+        return project_modules(workbook.read("xl/vbaProject.bin"))
 
-    # Check if this is a real OLE CFB file
-    is_ole = (
-        len(vba_bytes) >= len(OLE_CFB_SIGNATURE)
-        and vba_bytes[: len(OLE_CFB_SIGNATURE)] == OLE_CFB_SIGNATURE
-    )
 
-    # Try to extract from real OLE VBA project
-    if is_ole:
-        modules = _extract_modules_from_ole_vba_project(vba_bytes, workbook_path)
-        if modules:
-            return modules
-
-    # Fall back to legacy mirror block extraction for pseudo-projects
-    vba_text = vba_bytes.decode("latin1", errors="ignore")
-    modules: dict[str, str] = {}
-    for match in MIRROR_BLOCK_PATTERN.finditer(vba_text):
-        module_name = match.group("name")
-        body = _normalize_newlines(match.group("body"))
-        anchor = f'Attribute VB_Name = "{module_name}"'
-        start = body.find(anchor)
+def extract_legacy_mirrors(vba_bytes: bytes) -> dict[str, str]:
+    """Recover historical text mirrors; never use this as project validation."""
+    modules = {}
+    for match in MIRROR_BLOCK_PATTERN.finditer(vba_bytes.decode("latin1")):
+        name = match.group("name")
+        source = _normalize_newlines(match.group("body"))
+        anchor = f'Attribute VB_Name = "{name}"'
+        start = source.find(anchor)
         if start < 0:
-            msg = f"Mirror block for {module_name} in {workbook_path} is missing {anchor}."
-            raise ValueError(msg)
-        modules[module_name] = body[start:].strip() + "\n"
-
-    if not modules:
-        msg = (
-            f"No VBA modules were found in {workbook_path}. "
-            "The vbaProject.bin is not a valid VBA project nor does it contain "
-            "legacy mirror blocks. This may be a corrupted or incomplete VBA project."
-        )
-        raise ValueError(msg)
-
-    return modules
-
-
-def _extract_modules_from_ole_vba_project(vba_bytes: bytes, workbook_path: Path) -> dict[str, str]:
-    """Extract VBA modules from a real OLE VBA project binary.
-
-    This function handles structurally valid OLE CFB files that contain
-    VBA source code. It attempts to extract module sources by:
-    1. Decoding the bytes as UTF-16 (common for VBA projects)
-    2. Looking for VBA module attributes
-
-    Args:
-        vba_bytes: The raw bytes of the vbaProject.bin file.
-        workbook_path: The path to the workbook (for error messages).
-
-    Returns:
-        A dictionary mapping module names to their source code.
-    """
-    modules: dict[str, str] = {}
-
-    # Try UTF-16 decoding (VBA projects often use UTF-16)
-    try:
-        vba_text = vba_bytes.decode("utf-16le", errors="ignore")
-
-        # Clean up any null bytes that might be at the end due to padding
-        vba_text = vba_text.rstrip("\x00")
-
-        # Look for VBA module attributes
-        # Pattern: Attribute VB_Name = "ModuleName"
-        module_anchor_pattern = re.compile(
-            r'Attribute\s+VB_Name\s*=\s*"(?P<name>[^"]+)"',
-            re.IGNORECASE,
-        )
-
-        # Find all module declarations
-        for match in module_anchor_pattern.finditer(vba_text):
-            module_name = match.group("name")
-
-            # Find the start of this module
-            module_start = match.start()
-
-            # Find the next module declaration or end of file
-            next_match = module_anchor_pattern.search(vba_text, module_start + 1)
-            module_end = next_match.start() if next_match else len(vba_text)
-
-            # Extract the module source
-            module_source = vba_text[module_start:module_end]
-
-            # Clean up any remaining null bytes
-            module_source = module_source.replace("\x00", "")
-
-            # Normalize and clean up
-            module_source = _normalize_newlines(module_source).strip()
-            if module_source:
-                # Add trailing newline
-                if not module_source.endswith("\n"):
-                    module_source += "\n"
-                modules[module_name] = module_source
-
-        if modules:
-            return modules
-
-    except Exception:
-        # If UTF-16 decoding fails, try other encodings
-        pass
-
-    # Try UTF-8 decoding
-    try:
-        vba_text = vba_bytes.decode("utf-8", errors="ignore")
-
-        # Clean up any null bytes
-        vba_text = vba_text.replace("\x00", "")
-
-        # Look for VBA module attributes
-        module_anchor_pattern = re.compile(
-            r'Attribute\s+VB_Name\s*=\s*"(?P<name>[^"]+)"',
-            re.IGNORECASE,
-        )
-
-        for match in module_anchor_pattern.finditer(vba_text):
-            module_name = match.group("name")
-            module_start = match.start()
-
-            next_match = module_anchor_pattern.search(vba_text, module_start + 1)
-            module_end = next_match.start() if next_match else len(vba_text)
-
-            module_source = vba_text[module_start:module_end]
-            module_source = _normalize_newlines(module_source).strip()
-            if module_source:
-                if not module_source.endswith("\n"):
-                    module_source += "\n"
-                modules[module_name] = module_source
-
-    except Exception:
-        pass
-
+            raise ValueError(f"Missing legacy module attribute: {name}")
+        modules[name] = source[start:].strip() + "\n"
     return modules
 
 
@@ -203,9 +67,7 @@ def extract_modules_from_workbooks(workbook_paths: tuple[Path, ...]) -> dict[str
         for module_name, module_source in extract_modules_from_workbook(workbook_path).items():
             if module_name in modules:
                 if modules[module_name] != module_source:
-                    # Keep the first module definition for deterministic output
-                    # when workbook mirrors drift temporarily.
-                    continue
+                    raise ValueError(f"Conflicting actual module: {module_name} in {workbook_path}")
             else:
                 modules[module_name] = module_source
 

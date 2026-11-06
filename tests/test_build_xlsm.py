@@ -281,3 +281,83 @@ def test_runner_xlsm_manual_macro_verification_doc_is_present_and_actionable() -
     assert "OpenOutputFolder_Click" in content
     assert "Version Bump Regression Check" in content
     assert "--version 1.2.4" in content
+
+
+def _rewrite_parts(path, replacements):
+    with ZipFile(path) as archive:
+        parts = [(info, archive.read(info)) for info in archive.infolist()]
+    with ZipFile(path, "w") as archive:
+        for info, data in parts:
+            archive.writestr(info, replacements.get(info.filename, lambda value: value)(data))
+
+
+def test_config_structural_names_single_quotes_and_unindented_tags(tmp_path):
+    from xml.etree import ElementTree as ET
+
+    path = tmp_path / "legacy.xlsm"
+    _write_legacy_template(path)
+    name = "RunnerConfig_MosersAllPrograms"
+    _rewrite_parts(
+        path,
+        {
+            "xl/workbook.xml": lambda data: data.replace(
+                b'name="ControlData"', f"name='{name}'".encode()
+            )
+            .replace(
+                b"</workbook>",
+                b"<definedNames><definedName name='RunnerConfig_MosersTrend'>Config!$B$6</definedName></definedNames></workbook>",
+            )
+            .replace(b"  </sheets>", b"</sheets>"),
+            "xl/_rels/workbook.xml.rels": lambda data: data.replace(b'"', b"'"),
+            "[Content_Types].xml": lambda data: data.replace(b'"', b"'"),
+        },
+    )
+    xlsm.inject_config_sheet(path)
+    with ZipFile(path) as archive:
+        root = ET.fromstring(archive.read("xl/workbook.xml"))
+    ns = {"s": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+    names = root.findall("s:definedNames/s:definedName", ns)
+    assert [el.get("name") for el in names].count(name) == 1
+    assert [el.get("name") for el in names].count("RunnerConfig_MosersTrend") == 1
+    assert len(names) == 7
+    assert "Config" in [el.get("name") for el in root.findall("s:sheets/s:sheet", ns)]
+
+
+@pytest.mark.parametrize(
+    "member", ["xl/workbook.xml", "xl/_rels/workbook.xml.rels", "[Content_Types].xml"]
+)
+def test_config_unsupported_xml_preserves_original_archive(tmp_path, member):
+    path = tmp_path / "unsupported.xlsm"
+    _write_legacy_template(path)
+    _rewrite_parts(path, {member: lambda _: b"<unsupported/>"})
+    original = path.read_bytes()
+    with pytest.raises(ValueError, match="Unsupported"):
+        xlsm.inject_config_sheet(path)
+    assert path.read_bytes() == original
+
+
+def test_config_preserves_occupied_part_and_relationship_ids(tmp_path):
+    from xml.etree import ElementTree as ET
+
+    path = tmp_path / "occupied.xlsm"
+    _write_legacy_template(path)
+    _rewrite_parts(
+        path,
+        {
+            "xl/_rels/workbook.xml.rels": lambda data: data.replace(
+                b"</Relationships>",
+                b"<Relationship Id='rId3' Target='worksheets/sheet3.xml' Type='custom'/></Relationships>",
+            ),
+        },
+    )
+    with ZipFile(path, "a") as archive:
+        archive.writestr("xl/worksheets/sheet3.xml", b"preserve occupied part")
+        archive.writestr("custom/unrelated.bin", b"preserve unrelated part")
+    xlsm.inject_config_sheet(path)
+    with ZipFile(path) as archive:
+        assert archive.read("xl/worksheets/sheet3.xml") == b"preserve occupied part"
+        assert archive.read("custom/unrelated.bin") == b"preserve unrelated part"
+        assert "xl/worksheets/sheet4.xml" in archive.namelist()
+        rels = ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
+    ids = [el.get("Id") for el in rels]
+    assert len(set(ids)) == len(ids)

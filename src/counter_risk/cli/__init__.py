@@ -16,7 +16,15 @@ from counter_risk.logging import configure_logging
 from counter_risk.pipeline import run_fixture_replay, run_pipeline_with_config
 from counter_risk.runtime_paths import resolve_runtime_path
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+
+def _source_checkout_root() -> Path | None:
+    module = Path(__file__).resolve()
+    for parent in module.parents:
+        if (parent / "pyproject.toml").is_file() and (
+            parent / "src/counter_risk/cli/__init__.py"
+        ).resolve() == module:
+            return parent
+    return None
 
 
 def _resolved_cli_config_path(raw_path: Path, *, from_cwd: bool = False) -> Path:
@@ -30,11 +38,15 @@ def _resolved_cli_config_path(raw_path: Path, *, from_cwd: bool = False) -> Path
 
     if raw_path.is_absolute():
         return raw_path
+    if from_cwd and raw_path.is_file():
+        return raw_path.resolve()
     if getattr(sys, "frozen", False):
         return resolve_runtime_path(raw_path)
     if from_cwd:
         return raw_path.resolve()
-    return (_REPO_ROOT / raw_path).resolve()
+    source_root = _source_checkout_root()
+    return ((source_root or Path.cwd()) / raw_path).resolve()
+
 
 _SETTINGS_DISCOVERY_MODE_KEY = "discovery_mode"
 _SETTINGS_INPUT_ROOT_KEY = "input_root"
