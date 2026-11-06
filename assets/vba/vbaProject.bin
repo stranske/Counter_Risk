@@ -6,6 +6,13 @@ Private Const RUNNER_SHEET_NAME As String = "Runner"
 Private Const STATUS_CELL As String = "B7"
 Private Const RESULT_CELL As String = "B8"
 Private Const SHELL_ERROR_BASE As Long = vbObjectError + 7100
+Private Const RUN_FOLDER_FORMAT As String = "yyyy-mm-dd"
+Private Const PRE_LAUNCH_STATUS As String = "Launching..."
+Private Const POST_LAUNCH_STATUS As String = "Finished"
+Private Const COMPLETE_STATUS As String = "Complete"
+Private Const DQ_STATUS_CELL As String = "B9"
+Private Const SETTINGS_TEMP_FILENAME As String = "counter-risk-runner-settings.json"
+Private Const MANIFEST_FILENAME As String = "manifest.json"
 
 Public Enum RunnerMode
     RunnerModeAllPrograms = 0
@@ -33,36 +40,160 @@ Public Sub RunTrend_Click()
     RunModeClick "Trend"
 End Sub
 
+Public Sub DryRunDiscovery_Click()
+    On Error GoTo DryRunDiscoveryError
+
+    Dim selectedDate As String
+    Dim command As String
+    Dim status As LaunchStatus
+
+    selectedDate = ReadSelectedDate()
+    WriteStatus PRE_LAUNCH_STATUS
+    WriteStatus "Running..."
+    command = BuildDryRunDiscoveryArguments(selectedDate)
+    status = ExecuteRunnerCommand(ResolveExecutablePath(), command)
+    WriteStatus POST_LAUNCH_STATUS
+    If Not status.Success Then
+        WriteStatus "Error"
+        WriteLaunchResult status
+        Exit Sub
+    End If
+
+    WriteStatus COMPLETE_STATUS
+    WriteLaunchResult status
+    Exit Sub
+
+DryRunDiscoveryError:
+    WriteStatus "Error"
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
+Public Sub AskAbout_Click()
+    On Error GoTo AskAboutError
+
+    Dim selectedDate As String
+    Dim runFolder As String
+    Dim operatorMessage As String
+
+    selectedDate = ReadSelectedDate()
+    runFolder = ResolveExistingOutputDir(ResolveRepoRoot(), selectedDate)
+    operatorMessage = "Run Q&A for the latest run folder (" & runFolder & _
+                      ") is not available from this workbook. Use counter-risk gui."
+    MsgBox operatorMessage
+    WriteResult operatorMessage
+    Exit Sub
+
+AskAboutError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
 Public Sub OpenOutputFolder_Click()
     On Error GoTo OpenOutputFolderError
 
     Dim selectedDate As String
-    Dim p            As String
+    Dim resolvedPath As String
+    Dim missingDirectoryMessage As String
     Dim fileSystem As Object
     Dim status As LaunchStatus
 
     selectedDate = ReadSelectedDate()
-    p            = ResolveOutputDir(ResolveRepoRoot(), selectedDate)
-    If Dir$(p           , vbDirectory) = "" Then
+    resolvedPath = ResolveExistingOutputDir(ResolveRepoRoot(), selectedDate)
+    missingDirectoryMessage = "Directory not found" & " " & resolvedPath
+    If Dir$(resolvedPath, vbDirectory) = "" Then
         Set fileSystem = CreateObject("Scripting.FileSystemObject")
-        If Not fileSystem.FolderExists(p           ) Then
-            MsgBox "Directory not found" & " " & p     
-            WriteResult "Error Directory not found" & " " & p     
+        If Not fileSystem.FolderExists(resolvedPath) Then
+            MsgBox missingDirectoryMessage
+            WriteResult "Error " & missingDirectoryMessage
             Exit Sub
         End If
     End If
 
-    If Not DirectoryExists(p           ) Then
-        MsgBox "Directory not found" & " " & p     
-        WriteResult "Error Directory not found" & " " & p     
+    If Not DirectoryExists(resolvedPath) Then
+        MsgBox missingDirectoryMessage
+        WriteResult "Error " & missingDirectoryMessage
         Exit Sub
     End If
 
-    status = OpenDirectory(p           )
+    status = OpenDirectory(resolvedPath)
     WriteLaunchResult status
     Exit Sub
 
 OpenOutputFolderError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
+Public Sub OpenSummary_Click()
+    On Error GoTo OpenSummaryError
+
+    Dim selectedDate As String
+    Dim summaryPath As String
+    Dim missingSummaryMessage As String
+    Dim status As LaunchStatus
+
+    selectedDate = ReadSelectedDate()
+    summaryPath = ResolveDataQualitySummaryPath(ResolveRepoRoot(), selectedDate)
+    missingSummaryMessage = "Summary not found" & " " & summaryPath
+    If Not FileExists(summaryPath) Then
+        MsgBox missingSummaryMessage
+        WriteResult "Error " & missingSummaryMessage
+        Exit Sub
+    End If
+
+    status = OpenFile(summaryPath)
+    WriteLaunchResult status
+    Exit Sub
+
+OpenSummaryError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
+Public Sub OpenManifest_Click()
+    On Error GoTo OpenManifestError
+
+    Dim selectedDate As String
+    Dim manifestPath As String
+    Dim missingManifestMessage As String
+    Dim status As LaunchStatus
+
+    selectedDate = ReadSelectedDate()
+    manifestPath = ResolveManifestPath(ResolveRepoRoot(), selectedDate)
+    missingManifestMessage = "Manifest not found" & " " & manifestPath
+    If Not FileExists(manifestPath) Then
+        MsgBox missingManifestMessage
+        WriteResult "Error " & missingManifestMessage
+        Exit Sub
+    End If
+
+    status = OpenFile(manifestPath)
+    WriteLaunchResult status
+    Exit Sub
+
+OpenManifestError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
+Public Sub OpenPPTFolder_Click()
+    On Error GoTo OpenPPTFolderError
+
+    Dim selectedDate As String
+    Dim pptOutputDir As String
+    Dim missingDirectoryMessage As String
+    Dim status As LaunchStatus
+
+    selectedDate = ReadSelectedDate()
+    pptOutputDir = ResolvePPTOutputDir(ResolveRepoRoot(), selectedDate)
+    missingDirectoryMessage = "PPT output folder not found" & " " & pptOutputDir
+    If Not DirectoryExists(pptOutputDir) Then
+        MsgBox missingDirectoryMessage
+        WriteResult "Error " & missingDirectoryMessage
+        Exit Sub
+    End If
+
+    status = OpenDirectory(pptOutputDir)
+    WriteLaunchResult status
+    Exit Sub
+
+OpenPPTFolderError:
     WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
 End Sub
 
@@ -71,7 +202,7 @@ Public Function BuildRunArguments(ByVal asOfMonth As String, ByVal mode As Runne
     Dim parsedDate As Date
 
     parsedDate = ParseAsOfMonth(asOfMonth)
-    outputDir = ResolveOutputDir(" ", asOfMonth)
+    outputDir = ResolveOutputDir(ResolveRepoRoot(), asOfMonth)
     BuildRunArguments = BuildCommandArguments(ModeToString(mode), parsedDate, outputDir)
 End Function
 
@@ -81,32 +212,32 @@ Public Function BuildCommand( _
     ByVal outputDir As String _
 ) As String
     Dim parsedDate As Date
-    Dim parsedDateValue As String
+    Dim repoRoot As String
     Dim resolvedOutputDir As String
     Dim command As String
-    Dim shellObject As Object
-    Dim shellCommand As String
-    Dim exitCode As Long
+    Dim status As LaunchStatus
 
     On Error GoTo BuildCommandError
+
+    WriteStatus PRE_LAUNCH_STATUS
     WriteStatus "Running..."
 
     parsedDate = ParseAsOfMonth(selectedDate)
-    parsedDateValue = Format$(parsedDate, "yyyy-mm-dd")
-    resolvedOutputDir = NormalizePathSeparators(ThisWorkbook.Path) & "\runs\" & parsedDateValue
+    parsedDate = CDate(parsedDate)
+    repoRoot = ResolveRepoRoot()
+    resolvedOutputDir = ResolveOutputDir(repoRoot, selectedDate)
     outputDir = resolvedOutputDir
 
     command = BuildCommandArguments(runMode, parsedDate, resolvedOutputDir)
-    shellCommand = BuildExecutableShellCommand(ResolveExecutablePath(), command)
 
-    Set shellObject = CreateObject("WScript.Shell")
-    exitCode = CLng(shellObject.Run(shellCommand, 0, True))
-    If exitCode <> 0 Then
-        Err.Raise SHELL_ERROR_BASE + exitCode, "RunnerLaunch.BuildCommand", _
-                  "Process exited with code " & CStr(exitCode)
+    status = ExecuteRunnerCommand(ResolveExecutablePath(), command)
+    WriteStatus POST_LAUNCH_STATUS
+    If Not status.Success Then
+        Err.Raise status.ErrorCode, "RunnerLaunch.BuildCommand", status.Message
     End If
 
     WriteStatus "Success"
+    WriteStatus COMPLETE_STATUS
     BuildCommand = command
     Exit Function
 
@@ -121,10 +252,38 @@ Private Function BuildCommandArguments( _
     ByVal parsedDate As Date, _
     ByVal outputDir As String _
 ) As String
-    BuildCommandArguments = "run --fixture-replay --config " & _
+    Dim settingsPath As String
+    settingsPath = ResolveSettingsFilePath()
+    WriteSettingsFile settingsPath, BuildSettingsJson()
+
+    BuildCommandArguments = "run --config " & _
                             QuoteArg(ResolveConfigPath(ResolveRunnerMode(runMode))) & _
-                            " --as-of-month " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd")) & _
-                            " --output-dir " & QuoteArg(outputDir)
+                            " --as-of-date " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd")) & _
+                            " --output-dir " & QuoteArg(outputDir) & _
+                            " --settings " & QuoteArg(settingsPath)
+End Function
+
+Private Function BuildDryRunDiscoveryArguments(ByVal selectedDate As String) As String
+    Dim settingsPath As String
+    Dim parsedDate As Date
+    Dim strictPolicy As String
+    Dim formattingProfile As String
+
+    settingsPath = ResolveSettingsFilePath()
+    WriteSettingsFile settingsPath, BuildSettingsJson()
+    parsedDate = ParseAsOfMonth(selectedDate)
+    strictPolicy = ReadSettingValue("RunnerSetting_StrictPolicy", "warn")
+    formattingProfile = ReadSettingValue("RunnerSetting_FormattingProfile", "default")
+
+    ' Match the Tk GUI default dry-run path: all-programs config, settings JSON,
+    ' --dry-run-discovery, and the selected month-end.
+    BuildDryRunDiscoveryArguments = "run --config " & _
+                                    QuoteArg(ResolveConfigPath(RunnerModeAllPrograms)) & _
+                                    " --settings " & QuoteArg(settingsPath) & _
+                                    " --dry-run-discovery" & _
+                                    " --as-of-month " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd")) & _
+                                    " --strict-policy " & QuoteArg(strictPolicy) & _
+                                    " --formatting-profile " & QuoteArg(formattingProfile)
 End Function
 
 Public Function BuildExecutableCommand( _
@@ -137,17 +296,111 @@ End Function
 
 Public Function ResolveOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
     Dim parsedDate As Date
-    parsedDate = ParseAsOfMonth(selectedDate)
+    Dim configuredOutputRoot As String
+    Dim outputRoot As String
+    Dim baseName As String
+    Dim suffixIndex As Long
+    Dim candidate As String
 
-    ResolveOutputDir = NormalizePathSeparators(repoRoot) & "\runs\" & Format$(parsedDate, "yyyy-mm-dd")
+    parsedDate = ParseAsOfMonth(selectedDate)
+    configuredOutputRoot = ReadSettingValue("RunnerSetting_OutputRoot", "runs")
+    outputRoot = ResolveOutputRootPath(repoRoot, configuredOutputRoot)
+    baseName = Format$(parsedDate, RUN_FOLDER_FORMAT)
+
+    For suffixIndex = 0 To 9999
+        candidate = outputRoot & "\" & BuildRunFolderName(baseName, suffixIndex)
+        If Not DirectoryExists(candidate) Then
+            ResolveOutputDir = candidate
+            Exit Function
+        End If
+    Next suffixIndex
+
+    Err.Raise vbObjectError + 7004, "RunnerLaunch.ResolveOutputDir", _
+              "Unable to resolve unique output directory for " & baseName
+End Function
+
+Public Function ResolveExistingOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
+    Dim parsedDate As Date
+    Dim configuredOutputRoot As String
+    Dim outputRoot As String
+    Dim baseName As String
+    Dim suffixIndex As Long
+    Dim candidate As String
+    Dim latestExisting As String
+
+    parsedDate = ParseAsOfMonth(selectedDate)
+    configuredOutputRoot = ReadSettingValue("RunnerSetting_OutputRoot", "runs")
+    outputRoot = ResolveOutputRootPath(repoRoot, configuredOutputRoot)
+    baseName = Format$(parsedDate, RUN_FOLDER_FORMAT)
+
+    For suffixIndex = 0 To 9999
+        candidate = outputRoot & "\" & BuildRunFolderName(baseName, suffixIndex)
+        If DirectoryExists(candidate) Then
+            latestExisting = candidate
+        Else
+            Exit For
+        End If
+    Next suffixIndex
+
+    If LenB(latestExisting) > 0 Then
+        ResolveExistingOutputDir = latestExisting
+    Else
+        ResolveExistingOutputDir = outputRoot & "\" & baseName
+    End If
+End Function
+
+Public Function ResolveDataQualitySummaryPath(ByVal repoRoot As String, ByVal selectedDate As String) As String
+    ResolveDataQualitySummaryPath = ResolveExistingOutputDir(repoRoot, selectedDate) & "\DATA_QUALITY_SUMMARY.txt"
+End Function
+
+Public Function ResolveManifestPath(ByVal repoRoot As String, ByVal selectedDate As String) As String
+    ResolveManifestPath = ResolveExistingOutputDir(repoRoot, selectedDate) & "\" & MANIFEST_FILENAME
+End Function
+
+Public Function ResolvePPTOutputDir(ByVal repoRoot As String, ByVal selectedDate As String) As String
+    ResolvePPTOutputDir = ResolveExistingOutputDir(repoRoot, selectedDate)
+End Function
+
+Private Function BuildRunFolderName(ByVal baseName As String, ByVal suffixIndex As Long) As String
+    If suffixIndex = 0 Then
+        BuildRunFolderName = baseName
+    Else
+        BuildRunFolderName = baseName & "_" & CStr(suffixIndex)
+    End If
+End Function
+
+Private Function ResolveOutputRootPath(ByVal repoRoot As String, ByVal outputRootSetting As String) As String
+    Dim normalizedOutputRoot As String
+    normalizedOutputRoot = NormalizePathSeparators(outputRootSetting)
+    If LenB(normalizedOutputRoot) = 0 Then
+        normalizedOutputRoot = "runs"
+    End If
+
+    If Left$(normalizedOutputRoot, 2) = "\\" Or IsAbsoluteWindowsPath(normalizedOutputRoot) Then
+        ResolveOutputRootPath = normalizedOutputRoot
+        Exit Function
+    End If
+
+    ResolveOutputRootPath = NormalizePathSeparators(repoRoot) & "\" & normalizedOutputRoot
+End Function
+
+Private Function IsAbsoluteWindowsPath(ByVal candidatePath As String) As Boolean
+    IsAbsoluteWindowsPath = (Len(candidatePath) >= 2 And Mid$(candidatePath, 2, 1) = ":")
 End Function
 
 Public Function ExecuteRunnerCommand(ByVal executablePath As String, ByVal command As String) As LaunchStatus
     Dim status As LaunchStatus
+    Dim repoRoot As String
     Dim shellCommand As String
     Dim exitCode As Long
 
     On Error GoTo ExecuteRunnerCommandError
+
+    repoRoot = ResolveRepoRoot()
+    If LenB(Trim$(executablePath)) = 0 Then
+        executablePath = NormalizePathSeparators(repoRoot) & "\dist\counter-risk.exe"
+    End If
+
     shellCommand = BuildExecutableShellCommand(executablePath, command)
     exitCode = ExecuteShellCommand(shellCommand)
     status = BuildSuccessStatus(shellCommand, exitCode)
@@ -164,18 +417,57 @@ ExecuteRunnerCommandError:
     ExecuteRunnerCommand = BuildErrorStatus(command, Err.Number, Err.Description)
 End Function
 
-Private Function ResolveConfigPath(ByVal mode As RunnerMode) As String
+Private Function ResolveWorkflowConfigFileForRunnerArguments(ByVal mode As RunnerMode) As String
+    Dim relativeConfig As String
+
     Select Case mode
         Case RunnerModeAllPrograms
-            ResolveConfigPath = "config\all_programs.yml"
+            relativeConfig = "config\all_programs.yml"
         Case RunnerModeExTrend
-            ResolveConfigPath = "config\ex_trend.yml"
+            relativeConfig = "config\ex_trend.yml"
         Case RunnerModeTrend
-            ResolveConfigPath = "config\trend.yml"
+            relativeConfig = "config\trend.yml"
         Case Else
-            Err.Raise vbObjectError + 7000, "RunnerLaunch.ResolveConfigPath", _
+            Err.Raise vbObjectError + 7000, "RunnerLaunch.ResolveWorkflowConfigFileForRunnerArguments", _
                       "Unsupported run mode value: " & CStr(mode)
     End Select
+
+    ResolveWorkflowConfigFileForRunnerArguments = NormalizePathSeparators(ResolveBundleRelativePath(relativeConfig))
+End Function
+
+Private Function ResolveBundleRelativePath(ByVal relativePath As String) As String
+    Dim bundleRoot As String
+
+    bundleRoot = Trim$(Environ$("COUNTER_RISK_BUNDLE_ROOT"))
+    If LenB(bundleRoot) > 0 Then
+        ResolveBundleRelativePath = JoinPath(bundleRoot, relativePath)
+        Exit Function
+    End If
+
+    ResolveBundleRelativePath = JoinPath(ResolveRepoRoot(), relativePath)
+End Function
+
+Private Function JoinPath(ByVal rootPath As String, ByVal relativePath As String) As String
+    Dim normalizedRoot As String
+    Dim normalizedRelative As String
+
+    normalizedRoot = NormalizePathSeparators(rootPath)
+    normalizedRelative = NormalizePathSeparators(relativePath)
+
+    If LenB(normalizedRoot) = 0 Then
+        JoinPath = normalizedRelative
+        Exit Function
+    End If
+
+    If Right$(normalizedRoot, 1) = "\" Then
+        JoinPath = normalizedRoot & normalizedRelative
+    Else
+        JoinPath = normalizedRoot & "\" & normalizedRelative
+    End If
+End Function
+
+Private Function ResolveConfigPath(ByVal mode As RunnerMode) As String
+    ResolveConfigPath = ResolveWorkflowConfigFileForRunnerArguments(mode)
 End Function
 
 Private Function ResolveRunnerMode(ByVal runMode As String) As RunnerMode
@@ -235,6 +527,7 @@ Private Sub RunModeClick(ByVal runMode As String)
         Exit Sub
     End If
     WriteResult "Success"
+    WriteDataQualityStatus outputDir
     Exit Sub
 
 RunModeClickError:
@@ -277,6 +570,23 @@ OpenDirectoryError:
     OpenDirectory = BuildErrorStatus(directoryPath, Err.Number, Err.Description)
 End Function
 
+Private Function OpenFile(ByVal filePath As String) As LaunchStatus
+    Dim status As LaunchStatus
+    Dim shellObject As Object
+    Dim openCommand As String
+
+    On Error GoTo OpenFileError
+    Set shellObject = CreateObject("WScript.Shell")
+    openCommand = BuildOpenFileCommand(filePath)
+    shellObject.Run openCommand, 1, False
+    status = BuildSuccessStatus(openCommand, 0)
+    OpenFile = status
+    Exit Function
+
+OpenFileError:
+    OpenFile = BuildErrorStatus(filePath, Err.Number, Err.Description)
+End Function
+
 Private Function BuildOpenFolderCommand(ByVal directoryPath As String) As String
     Dim platformName As String
     platformName = Application.OperatingSystem
@@ -293,8 +603,28 @@ Private Function BuildOpenFolderCommand(ByVal directoryPath As String) As String
     BuildOpenFolderCommand = "xdg-open " & QuoteArg(directoryPath)
 End Function
 
+Private Function BuildOpenFileCommand(ByVal filePath As String) As String
+    Dim platformName As String
+    platformName = Application.OperatingSystem
+
+    If InStr(1, platformName, "Windows", vbTextCompare) > 0 Then
+        BuildOpenFileCommand = "cmd /c start " & Chr$(34) & Chr$(34) & " " & QuoteArg(filePath)
+        Exit Function
+    End If
+    If InStr(1, platformName, "Mac", vbTextCompare) > 0 Then
+        BuildOpenFileCommand = "open " & QuoteArg(filePath)
+        Exit Function
+    End If
+
+    BuildOpenFileCommand = "xdg-open " & QuoteArg(filePath)
+End Function
+
 Private Function DirectoryExists(ByVal directoryPath As String) As Boolean
     DirectoryExists = LenB(Dir$(directoryPath, vbDirectory)) <> 0
+End Function
+
+Private Function FileExists(ByVal filePath As String) As Boolean
+    FileExists = LenB(Dir$(filePath, vbNormal)) <> 0
 End Function
 
 Private Function BuildSuccessStatus(ByVal command As String, ByVal exitCode As Long) As LaunchStatus
@@ -321,6 +651,133 @@ Private Function BuildErrorStatus( _
     status.Command = command
     status.ExitCode = -1
     BuildErrorStatus = status
+End Function
+
+Private Sub WriteDataQualityStatus(ByVal outputDir As String)
+    Dim summaryPath As String
+    Dim statusColor As String
+    summaryPath = outputDir & "\DATA_QUALITY_SUMMARY.txt"
+    If Not FileExists(summaryPath) Then
+        Exit Sub
+    End If
+    statusColor = ReadOverallStatusColor(summaryPath)
+    WriteDataQualityStatusCell statusColor
+End Sub
+
+Public Function ReadOverallStatusColor(ByVal summaryPath As String) As String
+    Dim fileNumber As Integer
+    Dim lineText As String
+    Dim upperLine As String
+
+    ReadOverallStatusColor = ""
+    If Not FileExists(summaryPath) Then
+        Exit Function
+    End If
+
+    fileNumber = FreeFile
+    Open summaryPath For Input As #fileNumber
+    Do While Not EOF(fileNumber)
+        Line Input #fileNumber, lineText
+        upperLine = UCase$(lineText)
+        If InStr(1, upperLine, "(GREEN)", vbBinaryCompare) > 0 Then
+            ReadOverallStatusColor = "GREEN"
+            Close #fileNumber
+            Exit Function
+        End If
+        If InStr(1, upperLine, "(RED)", vbBinaryCompare) > 0 Then
+            ReadOverallStatusColor = "RED"
+            Close #fileNumber
+            Exit Function
+        End If
+        If InStr(1, upperLine, "(YELLOW)", vbBinaryCompare) > 0 Then
+            ReadOverallStatusColor = "YELLOW"
+            Close #fileNumber
+            Exit Function
+        End If
+    Loop
+    Close #fileNumber
+End Function
+
+Private Sub WriteDataQualityStatusCell(ByVal statusColor As String)
+    Dim cell As Range
+    Set cell = ThisWorkbook.Worksheets(RUNNER_SHEET_NAME).Range(DQ_STATUS_CELL)
+
+    Select Case UCase$(Trim$(statusColor))
+        Case "GREEN"
+            cell.Value = "GREEN - Safe to send"
+            cell.Interior.Color = RGB(0, 176, 80)
+        Case "YELLOW"
+            cell.Value = "YELLOW - Review warnings"
+            cell.Interior.Color = RGB(255, 192, 0)
+        Case "RED"
+            cell.Value = "RED - Do not send"
+            cell.Interior.Color = RGB(255, 0, 0)
+        Case Else
+            cell.Value = ""
+            cell.Interior.ColorIndex = xlNone
+    End Select
+End Sub
+
+Private Function ResolveSettingsFilePath() As String
+    Dim tempRoot As String
+    tempRoot = NormalizePathSeparators(Environ$("TEMP"))
+    If LenB(tempRoot) = 0 Then
+        tempRoot = NormalizePathSeparators(ResolveRepoRoot())
+    End If
+    ResolveSettingsFilePath = tempRoot & "\" & SETTINGS_TEMP_FILENAME
+End Function
+
+Private Sub WriteSettingsFile(ByVal filePath As String, ByVal payload As String)
+    Dim fileNumber As Integer
+    Dim normalizedPath As String
+    normalizedPath = NormalizePathSeparators(filePath)
+
+    On Error GoTo WriteSettingsFileError
+    fileNumber = FreeFile
+    Open normalizedPath For Output As #fileNumber
+    Print #fileNumber, payload
+    Close #fileNumber
+    Exit Sub
+
+WriteSettingsFileError:
+    If fileNumber > 0 Then
+        Close #fileNumber
+    End If
+    Err.Raise Err.Number, "RunnerLaunch.WriteSettingsFile", Err.Description
+End Sub
+
+Private Function BuildSettingsJson() As String
+    BuildSettingsJson = "{" & _
+                        Chr$(34) & "input_root" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_InputRoot", "inputs")) & Chr$(34) & "," & _
+                        Chr$(34) & "discovery_mode" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_DiscoveryMode", "discover")) & Chr$(34) & "," & _
+                        Chr$(34) & "strict_policy" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_StrictPolicy", "warn")) & Chr$(34) & "," & _
+                        Chr$(34) & "formatting_profile" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_FormattingProfile", "default")) & Chr$(34) & "," & _
+                        Chr$(34) & "output_root" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerSetting_OutputRoot", "runs")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_mosers_all_programs_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_MosersAllPrograms", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_mosers_ex_trend_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_MosersExTrend", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_mosers_trend_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_MosersTrend", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_hist_all_programs_3yr_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_HistAllPrograms3yr", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_hist_ex_llc_3yr_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_HistExLlc3yr", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_hist_llc_3yr_xlsx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_HistLlc3yr", "")) & Chr$(34) & "," & _
+                        Chr$(34) & "path_monthly_pptx" & Chr$(34) & ":" & Chr$(34) & JsonEscape(ReadSettingValue("RunnerConfig_MonthlyPptx", "")) & Chr$(34) & _
+                        "}"
+End Function
+
+Private Function ReadSettingValue(ByVal settingName As String, ByVal fallbackValue As String) As String
+    On Error GoTo ReadSettingValueFallback
+    ReadSettingValue = CStr(ThisWorkbook.Names(settingName).RefersToRange.Value)
+    If LenB(Trim$(ReadSettingValue)) = 0 Then
+        ReadSettingValue = fallbackValue
+    End If
+    Exit Function
+
+ReadSettingValueFallback:
+    ReadSettingValue = fallbackValue
+End Function
+
+Private Function JsonEscape(ByVal rawValue As String) As String
+    JsonEscape = Replace(rawValue, "\", "\\")
+    JsonEscape = Replace(JsonEscape, Chr$(34), "\" & Chr$(34))
 End Function
 
 Private Function NormalizePathSeparators(ByVal rawPath As String) As String
@@ -354,7 +811,6 @@ End Sub
 Private Function ReadSelectedDate() As String
     ReadSelectedDate = CStr(ThisWorkbook.Worksheets(RUNNER_SHEET_NAME).Range("B3").Value)
 End Function
-
 
 '
 ' BEGIN RunnerLaunch.bas mirror
@@ -776,18 +1232,57 @@ ExecuteRunnerCommandError:
     ExecuteRunnerCommand = BuildErrorStatus(command, Err.Number, Err.Description)
 End Function
 
-Private Function ResolveConfigPath(ByVal mode As RunnerMode) As String
+Private Function ResolveWorkflowConfigFileForRunnerArguments(ByVal mode As RunnerMode) As String
+    Dim relativeConfig As String
+
     Select Case mode
         Case RunnerModeAllPrograms
-            ResolveConfigPath = "config\all_programs.yml"
+            relativeConfig = "config\all_programs.yml"
         Case RunnerModeExTrend
-            ResolveConfigPath = "config\ex_trend.yml"
+            relativeConfig = "config\ex_trend.yml"
         Case RunnerModeTrend
-            ResolveConfigPath = "config\trend.yml"
+            relativeConfig = "config\trend.yml"
         Case Else
-            Err.Raise vbObjectError + 7000, "RunnerLaunch.ResolveConfigPath", _
+            Err.Raise vbObjectError + 7000, "RunnerLaunch.ResolveWorkflowConfigFileForRunnerArguments", _
                       "Unsupported run mode value: " & CStr(mode)
     End Select
+
+    ResolveWorkflowConfigFileForRunnerArguments = NormalizePathSeparators(ResolveBundleRelativePath(relativeConfig))
+End Function
+
+Private Function ResolveBundleRelativePath(ByVal relativePath As String) As String
+    Dim bundleRoot As String
+
+    bundleRoot = Trim$(Environ$("COUNTER_RISK_BUNDLE_ROOT"))
+    If LenB(bundleRoot) > 0 Then
+        ResolveBundleRelativePath = JoinPath(bundleRoot, relativePath)
+        Exit Function
+    End If
+
+    ResolveBundleRelativePath = JoinPath(ResolveRepoRoot(), relativePath)
+End Function
+
+Private Function JoinPath(ByVal rootPath As String, ByVal relativePath As String) As String
+    Dim normalizedRoot As String
+    Dim normalizedRelative As String
+
+    normalizedRoot = NormalizePathSeparators(rootPath)
+    normalizedRelative = NormalizePathSeparators(relativePath)
+
+    If LenB(normalizedRoot) = 0 Then
+        JoinPath = normalizedRelative
+        Exit Function
+    End If
+
+    If Right$(normalizedRoot, 1) = "\" Then
+        JoinPath = normalizedRoot & normalizedRelative
+    Else
+        JoinPath = normalizedRoot & "\" & normalizedRelative
+    End If
+End Function
+
+Private Function ResolveConfigPath(ByVal mode As RunnerMode) As String
+    ResolveConfigPath = ResolveWorkflowConfigFileForRunnerArguments(mode)
 End Function
 
 Private Function ResolveRunnerMode(ByVal runMode As String) As RunnerMode

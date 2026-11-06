@@ -416,18 +416,57 @@ ExecuteRunnerCommandError:
     ExecuteRunnerCommand = BuildErrorStatus(command, Err.Number, Err.Description)
 End Function
 
-Private Function ResolveConfigPath(ByVal mode As RunnerMode) As String
+Private Function ResolveWorkflowConfigFileForRunnerArguments(ByVal mode As RunnerMode) As String
+    Dim relativeConfig As String
+
     Select Case mode
         Case RunnerModeAllPrograms
-            ResolveConfigPath = "config\all_programs.yml"
+            relativeConfig = "config\all_programs.yml"
         Case RunnerModeExTrend
-            ResolveConfigPath = "config\ex_trend.yml"
+            relativeConfig = "config\ex_trend.yml"
         Case RunnerModeTrend
-            ResolveConfigPath = "config\trend.yml"
+            relativeConfig = "config\trend.yml"
         Case Else
-            Err.Raise vbObjectError + 7000, "RunnerLaunch.ResolveConfigPath", _
+            Err.Raise vbObjectError + 7000, "RunnerLaunch.ResolveWorkflowConfigFileForRunnerArguments", _
                       "Unsupported run mode value: " & CStr(mode)
     End Select
+
+    ResolveWorkflowConfigFileForRunnerArguments = NormalizePathSeparators(ResolveBundleRelativePath(relativeConfig))
+End Function
+
+Private Function ResolveBundleRelativePath(ByVal relativePath As String) As String
+    Dim bundleRoot As String
+
+    bundleRoot = Trim$(Environ$("COUNTER_RISK_BUNDLE_ROOT"))
+    If LenB(bundleRoot) > 0 Then
+        ResolveBundleRelativePath = JoinPath(bundleRoot, relativePath)
+        Exit Function
+    End If
+
+    ResolveBundleRelativePath = JoinPath(ResolveRepoRoot(), relativePath)
+End Function
+
+Private Function JoinPath(ByVal rootPath As String, ByVal relativePath As String) As String
+    Dim normalizedRoot As String
+    Dim normalizedRelative As String
+
+    normalizedRoot = NormalizePathSeparators(rootPath)
+    normalizedRelative = NormalizePathSeparators(relativePath)
+
+    If LenB(normalizedRoot) = 0 Then
+        JoinPath = normalizedRelative
+        Exit Function
+    End If
+
+    If Right$(normalizedRoot, 1) = "\" Then
+        JoinPath = normalizedRoot & normalizedRelative
+    Else
+        JoinPath = normalizedRoot & "\" & normalizedRelative
+    End If
+End Function
+
+Private Function ResolveConfigPath(ByVal mode As RunnerMode) As String
+    ResolveConfigPath = ResolveWorkflowConfigFileForRunnerArguments(mode)
 End Function
 
 Private Function ResolveRunnerMode(ByVal runMode As String) As RunnerMode
