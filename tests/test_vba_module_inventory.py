@@ -14,11 +14,18 @@ WORKBOOKS_WITH_VBA = (
 VBA_MODULE_PATTERN = re.compile(r'Attribute VB_Name\s*=\s*"([^"]+)"')
 MODULE_SOURCE_EXTENSION = ".bas"
 ALLOWED_NON_MODULE_FILES = ("vbaProject.bin",)
+_OLE_CFB_SIGNATURE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 
 
 def _extract_module_names(workbook_path: Path) -> set[str]:
     with ZipFile(workbook_path) as workbook, workbook.open("xl/vbaProject.bin") as handle:
-        vba_text = handle.read().decode("latin-1", errors="ignore")
+        raw = handle.read()
+    # Real OLE projects store module source as UTF-16LE. Legacy pseudo-projects
+    # stored Attribute VB_Name markers as latin-1 text.
+    if raw.startswith(_OLE_CFB_SIGNATURE):
+        vba_text = raw.decode("utf-16le", errors="ignore")
+    else:
+        vba_text = raw.decode("latin-1", errors="ignore")
     return set(VBA_MODULE_PATTERN.findall(vba_text))
 
 

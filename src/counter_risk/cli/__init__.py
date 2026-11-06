@@ -21,7 +21,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 def _resolved_cli_config_path(raw_path: Path, *, from_cwd: bool = False) -> Path:
     """Resolve a workflow config path for CLI ``run``.
-    
+
     Args:
         raw_path: The path to resolve.
         from_cwd: If True, resolve relative paths from CWD. If False, resolve from

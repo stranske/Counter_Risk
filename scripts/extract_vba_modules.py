@@ -42,11 +42,11 @@ def _normalize_newlines(text: str) -> str:
 
 def extract_modules_from_workbook(workbook_path: Path) -> dict[str, str]:
     """Return VBA module sources extracted from one workbook.
-    
+
     This function first attempts to extract modules from a real VBA project
     binary (OLE CFB format). If that fails, it falls back to the legacy
     mirror block extraction for backward compatibility.
-    
+
     Raises:
         ValueError: If no modules can be extracted and the vbaProject.bin
                    is not a valid pseudo-project (text-based).
@@ -57,19 +57,19 @@ def extract_modules_from_workbook(workbook_path: Path) -> dict[str, str]:
 
     with ZipFile(workbook_path) as workbook:
         vba_bytes = workbook.read("xl/vbaProject.bin")
-    
+
     # Check if this is a real OLE CFB file
     is_ole = (
         len(vba_bytes) >= len(OLE_CFB_SIGNATURE)
         and vba_bytes[: len(OLE_CFB_SIGNATURE)] == OLE_CFB_SIGNATURE
     )
-    
+
     # Try to extract from real OLE VBA project
     if is_ole:
         modules = _extract_modules_from_ole_vba_project(vba_bytes, workbook_path)
         if modules:
             return modules
-    
+
     # Fall back to legacy mirror block extraction for pseudo-projects
     vba_text = vba_bytes.decode("latin1", errors="ignore")
     modules: dict[str, str] = {}
@@ -96,55 +96,52 @@ def extract_modules_from_workbook(workbook_path: Path) -> dict[str, str]:
 
 def _extract_modules_from_ole_vba_project(vba_bytes: bytes, workbook_path: Path) -> dict[str, str]:
     """Extract VBA modules from a real OLE VBA project binary.
-    
+
     This function handles structurally valid OLE CFB files that contain
     VBA source code. It attempts to extract module sources by:
     1. Decoding the bytes as UTF-16 (common for VBA projects)
     2. Looking for VBA module attributes
-    
+
     Args:
         vba_bytes: The raw bytes of the vbaProject.bin file.
         workbook_path: The path to the workbook (for error messages).
-    
+
     Returns:
         A dictionary mapping module names to their source code.
     """
     modules: dict[str, str] = {}
-    
+
     # Try UTF-16 decoding (VBA projects often use UTF-16)
     try:
         vba_text = vba_bytes.decode("utf-16le", errors="ignore")
-        
+
         # Clean up any null bytes that might be at the end due to padding
         vba_text = vba_text.rstrip("\x00")
-        
+
         # Look for VBA module attributes
         # Pattern: Attribute VB_Name = "ModuleName"
         module_anchor_pattern = re.compile(
             r'Attribute\s+VB_Name\s*=\s*"(?P<name>[^"]+)"',
             re.IGNORECASE,
         )
-        
+
         # Find all module declarations
         for match in module_anchor_pattern.finditer(vba_text):
             module_name = match.group("name")
-            
+
             # Find the start of this module
             module_start = match.start()
-            
+
             # Find the next module declaration or end of file
             next_match = module_anchor_pattern.search(vba_text, module_start + 1)
-            if next_match:
-                module_end = next_match.start()
-            else:
-                module_end = len(vba_text)
-            
+            module_end = next_match.start() if next_match else len(vba_text)
+
             # Extract the module source
             module_source = vba_text[module_start:module_end]
-            
+
             # Clean up any remaining null bytes
             module_source = module_source.replace("\x00", "")
-            
+
             # Normalize and clean up
             module_source = _normalize_newlines(module_source).strip()
             if module_source:
@@ -152,47 +149,44 @@ def _extract_modules_from_ole_vba_project(vba_bytes: bytes, workbook_path: Path)
                 if not module_source.endswith("\n"):
                     module_source += "\n"
                 modules[module_name] = module_source
-        
+
         if modules:
             return modules
-            
+
     except Exception:
         # If UTF-16 decoding fails, try other encodings
         pass
-    
+
     # Try UTF-8 decoding
     try:
         vba_text = vba_bytes.decode("utf-8", errors="ignore")
-        
+
         # Clean up any null bytes
         vba_text = vba_text.replace("\x00", "")
-        
+
         # Look for VBA module attributes
         module_anchor_pattern = re.compile(
             r'Attribute\s+VB_Name\s*=\s*"(?P<name>[^"]+)"',
             re.IGNORECASE,
         )
-        
+
         for match in module_anchor_pattern.finditer(vba_text):
             module_name = match.group("name")
             module_start = match.start()
-            
+
             next_match = module_anchor_pattern.search(vba_text, module_start + 1)
-            if next_match:
-                module_end = next_match.start()
-            else:
-                module_end = len(vba_text)
-            
+            module_end = next_match.start() if next_match else len(vba_text)
+
             module_source = vba_text[module_start:module_end]
             module_source = _normalize_newlines(module_source).strip()
             if module_source:
                 if not module_source.endswith("\n"):
                     module_source += "\n"
                 modules[module_name] = module_source
-        
+
     except Exception:
         pass
-    
+
     return modules
 
 

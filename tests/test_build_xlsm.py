@@ -189,12 +189,12 @@ def test_build_xlsm_artifact_retains_runnerlaunch_vba_markers(tmp_path: Path) ->
 
     # Extract the VBA module from the generated workbook
     from scripts import extract_vba_modules
-    
+
     modules = extract_vba_modules.extract_modules_from_workbook(output_path)
-    
+
     assert "RunnerLaunch" in modules
     module_text = modules["RunnerLaunch"]
-    
+
     assert 'Attribute VB_Name = "RunnerLaunch"' in module_text
     assert "Public Sub RunAll_Click()" in module_text
     assert "Public Sub RunExTrend_Click()" in module_text

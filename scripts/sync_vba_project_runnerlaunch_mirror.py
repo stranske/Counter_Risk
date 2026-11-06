@@ -19,7 +19,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 OLE_CFB_SIGNATURE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 
 
@@ -48,14 +47,14 @@ def sync_vba_project(
     project_path: Path = Path("assets/vba/vbaProject.bin"),
 ) -> None:
     """Sync the VBA project by rebuilding it from the BAS source.
-    
+
     This is a full rebuild operation: the existing project file is replaced
     with a new OLE CFB file generated from the BAS source.
-    
+
     Args:
         bas_path: Path to the RunnerLaunch.bas source file.
         project_path: Path to the vbaProject.bin output file.
-    
+
     Raises:
         FileNotFoundError: If bas_path does not exist.
         ValueError: If the generated project does not have a valid OLE signature.
@@ -63,20 +62,20 @@ def sync_vba_project(
     if not bas_path.is_file():
         msg = f"BAS source file not found: {bas_path}"
         raise FileNotFoundError(msg)
-    
+
     # Read the module source
     _read_module_source(bas_path)
-    
+
     # Create a new VBA project from the BAS source
     # Use the create_vba_project.py script
     create_script = Path(__file__).parent / "create_vba_project.py"
-    
+
     # Build the command
     cmd = [
         sys.executable,
         str(create_script),
     ]
-    
+
     # Run the script
     result = subprocess.run(
         cmd,
@@ -84,11 +83,11 @@ def sync_vba_project(
         capture_output=True,
         text=True,
     )
-    
+
     if result.returncode != 0:
         msg = f"Failed to create VBA project: {result.stderr}"
         raise RuntimeError(msg)
-    
+
     # Validate the generated project
     _validate_vba_project(project_path)
 
