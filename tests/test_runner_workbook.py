@@ -715,6 +715,32 @@ def test_build_runner_workbook_fails_when_vba_project_bin_has_invalid_signature(
     assert runner_builder.main() == 1
 
 
+def test_runner_builder_defines_d5_and_i5_action_buttons() -> None:
+    """EXPECTED_RUNNER_BUTTONS must require D5/I5 macros; VBA must export both Public Subs."""
+
+    buttons = {button.cell_ref: button for button in runner_builder._RUNNER_ACTION_BUTTONS}
+    assert "D5" in EXPECTED_RUNNER_BUTTONS
+    assert "I5" in EXPECTED_RUNNER_BUTTONS
+    assert EXPECTED_RUNNER_BUTTONS["D5"][1] == "DryRunDiscovery_Click"
+    assert EXPECTED_RUNNER_BUTTONS["I5"][1] == "AskAbout_Click"
+
+    assert "D5" in buttons, "D5 RunnerActionButton is missing from builder"
+    assert "I5" in buttons, "I5 RunnerActionButton is missing from builder"
+    assert buttons["D5"].macro == "DryRunDiscovery_Click"
+    assert buttons["I5"].macro == "AskAbout_Click"
+    assert buttons["D5"].caption == EXPECTED_RUNNER_BUTTONS["D5"][0]
+    assert buttons["I5"].caption == EXPECTED_RUNNER_BUTTONS["I5"][0]
+
+    source = Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
+    public_subs = set(PUBLIC_SUB_PATTERN.findall(source))
+    assert "DryRunDiscovery_Click" in public_subs
+    assert "AskAbout_Click" in public_subs
+
+    module_text = _runnerlaunch_module_source_from_workbook(Path("Runner.xlsm"))
+    assert "Public Sub DryRunDiscovery_Click()" in module_text
+    assert "Public Sub AskAbout_Click()" in module_text
+
+
 def test_runner_builder_defines_i5_ask_about_action() -> None:
     buttons = {button.cell_ref: button for button in runner_builder._RUNNER_ACTION_BUTTONS}
     assert "I5" in buttons, "I5 RunnerActionButton is missing from builder"
