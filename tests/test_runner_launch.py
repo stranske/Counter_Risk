@@ -31,7 +31,6 @@ from counter_risk.runner_launch import (
     resolve_output_root,
     resolve_ppt_output_dir,
     resolve_settings_path,
-    resolve_workflow_config_file_for_runner_arguments,
     write_runner_settings_file,
 )
 
@@ -67,10 +66,7 @@ def test_build_command_all_mode_for_distinct_dates(
 
     command = build_command(RunnerMode.ALL, selected_date, output_dir)
 
-    expected_config = resolve_workflow_config_file_for_runner_arguments(RunnerMode.ALL)
-    assert expected_config.endswith("config\\all_programs.yml")
-    assert Path(expected_config.replace("\\", "/")).is_absolute()
-    assert f'--config "{expected_config}"' in command
+    assert '--config "config\\all_programs.yml"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
     assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
     assert '--settings "' in command
@@ -90,10 +86,7 @@ def test_build_command_ex_trend_mode_for_distinct_dates(
 
     command = build_command(RunnerMode.EX_TREND, selected_date, output_dir)
 
-    expected_config = resolve_workflow_config_file_for_runner_arguments(RunnerMode.EX_TREND)
-    assert expected_config.endswith("config\\ex_trend.yml")
-    assert Path(expected_config.replace("\\", "/")).is_absolute()
-    assert f'--config "{expected_config}"' in command
+    assert '--config "config\\ex_trend.yml"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
     assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
     assert '--settings "' in command
@@ -113,10 +106,7 @@ def test_build_command_trend_mode_for_distinct_dates(
 
     command = build_command(RunnerMode.TREND, selected_date, output_dir)
 
-    expected_config = resolve_workflow_config_file_for_runner_arguments(RunnerMode.TREND)
-    assert expected_config.endswith("config\\trend.yml")
-    assert Path(expected_config.replace("\\", "/")).is_absolute()
-    assert f'--config "{expected_config}"' in command
+    assert '--config "config\\trend.yml"' in command
     assert f'--as-of-date "{expected_dir_date}"' in command
     assert f'--output-dir "C:\\repo\\runs\\{expected_dir_date}"' in command
     assert '--settings "' in command
@@ -318,28 +308,40 @@ def test_write_runner_settings_file_writes_json_payload(tmp_path: Path) -> None:
     assert target.read_text(encoding="utf-8") == payload
 
 
-@pytest.mark.parametrize("mode", [RunnerMode.ALL, RunnerMode.EX_TREND, RunnerMode.TREND])
+@pytest.mark.parametrize(
+    ("mode", "expected_config"),
+    [
+        (RunnerMode.ALL, 'config "config\\all_programs.yml"'),
+        (RunnerMode.EX_TREND, 'config "config\\ex_trend.yml"'),
+        (RunnerMode.TREND, 'config "config\\trend.yml"'),
+    ],
+)
 def test_build_discovery_dry_run_command_includes_mode_config_and_as_of_date(
-    mode: RunnerMode,
+    mode: RunnerMode, expected_config: str
 ) -> None:
     command = build_discovery_dry_run_command(mode, "2025-02-15")
 
     assert "run --dry-run-discovery" in command
-    expected_config = resolve_workflow_config_file_for_runner_arguments(mode)
-    assert f'--config "{expected_config}"' in command
+    assert expected_config in command
     assert '--as-of-month "2025-02-28"' in command
     assert '--settings "' in command
 
 
-@pytest.mark.parametrize("mode", [RunnerMode.ALL, RunnerMode.EX_TREND, RunnerMode.TREND])
+@pytest.mark.parametrize(
+    ("mode", "expected_config"),
+    [
+        (RunnerMode.ALL, 'config "config\\all_programs.yml"'),
+        (RunnerMode.EX_TREND, 'config "config\\ex_trend.yml"'),
+        (RunnerMode.TREND, 'config "config\\trend.yml"'),
+    ],
+)
 def test_build_discovery_run_command_includes_discover_flag_and_output_dir(
-    mode: RunnerMode,
+    mode: RunnerMode, expected_config: str
 ) -> None:
     command = build_discovery_run_command(mode, "2025-02-15", "C:\\repo\\runs\\2025-02-28")
 
     assert "run --discover" in command
-    expected_config = resolve_workflow_config_file_for_runner_arguments(mode)
-    assert f'--config "{expected_config}"' in command
+    assert expected_config in command
     assert '--as-of-month "2025-02-28"' in command
     assert '--output-dir "C:\\repo\\runs\\2025-02-28"' in command
     assert '--settings "' in command

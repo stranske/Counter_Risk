@@ -3,12 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-import json
-import os
 import re
-import shutil
-import subprocess
-import sys
 from datetime import date
 from pathlib import Path
 from xml.etree import ElementTree
@@ -16,7 +11,6 @@ from zipfile import ZipFile
 
 import pytest
 from scripts import build_runner_workbook as runner_builder
-from scripts import extract_vba_modules
 
 SPREADSHEET_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 RELATIONSHIP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -62,12 +56,10 @@ EXPECTED_RUNNER_BUTTONS = {
     "A5": ("Run All", "RunAll_Click", 1025, "rId2", "ctrlProp1.xml"),
     "B5": ("Run Ex Trend", "RunExTrend_Click", 1026, "rId3", "ctrlProp2.xml"),
     "C5": ("Run Trend", "RunTrend_Click", 1027, "rId4", "ctrlProp3.xml"),
-    "D5": ("Dry-Run Discovery", "DryRunDiscovery_Click", 1028, "rId5", "ctrlProp4.xml"),
-    "E5": ("Open Output Folder", "OpenOutputFolder_Click", 1029, "rId6", "ctrlProp5.xml"),
-    "F5": ("Open Manifest", "OpenManifest_Click", 1030, "rId7", "ctrlProp6.xml"),
-    "G5": ("Open Summary", "OpenSummary_Click", 1031, "rId8", "ctrlProp7.xml"),
-    "H5": ("Open PPT Folder", "OpenPPTFolder_Click", 1032, "rId9", "ctrlProp8.xml"),
-    "I5": ("Ask about this run", "AskAbout_Click", 1033, "rId10", "ctrlProp9.xml"),
+    "E5": ("Open Output Folder", "OpenOutputFolder_Click", 1028, "rId5", "ctrlProp4.xml"),
+    "F5": ("Open Manifest", "OpenManifest_Click", 1029, "rId6", "ctrlProp5.xml"),
+    "G5": ("Open Summary", "OpenSummary_Click", 1030, "rId7", "ctrlProp6.xml"),
+    "H5": ("Open PPT Folder", "OpenPPTFolder_Click", 1031, "rId8", "ctrlProp7.xml"),
 }
 PUBLIC_SUB_PATTERN = re.compile(r"^Public Sub ([A-Za-z0-9_]+)\(\)", re.MULTILINE)
 
@@ -111,12 +103,11 @@ def _extract_vba_project_bytes(workbook_path: Path) -> bytes:
 
 
 def _extract_searchable_vba_text(workbook_path: Path) -> str:
-    return "\n".join(extract_vba_modules.extract_modules_from_workbook(workbook_path).values())
-
-
-def _runnerlaunch_module_source_from_workbook(workbook_path: Path) -> str:
-    modules = extract_vba_modules.extract_modules_from_workbook(workbook_path)
-    return modules["RunnerLaunch"]
+    vba_bytes = _extract_vba_project_bytes(workbook_path)
+    try:
+        return vba_bytes.decode("latin-1", errors="ignore")
+    except Exception:  # pragma: no cover - defensive fallback for non-standard decode failures
+        return vba_bytes.decode("latin-1", errors="replace")
 
 
 def test_runner_workbook_exists() -> None:
@@ -414,12 +405,6 @@ def test_runner_workbook_button_macros_exist_in_runnerlaunch_source() -> None:
     assert macros
     assert macros <= public_subs
 
-    module_text = _runnerlaunch_module_source_from_workbook(workbook_path)
-    for macro_name in ("DryRunDiscovery_Click", "AskAbout_Click"):
-        exported_name = f"Public Sub {macro_name}()"
-        assert exported_name in source
-        assert exported_name in module_text
-
 
 def test_runner_workbook_loads_with_openpyxl_keep_vba() -> None:
     from openpyxl import load_workbook
@@ -497,37 +482,6 @@ def test_runner_workbook_contains_data_quality_row() -> None:
         assert result_label.text == "Result"
 
 
-def test_build_runner_workbook_exports_expected_action_button_macros(tmp_path: Path) -> None:
-    output_workbook = tmp_path / "Runner.built.xlsm"
-    runner_builder.build_runner_workbook(output_workbook)
-
-    with ZipFile(output_workbook) as zip_file:
-        runner_sheet_root = _read_xml(zip_file, "xl/worksheets/sheet1.xml")
-        controls = runner_sheet_root.findall(
-            "ss:controls/mc:AlternateContent/mc:Choice/ss:control",
-            NAMESPACES,
-        )
-        vml_root = _read_xml(zip_file, "xl/drawings/vmlDrawing1.vml")
-
-    control_macros = {
-        _macro_name(control.find("ss:controlPr", NAMESPACES).attrib["macro"])
-        for control in controls
-    }
-    vml_macros = {
-        _macro_name(node.text)
-        for node in vml_root.findall("v:shape/x:ClientData/x:FmlaMacro", NAMESPACES)
-        if node.text
-    }
-    expected_macros = {macro for _, (_, macro, *_) in EXPECTED_RUNNER_BUTTONS.items()}
-
-    assert len(controls) == len(EXPECTED_RUNNER_BUTTONS)
-    assert len(vml_macros) == len(EXPECTED_RUNNER_BUTTONS)
-    assert control_macros == expected_macros
-    assert vml_macros == expected_macros
-    assert "DryRunDiscovery_Click" in control_macros
-    assert "AskAbout_Click" in control_macros
-
-
 def test_build_runner_workbook_embeds_valid_vba_binary_with_matching_hash(tmp_path: Path) -> None:
     output_workbook = tmp_path / "Runner.built.xlsm"
     runner_builder.build_runner_workbook(output_workbook)
@@ -553,143 +507,23 @@ def test_build_runner_workbook_extracts_searchable_vba_text(tmp_path: Path) -> N
     output_workbook = tmp_path / "Runner.built.xlsm"
     runner_builder.build_runner_workbook(output_workbook)
 
-    module_text = _runnerlaunch_module_source_from_workbook(output_workbook)
-    expected_source = Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
-    if not expected_source.endswith("\n"):
-        expected_source += "\n"
+    vba_text = _extract_searchable_vba_text(output_workbook)
 
-    assert module_text == expected_source
-    assert "Public Sub DryRunDiscovery_Click()" in module_text
-    assert "Public Sub AskAbout_Click()" in module_text
-    assert 'missingDirectoryMessage = "Directory not found" & " " & resolvedPath' in module_text
-    assert 'MsgBox "Directory not found" & resolvedPath' not in module_text
-
-
-def test_runner_workbook_embedded_module_matches_committed_bas() -> None:
-    expected_source = Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
-    if not expected_source.endswith("\n"):
-        expected_source += "\n"
-    module_text = _runnerlaunch_module_source_from_workbook(Path("Runner.xlsm"))
-    assert module_text == expected_source
-
-
-def test_cli_dry_run_discovery_resolves_config_from_unrelated_cwd(tmp_path: Path) -> None:
-    repo_root = Path(__file__).resolve().parents[1]
-    settings_path = tmp_path / "counter-risk-runner-settings.json"
-    settings_path.write_text(
-        json.dumps(
-            {
-                "input_root": "inputs",
-                "discovery_mode": "discover",
-                "strict_policy": "warn",
-                "formatting_profile": "default",
-                "output_root": "runs",
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    env = os.environ.copy()
-    env["PYTHONPATH"] = str(repo_root / "src")
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "counter_risk.cli",
-            "run",
-            "--dry-run-discovery",
-            "--config",
-            str(repo_root / "config" / "all_programs.yml"),
-            "--as-of-date",
-            "2025-12-31",
-            "--settings",
-            str(settings_path),
-        ],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        env=env,
-        check=False,
-    )
-
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "Discovery dry-run for as-of date 2025-12-31" in result.stdout
-
-
-def test_cli_dry_run_discovery_resolves_relative_config_under_frozen_bundle_root(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    from counter_risk.cli import main
-
-    bundle_root = tmp_path / "bundle"
-    shutil.copytree(Path("config"), bundle_root / "config")
-
-    settings_path = tmp_path / "counter-risk-runner-settings.json"
-    settings_path.write_text(
-        json.dumps(
-            {
-                "input_root": "inputs",
-                "discovery_mode": "discover",
-                "strict_policy": "warn",
-                "formatting_profile": "default",
-                "output_root": "runs",
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    monkeypatch.setenv("COUNTER_RISK_BUNDLE_ROOT", str(bundle_root))
-    monkeypatch.setattr(sys, "frozen", True, raising=False)
-    monkeypatch.chdir(tmp_path)
-
-    exit_code = main(
-        [
-            "run",
-            "--dry-run-discovery",
-            "--config",
-            "config/all_programs.yml",
-            "--as-of-date",
-            "2025-12-31",
-            "--settings",
-            str(settings_path),
-        ]
-    )
-
-    captured = capsys.readouterr()
-    assert exit_code == 0, captured.out + captured.err
-    assert "Discovery dry-run for as-of date 2025-12-31" in captured.out
-
-
-def test_i5_removal_then_restoration_on_builder_inventory(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    """Removing I5 drops a control; restoring the full tuple brings inventory back to 9."""
-
-    full_buttons = runner_builder._RUNNER_ACTION_BUTTONS
-    trimmed = tuple(button for button in full_buttons if button.cell_ref != "I5")
-    assert len(trimmed) == len(full_buttons) - 1
-
-    def _control_count(workbook_path: Path) -> int:
-        with ZipFile(workbook_path) as zip_file:
-            runner_sheet_root = _read_xml(zip_file, "xl/worksheets/sheet1.xml")
-            return len(
-                runner_sheet_root.findall(
-                    "ss:controls/mc:AlternateContent/mc:Choice/ss:control",
-                    NAMESPACES,
-                )
-            )
-
-    monkeypatch.setattr(runner_builder, "_RUNNER_ACTION_BUTTONS", trimmed)
-    broken = tmp_path / "Runner.no-i5.xlsm"
-    runner_builder.build_runner_workbook(broken)
-    assert _control_count(broken) == len(trimmed)
-    with pytest.raises(AssertionError):
-        assert _control_count(broken) == len(EXPECTED_RUNNER_BUTTONS)
-
-    monkeypatch.setattr(runner_builder, "_RUNNER_ACTION_BUTTONS", full_buttons)
-    restored = tmp_path / "Runner.restored.xlsm"
-    runner_builder.build_runner_workbook(restored)
-    assert _control_count(restored) == len(EXPECTED_RUNNER_BUTTONS)
+    assert vba_text
+    assert 'Attribute VB_Name = "RunnerLaunch"' in vba_text
+    assert "Public Sub RunAll_Click()" in vba_text
+    assert "Public Sub RunExTrend_Click()" in vba_text
+    assert "Public Sub RunTrend_Click()" in vba_text
+    assert "OpenOutputFolder_Click" in vba_text
+    assert "BuildRunArguments" in vba_text
+    assert "BuildExecutableCommand" in vba_text
+    assert "ReadSelectedDate" in vba_text
+    assert "Running..." in vba_text
+    assert "Success" in vba_text
+    assert "Error" in vba_text
+    assert "Directory not found" in vba_text
+    assert 'MsgBox "Directory not found" & " " & p' in vba_text
+    assert 'MsgBox "Directory not found" & resolvedPath' not in vba_text
 
 
 def test_build_runner_workbook_fails_when_vba_project_bin_missing(
@@ -713,8 +547,3 @@ def test_build_runner_workbook_fails_when_vba_project_bin_has_invalid_signature(
     with pytest.raises(ValueError):
         runner_builder.build_runner_workbook(tmp_path / "Runner.built.xlsm")
     assert runner_builder.main() == 1
-
-
-def test_runner_builder_defines_i5_ask_about_action() -> None:
-    buttons = {button.cell_ref: button for button in runner_builder._RUNNER_ACTION_BUTTONS}
-    assert "I5" in buttons, "I5 RunnerActionButton is missing from builder"

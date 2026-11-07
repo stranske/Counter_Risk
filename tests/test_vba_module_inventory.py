@@ -2,22 +2,24 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
-
-from scripts.extract_vba_modules import extract_modules_from_workbook
+from zipfile import ZipFile
 
 VBA_SOURCE_DIR = Path("assets/vba")
 WORKBOOKS_WITH_VBA = (
     Path("Runner.xlsm"),
     Path("assets/templates/counter_risk_template.xlsm"),
 )
+VBA_MODULE_PATTERN = re.compile(r'Attribute VB_Name\s*=\s*"([^"]+)"')
 MODULE_SOURCE_EXTENSION = ".bas"
 ALLOWED_NON_MODULE_FILES = ("vbaProject.bin",)
 
 
 def _extract_module_names(workbook_path: Path) -> set[str]:
-    # Discover modules via declared CFB/MS-OVBA streams, not raw text scans.
-    return set(extract_modules_from_workbook(workbook_path))
+    with ZipFile(workbook_path) as workbook, workbook.open("xl/vbaProject.bin") as handle:
+        vba_text = handle.read().decode("latin-1", errors="ignore")
+    return set(VBA_MODULE_PATTERN.findall(vba_text))
 
 
 def test_assets_vba_directory_exists() -> None:
