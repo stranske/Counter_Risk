@@ -1330,8 +1330,77 @@
     "reconciled_pr_body": "docs/evidence/issue-1218/reconciled-pr-body.md",
     "pr_state_verified": {
       "number": 1232,
-      "state": "open",
-      "isDraft": false
+      "state": "merged",
+      "merged_at": "2026-11-05T08:02:31Z",
+      "merge_commit_sha": "ce1636350b69d84f469998b8dc8d1cae61238642"
     }
+  },
+  "closer_repair_followup": {
+    "repair_of": "stranske/Counter_Risk#1218@1232",
+    "branch": "closer-r1/issue-1218",
+    "base_merge_commit_sha": "ce1636350b69d84f469998b8dc8d1cae61238642",
+    "interpreter": "/Users/teacher/Library/CloudStorage/Dropbox/Learning/Code/Counter_Risk/.venv/bin/python",
+    "interpreter_version": "3.12.2",
+    "interpreter_note": "Repository-selected .venv (symlink to shared Anaconda). Supported-version proof is hosted Python 3.13/3.14 on merge commit ce163635.",
+    "final_test_file_sha256": {
+      "tests/compute/test_rollups.py": "22491383084e1b549ee1aa074dcfd1be46a7266a91fa459baff99dc03922c5f3",
+      "tests/test_nisa_all_programs_parser.py": "c5b974d2b11a1cd93e9f631e5f0859e410a740520e24c6e54fed09a8371ad734",
+      "tests/test_python_floor.py": "0d339b84c824bdfa72972117161196a54cf82815a319590224d43bdc70b99827"
+    },
+    "command": "python -m pytest tests/ -m \"not slow\" -n 4 --dist load --cov=counter_risk --cov-report=term -q",
+    "local_whole_suite": {
+      "passed": 3054,
+      "failed": 1,
+      "skipped": 2,
+      "seconds": 48.35,
+      "totals_percent_covered_display": "96",
+      "totals_missing_lines": 510,
+      "environment_failure": "tests/test_validate_release_bundle.py::test_validate_bundle_fails_when_gh_is_missing — gh is on local PATH so the expected error substring differs; not part of issue #1218 test additions."
+    },
+    "local_focused_three_files": {
+      "command": "python -m pytest tests/compute/test_rollups.py tests/test_nisa_all_programs_parser.py tests/test_python_floor.py -m \"not slow\" -q",
+      "passed": 123,
+      "seconds": 5.26
+    },
+    "mutation_rerun_local": {
+      "rollups_alias": {
+        "receipt_file": "docs/evidence/issue-1218/rollups-alias-mutation-receipts.json",
+        "scenarios": [
+          "alias-lookup",
+          "row-zero",
+          "signed-cash"
+        ],
+        "each_red": "2 failed, exit 1",
+        "each_green": "2 passed, exit 0"
+      },
+      "eof_dimensionless": {
+        "receipt_file": "docs/evidence/issue-1218/eof-mutation-receipts.json",
+        "scenarios": [
+          "totals-exclusive-upper-bound",
+          "worksheet-cached-bound-truncated"
+        ],
+        "each_red": "1 failed (eof parametrization), 1 passed, exit 1",
+        "each_green": "2 passed, exit 0"
+      }
+    },
+    "hosted_supported_version_ci": {
+      "merge_commit_sha": "ce1636350b69d84f469998b8dc8d1cae61238642",
+      "gate_run_id": 41991482374,
+      "workflow": "CI",
+      "python_3_13": "success",
+      "python_3_14": "success",
+      "lint_ruff": "success",
+      "lint_format": "success",
+      "typecheck_mypy": "success",
+      "note": "Verifies all tests merged from PR #1232 including rollups alias, EOF, and python_floor strengthening."
+    },
+    "target_ranking_evidence": {
+      "source": "coverage-summary.json targets_in_issue_order and rollups_alias_followup.targets_in_issue_order",
+      "ordering": "nisa.py, rollups.py, runner_launch.py, mapping_diff_report.py, mapping_diff.py, langchain_runtime.py, normalize.py, limits_config.py, base.py, pptx_postprocess.py, xlsm.py",
+      "historical_statement_reduction": 198,
+      "reconstruction_note": "Original autopilot ranking script output is not archived separately; issue order is preserved in targets_in_issue_order (baseline vs candidate missing-line lists from Python 3.12.2 measurements at issue base faad152)."
+    },
+    "reconciled_pr_body": "docs/evidence/issue-1218/reconciled-pr-body.md",
+    "prior_local_branches_merged": "No commits on closer-r1/issue-1218 beyond origin/main; nothing discarded."
   }
 }
