@@ -39,6 +39,53 @@ Public Sub RunTrend_Click()
     RunModeClick "Trend"
 End Sub
 
+Public Sub DryRunDiscovery_Click()
+    On Error GoTo DryRunDiscoveryError
+
+    Dim selectedDate As String
+    Dim command As String
+    Dim status As LaunchStatus
+
+    selectedDate = ReadSelectedDate()
+    WriteStatus PRE_LAUNCH_STATUS
+    WriteStatus "Running..."
+    command = BuildDryRunDiscoveryArguments(selectedDate)
+    status = ExecuteRunnerCommand(ResolveExecutablePath(), command)
+    WriteStatus POST_LAUNCH_STATUS
+    If Not status.Success Then
+        WriteStatus "Error"
+        WriteLaunchResult status
+        Exit Sub
+    End If
+
+    WriteStatus COMPLETE_STATUS
+    WriteLaunchResult status
+    Exit Sub
+
+DryRunDiscoveryError:
+    WriteStatus "Error"
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
+Public Sub AskAbout_Click()
+    On Error GoTo AskAboutError
+
+    Dim selectedDate As String
+    Dim runFolder As String
+    Dim operatorMessage As String
+
+    selectedDate = ReadSelectedDate()
+    runFolder = ResolveExistingOutputDir(ResolveRepoRoot(), selectedDate)
+    operatorMessage = "Run Q&A for the latest run folder (" & runFolder & _
+                      ") is not available from this workbook. Use counter-risk gui."
+    MsgBox operatorMessage
+    WriteResult operatorMessage
+    Exit Sub
+
+AskAboutError:
+    WriteResult "Error " & CStr(Err.Number) & ": " & Err.Description
+End Sub
+
 Public Sub OpenOutputFolder_Click()
     On Error GoTo OpenOutputFolderError
 
@@ -215,6 +262,29 @@ Private Function BuildCommandArguments( _
                             " --settings " & QuoteArg(settingsPath)
 End Function
 
+Private Function BuildDryRunDiscoveryArguments(ByVal selectedDate As String) As String
+    Dim settingsPath As String
+    Dim parsedDate As Date
+    Dim strictPolicy As String
+    Dim formattingProfile As String
+
+    settingsPath = ResolveSettingsFilePath()
+    WriteSettingsFile settingsPath, BuildSettingsJson()
+    parsedDate = ParseAsOfMonth(selectedDate)
+    strictPolicy = ReadSettingValue("RunnerSetting_StrictPolicy", "warn")
+    formattingProfile = ReadSettingValue("RunnerSetting_FormattingProfile", "default")
+
+    ' Match the Tk GUI default dry-run path: all-programs config, settings JSON,
+    ' --dry-run-discovery, and the selected month-end.
+    BuildDryRunDiscoveryArguments = "run --config " & _
+                                    QuoteArg(ResolveConfigPath(RunnerModeAllPrograms)) & _
+                                    " --settings " & QuoteArg(settingsPath) & _
+                                    " --dry-run-discovery" & _
+                                    " --as-of-month " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd")) & _
+                                    " --strict-policy " & QuoteArg(strictPolicy) & _
+                                    " --formatting-profile " & QuoteArg(formattingProfile)
+End Function
+
 Public Function BuildExecutableCommand( _
     ByVal executablePath As String, _
     ByVal asOfMonth As String, _
@@ -346,18 +416,63 @@ ExecuteRunnerCommandError:
     ExecuteRunnerCommand = BuildErrorStatus(command, Err.Number, Err.Description)
 End Function
 
-Private Function ResolveConfigPath(ByVal mode As RunnerMode) As String
+Private Function ResolveWorkflowConfigFileForRunnerArguments(ByVal mode As RunnerMode) As String
+    Dim relativeConfig As String
+
     Select Case mode
         Case RunnerModeAllPrograms
-            ResolveConfigPath = "config\all_programs.yml"
+            relativeConfig = "config\all_programs.yml"
         Case RunnerModeExTrend
-            ResolveConfigPath = "config\ex_trend.yml"
+            relativeConfig = "config\ex_trend.yml"
         Case RunnerModeTrend
-            ResolveConfigPath = "config\trend.yml"
+            relativeConfig = "config\trend.yml"
         Case Else
-            Err.Raise vbObjectError + 7000, "RunnerLaunch.ResolveConfigPath", _
+            Err.Raise vbObjectError + 7000, "RunnerLaunch.ResolveWorkflowConfigFileForRunnerArguments", _
                       "Unsupported run mode value: " & CStr(mode)
     End Select
+
+    ResolveWorkflowConfigFileForRunnerArguments = NormalizePathSeparators(ResolveBundleRelativePath(relativeConfig))
+End Function
+
+Private Function ResolveBundleRelativePath(ByVal relativePath As String) As String
+    Dim bundleRoot As String
+    Dim candidatePath As String
+    Dim repoRootPath As String
+
+    bundleRoot = Trim$(Environ$("COUNTER_RISK_BUNDLE_ROOT"))
+    If LenB(bundleRoot) > 0 Then
+        candidatePath = JoinPath(bundleRoot, relativePath)
+        If FileExists(candidatePath) Or DirectoryExists(candidatePath) Then
+            ResolveBundleRelativePath = candidatePath
+            Exit Function
+        End If
+    End If
+
+    repoRootPath = JoinPath(ResolveRepoRoot(), relativePath)
+    ResolveBundleRelativePath = repoRootPath
+End Function
+
+Private Function JoinPath(ByVal rootPath As String, ByVal relativePath As String) As String
+    Dim normalizedRoot As String
+    Dim normalizedRelative As String
+
+    normalizedRoot = NormalizePathSeparators(rootPath)
+    normalizedRelative = NormalizePathSeparators(relativePath)
+
+    If LenB(normalizedRoot) = 0 Then
+        JoinPath = normalizedRelative
+        Exit Function
+    End If
+
+    If Right$(normalizedRoot, 1) = "\" Then
+        JoinPath = normalizedRoot & normalizedRelative
+    Else
+        JoinPath = normalizedRoot & "\" & normalizedRelative
+    End If
+End Function
+
+Private Function ResolveConfigPath(ByVal mode As RunnerMode) As String
+    ResolveConfigPath = ResolveWorkflowConfigFileForRunnerArguments(mode)
 End Function
 
 Private Function ResolveRunnerMode(ByVal runMode As String) As RunnerMode

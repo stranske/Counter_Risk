@@ -95,10 +95,12 @@ _RUNNER_ACTION_BUTTONS: tuple[RunnerActionButton, ...] = (
     RunnerActionButton("A5", "Run All", "RunAll_Click", 1),
     RunnerActionButton("B5", "Run Ex Trend", "RunExTrend_Click", 2),
     RunnerActionButton("C5", "Run Trend", "RunTrend_Click", 3),
-    RunnerActionButton("E5", "Open Output Folder", "OpenOutputFolder_Click", 4),
-    RunnerActionButton("F5", "Open Manifest", "OpenManifest_Click", 5),
-    RunnerActionButton("G5", "Open Summary", "OpenSummary_Click", 6),
-    RunnerActionButton("H5", "Open PPT Folder", "OpenPPTFolder_Click", 7),
+    RunnerActionButton("D5", "Dry-Run Discovery", "DryRunDiscovery_Click", 4),
+    RunnerActionButton("E5", "Open Output Folder", "OpenOutputFolder_Click", 5),
+    RunnerActionButton("F5", "Open Manifest", "OpenManifest_Click", 6),
+    RunnerActionButton("G5", "Open Summary", "OpenSummary_Click", 7),
+    RunnerActionButton("H5", "Open PPT Folder", "OpenPPTFolder_Click", 8),
+    RunnerActionButton("I5", "Ask about this run", "AskAbout_Click", 9),
 )
 _SPREADSHEET_DRAWING_NS = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
 _CTRL_PROP_CONTENT_TYPE = "application/vnd.ms-excel.controlproperties+xml"
@@ -488,15 +490,15 @@ def _load_vba_project_bin(path: Path | None = None) -> bytes:
         raise FileNotFoundError(msg)
 
     content = path.read_bytes()
-    if (
-        len(content) < len(OLE_CFB_SIGNATURE)
-        or content[: len(OLE_CFB_SIGNATURE)] != OLE_CFB_SIGNATURE
-    ):
-        msg = (
-            "Invalid VBA project binary signature for "
-            f"{path}; expected OLE/CFB header {OLE_CFB_SIGNATURE.hex(' ').upper()}"
-        )
-        raise ValueError(msg)
+    # Support both module imports and direct script execution.
+    if __package__ in {None, ""}:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts.vba_project import project_modules
+
+    modules = project_modules(content)
+    expected = Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
+    if modules.get("RunnerLaunch") != expected:
+        raise ValueError("Actual RunnerLaunch module differs from canonical source")
 
     return content
 

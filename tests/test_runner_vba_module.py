@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from pathlib import Path
-from zipfile import ZipFile
+
+from scripts import extract_vba_modules
 
 
 def _module_source() -> str:
     return Path("assets/vba/RunnerLaunch.bas").read_text(encoding="utf-8")
+
+
+def _runnerlaunch_from_workbook() -> str:
+    modules = extract_vba_modules.extract_modules_from_workbook(Path("Runner.xlsm"))
+    return modules["RunnerLaunch"]
 
 
 def test_runner_vba_module_constructs_arguments_from_date_and_mode() -> None:
@@ -30,11 +36,14 @@ def test_runner_vba_module_constructs_arguments_from_date_and_mode() -> None:
     assert '" --settings " & QuoteArg(settingsPath)' in module_source
 
     assert "Case RunnerModeAllPrograms" in module_source
-    assert 'ResolveConfigPath = "config\\all_programs.yml"' in module_source
+    assert 'relativeConfig = "config\\all_programs.yml"' in module_source
     assert "Case RunnerModeExTrend" in module_source
-    assert 'ResolveConfigPath = "config\\ex_trend.yml"' in module_source
+    assert 'relativeConfig = "config\\ex_trend.yml"' in module_source
     assert "Case RunnerModeTrend" in module_source
-    assert 'ResolveConfigPath = "config\\trend.yml"' in module_source
+    assert 'relativeConfig = "config\\trend.yml"' in module_source
+    assert "Private Function ResolveWorkflowConfigFileForRunnerArguments" in module_source
+    assert "Private Function JoinPath" in module_source
+    assert "Private Function ResolveBundleRelativePath" in module_source
 
 
 def test_runner_vba_module_defines_structured_launch_status_and_execution() -> None:
@@ -189,14 +198,48 @@ def test_runner_vba_run_trend_reads_selected_date_and_calls_shared_builder() -> 
     assert 'RunModeClick "Trend"' in module_source
 
 
-def test_runner_workbook_embeds_runnerlaunch_entrypoints_in_vba_project() -> None:
-    with ZipFile("Runner.xlsm") as zip_file, zip_file.open("xl/vbaProject.bin") as handle:
-        vba_project = handle.read().decode("latin-1", errors="ignore")
+def test_runner_vba_dry_run_discovery_matches_tk_gui_cli_path() -> None:
+    module_source = _module_source()
 
-    assert 'Attribute VB_Name = "RunnerLaunch"' in vba_project
-    assert "Public Sub RunAll_Click()" in vba_project
-    assert "Public Sub RunExTrend_Click()" in vba_project
-    assert "Public Sub RunTrend_Click()" in vba_project
-    assert "Public Sub OpenOutputFolder_Click()" in vba_project
-    assert "Public Sub OpenManifest_Click()" in vba_project
-    assert "Public Sub OpenPPTFolder_Click()" in vba_project
+    assert "Public Sub DryRunDiscovery_Click()" in module_source
+    assert "BuildDryRunDiscoveryArguments(selectedDate)" in module_source
+    assert "status = ExecuteRunnerCommand(ResolveExecutablePath(), command)" in module_source
+    assert "WriteLaunchResult status" in module_source
+    assert "Private Function BuildDryRunDiscoveryArguments" in module_source
+    assert '" --dry-run-discovery"' in module_source
+    assert '" --as-of-month " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd"))' in module_source
+    assert '" --settings " & QuoteArg(settingsPath)' in module_source
+    assert "WriteSettingsFile settingsPath, BuildSettingsJson()" in module_source
+    assert "ResolveConfigPath(RunnerModeAllPrograms)" in module_source
+
+
+def test_runner_vba_ask_about_directs_operators_to_counter_risk_gui() -> None:
+    module_source = _module_source()
+
+    assert "Public Sub AskAbout_Click()" in module_source
+    assert "runFolder = ResolveExistingOutputDir(ResolveRepoRoot(), selectedDate)" in module_source
+    assert "Use counter-risk gui." in module_source
+    assert "MsgBox operatorMessage" in module_source
+    assert "WriteResult operatorMessage" in module_source
+
+
+def test_runner_workbook_embeds_runnerlaunch_entrypoints_in_vba_project() -> None:
+    module_text = _runnerlaunch_from_workbook()
+
+    assert 'Attribute VB_Name = "RunnerLaunch"' in module_text
+    assert "Public Sub RunAll_Click()" in module_text
+    assert "Public Sub RunExTrend_Click()" in module_text
+    assert "Public Sub RunTrend_Click()" in module_text
+    assert "Public Sub OpenOutputFolder_Click()" in module_text
+    assert "Public Sub OpenManifest_Click()" in module_text
+    assert "Public Sub OpenPPTFolder_Click()" in module_text
+    assert "Public Sub DryRunDiscovery_Click()" in module_text
+    assert "Public Sub AskAbout_Click()" in module_text
+
+
+def test_actual_module_matches_source_in_both_workbooks() -> None:
+    for workbook in ("Runner.xlsm", "assets/templates/counter_risk_template.xlsm"):
+        assert (
+            extract_vba_modules.extract_modules_from_workbook(Path(workbook))["RunnerLaunch"]
+            == _module_source()
+        )
