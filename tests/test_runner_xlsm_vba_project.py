@@ -24,9 +24,7 @@ WINDOWS_RUN_FOLDER_FORMAT_REGEX = re.compile(
 def _extract_embedded_vba_text(workbook_path: Path = RUNNER_WORKBOOK_PATH) -> str:
     # Real CFB/MS-OVBA projects store compressed module streams; scan declared
     # decompressed sources rather than the raw compound-file bytes.
-    return "\n".join(
-        extract_vba_modules.extract_modules_from_workbook(workbook_path).values()
-    )
+    return "\n".join(extract_vba_modules.extract_modules_from_workbook(workbook_path).values())
 
 
 def _load_runnerlaunch_bas_source() -> str:

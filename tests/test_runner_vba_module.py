@@ -198,6 +198,31 @@ def test_runner_vba_run_trend_reads_selected_date_and_calls_shared_builder() -> 
     assert 'RunModeClick "Trend"' in module_source
 
 
+def test_runner_vba_dry_run_discovery_matches_tk_gui_cli_path() -> None:
+    module_source = _module_source()
+
+    assert "Public Sub DryRunDiscovery_Click()" in module_source
+    assert "BuildDryRunDiscoveryArguments(selectedDate)" in module_source
+    assert "status = ExecuteRunnerCommand(ResolveExecutablePath(), command)" in module_source
+    assert "WriteLaunchResult status" in module_source
+    assert "Private Function BuildDryRunDiscoveryArguments" in module_source
+    assert '" --dry-run-discovery"' in module_source
+    assert '" --as-of-month " & QuoteArg(Format$(parsedDate, "yyyy-mm-dd"))' in module_source
+    assert '" --settings " & QuoteArg(settingsPath)' in module_source
+    assert "WriteSettingsFile settingsPath, BuildSettingsJson()" in module_source
+    assert "ResolveConfigPath(RunnerModeAllPrograms)" in module_source
+
+
+def test_runner_vba_ask_about_directs_operators_to_counter_risk_gui() -> None:
+    module_source = _module_source()
+
+    assert "Public Sub AskAbout_Click()" in module_source
+    assert "runFolder = ResolveExistingOutputDir(ResolveRepoRoot(), selectedDate)" in module_source
+    assert "Use counter-risk gui." in module_source
+    assert "MsgBox operatorMessage" in module_source
+    assert "WriteResult operatorMessage" in module_source
+
+
 def test_runner_workbook_embeds_runnerlaunch_entrypoints_in_vba_project() -> None:
     module_text = _runnerlaunch_from_workbook()
 
