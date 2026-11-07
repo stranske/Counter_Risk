@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from zipfile import ZipFile
+
+from scripts import extract_vba_modules
 
 RUNNER_WORKBOOK_PATH = Path("Runner.xlsm")
-VBA_PROJECT_BIN_PATH = "xl/vbaProject.bin"
 
 WINDOWS_RUN_FOLDER_FORMAT_LITERAL = "yyyy-mm-dd"
 WINDOWS_RUN_FOLDER_FORMAT_REGEX = re.compile(
@@ -22,8 +22,9 @@ WINDOWS_RUN_FOLDER_FORMAT_REGEX = re.compile(
 
 
 def _extract_embedded_vba_text(workbook_path: Path = RUNNER_WORKBOOK_PATH) -> str:
-    with ZipFile(workbook_path) as zip_file, zip_file.open(VBA_PROJECT_BIN_PATH) as handle:
-        return handle.read().decode("latin-1", errors="ignore")
+    # Real CFB/MS-OVBA projects store compressed module streams; scan declared
+    # decompressed sources rather than the raw compound-file bytes.
+    return "\n".join(extract_vba_modules.extract_modules_from_workbook(workbook_path).values())
 
 
 def _load_runnerlaunch_bas_source() -> str:

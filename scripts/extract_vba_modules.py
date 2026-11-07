@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
-"""Extract VBA module source files from workbook fixtures.
-
-The workbooks embed a readable module mirror in ``xl/vbaProject.bin`` delimited by
-``' BEGIN <Module>.bas mirror`` and ``' END <Module>.bas mirror`` markers.
-This script exports those modules into ``assets/vba/*.bas``.
-"""
+"""Extract declared CFB/MS-OVBA module streams; legacy recovery is explicitly separate."""
 
 from __future__ import annotations
 
 import argparse
 import re
+import sys
 from pathlib import Path
 from zipfile import ZipFile
 
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+# OLE CFB signature
+OLE_CFB_SIGNATURE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+
+# Pattern for mirror blocks in legacy pseudo-projects (kept for backward compatibility)
 MIRROR_BLOCK_PATTERN = re.compile(
     r"' BEGIN (?P<name>[A-Za-z0-9_]+)\.bas mirror\r?\n(?P<body>.*?)' END (?P=name)\.bas mirror",
     re.DOTALL,
@@ -30,29 +33,24 @@ def _normalize_newlines(text: str) -> str:
 
 
 def extract_modules_from_workbook(workbook_path: Path) -> dict[str, str]:
-    """Return VBA module sources extracted from one workbook."""
-    if not workbook_path.is_file():
-        msg = f"Workbook not found: {workbook_path}"
-        raise FileNotFoundError(msg)
+    """Extract only declared, decompressed module streams from an executable project."""
+    from scripts.vba_project import project_modules
 
     with ZipFile(workbook_path) as workbook:
-        vba_text = workbook.read("xl/vbaProject.bin").decode("latin1", errors="ignore")
+        return project_modules(workbook.read("xl/vbaProject.bin"))
 
-    modules: dict[str, str] = {}
-    for match in MIRROR_BLOCK_PATTERN.finditer(vba_text):
-        module_name = match.group("name")
-        body = _normalize_newlines(match.group("body"))
-        anchor = f'Attribute VB_Name = "{module_name}"'
-        start = body.find(anchor)
+
+def extract_legacy_mirrors(vba_bytes: bytes) -> dict[str, str]:
+    """Recover historical text mirrors; never use this as project validation."""
+    modules = {}
+    for match in MIRROR_BLOCK_PATTERN.finditer(vba_bytes.decode("latin1")):
+        name = match.group("name")
+        source = _normalize_newlines(match.group("body"))
+        anchor = f'Attribute VB_Name = "{name}"'
+        start = source.find(anchor)
         if start < 0:
-            msg = f"Mirror block for {module_name} in {workbook_path} is missing {anchor}."
-            raise ValueError(msg)
-        modules[module_name] = body[start:].strip() + "\n"
-
-    if not modules:
-        msg = f"No VBA mirror blocks were found in {workbook_path}."
-        raise ValueError(msg)
-
+            raise ValueError(f"Missing legacy module attribute: {name}")
+        modules[name] = source[start:].strip() + "\n"
     return modules
 
 
@@ -69,9 +67,7 @@ def extract_modules_from_workbooks(workbook_paths: tuple[Path, ...]) -> dict[str
         for module_name, module_source in extract_modules_from_workbook(workbook_path).items():
             if module_name in modules:
                 if modules[module_name] != module_source:
-                    # Keep the first module definition for deterministic output
-                    # when workbook mirrors drift temporarily.
-                    continue
+                    raise ValueError(f"Conflicting actual module: {module_name} in {workbook_path}")
             else:
                 modules[module_name] = module_source
 

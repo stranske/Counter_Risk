@@ -7,12 +7,15 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import tempfile
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
+
+from counter_risk.runtime_paths import resolve_runtime_path
 
 SHELL_ERROR_BASE = 7100
 _OPERATOR_ACTION_PREFIX = "Operator action:"
@@ -194,6 +197,32 @@ def resolve_config_path(run_mode: RunnerMode) -> str:
     return "config\\trend.yml"
 
 
+def _workflow_config_relative_path(run_mode: RunnerMode) -> Path:
+    if run_mode is RunnerMode.ALL:
+        return Path("config") / "all_programs.yml"
+    if run_mode is RunnerMode.EX_TREND:
+        return Path("config") / "ex_trend.yml"
+    return Path("config") / "trend.yml"
+
+
+def resolve_workflow_config_file_for_runner_arguments(run_mode: RunnerMode) -> str:
+    """Return an absolute config path string for CLI arguments (mirrors Runner VBA).
+
+    Source mode anchors relative bundle paths at the repository root (not ``Path.cwd()``)
+    so dry-run and workflow runs resolve the same YAML whether or not the process was
+    started from an unrelated working directory. Frozen mode resolves through
+    ``resolve_runtime_path`` (``COUNTER_RISK_BUNDLE_ROOT`` / ``_MEIPASS`` / executable dir).
+    """
+
+    relative = _workflow_config_relative_path(run_mode)
+    if getattr(sys, "frozen", False):
+        resolved = resolve_runtime_path(relative)
+    else:
+        repo_root = Path(__file__).resolve().parents[2]
+        resolved = (repo_root / relative).resolve()
+    return normalize_path_separators(str(resolved))
+
+
 def resolve_settings_path(temp_root: str | None = None) -> str:
     root = temp_root or os.environ.get("TEMP") or tempfile.gettempdir()
     normalized_root = normalize_path_separators(root)
@@ -229,7 +258,7 @@ def build_command(
 ) -> str:
     # Keep date validation behavior aligned with VBA parser semantics.
     parsed_date = parse_as_of_month(selected_date)
-    config_path = resolve_config_path(run_mode)
+    config_path = resolve_workflow_config_file_for_runner_arguments(run_mode)
     selected_settings_path = settings_path or resolve_settings_path()
     return (
         "run "
@@ -244,7 +273,7 @@ def build_discovery_dry_run_command(
     run_mode: RunnerMode, selected_date: str, settings_path: str | None = None
 ) -> str:
     parsed_date = parse_as_of_month(selected_date)
-    config_path = resolve_config_path(run_mode)
+    config_path = resolve_workflow_config_file_for_runner_arguments(run_mode)
     selected_settings_path = settings_path or resolve_settings_path()
     return (
         "run --dry-run-discovery "
@@ -258,7 +287,7 @@ def build_discovery_run_command(
     run_mode: RunnerMode, selected_date: str, output_dir: str, settings_path: str | None = None
 ) -> str:
     parsed_date = parse_as_of_month(selected_date)
-    config_path = resolve_config_path(run_mode)
+    config_path = resolve_workflow_config_file_for_runner_arguments(run_mode)
     selected_settings_path = settings_path or resolve_settings_path()
     return (
         "run --discover "

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
@@ -14,6 +15,38 @@ from counter_risk.io.discover import discover_workflow_inputs, resolve_discovery
 from counter_risk.logging import configure_logging
 from counter_risk.pipeline import run_fixture_replay, run_pipeline_with_config
 from counter_risk.runtime_paths import resolve_runtime_path
+
+
+def _source_checkout_root() -> Path | None:
+    module = Path(__file__).resolve()
+    for parent in module.parents:
+        if (parent / "pyproject.toml").is_file() and (
+            parent / "src/counter_risk/cli/__init__.py"
+        ).resolve() == module:
+            return parent
+    return None
+
+
+def _resolved_cli_config_path(raw_path: Path, *, from_cwd: bool = False) -> Path:
+    """Resolve a workflow config path for CLI ``run``.
+
+    Args:
+        raw_path: The path to resolve.
+        from_cwd: If True, resolve relative paths from CWD. If False, resolve from
+                   source/bundle location for built-in defaults.
+    """
+
+    if raw_path.is_absolute():
+        return raw_path
+    if from_cwd and raw_path.is_file():
+        return raw_path.resolve()
+    if getattr(sys, "frozen", False):
+        return resolve_runtime_path(raw_path)
+    if from_cwd:
+        return raw_path.resolve()
+    source_root = _source_checkout_root()
+    return ((source_root or Path.cwd()) / raw_path).resolve()
+
 
 _SETTINGS_DISCOVERY_MODE_KEY = "discovery_mode"
 _SETTINGS_INPUT_ROOT_KEY = "input_root"
@@ -71,7 +104,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument(
         "--config",
         type=Path,
-        default=resolve_runtime_path(Path("config/fixture_replay.yml")),
+        default=None,
         help="Path to workflow YAML config used by --fixture-replay mode.",
     )
     run_parser.add_argument(
@@ -512,6 +545,13 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    if getattr(args, "command", None) == "run":
+        config_arg = cast(Path | None, getattr(args, "config", None))
+        if config_arg is None:
+            args.config = _resolved_cli_config_path(Path("config/fixture_replay.yml"))
+        else:
+            args.config = _resolved_cli_config_path(config_arg, from_cwd=True)
 
     # Configure logging exactly once, here, before any subcommand dispatch. Every
     # subcommand reaches this line -- including `gui`, which is how the packaged
