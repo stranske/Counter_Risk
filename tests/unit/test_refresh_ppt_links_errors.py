@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import builtins
+import hashlib
 import logging
 import sys
 import types
@@ -586,6 +587,7 @@ def test_failed_required_linked_shape_update_returns_failed(
                 fail_update=fail_update,
             )
 
+    save_calls: list[object] = []
     presentation = types.SimpleNamespace()
     presentation.UpdateLinks = lambda: None
     presentation.Slides = [
@@ -596,7 +598,7 @@ def test_failed_required_linked_shape_update_returns_failed(
             ]
         )
     ]
-    presentation.Save = lambda: None
+    presentation.Save = lambda: save_calls.append(None)
     presentation.Close = lambda: setattr(state, "closed", True)
 
     presentations = types.SimpleNamespace()
@@ -636,5 +638,27 @@ def test_failed_required_linked_shape_update_returns_failed(
     assert "Linked Chart B" in result.error_detail
     assert "linked chart update rejected" in result.error_detail
     assert "Historical%20Graphs.xlsx" in result.error_detail
+    assert save_calls == [None]
     assert state.closed is True
     assert state.quit_called is True
+
+
+def test_refresh_ppt_links_keeps_deliberate_break_needle() -> None:
+    """Lock the per-shape failure collection loop the deliberate-break proof mutates away."""
+    from counter_risk.pipeline import run as run_module
+
+    source = Path(run_module.__file__).read_bytes().replace(b"\r\n", b"\n")
+    digest = hashlib.sha256(source).hexdigest()
+    predicate_line = (
+        b"                is_required, source = _required_linked_shape_context(shape)\n"
+    )
+    required_branch = (
+        b"                except Exception as exc:\n"
+        b"                    if is_required:\n"
+        b'                        shape_name = getattr(shape, "Name", "<unknown>")\n'
+        b"                        linked_update_failures.append(\n"
+    )
+    hollow_handler = b"                except Exception:\n                    continue\n"
+    assert predicate_line in source, f"missing linked-shape predicate anchor (sha256={digest})"
+    assert required_branch in source, f"missing deliberate-break anchor (sha256={digest})"
+    assert hollow_handler not in source

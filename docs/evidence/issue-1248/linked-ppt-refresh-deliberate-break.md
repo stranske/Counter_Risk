@@ -14,7 +14,7 @@ Production behavior lives in `src/counter_risk/pipeline/run.py` inside `_refresh
 4. Restore production handling and re-run; capture pass.
 5. Record literal transcripts below.
 
-Executed on branch `cursor/issue-1248` with Python 3.14.10 (re-verified keepalive 1249 on 2026-11-16 UTC after pipeline predicate pin; `scripts/check_deliberate_break.py --pr-body-file docs/evidence/issue-1248/reconciled-pr-body.md` → `verdict: PASS`, `reason: head-passed-base-failed`).
+Executed on branch `cursor/issue-1248` with Python 3.14.10 (re-verified keepalive 1249 2026-11-16 UTC: `check_deliberate_break.py` → `verdict: PASS`, `reason: head-passed-base-failed`; acceptance pytest suites 22 passed including new pipeline regression for required Type-10 failure).
 
 ## RED — failure collection deliberately disabled
 
