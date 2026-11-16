@@ -68,9 +68,11 @@ def test_missing_office_client_skips_refresh_before_preparing_files(
 def test_refresh_continues_after_unlinked_shape_and_bulk_update_failures(
     link_refresh_dependencies, tmp_path: Path
 ) -> None:
-    failed_shape = SimpleNamespace(LinkFormat=Mock())
+    failed_shape = SimpleNamespace(Type=1, LinkFormat=Mock())
+    failed_shape.LinkFormat.SourceFullName = ""
     failed_shape.LinkFormat.Update.side_effect = RuntimeError("shape has no link")
-    linked_shape = SimpleNamespace(LinkFormat=Mock())
+    linked_shape = SimpleNamespace(Type=1, LinkFormat=Mock())
+    linked_shape.LinkFormat.SourceFullName = r"file:///C:/run/chart.xlsx"
     presentation = Mock()
     presentation.UpdateLinks.side_effect = RuntimeError("bulk update unsupported")
     presentation.Slides = [SimpleNamespace(Shapes=[failed_shape, linked_shape])]
