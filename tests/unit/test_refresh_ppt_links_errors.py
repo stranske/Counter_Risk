@@ -458,3 +458,78 @@ def test_refresh_ppt_links_succeeds_when_visible_cannot_be_set(
     assert result.status == PptProcessingStatus.SUCCESS
     assert state.closed is True
     assert state.quit_called is True
+
+
+def test_failed_required_linked_shape_update_returns_failed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Windows")
+    state = _State()
+
+    class _LinkFormat:
+        def __init__(self, source: str, *, fail_update: bool) -> None:
+            self.SourceFullName = source
+            self._fail_update = fail_update
+
+        def Update(self) -> None:  # noqa: N802
+            if self._fail_update:
+                raise RuntimeError("linked chart update rejected")
+
+    class _Shape:
+        def __init__(self, name: str, *, fail_update: bool) -> None:
+            self.Type = 10
+            self.Name = name
+            self.LinkFormat = _LinkFormat(
+                r"file:///C:/run/Historical%20Graphs.xlsx",
+                fail_update=fail_update,
+            )
+
+    presentation = types.SimpleNamespace()
+    presentation.UpdateLinks = lambda: None
+    presentation.Slides = [
+        types.SimpleNamespace(
+            Shapes=[
+                _Shape("Linked Chart A", fail_update=False),
+                _Shape("Linked Chart B", fail_update=True),
+            ]
+        )
+    ]
+    presentation.Save = lambda: None
+    presentation.Close = lambda: setattr(state, "closed", True)
+
+    presentations = types.SimpleNamespace()
+    presentations.Open = lambda _path, **kwargs: (
+        _raise_assertion_error("WithWindow was not passed")
+        if "WithWindow" not in kwargs
+        else presentation
+    )
+
+    app = types.SimpleNamespace(
+        Visible=True,
+        Presentations=presentations,
+        Quit=lambda: setattr(state, "quit_called", True),
+    )
+
+    fake_client = types.ModuleType("win32com.client")
+    cast(Any, fake_client).DispatchEx = lambda _prog_id: app
+    fake_win32com = types.ModuleType("win32com")
+    cast(Any, fake_win32com).client = fake_client
+
+    monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+
+    ppt_path = tmp_path / "monthly.pptx"
+    with zipfile.ZipFile(ppt_path, "w") as archive:
+        archive.writestr("[Content_Types].xml", "<Types/>")
+
+    from counter_risk.pipeline.run import PptProcessingStatus
+
+    result = _refresh_ppt_links(ppt_path)
+
+    assert result.status == PptProcessingStatus.FAILED
+    assert result.error_detail is not None
+    assert "Linked Chart B" in result.error_detail
+    assert "linked chart update rejected" in result.error_detail
+    assert "Historical%20Graphs.xlsx" in result.error_detail
+    assert state.closed is True
+    assert state.quit_called is True
