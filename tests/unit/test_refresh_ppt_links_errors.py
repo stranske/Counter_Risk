@@ -14,8 +14,8 @@ import pytest
 from counter_risk.pipeline.run import (
     _ole_safe_resave_historical_workbooks,
     _refresh_ppt_links,
-    _required_linked_shape_context,
     _repoint_and_autoscale_ppt_charts,
+    _required_linked_shape_context,
 )
 
 
@@ -463,7 +463,7 @@ def test_refresh_ppt_links_succeeds_when_visible_cannot_be_set(
 
 class _LinkFormatRaisesOnSource:
     @property
-    def SourceFullName(self) -> str:
+    def SourceFullName(self) -> str:  # noqa: N802
         raise RuntimeError("no link metadata")
 
 
