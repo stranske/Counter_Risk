@@ -98,6 +98,37 @@ def test_refresh_continues_after_unlinked_shape_and_bulk_update_failures(
     app.Quit.assert_called_once_with()
 
 
+def test_refresh_returns_failed_when_required_linked_shape_update_fails(
+    link_refresh_dependencies, tmp_path: Path
+) -> None:
+    good_shape = SimpleNamespace(Type=10, Name="Linked Chart A", LinkFormat=Mock())
+    good_shape.LinkFormat.SourceFullName = r"file:///C:/run/Historical.xlsx"
+    failing_shape = SimpleNamespace(Type=10, Name="Linked Chart B", LinkFormat=Mock())
+    failing_shape.LinkFormat.SourceFullName = r"file:///C:/run/Historical.xlsx"
+    failing_shape.LinkFormat.Update.side_effect = RuntimeError("linked chart update rejected")
+
+    presentation = Mock()
+    presentation.Slides = [SimpleNamespace(Shapes=[good_shape, failing_shape])]
+    app = Mock()
+    app.Presentations.Open.return_value = presentation
+    link_refresh_dependencies.dispatch.return_value = app
+    path = tmp_path / "monthly.pptx"
+
+    result = run_module._refresh_ppt_links(path)
+
+    assert result.status is run_module.PptProcessingStatus.FAILED
+    assert result.error_detail is not None
+    assert result.error_detail.startswith("required linked shape update failed:")
+    assert "slide=1" in result.error_detail
+    assert "Linked Chart B" in result.error_detail
+    assert "linked chart update rejected" in result.error_detail
+    good_shape.LinkFormat.Update.assert_called_once_with()
+    failing_shape.LinkFormat.Update.assert_called_once_with()
+    presentation.Save.assert_called_once_with()
+    presentation.Close.assert_called_once_with()
+    app.Quit.assert_called_once_with()
+
+
 def test_refresh_save_failure_preserves_cause_and_releases_office(
     link_refresh_dependencies, tmp_path: Path
 ) -> None:

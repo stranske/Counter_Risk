@@ -23,7 +23,7 @@ A shape is a required linked shape when its Type is 10 (linked OLE object) or it
 
 Deliberate-break evidence: `docs/evidence/issue-1248/linked-ppt-refresh-deliberate-break.md`
 
-PR description reconciliation: apply this file when `gh` is unavailable in the runner (live acceptance checkboxes were stale at keepalive 1249; all eight tasks re-verified 2026-11-16 UTC on `cursor/issue-1248` at HEAD after predicate assertions in `test_run_link_refresh_failures.py`).
+PR description reconciliation: apply this file when `gh` is unavailable in the runner (live acceptance checkboxes were stale at keepalive 1249; all eight tasks re-verified 2026-11-16 UTC on `cursor/issue-1248` at HEAD including `test_refresh_returns_failed_when_required_linked_shape_update_fails`).
 
 **Progress:** 8/8 tasks complete (implementation, pytest runs, deliberate-break proof via `scripts/check_deliberate_break.py`).
 
