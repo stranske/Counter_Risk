@@ -647,6 +647,9 @@ def test_refresh_ppt_links_keeps_deliberate_break_needle() -> None:
 
     source = Path(run_module.__file__).read_bytes()
     digest = hashlib.sha256(source).hexdigest()
+    predicate_line = (
+        b"                is_required, source = _required_linked_shape_context(shape)\n"
+    )
     required_branch = (
         b"                except Exception as exc:\n"
         b"                    if is_required:\n"
@@ -654,5 +657,6 @@ def test_refresh_ppt_links_keeps_deliberate_break_needle() -> None:
         b"                        linked_update_failures.append(\n"
     )
     hollow_handler = b"                except Exception:\n                    continue\n"
+    assert predicate_line in source, f"missing linked-shape predicate anchor (sha256={digest})"
     assert required_branch in source, f"missing deliberate-break anchor (sha256={digest})"
     assert hollow_handler not in source

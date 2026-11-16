@@ -14,7 +14,7 @@ Production behavior lives in `src/counter_risk/pipeline/run.py` inside `_refresh
 4. Restore production handling and re-run; capture pass.
 5. Record literal transcripts below.
 
-Executed on branch `cursor/issue-1248` with Python 3.14.10 (re-verified keepalive 1249 on 2026-11-16 UTC after pipeline predicate pin; `scripts/check_deliberate_break.py --pr-body-file docs/evidence/issue-1248/reconciled-pr-body.md` → `verdict: PASS`, `reason: head-passed-base-failed`).
+Executed on branch `cursor/issue-1248` with Python 3.14.10 (re-verified keepalive 1249 on 2026-11-16 UTC after pipeline predicate pin; manual hollow-handler mutation at HEAD → named test FAILED, revert → 1 passed; `scripts/check_deliberate_break.py --base 8ed8630^ --pr-body-file docs/evidence/issue-1248/reconciled-pr-body.md` → `verdict: PASS`, `reason: head-passed-base-failed`; default `--base origin/main` is hollow after #1249 merge).
 
 ## RED — failure collection deliberately disabled
 
