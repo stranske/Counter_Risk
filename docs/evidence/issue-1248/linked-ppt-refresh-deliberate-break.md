@@ -7,14 +7,14 @@ Production behavior lives in `src/counter_risk/pipeline/run.py` inside `_refresh
 
 ## Procedure
 
-1. Run the named pytest on unmodified branch `cursor/issue-1248` at `5137773`.
+1. Run the named pytest on unmodified branch `cursor/issue-1248` at `64dc083`.
 2. Temporarily restore tolerant `except Exception: continue` around `shape.LinkFormat.Update()`
    (drops per-shape failure collection; refresh returns `SUCCESS` when a required linked shape fails).
 3. Re-run the identical pytest command; capture the expected failure.
 4. Restore production handling and re-run; capture pass.
 5. Record literal transcripts below.
 
-Executed from commit `51377733d48561c47f8624d76fff17ed1667a133` with Python 3.14.10.
+Executed from commit `64dc083f080ceff7bd5455d668766ba1ca9b1bcb` with Python 3.14.10 (re-verified keepalive 2026-11-16).
 
 ## RED — failure collection deliberately disabled
 
