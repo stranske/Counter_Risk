@@ -587,6 +587,7 @@ def test_failed_required_linked_shape_update_returns_failed(
                 fail_update=fail_update,
             )
 
+    save_calls: list[object] = []
     presentation = types.SimpleNamespace()
     presentation.UpdateLinks = lambda: None
     presentation.Slides = [
@@ -597,7 +598,7 @@ def test_failed_required_linked_shape_update_returns_failed(
             ]
         )
     ]
-    presentation.Save = lambda: None
+    presentation.Save = lambda: save_calls.append(None)
     presentation.Close = lambda: setattr(state, "closed", True)
 
     presentations = types.SimpleNamespace()
@@ -637,6 +638,7 @@ def test_failed_required_linked_shape_update_returns_failed(
     assert "Linked Chart B" in result.error_detail
     assert "linked chart update rejected" in result.error_detail
     assert "Historical%20Graphs.xlsx" in result.error_detail
+    assert save_calls == [None]
     assert state.closed is True
     assert state.quit_called is True
 
