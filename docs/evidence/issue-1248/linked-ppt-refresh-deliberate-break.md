@@ -14,7 +14,7 @@ Production behavior lives in `src/counter_risk/pipeline/run.py` inside `_refresh
 4. Restore production handling and re-run; capture pass.
 5. Record literal transcripts below.
 
-Executed on branch `cursor/issue-1248` with Python 3.14.10 (re-verified keepalive 2026-11-16 UTC; named test asserts `error_detail` prefix, `slide=1`, shape, source, and error text).
+Executed on branch `cursor/issue-1248` with Python 3.14.10 (re-verified keepalive 2026-11-16 UTC; named test asserts `error_detail` prefix, `slide=1`, `shape='Linked Chart B'`, source, and error text).
 
 ## RED — failure collection deliberately disabled
 
