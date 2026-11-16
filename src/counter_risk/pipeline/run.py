@@ -3798,6 +3798,25 @@ def _repoint_and_autoscale_ppt_charts(pptx_path: Path, run_dir: Path) -> tuple[i
     return repointed, axes_removed
 
 
+def _required_linked_shape_context(shape: Any) -> tuple[bool, str]:
+    """Return whether a shape must refresh successfully and its link source path."""
+
+    if getattr(shape, "Type", None) == 10:
+        try:
+            source = shape.LinkFormat.SourceFullName
+        except Exception:
+            return True, ""
+        return True, source if isinstance(source, str) else ""
+
+    try:
+        source = shape.LinkFormat.SourceFullName
+    except Exception:
+        return False, ""
+    if isinstance(source, str) and source.strip():
+        return True, source
+    return False, ""
+
+
 def _refresh_ppt_links(pptx_path: Path) -> PptProcessingResult:
     """Refresh linked PowerPoint chart content so the graphs reflect this run.
 
@@ -3851,13 +3870,35 @@ def _refresh_ppt_links(pptx_path: Path) -> PptProcessingResult:
         with contextlib.suppress(Exception):
             presentation.UpdateLinks()
         updated = 0
-        for slide in presentation.Slides:
+        linked_update_failures: list[str] = []
+        for slide_index, slide in enumerate(presentation.Slides, start=1):
             for shape in slide.Shapes:
+                is_required, source = _required_linked_shape_context(shape)
                 try:
                     shape.LinkFormat.Update()
                     updated += 1
-                except Exception:
+                except Exception as exc:
+                    if is_required:
+                        shape_name = getattr(shape, "Name", "<unknown>")
+                        linked_update_failures.append(
+                            "slide="
+                            f"{slide_index} shape={shape_name!r} source={source!r} error={exc}"
+                        )
                     continue
+        if linked_update_failures:
+            error_detail = "required linked shape update failed: " + "; ".join(
+                linked_update_failures
+            )
+            presentation.Save()
+            LOGGER.error(
+                "ppt_link_refresh_linked_shapes_failed file=%s failures=%s",
+                pptx_path,
+                error_detail,
+            )
+            return PptProcessingResult(
+                status=PptProcessingStatus.FAILED,
+                error_detail=error_detail,
+            )
         presentation.Save()
         LOGGER.info("ppt_link_refresh_complete file=%s shapes_updated=%d", pptx_path, updated)
         return PptProcessingResult(status=PptProcessingStatus.SUCCESS)
