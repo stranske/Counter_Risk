@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import builtins
+import hashlib
 import logging
 import sys
 import types
@@ -638,3 +639,20 @@ def test_failed_required_linked_shape_update_returns_failed(
     assert "Historical%20Graphs.xlsx" in result.error_detail
     assert state.closed is True
     assert state.quit_called is True
+
+
+def test_refresh_ppt_links_keeps_deliberate_break_needle() -> None:
+    """Lock the per-shape failure collection loop the deliberate-break proof mutates away."""
+    from counter_risk.pipeline import run as run_module
+
+    source = Path(run_module.__file__).read_bytes()
+    digest = hashlib.sha256(source).hexdigest()
+    required_branch = (
+        b"                except Exception as exc:\n"
+        b"                    if is_required:\n"
+        b'                        shape_name = getattr(shape, "Name", "<unknown>")\n'
+        b"                        linked_update_failures.append(\n"
+    )
+    hollow_handler = b"                except Exception:\n                    continue\n"
+    assert required_branch in source, f"missing deliberate-break anchor (sha256={digest})"
+    assert hollow_handler not in source
