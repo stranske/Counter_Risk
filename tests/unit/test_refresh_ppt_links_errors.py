@@ -503,6 +503,64 @@ def test_required_linked_shape_context_predicate(
     assert source == expected_source
 
 
+def test_refresh_ppt_links_tolerates_failing_update_links_when_linked_shapes_succeed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Bulk UpdateLinks failures stay tolerated when every required linked shape refreshes."""
+
+    monkeypatch.setattr("counter_risk.pipeline.run.platform.system", lambda: "Windows")
+    state = _State()
+
+    class _LinkFormat:
+        SourceFullName = r"file:///C:/run/Historical%20Graphs.xlsx"
+
+        def Update(self) -> None:  # noqa: N802
+            return None
+
+    presentation = types.SimpleNamespace()
+    presentation.UpdateLinks = lambda: (_ for _ in ()).throw(RuntimeError("bulk update rejected"))
+    presentation.Slides = [
+        types.SimpleNamespace(
+            Shapes=[types.SimpleNamespace(Type=10, Name="Linked Chart", LinkFormat=_LinkFormat())]
+        )
+    ]
+    presentation.Save = lambda: None
+    presentation.Close = lambda: setattr(state, "closed", True)
+
+    presentations = types.SimpleNamespace()
+    presentations.Open = lambda _path, **kwargs: (
+        _raise_assertion_error("WithWindow was not passed")
+        if "WithWindow" not in kwargs
+        else presentation
+    )
+
+    app = types.SimpleNamespace(
+        Visible=True,
+        Presentations=presentations,
+        Quit=lambda: setattr(state, "quit_called", True),
+    )
+
+    fake_client = types.ModuleType("win32com.client")
+    cast(Any, fake_client).DispatchEx = lambda _prog_id: app
+    fake_win32com = types.ModuleType("win32com")
+    cast(Any, fake_win32com).client = fake_client
+
+    monkeypatch.setitem(sys.modules, "win32com", fake_win32com)
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+
+    ppt_path = tmp_path / "monthly.pptx"
+    with zipfile.ZipFile(ppt_path, "w") as archive:
+        archive.writestr("[Content_Types].xml", "<Types/>")
+
+    from counter_risk.pipeline.run import PptProcessingStatus
+
+    result = _refresh_ppt_links(ppt_path)
+
+    assert result.status == PptProcessingStatus.SUCCESS
+    assert state.closed is True
+    assert state.quit_called is True
+
+
 def test_failed_required_linked_shape_update_returns_failed(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
