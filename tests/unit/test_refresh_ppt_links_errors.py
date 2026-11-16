@@ -14,6 +14,7 @@ import pytest
 from counter_risk.pipeline.run import (
     _ole_safe_resave_historical_workbooks,
     _refresh_ppt_links,
+    _required_linked_shape_context,
     _repoint_and_autoscale_ppt_charts,
 )
 
@@ -458,6 +459,48 @@ def test_refresh_ppt_links_succeeds_when_visible_cannot_be_set(
     assert result.status == PptProcessingStatus.SUCCESS
     assert state.closed is True
     assert state.quit_called is True
+
+
+class _LinkFormatRaisesOnSource:
+    @property
+    def SourceFullName(self) -> str:
+        raise RuntimeError("no link metadata")
+
+
+@pytest.mark.parametrize(
+    ("shape", "expected_required", "expected_source"),
+    [
+        (
+            types.SimpleNamespace(
+                Type=10,
+                LinkFormat=types.SimpleNamespace(SourceFullName=r"file:///C:/a.xlsx"),
+            ),
+            True,
+            r"file:///C:/a.xlsx",
+        ),
+        (types.SimpleNamespace(Type=10, LinkFormat=_LinkFormatRaisesOnSource()), True, ""),
+        (
+            types.SimpleNamespace(Type=1, LinkFormat=types.SimpleNamespace(SourceFullName="")),
+            False,
+            "",
+        ),
+        (
+            types.SimpleNamespace(
+                Type=1,
+                LinkFormat=types.SimpleNamespace(SourceFullName=r"file:///C:/b.xlsx"),
+            ),
+            True,
+            r"file:///C:/b.xlsx",
+        ),
+        (types.SimpleNamespace(Type=1, LinkFormat=_LinkFormatRaisesOnSource()), False, ""),
+    ],
+)
+def test_required_linked_shape_context_predicate(
+    shape: types.SimpleNamespace, expected_required: bool, expected_source: str
+) -> None:
+    is_required, source = _required_linked_shape_context(shape)
+    assert is_required is expected_required
+    assert source == expected_source
 
 
 def test_failed_required_linked_shape_update_returns_failed(
