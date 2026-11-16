@@ -15,7 +15,6 @@ from counter_risk.pipeline.run import (
     _ole_safe_resave_historical_workbooks,
     _refresh_ppt_links,
     _repoint_and_autoscale_ppt_charts,
-    _required_linked_shape_context,
 )
 
 
@@ -498,6 +497,8 @@ class _LinkFormatRaisesOnSource:
 def test_required_linked_shape_context_predicate(
     shape: types.SimpleNamespace, expected_required: bool, expected_source: str
 ) -> None:
+    from counter_risk.pipeline.run import _required_linked_shape_context
+
     is_required, source = _required_linked_shape_context(shape)
     assert is_required is expected_required
     assert source == expected_source
