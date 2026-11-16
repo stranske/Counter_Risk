@@ -647,7 +647,7 @@ def test_refresh_ppt_links_keeps_deliberate_break_needle() -> None:
     """Lock the per-shape failure collection loop the deliberate-break proof mutates away."""
     from counter_risk.pipeline import run as run_module
 
-    source = Path(run_module.__file__).read_bytes()
+    source = Path(run_module.__file__).read_bytes().replace(b"\r\n", b"\n")
     digest = hashlib.sha256(source).hexdigest()
     predicate_line = (
         b"                is_required, source = _required_linked_shape_context(shape)\n"
