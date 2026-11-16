@@ -629,6 +629,7 @@ def test_failed_required_linked_shape_update_returns_failed(
 
     assert result.status == PptProcessingStatus.FAILED
     assert result.error_detail is not None
+    assert "slide=1" in result.error_detail
     assert "Linked Chart B" in result.error_detail
     assert "linked chart update rejected" in result.error_detail
     assert "Historical%20Graphs.xlsx" in result.error_detail

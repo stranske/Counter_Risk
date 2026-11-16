@@ -17,7 +17,7 @@ A shape is a required linked shape when its Type is 10 (linked OLE object) or it
 ## Acceptance Criteria
 
 - [x] Named test `tests/unit/test_refresh_ppt_links_errors.py::test_failed_required_linked_shape_update_returns_failed` passes: `python3 -m pytest tests/unit/test_refresh_ppt_links_errors.py::test_failed_required_linked_shape_update_returns_failed -q`
-- [x] Deliberate break → revert, shown in the PR: evidence in `docs/evidence/issue-1248/linked-ppt-refresh-deliberate-break.md` (re-run at HEAD `64dc083`).
+- [x] Deliberate break → revert, shown in the PR: evidence in `docs/evidence/issue-1248/linked-ppt-refresh-deliberate-break.md` (re-run at HEAD).
 - [x] The whole test file still passes: `python3 -m pytest tests/unit/test_refresh_ppt_links_errors.py -q`
 - [x] Existing test still passes unchanged: `python3 -m pytest tests/pipeline/test_run_link_refresh_failures.py -q`
 
