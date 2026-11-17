@@ -6,7 +6,7 @@ import math
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from zipfile import BadZipFile, ZipFile
 
 from counter_risk.normalize import canonicalize_name, safe_display_name
@@ -497,7 +497,24 @@ _BREAKDOWN_LABEL = "notional breakdown"
 _ABSOLUTE_MARKER = "absolute"
 
 
+@dataclass(frozen=True)
+class ClassNotionalBreakdown:
+    """Published class shares and evidence about the selected worksheet row."""
+
+    values: dict[str, float]
+    source: Literal["absolute", "plain"]
+    coerced_invalid_cells: int = 0
+
+
 def read_class_notional_breakdown(path: Path | str) -> dict[str, float] | None:
+    """Read published class shares, preserving the legacy mapping-only API."""
+    result = read_class_notional_breakdown_with_provenance(path)
+    return result.values if result is not None else None
+
+
+def read_class_notional_breakdown_with_provenance(
+    path: Path | str,
+) -> ClassNotionalBreakdown | None:
     """Read the published asset-class share row from a CPRS-CH worksheet.
 
     The MOSERS CPRS-CH tab publishes the class mix directly as a "Notional
@@ -513,8 +530,9 @@ def read_class_notional_breakdown(path: Path | str) -> dict[str, float] | None:
     those rows are written, so a class's netted figure there can be materially
     smaller than its absolute figure. It must be read from the published row.
 
-    Returns a mapping of asset class -> share, or None when no breakdown row is
-    present (the caller then computes the mix from records as before).
+    Returns the shares, selected row source, and number of invalid cells coerced
+    to zero, or None when no breakdown row is present. Blank cells remain zero
+    without counting as invalid. Only cells in the selected row are counted.
     """
     file_path = Path(path)
     if not file_path.exists():
@@ -554,9 +572,14 @@ def read_class_notional_breakdown(path: Path | str) -> dict[str, float] | None:
         return None
 
     breakdown: dict[str, float] = {}
+    coerced_invalid_cells = 0
     for field, column_index in class_columns.items():
         raw_value = rows[chosen].get(column_index)
         try:
+            # The shared accounting coercer treats Excel errors as missing data.
+            # Preserve its zero value while reporting the damaged source cell.
+            if _normalize_text(raw_value).startswith("#"):
+                raise ValueError("Worksheet error cell")
             breakdown[field] = (
                 coerce_accounting_float(raw_value, strip_percent=True)
                 if raw_value not in (None, "")
@@ -564,4 +587,9 @@ def read_class_notional_breakdown(path: Path | str) -> dict[str, float] | None:
             )
         except (ValueError, TypeError):
             breakdown[field] = 0.0
-    return breakdown
+            coerced_invalid_cells += 1
+    return ClassNotionalBreakdown(
+        values=breakdown,
+        source="absolute" if absolute_row is not None else "plain",
+        coerced_invalid_cells=coerced_invalid_cells,
+    )

@@ -101,6 +101,8 @@ def test_numeric_validation_reports_field_and_source_row(value, message):
 def test_class_breakdown_requires_existing_workbook(tmp_path):
     with pytest.raises(FileNotFoundError, match="CPRS-CH file not found"):
         ch.read_class_notional_breakdown(tmp_path / "missing.xlsx")
+    with pytest.raises(FileNotFoundError, match="CPRS-CH file not found"):
+        ch.read_class_notional_breakdown_with_provenance(tmp_path / "missing.xlsx")
 
 
 @pytest.mark.parametrize("kind", ["zip", "header", "classes", "breakdown"])
@@ -115,6 +117,7 @@ def test_class_breakdown_returns_none_when_unavailable(tmp_path, kind):
     if kind == "zip":
         path.write_bytes(b"invalid zip")
     assert ch.read_class_notional_breakdown(path) is None
+    assert ch.read_class_notional_breakdown_with_provenance(path) is None
 
 
 @pytest.mark.parametrize("absolute", [False, True])
@@ -137,10 +140,15 @@ def test_class_breakdown_prefers_first_absolute_row_and_parses_percentages(tmp_p
             ]
         )
     rows.append(["Notional Breakdown", None, None, 99, 99, 99, 99, 99])
-    result = ch.read_class_notional_breakdown(_workbook(tmp_path, rows))
+    path = _workbook(tmp_path, rows)
+    result = ch.read_class_notional_breakdown(path)
     expected = [5.0, 25.0, 40.0, 10.0, 20.0] if absolute else [10.0, 20.0, 30.0, 15.0, 25.0]
     assert result == dict(
         zip(("TIPS", "Treasury", "Equity", "Commodity", "Currency"), expected, strict=True)
+    )
+    provenance = ch.read_class_notional_breakdown_with_provenance(str(path))
+    assert provenance == ch.ClassNotionalBreakdown(
+        values=result, source="absolute" if absolute else "plain", coerced_invalid_cells=0
     )
 
 
@@ -156,3 +164,25 @@ def test_class_breakdown_defaults_missing_and_invalid_cells_to_zero(tmp_path):
         "Commodity": -12.5,
         "Currency": 25.0,
     }
+    provenance = ch.read_class_notional_breakdown_with_provenance(path)
+    assert provenance.source == "plain"
+    assert provenance.coerced_invalid_cells == 1
+    assert provenance.values == ch.read_class_notional_breakdown(path)
+
+
+@pytest.mark.parametrize("invalid", ["invalid", "NaN", "inf", "-inf", True, "#DIV/0!"])
+def test_class_breakdown_counts_only_invalid_cells_in_selected_row(tmp_path, invalid):
+    path = _workbook(
+        tmp_path,
+        [
+            HEADERS,
+            ["Notional Breakdown", None, None, "bad", "bad", "bad", "bad", "bad"],
+            ["Notional Breakdown (Absolute Values)", None, None, invalid, None, "", "-", "25%"],
+        ],
+    )
+    result = ch.read_class_notional_breakdown_with_provenance(path)
+    assert result == ch.ClassNotionalBreakdown(
+        values={"TIPS": 0.0, "Treasury": 0.0, "Equity": 0.0, "Commodity": 0.0, "Currency": 25.0},
+        source="absolute",
+        coerced_invalid_cells=1,
+    )

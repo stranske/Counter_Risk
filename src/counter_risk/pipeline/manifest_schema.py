@@ -389,6 +389,14 @@ def manifest_schema() -> dict[str, Any]:
             "repo_cash_summary": _REPO_CASH_SUMMARY_SCHEMA,
             "date_resolution": _DATE_RESOLUTION_SCHEMA,
             "risk_proxy_summary": _RISK_PROXY_SUMMARY_SCHEMA,
+            "class_breakdown_sources": {
+                "type": "object",
+                "properties": {
+                    variant: {"type": "string", "enum": ["absolute", "plain", "record-derived"]}
+                    for variant in ("all_programs", "ex_trend", "trend")
+                },
+                "additionalProperties": False,
+            },
         },
         "additionalProperties": False,
     }

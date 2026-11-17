@@ -10,6 +10,8 @@ Severity = str
 _SEVERITIES: tuple[Severity, ...] = ("info", "warn", "fail")
 _SEVERITY_BY_CODE: dict[str, Severity] = {
     "NO_FINDINGS": "info",
+    "CLASS_BREAKDOWN_FALLBACK": "warn",
+    "CLASS_BREAKDOWN_CELL_COERCED": "warn",
     "MISSING_REQUIRED_INPUTS": "fail",
     "MISSING_OPTIONAL_INPUTS": "warn",
     "UNMATCHED_MAPPINGS": "fail",
@@ -46,6 +48,8 @@ _SEVERITY_BY_CODE: dict[str, Severity] = {
 }
 _CATEGORY_BY_CODE: dict[str, str] = {
     "NO_FINDINGS": "pipeline",
+    "CLASS_BREAKDOWN_FALLBACK": "data_validation",
+    "CLASS_BREAKDOWN_CELL_COERCED": "data_validation",
     "MISSING_REQUIRED_INPUTS": "input",
     "MISSING_OPTIONAL_INPUTS": "input",
     "UNMATCHED_MAPPINGS": "mapping",
@@ -516,6 +520,9 @@ def _recommended_action(*, category: str, severity: str) -> str:
 
 
 def _code_from_message(message: str) -> str:
+    for code in ("CLASS_BREAKDOWN_FALLBACK", "CLASS_BREAKDOWN_CELL_COERCED"):
+        if message.upper().startswith(f"{code}:"):
+            return code
     message_lower = message.casefold()
     if message_lower.startswith("source report date override:"):
         return "SOURCE_REPORT_DATE_OVERRIDE"

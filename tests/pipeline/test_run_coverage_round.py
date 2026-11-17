@@ -92,6 +92,19 @@ def test_pipeline_stage_failures_preserve_cause_and_stop_later_stages(
         stages[later_stage].assert_not_called()
 
 
+def test_run_pipeline_preserves_class_breakdown_sources_in_manifest(pipeline_stages, tmp_path):
+    stages, _ = pipeline_stages
+    expected = {"all_programs": "plain", "ex_trend": "record-derived", "trend": "absolute"}
+
+    def update_history(*, class_breakdown_sources, **kwargs):
+        class_breakdown_sources.update(expected)
+        return []
+
+    stages["_update_historical_outputs"].side_effect = update_history
+    run_module.run_pipeline(tmp_path / "config.yml")
+    assert stages["manifest_build"].call_args.kwargs["class_breakdown_sources"] == expected
+
+
 def test_run_pipeline_with_config_forwards_report_date_override(
     monkeypatch, tmp_path: Path
 ) -> None:
@@ -279,7 +292,10 @@ def test_cash_source_rejects_unknown_extension_and_falls_back_to_daily_pdf(tmp_p
 
 
 @pytest.mark.parametrize("total_notional", [0.0, 100.0])
-def test_historical_class_mix_falls_back_to_rollup_records(tmp_path, total_notional) -> None:
+@pytest.mark.parametrize("variant", ["all_programs", "ex_trend", "trend"])
+def test_historical_class_mix_falls_back_to_rollup_records(
+    tmp_path, total_notional, variant
+) -> None:
     from openpyxl import Workbook, load_workbook
 
     path = tmp_path / "history.xlsx"
@@ -291,16 +307,19 @@ def test_historical_class_mix_falls_back_to_rollup_records(tmp_path, total_notio
     sheet.append([date(2025, 11, 30), 0.0, 1.0])
     book.save(path)
     book.close()
+    warnings = []
     run_module._merge_historical_workbook(
         workbook_path=path,
-        variant="trend",
+        variant=variant,
         as_of_date=date(2025, 12, 31),
         cprs_ch_records=[
             {"Segment": "totals", "Notional": total_notional, "Equity": 25, "Treasury": 75},
             {"Segment": "repo", "Notional": 999, "Equity": 999},
         ],
-        warnings=[],
+        warnings=warnings,
     )
+    assert len(warnings) == 1
+    assert f"CLASS_BREAKDOWN_FALLBACK: {variant} uses record-derived fallback shares" in warnings[0]
     updated = load_workbook(path)
     try:
         row = list(updated["Class"].values)[-1]
@@ -331,6 +350,7 @@ def test_historical_class_mix_prefers_published_absolute_values_and_defaults_mis
         as_of_date=date(2025, 12, 31),
         cprs_ch_records=[{"Segment": "totals", "Notional": 100, "Equity": -25, "Treasury": 125}],
         class_breakdown={"Equity": 0.8},
+        class_breakdown_source="absolute",
         warnings=warnings,
     )
 
