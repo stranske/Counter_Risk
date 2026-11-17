@@ -23,10 +23,17 @@ from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import PptStandaloneValidationResult
 
+_MONTHLY_PPTX_FIXTURE = Path("tests/fixtures/Monthly Counterparty Exposure Report.pptx")
 
-def _write_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
+
+def _write_workbook_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
+    """Write minimal bytes for required workbook inputs; deck outputs use real PPTX fixtures."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(payload)
+
+
+def _assert_openable_pptx(path: Path) -> None:
+    assert len(Presentation(str(path)).slides) > 0
 
 
 def _build_config(
@@ -42,7 +49,7 @@ def _build_config(
         "hist_llc": inputs_dir / "hist_llc.xlsx",
     }
     for input_path in files.values():
-        _write_placeholder(input_path)
+        _write_workbook_placeholder(input_path)
 
     return WorkflowConfig(
         mosers_all_programs_xlsx=files["all_programs"],
@@ -51,7 +58,7 @@ def _build_config(
         hist_all_programs_3yr_xlsx=files["hist_all"],
         hist_ex_llc_3yr_xlsx=files["hist_ex"],
         hist_llc_3yr_xlsx=files["hist_llc"],
-        monthly_pptx=Path("tests/fixtures/Monthly Counterparty Exposure Report.pptx"),
+        monthly_pptx=_MONTHLY_PPTX_FIXTURE,
         output_root=tmp_path / "ignored-output-root",
         enable_screenshot_replacement=False,
         enable_ppt_output=enable_ppt_output,
@@ -301,10 +308,13 @@ def test_ppt_enabled_names_produce_exactly_two_expected_pptx_files(
         warnings=[],
     )
 
-    assert sorted(path.name for path in run_dir.glob("*.pptx")) == [
+    pptx_paths = sorted(run_dir.glob("*.pptx"), key=lambda path: path.name)
+    assert [path.name for path in pptx_paths] == [
         "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx",
         "Monthly Counterparty Exposure Report - 2025-12-31.pptx",
     ]
+    for pptx_path in pptx_paths:
+        _assert_openable_pptx(pptx_path)
 
     manifest = ManifestBuilder(
         config=config,
@@ -533,7 +543,9 @@ def test_distribution_disabled_keeps_master_and_records_skipped_manifest_entry(
         warnings=[],
     )
 
-    assert (run_dir / output_names.master_filename).exists()
+    master_path = run_dir / output_names.master_filename
+    assert master_path.exists()
+    _assert_openable_pptx(master_path)
     assert not (run_dir / output_names.distribution_filename).exists()
     assert not (run_dir / "README.txt").exists()
     assert calls["distribution"] == 0
