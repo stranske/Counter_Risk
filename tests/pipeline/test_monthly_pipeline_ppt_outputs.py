@@ -9,6 +9,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
+from zipfile import BadZipFile
 
 import pytest
 import yaml
@@ -779,13 +780,29 @@ def test_final_concentration_slide_precedes_pdf_export(
         assert not distribution.with_suffix(".pdf").exists()
 
 
+def test_derive_distribution_ppt_rejects_non_zip_master(tmp_path: Path) -> None:
+    master_path = tmp_path / "master.pptx"
+    master_path.write_bytes(b"not a ZIP archive")
+    distribution_path = tmp_path / "distribution.pptx"
+
+    with pytest.raises(RuntimeError, match="Distribution PPT derivation failed") as exc_info:
+        run_module._derive_distribution_ppt(
+            master_pptx_path=master_path, distribution_pptx_path=distribution_path
+        )
+
+    assert isinstance(exc_info.value.__cause__, BadZipFile)
+    assert not distribution_path.exists()
+
+
 @pytest.mark.parametrize("refresh_selection", ["omitted", "disabled", "cli"])
 def test_unreadable_distribution_ppt_fails_output_generation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
     refresh_selection: str,
 ) -> None:
     exported: list[Path] = []
+    corrupted: list[Path] = []
 
     def _unexpected_export(source: Path, target: Path) -> None:
         _ = target
@@ -799,6 +816,7 @@ def test_unreadable_distribution_ppt_fails_output_generation(
             master_pptx_path=master_pptx_path, distribution_pptx_path=distribution_pptx_path
         )
         distribution_pptx_path.write_bytes(b"corrupt-final-distribution-deck")
+        corrupted.append(distribution_pptx_path)
 
     monkeypatch.setattr(run_module, "_derive_distribution_ppt", _derive_then_corrupt)
     monkeypatch.setattr(
@@ -839,12 +857,15 @@ def test_unreadable_distribution_ppt_fails_output_generation(
         )
 
     if refresh_selection == "cli":
+        config.monthly_pptx = config.monthly_pptx.resolve()
+        config.as_of_date = date(2025, 12, 31)
         config_path = tmp_path / "config.yml"
         config_path.write_text(
             yaml.safe_dump(config.model_dump(mode="json")),
             encoding="utf-8",
         )
         run_output_dir = tmp_path / "cli-run"
+        monkeypatch.setattr("counter_risk.cli.configure_logging", Mock())
         monkeypatch.setattr(run_module, "_parse_inputs", lambda *a: {})
         monkeypatch.setattr(run_module, "_validate_parsed_inputs", lambda *a: None)
         monkeypatch.setattr(run_module, "_run_reconciliation_checks", lambda **k: {})
@@ -872,6 +893,19 @@ def test_unreadable_distribution_ppt_fails_output_generation(
             )
             == 1
         )
+        (corrupted_path,) = corrupted
+        (failure_record,) = [
+            record
+            for record in caplog.records
+            if record.name == run_module.LOGGER.name
+            and record.getMessage().startswith("pipeline_failed stage=write_outputs ")
+        ]
+        assert failure_record.exc_info is not None
+        validation_error = failure_record.exc_info[1]
+        assert isinstance(validation_error, RuntimeError)
+        assert "Failed to validate distribution PPT" in str(validation_error)
+        assert str(corrupted_path) in str(validation_error)
+        assert isinstance(validation_error.__cause__, BadZipFile)
         assert exported == []
         return
 
