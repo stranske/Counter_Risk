@@ -738,11 +738,18 @@ def run_pipeline(
         LOGGER.exception("pipeline_failed stage=langsmith_fleet_artifact run_dir=%s", run_dir)
         raise RuntimeError("Pipeline failed during LangSmith fleet artifact stage") from exc
 
+    consumed_cash_overrides_path = (
+        Path(repo_cash_summary["overrides_path"])
+        if repo_cash_summary.get("overrides_path")
+        else None
+    )
     try:
         input_hashes = {
             name: _sha256_file(path)
             for name, path in _resolve_manifest_input_paths(
-                runtime_config, external_screenshot_inputs=config.screenshot_inputs
+                runtime_config,
+                external_screenshot_inputs=config.screenshot_inputs,
+                consumed_cash_overrides_path=consumed_cash_overrides_path,
             ).items()
         }
         manifest_builder = ManifestBuilder(
@@ -1100,11 +1107,18 @@ def _ppt_screenshot_output_active(config: WorkflowConfig) -> bool:
 
 
 def _resolve_manifest_input_paths(
-    config: WorkflowConfig, *, external_screenshot_inputs: Mapping[str, Path]
+    config: WorkflowConfig,
+    *,
+    external_screenshot_inputs: Mapping[str, Path],
+    consumed_cash_overrides_path: Path | None = None,
 ) -> dict[str, Path]:
     """Return externally supplied sources, never run-generated screenshot intermediates."""
 
     paths = _resolve_input_paths(config)
+    if consumed_cash_overrides_path is not None:
+        # Auto-discovered cash_overrides_<as_of_date>.csv files change reported cash,
+        # so hash them too; an explicit config.cash_overrides_csv keeps precedence.
+        paths.setdefault("cash_overrides_csv", consumed_cash_overrides_path)
     if (
         config.enable_screenshot_replacement
         and external_screenshot_inputs
