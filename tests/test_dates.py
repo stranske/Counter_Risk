@@ -184,6 +184,29 @@ def test_compare_source_dates_detects_later_variant_without_changing_precedence(
     assert resolve_as_of_date(config, ["Report Date: 2026-02-28"]).value == date(2026, 1, 31)
 
 
+def test_compare_source_dates_detects_effective_mismatch_when_config_unset() -> None:
+    from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+
+    evidence = [
+        source_report_date_evidence(
+            variant=variant, path=f"{variant}.xlsx", headers=["Report Date: 2026-01-31"]
+        )
+        for variant in ("all_programs", "ex_trend", "trend")
+    ]
+    comparison = compare_source_report_dates(
+        configured_date=None,
+        effective_date=date(2026, 3, 1),
+        evidence=evidence,
+    )
+    assert comparison["configured_date"] is None
+    assert comparison["effective_date"] == "2026-03-01"
+    assert comparison["has_conflict"] is True
+    assert comparison["config_conflict_variants"] == []
+    assert comparison["effective_conflict_variants"] == ["all_programs", "ex_trend", "trend"]
+    assert comparison["inter_variant_conflict"] is False
+    assert comparison["status"] == "conflict"
+
+
 @pytest.mark.parametrize(
     "headers,status",
     [

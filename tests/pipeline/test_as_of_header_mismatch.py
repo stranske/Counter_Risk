@@ -11,6 +11,7 @@ import yaml
 
 from counter_risk.cli import main
 from counter_risk.config import WorkflowConfig
+from counter_risk.dates import AS_OF_SOURCE_HEADER_TEXT
 from counter_risk.pipeline import run as pipeline
 
 Workbook = pytest.importorskip("openpyxl", reason="XLSX date safeguards require openpyxl").Workbook
@@ -90,6 +91,16 @@ def _manifest(config, tmp_path, **kwargs):
     run_dir = pipeline.run_pipeline(_write_config(config, tmp_path / "config.yml"), **kwargs)
     manifest = json.loads((run_dir / "manifest.json").read_text())
     return run_dir, manifest, manifest["date_resolution"]["source_report_dates"]
+
+
+def _unset_config_march_inference(config: WorkflowConfig) -> WorkflowConfig:
+    """Legacy header text infers March 1 while labelled sources remain January 31."""
+    config = config.model_copy(update={"as_of_date": None})
+    _set_header(
+        config.mosers_all_programs_xlsx,
+        ["Printed 2026-03-01", "Report Date: 2026-01-31"],
+    )
+    return config
 
 
 @pytest.mark.parametrize("configured", [date(2026, 1, 31), None])
@@ -191,6 +202,105 @@ def test_unverified_workbook_never_confirms_match_or_conflict(date_run, tmp_path
     assert comparison["status"] == "unverified"
     assert comparison["has_conflict"] is False
     assert comparison["sources"][2]["report_date"] is None
+
+
+def test_inferred_as_of_mismatch_with_identified_sources_is_conflict(date_run, tmp_path):
+    config, _ = date_run
+    config = _unset_config_march_inference(config)
+    _, manifest, comparison = _manifest(config, tmp_path)
+    assert manifest["as_of_date"] == "2026-03-01"
+    assert comparison["configured_date"] is None
+    assert comparison["effective_date"] == "2026-03-01"
+    assert comparison["has_conflict"] is True
+    assert comparison["config_conflict_variants"] == []
+    assert comparison["effective_conflict_variants"] == ["all_programs", "ex_trend", "trend"]
+    assert comparison["inter_variant_conflict"] is False
+    assert comparison["effective_date_resolution"]["source"] == AS_OF_SOURCE_HEADER_TEXT
+
+
+def test_unset_config_inferred_mismatch_records_conflict_diagnostics(date_run, tmp_path):
+    config, _ = date_run
+    config = _unset_config_march_inference(config)
+    run_dir, manifest, comparison = _manifest(config, tmp_path)
+    finding = next(
+        f
+        for f in manifest["data_quality"]["findings"]
+        if f["code"] == "SOURCE_REPORT_DATE_CONFLICT"
+    )
+    assert finding["severity"] == "warn"
+    assert finding["details"] == comparison
+    assert finding["details"]["effective_date_resolution"]["value"] == "2026-03-01"
+    assert "2026-03-01" in finding["message"] and "2026-01-31" in finding["message"]
+    assert manifest["data_quality"]["overall_status"] == "warn"
+    assert "YELLOW" in (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text()
+
+
+@pytest.mark.parametrize("mode", ["strict", "history", "publication", "distribution", "pdf"])
+def test_unset_config_inferred_mismatch_blocks_strict_or_final_execution(date_run, tmp_path, mode):
+    config, calls = date_run
+    config = _unset_config_march_inference(config)
+    updates = {
+        "strict": {"report_date_policy": "strict"},
+        "history": {
+            "output_generators": WorkflowConfig.model_fields["output_generators"].default_factory()
+        },
+        "publication": {"enable_ppt_output": True},
+        "distribution": {"enable_distribution_output": True},
+        "pdf": {"export_pdf": True, "enable_distribution_output": True},
+    }[mode]
+    config = config.model_copy(update=updates)
+    original = {
+        path: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in (
+            config.hist_all_programs_3yr_xlsx,
+            config.hist_ex_llc_3yr_xlsx,
+            config.hist_llc_3yr_xlsx,
+            config.monthly_pptx,
+        )
+    }
+    path = _write_config(config, tmp_path / "config.yml")
+    assert main(["run", "--config", str(path)]) == 1
+    assert calls == []
+    run_dir = next(config.output_root.iterdir())
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    comparison = manifest["date_resolution"]["source_report_dates"]
+    assert comparison["configured_date"] is None
+    assert comparison["effective_date"] == "2026-03-01"
+    assert comparison["execution"] == "blocked"
+    assert "SOURCE_REPORT_DATE_CONFLICT" in (run_dir / "DATA_QUALITY_SUMMARY.txt").read_text()
+    assert {p.name for p in run_dir.iterdir()} == {"manifest.json", "DATA_QUALITY_SUMMARY.txt"}
+    for path, digest in original.items():
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == digest
+
+
+def test_unset_config_inferred_mismatch_override_reaches_final_stages(date_run, tmp_path):
+    config, calls = date_run
+    config = _unset_config_march_inference(config)
+    config = config.model_copy(update={"report_date_policy": "strict", "enable_ppt_output": True})
+    path = _write_config(config, tmp_path / "config.yml")
+    assert (
+        main(
+            [
+                "run",
+                "--config",
+                str(path),
+                "--report-date-override",
+                "Risk owner approved period exception REF-42",
+            ]
+        )
+        == 0
+    )
+    assert calls == ["history", "publication"]
+    run_dir = next(config.output_root.iterdir())
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    comparison = manifest["date_resolution"]["source_report_dates"]
+    assert comparison["configured_date"] is None
+    assert comparison["effective_date"] == "2026-03-01"
+    assert comparison["execution"] == "override"
+    assert comparison["override"]["reason"] == "Risk owner approved period exception REF-42"
+    # Override is not retained by the next invocation of the same config.
+    assert main(["run", "--config", str(path)]) == 1
+    assert calls == ["history", "publication"]
 
 
 @pytest.mark.parametrize("mode", ["strict", "history", "publication", "distribution", "pdf"])

@@ -460,8 +460,11 @@ def run_pipeline(
         raise RuntimeError("Pipeline failed during run directory setup stage") from exc
 
     date_comparison = compare_source_report_dates(
-        configured_date=config.as_of_date, evidence=source_dates
+        configured_date=config.as_of_date,
+        effective_date=as_of_date,
+        evidence=source_dates,
     )
+    date_comparison["effective_date_resolution"] = as_of_date_resolution.to_manifest_entry()
     date_comparison["policy"] = config.report_date_policy
     date_comparison["override"] = (
         {
@@ -475,9 +478,14 @@ def run_pipeline(
     )
     warnings: list[str] = []
     if date_comparison["has_conflict"]:
+        authority = (
+            "configured=" + str(date_comparison["configured_date"])
+            if date_comparison["configured_date"] is not None
+            else "effective=" + str(date_comparison["effective_date"])
+        )
         warnings.append(
-            "Source report date conflict: configured="
-            + str(date_comparison["configured_date"])
+            "Source report date conflict: "
+            + authority
             + "; "
             + "; ".join(
                 f"{entry['variant']} ({entry['path']})={entry['report_date']}"
