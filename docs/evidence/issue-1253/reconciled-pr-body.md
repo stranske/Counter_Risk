@@ -25,10 +25,15 @@ Retain legacy header inference and compare its effective date with every identif
 
 Deliberate-break evidence: `docs/evidence/issue-1253/effective-as-of-deliberate-break.md`
 
-Verified on branch `cursor/issue-1253` at keepalive 2026-11-17 UTC: `scripts/check_deliberate_break.py --head HEAD --pr-body-file docs/evidence/issue-1253/effective-as-of-deliberate-break.md` → PASS.
+Verified on branch `cursor/issue-1253` at keepalive 2026-11-17 UTC (round 1256):
+
+- `python3 -m pytest tests/pipeline/test_as_of_header_mismatch.py::test_inferred_as_of_mismatch_with_identified_sources_is_conflict -q` → 1 passed
+- `python3 -m pytest tests/pipeline/test_as_of_header_mismatch.py -q` → 37 passed
+- `python3 -m pytest tests/test_dates.py::test_compare_source_dates_detects_effective_mismatch_when_config_unset tests/test_dates.py::test_compare_source_dates_detects_later_variant_without_changing_precedence tests/test_dates.py::test_compare_source_dates_keeps_config_null_when_effective_matches_sources -q` → 3 passed
+- `scripts/check_deliberate_break.py --head HEAD --pr-body-file docs/evidence/issue-1253/effective-as-of-deliberate-break.md` → verdict PASS
 
 **Progress:** 8/8 tasks complete.
 
-Apply this file when `gh` is unavailable in the runner (live PR checkboxes were stale after commits `fbae459` and `10a9486`).
+Apply this file when `gh` is unavailable in the runner (live PR checkboxes were stale after commits `fbae459`, `10a9486`, and `a880bfa`).
 
 <!-- deliberate-break: test=tests/pipeline/test_as_of_header_mismatch.py::test_inferred_as_of_mismatch_with_identified_sources_is_conflict test-file=tests/pipeline/test_as_of_header_mismatch.py break-file=src/counter_risk/dates.py -->

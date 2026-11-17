@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, date
 from pathlib import Path
 
@@ -227,6 +228,24 @@ def test_compare_source_dates_keeps_config_null_when_effective_matches_sources()
     assert comparison["config_conflict_variants"] == []
     assert comparison["effective_conflict_variants"] == []
     assert comparison["status"] == "consistent"
+
+
+def test_compare_source_dates_keeps_deliberate_break_needle() -> None:
+    """Lock effective-vs-source comparison independent of configured_date (#1253)."""
+    import counter_risk.dates as dates_module
+
+    source = Path(dates_module.__file__).read_bytes().replace(b"\r\n", b"\n")
+    digest = hashlib.sha256(source).hexdigest()
+    effective_branch = b'        if effective_date is not None and entry["report_date"] != effective_date.isoformat()\n'
+    gated_branch = (
+        b"        if (\n"
+        b"            configured_date is not None\n"
+        b"            and effective_date is not None\n"
+        b'            and entry["report_date"] != effective_date.isoformat()\n'
+        b"        )\n"
+    )
+    assert effective_branch in source, f"missing effective-conflict anchor (sha256={digest})"
+    assert gated_branch not in source
 
 
 @pytest.mark.parametrize(
