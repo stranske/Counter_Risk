@@ -6,13 +6,12 @@ import csv
 import json
 import shutil
 from datetime import date
-
-import yaml
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
 import pytest
+import yaml
 from pptx import Presentation
 
 import counter_risk.pipeline.run as run_module
@@ -762,10 +761,10 @@ def test_unreadable_distribution_ppt_fails_output_generation(
 
     real_derive = run_module._derive_distribution_ppt
 
-    def _derive_then_corrupt(
-        *, master_pptx_path: Path, distribution_pptx_path: Path
-    ) -> None:
-        real_derive(master_pptx_path=master_pptx_path, distribution_pptx_path=distribution_pptx_path)
+    def _derive_then_corrupt(*, master_pptx_path: Path, distribution_pptx_path: Path) -> None:
+        real_derive(
+            master_pptx_path=master_pptx_path, distribution_pptx_path=distribution_pptx_path
+        )
         distribution_pptx_path.write_bytes(b"corrupt-final-distribution-deck")
 
     monkeypatch.setattr(run_module, "_derive_distribution_ppt", _derive_then_corrupt)
@@ -796,9 +795,11 @@ def test_unreadable_distribution_ppt_fails_output_generation(
         config = config.model_copy(
             update={
                 "output_generators": tuple(
-                    registration.model_copy(update={"enabled": False})
-                    if registration.name == "ppt_link_refresh"
-                    else registration
+                    (
+                        registration.model_copy(update={"enabled": False})
+                        if registration.name == "ppt_link_refresh"
+                        else registration
+                    )
                     for registration in config.output_generators
                 )
             }
