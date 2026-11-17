@@ -19,6 +19,13 @@ def _write_placeholder(path: Path) -> None:
     path.write_bytes(b"fixture")
 
 
+def _write_minimal_pptx(path: Path) -> None:
+    from pptx import Presentation
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Presentation().save(str(path))
+
+
 def _write_config(path: Path, inputs: dict[str, Path]) -> None:
     path.write_text(
         "\n".join(
@@ -49,8 +56,11 @@ def _prepare_pipeline_for_status_tests(tmp_path: Path, monkeypatch: pytest.Monke
         "hist_llc": tmp_path / "inputs" / "hist_llc.xlsx",
         "monthly_pptx": tmp_path / "inputs" / "monthly.pptx",
     }
-    for path in inputs.values():
-        _write_placeholder(path)
+    for key, path in inputs.items():
+        if key == "monthly_pptx":
+            _write_minimal_pptx(path)
+        else:
+            _write_placeholder(path)
 
     config_path = tmp_path / "config.yml"
     _write_config(config_path, inputs)

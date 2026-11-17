@@ -9,11 +9,14 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
+from zipfile import BadZipFile
 
 import pytest
+import yaml
 from pptx import Presentation
 
 import counter_risk.pipeline.run as run_module
+from counter_risk.cli import main
 from counter_risk.config import WorkflowConfig
 from counter_risk.outputs.pdf_export import PDFExportGenerator
 from counter_risk.parsers import parse_fcm_totals
@@ -21,10 +24,17 @@ from counter_risk.pipeline.manifest import ManifestBuilder
 from counter_risk.pipeline.ppt_naming import resolve_ppt_output_names
 from counter_risk.pipeline.ppt_validation import PptStandaloneValidationResult
 
+_MONTHLY_PPTX_FIXTURE = Path("tests/fixtures/Monthly Counterparty Exposure Report.pptx")
 
-def _write_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
+
+def _write_workbook_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
+    """Write minimal bytes for required workbook inputs; deck outputs use real PPTX fixtures."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(payload)
+
+
+def _assert_openable_pptx(path: Path) -> None:
+    assert len(Presentation(str(path)).slides) > 0
 
 
 def _build_config(
@@ -40,7 +50,7 @@ def _build_config(
         "hist_llc": inputs_dir / "hist_llc.xlsx",
     }
     for input_path in files.values():
-        _write_placeholder(input_path)
+        _write_workbook_placeholder(input_path)
 
     return WorkflowConfig(
         mosers_all_programs_xlsx=files["all_programs"],
@@ -49,12 +59,30 @@ def _build_config(
         hist_all_programs_3yr_xlsx=files["hist_all"],
         hist_ex_llc_3yr_xlsx=files["hist_ex"],
         hist_llc_3yr_xlsx=files["hist_llc"],
-        monthly_pptx=Path("tests/fixtures/Monthly Counterparty Exposure Report.pptx"),
+        monthly_pptx=_MONTHLY_PPTX_FIXTURE,
         output_root=tmp_path / "ignored-output-root",
         enable_screenshot_replacement=False,
         enable_ppt_output=enable_ppt_output,
         enable_distribution_output=enable_distribution_output,
     )
+
+
+def test_build_config_uses_workbook_placeholders_and_valid_monthly_fixture(
+    tmp_path: Path,
+) -> None:
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    assert config.monthly_pptx == _MONTHLY_PPTX_FIXTURE
+    _assert_openable_pptx(_MONTHLY_PPTX_FIXTURE)
+    workbook_paths = (
+        config.mosers_all_programs_xlsx,
+        config.mosers_ex_trend_xlsx,
+        config.mosers_trend_xlsx,
+        config.hist_all_programs_3yr_xlsx,
+        config.hist_ex_llc_3yr_xlsx,
+        config.hist_llc_3yr_xlsx,
+    )
+    for workbook_path in workbook_paths:
+        assert workbook_path.read_bytes() == b"fixture"
 
 
 @pytest.mark.parametrize("selection", ["enabled", "disabled", "omitted"])
@@ -299,10 +327,13 @@ def test_ppt_enabled_names_produce_exactly_two_expected_pptx_files(
         warnings=[],
     )
 
-    assert sorted(path.name for path in run_dir.glob("*.pptx")) == [
+    pptx_paths = sorted(run_dir.glob("*.pptx"), key=lambda path: path.name)
+    assert [path.name for path in pptx_paths] == [
         "Monthly Counterparty Exposure Report (Master) - 2025-12-31.pptx",
         "Monthly Counterparty Exposure Report - 2025-12-31.pptx",
     ]
+    for pptx_path in pptx_paths:
+        _assert_openable_pptx(pptx_path)
 
     manifest = ManifestBuilder(
         config=config,
@@ -354,6 +385,9 @@ def test_ppt_enabled_run_writes_readme_consistent_with_manifest_entries(
         as_of_date=as_of_date,
         warnings=[],
     )
+
+    _assert_openable_pptx(run_dir / output_names.master_filename)
+    _assert_openable_pptx(run_dir / output_names.distribution_filename)
 
     readme_path = run_dir / "README.txt"
     assert readme_path.exists()
@@ -531,7 +565,9 @@ def test_distribution_disabled_keeps_master_and_records_skipped_manifest_entry(
         warnings=[],
     )
 
-    assert (run_dir / output_names.master_filename).exists()
+    master_path = run_dir / output_names.master_filename
+    assert master_path.exists()
+    _assert_openable_pptx(master_path)
     assert not (run_dir / output_names.distribution_filename).exists()
     assert not (run_dir / "README.txt").exists()
     assert calls["distribution"] == 0
@@ -742,6 +778,149 @@ def test_final_concentration_slide_precedes_pdf_export(
     else:
         assert export_source == []
         assert not distribution.with_suffix(".pdf").exists()
+
+
+def test_derive_distribution_ppt_rejects_non_zip_master(tmp_path: Path) -> None:
+    master_path = tmp_path / "master.pptx"
+    master_path.write_bytes(b"not a ZIP archive")
+    distribution_path = tmp_path / "distribution.pptx"
+
+    with pytest.raises(RuntimeError, match="Distribution PPT derivation failed") as exc_info:
+        run_module._derive_distribution_ppt(
+            master_pptx_path=master_path, distribution_pptx_path=distribution_path
+        )
+
+    assert isinstance(exc_info.value.__cause__, BadZipFile)
+    assert not distribution_path.exists()
+
+
+@pytest.mark.parametrize("refresh_selection", ["omitted", "disabled", "cli"])
+def test_unreadable_distribution_ppt_fails_output_generation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    refresh_selection: str,
+) -> None:
+    exported: list[Path] = []
+    corrupted: list[Path] = []
+
+    def _unexpected_export(source: Path, target: Path) -> None:
+        _ = target
+        exported.append(source)
+        raise AssertionError("PDF export should not run for unreadable distribution deck")
+
+    real_derive = run_module._derive_distribution_ppt
+
+    def _derive_then_corrupt(*, master_pptx_path: Path, distribution_pptx_path: Path) -> None:
+        real_derive(
+            master_pptx_path=master_pptx_path, distribution_pptx_path=distribution_pptx_path
+        )
+        distribution_pptx_path.write_bytes(b"corrupt-final-distribution-deck")
+        corrupted.append(distribution_pptx_path)
+
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", _derive_then_corrupt)
+    monkeypatch.setattr(
+        run_module,
+        "_build_pdf_export_output_generator",
+        lambda *, source_pptx, warnings: PDFExportGenerator(
+            source_pptx=source_pptx,
+            warnings=warnings,
+            com_availability_checker=lambda: True,
+            pptx_to_pdf_exporter=_unexpected_export,
+        ),
+    )
+
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    config.export_pdf = True
+    if refresh_selection == "omitted":
+        config = config.model_copy(
+            update={
+                "output_generators": tuple(
+                    registration
+                    for registration in config.output_generators
+                    if registration.name != "ppt_link_refresh"
+                )
+            }
+        )
+    elif refresh_selection == "disabled":
+        config = config.model_copy(
+            update={
+                "output_generators": tuple(
+                    (
+                        registration.model_copy(update={"enabled": False})
+                        if registration.name == "ppt_link_refresh"
+                        else registration
+                    )
+                    for registration in config.output_generators
+                )
+            }
+        )
+
+    if refresh_selection == "cli":
+        config.monthly_pptx = config.monthly_pptx.resolve()
+        config.as_of_date = date(2025, 12, 31)
+        config_path = tmp_path / "config.yml"
+        config_path.write_text(
+            yaml.safe_dump(config.model_dump(mode="json")),
+            encoding="utf-8",
+        )
+        run_output_dir = tmp_path / "cli-run"
+        monkeypatch.setattr("counter_risk.cli.configure_logging", Mock())
+        monkeypatch.setattr(run_module, "_parse_inputs", lambda *a: {})
+        monkeypatch.setattr(run_module, "_validate_parsed_inputs", lambda *a: None)
+        monkeypatch.setattr(run_module, "_run_reconciliation_checks", lambda **k: {})
+        monkeypatch.setattr(run_module, "_compute_metrics", lambda *a: ({}, {}))
+        monkeypatch.setattr(run_module, "_write_risk_outputs", lambda **k: [])
+        monkeypatch.setattr(run_module, "_compute_and_write_concentration_metrics", lambda **k: [])
+        monkeypatch.setattr(run_module, "_write_change_attribution_outputs", lambda **k: [])
+        monkeypatch.setattr(
+            run_module,
+            "_compute_and_write_limit_breaches",
+            lambda **k: run_module.LimitBreachEvaluation(None, 0),
+        )
+        monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **k: [])
+        monkeypatch.setattr(run_module, "_resolve_repo_root", lambda: tmp_path)
+
+        assert (
+            main(
+                [
+                    "run",
+                    "--config",
+                    str(config_path),
+                    "--output-dir",
+                    str(run_output_dir),
+                ]
+            )
+            == 1
+        )
+        (corrupted_path,) = corrupted
+        (failure_record,) = [
+            record
+            for record in caplog.records
+            if record.name == run_module.LOGGER.name
+            and record.getMessage().startswith("pipeline_failed stage=write_outputs ")
+        ]
+        assert failure_record.exc_info is not None
+        validation_error = failure_record.exc_info[1]
+        assert isinstance(validation_error, RuntimeError)
+        assert "Failed to validate distribution PPT" in str(validation_error)
+        assert str(corrupted_path) in str(validation_error)
+        assert isinstance(validation_error.__cause__, BadZipFile)
+        assert exported == []
+        return
+
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+
+    with pytest.raises(RuntimeError, match="Failed to validate distribution PPT"):
+        run_module._write_outputs(
+            run_dir=run_dir,
+            config=config,
+            as_of_date=date(2025, 12, 31),
+            warnings=[],
+        )
+
+    assert exported == []
 
 
 def test_final_concentration_validation_failure_prevents_pdf_export(
