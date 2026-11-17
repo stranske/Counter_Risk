@@ -25,12 +25,12 @@ Retain legacy header inference and compare its effective date with every identif
 
 Deliberate-break evidence: `docs/evidence/issue-1253/effective-as-of-deliberate-break.md`
 
-Verified on branch `cursor/issue-1253` at keepalive 2026-11-17 UTC (round 1256):
+Verified on branch `cursor/issue-1253` at keepalive 2026-11-17 UTC (round 1256, reconciled):
 
 - `python3 -m pytest tests/pipeline/test_as_of_header_mismatch.py::test_inferred_as_of_mismatch_with_identified_sources_is_conflict -q` → 1 passed
-- `python3 -m pytest tests/pipeline/test_as_of_header_mismatch.py -q` → 37 passed
-- `python3 -m pytest tests/test_dates.py::test_compare_source_dates_detects_effective_mismatch_when_config_unset tests/test_dates.py::test_compare_source_dates_detects_later_variant_without_changing_precedence tests/test_dates.py::test_compare_source_dates_keeps_config_null_when_effective_matches_sources -q` → 3 passed
-- `scripts/check_deliberate_break.py --head HEAD --pr-body-file docs/evidence/issue-1253/effective-as-of-deliberate-break.md` → verdict PASS
+- `python3 -m pytest tests/pipeline/test_as_of_header_mismatch.py -q` → 38 passed (includes `test_pipeline_keeps_effective_date_wiring_needle`)
+- `python3 -m pytest tests/test_dates.py::test_compare_source_dates_detects_effective_mismatch_when_config_unset tests/test_dates.py::test_compare_source_dates_detects_later_variant_without_changing_precedence tests/test_dates.py::test_compare_source_dates_keeps_deliberate_break_needle -q` → 3 passed
+- `scripts/check_deliberate_break.py --head HEAD --pr-body-file docs/evidence/issue-1253/effective-as-of-deliberate-break.md` → verdict PASS (`reason=head-passed-base-failed`)
 
 **Progress:** 8/8 tasks complete.
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import date
+from pathlib import Path
 
 import pytest
 import yaml
@@ -202,6 +203,18 @@ def test_unverified_workbook_never_confirms_match_or_conflict(date_run, tmp_path
     assert comparison["status"] == "unverified"
     assert comparison["has_conflict"] is False
     assert comparison["sources"][2]["report_date"] is None
+
+
+def test_pipeline_keeps_effective_date_wiring_needle() -> None:
+    """Lock resolved as_of_date passed as effective_date when config is unset (#1253)."""
+    import counter_risk.pipeline.run as run_module
+
+    source = Path(run_module.__file__).read_bytes().replace(b"\r\n", b"\n")
+    digest = hashlib.sha256(source).hexdigest()
+    needle = b"        effective_date=as_of_date,\n"
+    gated = b"        effective_date=config.as_of_date,\n"
+    assert needle in source, f"missing effective_date wiring (sha256={digest})"
+    assert gated not in source
 
 
 def test_inferred_as_of_mismatch_with_identified_sources_is_conflict(date_run, tmp_path):
