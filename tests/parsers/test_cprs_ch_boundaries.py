@@ -1,5 +1,7 @@
 """CPRS-CH structure failures and published class-breakdown selection."""
 
+from zipfile import ZipFile
+
 import pytest
 
 from counter_risk.parsers import cprs_ch as ch
@@ -105,17 +107,27 @@ def test_class_breakdown_requires_existing_workbook(tmp_path):
         ch.read_class_notional_breakdown_with_provenance(tmp_path / "missing.xlsx")
 
 
-@pytest.mark.parametrize("kind", ["zip", "header", "classes", "breakdown"])
+@pytest.mark.parametrize("kind", ["zip", "worksheet", "xml", "header", "classes", "breakdown"])
 def test_class_breakdown_returns_none_when_unavailable(tmp_path, kind):
     rows = {
         "zip": [],
+        "worksheet": [HEADERS, ["Notional Breakdown", None, None, 10, 20, 30, 15, 25]],
+        "xml": [HEADERS, ["Notional Breakdown", None, None, 10, 20, 30, 15, 25]],
         "header": [["unrelated"]],
         "classes": [["Counterparty", "Notional"], [], ["Notional Breakdown", 100]],
         "breakdown": [HEADERS, [], ["Futures", "CME", 0, 0, 0, 15, 0, 0, 15]],
     }[kind]
-    path = _workbook(tmp_path, rows)
+    path = _workbook(tmp_path, rows, sheet_name="unrelated" if kind == "worksheet" else "CPRS - CH")
     if kind == "zip":
         path.write_bytes(b"invalid zip")
+    elif kind == "xml":
+        # Keep the XLSX container valid while damaging the selected worksheet.
+        with ZipFile(path) as workbook_zip:
+            members = {name: workbook_zip.read(name) for name in workbook_zip.namelist()}
+        members["xl/worksheets/sheet1.xml"] = b"<worksheet>"
+        with ZipFile(path, "w") as workbook_zip:
+            for name, content in members.items():
+                workbook_zip.writestr(name, content)
     assert ch.read_class_notional_breakdown(path) is None
     assert ch.read_class_notional_breakdown_with_provenance(path) is None
 

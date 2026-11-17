@@ -109,3 +109,42 @@ was rejected for the same reason, as were attempts to add a blocker comment and
 the `needs-human` label. Those remote checkboxes remain unchanged.
 The new test cases and these notes remain in the working tree; committing them
 requires writable Git metadata or an approved GitHub write capability.
+
+## Reconciliation and parser structure regressions (2026-11-17)
+
+Reviewed commits `3b450b5` and `ed6b875` and verified the six implementation
+tasks against the current parser, generator, merger, data-quality, and manifest
+code. Added missing-worksheet and malformed-worksheet-XML cases to
+`test_class_breakdown_returns_none_when_unavailable`. Both use real XLSX
+containers and verify that the provenance reader and legacy mapping reader
+return `None`, preserving the contract that triggers record-derived warnings.
+
+- [x] Parser and historical-workbook regressions: **53 passed**.
+- [x] Named Trend fallback regression: **1 passed** before the deliberate
+  break, **1 failed** with the break, **1 passed** after restoring the source
+  byte for byte. The temporary defect forced non-absolute Trend sources to
+  `absolute` before warning generation; the failure showed `warnings=[]`,
+  `overall_status='info'`, `finding_codes=['NO_FINDINGS']`, and
+  `trend_source='absolute'`. No temporary defect remains in the working tree.
+- [x] Complete historical-workbook file: **24 passed**.
+- [x] Other affected parser, data-quality, manifest-schema, merger, pipeline,
+  and PPT-status regressions: **480 passed, 38 slow tests deselected**.
+  All pytest commands used `-m 'not slow'`.
+- [x] Ruff on the changed Python test file and `git diff --check`: **passed**.
+- [x] Required whole-repository Black gate: **422 files would be left
+  unchanged**, after verifying each file through Black's single-file CLI to
+  populate the writable cache used by the command documented above.
+- [ ] Commit the new parser structure cases on `codex/issue-1254`.
+- [ ] Reconcile verified checkboxes in PR #1255 and publish the deliberate-break
+  evidence above in its body or conversation.
+
+The GitHub connector rejected the PR-body update, evidence comment, and
+`needs-human` label with `MCP tool call requires approval, but approval policy
+is never`. The PR was verified **open**, with **isDraft=false**. Remote
+reconciliation remains blocked by the unavailable GitHub write capability.
+
+After all checks passed, the scoped commit attempt stopped at `git add`
+(exit 128): `fatal: Unable to create
+'/home/runner/work/Counter_Risk/Counter_Risk/.git/index.lock': Read-only file system`.
+The new Python test changes and this evidence remain uncommitted; no branch or
+pull request was created.
