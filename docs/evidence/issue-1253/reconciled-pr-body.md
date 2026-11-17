@@ -25,7 +25,7 @@ Retain legacy header inference and compare its effective date with every identif
 
 Deliberate-break evidence: `docs/evidence/issue-1253/effective-as-of-deliberate-break.md`
 
-Verified on branch `cursor/issue-1253` at keepalive 2026-11-17 UTC (round 1256 re-verify):
+Verified on branch `cursor/issue-1253` at keepalive 2026-11-17 UTC (round 1256 deliberate-break cycle):
 
 - `python3 -m pytest tests/pipeline/test_as_of_header_mismatch.py::test_inferred_as_of_mismatch_with_identified_sources_is_conflict -q` → 1 passed (`status == "conflict"` asserted)
 - Deliberate break (omit effective comparisons when `configured_date` is null) → `assert False is True` on `has_conflict` at line 227; restored → 1 passed

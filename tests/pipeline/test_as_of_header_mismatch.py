@@ -217,6 +217,24 @@ def test_pipeline_keeps_effective_date_wiring_needle() -> None:
     assert gated not in source
 
 
+def test_as_of_header_mismatch_keeps_effective_conflict_needle() -> None:
+    """Lock effective-vs-source comparison when configured_date is unset (#1253)."""
+    import counter_risk.dates as dates_module
+
+    source = Path(dates_module.__file__).read_bytes().replace(b"\r\n", b"\n")
+    digest = hashlib.sha256(source).hexdigest()
+    effective_branch = b'        if effective_date is not None and entry["report_date"] != effective_date.isoformat()\n'
+    gated_branch = (
+        b"        if (\n"
+        b"            configured_date is not None\n"
+        b"            and effective_date is not None\n"
+        b'            and entry["report_date"] != effective_date.isoformat()\n'
+        b"        )\n"
+    )
+    assert effective_branch in source, f"missing effective-conflict anchor (sha256={digest})"
+    assert gated_branch not in source
+
+
 def test_inferred_as_of_mismatch_with_identified_sources_is_conflict(date_run, tmp_path):
     config, _ = date_run
     config = _unset_config_march_inference(config)
