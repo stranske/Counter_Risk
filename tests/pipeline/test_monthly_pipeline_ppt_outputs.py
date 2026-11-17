@@ -6,6 +6,8 @@ import csv
 import json
 import shutil
 from datetime import date
+
+import yaml
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
@@ -14,6 +16,7 @@ import pytest
 from pptx import Presentation
 
 import counter_risk.pipeline.run as run_module
+from counter_risk.cli import main
 from counter_risk.config import WorkflowConfig
 from counter_risk.outputs.pdf_export import PDFExportGenerator
 from counter_risk.parsers import parse_fcm_totals
@@ -742,6 +745,114 @@ def test_final_concentration_slide_precedes_pdf_export(
     else:
         assert export_source == []
         assert not distribution.with_suffix(".pdf").exists()
+
+
+@pytest.mark.parametrize("refresh_selection", ["omitted", "disabled", "cli"])
+def test_unreadable_distribution_ppt_fails_output_generation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    refresh_selection: str,
+) -> None:
+    exported: list[Path] = []
+
+    def _unexpected_export(source: Path, target: Path) -> None:
+        _ = target
+        exported.append(source)
+        raise AssertionError("PDF export should not run for unreadable distribution deck")
+
+    real_derive = run_module._derive_distribution_ppt
+
+    def _derive_then_corrupt(
+        *, master_pptx_path: Path, distribution_pptx_path: Path
+    ) -> None:
+        real_derive(master_pptx_path=master_pptx_path, distribution_pptx_path=distribution_pptx_path)
+        distribution_pptx_path.write_bytes(b"corrupt-final-distribution-deck")
+
+    monkeypatch.setattr(run_module, "_derive_distribution_ppt", _derive_then_corrupt)
+    monkeypatch.setattr(
+        run_module,
+        "_build_pdf_export_output_generator",
+        lambda *, source_pptx, warnings: PDFExportGenerator(
+            source_pptx=source_pptx,
+            warnings=warnings,
+            com_availability_checker=lambda: True,
+            pptx_to_pdf_exporter=_unexpected_export,
+        ),
+    )
+
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    config.export_pdf = True
+    if refresh_selection == "omitted":
+        config = config.model_copy(
+            update={
+                "output_generators": tuple(
+                    registration
+                    for registration in config.output_generators
+                    if registration.name != "ppt_link_refresh"
+                )
+            }
+        )
+    elif refresh_selection == "disabled":
+        config = config.model_copy(
+            update={
+                "output_generators": tuple(
+                    registration.model_copy(update={"enabled": False})
+                    if registration.name == "ppt_link_refresh"
+                    else registration
+                    for registration in config.output_generators
+                )
+            }
+        )
+
+    if refresh_selection == "cli":
+        config_path = tmp_path / "config.yml"
+        config_path.write_text(
+            yaml.safe_dump(config.model_dump(mode="json")),
+            encoding="utf-8",
+        )
+        run_output_dir = tmp_path / "cli-run"
+        monkeypatch.setattr(run_module, "_parse_inputs", lambda *a: {})
+        monkeypatch.setattr(run_module, "_validate_parsed_inputs", lambda *a: None)
+        monkeypatch.setattr(run_module, "_run_reconciliation_checks", lambda **k: {})
+        monkeypatch.setattr(run_module, "_compute_metrics", lambda *a: ({}, {}))
+        monkeypatch.setattr(run_module, "_write_risk_outputs", lambda **k: [])
+        monkeypatch.setattr(run_module, "_compute_and_write_concentration_metrics", lambda **k: [])
+        monkeypatch.setattr(run_module, "_write_change_attribution_outputs", lambda **k: [])
+        monkeypatch.setattr(
+            run_module,
+            "_compute_and_write_limit_breaches",
+            lambda **k: run_module.LimitBreachEvaluation(None, 0),
+        )
+        monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **k: [])
+        monkeypatch.setattr(run_module, "_resolve_repo_root", lambda: tmp_path)
+
+        assert (
+            main(
+                [
+                    "run",
+                    "--config",
+                    str(config_path),
+                    "--output-dir",
+                    str(run_output_dir),
+                ]
+            )
+            == 1
+        )
+        assert exported == []
+        return
+
+    run_dir = tmp_path / "run"
+    run_dir.mkdir(parents=True)
+
+    with pytest.raises(RuntimeError, match="Failed to validate distribution PPT"):
+        run_module._write_outputs(
+            run_dir=run_dir,
+            config=config,
+            as_of_date=date(2025, 12, 31),
+            warnings=[],
+        )
+
+    assert exported == []
 
 
 def test_final_concentration_validation_failure_prevents_pdf_export(

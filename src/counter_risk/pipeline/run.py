@@ -3024,25 +3024,14 @@ def _write_outputs(
                 raise RuntimeError(
                     "Pipeline failed during concentration table append stage"
                 ) from exc
-        try:
-            distribution_validation = validate_distribution_ppt_standalone(target_distribution_ppt)
-        except RuntimeError as exc:
-            warnings.append(
-                "Distribution PPT standalone validation skipped; unable to parse generated deck"
+        distribution_validation = validate_distribution_ppt_standalone(target_distribution_ppt)
+        if not distribution_validation.is_valid:
+            rel_parts = ", ".join(distribution_validation.external_relationship_parts)
+            raise RuntimeError(
+                "Distribution PPT standalone validation failed; "
+                f"found {distribution_validation.external_relationship_count} "
+                f"external relationships in: {rel_parts}"
             )
-            LOGGER.warning(
-                "Distribution PPT standalone validation skipped for %s: %s",
-                target_distribution_ppt,
-                exc,
-            )
-        else:
-            if not distribution_validation.is_valid:
-                rel_parts = ", ".join(distribution_validation.external_relationship_parts)
-                raise RuntimeError(
-                    "Distribution PPT standalone validation failed; "
-                    f"found {distribution_validation.external_relationship_count} "
-                    f"external relationships in: {rel_parts}"
-                )
         output_paths.append(target_distribution_ppt)
         manifest_ppt_outputs["distribution"] = {
             "role": "distribution",
@@ -3196,13 +3185,11 @@ def _derive_distribution_ppt(*, master_pptx_path: Path, distribution_pptx_path: 
             master_pptx_path,
             scrubbed_pptx_path=distribution_pptx_path,
         )
-    except BadZipFile:
-        shutil.copy2(master_pptx_path, distribution_pptx_path)
-        LOGGER.debug(
-            "Distribution derivation skipped link stripping for non-standard PPTX: %s",
-            master_pptx_path,
-        )
-        return
+    except BadZipFile as exc:
+        raise RuntimeError(
+            "Distribution PPT derivation failed; master deck is not a valid PPTX archive: "
+            f"{master_pptx_path}"
+        ) from exc
 
     remaining_targets = _list_external_link_targets(distribution_pptx_path)
     if remaining_targets:
