@@ -207,6 +207,28 @@ def test_compare_source_dates_detects_effective_mismatch_when_config_unset() -> 
     assert comparison["status"] == "conflict"
 
 
+def test_compare_source_dates_keeps_config_null_when_effective_matches_sources() -> None:
+    from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+
+    evidence = [
+        source_report_date_evidence(
+            variant=variant, path=f"{variant}.xlsx", headers=["Report Date: 2026-01-31"]
+        )
+        for variant in ("all_programs", "ex_trend", "trend")
+    ]
+    comparison = compare_source_report_dates(
+        configured_date=None,
+        effective_date=date(2026, 1, 31),
+        evidence=evidence,
+    )
+    assert comparison["configured_date"] is None
+    assert comparison["effective_date"] == "2026-01-31"
+    assert comparison["has_conflict"] is False
+    assert comparison["config_conflict_variants"] == []
+    assert comparison["effective_conflict_variants"] == []
+    assert comparison["status"] == "consistent"
+
+
 @pytest.mark.parametrize(
     "headers,status",
     [
