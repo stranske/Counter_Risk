@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -26,6 +27,13 @@ class _ScreenshotBackendCall:
 def _write_placeholder(path: Path, *, payload: bytes = b"fixture") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(payload)
+
+
+def _write_minimal_pptx(path: Path) -> None:
+    from pptx import Presentation
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    Presentation().save(str(path))
 
 
 def _write_pptx_with_external_link(path: Path, target: str) -> None:
@@ -69,8 +77,11 @@ def _build_config(
         "hist_llc": inputs_dir / "hist_llc.xlsx",
         "monthly_pptx": inputs_dir / "monthly.pptx",
     }
-    for path in files.values():
-        _write_placeholder(path)
+    for key, path in files.items():
+        if key == "monthly_pptx":
+            _write_minimal_pptx(path)
+        else:
+            _write_placeholder(path)
 
     return WorkflowConfig(
         mosers_all_programs_xlsx=files["all_programs"],
@@ -108,7 +119,7 @@ def test_write_outputs_calls_zip_backend_once_when_enabled(
 
     def _fake_zip_backend(source: Path, output: Path, mapping: dict[str, Path]) -> None:
         calls.append(_ScreenshotBackendCall(source=source, output=output, mapping=mapping))
-        output.write_bytes(source.read_bytes() + b"-replaced")
+        shutil.copy2(source, output)
 
     monkeypatch.setattr(run_module, "_replace_screenshots_with_zip_backend", _fake_zip_backend)
     monkeypatch.setattr(
@@ -163,7 +174,7 @@ def test_write_outputs_routes_python_pptx_backend_when_selected(
     def _fake_python_pptx_backend(source: Path, output: Path, mapping: dict[str, Path]) -> None:
         _ = mapping
         called["python_pptx"] += 1
-        output.write_bytes(source.read_bytes() + b"-replaced")
+        shutil.copy2(source, output)
 
     def _fake_zip_backend(_source: Path, _output: Path, _mapping: dict[str, Path]) -> None:
         called["zip"] += 1
@@ -203,10 +214,11 @@ def test_write_outputs_derives_distribution_from_refreshed_master(
         tmp_path=tmp_path,
         enable_screenshot_replacement=False,
     )
-    config.monthly_pptx.write_bytes(b"base-ppt")
+    _write_minimal_pptx(config.monthly_pptx)
 
     def _refresh(path: Path) -> PptProcessingResult:
-        path.write_bytes(path.read_bytes() + b"-refreshed")
+        with ZipFile(path, "a") as archive:
+            archive.writestr("_test/refresh-marker", b"refreshed")
         return PptProcessingResult(status=PptProcessingStatus.SUCCESS)
 
     monkeypatch.setattr(run_module, "_refresh_ppt_links", _refresh)
@@ -223,8 +235,10 @@ def test_write_outputs_derives_distribution_from_refreshed_master(
     assert master in output_paths
     assert distribution in output_paths
     assert output_paths.index(master) < output_paths.index(distribution)
-    assert master.read_bytes().endswith(b"-refreshed")
-    assert distribution.read_bytes() == master.read_bytes()
+    with ZipFile(master) as master_archive:
+        assert master_archive.read("_test/refresh-marker") == b"refreshed"
+    with ZipFile(distribution) as distribution_archive:
+        assert distribution_archive.read("_test/refresh-marker") == b"refreshed"
 
 
 def test_write_outputs_raises_when_master_generation_drops_external_links(
