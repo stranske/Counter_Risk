@@ -647,6 +647,7 @@ def run_pipeline(
         limit_breach_summary=limit_breach_summary,
     )
 
+    class_breakdown_sources: dict[str, str] = {}
     try:
         historical_output_paths = _update_historical_outputs(
             run_dir=run_dir,
@@ -655,6 +656,7 @@ def run_pipeline(
             as_of_date=as_of_date,
             formatting_profile=resolved_formatting_profile,
             warnings=warnings,
+            class_breakdown_sources=class_breakdown_sources,
         )
     except Exception as exc:
         LOGGER.exception("pipeline_failed stage=historical_update run_dir=%s", run_dir)
@@ -770,6 +772,7 @@ def run_pipeline(
             risk_proxy_summary=risk_proxy_summary,
             limit_breach_summary=limit_breach_summary,
             repo_cash_summary=repo_cash_summary,
+            class_breakdown_sources=class_breakdown_sources,
         )
         manifest_path = manifest_builder.write(run_dir=run_dir, manifest=manifest)
     except Exception as exc:
@@ -4231,7 +4234,10 @@ def _update_historical_outputs(
     as_of_date: date,
     formatting_profile: str | None = None,
     warnings: list[str],
+    class_breakdown_sources: dict[str, str] | None = None,
 ) -> list[Path]:
+    from counter_risk.outputs.historical_workbook import HistoricalWorkbookOutputGenerator
+
     LOGGER.info("historical_update_start run_dir=%s as_of_date=%s", run_dir, as_of_date.isoformat())
     registry = _build_output_generator_registry(warnings=warnings, config=config, run_dir=run_dir)
     output_generators = registry.load(
@@ -4253,6 +4259,10 @@ def _update_historical_outputs(
     output_paths: list[Path] = []
     for output_generator in output_generators:
         output_paths.extend(output_generator.generate(context=output_context))
+        if class_breakdown_sources is not None and isinstance(
+            output_generator, HistoricalWorkbookOutputGenerator
+        ):
+            class_breakdown_sources.update(output_generator.class_breakdown_sources)
 
     LOGGER.info("historical_update_complete workbook_count=%s", len(output_paths))
     return output_paths
@@ -4558,6 +4568,8 @@ def _merge_historical_workbook(
     cprs_ch_records: list[dict[str, Any]],
     formatting_profile: str | None = None,
     class_breakdown: Mapping[str, float] | None = None,
+    class_breakdown_source: str | None = None,
+    coerced_invalid_cells: int = 0,
     warnings: list[str],
 ) -> None:
     try:
@@ -4623,6 +4635,17 @@ def _merge_historical_workbook(
             worksheet.cell(row=append_row, column=1).value = as_of_date
 
             if spec.kind == "class_breakdown":
+                from counter_risk.outputs.historical_workbook import warn_class_breakdown
+
+                source = (
+                    (class_breakdown_source or "plain") if class_breakdown else "record-derived"
+                )
+                warn_class_breakdown(
+                    variant=variant,
+                    source=source,
+                    coerced_invalid_cells=coerced_invalid_cells,
+                    warnings=warnings,
+                )
                 # Prefer the class mix published on the CPRS-CH tab. For Trend that
                 # is the "Notional Breakdown (Absolute Values)" row: Trend holds
                 # short futures, so summing the signed clearing-house rows nets to a

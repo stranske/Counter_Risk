@@ -61,6 +61,7 @@ class ManifestBuilder:
         risk_proxy_summary: dict[str, Any] | None = None,
         limit_breach_summary: dict[str, Any] | None = None,
         repo_cash_summary: dict[str, Any] | None = None,
+        class_breakdown_sources: Mapping[str, str] | None = None,
     ) -> dict[str, Any]:
         valid_ppt_statuses = {"success", "skipped", "failed"}
         if ppt_status not in valid_ppt_statuses:
@@ -148,6 +149,8 @@ class ManifestBuilder:
             manifest["limit_breach_summary"] = limit_breach_summary
         if repo_cash_summary is not None:
             manifest["repo_cash_summary"] = repo_cash_summary
+        if class_breakdown_sources is not None:
+            manifest["class_breakdown_sources"] = dict(class_breakdown_sources)
         return manifest
 
     def _build_provenance(self) -> dict[str, Any]:

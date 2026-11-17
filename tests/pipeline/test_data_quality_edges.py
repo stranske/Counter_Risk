@@ -97,3 +97,37 @@ def test_cash_override_messages_keep_their_specific_codes(message, code, severit
     assert quality["findings"] == [
         {"category": "cash", "severity": severity, "code": code, "message": message}
     ]
+
+
+@pytest.mark.parametrize("code", ["CLASS_BREAKDOWN_FALLBACK", "CLASS_BREAKDOWN_CELL_COERCED"])
+@pytest.mark.parametrize("structured", [False, True])
+def test_class_breakdown_findings_are_always_warnings(code, structured) -> None:
+    # Words such as "failed" and "summary" must not override these explicit codes.
+    message = f"{code}: trend source failed; generated summary uses fallback"
+    warning = {"code": code, "message": message} if structured else message
+    quality = build_data_quality([warning, warning])
+    assert quality["overall_status"] == "warn"
+    assert quality["counts"]["by_severity"] == {"info": 0, "warn": 1, "fail": 0}
+    assert quality["findings"] == [
+        {"category": "data_validation", "severity": "warn", "code": code, "message": message}
+    ]
+
+
+@pytest.mark.parametrize(
+    ("warnings", "status"),
+    [
+        ([], "info"),
+        (["CLASS_BREAKDOWN_FALLBACK: trend uses plain shares"], "warn"),
+        (["CLASS_BREAKDOWN_CELL_COERCED: all_programs has 1 invalid cell"], "warn"),
+        (
+            [
+                "CLASS_BREAKDOWN_FALLBACK: trend uses record-derived shares",
+                {"code": "SOURCE_ERROR", "message": "Source unavailable"},
+            ],
+            "fail",
+        ),
+    ],
+)
+def test_class_breakdown_quality_preserves_status_precedence(warnings, status) -> None:
+    quality = build_data_quality(warnings)
+    assert quality["overall_status"] == status

@@ -64,6 +64,25 @@ def test_manifest_schema_requires_audit_sections() -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    ("sources", "valid"),
+    [
+        ({}, True),
+        ({"trend": "absolute", "all_programs": "plain", "ex_trend": "record-derived"}, True),
+        ({"trend": "guessed"}, False),
+        ({"unknown_variant": "absolute"}, False),
+        ({"trend": None}, False),
+        ({"trend": 1}, False),
+        ([], False),
+    ],
+)
+def test_class_breakdown_sources_schema_validates_variants_and_sources(sources, valid) -> None:
+    schema = manifest_schema()
+    assert "class_breakdown_sources" not in schema["required"]
+    reason = _check_node(sources, schema["properties"]["class_breakdown_sources"], "sources")
+    assert (reason is None) is valid
+
+
 def test_manifest_schema_defines_limit_breach_summary_shape() -> None:
     schema = manifest_schema()
 

@@ -4663,6 +4663,7 @@ def test_run_pipeline_passes_as_of_date_and_parsed_inputs_to_historical_update(
         as_of_date: date,
         formatting_profile: str,
         warnings: list[str],
+        class_breakdown_sources: dict[str, str],
     ) -> list[Path]:
         _ = (config, formatting_profile)
         calls.append(
