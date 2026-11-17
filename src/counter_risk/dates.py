@@ -246,7 +246,10 @@ def source_report_date_evidence(
 
 
 def compare_source_report_dates(
-    *, configured_date: date | None, evidence: Iterable[dict[str, Any]]
+    *,
+    configured_date: date | None,
+    evidence: Iterable[dict[str, Any]],
+    effective_date: date | None = None,
 ) -> dict[str, Any]:
     """Compare every reliable source, independently of authoritative date resolution."""
     sources = list(evidence)
@@ -258,15 +261,23 @@ def compare_source_report_dates(
         for entry in identified
         if configured_date is not None and entry["report_date"] != configured_date.isoformat()
     ]
+    effective_conflicts = [
+        entry["variant"]
+        for entry in identified
+        if effective_date is not None and entry["report_date"] != effective_date.isoformat()
+    ]
+    has_conflict = bool(config_conflicts or effective_conflicts) or inter_variant_conflict
     return {
         "configured_date": configured_date.isoformat() if configured_date else None,
+        "effective_date": effective_date.isoformat() if effective_date else None,
         "sources": sources,
-        "has_conflict": bool(config_conflicts) or inter_variant_conflict,
+        "has_conflict": has_conflict,
         "config_conflict_variants": config_conflicts,
+        "effective_conflict_variants": effective_conflicts,
         "inter_variant_conflict": inter_variant_conflict,
         "status": (
             "conflict"
-            if config_conflicts or inter_variant_conflict
+            if config_conflicts or effective_conflicts or inter_variant_conflict
             else "consistent" if len(identified) == len(sources) and identified else "unverified"
         ),
     }

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, date
 from pathlib import Path
 
@@ -182,6 +183,69 @@ def test_compare_source_dates_detects_later_variant_without_changing_precedence(
     assert comparison["inter_variant_conflict"] is True
     assert comparison["sources"][1]["path"] == "trend.xlsx"
     assert resolve_as_of_date(config, ["Report Date: 2026-02-28"]).value == date(2026, 1, 31)
+
+
+def test_compare_source_dates_detects_effective_mismatch_when_config_unset() -> None:
+    from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+
+    evidence = [
+        source_report_date_evidence(
+            variant=variant, path=f"{variant}.xlsx", headers=["Report Date: 2026-01-31"]
+        )
+        for variant in ("all_programs", "ex_trend", "trend")
+    ]
+    comparison = compare_source_report_dates(
+        configured_date=None,
+        effective_date=date(2026, 3, 1),
+        evidence=evidence,
+    )
+    assert comparison["configured_date"] is None
+    assert comparison["effective_date"] == "2026-03-01"
+    assert comparison["has_conflict"] is True
+    assert comparison["config_conflict_variants"] == []
+    assert comparison["effective_conflict_variants"] == ["all_programs", "ex_trend", "trend"]
+    assert comparison["inter_variant_conflict"] is False
+    assert comparison["status"] == "conflict"
+
+
+def test_compare_source_dates_keeps_config_null_when_effective_matches_sources() -> None:
+    from counter_risk.dates import compare_source_report_dates, source_report_date_evidence
+
+    evidence = [
+        source_report_date_evidence(
+            variant=variant, path=f"{variant}.xlsx", headers=["Report Date: 2026-01-31"]
+        )
+        for variant in ("all_programs", "ex_trend", "trend")
+    ]
+    comparison = compare_source_report_dates(
+        configured_date=None,
+        effective_date=date(2026, 1, 31),
+        evidence=evidence,
+    )
+    assert comparison["configured_date"] is None
+    assert comparison["effective_date"] == "2026-01-31"
+    assert comparison["has_conflict"] is False
+    assert comparison["config_conflict_variants"] == []
+    assert comparison["effective_conflict_variants"] == []
+    assert comparison["status"] == "consistent"
+
+
+def test_compare_source_dates_keeps_deliberate_break_needle() -> None:
+    """Lock effective-vs-source comparison independent of configured_date (#1253)."""
+    import counter_risk.dates as dates_module
+
+    source = Path(dates_module.__file__).read_bytes().replace(b"\r\n", b"\n")
+    digest = hashlib.sha256(source).hexdigest()
+    effective_branch = b'        if effective_date is not None and entry["report_date"] != effective_date.isoformat()\n'
+    gated_branch = (
+        b"        if (\n"
+        b"            configured_date is not None\n"
+        b"            and effective_date is not None\n"
+        b'            and entry["report_date"] != effective_date.isoformat()\n'
+        b"        )\n"
+    )
+    assert effective_branch in source, f"missing effective-conflict anchor (sha256={digest})"
+    assert gated_branch not in source
 
 
 @pytest.mark.parametrize(
