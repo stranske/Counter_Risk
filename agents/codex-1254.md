@@ -148,3 +148,30 @@ After all checks passed, the scoped commit attempt stopped at `git add`
 '/home/runner/work/Counter_Risk/Counter_Risk/.git/index.lock': Read-only file system`.
 The new Python test changes and this evidence remain uncommitted; no branch or
 pull request was created.
+
+## Sparse class-column regression verification (2026-11-17)
+
+Added two parser regression cases for the first additional task. Reordered
+class columns and omitted Equity/Commodity columns preserve plain/absolute
+provenance and the legacy mapping result. An invalid Treasury share counts as
+one coercion; invalid Cash and Notional cells do not inflate the count.
+
+- [x] Parser boundaries and historical-workbook tests: **55 passed**.
+- [x] Named missing-Trend fallback regression: **1 passed**.
+- [x] Related parser, data-quality, manifest, and historical-header tests:
+  **141 passed**. All pytest commands used `-m 'not slow'`.
+- [x] Ruff on the changed Python test file: **passed**.
+- [x] Complete historical-workbook file checked independently: **24 passed**.
+- [x] Required whole-repository Black gate: **422 files would be left
+  unchanged**, after all 422 files passed single-file Black checks with the
+  writable cache documented above. `git diff --check` also passed.
+- [ ] Commit the sparse-column parser regressions on `codex/issue-1254`.
+
+The scoped commit attempt failed at `git add` (exit 128): `fatal: Unable to
+create '/home/runner/work/Counter_Risk/Counter_Risk/.git/index.lock': Read-only
+file system`. The two new Python test cases and these notes remain in the
+working tree. Writable Git metadata is required to complete the commit.
+
+GitHub reports PR #1255 as **closed and merged**, with **draft=false**. The
+keepalive appendix's open-work checklist is stale. No branch or PR was created
+or reopened, and no remote PR state was changed by this follow-up.

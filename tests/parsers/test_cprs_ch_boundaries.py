@@ -182,6 +182,29 @@ def test_class_breakdown_defaults_missing_and_invalid_cells_to_zero(tmp_path):
     assert provenance.values == ch.read_class_notional_breakdown(path)
 
 
+@pytest.mark.parametrize("absolute", [False, True])
+def test_class_breakdown_provenance_follows_sparse_reordered_class_columns(tmp_path, absolute):
+    label = "Notional Breakdown (Absolute Values)" if absolute else "Notional Breakdown"
+    path = _workbook(
+        tmp_path,
+        [
+            [None, "Currency", "Cash", "Counterparty", "Treasury", "Notional", "TIPS"],
+            [],
+            [label, "25%", "#DIV/0!", None, "invalid", "bad notional", "(12.5%)"],
+        ],
+    )
+
+    # Class columns may move or be absent. Damage in Cash or Notional must not
+    # count toward the selected class row's coercions or introduce extra fields.
+    result = ch.read_class_notional_breakdown_with_provenance(path)
+    assert result == ch.ClassNotionalBreakdown(
+        values={"TIPS": -12.5, "Treasury": 0.0, "Currency": 25.0},
+        source="absolute" if absolute else "plain",
+        coerced_invalid_cells=1,
+    )
+    assert ch.read_class_notional_breakdown(path) == result.values
+
+
 @pytest.mark.parametrize("invalid", ["invalid", "NaN", "inf", "-inf", True, "#DIV/0!"])
 def test_class_breakdown_counts_only_invalid_cells_in_selected_row(tmp_path, invalid):
     path = _workbook(
