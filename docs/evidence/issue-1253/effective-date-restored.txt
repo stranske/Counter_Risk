@@ -1,10 +1,9 @@
 exit_code: 0
-=== stdout ===
 ============================= test session starts ==============================
 platform linux -- Python 3.14.10, pytest-9.2.0, pluggy-1.7.0
 rootdir: /home/runner/work/Counter_Risk/Counter_Risk
 configfile: pyproject.toml
-plugins: cov-7.1.0, regressions-2.11.0, platformdirs-4.14.5, datadir-1.9.0, langsmith-0.14.17, xdist-3.8.0, anyio-4.16.0
+plugins: langsmith-0.14.17, cov-7.1.0, platformdirs-4.14.5, regressions-2.11.0, datadir-1.9.0, anyio-4.16.0, xdist-3.8.0
 collected 1 item
 
 tests/pipeline/test_as_of_header_mismatch.py .                           [100%]
@@ -15,6 +14,4 @@ tests/pipeline/test_as_of_header_mismatch.py .                           [100%]
     if asyncio.iscoroutinefunction(func):
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================== 1 passed, 13 warnings in 0.32s ========================
-
-=== stderr ===
+======================== 1 passed, 13 warnings in 0.28s ========================

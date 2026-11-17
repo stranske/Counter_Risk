@@ -14,7 +14,7 @@ conflicts when `configured_date` is unset).
 4. Restore production handling and re-run; capture pass.
 5. Record literal transcripts below.
 
-Executed on branch `cursor/issue-1253` with Python 3.14.10 (keepalive 2026-11-17 UTC).
+Executed on branch `cursor/issue-1253` with Python 3.14.10 (keepalive 2026-11-17 UTC, round 1256 re-verify).
 
 ## RED — effective comparisons omitted when config unset
 

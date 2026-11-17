@@ -225,6 +225,7 @@ def test_inferred_as_of_mismatch_with_identified_sources_is_conflict(date_run, t
     assert comparison["configured_date"] is None
     assert comparison["effective_date"] == "2026-03-01"
     assert comparison["has_conflict"] is True
+    assert comparison["status"] == "conflict"
     assert comparison["config_conflict_variants"] == []
     assert comparison["effective_conflict_variants"] == ["all_programs", "ex_trend", "trend"]
     assert comparison["inter_variant_conflict"] is False
