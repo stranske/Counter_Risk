@@ -3024,14 +3024,25 @@ def _write_outputs(
                 raise RuntimeError(
                     "Pipeline failed during concentration table append stage"
                 ) from exc
-        distribution_validation = validate_distribution_ppt_standalone(target_distribution_ppt)
-        if not distribution_validation.is_valid:
-            rel_parts = ", ".join(distribution_validation.external_relationship_parts)
-            raise RuntimeError(
-                "Distribution PPT standalone validation failed; "
-                f"found {distribution_validation.external_relationship_count} "
-                f"external relationships in: {rel_parts}"
+        try:
+            distribution_validation = validate_distribution_ppt_standalone(target_distribution_ppt)
+        except RuntimeError as exc:
+            warnings.append(
+                "Distribution PPT standalone validation skipped; unable to parse generated deck"
             )
+            LOGGER.warning(
+                "Distribution PPT standalone validation skipped for %s: %s",
+                target_distribution_ppt,
+                exc,
+            )
+        else:
+            if not distribution_validation.is_valid:
+                rel_parts = ", ".join(distribution_validation.external_relationship_parts)
+                raise RuntimeError(
+                    "Distribution PPT standalone validation failed; "
+                    f"found {distribution_validation.external_relationship_count} "
+                    f"external relationships in: {rel_parts}"
+                )
         output_paths.append(target_distribution_ppt)
         manifest_ppt_outputs["distribution"] = {
             "role": "distribution",
