@@ -186,3 +186,31 @@ def test_class_breakdown_counts_only_invalid_cells_in_selected_row(tmp_path, inv
         source="absolute",
         coerced_invalid_cells=1,
     )
+
+
+@pytest.mark.parametrize("absolute", [False, True])
+def test_class_breakdown_reports_multiple_coercions_without_counting_blanks_or_zero(
+    tmp_path, absolute
+):
+    label = "Notional Breakdown (Absolute Values)" if absolute else "Notional Breakdown"
+    rows = [HEADERS]
+    if absolute:
+        # Damage in the unused signed row must not inflate the selected row's count.
+        rows.append(["Notional Breakdown", None, None, "bad", "bad", "bad", "bad", "bad"])
+    rows.extend(
+        [
+            [label, None, None, "#DIV/0!", "invalid", None, 0, "(12.5%)"],
+            # A later row with the same label must not replace the first selection.
+            [label, None, None, 1, 2, 3, 4, 5],
+        ]
+    )
+    path = _workbook(tmp_path, rows)
+
+    result = ch.read_class_notional_breakdown_with_provenance(path)
+
+    assert result == ch.ClassNotionalBreakdown(
+        values={"TIPS": 0.0, "Treasury": 0.0, "Equity": 0.0, "Commodity": 0.0, "Currency": -12.5},
+        source="absolute" if absolute else "plain",
+        coerced_invalid_cells=2,
+    )
+    assert ch.read_class_notional_breakdown(path) == result.values

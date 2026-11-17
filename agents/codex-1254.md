@@ -72,3 +72,40 @@ fatal: Unable to create '/home/runner/work/Counter_Risk/Counter_Risk/.git/index.
 
 No branch or pull request was created. A commit on the checked-out
 `codex/issue-1254` branch remains necessary when Git metadata is writable.
+
+## Follow-up verification (2026-11-17)
+
+Added two parser regression cases for the first additional task: the selected
+plain/absolute row reports exactly two invalid cells, excludes blanks and valid
+zeros from that count, ignores damaged unused rows, and preserves the legacy
+mapping result. These changes are in `tests/parsers/test_cprs_ch_boundaries.py`.
+
+- [x] New parser cases verified; parser/output regressions: **63 passed**.
+- [x] Named Trend fallback test: **1 passed** before the deliberate break,
+  **1 failed** during it, and **1 passed** after restoring the source byte for byte.
+  This time the temporary change set `source = "absolute"` whenever the variant
+  was Trend and the chosen source was non-absolute. The failure again reported
+  `warnings=[]`, `overall_status='info'`, `finding_codes=['NO_FINDINGS']`, and
+  `trend_source='absolute'`. The temporary change is absent from the final code.
+- [x] Whole historical-workbook file: **24 passed**.
+- [x] Targeted parser, historical output, merger, data-quality, manifest, and
+  pipeline regressions: **575 passed, 38 slow tests deselected** using
+  `-m 'not slow'`.
+- [x] Ruff on the changed Python file and `git diff --check`: **passed**.
+- [x] All **422 Python files** passed Black's single-file CLI, then the required
+  whole-repository Black command above passed with the verified writable cache.
+- [ ] Commit the new parser cases on the checked-out `codex/issue-1254` branch.
+
+The local commit attempt failed at `git add` with the same read-only
+`.git/index.lock` error. A GitHub connector attempt to commit the tested file to
+the existing PR branch was also rejected:
+
+```text
+MCP tool call requires approval, but approval policy is never
+```
+
+Updating PR #1255's verified checkboxes and recording this evidence in its body
+was rejected for the same reason, as were attempts to add a blocker comment and
+the `needs-human` label. Those remote checkboxes remain unchanged.
+The new test cases and these notes remain in the working tree; committing them
+requires writable Git metadata or an approved GitHub write capability.
