@@ -2802,6 +2802,107 @@ def test_optional_input_provenance_hashes(
     assert not any(key.startswith("screenshot_inputs.") for key in disabled)
 
 
+def test_optional_input_provenance_hashes_implicit_cash_override(
+    tmp_path: Path, fake_pandas: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Issue #1252: an auto-discovered cash_overrides_<as_of_date>.csv is hashed in the manifest."""
+
+    input_config = run_module.load_config(_write_scope_workflow_config(tmp_path))
+    cash_source = tmp_path / "repo-cash.csv"
+    cash_source.write_text("counterparty,cash_value\nCIBC,2.0\n", encoding="utf-8")
+    override_name = "cash_overrides_2025-12-31.csv"
+
+    monkeypatch.setattr(run_module, "_parse_inputs", lambda _: _minimal_parsed_by_variant())
+    monkeypatch.setattr(run_module, "_validate_parsed_inputs", lambda _: None)
+    monkeypatch.setattr(run_module, "_run_reconciliation_checks", lambda **kwargs: {})
+    monkeypatch.setattr(run_module, "_compute_metrics", lambda _: ({}, {}))
+    monkeypatch.setattr(run_module, "_write_risk_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(run_module, "_compute_and_write_concentration_metrics", lambda **kwargs: [])
+    monkeypatch.setattr(run_module, "_write_change_attribution_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(
+        run_module,
+        "_compute_and_write_limit_breaches",
+        lambda **kwargs: run_module.LimitBreachEvaluation(csv_path=None, breach_count=0),
+    )
+    monkeypatch.setattr(run_module, "_update_historical_outputs", lambda **kwargs: [])
+    monkeypatch.setattr(
+        run_module,
+        "_call_write_outputs",
+        lambda **kwargs: (
+            [],
+            run_module.PptProcessingResult(status=run_module.PptProcessingStatus.SUCCESS),
+        ),
+    )
+
+    def write_override(path: Path, cash_value: float) -> Path:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            f"counterparty,cash_value,note\nCIBC,{cash_value},manual\n", encoding="utf-8"
+        )
+        return path
+
+    def manifest_hashes(
+        run_name: str, *, config_name: str | None = None, explicit_override: Path | None = None
+    ) -> tuple[dict[str, str], Path]:
+        config_dir = tmp_path / f"{config_name or run_name}-config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        config_path = config_dir / "workflow.yml"
+        config_lines = [
+            "as_of_date: 2025-12-31",
+            f"mosers_all_programs_xlsx: {input_config.mosers_all_programs_xlsx}",
+            f"mosers_ex_trend_xlsx: {input_config.mosers_ex_trend_xlsx}",
+            f"mosers_trend_xlsx: {input_config.mosers_trend_xlsx}",
+            f"hist_all_programs_3yr_xlsx: {input_config.hist_all_programs_3yr_xlsx}",
+            f"hist_ex_llc_3yr_xlsx: {input_config.hist_ex_llc_3yr_xlsx}",
+            f"hist_llc_3yr_xlsx: {input_config.hist_llc_3yr_xlsx}",
+            f"monthly_pptx: {input_config.monthly_pptx}",
+            "cash_source_type: csv",
+            f"cash_source_path: {cash_source}",
+            f"output_root: {tmp_path / run_name}",
+        ]
+        if explicit_override is not None:
+            config_lines.append(f"cash_overrides_csv: {explicit_override}")
+        config_path.write_text("\n".join(config_lines) + "\n", encoding="utf-8")
+        run_dir = run_pipeline(config_path, output_dir=tmp_path / run_name)
+        manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+        return manifest["input_hashes"], config_dir
+
+    unrelated_cwd = tmp_path / "unrelated-cwd"
+    unrelated_cwd.mkdir()
+    monkeypatch.chdir(unrelated_cwd)
+
+    # Config-directory discovery: the consumed override's bytes land in the manifest.
+    config_dir_override = write_override(tmp_path / "config-dir-config" / override_name, 8.0)
+    hashes, _ = manifest_hashes("config-dir")
+    assert hashes["cash_source_path"] == _sha256(cash_source)
+    original_hash = hashes["cash_overrides_csv"]
+    assert original_hash == _sha256(config_dir_override)
+
+    # Changing the override bytes changes the recorded provenance.
+    write_override(config_dir_override, 9.0)
+    changed, _ = manifest_hashes("config-dir-changed", config_name="config-dir")
+    assert changed["cash_overrides_csv"] == _sha256(config_dir_override) != original_hash
+
+    # CWD fallback when the config directory has no override file.
+    cwd_override = write_override(unrelated_cwd / override_name, 6.0)
+    hashes, config_dir = manifest_hashes("cwd-fallback")
+    assert not (config_dir / override_name).exists()
+    assert hashes["cash_overrides_csv"] == _sha256(cwd_override)
+
+    # An explicit config.cash_overrides_csv wins over config-dir and CWD files.
+    explicit = write_override(tmp_path / "explicit-overrides.csv", 5.0)
+    write_override(tmp_path / "explicit-config" / override_name, 4.0)
+    hashes, _ = manifest_hashes("explicit", explicit_override=explicit)
+    assert hashes["cash_overrides_csv"] == _sha256(explicit)
+    assert len({_sha256(explicit), _sha256(cwd_override), original_hash}) == 3
+
+    # No override consumed: the key is omitted.
+    cwd_override.unlink()
+    hashes, _ = manifest_hashes("none-consumed")
+    assert "cash_overrides_csv" not in hashes
+    assert hashes["cash_source_path"] == _sha256(cash_source)
+
+
 def test_write_risk_outputs_writes_rankings_and_top_movers(tmp_path: Path) -> None:
     warnings: list[str] = []
     parsed_by_variant = {
