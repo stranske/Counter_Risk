@@ -66,6 +66,24 @@ def _build_config(
     )
 
 
+def test_build_config_uses_workbook_placeholders_and_valid_monthly_fixture(
+    tmp_path: Path,
+) -> None:
+    config = _build_config(tmp_path, enable_ppt_output=True)
+    assert config.monthly_pptx == _MONTHLY_PPTX_FIXTURE
+    _assert_openable_pptx(_MONTHLY_PPTX_FIXTURE)
+    workbook_paths = (
+        config.mosers_all_programs_xlsx,
+        config.mosers_ex_trend_xlsx,
+        config.mosers_trend_xlsx,
+        config.hist_all_programs_3yr_xlsx,
+        config.hist_ex_llc_3yr_xlsx,
+        config.hist_llc_3yr_xlsx,
+    )
+    for workbook_path in workbook_paths:
+        assert workbook_path.read_bytes() == b"fixture"
+
+
 @pytest.mark.parametrize("selection", ["enabled", "disabled", "omitted"])
 @pytest.mark.parametrize("distribution_enabled", [True, False])
 @pytest.mark.parametrize("use_legacy_fallback", [False, True])
@@ -366,6 +384,9 @@ def test_ppt_enabled_run_writes_readme_consistent_with_manifest_entries(
         as_of_date=as_of_date,
         warnings=[],
     )
+
+    _assert_openable_pptx(run_dir / output_names.master_filename)
+    _assert_openable_pptx(run_dir / output_names.distribution_filename)
 
     readme_path = run_dir / "README.txt"
     assert readme_path.exists()
