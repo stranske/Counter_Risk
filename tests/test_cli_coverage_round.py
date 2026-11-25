@@ -157,12 +157,33 @@ def test_runner_settings_helpers_reject_non_object_and_prefer_cli_values(tmp_pat
 
 
 def test_gui_headless_preserves_unsuccessful_exit_code(monkeypatch, capsys) -> None:
+    error_message = (
+        "Error 7: Operator action: review run inputs, then rerun the process."
+    )
     monkeypatch.setattr(
         "counter_risk.gui.runner.execute_gui_run",
-        lambda **kwargs: SimpleNamespace(exit_code=7),
+        lambda **kwargs: SimpleNamespace(exit_code=7, error_message=error_message),
     )
     assert cli._gui_command(argparse.Namespace(headless=True)) == 7
-    assert "failed with exit code 7" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Operator action:" in out
+    assert error_message in out
+    assert "failed with exit code 7" not in out
+
+
+def test_gui_headless_prints_operator_guidance_from_error_message(
+    monkeypatch, capsys
+) -> None:
+    error_message = (
+        "Error 2: Operator action: verify required input files are present "
+        "and paths are correct."
+    )
+    monkeypatch.setattr(
+        "counter_risk.gui.runner.execute_gui_run",
+        lambda **kwargs: SimpleNamespace(exit_code=2, error_message=error_message),
+    )
+    assert cli._gui_command(argparse.Namespace(headless=True)) == 2
+    assert error_message in capsys.readouterr().out
 
 
 def test_runner_settings_reports_unreadable_file(tmp_path: Path) -> None:
