@@ -12,6 +12,7 @@ import pytest
 
 from counter_risk import cli
 from counter_risk.config import WorkflowConfig
+from counter_risk.runner_launch import format_gui_run_failure
 
 
 def test_discovery_reports_gaps_and_applies_explicit_run_overrides(
@@ -184,6 +185,16 @@ def test_gui_headless_prints_operator_guidance_from_error_message(
     )
     assert cli._gui_command(argparse.Namespace(headless=True)) == 2
     assert error_message in capsys.readouterr().out
+
+
+def test_gui_headless_formats_pre_run_exception(monkeypatch, capsys) -> None:
+    def _raise(**_kwargs: object) -> None:
+        raise ValueError("missing required input")
+
+    monkeypatch.setattr("counter_risk.gui.runner.execute_gui_run", _raise)
+    assert cli._gui_command(argparse.Namespace(headless=True)) == 1
+    expected = format_gui_run_failure(exit_code=1, message="missing required input")
+    assert capsys.readouterr().out.strip() == expected
 
 
 def test_runner_settings_reports_unreadable_file(tmp_path: Path) -> None:
