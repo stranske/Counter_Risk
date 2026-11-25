@@ -277,6 +277,7 @@ def _run_command(args: argparse.Namespace) -> int:
 
 def _gui_command(args: argparse.Namespace) -> int:
     from counter_risk.gui.runner import GuiRunState, execute_gui_run, launch_gui
+    from counter_risk.runner_launch import format_gui_run_failure
 
     state = GuiRunState(
         as_of_date=cast(str, getattr(args, "as_of_date", date.today().isoformat())),
@@ -301,12 +302,15 @@ def _gui_command(args: argparse.Namespace) -> int:
                 cleanup_settings_file=True,
             )
         except Exception as exc:
-            print(f"Counter Risk GUI headless run failed: {exc}")
+            print(format_gui_run_failure(exit_code=1, message=str(exc)))
             return 1
         if result.exit_code == 0:
             print("Counter Risk GUI headless run completed.")
             return 0
-        print(f"Counter Risk GUI headless run failed with exit code {result.exit_code}.")
+        if result.error_message:
+            print(result.error_message)
+        else:
+            print(f"Counter Risk GUI headless run failed with exit code {result.exit_code}.")
         return result.exit_code
 
     launch_gui(initial_state=state, runner=_run_callback)
