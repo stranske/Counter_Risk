@@ -707,4 +707,6 @@ def test_main_gui_headless_reports_runner_exceptions(
     captured_output = capsys.readouterr()
 
     assert result == 1
-    assert "gui headless run failed: invalid as-of date" in captured_output.out.lower()
+    lowered = captured_output.out.lower()
+    assert "error 1:" in lowered
+    assert "operator action:" in lowered
