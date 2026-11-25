@@ -40,4 +40,7 @@ def test_dimension_audit_logs_marked_historical() -> None:
         assert HISTORICAL_BANNER in lines[2], filename
         assert "docs/PRODUCT_CONTRACT.md" in content, filename
         if filename == "22-design-ux.md":
-            assert "The “Ask about this run” action remains unbound" in lines[2]
+            assert "remains unbound" not in lines[2]
+            assert "The “Ask about this run” action is now wired" in lines[2]
+            assert "PR #1236" in lines[2]
+            assert "`counter-risk gui`" in lines[2]
