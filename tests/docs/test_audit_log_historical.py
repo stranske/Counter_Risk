@@ -41,6 +41,8 @@ def test_dimension_audit_logs_marked_historical() -> None:
         assert "docs/PRODUCT_CONTRACT.md" in content, filename
         if filename == "22-design-ux.md":
             assert "remains unbound" not in lines[2]
+            assert "#1183" not in lines[2]
             assert "The “Ask about this run” action is now wired" in lines[2]
             assert "PR #1236" in lines[2]
             assert "`counter-risk gui`" in lines[2]
+            assert "credentials" in lines[2]
