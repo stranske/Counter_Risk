@@ -310,9 +310,7 @@ def _gui_command(args: argparse.Namespace) -> int:
         if result.error_message:
             print(result.error_message)
         else:
-            print(
-                f"Counter Risk GUI headless run failed with exit code {result.exit_code}."
-            )
+            print(f"Counter Risk GUI headless run failed with exit code {result.exit_code}.")
         return result.exit_code
 
     launch_gui(initial_state=state, runner=_run_callback)
