@@ -22,7 +22,7 @@ The rows below preserve the pre-merge gaps and record whether each item is resol
 ### Cursor UI/outputs lane (resolved on main)
 - **#7 [BLOCKER]** discover `input()` — resolved (GUI uses worker thread / non-blocking discover).
 - #9 [MAJOR] GUI pipeline on Tk main thread — resolved.
-- #10 [MAJOR] GUI raw exit codes — resolved for the interactive GUI worker; `gui --headless` still prints raw exception text (follow-up).
+- #10 [MAJOR] GUI raw exit codes — resolved for the interactive GUI worker; `gui --headless` operator messaging resolved in PR #1273 (prints `result.error_message` on failure and `format_gui_run_failure` on exceptions).
 - #17 [MAJOR] `as_of_date` discarded by MOSERS writers — resolved.
 - #20 [MAJOR] GUI file/dir pickers + path validation — resolved.
 - #23 [MINOR] pptx geometry-mismatch error/EMU robustness — resolved on main.
@@ -30,7 +30,7 @@ The rows below preserve the pre-merge gaps and record whether each item is resol
 - #26 [MINOR] `historical_update._append_to_sheet` row 13 — resolved.
 
 ### Runner.xlsm
-- **#6 [BLOCKER]** runner controls and `Config` sheet — resolved; `Ask about this run` remains an unimplemented label with no VBA handler.
+- **#6 [BLOCKER]** runner controls and `Config` sheet — resolved; `Ask about this run` is wired to the `AskAbout_Click` Form Control at `I5` (PR #1236; asserted in `tests/test_runner_workbook.py`).
 
 ### Deferred MINORs (dropped from claude lane to avoid a test-breaking refactor)
 - #22 unify YAML loaders (reverted — broke 5 limit tests despite being byte-faithful; mechanism unresolved)

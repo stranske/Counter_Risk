@@ -17,6 +17,21 @@ def test_in_repo_audit_logs_marked_historical() -> None:
     assert "docs/PRODUCT_CONTRACT.md" in remaining_work
 
 
+def test_audit_progress_docs_drop_resolved_gaps() -> None:
+    """Resolved headless and Ask-about gaps must not be listed as open work."""
+    repo_root = Path(__file__).resolve().parents[2]
+    remaining_work = (repo_root / "docs/audit/REMAINING_WORK.md").read_text(encoding="utf-8")
+    summary = (repo_root / "docs/audit/IMPLEMENTATION_SUMMARY.md").read_text(encoding="utf-8")
+    assert "still prints raw exception text" not in remaining_work
+    assert "remains an unimplemented label" not in remaining_work
+    assert "PR #1273" in remaining_work
+    assert "PR #1236" in remaining_work
+    assert "have no existing VBA handler" not in summary
+    assert "get no button" not in summary
+    assert "AskAbout_Click" in summary
+    assert "desktop Excel on Windows" in summary
+
+
 def test_dimension_audit_logs_marked_historical() -> None:
     """Dimension audit snapshots must carry the shared historical banner on line 3."""
     repo_root = Path(__file__).resolve().parents[2]
