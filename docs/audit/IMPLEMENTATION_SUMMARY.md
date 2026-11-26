@@ -43,7 +43,7 @@ Items: #1 frozen-config · #2 denominator · #3 fail→RED · #4 HHI · #6 xlsm 
 
 ## Verification notes / caveats
 
-- **#6 Runner.xlsm**: verified valid OOXML, `openpyxl.load_workbook(keep_vba=True)` succeeds, `vbaProject.bin` byte-identical, 45 runner/VBA tests pass. Two labels ("Dry-Run Discovery", "Ask about this run") have no existing VBA handler so get no button. **Final click-test requires opening in desktop Excel on Windows** (cannot be verified from macOS/headless).
+- **#6 Runner.xlsm**: verified valid OOXML, `openpyxl.load_workbook(keep_vba=True)` succeeds, `vbaProject.bin` byte-identical, 45 runner/VBA tests pass. "Dry-Run Discovery" (`D5`, `DryRunDiscovery_Click`) and "Ask about this run" (`I5`, `AskAbout_Click`) are now bound to Form Controls (PR #1236; asserted in `tests/test_runner_workbook.py`). **Final click-test requires opening in desktop Excel on Windows** (cannot be verified from macOS/headless).
 - **#17 as_of_date** stamped to `CPRS - CH` A3/B3 in the MOSERS workbook.
 - The `_resolve_repo_root` / `resolve_runtime_path` source-vs-frozen split is subtle: source mode must use absolute repo-tree paths (the pipeline chdirs into run folders). See `f482538`.
 
